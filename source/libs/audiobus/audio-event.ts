@@ -1,0 +1,26 @@
+/**
+ * An Audio Event is an Audio Command that has 
+ * completed or been "triggered". This is useful
+ * for simplifying the connection between request
+ * and response.
+ * 
+ */
+import AudioCommand from "./audio-command.ts"
+
+export default class AudioEvent extends AudioCommand { 
+
+    
+	get duration():number{
+		return this.endAt - this.startAt
+	}
+
+    constructor( audioCommand:AudioCommand, timer ) {
+        super()
+    }
+
+    /**
+     * Make this Audio Command make music in a Audio Device     */
+    trigger(){
+
+    }
+}

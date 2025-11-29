@@ -1,66 +1,67 @@
 /**
 * A single musical command.
+* 
 * This can be used to send a command to any part
 * of the audio application in order to trigger something
-* or change parameters
+* or change parameters.
+* 
+* Essentially this is a musical event which hasn't been
+* triggered and so doesn't have a real timestamp
 */
 export default class AudioCommand {
 
 	static counter = 1
 
-    get noteNumber(){
+    get noteNumber():number{
         return this.number
     }
 
 	// pitch value 0 -> 16383
-	get pitch(){
+	get pitch():number{
 		return this.value
 	}
 	
-	get duration(){
-		return this.endAt - this.startAt
-	}
-
    
 	// MIDI GM Note number for setting pitch
-    number
+    number:number
 
 	// velocity / amplitude value
-    velocity
-    startAt
-    endAt
+    velocity:number
+    startAt:number
+    endAt:number
 
 	// pitch value from MIDI is 0 -> 16383
-	value
-	pitchBend = 0
+	value:number
+	pitchBend:number = 0
 
 	// UNOFFICAl: Uint8Array
-	raw
+	raw:Uint8Array
+	// data:
 
-	time = 0
-	timeCode = 0
+	time:number = 0
+	timeCode:number = 0
 
 	// Handy places to store information about this command
-	id 
-	type
-	subtype
-	text
-	data
-
+	id:number
+	type:string
+	subtype:string
+	
+	text:string
+	
 	constructor() {
 		this.id = AudioCommand.counter++
 	}
 
 	// for linked lists
-	previous
-	next
+	previous:AudioCommand
+	next:AudioCommand
 
 	remove(){
 		this.previous.next = this.next
 		this.next.previous = this.previous
 	}
 
-	append(tail){
+	append(tail:AudioCommand){
 		tail.next = this
 		this.previous = tail
 	}
@@ -69,11 +70,11 @@ export default class AudioCommand {
 	 * 
 	 * @returns copy of this
 	 */
-	clone(){
+	clone():AudioCommand{
 		return this.copyAllParametersToCommand( new AudioCommand() )
 	}
 
-	copyAllParametersToCommand(command){
+	copyAllParametersToCommand(command:AudioCommand){
 		for (let i in this)
 		{
 			command[i] = this[i]
