@@ -24,7 +24,7 @@ export function ConfigDrawer() {
         ])
     }
 
-    return (<div>
+    return (<div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
         <button onClick={onAdd('identity')}>Identity</button>
         <button onClick={onAdd('quantise')}>Quantise</button>
         <button onClick={onAdd('harmonise')}>Harmonise</button>

@@ -10,116 +10,97 @@
 
 <body>
 
+  <!-- Timer Bar -->
+  <div id="timer-bar">
+    <strong>TIMER</strong>
+    <time id="clock"></time>
+  </div>
+
+  <!-- Main Header -->
   <header>
     <h1>Harmoneasy</h1>
-    <h2>Jamtastic</h2>
-  </header>
-  
-  <main>
-
-    <details>
-      <summary>
-
-        <strong>
-          MIDI Events
-        </strong>
-        <time id="clock">
-
-        </time>
-      </summary>
-
-      <div>
-        <output id="midi-devices">
-
-        </output>
-
-        <output id="midi-input-commands">
-
-        </output>
-
-        <output id="midi-output-commands">
-
-        </output>
-      </div>
-
-    </details>
-
-    <form id="options">
-
-      <fieldset id="midi-settings-fieldset">
-        <legend>Tempo</legend>
+    <div class="header-controls">
+      <div id="tempo-control">
         <label>
-          Beats per minute
+          Tempo:
           <input id="tempo" type="range" min=10 max=303>
-        </label>
-        <p>
           <output id="bpm"></output>
           BPM
-        </p>
-      </fieldset>
-
-
-
-      
-      <!-- <fieldset>
-        <legend>Options</legend>
-        <label>
-          Quantize
-          <input id="toggle-quantize" type="checkbox" value="quantize">
         </label>
-      </fieldset> -->
+      </div>
+      <div class="device-buttons">
+        <button type="button" id="btn-connect-to-ble">Connect Bluetooth</button>
+        <button type="button" id="btn-toggle-webmidi">Connect WebMIDI</button>
+      </div>
+    </div>
+  </header>
 
-      <fieldset id="midi-controls">
-        <button type="button" id="btn-connect-to-ble">Connect to Bluetooth Musical Device</button>
-        <button type="button" id="btn-toggle-webmidi">Connect to WebMIDI Device</button>
-       
-        <fieldset id="ble-manual-send-fieldset" hidden>
-          <legend>Manual BLE Send</legend>
-         
-          <label for="midi-channel-selector">BLE MIDI Channel:
-              <select id="midi-channel-selector">
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
-                <option value="6">6</option>
-                <option value="7">7</option>
-                <option value="8">8</option>
-                <option value="9">9</option>
-                <option value="10">10</option>
-                <option value="11">11</option>
-                <option value="12">12</option>
-                <option value="13">13</option>
-                <option value="14">14</option>
-                <option value="15">15</option>
-                <option value="16">16</option>
-              </select>
-          </label>
+  <!-- Sidebar for MIDI Events -->
+  <aside id="sidebar">
+    <div id="sidebar-header">
+      <h2>MIDI Events</h2>
+      <button id="sidebar-close">&times;</button>
+    </div>
+    <div id="sidebar-content">
+      <output id="midi-devices"></output>
+      <output id="midi-input-commands"></output>
+      <output id="midi-output-commands"></output>
 
-          <label for="ble-manual-input">Manual BLE Send
-            <input id="ble-manual-input" type="text" placeholder="Enter bytes e.g. 144,60,127">
-          </label>
-          
-          <button type="button" id="btn-send-ble-manual">Send BLE</button>
+      <div id="ble-manual-send-fieldset" hidden>
+        <legend>Manual BLE Send</legend>
 
-        </fieldset>
-      </fieldset>
-      
-    </form>
+        <label for="midi-channel-selector">BLE MIDI Channel:
+          <select id="midi-channel-selector">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+            <option value="10">10</option>
+            <option value="11">11</option>
+            <option value="12">12</option>
+            <option value="13">13</option>
+            <option value="14">14</option>
+            <option value="15">15</option>
+            <option value="16">16</option>
+          </select>
+        </label>
 
-    <!-- AudioTool integration -->
-    <div id="app"></div>
+        <label for="ble-manual-input">Manual BLE Send
+          <input id="ble-manual-input" type="text" placeholder="Enter bytes e.g. 144,60,127">
+        </label>
 
+        <button type="button" id="btn-send-ble-manual">Send BLE</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main>
+    <!-- Graph Container -->
+    <div id="graph-container">
+      <div id="app"></div>
       <div id="graph"></div>
+    </div>
 
-    <canvas id="wallpaper" width="320" height="240"></canvas>
+    <!-- Keyboard Container -->
+    <div id="keyboard-container">
+      <canvas id="wallpaper" width="1920" height="1080"></canvas>
+    </div>
   </main>
 
+  <!-- Hidden form for backward compatibility -->
+  <form id="options" style="display: none;">
+    <fieldset id="midi-settings-fieldset"></fieldset>
+    <fieldset id="midi-controls"></fieldset>
+  </form>
 
-  <footer>
 
-  </footer>
+  <footer></footer>
 
   <dialog id="error-dialog" aria-live="polite">
     <h3></h3>
@@ -131,6 +112,29 @@
   </dialog>
 
   <script type="module" src="/source/index.ts"></script>
+  <script>
+    // Sidebar toggle functionality
+    const timerBar = document.getElementById('timer-bar');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarClose = document.getElementById('sidebar-close');
+
+    timerBar.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+    });
+
+    sidebarClose.addEventListener('click', () => {
+      sidebar.classList.remove('open');
+    });
+
+    // Close sidebar when clicking outside of it
+    document.addEventListener('click', (e) => {
+      if (sidebar.classList.contains('open') &&
+          !sidebar.contains(e.target) &&
+          !timerBar.contains(e.target)) {
+        sidebar.classList.remove('open');
+      }
+    });
+  </script>
 </body>
 
 </html>
