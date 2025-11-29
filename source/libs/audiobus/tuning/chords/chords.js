@@ -5,6 +5,25 @@ const rotateArray = (a, n) => {
 }
 
 /**
+ * 
+ * @param {Array<Number>} noteNumber raw note index e.g. A0 = 21
+ * @param {Number} rootNote Define the root note of the scale (e.g. A = 0)
+ * @param {Array<Number>} intervalsFormula Array of intervals defining the scale
+ * @returns 
+ */
+
+export const findRotationFromNote = ( noteNumber, rootNote, intervalsFormula ) => {
+	const A0_MIDI_NOTE_NUMBER = 21 // Min Piano Key
+	const keyNumber = noteNumber - A0_MIDI_NOTE_NUMBER
+	const whichNoteInScale = (keyNumber - rootNote) % 12
+	const noteIndexInFormula = intervalsFormula.indexOf( whichNoteInScale )
+	// console.log('findRotationFromNote - noteNumber:', noteNumber, 'keyNumber:', keyNumber, 'whichNoteInScale:', whichNoteInScale, 'isNoteinScale:', isNoteinScale, 'noteIndexInFormula:', noteIndexInFormula)
+
+	return noteIndexInFormula
+}
+
+
+/**
  * Export a chord from a root note and a scale
  * 
  * @param {Array<Number>} notes Note to use as the basis for the formula (usually full keyboard)
@@ -17,7 +36,7 @@ const rotateArray = (a, n) => {
  * @returns {Array<Number>} Audio Note Numbers
  */
 export const createChord = (notes, intervalsFormula=IONIAN_INTERVALS, offset=0, rotation=0, length=-1, cutOff=true, accumulate=false) => {
-	
+
 	const quantityOfNotes = notes.length
 	const quantityOfIntervals = intervalsFormula.length
 	const loopQuantity = length > 0 ? length : Math.min( quantityOfIntervals, quantityOfNotes )
@@ -27,7 +46,7 @@ export const createChord = (notes, intervalsFormula=IONIAN_INTERVALS, offset=0, 
     
 	for (let index=0; index<loopQuantity; ++index)
 	{
-		const noteIndex = intervalsFormula[(index*2+rotation)%quantityOfIntervals] // to skip every second note for chords
+		const noteIndex = intervalsFormula[(index*2+rotation)%quantityOfIntervals]-intervalsFormula[rotation] // to skip every second note for chords
 		if (accumulate)
 		{
             // if noteIndex is 0 and index !== 0 add 12?
@@ -51,7 +70,7 @@ export const createChord = (notes, intervalsFormula=IONIAN_INTERVALS, offset=0, 
 			output.push( notes[accumulator%quantityOfNotes] )
 		}
 	}
-	
+
 	return output
 }
 
