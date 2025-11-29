@@ -14,6 +14,15 @@ importers:
       '@types/web-bluetooth':
         specifier: ^0.0.21
         version: 0.0.21
+      fflate:
+        specifier: ^0.8.2
+        version: 0.8.2
+      jzz:
+        specifier: ^1.9.6
+        version: 1.9.6
+      litegraph.js:
+        specifier: 0.7.3
+        version: 0.7.3
       standardized-audio-context:
         specifier: ^25.3.77
         version: 25.3.77
@@ -515,6 +524,9 @@ packages:
       picomatch:
         optional: true
 
+  fflate@0.8.2:
+    resolution: {integrity: sha512-cPJU47OaAoCbg0pBvzsgpTPhmhqI5eJjh/JIu8tPj5q+T7iLvW/JAYUqmE7KOB4R1ZyEhzBaIQpQpardBF5z8A==}
+
   fill-range@7.1.1:
     resolution: {integrity: sha512-YsGpe3WHLK8ZYi4tWDg2Jy3ebRz2rXowDxnld4bkQB00cc/1Zw9AWnC0i9ztDJitivtQvaI9KaLyKrc+hBW0yg==}
     engines: {node: '>=8'}
@@ -553,6 +565,9 @@ packages:
 
   jzz@1.9.6:
     resolution: {integrity: sha512-J7ENLhXwfm2BNDKRUrL8eKtPhUS/CtMBpiafxQHDBcOWSocLhearDKEdh+ylnZFcr5OXWTed0gj6l/txeQA9vg==}
+
+  litegraph.js@0.7.3:
+    resolution: {integrity: sha512-Cs3BgYUs50BRJ2kAafSCNmE99jt7zXg/kd5B+VAwkN2AoKalEeFgrKLIKYjEKpZ+k7rBCqkh8/faf6NjRchIyw==}
 
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
@@ -1241,6 +1256,8 @@ snapshots:
     optionalDependencies:
       picomatch: 4.0.3
 
+  fflate@0.8.2: {}
+
   fill-range@7.1.1:
     dependencies:
       to-regex-range: 5.0.1
@@ -1264,15 +1281,15 @@ snapshots:
   is-number@7.0.0:
     optional: true
 
-  jazz-midi@1.7.9:
-    optional: true
+  jazz-midi@1.7.9: {}
 
   js-cookie@3.0.5: {}
 
   jzz@1.9.6:
     dependencies:
       jazz-midi: 1.7.9
-    optional: true
+
+  litegraph.js@0.7.3: {}
 
   magic-string@0.30.21:
     dependencies:
