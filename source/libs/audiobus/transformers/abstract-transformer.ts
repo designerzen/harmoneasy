@@ -22,6 +22,12 @@ export abstract class Transformer<Config = TransformerConfig> {
     
     protected config: Config
 
+    get fields(): FieldConfig[] {
+        return []
+    }
+
+    abstract get name(): string
+
     constructor(config: Config) {
         this.config = config
         if (!this.id)
@@ -30,15 +36,9 @@ export abstract class Transformer<Config = TransformerConfig> {
         }
     }
 
-    get fields(): FieldConfig[] {
-        return []
-    }
-
-    abstract get name(): string
-
     abstract transform(command: AudioCommandInterface[]): AudioCommandInterface[]
 
-    setConfig(c: string, val: unknown) {
+    setConfig(c: string, val: unknown):void {
         this.config[c] = val
     }
 }

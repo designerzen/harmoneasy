@@ -22,6 +22,46 @@ export class TransformerTransposer extends Transformer<Config>{
 
     id = ID_QUANTISE
 
+    get name(): string {
+        return 'Transposer'
+    }
+
+    get fields() {
+        return [
+            {
+                name: 'root',
+                type: 'select',
+                values: [
+                    { name: 'A', value: 0 },
+                    { name: 'A#/Bb', value: 1 },
+                    { name: 'B', value: 2 },
+                    { name: 'C', value: 3 },
+                    { name: 'C#/Db', value: 4 },
+                    { name: 'D', value: 5 },
+                    { name: 'D#/Eb', value: 6 },
+                    { name: 'E', value: 7 },
+                    { name: 'F', value: 8 },
+                    { name: 'F#/Gb', value: 9 },
+                    { name: 'G', value: 10 },
+                    { name: 'G#/Ab', value: 11 }
+                ]
+            },
+            {
+                name: 'mode',
+                type: 'select',
+                values: [
+                    { name: 'Major (Ionian)', value: 'ionian' },
+                    { name: 'Dorian', value: 'dorian' },
+                    { name: 'Phrygian', value: 'phrygian' },
+                    { name: 'Lydian', value: 'lydian' },
+                    { name: 'Mixolydian', value: 'mixolydian' },
+                    { name: 'Natural Minor (Aeolian)', value: 'aeolian' },
+                    { name: 'Locrian', value: 'locrian' }
+                ]
+            }
+        ]
+    }
+
     constructor(config = { root: 0, mode: 'ionian' }) {
         super(config)
     }
@@ -117,47 +157,9 @@ export class TransformerTransposer extends Transformer<Config>{
         }
     }
 
-    get name(): string {
-        return 'Transpose'
-    }
 
     setConfig(c: string, val: unknown) {
         this.config[c] = val
     }
 
-    get fields() {
-        return [
-            {
-                name: 'root',
-                type: 'select',
-                values: [
-                    { name: 'A', value: 0 },
-                    { name: 'A#/Bb', value: 1 },
-                    { name: 'B', value: 2 },
-                    { name: 'C', value: 3 },
-                    { name: 'C#/Db', value: 4 },
-                    { name: 'D', value: 5 },
-                    { name: 'D#/Eb', value: 6 },
-                    { name: 'E', value: 7 },
-                    { name: 'F', value: 8 },
-                    { name: 'F#/Gb', value: 9 },
-                    { name: 'G', value: 10 },
-                    { name: 'G#/Ab', value: 11 }
-                ]
-            },
-            {
-                name: 'mode',
-                type: 'select',
-                values: [
-                    { name: 'Major (Ionian)', value: 'ionian' },
-                    { name: 'Dorian', value: 'dorian' },
-                    { name: 'Phrygian', value: 'phrygian' },
-                    { name: 'Lydian', value: 'lydian' },
-                    { name: 'Mixolydian', value: 'mixolydian' },
-                    { name: 'Natural Minor (Aeolian)', value: 'aeolian' },
-                    { name: 'Locrian', value: 'locrian' }
-                ]
-            }
-        ]
-    }
 }
