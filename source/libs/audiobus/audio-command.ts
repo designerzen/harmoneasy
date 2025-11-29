@@ -23,7 +23,6 @@ export default class AudioCommand implements AudioCommandInterface {
 		return this.value
 	}
 	
-   
 	// MIDI GM Note number for setting pitch
     number:number
 
@@ -76,7 +75,7 @@ export default class AudioCommand implements AudioCommandInterface {
 		return this.copyAllParametersToCommand( new AudioCommand() )
 	}
 
-	copyAllParametersToCommand(command:AudioCommand){
+	copyAllParametersToCommand(command:AudioCommand):AudioCommand{
 		for (let i in this)
 		{
 			command[i] = this[i]
@@ -88,7 +87,7 @@ export default class AudioCommand implements AudioCommandInterface {
 	 * Show characteristics about this data 
 	 * @returns {string}
 	 */
-	toString() {
+	toString():string {
 		let output = `#${this.id} = ${this.time}. MIDI:Input::${this.subtype} Type:${this.type}`
 		if (this.noteNumber) { output += ` Note:${this.noteNumber}` }
 		if (this.velocity) { output += ` Velocity:${this.velocity}` }
