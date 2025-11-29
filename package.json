@@ -21,6 +21,8 @@
   "dependencies": {
     "@audiotool/nexus": "file:audiotool-nexus-0.0.5.tgz",
     "@types/web-bluetooth": "^0.0.21",
+    "fflate": "^0.8.2",
+    "jzz": "^1.9.6",
     "standardized-audio-context": "^25.3.77",
     "webmidi": "^3.1.14"
   }
