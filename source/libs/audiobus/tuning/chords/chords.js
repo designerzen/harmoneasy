@@ -1,0 +1,81 @@
+
+const rotateArray = (a, n) => {
+    n = n % a.length
+    return a.slice(n, a.length).concat(a.slice(0, n))
+}
+
+/**
+ * Export a chord from a root note and a scale
+ * 
+ * @param {Array<Number>} notes Note to use as the basis for the formula (usually full keyboard)
+ * @param {Array<Number>} intervalsFormula Interval spacing between selected notes
+ * @param {Number} offset Starting Note number
+ * @param {Number} rotation If you want the formula to rotate
+ * @param {Number} length If you want a specific amount of notes in your chord
+ * @param {Boolean} cutOff ignore all keys after provided index
+ * @param {Boolean} accumulate add to previous index
+ * @returns {Array<Number>} Audio Note Numbers
+ */
+export const createChord = (notes, intervalsFormula=IONIAN_INTERVALS, offset=0, rotation=0, length=-1, cutOff=true, accumulate=false) => {
+	
+	const quantityOfNotes = notes.length
+	const quantityOfIntervals = intervalsFormula.length
+	const loopQuantity = length > 0 ? length : Math.min( quantityOfIntervals, quantityOfNotes )
+	
+	let accumulator = offset // : 0
+	let output = []
+    
+	for (let index=0; index<loopQuantity; ++index)
+	{
+		const noteIndex = intervalsFormula[(index+rotation)%quantityOfIntervals]
+		if (accumulate)
+		{
+            // if noteIndex is 0 and index !== 0 add 12?
+            if (noteIndex === 0 && index !== 0)
+            {
+                // this will be a note repetition so we transpose
+                accumulator -= 12
+                accumulator += noteIndex
+                console.log("transpose", offset, accumulator, offset - accumulator )
+            }else{
+                accumulator += noteIndex
+            }
+		
+		}else{
+			accumulator = noteIndex
+		}
+		
+		if (cutOff && accumulator > quantityOfNotes)
+		{
+			// ignore
+		}else{
+			output.push( notes[accumulator%quantityOfNotes] )
+		}
+	}
+    
+	return output
+}
+
+/**
+ * The chord rotates the array
+ * so an A D G becomes D G A
+ * 
+ * @param {Array} chord 
+ * @param {Number} inversion 
+ * @returns 
+ */
+export const invertChord = (chord, inversion=0) => rotateArray( chord, inversion )
+
+/**
+ * Helpers for simplified usage
+ * @param {Array<Number>} notes 
+ * @param {Number} offset 
+ * @param {Number} rotation 
+ * @param {Number} length 
+ * @returns 
+ */
+export const createMajorChord = ( notes, offset=0, rotation=0, length=-1 )=> createChord( notes, MAJOR_CHORD_INTERVALS, offset, rotation, length, true, true )
+export const createMinorChord = ( notes, offset=0, rotation=0, length=-1 )=> createChord( notes, MINOR_CHORD_INTERVALS, offset, rotation, length, true, true )
+export const createDiminishedChord = ( notes, offset=0, rotation=0, length=-1 )=> createChord( notes, DIMINISHED_CHORD_INTERVALS, offset, rotation, length, true, true )
+// export const createJazzChord = ( notes, offset=0, rotation=0, length=-1 )=> createChord( notes, MELODIC_MINOR_SCALE, offset, rotation, length, true, false )
+export const createFifthsChord = ( notes, offset=0, rotation=0, length=-1 )=> createChord( notes, FIFTHS_CHORD_INTERVALS, offset, rotation, length, true, true )

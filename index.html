@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/designerzen.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Xen AudioTools</title>
+</head>
+
+<body>
+
+  <header>
+    <h1>MIDI 2.0 Microtonality</h1>
+    <h2>Proof of concept</h2>
+  </header>
+  
+  <main>
+
+    <details>
+      <summary>
+
+        <strong>
+          MIDI Events
+        </strong>
+        <time id="clock">
+
+        </time>
+      </summary>
+
+      <div>
+        <output id="midi-devices">
+
+        </output>
+
+        <output id="midi-input-commands">
+
+        </output>
+
+        <output id="midi-output-commands">
+
+        </output>
+      </div>
+
+    </details>
+
+    <form id="options">
+
+      <fieldset id="midi-settings-fieldset">
+        <legend>Tempo</legend>
+        <label>
+          Beats per minute
+          <input id="tempo" type="range" min=10 max=303>
+        </label>
+        <p>
+          <output id="bpm"></output>
+          BPM
+        </p>
+      </fieldset>
+
+
+      <fieldset>
+        <legend>Scale</legend>
+         <label>
+          Use Chords
+          <input id="toggle-chords" type="checkbox" value="chords">
+        </label>
+
+        <label>
+          Musical Modes
+          <select id="scale-selector">
+                   <!-- <option value="harmonicMinor">Harmonic Minor</option>
+            <option value="melodicMinor">Melodic Minor</option> -->
+
+            <option value="ionian">Major (Ionian)</option>
+            <option value="dorian">Dorian</option>     
+            <option value="phrygian">Phrygian</option>
+            <option value="lydian">Lydian</option>
+            <option value="mixolydian">Mixolydian</option>
+            <option value="aeolian">Natural Minor (Aeolian)</option>
+          <option value="locrian">Locrian</option>
+          </select>
+        </label>
+      </fieldset>
+
+      
+      <fieldset>
+        <legend>Options</legend>
+        <label>
+          Quantize
+          <input id="toggle-quantize" type="checkbox" value="quantize">
+        </label>
+      </fieldset>
+
+      <fieldset id="midi-controls">
+        <button type="button" id="btn-connect-to-ble">Connect to Bluetooth Musical Device</button>
+        <button type="button" id="btn-toggle-webmidi">Connect to WebMIDI Device</button>
+       
+        <fieldset id="ble-manual-send-fieldset" hidden>
+          <legend>Manual BLE Send</legend>
+         
+          <label for="midi-channel-selector">BLE MIDI Channel:
+              <select id="midi-channel-selector">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+                <option value="11">11</option>
+                <option value="12">12</option>
+                <option value="13">13</option>
+                <option value="14">14</option>
+                <option value="15">15</option>
+                <option value="16">16</option>
+              </select>
+          </label>
+
+          <label for="ble-manual-input">Manual BLE Send
+            <input id="ble-manual-input" type="text" placeholder="Enter bytes e.g. 144,60,127">
+          </label>
+          
+          <button type="button" id="btn-send-ble-manual">Send BLE</button>
+
+        </fieldset>
+      </fieldset>
+      
+    </form>
+
+    <!-- AudioTool integration -->
+    <div id="app"></div>
+
+    <canvas id="wallpaper" width="320" height="240"></canvas>
+  </main>
+
+
+  <footer>
+
+  </footer>
+
+  <dialog id="error-dialog" aria-live="polite">
+    <h3></h3>
+    <p id="error-message"></p>
+    <p id="error-solution"></p>
+    <form>
+      <button class="error-close-button" type="dialog">Close</button>
+    </form>
+  </dialog>
+
+  <script type="module" src="/src/index.ts"></script>
+</body>
+
+</html>

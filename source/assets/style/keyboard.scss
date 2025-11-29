@@ -1,0 +1,195 @@
+@use "./ease";
+
+.piano-key{
+	transition: 
+        opacity var(--time-quick, 90ms) linear,
+        fill var(--time-quick, 90ms) linear;
+
+    border-radius: 10%;
+
+    will-change: fill;
+
+	.piano-key-name{
+		visibility: hidden;
+	}
+
+	&:hover{
+		fill:hsla(168, 70%, 40%, 0.858);
+        opacity: 0.98;
+		.piano-key-name{
+			visibility: visible;
+		}		
+	}	
+    &.active{
+		fill:var( --col-accent, var(--shade-brand, red) );
+	}
+    &.active:hover{
+		fill:var( --col-accent, var(--shade-brand, red) );
+	}
+
+	&:focus{
+		outline: none;
+	}
+
+	&:focus-visible{
+		outline: none;
+		stroke-width:4px;
+		stroke:var(--col-accent);
+	} 
+}
+
+.piano-key-white{
+	background-color:white;
+	fill:white;
+}
+
+.piano-key-black{
+	fill:black;
+	background-color:black;
+	// background-image:linear-gradient(to bottom, #000, #222);
+	&:focus-visible{
+		stroke-width:4px;
+		stroke:var(--col-accent);
+	}
+}
+
+.piano-key-indicators{
+	pointer-events: none;
+}
+
+.piano-note-indicator{
+	transition: opacity var(--time-quick, 90ms) linear;
+	stroke:white;
+	stroke-width:0.3;
+	fill:yellow;
+	opacity: 0;
+}
+
+
+// peeking
+.piano{
+	// we always want the smallest size for the footer
+    --footer-height:clamp(33px, 10vmin, 10vh);
+    --footer-height:clamp(60px, 10vh, 200px);
+
+	--overhang:calc(-50% + 50vw);
+ 	--c:calc(100% - var(--footer-height) );
+	// margin-top:calc( -1 * var(--c) );
+
+	min-height:calc( 100px +  var(--footer-height));
+	//width: min(100%, 100vw);
+	
+    max-width: min( 100%, 100vw );
+    max-width: min( 100%, 100dvw );
+
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+
+   	position: sticky;
+    bottom:0; // calc( -1 * var(--footer-height,0 ));
+	
+	transition: bottom var(--time-medium, 90ms) ease.$easeOutBack; 
+	pointer-events: none;
+	z-index: 909;
+
+    // background-color: black;
+	// transform: translateX(-50%);
+
+	.piano-keys{
+		// we want the piano to be in the middle of the screen
+		// so we move it 50% of it's own width to the left then 50% of the screen to the right
+
+		pointer-events: all;
+		
+		// peeking
+		// transform: translateY( calc( var(--c) ) ) translateX( var(--overhang) );
+		// full soze
+		transform: translateY( 0 ) translateX( var(--overhang) );
+	
+		
+		transition: transform var(--time-medium, 90ms) ease.$easeOutBack; 
+         position: absolute;
+         bottom: 0;
+
+		margin:auto;
+		margin-bottom: 0;
+		
+		// padding-right: 100%;
+		// left:50%;
+
+		// make sure that it cannot be taller than 1/4 of the viewport height
+		max-height:min(148px, 33vh);
+
+		// ensure that it never shrinks to unusable size
+		min-width:max( 100%, calc( 128 * 11px) );
+	}
+}
+
+// Full size
+.piano.show-full-keyboard{
+	.piano-keys{
+		transform: translateY( 0 ) translateX( var(--overhang) );
+	}
+}
+
+/* Accessible checkbox styles: larger hit area (>=48px) and clearer visuals */
+input[type="checkbox"]{
+	--visual-size: 20px;
+	-webkit-appearance: none;
+	appearance: none;
+	
+	width: var(--visual-size);
+	height: var(--visual-size);
+	margin: 0;
+	
+	padding: calc((48px - var(--visual-size)) / 2);
+	box-sizing: content-box;
+	
+	position: relative;
+	cursor: pointer;
+	vertical-align: middle;
+	display: inline-block;
+}
+
+/* draw the visible box using ::after so the padded area remains clickable but visually compact */
+input[type="checkbox"]::after{
+	content: '';
+	position: absolute;
+	left: calc((100% - var(--visual-size)) / 2 - ( (48px - var(--visual-size)) / 2 ));
+	top: calc((100% - var(--visual-size)) / 2 - ( (48px - var(--visual-size)) / 2 ));
+	width: var(--visual-size);
+	height: var(--visual-size);
+	border-radius: 4px;
+	background: var(--checkbox-bg, #fff);
+	border: 2px solid var(--checkbox-border, #ccc);
+	box-shadow: 0 1px 0 rgba(0,0,0,0.03) inset;
+	transition: background .12s ease, border-color .12s ease, box-shadow .12s ease;
+}
+
+input[type="checkbox"]:checked::after{
+	background: var(--col-accent, #1e90ff);
+	border-color: var(--col-accent, #1e90ff);
+	box-shadow: inset 0 0 0 3px rgba(255,255,255,0.85);
+}
+
+input[type="checkbox"]:focus-visible{
+	outline: none;
+}
+
+input[type="checkbox"]:focus-visible::after{
+	box-shadow: 0 0 0 4px rgba(30,144,255,0.14), inset 0 1px 0 rgba(0,0,0,0.03);
+}
+
+/* increase hit area for labels that wrap checkboxes as well */
+label > input[type="checkbox"]{
+	display: inline-block;
+}
+
+/* When the checkbox is disabled, show a muted style */
+input[type="checkbox"][disabled]::after{
+	background: #f3f3f3;
+	border-color: #ddd;
+	opacity: 0.8;
+}
+

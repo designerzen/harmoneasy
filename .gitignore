@@ -1,0 +1,8 @@
+.DS_Store
+node_modules
+__*
+pnpm-lock.yml
+dist/
+pnpm-lock.yaml
+*-lock*
+source/libs/audiotoolsdk

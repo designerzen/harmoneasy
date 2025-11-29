@@ -1,0 +1,27 @@
+{
+  "name": "harmoneasy-audiotools",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "start": "./source/index.ts",
+  "scripts": {
+    "test": "vitest",
+    "dev": "vite",
+    "start": "npm run dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "upgrader": "npx npm-check-updates --interactive -u"
+  },
+  "devDependencies": {
+    "sass-embedded": "^1.93.3",
+    "typescript": "~5.9.3",
+    "vite": "^7.2.4",
+    "vitest": "^4.0.14"
+  },
+  "dependencies": {
+    "@audiotool/nexus": "file:audiotool-nexus-0.0.5.tgz",
+    "@types/web-bluetooth": "^0.0.21",
+    "standardized-audio-context": "^25.3.77",
+    "webmidi": "^3.1.14"
+  }
+}
