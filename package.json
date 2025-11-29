@@ -13,6 +13,7 @@
     "upgrader": "npx npm-check-updates --interactive -u"
   },
   "devDependencies": {
+    "@types/react": "^19.2.7",
     "sass-embedded": "^1.93.3",
     "typescript": "~5.9.3",
     "vite": "^7.2.4",
@@ -21,9 +22,17 @@
   "dependencies": {
     "@audiotool/nexus": "file:audiotool-nexus-0.0.5.tgz",
     "@types/web-bluetooth": "^0.0.21",
+    "@xyflow/react": "^12.9.3",
     "fflate": "^0.8.2",
     "jzz": "^1.9.6",
-    "litegraph.js": "0.7.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "rete": "^2.0.6",
+    "rete-area-plugin": "^2.1.5",
+    "rete-connection-plugin": "^2.0.5",
+    "rete-context-menu-plugin": "^2.0.6",
+    "rete-react-plugin": "^2.1.0",
+    "rete-render-utils": "^2.0.0",
     "standardized-audio-context": "^25.3.77",
     "webmidi": "^3.1.14"
   }

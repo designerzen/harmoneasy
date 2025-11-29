@@ -2,6 +2,12 @@
 @use "./base.scss";
 @use "./keyboard.scss";
 
+#graph {
+  background: #FFF;
+  color: #000;
+}
+
+
 :root {
   --gap:1rem;
   --pad:1rem;

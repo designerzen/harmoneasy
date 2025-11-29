@@ -5,4 +5,8 @@ export class IdentityTransformer extends Transformer<{}> {
     transform(command: AudioCommand[]): AudioCommand[] {
         return command
     }
+
+    get name(): string {
+        return 'Identity Transformer'
+    }
 }

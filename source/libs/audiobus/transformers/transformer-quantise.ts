@@ -14,4 +14,8 @@ export class TransformerQuantise extends Transformer<{}>{
     transform(commands:AudioCommandInterface[]):AudioCommandInterface[] {
         return commands
     }
+
+    get name(): string {
+        return 'Quantise'
+    }
 }

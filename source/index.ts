@@ -46,6 +46,7 @@ import AudioCommand from './libs/audiobus/audio-command.ts'
 import type { AudioCommandInterface } from './libs/audiobus/audio-command-interface.ts'
 import { createAudioCommand } from './libs/audiobus/audio-command-factory.ts'
 // import { createGraph } from './components/transformers-graph.ts'
+import { createGraph } from './components/transformers-graph.tsx'
 
 
 // import { AudioContext, BiquadFilterNode } from "standardized-audio-context"
@@ -764,5 +765,6 @@ document.addEventListener("mousedown", onAudioContextAvailable, {once:true} )
 // console.warn( "TEST", mictrotonalPitches, 60, 3, "LLsLLLs", 2, 1 )
 
 
+window.transformerManager = new TransformerManager()
 
-// createGraph('#graph')
+createGraph('#graph');

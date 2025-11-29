@@ -24,5 +24,7 @@ export abstract class Transformer<Config = TransformerConfig> {
         }
     }
 
-    abstract transform(commands: AudioCommandInterface[]): AudioCommandInterface[]
+    abstract get name(): string
+
+    abstract transform(command: AudioCommandInterface[]): AudioCommandInterface[]
 }
