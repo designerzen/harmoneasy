@@ -1,5 +1,5 @@
 import type AudioCommand from "../audio-command.ts"
-import { Transformer } from "./abstract-transofrmer.ts"
+import { Transformer } from "./abstract-transformer.ts"
 
 export class QuantiseTransformer extends Transformer<{}> {
     transform(command: AudioCommand): AudioCommand {
