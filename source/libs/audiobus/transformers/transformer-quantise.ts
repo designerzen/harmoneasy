@@ -3,29 +3,37 @@ import { Transformer } from "./abstract-transformer"
 
 export const ID_QUANTISE = "quantise"
 
+interface Config {
+    step: number
+}
+
+const DEFAULT_OPTIONS: Config = {
+   step: 4
+}
+
 export class TransformerQuantise extends Transformer<{ step: number }>{
 
     id = ID_QUANTISE
 
-    constructor(config = { step: 4 }) {
-        super(config)
-    }
-
-    transform(commands:AudioCommandInterface[]):AudioCommandInterface[] {
-        return commands
-    }
-
     get name(): string {
-        return 'Quantise'
-    }
-
-    setConfig(c: string, val: unknown) {
-        this.config[c] = val
+        return 'Quantiser'
     }
 
     get fields() {
         return [
             { name: 'step', type: 'select', values: [1, 4, 8, 12] }
         ]
+    }
+
+    constructor(config = { step: 4 }) {
+        super( {...DEFAULT_OPTIONS, ...config} )
+    }
+
+    transform(commands:AudioCommandInterface[]):AudioCommandInterface[] {
+        return commands
+    }
+
+    setConfig(c: string, val: unknown) {
+        this.config[c] = val
     }
 }

@@ -14,6 +14,7 @@ import {
     AEOLIAN_INTERVALS,
     LOCRIAN_INTERVALS
 } from "../tuning/intervals.js"
+import { TUNING_MODE_IONIAN } from "../tuning/scales.js";
 
 export const ID_QUANTISE = "harmonise"
 
@@ -28,12 +29,57 @@ interface Config {
     mode: string
 }
 
+const DEFAULT_OPTIONS: Config = {
+    root: 69,
+    mode: TUNING_MODE_IONIAN
+}
+
 export class TransformerHarmoniser extends Transformer<Config>{
 
     id = ID_QUANTISE
 
-    constructor(config = { root: 0, mode: 'ionian' }) {
-        super(config)
+    get name(): string {
+        return 'Harmoniser'
+    }
+
+    get fields() {
+        return [
+            {
+                name: 'root',
+                type: 'select',
+                values: [
+                    { name: 'A', value: 0 },
+                    { name: 'A#/Bb', value: 1 },
+                    { name: 'B', value: 2 },
+                    { name: 'C', value: 3 },
+                    { name: 'C#/Db', value: 4 },
+                    { name: 'D', value: 5 },
+                    { name: 'D#/Eb', value: 6 },
+                    { name: 'E', value: 7 },
+                    { name: 'F', value: 8 },
+                    { name: 'F#/Gb', value: 9 },
+                    { name: 'G', value: 10 },
+                    { name: 'G#/Ab', value: 11 }
+                ]
+            },
+            {
+                name: 'mode',
+                type: 'select',
+                values: [
+                    { name: 'Major (Ionian)', value: 'ionian' },
+                    { name: 'Dorian', value: 'dorian' },
+                    { name: 'Phrygian', value: 'phrygian' },
+                    { name: 'Lydian', value: 'lydian' },
+                    { name: 'Mixolydian', value: 'mixolydian' },
+                    { name: 'Natural Minor (Aeolian)', value: 'aeolian' },
+                    { name: 'Locrian', value: 'locrian' }
+                ]
+            }
+        ]
+    }
+
+    constructor(config = { root: 0, mode:TUNING_MODE_IONIAN }) {
+        super( {...DEFAULT_OPTIONS, ...config} )
     }
 
     transform(commands:AudioCommandInterface[]):AudioCommandInterface[] {
@@ -114,47 +160,7 @@ export class TransformerHarmoniser extends Transformer<Config>{
         }
     }
 
-    get name(): string {
-        return 'Harmonise'
-    }
-
     setConfig(c: string, val: unknown) {
         this.config[c] = val
-    }
-
-    get fields() {
-        return [
-            {
-                name: 'root',
-                type: 'select',
-                values: [
-                    { name: 'A', value: 0 },
-                    { name: 'A#/Bb', value: 1 },
-                    { name: 'B', value: 2 },
-                    { name: 'C', value: 3 },
-                    { name: 'C#/Db', value: 4 },
-                    { name: 'D', value: 5 },
-                    { name: 'D#/Eb', value: 6 },
-                    { name: 'E', value: 7 },
-                    { name: 'F', value: 8 },
-                    { name: 'F#/Gb', value: 9 },
-                    { name: 'G', value: 10 },
-                    { name: 'G#/Ab', value: 11 }
-                ]
-            },
-            {
-                name: 'mode',
-                type: 'select',
-                values: [
-                    { name: 'Major (Ionian)', value: 'ionian' },
-                    { name: 'Dorian', value: 'dorian' },
-                    { name: 'Phrygian', value: 'phrygian' },
-                    { name: 'Lydian', value: 'lydian' },
-                    { name: 'Mixolydian', value: 'mixolydian' },
-                    { name: 'Natural Minor (Aeolian)', value: 'aeolian' },
-                    { name: 'Locrian', value: 'locrian' }
-                ]
-            }
-        ]
     }
 }
