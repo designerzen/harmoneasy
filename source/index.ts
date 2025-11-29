@@ -287,7 +287,7 @@ export const noteOff = (noteModel:NoteModel, fromDevice:string=ONSCREEN_KEYBOARD
  */
 const onNoteOnRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=ONSCREEN_KEYBOARD_NAME ) => {
    
-    const audioCommand:AudioCommand = createAudioCommand( Commands.NOTE_ON, noteModel, timmer )
+    const audioCommand:AudioCommand = createAudioCommand( Commands.NOTE_ON, noteModel, timer )
 
     if (state && state.get("quantise") )
     {
