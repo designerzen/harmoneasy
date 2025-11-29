@@ -1,13 +1,19 @@
-import type { AudioCommandInterface } from "../audio-command-interface"
-import { Transformer } from "./abstract-transformer"
-import { IdentityTransformer } from "./id-transformer"
-import { TransformerHarmoniser } from "./transformer-harmoniser"
-import { ID_QUANTISE } from "./transformer-quantise"
-import { TransformerTransposer } from "./transformer-transposer"
+/**
+ * TRANSFORMER -----------------------------------------------
+ * 
+ */
+import type { AudioCommandInterface } from "../audio-command-interface.ts"
+import { Transformer } from "./abstract-transformer.ts"
+import { IdentityTransformer } from "./id-transformer.ts"
+import { TransformerHarmoniser } from "./transformer-harmoniser.ts"
+import { ID_QUANTISE } from "./transformer-quantise.ts"
+import { TransformerTransposer } from "./transformer-transposer.ts"
 
 type Callback = () => void
 
 export class TransformerManager extends Transformer<{}> {
+     
+    public name: string = 'TransformerManager'
    
     private transformers: Array<Transformer> = [
         new IdentityTransformer({}),
@@ -16,13 +22,12 @@ export class TransformerManager extends Transformer<{}> {
     ]
 
     private transformersMap:Map<string, Transformer> = new Map()
+    private onChangeFns: Callback[] = []
 
     get isQuantised(){
         return this.transformersMap.has(ID_QUANTISE)
     }
   
-    private onChangeFns: Callback[] = []
-
     constructor(initialTransformers?: Array<Transformer>) {
         super({})
         
@@ -39,6 +44,26 @@ export class TransformerManager extends Transformer<{}> {
     }
     
     /**
+     * Add a transformer to the pipeline
+     * @param transformerToAdd 
+     */
+    addTransformer(transformerToAdd: Transformer) {
+        this.transformers.push(transformerToAdd)
+        this.transformersMap.set(transformerToAdd.id, transformerToAdd)
+        this.onChangeFns.forEach(t => t())
+    }
+
+    /**
+     * Remove a transformer to the pipeline
+     * @param transformerToRemove 
+     */
+    removeTransformer(transformerToRemove: Transformer) {
+        this.transformers = this.transformers.filter(transformer => transformer !== transformerToRemove)
+        this.transformersMap.delete(transformerToRemove.id)
+        this.onChangeFns.forEach(t => t())
+    }
+
+    /**
      * Overwrite the qhole transformers queue stack
      * @param transformers 
      */
@@ -46,19 +71,15 @@ export class TransformerManager extends Transformer<{}> {
         this.transformers = transformers
         this.transformersMap = new Map()
         this.transformers.forEach( (transformer:Transformer) => this.transformersMap.set(transformer.id, transformer) )
-        this.transformers = transformers;
         this.onChangeFns.forEach(t => t())
     }
 
-    getTransformers() {
-        return this.transformers
+    getTransformer( id:string ): Transformer {
+        return this.transformersMap.get(id)
     }
 
-    onChange(fn: () => void) {
-        this.onChangeFns.push(fn)
-        return () => {
-            this.onChangeFns = this.onChangeFns.filter(f => f !== fn)
-        }
+    getTransformers(): Array<Transformer> {
+        return this.transformers
     }
 
     getStructure() {
@@ -102,37 +123,22 @@ export class TransformerManager extends Transformer<{}> {
         return { nodes: [...nodes, ...alwaysNodes], edges: [...edges, ...alwaysEdges] }
     }
 
-    get name(): string {
-        return 'TransformerManager'
-    }
-
     /**
-     * Add a transformer to the pipeline
-     * @param transformer 
-     */
-    addTransformer(transformer: Transformer) {
-        this.transformers.push(transformer)
-        this.transformersMap.set(transformer.id, transformer)
-        this.onChangeFns.forEach(t => t())
-    }
-
-    /**
-     * Remove a transformer to the pipeline
-     * @param transformer 
-     */
-    removeTransformer(transformer: Transformer) {
-        this.transformers = this.transformers.filter(t => t !== transformer)
-        this.transformersMap.delete(transformer.id)
-        this.onChangeFns.forEach(t => t())
-    }
-
-    /**
+     * INTERFACE : 
      * Advance through every single registered transformer and pass the
      * command 
-     * @param note 
-     * @returns 
+     * @param command 
+     * @returns AudioCommandInterface
      */
-    transform(note: AudioCommandInterface[]) {
-       return this.transformers.reduce((v, t) => t.transform(v), note)
+    transform(command: AudioCommandInterface[]) {
+       return this.transformers.reduce((v, t) => t.transform(v), command)
+    }
+
+    
+    onChange(fn: () => void) {
+        this.onChangeFns.push(fn)
+        return () => {
+            this.onChangeFns = this.onChangeFns.filter(f => f !== fn)
+        }
     }
 }
