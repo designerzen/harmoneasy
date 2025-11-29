@@ -54,16 +54,19 @@ export class TransformerManager extends Transformer<{}> {
         const SPACING = 200
         const nodes = this.transformers.map((t, i) => ({
             id: 'node-' + i,
-            data: { label: t.name },
+            type: 'transformer',
+            data: { label: t.name, fields: t.fields, element: t },
             position: { x: SPACING * (i + 1), y: 0 }
         }))
 
         const alwaysNodes = [{
             id: 'start',
+            type: 'start',
             data: { label: 'START' },
             position: { x: 0, y: 0 }
         }, {
             id: 'end',
+            type: 'end',
             data: { label: 'END' },
             position: { x: SPACING * (this.transformers.length + 1), y: 0 }
         }]
