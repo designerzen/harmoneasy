@@ -82,6 +82,13 @@ export default class AudioCommand implements AudioCommandInterface {
 		}
 		return command
 	}
+	copyAllParametersFromCommand(command:AudioCommand):AudioCommand{
+		for (let i in this)
+		{
+			this[i] = command[i]
+		}
+		return command
+	}
 
 	/**
 	 * Show characteristics about this data 

@@ -210,19 +210,25 @@ const convertAudioCommandsToAudioEvents = ( commands:AudioCommandInterface[] ):A
     })
 }
 
-const triggerAudioCommandOnDevice = ( command:AudioCommandInterface ) => {
-    switch(command.type)
-    {
-        case Commands.NOTE_ON:  
-            console.warn("Executing Audio Command: NOTE ON", command )
-            break
-        
-        case Commands.NOTE_OFF:
-            console.warn("Executing Audio Command: NOTE OFF", command )
-           
-        default:
-            console.error("UNKNOWN Audio Command", command)
-    }
+const triggerAudioCommandsOnDevice = ( commands:AudioCommandInterface[] ) => {
+    commands.forEach( command => {
+
+        switch(command.type)
+        {
+            case Commands.NOTE_ON:  
+                console.warn("Executing Audio Command: NOTE ON", command )
+                noteOn( new NoteModel( command.number ) )
+                break
+            
+            case Commands.NOTE_OFF:
+                console.warn("Executing Audio Command: NOTE OFF", command )
+                noteOff( new NoteModel( command.number ) )
+                break
+
+            default:
+                console.error("UNKNOWN Audio Command", command.type, Commands )
+        }
+    })
 }
 
 /**
@@ -230,8 +236,9 @@ const triggerAudioCommandOnDevice = ( command:AudioCommandInterface ) => {
  * @param noteModel The Note
  * @param fromDevice 
  */
-const noteOn = (noteModel:NoteModel, fromDevice:string=ONSCREEN_KEYBOARD_NAME) => {
-
+const noteOn = (noteModel:NoteModel, velocity:number=1, fromDevice:string=ONSCREEN_KEYBOARD_NAME) => {
+    const now = timer.now
+  
     //console.info("Key pressed - send out MIDI", e )
     ui.noteOn( noteModel )
     onscreenKeyboardMIDIDevice.noteOn( noteModel, timer.now )
@@ -242,7 +249,7 @@ const noteOn = (noteModel:NoteModel, fromDevice:string=ONSCREEN_KEYBOARD_NAME) =
 
     if (synth)
     {
-        synth.noteOn( noteModel, 1 )
+        synth.noteOn( noteModel, velocity )
         // synth.noteOn( microntonal, 1 )
         // synth.detune = detune
     }
@@ -268,9 +275,10 @@ const noteOn = (noteModel:NoteModel, fromDevice:string=ONSCREEN_KEYBOARD_NAME) =
                 })
             })
     }
+    console.log("Note ON", noteModel, velocity, {now} )
 }
 
-export const noteOff = (noteModel:NoteModel, fromDevice:string=ONSCREEN_KEYBOARD_NAME) => {
+export const noteOff = (noteModel:NoteModel, velocity:number=1, fromDevice:string=ONSCREEN_KEYBOARD_NAME) => {
     const now = timer.now
     ui.noteOff( noteModel)
     onscreenKeyboardMIDIDevice.noteOff( noteModel, now )
@@ -299,8 +307,10 @@ export const noteOff = (noteModel:NoteModel, fromDevice:string=ONSCREEN_KEYBOARD
                     device: bluetoothMIDICharacteristic
                 })
             })
-    }
-    console.info("onNoteOffRequestedFromKeyboard", noteModel, now )
+
+    } 
+    
+    console.log("Note OFF", noteModel, velocity, {now} )
 }   
 
 /**
@@ -320,7 +330,7 @@ const onNoteOnRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=ON
         // then when the time is right, we trigger the events
         const transformed:AudioCommandInterface[] = transformerManager.transform([audioCommand])
         const events = convertAudioCommandsToAudioEvents( transformed )
-        const triggers = triggerAudioCommandOnDevice(events)
+        const triggers = triggerAudioCommandsOnDevice(events)
         console.error("Note ON NOW", {audioCommand, transformed, events, triggers})
     }
 
@@ -364,7 +374,7 @@ const onNoteOffRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=O
     }else{
         const transformed:AudioCommandInterface[] = transformerManager.transform([audioCommand])
         const events = convertAudioCommandsToAudioEvents( transformed )
-        const triggers = triggerAudioCommandOnDevice(events)
+        const triggers = triggerAudioCommandsOnDevice(events)
         console.info("AudioCommand triggered immediately", {audioCommand, transformerManager, events, triggers} )
     }
 
@@ -444,7 +454,7 @@ const onTick = (values) => {
         buffer.forEach( (audioCommand:AudioCommand, index:number) => {
             const transformed:AudioCommandInterface[] = transformerManager.transform([audioCommand])
             const events = convertAudioCommandsToAudioEvents( transformed )
-            const triggers = triggerAudioCommandOnDevice(events)
+            const triggers = triggerAudioCommandsOnDevice(events)
             console.info("AudioCommand triggered in time domain", {audioCommand, transformerManager, events, triggers, timer} )
         })
 
