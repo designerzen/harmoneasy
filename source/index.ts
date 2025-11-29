@@ -40,6 +40,10 @@ import {createChord} from './libs/audiobus/tuning/chords/chords.js'
 import * as INTERVALS from './libs/audiobus/tuning/intervals.js'
 import { convertToIntervalArray } from './libs/audiobus/tuning/chords/describe-chord.ts'
 import { TUNING_MODE_NAMES } from './libs/audiobus/tuning/scales.ts'
+import { TransformerManager } from './libs/audiobus/transformers/transformer-manager.ts'
+import { TransformerQuantise } from './libs/audiobus/transformers/transformer-quantise.ts'
+import AudioCommand from './libs/audiobus/audio-command.ts'
+import type { AudioCommandInterface } from './libs/audiobus/audio-command-interface.ts'
 // import { createGraph } from './components/transformers-graph.ts'
 
 
@@ -49,6 +53,7 @@ const ALL_MIDI_CHANNELS = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15, 16]
 // All connected MIDI Devices
 const MIDIDevices:MIDIDevice[] = []
 
+let transformerManager:TransformerManager
 let timer:AudioTimer = null
 let timeLastBarBegan = 0
 let audioContext:AudioContext
@@ -197,6 +202,11 @@ const onRecordingMusicalEventsLoopBegin = ( activeAudioEvents ) => {
     }
 }
 
+/**
+ * Called from MIDI Devices and on screen keyboard
+ * @param noteModel The Note
+ * @param fromDevice 
+ */
 const noteOn = (noteModel:NoteModel, fromDevice:string=ONSCREEN_KEYBOARD_NAME) => {
 
     //console.info("Key pressed - send out MIDI", e )
@@ -277,7 +287,30 @@ export const noteOff = (noteModel:NoteModel, fromDevice:string=ONSCREEN_KEYBOARD
 const onNoteOnRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=ONSCREEN_KEYBOARD_NAME ) => {
    
     let notes:Array<NoteModel>
-    
+
+    // create an AudioCommand for this NoteModel
+    const audioCommand = new AudioCommand()
+    audioCommand.type = Commands.NOTE_ON
+    audioCommand.subtype = Commands.NOTE_ON
+    audioCommand.number = noteModel.noteNumber
+    audioCommand.value = noteModel.noteNumber
+    audioCommand.velocity = noteModel.noteNumber
+    audioCommand.time = timer.now
+
+
+    if (state && state.get("quantise") )
+    {
+        // wait till timing event
+        buffer.push(audioCommand)
+         console.error("buffer", buffer, { transformerManager} )
+    }else{
+        // dispatch NOW!
+        // then when the time is right, we trigger the events
+        const transformed:AudioCommandInterface[] = transformerManager.transform([audioCommand])
+        console.error("transformed", transformed)
+    }
+
+
     // create some chords from this root node
     if ( state && state.get("useChords") ){
         const chord = createChord( ALL_KEYBOARD_NOTES, intervalFormula, noteModel.noteNumber, 0, NOTES_IN_CHORDS, true, true )
@@ -346,23 +379,39 @@ const onTick = (values) => {
 
     // If bar is at zero point we check to see if the buffer
     // needs to be reset....
-    if ( divisionsElapsed===0 ){
-        // ui.noteOn( )
-        currentRecordingMeasure++
+    // if ( divisionsElapsed===0 ){
+    //     // ui.noteOn( )
+    //     currentRecordingMeasure++
 
-        if (currentRecordingMeasure > BARS_TO_RECORD)
-        {
-            currentRecordingMeasure = 0
-            timeLastBarBegan = timer.now
-            onRecordingMusicalEventsLoopBegin([...buffer])
-            buffer = []
-            // console.info("TICK:BUFFER RESET", values )
-        }else{
-            // console.info("TICK:IGNORE")
-        }
+    //     if (currentRecordingMeasure > BARS_TO_RECORD)
+    //     {
+    //         currentRecordingMeasure = 0
+    //         timeLastBarBegan = timer.now
+    //         onRecordingMusicalEventsLoopBegin([...buffer])
+    //         buffer = []
+    //         // console.info("TICK:BUFFER RESET", values )
+    //     }else{
+    //         // console.info("TICK:IGNORE")
+    //     }
+    // }else{
+    //     //  console.info("TICK:", {bar, divisionsElapsed})
+    // }
+
+
+    // We have got quantised data so let's run the transformers
+    // 
+    if (state && state.get("quantise") )
+    {
+        // then when the time is right, we trigger the events
+        //const transformed = transformerManager.transform(audioCommand)
+        console.error("Quantised Time Domain transform")
+       
     }else{
-        //  console.info("TICK:", {bar, divisionsElapsed})
+        console.error("Metronome ignored")
     }
+
+
+
 
     let hasUpdates = false
     // check to see if any events have happened since
@@ -561,8 +610,19 @@ const onAudioContextAvailable = async (event) => {
     synth.output.connect( audioContext.destination )
     // synth.addTremolo(0.5)
 
+    // this handles the audio timing
     timer = new AudioTimer( audioContext )
+
+    // Transformers Audio Device
+    transformerManager = new TransformerManager( {} )
+    // add the transformers in the sequence that we want to see them in...
+    transformerManager.addTransformer( new TransformerQuantise( {} ) )
   
+
+
+
+
+
     // Front End UI -------------------------------
     ui = new UI( ALL_KEYBOARD_NOTES, onNoteOnRequestedFromKeyboard, onNoteOffRequestedFromKeyboard )
     ui.setTempo( timer.BPM )

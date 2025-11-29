@@ -45,7 +45,7 @@ export default class NoteModel{
     // sound
     // alternate
 
-    detune = 0
+    detune:number = 0
     sequenceIndex: number
     number: any
     noteKey: string
@@ -56,13 +56,13 @@ export default class NoteModel{
     sound: string
     alternate: any
         
-    get colour(){
+    get colour():string{
         return "rgb("+360*(this.sequenceIndex%12)/12+",150,150)"
         return "hsl("+360*(this.sequenceIndex%12)/12+",5%,80%)"
     }
 
 
-    set noteNumber(noteNumber){
+    set noteNumber(noteNumber:number){
         this.number = noteNumber
         this.sequenceIndex = noteNumber % QUANTITY_NOTES
         this.noteKey =  noteNumberToKeyName( noteNumber )  
@@ -76,7 +76,7 @@ export default class NoteModel{
             this.noteName 
     }
 
-    get noteNumber(){
+    get noteNumber():number{
         return this.number
     }
 
@@ -84,11 +84,11 @@ export default class NoteModel{
        this.noteNumber = noteNumber
     }
 
-    toString(){
+    toString():string{
         return "[Note: "+this.noteNumber+" key:"+this.noteKey+"  octave:" + this.octave + " sound:" + this.sound+"  ] Freq:"+ this.frequency
     }
 
-    clone(){
+    clone():NoteModel{
         return new NoteModel( this.noteNumber )
     }
 }
