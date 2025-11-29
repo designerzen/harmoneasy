@@ -83,24 +83,27 @@ export class TransformerManager extends Transformer<{}> {
     }
 
     getStructure() {
-        const SPACING = 200
+        // Calculate positions with better spacing and centering
+        const HORIZONTAL_SPACING = 250
+        const NODE_HEIGHT = 100
+
         const nodes = this.transformers.map((t, i) => ({
             id: 'node-' + i,
             type: 'transformer',
             data: { label: t.name, fields: t.fields, element: t },
-            position: { x: SPACING * (i + 1), y: 0 }
+            position: { x: HORIZONTAL_SPACING * (i + 1), y: NODE_HEIGHT }
         }))
 
         const alwaysNodes = [{
             id: 'start',
             type: 'start',
             data: { label: 'START' },
-            position: { x: 0, y: 0 }
+            position: { x: 0, y: NODE_HEIGHT }
         }, {
             id: 'end',
             type: 'end',
             data: { label: 'END' },
-            position: { x: SPACING * (this.transformers.length + 1), y: 0 }
+            position: { x: HORIZONTAL_SPACING * (this.transformers.length + 1), y: NODE_HEIGHT }
         }]
 
         const edges = this.transformers.map((_, i) => ({
