@@ -5,9 +5,10 @@
  * and response.
  * 
  */
+import type { AudioCommandInterface } from "./audio-command-interface.ts"
 import AudioCommand from "./audio-command.ts"
 
-export default class AudioEvent extends AudioCommand { 
+export default class AudioEvent extends AudioCommand implements AudioCommandInterface { 
 
     
 	get duration():number{
