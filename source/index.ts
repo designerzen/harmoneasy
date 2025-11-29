@@ -40,6 +40,7 @@ import {createChord} from './libs/audiobus/tuning/chords/chords.js'
 import * as INTERVALS from './libs/audiobus/tuning/intervals.js'
 import { convertToIntervalArray } from './libs/audiobus/tuning/chords/describe-chord.ts'
 import { TUNING_MODE_NAMES } from './libs/audiobus/tuning/scales.ts'
+// import { createGraph } from './components/transformers-graph.ts'
 
 
 // import { AudioContext, BiquadFilterNode } from "standardized-audio-context"
@@ -94,6 +95,8 @@ let state
 
 // this should be set per user
 let intervalFormula = INTERVALS.IONIAN_INTERVALS
+
+let rootNote = 0
 
 /**
  * EVENT
@@ -587,6 +590,11 @@ const onAudioContextAvailable = async (event) => {
         intervalFormula = INTERVALS.MODAL_SCALES[TUNING_MODE_NAMES.indexOf(scaleNName) ]
     })
 
+    ui.whenNewRootIsSelected( (root: number, select: HTMLElement) => {
+        console.log("New root selected:", root)
+        rootNote = root
+    })
+
     ui.onDoubleClick( () => {
         synth.setRandomTimbre()
     })
@@ -694,3 +702,7 @@ document.addEventListener("mousedown", onAudioContextAvailable, {once:true} )
 // load and complete some tests!
 // import { parseEdoScaleMicroTuningOctave } from "index.ts"
 // console.warn( "TEST", mictrotonalPitches, 60, 3, "LLsLLLs", 2, 1 )
+
+
+
+// createGraph('#graph')
