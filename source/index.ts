@@ -382,6 +382,7 @@ const onNoteOffRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=O
     let notes:Array<NoteModel>
 
     if ( state && state.get("useChords") ){
+    // FIXME: replace zero with findRotation. -1 if is outside of the scale.
         const chord = createChord( ALL_KEYBOARD_NOTES, intervalFormula, noteModel.noteNumber, 0, NOTES_IN_CHORDS, true, true )
         const chordNotes = chord.map( (c:NoteModel) => c.number)
         const intervals = convertToIntervalArray( chordNotes )
@@ -685,20 +686,20 @@ const onAudioContextAvailable = async (event) => {
        console.info("BLE MANUAL SEND", t)
     })
 
-    ui.whenNewScaleIsSelected( (scaleNName:string, select:HTMLElement ) => {
-        console.log("New scale selected:", scaleNName)
-        // state.set( scaleNName, true )
+    // ui.whenNewScaleIsSelected( (scaleNName:string, select:HTMLElement ) => {
+    //     console.log("New scale selected:", scaleNName)
+    //     // state.set( scaleNName, true )
 
-        // ensure we turn all notes off before we change
-        // otherwise any currently active notes may stick fprever
+    //     // ensure we turn all notes off before we change
+    //     // otherwise any currently active notes may stick fprever
 
-        intervalFormula = INTERVALS.MODAL_SCALES[TUNING_MODE_NAMES.indexOf(scaleNName) ]
-    })
+    //     intervalFormula = INTERVALS.MODAL_SCALES[TUNING_MODE_NAMES.indexOf(scaleNName) ]
+    // })
 
-    ui.whenNewRootIsSelected( (root: number, select: HTMLElement) => {
-        console.log("New root selected:", root)
-        rootNote = root
-    })
+    // ui.whenNewRootIsSelected( (root: number, select: HTMLElement) => {
+    //     console.log("New root selected:", root)
+    //     rootNote = root
+    // })
 
     ui.onDoubleClick( () => {
         synth.setRandomTimbre()

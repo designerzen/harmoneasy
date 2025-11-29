@@ -151,13 +151,13 @@ export default class UI{
      * 
      * @param {Function} callback 
      */
-    whenNewScaleIsSelected(callback){
-        this.elementScaleSelector.addEventListener("change", e=>callback(this.elementScaleSelector.value, this.elementScaleSelector) )
-    }
+    // whenNewScaleIsSelected(callback){
+    //     this.elementScaleSelector.addEventListener("change", e=>callback(this.elementScaleSelector.value, this.elementScaleSelector) )
+    // }
 
-    whenNewRootIsSelected(callback){
-        this.elementRootSelector.addEventListener("change", e=>callback(parseInt(this.elementRootSelector.value, 10), this.elementRootSelector) )
-    }
+    // whenNewRootIsSelected(callback){
+    //     this.elementRootSelector.addEventListener("change", e=>callback(parseInt(this.elementRootSelector.value, 10), this.elementRootSelector) )
+    // }
 
     /**
      * Register a callback when MIDI channel selection changes.
