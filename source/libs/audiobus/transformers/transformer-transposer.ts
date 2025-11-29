@@ -156,10 +156,4 @@ export class TransformerTransposer extends Transformer<Config>{
                 return IONIAN_INTERVALS
         }
     }
-
-
-    setConfig(c: string, val: unknown) {
-        this.config[c] = val
-    }
-
 }
