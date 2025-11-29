@@ -25,6 +25,19 @@
     }
 }
 
+.buttons-back {
+    font-size: 0.6em;
+    display: flex;
+    margin-top: 1em;
+    button {
+        background: transparent;
+    }
+
+    .prev {
+        margin-right: auto;
+    }
+}
+
 .graph-node .button-remove {
     background: rgba(220, 38, 38, 0.9);
     color: white;

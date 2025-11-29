@@ -25,11 +25,25 @@ export function TransformerNode(props) {
     const removeNode = () => {
         window.transformerManager.removeTransformer(props.data.element)
     }
+
+    const movePrev = () => {
+        window.transformerManager.moveOneStepBefore(props.data.element)
+    }
+
+    const moveNext = () => {
+        window.transformerManager.moveOneStepAfter(props.data.element)
+    }
+
     return <div className="node-transformer graph-node">
         <div>{props.data.label} <button className="button-remove" onClick={removeNode}>X</button></div>
         {props.data.fields.map(f => (
             <ConfigField key={f.name} config={f} element={props.data.element} />
         ))}
+
+        <div className="buttons-back">
+            <button className="prev" onClick={movePrev}>«</button>
+            <button onClick={moveNext}>»</button>
+        </div>
 
         <Handle type="source" position={Position.Right} />
       <Handle type="target" position={Position.Left} />

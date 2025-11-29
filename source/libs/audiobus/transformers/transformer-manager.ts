@@ -6,8 +6,8 @@ import type { AudioCommandInterface } from "../audio-command-interface.ts"
 import { Transformer } from "./abstract-transformer.ts"
 import { IdentityTransformer } from "./id-transformer.ts"
 import { TransformerHarmoniser } from "./transformer-harmoniser.ts"
-import { ID_QUANTISE, TransformerQuantise } from "./transformer-quantise.ts"
 import { TransformerTransposer } from "./transformer-transposer.ts"
+import { ID_QUANTISE, TransformerQuantise } from "./transformer-quantise.ts"
 
 type Callback = () => void
 
@@ -85,6 +85,27 @@ export class TransformerManager extends Transformer<{}> {
     getTransformer( id:string ): Transformer {
         return this.transformersMap.get(id)
     }
+moveOneStepBefore(el: Transformer) {
+    const idx = this.transformers.indexOf(el);
+    if (idx <= 0) return; // already at the start or not found
+
+    const newList = [...this.transformers];
+    // swap el with the one before it
+    [newList[idx - 1], newList[idx]] = [newList[idx], newList[idx - 1]];
+
+    this.setTransformers(newList);
+}
+
+moveOneStepAfter(el: Transformer) {
+    const idx = this.transformers.indexOf(el);
+    if (idx === -1 || idx >= this.transformers.length - 1) return; // end or not found
+
+    const newList = [...this.transformers];
+    // swap el with the one after it
+    [newList[idx + 1], newList[idx]] = [newList[idx], newList[idx + 1]];
+
+    this.setTransformers(newList);
+}
 
     getTransformers(): Array<Transformer> {
         return this.transformers
