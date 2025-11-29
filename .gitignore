@@ -3,3 +3,4 @@ node_modules
 __*
 dist/
 source/libs/audiotoolsdk
+*-copy*
