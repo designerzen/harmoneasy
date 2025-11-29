@@ -1,3 +1,4 @@
+@use "./options.scss";
 @use "./fonts.scss";
 @use "./base.scss";
 @use "./keyboard.scss";
@@ -5,10 +6,6 @@
 @use './layout.scss';
 @use './typography.scss';
 
-:root {
-  --gap:1rem;
-  --pad:1rem;
-}
 
 #app {
   display: none;
@@ -33,8 +30,4 @@
 
 .read-the-docs {
   color: #888;
-}
-
-.react-flow__attribution{
-  display: none;
 }
