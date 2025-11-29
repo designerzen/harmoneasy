@@ -297,7 +297,6 @@ const onNoteOnRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=ON
     audioCommand.velocity = noteModel.noteNumber
     audioCommand.time = timer.now
 
-
     if (state && state.get("quantise") )
     {
         // wait till timing event
@@ -310,7 +309,7 @@ const onNoteOnRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=ON
         console.error("transformed", transformed)
     }
 
-
+    /*
     // create some chords from this root node
     if ( state && state.get("useChords") ){
         const chord = createChord( ALL_KEYBOARD_NOTES, intervalFormula, noteModel.noteNumber, 0, NOTES_IN_CHORDS, true, true )
@@ -328,6 +327,7 @@ const onNoteOnRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=ON
     // play all activated notes
     notes.forEach( noteModel => noteOn( noteModel, fromDevice ))
     console.info("onNoteOnRequestedFromKeyboard, Microtonal Pitch", noteModel, mictrotonalPitches.freqs[noteModel.noteNumber])
+    */
 }
 
 /**
@@ -335,6 +335,15 @@ const onNoteOnRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=ON
  * @param noteModel:NoteModel 
  */
 const onNoteOffRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=ONSCREEN_KEYBOARD_NAME) => {
+
+    // create an AudioCommand for this NoteModel
+    const audioCommand = new AudioCommand()
+    audioCommand.type = Commands.NOTE_OFF
+    audioCommand.subtype = Commands.NOTE_OFF
+    audioCommand.number = noteModel.noteNumber
+    audioCommand.value = noteModel.noteNumber
+    audioCommand.velocity = noteModel.noteNumber
+    audioCommand.time = timer.now
 
     let notes:Array<NoteModel>
 

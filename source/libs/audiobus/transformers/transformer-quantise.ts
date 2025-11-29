@@ -1,4 +1,4 @@
-import type AudioCommand from "../audio-command";
+import type { AudioCommandInterface } from "../audio-command-interface";
 import { Transformer } from "./abstract-transformer"
 
 export class TransformerQuantise extends Transformer<{}>{
@@ -7,7 +7,7 @@ export class TransformerQuantise extends Transformer<{}>{
         super(config)
     }
 
-    transform( command:AudioCommand ):AudioCommand{
+    transform(command:AudioCommandInterface[]):AudioCommandInterface[] {
         return command
     }
 }
