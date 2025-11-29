@@ -47,7 +47,7 @@ import type { AudioCommandInterface } from './libs/audiobus/audio-command-interf
 import { createAudioCommand } from './libs/audiobus/audio-command-factory.ts'
 // import { createGraph } from './components/transformers-graph.ts'
 import { createGraph } from './components/transformers-graph.tsx'
-
+import AudioEvent from './libs/audiobus/audio-event.ts'
 
 // import { AudioContext, BiquadFilterNode } from "standardized-audio-context"
 const ALL_MIDI_CHANNELS = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15, 16]
@@ -204,6 +204,27 @@ const onRecordingMusicalEventsLoopBegin = ( activeAudioEvents ) => {
     }
 }
 
+const convertAudioCommandsToAudioEvents = ( commands:AudioCommandInterface[] ):AudioEvent[] => {
+    return (commands ?? []).map( (command:AudioCommandInterface) => {
+       return new AudioEvent( command, timer )
+    })
+}
+
+const triggerAudioCommandOnDevice = ( command:AudioCommandInterface ) => {
+    switch(command.type)
+    {
+        case Commands.NOTE_ON:  
+            console.warn("Executing Audio Command: NOTE ON", command )
+            break
+        
+        case Commands.NOTE_OFF:
+            console.warn("Executing Audio Command: NOTE OFF", command )
+           
+        default:
+            console.error("UNKNOWN Audio Command", command)
+    }
+}
+
 /**
  * Called from MIDI Devices and on screen keyboard
  * @param noteModel The Note
@@ -298,7 +319,9 @@ const onNoteOnRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=ON
         // dispatch NOW!
         // then when the time is right, we trigger the events
         const transformed:AudioCommandInterface[] = transformerManager.transform([audioCommand])
-        console.error("Note ON NOW", {audioCommand, transformed})
+        const events = convertAudioCommandsToAudioEvents( transformed )
+        const triggers = triggerAudioCommandOnDevice(events)
+        console.error("Note ON NOW", {audioCommand, transformed, events, triggers})
     }
 
     /*
@@ -336,9 +359,13 @@ const onNoteOffRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=O
 
     if ( transformerManager.isQuantised )    
     {
+        buffer.push(audioCommand)
         console.info("AudioCommand created - waiting for next tick", audioCommand )
     }else{
-        console.info("AudioCommand triggered immediately", audioCommand )
+        const transformed:AudioCommandInterface[] = transformerManager.transform([audioCommand])
+        const events = convertAudioCommandsToAudioEvents( transformed )
+        const triggers = triggerAudioCommandOnDevice(events)
+        console.info("AudioCommand triggered immediately", {audioCommand, transformerManager, events, triggers} )
     }
 
     /*
@@ -407,47 +434,58 @@ const onTick = (values) => {
 
     // We have got quantised data so let's run the transformers
     // 
-    if (state && state.get("quantise") )
+   
+    if ( transformerManager.isQuantised && buffer.length > 0 )
     {
         // then when the time is right, we trigger the events
         //const transformed = transformerManager.transform(audioCommand)
-        console.error("Quantised Time Domain transform")
        
+        // act on all data in the buffer...
+        buffer.forEach( (audioCommand:AudioCommand, index:number) => {
+            const transformed:AudioCommandInterface[] = transformerManager.transform([audioCommand])
+            const events = convertAudioCommandsToAudioEvents( transformed )
+            const triggers = triggerAudioCommandOnDevice(events)
+            console.info("AudioCommand triggered in time domain", {audioCommand, transformerManager, events, triggers, timer} )
+        })
+
+        // FIXME: clear entire buffer
+        buffer = []
+
     }else{
-        console.error("Metronome ignored")
+        // console.error("Metronome ignored as no events to trigger")
     }
 
 
 
 
-    let hasUpdates = false
-    // check to see if any events have happened since
-    // the last bar
-    const updates = MIDIDevices.map( (midiDevice, index) => {
-        const deviceCommandsReadyToTrigger = midiDevice.update( timer.now, divisionsElapsed )
+    // let hasUpdates = false
+    // // check to see if any events have happened since
+    // // the last bar
+    // const updates = MIDIDevices.map( (midiDevice, index) => {
+    //     const deviceCommandsReadyToTrigger = midiDevice.update( timer.now, divisionsElapsed )
         
-        if (deviceCommandsReadyToTrigger.length > 0)
-        {
-            hasUpdates = true
-            // create copies of the triggers and ensure they start at same position in time
-            buffer.push(...deviceCommandsReadyToTrigger)
-            console.info(index, "TICK:MusicalEvents", midiDevice.name, {deviceCommandsReadyToTrigger} )
-        }
+    //     if (deviceCommandsReadyToTrigger.length > 0)
+    //     {
+    //         hasUpdates = true
+    //         // create copies of the triggers and ensure they start at same position in time
+    //         buffer.push(...deviceCommandsReadyToTrigger)
+    //         console.info(index, "TICK:MusicalEvents", midiDevice.name, {deviceCommandsReadyToTrigger} )
+    //     }
         
-        return deviceCommandsReadyToTrigger
-    })
+    //     return deviceCommandsReadyToTrigger
+    // })
 
     // console.info("TICK:MIDIDevices", MIDIDevices )
 
     // Do we have any events that we need to trigger in this period?
-    if (hasUpdates)
-    {
-        console.info("TICK:hasUpdates", {buffer, updates, MIDIDevices} )
-        // UPDATE UI with all midi events
-        // that are going to be triggered at this stage
-    }else{
-        // console.info("TICK:NO UPDATES", updates )
-    }
+    // if (hasUpdates)
+    // {
+    //     console.info("TICK:hasUpdates", {buffer, updates, MIDIDevices} )
+    //     // UPDATE UI with all midi events
+    //     // that are going to be triggered at this stage
+    // }else{
+    //     // console.info("TICK:NO UPDATES", updates )
+    // }
 
     // save all new musical events in the buffer
     // buffer.push()
@@ -611,6 +649,7 @@ const parseToUint8 = (s) => {
  */
 const onAudioContextAvailable = async (event) => {
 
+
     audioContext = new AudioContext() 
     synth = new PolySynth( audioContext )
     // synth = new SynthOscillator( audioContext )
@@ -619,15 +658,6 @@ const onAudioContextAvailable = async (event) => {
 
     // this handles the audio timing
     timer = new AudioTimer( audioContext )
-
-    // Transformers Audio Device
-    transformerManager = new TransformerManager( [] )
-    // add the transformers in the sequence that we want to see them in...
-    transformerManager.addTransformer( new TransformerQuantise( {} ) )
-  
-
-
-
 
 
     // Front End UI -------------------------------
@@ -750,6 +780,13 @@ const onAudioContextAvailable = async (event) => {
     // connect to audioTool and start a new project
     // await handleConnectWithPAT( (document.getElementById('pat-input') as HTMLInputElement).value.trim() )
 
+    // Hackday hack!
+    transformerManager = new TransformerManager()
+    window.transformerManager = transformerManager
+
+    createGraph('#graph')
+
+
     // start the clock going
     timer.startTimer( onTick )
 }
@@ -770,7 +807,3 @@ document.addEventListener("mousedown", onAudioContextAvailable, {once:true} )
 // import { parseEdoScaleMicroTuningOctave } from "index.ts"
 // console.warn( "TEST", mictrotonalPitches, 60, 3, "LLsLLLs", 2, 1 )
 
-
-window.transformerManager = new TransformerManager()
-
-createGraph('#graph');
