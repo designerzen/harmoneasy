@@ -26,6 +26,10 @@ export abstract class Transformer<Config = TransformerConfig> {
         return []
     }
 
+    get options(): Config {
+        return this.config
+    }
+
     abstract get name(): string
 
     constructor(config: Config) {

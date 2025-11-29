@@ -1,4 +1,4 @@
-import type { AudioCommandInterface } from "../audio-command-interface";
+import type { AudioCommandInterface } from "../audio-command-interface"
 import { Transformer } from "./abstract-transformer"
 import {
     IONIAN_INTERVALS,
@@ -10,12 +10,20 @@ import {
     LOCRIAN_INTERVALS
 } from "../tuning/intervals.js"
 
+import { TUNING_MODE_IONIAN } from "../tuning/scales.js"
+import { getIntervalFormulaForMode } from "../tuning/chords/modal-chords.js"
+
 export const ID_QUANTISE = "transposer"
 
 interface Config {
     root: number,
     mode: string,
     [key: string]: any
+}
+
+const DEFAULT_OPTIONS: Config = {
+    root: 69,
+    mode: TUNING_MODE_IONIAN
 }
 
 export class TransformerTransposer extends Transformer<Config>{
@@ -62,12 +70,12 @@ export class TransformerTransposer extends Transformer<Config>{
         ]
     }
 
-    constructor(config = { root: 0, mode: 'ionian' }) {
-        super(config)
+    constructor(config = { root: 0, mode: TUNING_MODE_IONIAN }) {
+        super( {...DEFAULT_OPTIONS, ...config} )
     }
 
     transform(commands:AudioCommandInterface[]):AudioCommandInterface[] {
-        const intervalFormula = this.getIntervalFormulaForMode(this.config.mode)
+        const intervalFormula = getIntervalFormulaForMode(this.config.mode)
         const rootNote = this.config.root
 
         console.log('ROOT NOTE', rootNote)
@@ -100,7 +108,7 @@ export class TransformerTransposer extends Transformer<Config>{
         // Generate notes for all octaves (MIDI range 0-127)
         for (let octave = 0; octave < 11; octave++) {
             for (const interval of intervals) {
-                const note = root + (octave * 12) + interval
+                const note:number = root + (octave * 12) + interval
                 if (note >= 0 && note <= 127) {
                     scaleNotes.add(note)
                 }
@@ -136,24 +144,4 @@ export class TransformerTransposer extends Transformer<Config>{
         return closestNote
     }
 
-    private getIntervalFormulaForMode(mode: string): number[] {
-        switch (mode) {
-            case 'ionian':
-                return IONIAN_INTERVALS
-            case 'dorian':
-                return DORIAN_INTERVALS
-            case 'phrygian':
-                return PHRYGIAN_INTERVALS
-            case 'lydian':
-                return LYDIAN_INTERVALS
-            case 'mixolydian':
-                return MIXOLYDIAN_INTERVALS
-            case 'aeolian':
-                return AEOLIAN_INTERVALS
-            case 'locrian':
-                return LOCRIAN_INTERVALS
-            default:
-                return IONIAN_INTERVALS
-        }
-    }
 }

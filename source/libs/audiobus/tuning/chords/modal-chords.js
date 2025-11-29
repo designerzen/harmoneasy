@@ -29,6 +29,19 @@ export const TUNING_MODE_NAMES = [
 	TUNING_MODE_LOCRIAN			// Start from seventh degree
 ]
 
+const TUNING_MODE_MAP = new Map()
+TUNING_MODE_MAP.set( TUNING_MODE_IONIAN, IONIAN_INTERVALS )
+TUNING_MODE_MAP.set( TUNING_MODE_DORIAN, DORIAN_INTERVALS )
+TUNING_MODE_MAP.set( TUNING_MODE_PHRYGIAN, IONIAN_INTERVALS )
+TUNING_MODE_MAP.set( TUNING_MODE_LYDIAN, PHRYGIAN_INTERVALS )
+TUNING_MODE_MAP.set( TUNING_MODE_MIXOLYDIAN, MIXOLYDIAN_INTERVALS )
+TUNING_MODE_MAP.set( TUNING_MODE_AEOLIAN, AEOLIAN_INTERVALS )
+TUNING_MODE_MAP.set( TUNING_MODE_LOCRIAN, LOCRIAN_INTERVALS )
+
+export const getIntervalFormulaForMode = (musicalMode) => {
+	return TUNING_MODE_MAP.get(musicalMode)
+}
+
 export const getModeAsIntegerOffset = (mode) => isNaN(parseInt(mode)) ? TUNING_MODE_NAMES.indexOf(mode) : mode%TUNING_MODE_NAMES.length
 export const getModeFromIntegerOffset = (mode) => isNaN(parseInt(mode)) ? mode : TUNING_MODE_NAMES[mode%TUNING_MODE_NAMES.length]
   

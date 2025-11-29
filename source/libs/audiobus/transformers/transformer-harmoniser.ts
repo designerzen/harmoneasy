@@ -15,6 +15,7 @@ import {
     LOCRIAN_INTERVALS
 } from "../tuning/intervals.js"
 import { TUNING_MODE_IONIAN } from "../tuning/scales.js";
+import { getIntervalFormulaForMode } from "../tuning/chords/modal-chords.js"
 
 export const ID_QUANTISE = "harmonise"
 
@@ -94,7 +95,7 @@ export class TransformerHarmoniser extends Transformer<Config>{
         const noteModel = new NoteModel(firstCommand.number)
 
         // Get interval formula based on the configured mode
-        const intervalFormula = this.getIntervalFormulaForMode(this.config.mode)
+        const intervalFormula = getIntervalFormulaForMode(this.config.mode)
 
         // Calculate rotation: -1 if note is outside of the scale
         const rotation = findRotationFromNote(noteModel.noteNumber, this.config.root, intervalFormula)
@@ -137,26 +138,5 @@ export class TransformerHarmoniser extends Transformer<Config>{
 
         // Return the harmonised chord commands
         return harmonisedCommands
-    }
-
-    private getIntervalFormulaForMode(mode: string): number[] {
-        switch (mode) {
-            case 'ionian':
-                return IONIAN_INTERVALS
-            case 'dorian':
-                return DORIAN_INTERVALS
-            case 'phrygian':
-                return PHRYGIAN_INTERVALS
-            case 'lydian':
-                return LYDIAN_INTERVALS
-            case 'mixolydian':
-                return MIXOLYDIAN_INTERVALS
-            case 'aeolian':
-                return AEOLIAN_INTERVALS
-            case 'locrian':
-                return LOCRIAN_INTERVALS
-            default:
-                return IONIAN_INTERVALS
-        }
     }
 }

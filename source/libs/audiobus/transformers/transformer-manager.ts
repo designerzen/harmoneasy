@@ -6,7 +6,7 @@ import type { AudioCommandInterface } from "../audio-command-interface.ts"
 import { Transformer } from "./abstract-transformer.ts"
 import { IdentityTransformer } from "./id-transformer.ts"
 import { TransformerHarmoniser } from "./transformer-harmoniser.ts"
-import { ID_QUANTISE } from "./transformer-quantise.ts"
+import { ID_QUANTISE, TransformerQuantise } from "./transformer-quantise.ts"
 import { TransformerTransposer } from "./transformer-transposer.ts"
 
 type Callback = () => void
@@ -26,6 +26,14 @@ export class TransformerManager extends Transformer<{}> {
 
     get isQuantised(){
         return this.transformersMap.has(ID_QUANTISE)
+    }
+
+    get quantiseTransformer():TransformerQuantise|undefined{
+        return this.transformersMap.get(ID_QUANTISE) as TransformerQuantise
+    }
+  
+    get quantiseFidelity():number{
+        return this.quantiseTransformer?.options.step ?? 0
     }
   
     constructor(initialTransformers?: Array<Transformer>) {
