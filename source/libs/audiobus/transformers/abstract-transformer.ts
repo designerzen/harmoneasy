@@ -4,6 +4,12 @@ export interface TransformerConfig {
 
 }
 
+export interface FieldConfig {
+    name: string
+    type: string
+    values: Array<string | number | { name: string; value: string | number }>
+}
+
 export abstract class Transformer<Config = TransformerConfig> {
     
     static ID:number = 0
@@ -24,7 +30,7 @@ export abstract class Transformer<Config = TransformerConfig> {
         }
     }
 
-    get fields() {
+    get fields(): FieldConfig[] {
         return []
     }
 

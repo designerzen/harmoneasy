@@ -1,0 +1,93 @@
+#graph {
+    background: #FFF;
+}
+
+.graph-node {
+    border: 2px solid #333;
+    border-radius: 8px;
+    padding: 1em;
+    font-size: 0.9em;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    min-width: 200px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+    > div:first-child {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: bold;
+        margin-bottom: 0.75em;
+        padding-bottom: 0.5em;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    }
+}
+
+.graph-node .button-remove {
+    background: rgba(220, 38, 38, 0.9);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 0.25em 0.5em;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s;
+
+    &:hover {
+        background: rgba(185, 28, 28, 1);
+    }
+}
+
+.graph-node > div > div {
+    margin-bottom: 0.5em;
+
+    > div:first-child {
+        font-size: 0.85em;
+        text-transform: uppercase;
+        opacity: 0.9;
+        margin-bottom: 0.25em;
+    }
+
+    select {
+        width: 100%;
+        padding: 0.5em;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.95);
+        color: #333;
+        font-size: 0.9em;
+        cursor: pointer;
+
+        &:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.6);
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+        }
+    }
+}
+
+.node-start,
+.node-end {
+    border: 2px solid #333;
+    border-radius: 50%;
+    padding: 1.5em;
+    font-size: 0.9em;
+    color: white;
+    min-width: 100px;
+    min-height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.node-start {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.node-end {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}

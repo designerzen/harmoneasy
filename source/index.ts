@@ -382,6 +382,7 @@ const onNoteOffRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=O
     let notes:Array<NoteModel>
 
     if ( state && state.get("useChords") ){
+    // FIXME: replace zero with findRotation. -1 if is outside of the scale.
         const chord = createChord( ALL_KEYBOARD_NOTES, intervalFormula, noteModel.noteNumber, 0, NOTES_IN_CHORDS, true, true )
         const chordNotes = chord.map( (c:NoteModel) => c.number)
         const intervals = convertToIntervalArray( chordNotes )
