@@ -1,6 +1,4 @@
-interface AudioCommand {
-
-}
+import type AudioCommand from "../audio-command"
 
 export interface TransformerConfig {
 
