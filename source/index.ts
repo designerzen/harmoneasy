@@ -44,6 +44,7 @@ import { TransformerManager } from './libs/audiobus/transformers/transformer-man
 import { TransformerQuantise } from './libs/audiobus/transformers/transformer-quantise.ts'
 import AudioCommand from './libs/audiobus/audio-command.ts'
 import type { AudioCommandInterface } from './libs/audiobus/audio-command-interface.ts'
+import { createAudioCommand } from './libs/audiobus/audio-command-factory.ts'
 // import { createGraph } from './components/transformers-graph.ts'
 
 
@@ -286,22 +287,13 @@ export const noteOff = (noteModel:NoteModel, fromDevice:string=ONSCREEN_KEYBOARD
  */
 const onNoteOnRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=ONSCREEN_KEYBOARD_NAME ) => {
    
-    let notes:Array<NoteModel>
-
-    // create an AudioCommand for this NoteModel
-    const audioCommand = new AudioCommand()
-    audioCommand.type = Commands.NOTE_ON
-    audioCommand.subtype = Commands.NOTE_ON
-    audioCommand.number = noteModel.noteNumber
-    audioCommand.value = noteModel.noteNumber
-    audioCommand.velocity = noteModel.noteNumber
-    audioCommand.time = timer.now
+    const audioCommand:AudioCommand = createAudioCommand( Commands.NOTE_ON, noteModel, timmer )
 
     if (state && state.get("quantise") )
     {
         // wait till timing event
         buffer.push(audioCommand)
-         console.error("buffer", buffer, { transformerManager} )
+        console.error("buffer", buffer, { transformerManager} )
     }else{
         // dispatch NOW!
         // then when the time is right, we trigger the events
@@ -310,6 +302,9 @@ const onNoteOnRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=ON
     }
 
     /*
+       
+    let notes:Array<NoteModel>
+
     // create some chords from this root node
     if ( state && state.get("useChords") ){
         const chord = createChord( ALL_KEYBOARD_NOTES, intervalFormula, noteModel.noteNumber, 0, NOTES_IN_CHORDS, true, true )
@@ -337,14 +332,9 @@ const onNoteOnRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=ON
 const onNoteOffRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=ONSCREEN_KEYBOARD_NAME) => {
 
     // create an AudioCommand for this NoteModel
-    const audioCommand = new AudioCommand()
-    audioCommand.type = Commands.NOTE_OFF
-    audioCommand.subtype = Commands.NOTE_OFF
-    audioCommand.number = noteModel.noteNumber
-    audioCommand.value = noteModel.noteNumber
-    audioCommand.velocity = noteModel.noteNumber
-    audioCommand.time = timer.now
+    const audioCommand:AudioCommand = createAudioCommand( Commands.NOTE_OFF, noteModel, timmer )
 
+    /*
     let notes:Array<NoteModel>
 
     if ( state && state.get("useChords") ){
@@ -362,6 +352,7 @@ const onNoteOffRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=O
 
     // play all activated notes
     notes.forEach( noteModel => noteOff( noteModel, fromDevice ))
+    */
 }
 
 /**
@@ -623,7 +614,7 @@ const onAudioContextAvailable = async (event) => {
     timer = new AudioTimer( audioContext )
 
     // Transformers Audio Device
-    transformerManager = new TransformerManager( {} )
+    transformerManager = new TransformerManager( [] )
     // add the transformers in the sequence that we want to see them in...
     transformerManager.addTransformer( new TransformerQuantise( {} ) )
   
