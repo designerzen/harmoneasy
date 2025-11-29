@@ -400,6 +400,20 @@ const onNoteOffRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=O
     */
 }
 
+const executeQueueAndClear = (queue:AudioCommand[]) => {
+
+    // act on all data in the buffer...
+    queue.forEach( (audioCommand:AudioCommand, index:number) => {
+        const transformed:AudioCommandInterface[] = transformerManager.transform([audioCommand])
+        const events = convertAudioCommandsToAudioEvents( transformed )
+        const triggers = triggerAudioCommandsOnDevice(events)
+        console.info("AudioCommand triggered in time domain", {audioCommand, transformerManager, events, triggers, timer} )
+    })
+
+    // TODO: clear entire buffer
+    queue.length = 0
+}
+
 /**
  * EVENT:
  * Bar TICK - 24 divisions per quarter note
@@ -451,17 +465,14 @@ const onTick = (values) => {
         // then when the time is right, we trigger the events
         //const transformed = transformerManager.transform(audioCommand)
        
-        // act on all data in the buffer...
-        buffer.forEach( (audioCommand:AudioCommand, index:number) => {
-            const transformed:AudioCommandInterface[] = transformerManager.transform([audioCommand])
-            const events = convertAudioCommandsToAudioEvents( transformed )
-            const triggers = triggerAudioCommandsOnDevice(events)
-            console.info("AudioCommand triggered in time domain", {audioCommand, transformerManager, events, triggers, timer} )
-        })
-
-        // FIXME: clear entire buffer
-        buffer = []
-
+        if (divisionsElapsed % transformerManager.quantiseFidelity === 0)
+        {
+            console.info("TICK:QUANTISED", {divisionsElapsed, quantisationFidelity:transformerManager.quantiseFidelity})
+            executeQueueAndClear(buffer)
+        }else{
+            console.info("TICK:IGNORED", {divisionsElapsed, quantisationFidelity:transformerManager.quantiseFidelity})
+        }
+        
     }else{
         // console.error("Metronome ignored as no events to trigger")
     }
