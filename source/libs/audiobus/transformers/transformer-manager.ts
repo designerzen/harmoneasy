@@ -142,7 +142,7 @@ moveOneStepAfter(el: Transformer) {
         }))
         edges.pop()
 
-        const alwaysEdges = [{
+        const alwaysEdges = this.transformers.length <= 0 ? [{ id: 'connect', source: 'start', target: 'end'}] : [{
             id: 'edge-start',
             source: 'start',
             target: 'node-0'
