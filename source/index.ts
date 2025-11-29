@@ -289,17 +289,16 @@ export const noteOff = (noteModel:NoteModel, fromDevice:string=ONSCREEN_KEYBOARD
 const onNoteOnRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=ONSCREEN_KEYBOARD_NAME ) => {
    
     const audioCommand:AudioCommand = createAudioCommand( Commands.NOTE_ON, noteModel, timer )
-
-    if (state && state.get("quantise") )
+    if ( transformerManager.isQuantised )
     {
         // wait till timing event
         buffer.push(audioCommand)
-        console.error("buffer", buffer, { transformerManager} )
+        console.error("Note On DEFER buffer", buffer, { audioCommand, transformerManager} )
     }else{
         // dispatch NOW!
         // then when the time is right, we trigger the events
         const transformed:AudioCommandInterface[] = transformerManager.transform([audioCommand])
-        console.error("transformed", transformed)
+        console.error("Note ON NOW", {audioCommand, transformed})
     }
 
     /*
@@ -334,6 +333,13 @@ const onNoteOffRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=O
 
     // create an AudioCommand for this NoteModel
     const audioCommand:AudioCommand = createAudioCommand( Commands.NOTE_OFF, noteModel, timer )
+
+    if ( transformerManager.isQuantised )    
+    {
+        console.info("AudioCommand created - waiting for next tick", audioCommand )
+    }else{
+        console.info("AudioCommand triggered immediately", audioCommand )
+    }
 
     /*
     let notes:Array<NoteModel>
