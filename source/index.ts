@@ -333,7 +333,7 @@ const onNoteOnRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=ON
 const onNoteOffRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=ONSCREEN_KEYBOARD_NAME) => {
 
     // create an AudioCommand for this NoteModel
-    const audioCommand:AudioCommand = createAudioCommand( Commands.NOTE_OFF, noteModel, timmer )
+    const audioCommand:AudioCommand = createAudioCommand( Commands.NOTE_OFF, noteModel, timer )
 
     /*
     let notes:Array<NoteModel>
