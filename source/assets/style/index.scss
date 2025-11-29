@@ -1,8 +1,9 @@
-
+@use "./fonts.scss";
 @use "./base.scss";
 @use "./keyboard.scss";
 @use './node-graph.scss';
 @use './layout.scss';
+@use './typography.scss';
 
 :root {
   --gap:1rem;

@@ -39,17 +39,13 @@ header {
   color: #fff;
   padding: 16px 24px;
   display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #444;
   position: relative;
   z-index: 100;
-
-  h1 {
-    font-size: 24px;
-    font-weight: 600;
-    margin: 0;
-  }
 
   @media (prefers-color-scheme: light) {
     background: #2c2c2c;
@@ -62,6 +58,7 @@ header {
   display: flex;
   gap: 16px;
   align-items: center;
+  width: 100%;
 }
 
 #tempo-control {
@@ -90,7 +87,6 @@ header {
 
 #bpm {
   font-weight: 600;
-  min-width: 40px;
 }
 
 .device-buttons {
@@ -150,11 +146,6 @@ header {
   top: 0;
   z-index: 1;
 
-  h2 {
-    margin: 0;
-    font-size: 18px;
-  }
-
   @media (prefers-color-scheme: dark) {
     background: #1a1a1a;
   }
@@ -166,7 +157,7 @@ header {
   color: white;
   font-size: 24px;
   cursor: pointer;
-  padding: 4px 8px;
+  padding: calc(var(--pad) / 2) calc(var(--pad));
 
   &:hover {
     border-color: transparent;
@@ -179,7 +170,8 @@ header {
   output {
     display: block;
     margin-bottom: 16px;
-    padding: 12px;
+    padding: calc(2 * var(--pad));
+
     background: white;
     border-radius: 4px;
     border: 1px solid #ddd;
@@ -227,7 +219,7 @@ main {
 /* Keyboard/Canvas */
 #keyboard-container {
   background: #e0e0e0;
-  padding: 16px;
+  padding: calc(2 * var(--pad));
   display: flex;
   justify-content: center;
   align-items: center;
@@ -257,14 +249,14 @@ main {
 
 #ble-manual-send-fieldset {
   background: white;
-  padding: 16px;
+  padding: calc(2 * var(--pad));
   margin-top: 16px;
   border-radius: 4px;
   border: 1px solid #ddd;
 
   legend {
     font-weight: 600;
-    padding: 0 8px;
+    padding: 0 calc(var(--pad));
   }
 
   label {
@@ -276,7 +268,7 @@ main {
   input,
   select {
     width: 100%;
-    padding: 8px;
+    padding: calc(2 * var(--pad));
     margin-top: 4px;
     border: 1px solid #ddd;
     border-radius: 4px;
@@ -315,8 +307,8 @@ main {
 
 /* Responsive */
 @media (max-width: 768px) {
+
   header {
-    flex-direction: column;
     gap: 12px;
     align-items: flex-start;
   }
