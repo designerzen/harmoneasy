@@ -686,20 +686,20 @@ const onAudioContextAvailable = async (event) => {
        console.info("BLE MANUAL SEND", t)
     })
 
-    ui.whenNewScaleIsSelected( (scaleNName:string, select:HTMLElement ) => {
-        console.log("New scale selected:", scaleNName)
-        // state.set( scaleNName, true )
+    // ui.whenNewScaleIsSelected( (scaleNName:string, select:HTMLElement ) => {
+    //     console.log("New scale selected:", scaleNName)
+    //     // state.set( scaleNName, true )
 
-        // ensure we turn all notes off before we change
-        // otherwise any currently active notes may stick fprever
+    //     // ensure we turn all notes off before we change
+    //     // otherwise any currently active notes may stick fprever
 
-        intervalFormula = INTERVALS.MODAL_SCALES[TUNING_MODE_NAMES.indexOf(scaleNName) ]
-    })
+    //     intervalFormula = INTERVALS.MODAL_SCALES[TUNING_MODE_NAMES.indexOf(scaleNName) ]
+    // })
 
-    ui.whenNewRootIsSelected( (root: number, select: HTMLElement) => {
-        console.log("New root selected:", root)
-        rootNote = root
-    })
+    // ui.whenNewRootIsSelected( (root: number, select: HTMLElement) => {
+    //     console.log("New root selected:", root)
+    //     rootNote = root
+    // })
 
     ui.onDoubleClick( () => {
         synth.setRandomTimbre()

@@ -30,6 +30,8 @@ export class TransformerTransposer extends Transformer<Config>{
         const intervalFormula = this.getIntervalFormulaForMode(this.config.mode)
         const rootNote = this.config.root
 
+        console.log('ROOT NOTE', rootNote)
+
         // Create a set of all valid notes in the scale across all octaves
         const scaleNotes = this.generateScaleNotes(rootNote, intervalFormula)
 
@@ -116,7 +118,7 @@ export class TransformerTransposer extends Transformer<Config>{
     }
 
     get name(): string {
-        return 'Quantise'
+        return 'Transpose'
     }
 
     setConfig(c: string, val: unknown) {

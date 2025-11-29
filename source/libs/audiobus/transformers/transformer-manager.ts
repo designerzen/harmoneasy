@@ -1,8 +1,9 @@
 import type { AudioCommandInterface } from "../audio-command-interface"
 import { Transformer } from "./abstract-transformer"
 import { IdentityTransformer } from "./id-transformer"
-import { ID_QUANTISE, TransformerQuantise } from "./transformer-quantise"
-import { TransformerTransposition } from "./transformer-transposition"
+import { TransformerHarmoniser } from "./transformer-harmoniser"
+import { ID_QUANTISE } from "./transformer-quantise"
+import { TransformerTransposer } from "./transformer-transposer"
 
 type Callback = () => void
 
@@ -10,8 +11,8 @@ export class TransformerManager extends Transformer<{}> {
    
     private transformers: Array<Transformer> = [
         new IdentityTransformer({}),
-        new TransformerQuantise({}),
-        new TransformerTransposition({})
+        new TransformerTransposer(),
+        new TransformerHarmoniser()
     ]
 
     private transformersMap:Map<string, Transformer> = new Map()

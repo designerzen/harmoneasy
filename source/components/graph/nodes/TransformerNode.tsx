@@ -15,19 +15,20 @@ function SelectField({ values, onChange }) {
 function ConfigField({ config, element}) {
     return <div>
         <div>{config.name}</div>
-        { config.type === 'select' ? <SelectField values={config.values} onChange={(v) => element.setConfig(config.name, v)} /> : 'unknown' }
+        { config.type === 'select' ? <SelectField values={config.values} onChange={(v) => {
+            element.setConfig(config.name, v.target.value)
+        }} /> : 'unknown' }
         </div>
 }
 
 export function TransformerNode(props) {
-    console.log('PROPS', props)
     const removeNode = () => {
         window.transformerManager.removeTransformer(props.data.element)
     }
     return <div className="node-transformer graph-node">
         <div>{props.data.label} <button className="button-remove" onClick={removeNode}>X</button></div>
         {props.data.fields.map(f => (
-            <ConfigField config={f} element={props.data.element} />
+            <ConfigField key={f.name} config={f} element={props.data.element} />
         ))}
 
         <Handle type="source" position={Position.Right} />
