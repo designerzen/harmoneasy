@@ -280,6 +280,43 @@ export const stopBLECharacteristicStream = () => {
 
 }
 
+export const parseToUint8 = (s:string) :Uint8Array=> {
+    if (!s) return new Uint8Array()
+    const nums = s.split(',').map(x=>x.trim()).filter(x=>x.length>0).map(x=>Number(x))
+    const bytes = nums.map(n => ((n|0) & 0xFF))
+    return new Uint8Array(bytes)
+}
+
+
+/**
+ * Send MIDI Note On message via BLE
+ * 
+ * @param characteristic 
+ * @param channel (1-16)
+ * @param note 
+ * @param velocity (0-127)
+ * @param _runningTotal if you want to send lots of data in one packet
+ * @returns {Promise}
+ */
+export const sendBLECommand = async (
+    characteristic: BluetoothRemoteGATTCharacteristic,
+    channel: number | null,
+    data: string,
+    value: number = 127,
+    _runningTotal: Array<number> | undefined = undefined
+): Promise<boolean | null> => {
+    // no channel to send to, so exit early
+    if (channel === null) { return null }
+        const t = parseToUint8(data)
+        if (t.length > 0) 
+        {
+            return null
+        }
+    return _runningTotal ?
+        await queueBLEPacket(_runningTotal, characteristic, getMIDIStatusBytesFromNibbleAndChannel(MIDI_NOTE_ON, channel), note, velocity) :
+        await dispatchBLEPacket(characteristic, getMIDIStatusBytesFromNibbleAndChannel(MIDI_NOTE_ON, channel), note, velocity)
+}
+
 /**
  * Send MIDI Note On message via BLE
  * 

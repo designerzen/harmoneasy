@@ -17,12 +17,15 @@ export default class AudioEvent extends AudioCommand implements AudioCommandInte
     constructor( audioCommand:AudioCommand, timer ) {
         super()
         this.copyAllParametersFromCommand( audioCommand )
+        this.trigger( timer.now )
         console.info("AudioEvent Created", this)
     }
 
     /**
-     * Make this Audio Command make music in a Audio Device     */
-    trigger(){
-
+     * Make this Audio Command make music in a Audio Device    
+     * 
+     */
+    trigger( timestamp:number ){
+        this.startAt = timestamp
     }
 }

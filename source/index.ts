@@ -472,7 +472,7 @@ const onTick = (values) => {
         }else{
             console.info("TICK:IGNORED", {divisionsElapsed, quantisationFidelity:transformerManager.quantiseFidelity})
         }
-        
+
     }else{
         // console.error("Metronome ignored as no events to trigger")
     }
@@ -508,12 +508,6 @@ const onTick = (values) => {
     // }else{
     //     // console.info("TICK:NO UPDATES", updates )
     // }
-
-    // save all new musical events in the buffer
-    // buffer.push()
-
-    // now action the updates
-    // console.info("TICK", values )
 }
 
 
@@ -658,12 +652,6 @@ const toggleWebMIDI = async () => {
         }
     }
 }
-const parseToUint8 = (s) => {
-    if (!s) return new Uint8Array()
-    const nums = s.split(',').map(x=>x.trim()).filter(x=>x.length>0).map(x=>Number(x))
-    const bytes = nums.map(n => ((n|0) & 0xFF))
-    return new Uint8Array(bytes)
-}
 
 /**
  * AudioContext is now available
@@ -693,8 +681,10 @@ const onAudioContextAvailable = async (event) => {
 
     ui.whenUserRequestsManualBLECodes((rawString:string) => { 
         /* parse rawString into numbers and create Uint8Array, then send to BLE */ 
-       const t = parseToUint8(rawString)
-       console.info("BLE MANUAL SEND", t)
+     
+        // sendBLECommand(rawString)
+       
+        console.info("BLE MANUAL SEND", t)
     })
 
     // ui.whenNewScaleIsSelected( (scaleNName:string, select:HTMLElement ) => {
