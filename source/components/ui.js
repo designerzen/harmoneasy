@@ -7,6 +7,7 @@ const DOM_ID_MIDI_OUTPUTS = "midi-output-commands"
 const DOM_ID_MIDI_DEVICES = "midi-devices"
 const DOM_ID_CLOCK = "clock"
 const DOM_ID_SELECTOR_SCALE = "scale-selector"
+const DOM_ID_ROOT_SELECTOR = "root-selector"
 const DOM_ID_SELECTOR_MIDI_CHANNEL = "midi-channel-selector"
 const DOM_ID_RANGE_TEMPO = "tempo"
 const DOM_ID_BPM = "bpm"
@@ -25,6 +26,7 @@ export default class UI{
         
         this.elementClock = document.getElementById(DOM_ID_CLOCK)
         this.elementScaleSelector = document.getElementById(DOM_ID_SELECTOR_SCALE)
+        this.elementRootSelector = document.getElementById(DOM_ID_ROOT_SELECTOR)
         this.elementMIDIChannelSelector = document.getElementById(DOM_ID_SELECTOR_MIDI_CHANNEL)
         this.elementTempo = document.getElementById(DOM_ID_RANGE_TEMPO)
         this.elementBPM = document.getElementById(DOM_ID_BPM)
@@ -151,6 +153,10 @@ export default class UI{
      */
     whenNewScaleIsSelected(callback){
         this.elementScaleSelector.addEventListener("change", e=>callback(this.elementScaleSelector.value, this.elementScaleSelector) )
+    }
+
+    whenNewRootIsSelected(callback){
+        this.elementRootSelector.addEventListener("change", e=>callback(parseInt(this.elementRootSelector.value, 10), this.elementRootSelector) )
     }
 
     /**

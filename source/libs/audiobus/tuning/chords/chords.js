@@ -27,7 +27,7 @@ export const createChord = (notes, intervalsFormula=IONIAN_INTERVALS, offset=0, 
     
 	for (let index=0; index<loopQuantity; ++index)
 	{
-		const noteIndex = intervalsFormula[(index+rotation)%quantityOfIntervals]
+		const noteIndex = intervalsFormula[(index*2+rotation)%quantityOfIntervals] // to skip every second note for chords
 		if (accumulate)
 		{
             // if noteIndex is 0 and index !== 0 add 12?
@@ -36,9 +36,8 @@ export const createChord = (notes, intervalsFormula=IONIAN_INTERVALS, offset=0, 
                 // this will be a note repetition so we transpose
                 accumulator -= 12
                 accumulator += noteIndex
-                console.log("transpose", offset, accumulator, offset - accumulator )
             }else{
-                accumulator += noteIndex
+                accumulator = offset+noteIndex // add offset otherwise it increases too much the accumulator
             }
 		
 		}else{
@@ -52,7 +51,7 @@ export const createChord = (notes, intervalsFormula=IONIAN_INTERVALS, offset=0, 
 			output.push( notes[accumulator%quantityOfNotes] )
 		}
 	}
-    
+	
 	return output
 }
 
