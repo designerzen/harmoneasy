@@ -1,3 +1,5 @@
+import type { AudioCommandInterface } from "./audio-command-interface"
+
 /**
 * A single musical command.
 * 
@@ -8,7 +10,7 @@
 * Essentially this is a musical event which hasn't been
 * triggered and so doesn't have a real timestamp
 */
-export default class AudioCommand {
+export default class AudioCommand implements AudioCommandInterface {
 
 	static counter = 1
 
@@ -45,7 +47,7 @@ export default class AudioCommand {
 	id:number
 	type:string
 	subtype:string
-	
+
 	text:string
 	
 	constructor() {
