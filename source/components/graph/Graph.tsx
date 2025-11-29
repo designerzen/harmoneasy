@@ -3,12 +3,21 @@ import { ReactFlow, applyNodeChanges, applyEdgeChanges, addEdge } from '@xyflow/
 import '@xyflow/react/dist/style.css';
 import type { TransformerManager } from '../../libs/audiobus/transformers/transformer-manager';
 import { ConfigDrawer } from './ConfigDrawer';
+import { StartNode } from './nodes/StartNode';
+import { EndNode } from './nodes/EndNode';
+import { TransformerNode } from './nodes/TransformerNode';
  
 const initialNodes = [
   { id: 'n1', position: { x: 0, y: 0 }, data: { label: 'Node 1' } },
   { id: 'n2', position: { x: 0, y: 100 }, data: { label: 'Node 2' } },
 ];
 const initialEdges = [{ id: 'n1-n2', source: 'n1', target: 'n2' }];
+
+const nodeTypes = {
+  start: StartNode,
+  end: EndNode,
+  transformer: TransformerNode
+}
  
 export default function App() {
   const [nodes, setNodes] = useState(initialNodes);
@@ -49,6 +58,7 @@ export default function App() {
       <ReactFlow
         nodes={nodes}
         edges={edges}
+        nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}

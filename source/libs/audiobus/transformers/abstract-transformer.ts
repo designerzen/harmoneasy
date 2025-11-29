@@ -24,6 +24,10 @@ export abstract class Transformer<Config = TransformerConfig> {
         }
     }
 
+    get fields() {
+        return []
+    }
+
     abstract get name(): string
 
     abstract transform(command: AudioCommandInterface[]): AudioCommandInterface[]

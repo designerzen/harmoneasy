@@ -27,12 +27,6 @@
     "jzz": "^1.9.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "rete": "^2.0.6",
-    "rete-area-plugin": "^2.1.5",
-    "rete-connection-plugin": "^2.0.5",
-    "rete-context-menu-plugin": "^2.0.6",
-    "rete-react-plugin": "^2.1.0",
-    "rete-render-utils": "^2.0.0",
     "standardized-audio-context": "^25.3.77",
     "webmidi": "^3.1.14"
   }
