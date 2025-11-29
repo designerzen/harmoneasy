@@ -32,8 +32,4 @@ export class TransformerQuantise extends Transformer<{ step: number }>{
     transform(commands:AudioCommandInterface[]):AudioCommandInterface[] {
         return commands
     }
-
-    setConfig(c: string, val: unknown) {
-        this.config[c] = val
-    }
 }

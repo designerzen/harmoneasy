@@ -37,4 +37,8 @@ export abstract class Transformer<Config = TransformerConfig> {
     abstract get name(): string
 
     abstract transform(command: AudioCommandInterface[]): AudioCommandInterface[]
+
+    setConfig(c: string, val: unknown) {
+        this.config[c] = val
+    }
 }
