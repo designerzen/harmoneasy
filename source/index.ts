@@ -256,7 +256,7 @@ const noteOn = (noteModel:NoteModel, velocity:number=1, fromDevice:string=ONSCRE
 
     if (MIDIDevice.length > 0)
     {
-        sendMIDINoteToAllDevices( fromDevice, noteModel, "noteOn",  1)
+        sendMIDINoteToAllDevices( fromDevice, noteModel, Commands.NOTE_ON,  1)
     }
 
     if (bluetoothMIDICharacteristic)
@@ -289,7 +289,7 @@ export const noteOff = (noteModel:NoteModel, velocity:number=1, fromDevice:strin
     
     if (MIDIDevice.length > 0)
     {
-        sendMIDINoteToAllDevices(fromDevice, noteModel, "noteOff",  1)
+        sendMIDINoteToAllDevices(fromDevice, noteModel, Commands.NOTE_OFF,  1)
     }
         
     if (bluetoothMIDICharacteristic)
@@ -794,7 +794,6 @@ const onAudioContextAvailable = async (event) => {
 
     createGraph('#graph')
 
-
     // start the clock going
     timer.startTimer( onTick )
 }
@@ -809,9 +808,9 @@ const sendMIDINoteToAllDevices = (fromDevice:String, noteModel:NoteModel , actio
     })
 }
 
+// Wait for user to initiate an action so that we can use AudioContext
 document.addEventListener("mousedown", onAudioContextAvailable, {once:true} )
 
 // load and complete some tests!
 // import { parseEdoScaleMicroTuningOctave } from "index.ts"
 // console.warn( "TEST", mictrotonalPitches, 60, 3, "LLsLLLs", 2, 1 )
-
