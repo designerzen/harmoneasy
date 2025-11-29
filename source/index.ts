@@ -649,7 +649,6 @@ const parseToUint8 = (s) => {
  */
 const onAudioContextAvailable = async (event) => {
 
-
     audioContext = new AudioContext() 
     synth = new PolySynth( audioContext )
     // synth = new SynthOscillator( audioContext )
@@ -658,7 +657,6 @@ const onAudioContextAvailable = async (event) => {
 
     // this handles the audio timing
     timer = new AudioTimer( audioContext )
-
 
     // Front End UI -------------------------------
     ui = new UI( ALL_KEYBOARD_NOTES, onNoteOnRequestedFromKeyboard, onNoteOffRequestedFromKeyboard )

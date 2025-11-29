@@ -10,13 +10,14 @@ import AudioCommand from "./audio-command.ts"
 
 export default class AudioEvent extends AudioCommand implements AudioCommandInterface { 
 
-    
 	get duration():number{
 		return this.endAt - this.startAt
 	}
 
     constructor( audioCommand:AudioCommand, timer ) {
         super()
+        this.copyAllParametersToCommand( audioCommand )
+        console.info("AudioEvent Created", this)
     }
 
     /**

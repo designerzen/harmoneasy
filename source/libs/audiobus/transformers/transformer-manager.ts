@@ -1,20 +1,23 @@
 import type { AudioCommandInterface } from "../audio-command-interface"
 import { Transformer } from "./abstract-transformer"
 import { IdentityTransformer } from "./id-transformer"
-import { ID_QUANTISE } from "./transformer-quantise"
+import { ID_QUANTISE, TransformerQuantise } from "./transformer-quantise"
+import { TransformerTransposition } from "./transformer-transposition"
 
 type Callback = () => void
 
 export class TransformerManager extends Transformer<{}> {
    
     private transformers: Array<Transformer> = [
-        new IdentityTransformer({})
+        new IdentityTransformer({}),
+        new TransformerQuantise({}),
+        new TransformerTransposition({})
     ]
 
     private transformersMap:Map<string, Transformer> = new Map()
 
     get isQuantised(){
-        return this.transformersMap.get(ID_QUANTISE)
+        return this.transformersMap.has(ID_QUANTISE)
     }
   
     private onChangeFns: Callback[] = []
@@ -22,8 +25,15 @@ export class TransformerManager extends Transformer<{}> {
     constructor(initialTransformers?: Array<Transformer>) {
         super({})
         
+        if (this.transformers) {
+           this.setTransformers(this.transformers)
+        }
+         
+        // add any transformers set in the constructor
         if (initialTransformers) {
-           this.setTransformers(initialTransformers)
+            initialTransformers.forEach( (transformer:Transformer) => {
+                this.addTransformer(transformer)
+            })
         }
     }
     
