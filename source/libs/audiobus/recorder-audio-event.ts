@@ -1,9 +1,13 @@
 import { NOTE_OFF, NOTE_ON } from "../../commands.ts"
 import AudioEvent from "./audio-event.ts"
 
-export class RecorderAudioEvent {
+const GAP = 0
     
+export class RecorderAudioEvent {
+
     events:AudioEvent[] = []
+
+    duration:number = 0
     
     constructor(){
         this.events = []
@@ -16,6 +20,10 @@ export class RecorderAudioEvent {
 
     addEvent( event:AudioEvent){
         this.events.push(event)
+        if (this.duration < event.startAt )
+        {
+            this.duration = event.startAt + GAP
+        }
     }
 
     clear(){
