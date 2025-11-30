@@ -14,7 +14,7 @@ export class RecorderAudioEvent {
     }
 
     addEvents( events:AudioEvent[] ){
-        this.events.push(...events)
+        events.forEach( event => this.addEvent(event))
         return this.events
     }
 

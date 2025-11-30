@@ -21,8 +21,6 @@ export const createAudioToolProjectFromAudioEventRecording = async (recording:Re
     const BPM = timer.BPM
     const data:AudioEvent[] = recording.exportData()
 
-    console.info("Converting data to AudiTool Format", data )
-
     const client = await createAudiotoolClient({ token: PAT_TOKEN })
 
     // Create synced document
