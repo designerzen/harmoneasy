@@ -61,14 +61,14 @@ header {
   width: 100%;
 }
 
-#tempo-control {
+.controls{
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 8px 16px;
   background: #3a3a3a;
   border-radius: 4px;
-
+  
   label {
     display: flex;
     align-items: center;
@@ -79,6 +79,10 @@ header {
   @media (prefers-color-scheme: light) {
     background: #3a3a3a;
   }
+}
+
+#tempo-control {
+
 }
 
 #tempo {
