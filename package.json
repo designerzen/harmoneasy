@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@audiotool/nexus": "file:audiotool-nexus-0.0.5.tgz",
+    "@tonejs/midi": "^2.0.28",
     "@types/web-bluetooth": "^0.0.21",
     "@xyflow/react": "^12.9.3",
     "fflate": "^0.8.2",
