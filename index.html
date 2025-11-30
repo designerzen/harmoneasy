@@ -21,14 +21,22 @@
     <h1>Harmoneasy</h1>
     <h2>Play with friends</h2>
     <div class="header-controls">
-      <div id="tempo-control">
-        <label>
-          Tempo:
-          <input id="tempo" type="range" min=10 max=303>
-          <output id="bpm"></output>
-          BPM
-        </label>
-      </div>
+      <div id="tempo-control" class="controls">
+         <label>
+           Tempo:
+           <input id="tempo" type="range" min=10 max=303>
+           <output id="bpm"></output>
+           BPM
+         </label>
+       </div>
+       <div id="volume-control" class="controls">
+         <label>
+           Volume:
+           <input id="volume" type="range" min=0 max=100 value=50>
+           <output id="volume-output">50</output>
+           %
+         </label>
+       </div>
       <div class="device-buttons">
         <button type="button" id="btn-connect-to-ble">Connect Bluetooth</button>
         <button type="button" id="btn-toggle-webmidi">Connect WebMIDI</button>

@@ -11,6 +11,8 @@ const DOM_ID_ROOT_SELECTOR = "root-selector"
 const DOM_ID_SELECTOR_MIDI_CHANNEL = "midi-channel-selector"
 const DOM_ID_RANGE_TEMPO = "tempo"
 const DOM_ID_BPM = "bpm"
+const DOM_ID_RANGE_VOLUME = "volume"
+const DOM_ID_VOLUME_OUTPUT = "volume-output"
 const DOM_ID_BUTTON_CONNECT_BLUETOOTH = "btn-connect-to-ble"
 const DOM_ID_BUTTON_TOGGLE_WEBMIDI = "btn-toggle-webmidi"
 
@@ -19,35 +21,37 @@ const DOM_ID_DIALOG_ERROR = "error-dialog"
 export default class UI{
 
     constructor( keyboardNotes, onNoteOn, onNoteOff ){
-        this.devices = document.getElementById(DOM_ID_MIDI_DEVICES)
-        
-        this.inputs = document.getElementById(DOM_ID_MIDI_INPUTS)
-        this.outputs = document.getElementById(DOM_ID_MIDI_OUTPUTS)
-        
-        this.elementClock = document.getElementById(DOM_ID_CLOCK)
-        this.elementScaleSelector = document.getElementById(DOM_ID_SELECTOR_SCALE)
-        this.elementRootSelector = document.getElementById(DOM_ID_ROOT_SELECTOR)
-        this.elementMIDIChannelSelector = document.getElementById(DOM_ID_SELECTOR_MIDI_CHANNEL)
-        this.elementTempo = document.getElementById(DOM_ID_RANGE_TEMPO)
-        this.elementBPM = document.getElementById(DOM_ID_BPM)
-        
-        this.elementButtonBluetoothConnect = document.getElementById(DOM_ID_BUTTON_CONNECT_BLUETOOTH)
-    
-        this.elementButtonWebMIDI = document.getElementById(DOM_ID_BUTTON_TOGGLE_WEBMIDI)
-        this.elementBLEManualFields = document.getElementById('ble-manual-send-fieldset')
-        this.elementBLEManualInput = document.getElementById('ble-manual-input')
-        this.elementBLEManualSendButton = document.getElementById('btn-send-ble-manual')
-        this.elementBLEManualSendButton = document.getElementById('btn-send-ble-manual')
+         this.devices = document.getElementById(DOM_ID_MIDI_DEVICES)
+         
+         this.inputs = document.getElementById(DOM_ID_MIDI_INPUTS)
+         this.outputs = document.getElementById(DOM_ID_MIDI_OUTPUTS)
+         
+         this.elementClock = document.getElementById(DOM_ID_CLOCK)
+         this.elementScaleSelector = document.getElementById(DOM_ID_SELECTOR_SCALE)
+         this.elementRootSelector = document.getElementById(DOM_ID_ROOT_SELECTOR)
+         this.elementMIDIChannelSelector = document.getElementById(DOM_ID_SELECTOR_MIDI_CHANNEL)
+         this.elementTempo = document.getElementById(DOM_ID_RANGE_TEMPO)
+         this.elementBPM = document.getElementById(DOM_ID_BPM)
+         this.elementVolume = document.getElementById(DOM_ID_RANGE_VOLUME)
+         this.elementVolumeOutput = document.getElementById(DOM_ID_VOLUME_OUTPUT)
+         
+         this.elementButtonBluetoothConnect = document.getElementById(DOM_ID_BUTTON_CONNECT_BLUETOOTH)
      
-        this.elementErrorDialog = document.getElementById(DOM_ID_DIALOG_ERROR )
-        
-        this.wallpaperCanvas = document.getElementById("wallpaper")
-        this.noteVisualiser = new NoteVisualiser( keyboardNotes, this.wallpaperCanvas, false, 0 ) // ALL_KEYBOARD_NOTES
-        // wallpaperCanvas.addEventListener( "dblclick", e => scale === SCALES[ (SCALES.indexOf(scale) + 1) % SCALES.length] )
+         this.elementButtonWebMIDI = document.getElementById(DOM_ID_BUTTON_TOGGLE_WEBMIDI)
+         this.elementBLEManualFields = document.getElementById('ble-manual-send-fieldset')
+         this.elementBLEManualInput = document.getElementById('ble-manual-input')
+         this.elementBLEManualSendButton = document.getElementById('btn-send-ble-manual')
+         this.elementBLEManualSendButton = document.getElementById('btn-send-ble-manual')
+      
+         this.elementErrorDialog = document.getElementById(DOM_ID_DIALOG_ERROR )
+         
+         this.wallpaperCanvas = document.getElementById("wallpaper")
+         this.noteVisualiser = new NoteVisualiser( keyboardNotes, this.wallpaperCanvas, false, 0 ) // ALL_KEYBOARD_NOTES
+         // wallpaperCanvas.addEventListener( "dblclick", e => scale === SCALES[ (SCALES.indexOf(scale) + 1) % SCALES.length] )
 
-        this.keyboard = new SVGKeyboard( keyboardNotes, onNoteOn, onNoteOff )
-        this.keyboardElement = document.body.appendChild( this.keyboard.asElement )
-    }
+         this.keyboard = new SVGKeyboard( keyboardNotes, onNoteOn, onNoteOff )
+         this.keyboardElement = document.body.appendChild( this.keyboard.asElement )
+     }
 
 
     /**
@@ -140,10 +144,19 @@ export default class UI{
     }
 
     whenTempoChangesRun(callback){
-        this.elementTempo.addEventListener("input", e=>{
-            const tempo  = this.elementTempo.value
-            callback && callback(tempo) 
-            this.elementBPM.textContent = tempo
+         this.elementTempo.addEventListener("input", e=>{
+             const tempo  = this.elementTempo.value
+             callback && callback(tempo) 
+             this.elementBPM.textContent = tempo
+         })
+     }
+
+    whenVolumeChangesRun(callback){
+        if (!this.elementVolume) return
+        this.elementVolume.addEventListener("input", e=>{
+            const volume = this.elementVolume.value
+            callback && callback(volume)
+            if (this.elementVolumeOutput) this.elementVolumeOutput.textContent = volume
         })
     }
     

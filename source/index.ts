@@ -48,6 +48,7 @@ import { createAudioCommand } from './libs/audiobus/audio-command-factory.ts'
 // import { createGraph } from './components/transformers-graph.ts'
 import { createGraph } from './components/transformers-graph.tsx'
 import AudioEvent from './libs/audiobus/audio-event.ts'
+import { RecorderAudioEvent } from './libs/audiobus/recorder-audio-event.ts'
 
 // import { AudioContext, BiquadFilterNode } from "standardized-audio-context"
 const ALL_MIDI_CHANNELS = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15, 16]
@@ -75,7 +76,8 @@ let selectedMIDIChannel:number = 1  // User-selected MIDI output channel (1-16)
 let onscreenKeyboardMIDIDevice:MIDIDevice
 
 // Feed this for X amount of BARS
-let buffer = []
+let audioCommandQueue:AudioCommand[] = []
+const recorder:RecorderAudioEvent = new RecorderAudioEvent()
 let currentRecordingMeasure = 0
 
 const BARS_TO_RECORD = 1
@@ -103,7 +105,7 @@ let state
 // this should be set per user
 let intervalFormula = INTERVALS.IONIAN_INTERVALS
 
-let rootNote = 0
+let pausedQueue:number = 0
 
 /**
  * EVENT
@@ -205,9 +207,7 @@ const onRecordingMusicalEventsLoopBegin = ( activeAudioEvents ) => {
 }
 
 const convertAudioCommandsToAudioEvents = ( commands:AudioCommandInterface[] ):AudioEvent[] => {
-    return (commands ?? []).map( (command:AudioCommandInterface) => {
-       return new AudioEvent( command, timer )
-    })
+    return (commands ?? []).map( (command:AudioCommandInterface) => new AudioEvent( command, timer ))
 }
 
 const triggerAudioCommandsOnDevice = ( commands:AudioCommandInterface[] ) => {
@@ -229,6 +229,7 @@ const triggerAudioCommandsOnDevice = ( commands:AudioCommandInterface[] ) => {
                 console.error("UNKNOWN Audio Command", command.type, Commands )
         }
     })
+    return commands
 }
 
 /**
@@ -313,49 +314,64 @@ export const noteOff = (noteModel:NoteModel, velocity:number=1, fromDevice:strin
     console.log("Note OFF", noteModel, velocity, {now} )
 }   
 
+const exeecuteAudioCommands = (commands:AudioCommandInterface[]):AudioEvent[] => {
+    const transformed:AudioCommandInterface[] = transformerManager.transform( commands )
+    const events = convertAudioCommandsToAudioEvents( transformed )
+    recorder.addEvents( events )
+    return triggerAudioCommandsOnDevice(events)
+}
+
+/**
+ * Actions every single Command with a startAt set in the past
+ * and returns the commands in order of creation that are in the 
+ * future or not yet set to trigger 
+ * TODO: Add enabled / disabled
+ * @param queue 
+ */
+const executeQueueAndClearComplete = (queue:AudioCommand[]) => {
+
+    if ( !queue || queue.length === 0)
+    {
+        return []
+    }
+
+    const now = timer.now
+
+    // only trigger commands started in the past
+    // queue = queue.filter(audioCommand => audioCommand.startAt <= now)
+    const remainingCommands:AudioCommand[] = []
+
+    // act on all data in the buffer...
+    queue.forEach( (audioCommand:AudioCommand, index:number) => {
+        const shouldTrigger = audioCommand.startAt <= now
+        if (shouldTrigger)
+        {
+            const triggers = exeecuteAudioCommands([audioCommand])
+            // console.info("AudioCommand triggered in time domain", {audioCommand, transformerManager, triggers, timer} )
+        }else{
+            remainingCommands.push(audioCommand)
+        }
+    })
+
+    return remainingCommands
+}
+
 /**
  * EVEMT: Note On requested from onscreen keyboard / external keyboard
  * @param noteModel 
  */
 const onNoteOnRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=ONSCREEN_KEYBOARD_NAME ) => {
-   
-    const audioCommand:AudioCommand = createAudioCommand( Commands.NOTE_ON, noteModel, timer )
+    const audioCommand:AudioCommand = createAudioCommand( Commands.NOTE_ON, noteModel, timer, fromDevice )
     if ( transformerManager.isQuantised )
     {
-        // wait till timing event
-        buffer.push(audioCommand)
-        console.error("Note On DEFER buffer", buffer, { audioCommand, transformerManager} )
+        // wait till timing event = when the time is right, we trigger the events
+        audioCommandQueue.push(audioCommand)
+        console.error("Note On DEFER buffer", audioCommandQueue, { audioCommand, transformerManager} )
     }else{
         // dispatch NOW!
-        // then when the time is right, we trigger the events
-        const transformed:AudioCommandInterface[] = transformerManager.transform([audioCommand])
-        const events = convertAudioCommandsToAudioEvents( transformed )
-        const triggers = triggerAudioCommandsOnDevice(events)
-        console.error("Note ON NOW", {audioCommand, transformed, events, triggers})
+        const triggers = exeecuteAudioCommands([audioCommand])
+        console.error("Note ON NOW", {audioCommand, triggers})
     }
-
-    /*
-       
-    let notes:Array<NoteModel>
-
-    // create some chords from this root node
-    if ( state && state.get("useChords") ){
-        const chord = createChord( ALL_KEYBOARD_NOTES, intervalFormula, noteModel.noteNumber, 0, NOTES_IN_CHORDS, true, true )
-        const chordNotes = chord.map( (c:NoteModel) => c.number)
-        const intervals = convertToIntervalArray( chordNotes )
-        notes = chord
-        console.log("Root", noteModel.noteNumber)
-        console.log("Chord",noteModel, chord, chordNotes)
-        console.log("Intervals?", intervals, intervalFormula)
-        console.log("Chord Ionian",noteModel, MODES.createIonianChord( ALL_KEYBOARD_NOTES, noteModel.noteNumber, 0, 3 ) )
-    }else{
-        notes = [noteModel]
-    }
-   
-    // play all activated notes
-    notes.forEach( noteModel => noteOn( noteModel, fromDevice ))
-    console.info("onNoteOnRequestedFromKeyboard, Microtonal Pitch", noteModel, mictrotonalPitches.freqs[noteModel.noteNumber])
-    */
 }
 
 /**
@@ -369,49 +385,12 @@ const onNoteOffRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=O
 
     if ( transformerManager.isQuantised )    
     {
-        buffer.push(audioCommand)
+        audioCommandQueue.push(audioCommand)
         console.info("AudioCommand created - waiting for next tick", audioCommand )
     }else{
-        const transformed:AudioCommandInterface[] = transformerManager.transform([audioCommand])
-        const events = convertAudioCommandsToAudioEvents( transformed )
-        const triggers = triggerAudioCommandsOnDevice(events)
-        console.info("AudioCommand triggered immediately", {audioCommand, transformerManager, events, triggers} )
+        const triggers = exeecuteAudioCommands([audioCommand])
+        console.info("AudioCommand triggered immediately", {audioCommand, transformerManager, triggers} )
     }
-
-    /*
-    let notes:Array<NoteModel>
-
-    if ( state && state.get("useChords") ){
-    // FIXME: replace zero with findRotation. -1 if is outside of the scale.
-        const chord = createChord( ALL_KEYBOARD_NOTES, intervalFormula, noteModel.noteNumber, 0, NOTES_IN_CHORDS, true, true )
-        const chordNotes = chord.map( (c:NoteModel) => c.number)
-        const intervals = convertToIntervalArray( chordNotes )
-        notes = chord
-        console.log("Root", noteModel.noteNumber)
-        console.log("Chord",noteModel, chord, chordNotes)
-        console.log("Intervals?", intervals, intervalFormula)
-        console.log("Chord Ionian",noteModel, MODES.createIonianChord( ALL_KEYBOARD_NOTES, noteModel.noteNumber, 0, 3 ) )
-    }else{
-        notes = [noteModel]
-    }
-
-    // play all activated notes
-    notes.forEach( noteModel => noteOff( noteModel, fromDevice ))
-    */
-}
-
-const executeQueueAndClear = (queue:AudioCommand[]) => {
-
-    // act on all data in the buffer...
-    queue.forEach( (audioCommand:AudioCommand, index:number) => {
-        const transformed:AudioCommandInterface[] = transformerManager.transform([audioCommand])
-        const events = convertAudioCommandsToAudioEvents( transformed )
-        const triggers = triggerAudioCommandsOnDevice(events)
-        console.info("AudioCommand triggered in time domain", {audioCommand, transformerManager, events, triggers, timer} )
-    })
-
-    // TODO: clear entire buffer
-    queue.length = 0
 }
 
 /**
@@ -428,57 +407,33 @@ const onTick = (values) => {
         elapsed, expected, drift, level, intervals, lag
     } = values
 
-    // Loop through all commands and see if they are ready to action yet
-//    const updates = midiCommandRequests.map( (command, index) => {
-//         const ready = command.update()
-//         return ready
-//     })
-
     ui.updateClock( values )
 
-    // If bar is at zero point we check to see if the buffer
-    // needs to be reset....
-    // if ( divisionsElapsed===0 ){
-    //     // ui.noteOn( )
-    //     currentRecordingMeasure++
-
-    //     if (currentRecordingMeasure > BARS_TO_RECORD)
-    //     {
-    //         currentRecordingMeasure = 0
-    //         timeLastBarBegan = timer.now
-    //         onRecordingMusicalEventsLoopBegin([...buffer])
-    //         buffer = []
-    //         // console.info("TICK:BUFFER RESET", values )
-    //     }else{
-    //         // console.info("TICK:IGNORE")
-    //     }
-    // }else{
-    //     //  console.info("TICK:", {bar, divisionsElapsed})
-    // }
-
-
     // We have got quantised data so let's run the transformers
-    // 
-   
-    if ( transformerManager.isQuantised && buffer.length > 0 )
+    if ( transformerManager.isQuantised )
     {
-        // then when the time is right, we trigger the events
-        //const transformed = transformerManager.transform(audioCommand)
-       
-        if (divisionsElapsed % transformerManager.quantiseFidelity === 0)
+        // when the time is right, we trigger the events
+        // const transformed = transformerManager.transform(audioCommand)
+        const gridSize = transformerManager.quantiseFidelity
+        if ((pausedQueue === 0) && (divisionsElapsed % gridSize) === 0)
         {
-            console.info("TICK:QUANTISED", {divisionsElapsed, quantisationFidelity:transformerManager.quantiseFidelity})
-            executeQueueAndClear(buffer)
+            audioCommandQueue = executeQueueAndClearComplete(audioCommandQueue)
+            // if grid is set to true in options, we can only ever play one
+            // note at a time on this grid point
+            pausedQueue = state && state.get("grid") ? gridSize - 1 : 0
+            console.info( pausedQueue, "TICK:QUANTISED", {buffer: audioCommandQueue, divisionsElapsed, quantisationFidelity:transformerManager.quantiseFidelity})
         }else{
-            console.info("TICK:IGNORED", {divisionsElapsed, quantisationFidelity:transformerManager.quantiseFidelity})
+            // reset duplicator
+            pausedQueue = Math.max( 0, pausedQueue - 1 )
+            console.info( pausedQueue, "TICK:IGNORED", {buffer: audioCommandQueue, divisionsElapsed, quantisationFidelity:transformerManager.quantiseFidelity})
         }
 
     }else{
+
+        // there shouldn't be anything in the buffer, but flush it to be safe
+        audioCommandQueue = executeQueueAndClearComplete(audioCommandQueue)  
         // console.error("Metronome ignored as no events to trigger")
     }
-
-
-
 
     // let hasUpdates = false
     // // check to see if any events have happened since
@@ -510,7 +465,6 @@ const onTick = (values) => {
     // }
 }
 
-
 /**
  * Disconnect BLE device and clean up
  */
@@ -525,7 +479,6 @@ const disconnectBluetoothDevice = async () => {
             console.warn('[BLE] Error unsubscribing from characteristic:', err)
         }
     }
-    bluetoothWatchUnsubscribes = []
     
     // Disconnect the GATT server
     if (bluetoothDevice) {
@@ -533,6 +486,7 @@ const disconnectBluetoothDevice = async () => {
     }
     
     // Clear references
+    bluetoothWatchUnsubscribes = []
     bluetoothMIDICharacteristic = undefined as any
     bluetoothDevice = null
     
@@ -660,9 +614,15 @@ const toggleWebMIDI = async () => {
 const onAudioContextAvailable = async (event) => {
 
     audioContext = new AudioContext() 
+
+    const mixer:GainNode = audioContext.createGain()
+    mixer.gain.value = 0.5
+    mixer.connect(audioContext.destination)
+
     synth = new PolySynth( audioContext )
     // synth = new SynthOscillator( audioContext )
-    synth.output.connect( audioContext.destination )
+
+    synth.output.connect( mixer )
     // synth.addTremolo(0.5)
 
     // this handles the audio timing
@@ -672,6 +632,9 @@ const onAudioContextAvailable = async (event) => {
     ui = new UI( ALL_KEYBOARD_NOTES, onNoteOnRequestedFromKeyboard, onNoteOffRequestedFromKeyboard )
     ui.setTempo( timer.BPM )
     ui.whenTempoChangesRun( (tempo:number) => timer.BPM = tempo )
+    ui.whenVolumeChangesRun((volume:number) => {
+        mixer.gain.value = (volume / 100) * 0.5
+    })
     ui.whenBluetoothDeviceRequested( handleBluetoothConnect ) 
     ui.whenWebMIDIToggled(toggleWebMIDI)
     ui.whenMIDIChannelSelected((channel:number) => {
@@ -695,11 +658,6 @@ const onAudioContextAvailable = async (event) => {
     //     // otherwise any currently active notes may stick fprever
 
     //     intervalFormula = INTERVALS.MODAL_SCALES[TUNING_MODE_NAMES.indexOf(scaleNName) ]
-    // })
-
-    // ui.whenNewRootIsSelected( (root: number, select: HTMLElement) => {
-    //     console.log("New root selected:", root)
-    //     rootNote = root
     // })
 
     ui.onDoubleClick( () => {
@@ -793,7 +751,6 @@ const onAudioContextAvailable = async (event) => {
     // Hackday hack!
     transformerManager = new TransformerManager()
     window.transformerManager = transformerManager
-
     createGraph('#graph')
 
     // start the clock going
@@ -802,7 +759,6 @@ const onAudioContextAvailable = async (event) => {
 
 const sendMIDINoteToAllDevices = (fromDevice:String, noteModel:NoteModel , action="noteOn", velocity=1) => {
     MIDIDevices.forEach( device => {
-
         if ( device.id !== fromDevice )
         {
             device[action]( noteModel, audioContext.currentTime, velocity) 
