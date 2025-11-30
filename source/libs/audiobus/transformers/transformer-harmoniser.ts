@@ -85,6 +85,7 @@ export class TransformerHarmoniser extends Transformer<Config>{
     }
 
     transform(commands:AudioCommandInterface[], timer:Timer ):AudioCommandInterface[] {
+
         if (commands.length === 0) {
             return commands
         }

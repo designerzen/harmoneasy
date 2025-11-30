@@ -90,6 +90,7 @@ export class TransformerNoteRepeater extends Transformer<Config> {
     }
 
     transform(commands: AudioCommandInterface[], timer:Timer ): AudioCommandInterface[] {
+
         if (!this.config.enabled || commands.length === 0) {
             return commands
         }

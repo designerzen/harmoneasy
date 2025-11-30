@@ -8,21 +8,19 @@ import { IdentityTransformer } from "./id-transformer.ts"
 import { TransformerHarmoniser } from "./transformer-harmoniser.ts"
 import { TransformerTransposer } from "./transformer-transposer.ts"
 import { ID_QUANTISE, TransformerQuantise } from "./transformer-quantise.ts"
-import type { TransformerInterface } from "./trqansformer-interface.ts"
-import type Timer from "../timing/timer.ts"
-
-export const EVENT_TRANSFORMERS_UPDATED = "transformersHaveBeenUpdated"
 
 type Callback = () => void
 
-export class TransformerManager extends EventTarget implements TransformerInterface {
+export class TransformerManager {
      
     public name: string = 'TransformerManager'
-   
+    public timer: any = null // Reference to AudioTimer for BPM-synced transformers
+
     private transformers: Array<Transformer> = [
         new IdentityTransformer({}),
         new TransformerTransposer(),
-        new TransformerHarmoniser()
+        new TransformerHarmoniser(),
+        new TransformerRandomiser()
     ]
 
     private transformersMap:Map<string, Transformer> = new Map()
@@ -35,13 +33,12 @@ export class TransformerManager extends EventTarget implements TransformerInterf
     get quantiseTransformer():TransformerQuantise|undefined{
         return this.transformersMap.get(ID_QUANTISE) as TransformerQuantise
     }
-  
+
     get quantiseFidelity():number{
         return this.quantiseTransformer?.options.step ?? 0
     }
   
     constructor(initialTransformers?: Array<Transformer>) {
-        super()
         this.setTransformers([ ...this.transformers, ...(initialTransformers??[]) ])     
     }
     
@@ -97,6 +94,7 @@ export class TransformerManager extends EventTarget implements TransformerInterf
     }
 
     getStructure() {
+        
         // Calculate positions with better spacing and centering
         const HORIZONTAL_SPACING = 250
         const NODE_HEIGHT = 100
@@ -164,14 +162,14 @@ export class TransformerManager extends EventTarget implements TransformerInterf
 
 
     /**
-     * INTERFACE : 
+     * INTERFACE :
      * Advance through every single registered transformer and pass the
-     * command 
-     * @param command 
+     * command
+     * @param command
      * @returns AudioCommandInterface
      */
-    transform(command: AudioCommandInterface[], timer:Timer ) {
-       return this.transformers.reduce((v, t) => t.transform(v, timer), command)
+    transform(command: AudioCommandInterface[]) {
+       return this.transformers.reduce((v, t) => t.transform(v), command)
     }
 
     onChange(fn: () => void) {

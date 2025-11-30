@@ -11,14 +11,14 @@ type ArpPattern = 'up' | 'down' | 'up-down' | 'down-up' | 'random' | 'chord'
 interface Config {
     enabled: boolean
     pattern: ArpPattern
-    rate: number // milliseconds between notes
+    rate: string // Note division: '1/4', '1/8', '1/16', '1/32', or 'triplet'
     octaves: number // how many octaves to span (1-4)
 }
 
 const DEFAULT_OPTIONS: Config = {
     enabled: true,
     pattern: 'up',
-    rate: 125, // 125ms = 16th notes at 120 BPM
+    rate: '1/16', // 16th notes
     octaves: 1
 }
 
@@ -93,11 +93,11 @@ export class TransformerArpeggiator extends Transformer<Config> {
                 name: 'rate',
                 type: 'select',
                 values: [
-                    { name: '1/4', value: 500 },
-                    { name: '1/8', value: 250 },
-                    { name: '1/16', value: 125 },
-                    { name: '1/32', value: 62.5 },
-                    { name: 'Triplet', value: 166.67 }
+                    { name: '1/4', value: '1/4' },
+                    { name: '1/8', value: '1/8' },
+                    { name: '1/16', value: '1/16' },
+                    { name: '1/32', value: '1/32' },
+                    { name: 'Triplet', value: 'triplet' }
                 ]
             },
             {
@@ -112,11 +112,38 @@ export class TransformerArpeggiator extends Transformer<Config> {
         super({ ...DEFAULT_OPTIONS, ...config })
     }
 
-    transform(commands: AudioCommandInterface[], timer:Timer ): AudioCommandInterface[] {
+    /**
+     * Calculate delay in milliseconds based on note division and BPM
+     */
+    private calculateDelayMs(rate: string, bpm: number): number {
+        // Default to 120 BPM if not available
+        const tempo = bpm || 120
+        const beatDurationMs = (60 / tempo) * 1000 // Duration of one quarter note in ms
+
+        switch (rate) {
+            case '1/4':
+                return beatDurationMs
+            case '1/8':
+                return beatDurationMs / 2
+            case '1/16':
+                return beatDurationMs / 4
+            case '1/32':
+                return beatDurationMs / 8
+            case 'triplet':
+                return beatDurationMs / 3
+            default:
+                return beatDurationMs / 4 // Default to 16th notes
+        }
+    }
+
+    transform(commands: AudioCommandInterface[], timer: Timer): AudioCommandInterface[] {
+        const bpm = timer?.BPM || 120
+
         console.log('[ARPEGGIATOR] Transform called', {
             enabled: this.config.enabled,
             commandCount: commands.length,
-            config: this.config
+            config: this.config,
+            bpm
         })
 
         if (!this.config.enabled || commands.length === 0) {
@@ -204,11 +231,12 @@ export class TransformerArpeggiator extends Transformer<Config> {
 
             // Use the first command as the template for timing
             const templateCommand = noteOnCommands[0]
-            const arpeggio = this.generateArpeggio(templateCommand)
+            const arpeggio = this.generateArpeggio(templateCommand, bpm)
 
             console.log('[ARPEGGIATOR] Generated arpeggio', {
                 inputNotes: noteOnCommands.length,
-                outputCommands: arpeggio.length
+                outputCommands: arpeggio.length,
+                bpm
             })
 
             // Track which arpeggiated notes came from which original notes
@@ -240,9 +268,10 @@ export class TransformerArpeggiator extends Transformer<Config> {
             // Single note - check if there are already held notes to arpeggiate
             if (this.heldNotes.size > 1) {
                 console.log('[ARPEGGIATOR] Single note added to existing chord - generating arpeggio', {
-                    totalHeldNotes: this.heldNotes.size
+                    totalHeldNotes: this.heldNotes.size,
+                    bpm
                 })
-                const arpeggio = this.generateArpeggio(noteOnCommands[0])
+                const arpeggio = this.generateArpeggio(noteOnCommands[0], bpm)
 
                 // Track arpeggiated notes with timing
                 const arpeggiatedNotesData = arpeggio.map(cmd => ({
@@ -277,7 +306,7 @@ export class TransformerArpeggiator extends Transformer<Config> {
     /**
      * Generate arpeggiated note sequence from held notes
      */
-    private generateArpeggio(originalCommand: AudioCommandInterface): AudioCommandInterface[] {
+    private generateArpeggio(originalCommand: AudioCommandInterface, bpm: number): AudioCommandInterface[] {
         const baseNotes = Array.from(this.heldNotes).sort((a, b) => a - b)
 
         if (baseNotes.length === 0) {
@@ -298,15 +327,19 @@ export class TransformerArpeggiator extends Transformer<Config> {
         // Create delayed commands for each note in the sequence
         // Use the current time from the command as the base time
         const baseTime = originalCommand.time
+        const delayMs = this.calculateDelayMs(this.config.rate, bpm)
 
         const result = patternedSequence.map((noteNumber, index) => {
-            const delay = index * this.config.rate
+            const delay = index * delayMs
             const cmd = this.createCommand(originalCommand, noteNumber, delay, baseTime)
             console.log('[ARPEGGIATOR] Creating arpeggio note', {
                 index,
                 noteNumber,
                 delayMs: delay,
                 baseTime,
+                rate: this.config.rate,
+                bpm,
+                calculatedDelayMs: delayMs,
                 originalStartAt: originalCommand.startAt,
                 newStartAt: cmd.startAt,
                 originalTime: originalCommand.time
