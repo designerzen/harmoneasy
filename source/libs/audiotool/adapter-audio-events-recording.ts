@@ -12,86 +12,100 @@ const HARDCODED_PROJECT_URL =  "https://beta.audiotool.com/studio?project=fe8242
 const PAT_TOKEN = "at_pat_sFoMCeBSURZQA8YuWHWKYtpYviWgd4fCVCwPKqxnjmA"
 
 /**
- * 
- * @param recording 
+ *
+ * @param recording
  */
 export const createAudioToolProjectFromAudioEventRecording = async (recording:RecorderAudioEvent, timer:Timer ) => {
-    
-    // Take the timing
-    const BPM = timer.BPM
-    const data:AudioEvent[] = recording.exportData()
 
-    const client = await createAudiotoolClient({ token: PAT_TOKEN })
+    // Show export overlay
+    const overlay = document.getElementById('export-overlay')
+    if (overlay) {
+        overlay.style.display = 'flex'
+    }
 
-    // Create synced document
-    const nexus = await client.createSyncedDocument({
-        mode: "online",
-        project: HARDCODED_PROJECT_URL
-    })
+    try {
+        // Take the timing
+        const BPM = timer.BPM
+        const data:AudioEvent[] = recording.exportData()
 
-    await nexus.start()
-    
-    // create the neccessary instruments and note regions
-    await nexus.modify(t => {
-        t.entities.ofTypes("noteTrack", "mixerChannel").get().forEach(track => {
-            t.removeWithDependencies(track.id)
+        const client = await createAudiotoolClient({ token: PAT_TOKEN })
+
+        // Create synced document
+        const nexus = await client.createSyncedDocument({
+            mode: "online",
+            project: HARDCODED_PROJECT_URL
         })
 
-        const channel = t.create("mixerChannel", {})
+        await nexus.start()
 
-        // simplest instrument
-        const tonematrix = t.create("tonematrix", {})
+        // create the neccessary instruments and note regions
+        await nexus.modify(t => {
+            t.entities.ofTypes("noteTrack", "mixerChannel").get().forEach(track => {
+                t.removeWithDependencies(track.id)
+            })
 
-        t.create("desktopAudioCable", {
-            fromSocket: tonematrix.fields.audioOutput.location,
-            toSocket: channel.fields.audioInput.location
+            const channel = t.create("mixerChannel", {})
+
+            // simplest instrument
+            const tonematrix = t.create("tonematrix", {})
+
+            t.create("desktopAudioCable", {
+                fromSocket: tonematrix.fields.audioOutput.location,
+                toSocket: channel.fields.audioInput.location
+            })
+
+            // note track for channel
+            const track = t.create("noteTrack", {
+                player: tonematrix.location
+            })
+
+            const collection = t.create("noteCollection", {})
+
+            const duration = secondsToTicks(recording.duration, 120)
+
+            console.log('DURATION', duration)
+
+            const noteRegion = t.create("noteRegion", {
+                collection: collection.location,
+                track: track.location,
+                region: {
+                    positionTicks: 0,
+                    durationTicks: duration,
+                    displayName: "harmoneasy",
+                    loopDurationTicks: duration
+                }
+            })
+
+            data.forEach(command => {
+                switch( command.type )
+                {
+                    case NOTE_ON :
+                        const positionTicks = secondsToTicks(command.startAt, 120)
+                        const durationTicks =  secondsToTicks(command.duration, 120)
+
+                        t.create("note", {
+                            collection: collection.location,
+                            pitch: command.noteNumber,
+                            durationTicks,
+                            positionTicks
+                        })
+
+                        console.log("Adding event to AudiotTool", {positionTicks, durationTicks})
+                        break
+                }
+
+            })
+
+            collection
         })
-       
-        // note track for channel
-        const track = t.create("noteTrack", {
-            player: tonematrix.location
-        })
 
-        const collection = t.create("noteCollection", {})
+        const transaction = await nexus.createTransaction()
+        transaction.send()
 
-        const duration = secondsToTicks(recording.duration, 120)
-
-        console.log('DURATION', duration)
-
-        const noteRegion = t.create("noteRegion", {
-            collection: collection.location,
-            track: track.location,
-            region: {
-                positionTicks: 0,
-                durationTicks: duration,
-                displayName: "harmoneasy",
-                loopDurationTicks: duration
-            }
-        })
-
-        data.forEach(command => {
-            switch( command.type )
-            {
-                case NOTE_ON :
-                    const positionTicks = secondsToTicks(command.startAt, 120)
-                    const durationTicks =  secondsToTicks(command.duration, 120)
-                  
-                    t.create("note", {
-                        collection: collection.location,
-                        pitch: command.noteNumber,
-                        durationTicks,
-                        positionTicks
-                    })
-
-                    console.log("Adding event to AudiotTool", {positionTicks, durationTicks})
-                    break
-            }
-         
-        })
-
-        collection
-    })
-
-    const transaction = await nexus.createTransaction()
-    transaction.send()
+    } finally {
+        // Hide export overlay
+        if (overlay) {
+            overlay.style.display = 'none'
+        }
+    }
 }
