@@ -8,8 +8,8 @@ import type Timer from "../audiobus/timing/timer.js"
 import { NOTE_ON } from "../../commands.js"
 import { noteNumberToFrequency } from "../audiobus/note-model.js"
 
-const HARDCODED_PROJECT_URL =  "d8x95k99"
-const PAT_TOKEN = "at_pat_q3xW2Xt7iyeeQuFttBx3DcGuIRZOtsDO0JqJZCkVOq0"
+const HARDCODED_PROJECT_URL =  "https://beta.audiotool.com/studio?project=fe824261-7d93-4a75-95ec-3603d5891546"
+const PAT_TOKEN = "at_pat_sFoMCeBSURZQA8YuWHWKYtpYviWgd4fCVCwPKqxnjmA"
 
 /**
  * 
@@ -30,12 +30,24 @@ export const createAudioToolProjectFromAudioEventRecording = async (recording:Re
         mode: "online",
         project: HARDCODED_PROJECT_URL
     })
+
+    await nexus.start()
     
     // create the neccessary instruments and note regions
     await nexus.modify(t => {
+        t.entities.ofTypes("noteTrack", "mixerChannel").get().forEach(track => {
+            t.removeWithDependencies(track.id)
+        })
+
+        const channel = t.create("mixerChannel", {})
 
         // simplest instrument
         const tonematrix = t.create("tonematrix", {})
+
+        t.create("desktopAudioCable", {
+            fromSocket: tonematrix.fields.audioOutput.location,
+            toSocket: channel.fields.audioInput.location
+        })
        
         // note track for channel
         const track = t.create("noteTrack", {
@@ -44,13 +56,18 @@ export const createAudioToolProjectFromAudioEventRecording = async (recording:Re
 
         const collection = t.create("noteCollection", {})
 
+        const duration = secondsToTicks(recording.duration, 120)
+
+        console.log('DURATION', duration)
+
         const noteRegion = t.create("noteRegion", {
             collection: collection.location,
             track: track.location,
             region: {
                 positionTicks: 0,
-                durationTicks: Ticks.Beat * 4*10,
-                displayName: "my region"
+                durationTicks: Ticks.Beat * 4 * 10,
+                displayName: "harmoneasy",
+                loopDurationTicks: Ticks.Beat * 4 * 10
             }
         })
 
@@ -58,8 +75,8 @@ export const createAudioToolProjectFromAudioEventRecording = async (recording:Re
             switch( command.type )
             {
                 case NOTE_ON :
-                    const positionTicks = secondsToTicks(command.startAt / 1_000_000, 120)
-                    const durationTicks =  secondsToTicks(command.duration / 1_000_000, 120)
+                    const positionTicks = secondsToTicks(command.startAt, 120)
+                    const durationTicks =  secondsToTicks(command.duration, 120)
                   
                     t.create("note", {
                         collection: collection.location,

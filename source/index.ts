@@ -543,16 +543,16 @@ const onTick = (values) => {
             // if grid is set to true in options, we can only ever play one
             // note at a time on this grid point
             pausedQueue = state && state.get("grid") ? gridSize - 1 : 0
-            console.info( pausedQueue, "TICK:QUANTISED", {buffer: audioCommandQueue, divisionsElapsed, quantisationFidelity:transformerManager.quantiseFidelity})
+            // console.info( pausedQueue, "TICK:QUANTISED", {buffer: audioCommandQueue, divisionsElapsed, quantisationFidelity:transformerManager.quantiseFidelity})
         }else{
             // reset duplicator
             pausedQueue = Math.max( 0, pausedQueue - 1 )
-            console.info( pausedQueue, "TICK:IGNORED", {buffer: audioCommandQueue, divisionsElapsed, quantisationFidelity:transformerManager.quantiseFidelity})
+            // console.info( pausedQueue, "TICK:IGNORED", {buffer: audioCommandQueue, divisionsElapsed, quantisationFidelity:transformerManager.quantiseFidelity})
         }
     }else{
         // When not quantised, process queue immediately on every tick
         audioCommandQueue = executeQueueAndClearComplete(audioCommandQueue)
-        console.info("TICK:IMMEDIATE", {buffer: audioCommandQueue})
+        // console.info("TICK:IMMEDIATE", {buffer: audioCommandQueue})
     }
 
     // let hasUpdates = false
