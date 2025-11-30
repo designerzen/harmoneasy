@@ -84,17 +84,11 @@ export class TransformerHarmoniser extends Transformer<Config>{
         super( {...DEFAULT_OPTIONS, ...config} )
     }
 
-    transform(commands:AudioCommandInterface[], timer:Timer ):AudioCommandInterface[] {
-
-        if (commands.length === 0) {
-            return commands
-        }
-
+    private harmonizeNote(command: AudioCommandInterface) {
         // Get the first audio command to generate chord from
-        const firstCommand = commands[0]
 
         // Create note model from the first command's note number
-        const noteModel = new NoteModel(firstCommand.number)
+        const noteModel = new NoteModel(command.number)
 
         // Get interval formula based on the configured mode
         const intervalFormula = getIntervalFormulaForMode(this.config.mode)
@@ -121,16 +115,16 @@ export class TransformerHarmoniser extends Transformer<Config>{
         for (const chordNote of chord) {
             const newCommand = new AudioCommand()
             // Copy properties from the original command
-            newCommand.type = firstCommand.type
-            newCommand.subtype = firstCommand.subtype
-            newCommand.velocity = firstCommand.velocity
-            newCommand.startAt = firstCommand.startAt
-            newCommand.endAt = firstCommand.endAt
-            newCommand.value = firstCommand.value
-            newCommand.pitchBend = firstCommand.pitchBend
-            newCommand.time = firstCommand.time
-            newCommand.timeCode = firstCommand.timeCode
-            newCommand.text = firstCommand.text
+            newCommand.type = command.type
+            newCommand.subtype = command.subtype
+            newCommand.velocity = command.velocity
+            newCommand.startAt = command.startAt
+            newCommand.endAt = command.endAt
+            newCommand.value = command.value
+            newCommand.pitchBend = command.pitchBend
+            newCommand.time = command.time
+            newCommand.timeCode = command.timeCode
+            newCommand.text = command.text
 
             // Set the new note number from the chord
             newCommand.number = chordNote.number
@@ -140,5 +134,14 @@ export class TransformerHarmoniser extends Transformer<Config>{
 
         // Return the harmonised chord commands
         return harmonisedCommands
+    }
+
+    transform(commands:AudioCommandInterface[], timer:Timer ):AudioCommandInterface[] {
+
+        if (commands.length === 0) {
+            return commands
+        }
+
+        return commands.flatMap(c => this.harmonizeNote(c))
     }
 }
