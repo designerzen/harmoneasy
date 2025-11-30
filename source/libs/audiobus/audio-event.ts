@@ -13,7 +13,7 @@ export default class AudioEvent extends AudioCommand implements AudioCommandInte
 
 	get duration():number{
         // fallback to always having *some* duration
-		return this.endAt ? this.endAt - this.time : 100
+		return this.endAt ? this.endAt - this.time : 0.1
 	}
 
     constructor( audioCommand:AudioCommand, timer:Timer ) {
