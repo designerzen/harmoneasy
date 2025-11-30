@@ -15,4 +15,3 @@ export const PLAYBACK_STOP = 'playbackStop'
 export const NOTE_ON = 'noteOn'
 export const NOTE_OFF = 'noteOff'
 export const PITCH_BEND = 'pitchBend'
-

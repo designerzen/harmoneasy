@@ -5,6 +5,8 @@ import { STORAGE_KEYS } from '../audiotool/audio-tool-settings.js'
 import type AudioCommand from "../audiobus/audio-command.js"
 import type AudioEvent from "../audiobus/audio-event.js"
 import type Timer from "../audiobus/timing/timer.js"
+import { NOTE_ON } from "../../commands.js"
+import { noteNumberToFrequency } from "../audiobus/note-model.js"
 
 const HARDCODED_PROJECT_URL =  ""
 const PAT_TOKEN = "at_pat_q3xW2Xt7iyeeQuFttBx3DcGuIRZOtsDO0JqJZCkVOq0"
@@ -53,13 +55,23 @@ export const createAudioToolProjectFromAudioEventRecording = async (recording:Re
         })
 
         data.forEach(command => {
-            const positionTicks = secondsToTicks(command.startAt/1_000_000, 120)
-            t.create("note", {
-                collection: collection.location,
-                pitch: 1,
-                durationTicks: 0,
-                positionTicks
-            })
+            switch( command.type )
+            {
+                case NOTE_ON :
+                    const positionTicks = secondsToTicks(command.startAt / 1_000_000, 120)
+                    const durationTicks =  secondsToTicks(command.duration / 1_000_000, 120)
+                  
+                    t.create("note", {
+                        collection: collection.location,
+                        pitch: command.noteNumber,
+                        durationTicks,
+                        positionTicks
+                    })
+
+                    console.log("Adding event to AudiotTool", {positionTicks, durationTicks})
+                    break
+            }
+         
         })
     })
 

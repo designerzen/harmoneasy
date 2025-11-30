@@ -7,18 +7,19 @@
  */
 import type { AudioCommandInterface } from "./audio-command-interface.ts"
 import AudioCommand from "./audio-command.ts"
+import type Timer from "./timing/timer.ts"
 
 export default class AudioEvent extends AudioCommand implements AudioCommandInterface { 
 
 	get duration():number{
-		return this.endAt - this.startAt
+        // fallback to always having *some* duration
+		return this.endAt ? this.endAt - this.time : 100
 	}
 
     constructor( audioCommand:AudioCommand, timer:Timer ) {
         super()
         this.copyAllParametersFromCommand( audioCommand )
         this.trigger( timer.now )
-        console.info("AudioEvent Created", this)
     }
 
     /**

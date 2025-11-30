@@ -33,7 +33,7 @@ export class RecorderAudioEvent {
         {
             // find all note off events and find their assoc
             const event = allEvents[i]
-            console.info( "Event", event, {allEvents} )
+            // console.info( "Event", event, {allEvents} )
             switch( event.type )
             {
                 case NOTE_ON :
@@ -41,13 +41,26 @@ export class RecorderAudioEvent {
                     const hasNoteOn = currentlyPlaying.has( event.noteNumber )
                     if (hasNoteOn)
                     {
-                        const relatedCommand = currentlyPlaying.get( event.noteNumber )
-                        const duration:number = relatedCommand.startAt - event.startAt
-                        event.endAt = relatedCommand.startAt
-                        event.endAt = relatedCommand.startAt
-                        console.info("FOUND NOTE ON Reorganised data", event,event.duration, duration, { playing: currentlyPlaying })
+                        const noteOffCommand = currentlyPlaying.get( event.noteNumber )
+                        const duration:number = noteOffCommand.startAt - event.startAt
+
+                        // set the end at to the start at time of the note off
+                        event.endAt = noteOffCommand.startAt
+
+                        // and update the note offs
+                        // noteOffCommand.startAt = event.startAt
+                        // noteOffCommand.time = event.startAt
+                        noteOffCommand.endAt = noteOffCommand.startAt
+
+                        if (isNaN(duration))
+                        {
+                            console.info("BAD DURATION NOTE ON Reorganised data", event,event.duration, duration, { playing: currentlyPlaying })
+                        }else{
+                            // console.info("FOUND NOTE ON Reorganised data", event,event.duration, duration, { playing: currentlyPlaying })
+                        }
+
                     }else{
-                        console.info("ORPHAN NOTE ON Reorganised data", event, {playing: currentlyPlaying })
+                        // console.info("ORPHAN NOTE ON Reorganised data", event, {playing: currentlyPlaying })
                     }
 
                     currentlyPlaying.delete( event.noteNumber )
@@ -55,12 +68,12 @@ export class RecorderAudioEvent {
 
                 case NOTE_OFF :
                     currentlyPlaying.set( event.noteNumber, event )
-                    console.info("NOTE OFF Reorganised data", event, {playing: currentlyPlaying } )
+                    // console.info("NOTE OFF Reorganised data", event, {playing: currentlyPlaying } )
                     break
             }
            
         }
-
+        console.info("Note events", allEvents)
         return allEvents
     }
 }
