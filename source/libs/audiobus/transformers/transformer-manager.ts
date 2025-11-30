@@ -1,6 +1,6 @@
 /**
  * TRANSFORMER -----------------------------------------------
- * 
+ * GOBOTS IN DISGUISE
  */
 import type { AudioCommandInterface } from "../audio-command-interface.ts"
 import { Transformer } from "./abstract-transformer.ts"
@@ -11,7 +11,7 @@ import { ID_QUANTISE, TransformerQuantise } from "./transformer-quantise.ts"
 
 type Callback = () => void
 
-export class TransformerManager extends Transformer<{}> {
+export class TransformerManager {
      
     public name: string = 'TransformerManager'
    
@@ -37,18 +37,7 @@ export class TransformerManager extends Transformer<{}> {
     }
   
     constructor(initialTransformers?: Array<Transformer>) {
-        super({})
-        
-        if (this.transformers) {
-           this.setTransformers(this.transformers)
-        }
-         
-        // add any transformers set in the constructor
-        if (initialTransformers) {
-            initialTransformers.forEach( (transformer:Transformer) => {
-                this.addTransformer(transformer)
-            })
-        }
+        this.setTransformers([ ...this.transformers, ...(initialTransformers??[]) ])     
     }
     
     /**
@@ -82,30 +71,31 @@ export class TransformerManager extends Transformer<{}> {
         this.onChangeFns.forEach(t => t())
     }
 
-    getTransformer( id:string ): Transformer {
+    getTransformer( id:string ): Transformer|undefined {
         return this.transformersMap.get(id)
     }
-moveOneStepBefore(el: Transformer) {
-    const idx = this.transformers.indexOf(el);
-    if (idx <= 0) return; // already at the start or not found
 
-    const newList = [...this.transformers];
-    // swap el with the one before it
-    [newList[idx - 1], newList[idx]] = [newList[idx], newList[idx - 1]];
+    moveOneStepBefore(el: Transformer) {
+        const idx = this.transformers.indexOf(el)
+        if (idx <= 0) return // already at the start or not found
 
-    this.setTransformers(newList);
-}
+        const newList = [...this.transformers]
+        // swap el with the one before it
+        [newList[idx - 1], newList[idx]] = [newList[idx], newList[idx - 1]]
 
-moveOneStepAfter(el: Transformer) {
-    const idx = this.transformers.indexOf(el);
-    if (idx === -1 || idx >= this.transformers.length - 1) return; // end or not found
+        this.setTransformers(newList)
+    }
 
-    const newList = [...this.transformers];
-    // swap el with the one after it
-    [newList[idx + 1], newList[idx]] = [newList[idx], newList[idx + 1]];
+    moveOneStepAfter(el: Transformer) {
+        const idx = this.transformers.indexOf(el)
+        if (idx === -1 || idx >= this.transformers.length - 1) return // end or not found
 
-    this.setTransformers(newList);
-}
+        const newList = [...this.transformers]
+        // swap el with the one after it
+        [newList[idx + 1], newList[idx]] = [newList[idx], newList[idx + 1]]
+
+        this.setTransformers(newList)
+    }
 
     getTransformers(): Array<Transformer> {
         return this.transformers
