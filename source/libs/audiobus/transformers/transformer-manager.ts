@@ -8,10 +8,13 @@ import { IdentityTransformer } from "./id-transformer.ts"
 import { TransformerHarmoniser } from "./transformer-harmoniser.ts"
 import { TransformerTransposer } from "./transformer-transposer.ts"
 import { ID_QUANTISE, TransformerQuantise } from "./transformer-quantise.ts"
+import type { TransformerInterface } from "./trqansformer-interface.ts"
 
 type Callback = () => void
 
-export class TransformerManager {
+const EVENT_TRANSFORMERS_UPDATED = "EVENT_TRANSFORMERS_UPDATED"
+
+export class TransformerManager extends EventTarget implements TransformerInterface {
      
     public name: string = 'TransformerManager'
     public timer: any = null // Reference to AudioTimer for BPM-synced transformers
@@ -94,7 +97,7 @@ export class TransformerManager {
     }
 
     getStructure() {
-        
+
         // Calculate positions with better spacing and centering
         const HORIZONTAL_SPACING = 250
         const NODE_HEIGHT = 100
@@ -168,8 +171,8 @@ export class TransformerManager {
      * @param command
      * @returns AudioCommandInterface
      */
-    transform(command: AudioCommandInterface[]) {
-       return this.transformers.reduce((v, t) => t.transform(v), command)
+    transform(command: AudioCommandInterface[], timer:Timer ) {
+       return this.transformers.reduce((v, t) => t.transform(v, timer), command)
     }
 
     onChange(fn: () => void) {
