@@ -237,6 +237,14 @@ export default class Timer {
 	 * Get the current timing as a Microtempo 
 	 * @returns {Number} Microtempo
 	 */
+	get quarterNoteLength (){ 
+		return this.timePerBar * 0.25
+	}
+
+	/**
+	 * Get the current timing as a Microtempo 
+	 * @returns {Number} Microtempo
+	 */
 	get microTempo (){ 
 		return this.timePerBar * 0.001
 	}
