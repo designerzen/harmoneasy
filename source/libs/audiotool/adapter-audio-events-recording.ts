@@ -8,7 +8,7 @@ import type Timer from "../audiobus/timing/timer.js"
 import { NOTE_ON } from "../../commands.js"
 import { noteNumberToFrequency } from "../audiobus/note-model.js"
 
-const HARDCODED_PROJECT_URL =  ""
+const HARDCODED_PROJECT_URL =  "d8x95k99"
 const PAT_TOKEN = "at_pat_q3xW2Xt7iyeeQuFttBx3DcGuIRZOtsDO0JqJZCkVOq0"
 
 /**
@@ -73,6 +73,8 @@ export const createAudioToolProjectFromAudioEventRecording = async (recording:Re
             }
          
         })
+
+        collection
     })
 
     const transaction = await nexus.createTransaction()

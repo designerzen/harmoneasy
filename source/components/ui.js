@@ -16,6 +16,7 @@ const DOM_ID_VOLUME_OUTPUT = "volume-output"
 const DOM_ID_BUTTON_CONNECT_BLUETOOTH = "btn-connect-to-ble"
 const DOM_ID_BUTTON_TOGGLE_WEBMIDI = "btn-toggle-webmidi"
 const DOM_ID_BUTTON_EXPORT_AUDIOTOOL = "btn-audiotool-export"
+const DOM_ID_BUTTON_KILL_SWITCH = "btn-kill-switch"
 
 const DOM_ID_DIALOG_ERROR = "error-dialog"
 
@@ -43,6 +44,7 @@ export default class UI{
         this.elementBLEManualInput = document.getElementById('ble-manual-input')
         this.elementBLEManualSendButton = document.getElementById('btn-send-ble-manual')
         this.elementAudioToolExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_AUDIOTOOL)
+        this.elementButtonKillSwitch = document.getElementById(DOM_ID_BUTTON_KILL_SWITCH)
     
         this.elementErrorDialog = document.getElementById(DOM_ID_DIALOG_ERROR )
         
@@ -109,6 +111,17 @@ export default class UI{
     whenAudioToolExportRequested(callback){
         if (!this.elementAudioToolExportButton) return
         this.elementAudioToolExportButton.addEventListener('click', e => {
+            callback && callback()
+        })
+    }
+
+    /**
+     * Register a callback for when the kill switch (all notes off) button is clicked
+     * @param {Function} callback () => void
+     */
+    whenKillSwitchRequested(callback){
+        if (!this.elementButtonKillSwitch) return
+        this.elementButtonKillSwitch.addEventListener('click', e => {
             callback && callback()
         })
     }

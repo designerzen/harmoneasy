@@ -150,7 +150,9 @@ export class TransformerManager extends EventTarget implements TransformerInterf
 
         const newList = [...this.transformers]
         // swap el with the one before it
-        [newList[idx - 1], newList[idx]] = [newList[idx], newList[idx - 1]]
+        const temp = newList[idx - 1]
+        newList[idx - 1] = newList[idx]
+        newList[idx] = temp
 
         this.setTransformers(newList)
     }
@@ -161,7 +163,9 @@ export class TransformerManager extends EventTarget implements TransformerInterf
 
         const newList = [...this.transformers]
         // swap el with the one after it
-        [newList[idx + 1], newList[idx]] = [newList[idx], newList[idx + 1]]
+        const temp = newList[idx + 1]
+        newList[idx + 1] = newList[idx]
+        newList[idx] = temp
 
         this.setTransformers(newList)
     }

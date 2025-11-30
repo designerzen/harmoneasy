@@ -115,36 +115,51 @@ let pausedQueue:number = 0
  * MIDI Input received - delegate to classes
  * @param event 
  */
-const onMIDIEvent = ( event, activeMIDIDevice, connectedMIDIDevice, index ) => {    
+const onMIDIEvent = ( event, activeMIDIDevice, connectedMIDIDevice, index ) => {
     // Now test each "Requested Event" and facilitate
     // loop through our queue of requested events...
     // document.body.innerHTML+= `${event.note.name} <br>`
     const note = event.note
-    const { name, number, occtave, release } = note
+    const { number } = note
+    const deviceName = `${connectedMIDIDevice.manufacturer} ${connectedMIDIDevice.name}`
 
     switch(event.type)
     {
-        case "noteon":  
+        case "noteon":
             const alreadyPlaying = activeMIDIDevice.noteOn( note )
             // ui.addCommand( command )
             if (!alreadyPlaying)
             {
-                // here we add this note to the device map
-                console.info("MIDI NOTE ON Event!", alreadyPlaying, {note, event, activeMIDIDevice, connectedMIDIDevice, index} )    
+                // Route through the transformation/scheduling pipeline
+                const noteModel = new NoteModel( number )
+                onNoteOnRequestedFromKeyboard( noteModel, deviceName )
+                console.info("MIDI NOTE ON Event!", alreadyPlaying, {note, event, activeMIDIDevice, connectedMIDIDevice, index} )
             }else{
-                
-                console.info("IGNORE MIDI NOTE ON Event!", alreadyPlaying, {note, event, activeMIDIDevice, connectedMIDIDevice, index} )    
+                console.info("IGNORE MIDI NOTE ON Event!", alreadyPlaying, {note, event, activeMIDIDevice, connectedMIDIDevice, index} )
             }
-           
+
             break
 
         case "noteoff":
             console.info("MIDI NOTE OFF Event!", {event, activeMIDIDevice, connectedMIDIDevice, index} )
-            // find the 
-            // ui.removeCommand( command )
+            // Route through the transformation/scheduling pipeline
+            const noteModel = new NoteModel( number )
+            onNoteOffRequestedFromKeyboard( noteModel, deviceName )
             activeMIDIDevice.noteOff( note )
             break
-        
+
+        case "controlchange":
+            console.info("MIDI CC Event!", {
+                controller: event.controller.number,
+                value: event.value,
+                rawValue: event.rawValue,
+                event,
+                activeMIDIDevice,
+                connectedMIDIDevice,
+                index
+            })
+            break
+
         // TODO: Don't ignore stuff like pitch bend
     }
 }
@@ -156,8 +171,8 @@ const connectToMIDIDevice = ( connectedMIDIDevice, index:number ) => {
     const device = new MIDIDevice( `${connectedMIDIDevice.manufacturer} ${connectedMIDIDevice.name}` )
     connectedMIDIDevice.addListener("noteon", event => onMIDIEvent( event, device, connectedMIDIDevice, index ), {channels:ALL_MIDI_CHANNELS })
     connectedMIDIDevice.addListener("noteoff", event => onMIDIEvent( event, device, connectedMIDIDevice, index ), {channels:ALL_MIDI_CHANNELS })
-    // todo: pITCHBEND AND AFTERTOUCH
-    // connectedMIDIDevice.addListener("noteoff", event => onMIDIEvent( event, device, connectedMIDIDevice, index ), {channels:ALL_MIDI_CHANNELS })
+    connectedMIDIDevice.addListener("controlchange", event => onMIDIEvent( event, device, connectedMIDIDevice, index ), {channels:ALL_MIDI_CHANNELS })
+    // todo: PITCHBEND AND AFTERTOUCH
 
     ui.addDevice( connectedMIDIDevice, index )
 
@@ -290,12 +305,12 @@ export const noteOff = (noteModel:NoteModel, velocity:number=1, fromDevice:strin
     {
         synth.noteOff( noteModel )
     }
-    
+
     if (MIDIDevice.length > 0)
     {
         sendMIDINoteToAllDevices(fromDevice, noteModel, Commands.NOTE_OFF,  1)
     }
-        
+
     if (bluetoothMIDICharacteristic)
     {
         // Send actual note from keyboard to BLE MIDI device
@@ -304,32 +319,115 @@ export const noteOff = (noteModel:NoteModel, velocity:number=1, fromDevice:strin
                 console.log('Sent MIDI NOTE OFF to BLE device!', { note: noteModel.noteNumber, channel: selectedMIDIChannel, result } )
             })
             .catch( err => {
-                console.error('Failed to send MIDI NOTE OFF to BLE device!', { 
-                    note: noteModel.noteNumber, 
+                console.error('Failed to send MIDI NOTE OFF to BLE device!', {
+                    note: noteModel.noteNumber,
                     channel: selectedMIDIChannel,
                     error: err && err.message ? err.message : String(err),
                     device: bluetoothMIDICharacteristic
                 })
             })
 
-    } 
-    
-    console.log("Note OFF", noteModel, velocity, {now} )
-}   
+    }
 
-const exeecuteAudioCommands = (commands:AudioCommandInterface[], timing:Timer ):AudioEvent[] => {
-    const transformed:AudioCommandInterface[] = transformerManager.transform( commands, timing )
-    const events = convertAudioCommandsToAudioEvents( transformed )
-    recorder.addEvents( events )
-    return triggerAudioCommandsOnDevice(events)
+    console.log("Note OFF", noteModel, velocity, {now} )
+}
+
+/**
+ * Kill Switch - Send note off for all possible MIDI notes (0-127)
+ * This cleans up any stuck notes and simulates an "All Notes Off" command
+ */
+export const allNotesOff = async () => {
+    console.log("KILL SWITCH: Sending note off for all 128 MIDI notes")
+
+    // Clear the audio command queue of pending note commands
+    audioCommandQueue = audioCommandQueue.filter(cmd =>
+        cmd.type !== Commands.NOTE_ON && cmd.type !== Commands.NOTE_OFF
+    )
+
+    // Turn off all notes in the internal synth
+    if (synth)
+    {
+        // If the synth has an all notes off method, use it
+        // Otherwise, iterate through all possible notes
+        for (let noteNumber = 0; noteNumber < 128; noteNumber++)
+        {
+            const noteModel = new NoteModel(noteNumber)
+            synth.noteOff(noteModel)
+        }
+    }
+
+    // Turn off all actively tracked notes in all MIDI devices
+    MIDIDevices.forEach(device => {
+        // Clear active notes from the device's tracking
+        device.activeNotes.forEach((noteEvent: NoteModel) => {
+            const now = timer ? timer.now : audioContext.currentTime
+            device.noteOff(noteEvent, now)
+        })
+        // Also clear any scheduled commands
+        device.requestedCommands.clear()
+    })
+
+    // Send note off for all 128 MIDI notes to BLE device
+    if (bluetoothMIDICharacteristic)
+    {
+        console.log('Sending all notes off to BLE device on channel', selectedMIDIChannel)
+
+        // Method 1: Send MIDI CC#123 (All Notes Off) - standard MIDI command
+        try {
+            await sendBLEControlChange(
+                bluetoothMIDICharacteristic,
+                selectedMIDIChannel,
+                123,  // CC#123 = All Notes Off
+                0,
+                bluetoothPacketQueue
+            )
+            console.log('Sent CC#123 (All Notes Off) to BLE device')
+        } catch (err) {
+            console.error('Failed to send CC#123 to BLE device:', err)
+        }
+
+        // Method 2: Explicitly send note off for all 128 notes (belt and suspenders approach)
+        const noteOffPromises = []
+        for (let noteNumber = 0; noteNumber < 128; noteNumber++)
+        {
+            noteOffPromises.push(
+                sendBLENoteOff(
+                    bluetoothMIDICharacteristic,
+                    selectedMIDIChannel,
+                    noteNumber,
+                    0,
+                    bluetoothPacketQueue
+                ).catch(() => {
+                    // Don't log individual note errors to avoid console spam
+                    // Just silently continue
+                })
+            )
+        }
+
+        try {
+            await Promise.all(noteOffPromises)
+            console.log('Sent note off for all 128 notes to BLE device')
+        } catch (err) {
+            console.error('Error sending all notes off to BLE device:', err)
+        }
+    }
+
+    // Update UI to reflect all notes are off
+    for (let noteNumber = 0; noteNumber < 128; noteNumber++)
+    {
+        const noteModel = new NoteModel(noteNumber)
+        ui.noteOff(noteModel)
+    }
+
+    console.log("KILL SWITCH: Complete")
 }
 
 /**
  * Actions every single Command with a startAt set in the past
- * and returns the commands in order of creation that are in the 
- * future or not yet set to trigger 
+ * and returns the commands in order of creation that are in the
+ * future or not yet set to trigger
  * TODO: Add enabled / disabled
- * @param queue 
+ * @param queue
  */
 const executeQueueAndClearComplete = (queue:AudioCommand[]) => {
 
@@ -349,8 +447,11 @@ const executeQueueAndClearComplete = (queue:AudioCommand[]) => {
         const shouldTrigger = audioCommand.startAt <= now
         if (shouldTrigger)
         {
-            const triggers = exeecuteAudioCommands([audioCommand], timer)
-            // console.info("AudioCommand triggered in time domain", {audioCommand, transformerManager, triggers, timer} )
+            // Transformations already applied at input time, just execute
+            const events = convertAudioCommandsToAudioEvents( [audioCommand] )
+            recorder.addEvents( events )
+            const triggers = triggerAudioCommandsOnDevice(events)
+            // console.info("AudioCommand triggered in time domain", {audioCommand, triggers, timer} )
         }else{
             remainingCommands.push(audioCommand)
         }
@@ -361,39 +462,58 @@ const executeQueueAndClearComplete = (queue:AudioCommand[]) => {
 
 /**
  * EVEMT: Note On requested from onscreen keyboard / external keyboard
- * @param noteModel 
+ * @param noteModel
  */
 const onNoteOnRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=ONSCREEN_KEYBOARD_NAME ) => {
     const audioCommand:AudioCommand = createAudioCommand( Commands.NOTE_ON, noteModel, timer, fromDevice )
-    if ( transformerManager.isQuantised )
-    {
-        // wait till timing event = when the time is right, we trigger the events
-        audioCommandQueue.push(audioCommand)
-        console.error("Note On DEFER buffer", audioCommandQueue, { audioCommand, transformerManager} )
-    }else{
-        // dispatch NOW!
-        const triggers = exeecuteAudioCommands([audioCommand], timer)
-        console.error("Note ON NOW", {audioCommand, triggers})
-    }
+
+    // Apply transformations immediately when the command comes in
+    const transformedCommands:AudioCommandInterface[] = transformerManager.transform( [audioCommand], timer )
+
+    // Convert transformed commands to AudioCommand instances for the queue
+    const transformedAudioCommands = transformedCommands.map(cmd => {
+        const ac = new AudioCommand()
+        Object.assign(ac, cmd)
+        return ac
+    })
+
+    // Always use the queue for proper scheduling
+    audioCommandQueue.push(...transformedAudioCommands)
+    console.error("Note On queued (transformed)", audioCommandQueue, {
+        audioCommand,
+        transformedCommands: transformedAudioCommands,
+        transformerManager,
+        isQuantised: transformerManager.isQuantised
+    })
 }
 
 /**
  * EVENT : Note Off requested from onscreen keyboard / external keyboard
- * @param noteModel:NoteModel 
+ * @param noteModel:NoteModel
  */
 const onNoteOffRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=ONSCREEN_KEYBOARD_NAME) => {
 
     // create an AudioCommand for this NoteModel
     const audioCommand:AudioCommand = createAudioCommand( Commands.NOTE_OFF, noteModel, timer )
 
-    if ( transformerManager.isQuantised )    
-    {
-        audioCommandQueue.push(audioCommand)
-        console.info("AudioCommand created - waiting for next tick", audioCommand )
-    }else{
-        const triggers = exeecuteAudioCommands([audioCommand], timer)
-        console.info("AudioCommand triggered immediately", {audioCommand, transformerManager, triggers} )
-    }
+    // Apply transformations immediately when the command comes in
+    const transformedCommands:AudioCommandInterface[] = transformerManager.transform( [audioCommand], timer )
+
+    // Convert transformed commands to AudioCommand instances for the queue
+    const transformedAudioCommands = transformedCommands.map(cmd => {
+        const ac = new AudioCommand()
+        Object.assign(ac, cmd)
+        return ac
+    })
+
+    // Always use the queue for proper scheduling
+    audioCommandQueue.push(...transformedAudioCommands)
+    console.info("Note Off queued (transformed)", {
+        audioCommand,
+        transformedCommands: transformedAudioCommands,
+        transformerManager,
+        isQuantised: transformerManager.isQuantised
+    })
 }
 
 /**
@@ -412,11 +532,10 @@ const onTick = (values) => {
 
     ui.updateClock( values )
 
-    // We have got quantised data so let's run the transformers
+    // Always process the queue, with or without quantisation
     if ( transformerManager.isQuantised )
     {
-        // when the time is right, we trigger the events
-        // const transformed = transformerManager.transform(audioCommand)
+        // When quantised, only trigger events on the grid
         const gridSize = transformerManager.quantiseFidelity
         if ((pausedQueue === 0) && (divisionsElapsed % gridSize) === 0)
         {
@@ -430,12 +549,10 @@ const onTick = (values) => {
             pausedQueue = Math.max( 0, pausedQueue - 1 )
             console.info( pausedQueue, "TICK:IGNORED", {buffer: audioCommandQueue, divisionsElapsed, quantisationFidelity:transformerManager.quantiseFidelity})
         }
-
     }else{
-
-        // there shouldn't be anything in the buffer, but flush it to be safe
-        audioCommandQueue = executeQueueAndClearComplete(audioCommandQueue)  
-        // console.error("Metronome ignored as no events to trigger")
+        // When not quantised, process queue immediately on every tick
+        audioCommandQueue = executeQueueAndClearComplete(audioCommandQueue)
+        console.info("TICK:IMMEDIATE", {buffer: audioCommandQueue})
     }
 
     // let hasUpdates = false
@@ -655,6 +772,11 @@ const onAudioContextAvailable = async (event) => {
     ui.whenAudioToolExportRequested( async ()=>{
         const output = await createAudioToolProjectFromAudioEventRecording( recorder, timer )
         console.info("Exporting Data to AudioTool", {recorder, output })
+    })
+
+    ui.whenKillSwitchRequested( async ()=>{
+        console.log('[Kill Switch] All notes off requested')
+        await allNotesOff()
     })
 
     // Random timbre button

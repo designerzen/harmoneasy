@@ -8,6 +8,7 @@ import { TransformerNoteShortener } from "../../libs/audiobus/transformers/trans
 import { TransformerNoteRepeater } from "../../libs/audiobus/transformers/transformer-note-repeater";
 import { TransformerRandomiser } from "../../libs/audiobus/transformers/transformer-randomiser";
 import { TransformerTransposer } from "../../libs/audiobus/transformers/transformer-transposer";
+import { TransformerNoteDelay } from "../../libs/audiobus/transformers/transformer-note-delay";
 
 const tranformerFactory = (s: string) => {
     switch (s) {
@@ -16,6 +17,7 @@ const tranformerFactory = (s: string) => {
         case 'arpeggiator': return new TransformerArpeggiator()
         case 'note-shortener': return new TransformerNoteShortener()
         case 'note-repeater': return new TransformerNoteRepeater()
+        case 'note-delay': return new TransformerNoteDelay()
         case 'randomiser': return new TransformerRandomiser()
         case 'transposer': return new TransformerTransposer()
         default: return new IdentityTransformer({})
@@ -40,12 +42,12 @@ export function ConfigDrawer() {
     }
 
     return (<div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
-        <button onClick={onAdd('identity')}>Identity</button>
         <button onClick={onAdd('arpeggiator')}>Arpeggiator</button>
         <button onClick={onAdd('quantise')}>Quantise</button>
         <button onClick={onAdd('harmonise')}>Harmonise</button>
         <button onClick={onAdd('note-shortener')}>Note Shortener</button>
         <button onClick={onAdd('note-repeater')}>Note Repeater</button>
+        <button onClick={onAdd('note-delay')}>Note Delay</button>
         <button onClick={onAdd('randomiser')}>Randomiser</button>
         <button onClick={onAdd('transposer')}>Transposer</button>
 
