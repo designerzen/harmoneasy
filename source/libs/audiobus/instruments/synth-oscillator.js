@@ -178,7 +178,6 @@ export default class SynthOscillator{
     }
 
     get title(){
-
         return this.options.title ?? "SynthOscilltor"
     }
 
@@ -333,7 +332,7 @@ export default class SynthOscillator{
         // Decay to Sustain
         this.gainNode.gain.linearRampToValueAtTime( amplitudeSustain, startTime + this.options.attack + this.options.decay )
 
-        console.log( this.title, "noteon gain", this, {gain:this.gainNode})
+        // console.log( this.title, "noteon gain", this, {gain:this.gainNode})
 
 		// Shape the note
 		// this.filterNode.frequency.cancelScheduledValues(startTime)
@@ -402,10 +401,7 @@ export default class SynthOscillator{
             now
 
         // Use a longer minimum release time (e.g. 400ms)
-       const stopTime = extendNow + releaseDuration
-   
-       console.warn("noteOff - note too short?",  elapsed < this.options.minDuration, {now, extendNow, stopTime, elapsed} )
-
+        const stopTime = extendNow + releaseDuration
 
         // Cancel any scheduled gain changes and start from current value
         // const currentAmplitude = this.gainNode.gain.value
@@ -414,7 +410,7 @@ export default class SynthOscillator{
         // Use linear ramp for fade out
         this.gainNode.gain.linearRampToValueAtTime( SILENCE, extendNow + this.options.release )
         // this.gainNode.gain.setValueAtTime(currentAmplitude, now)
-console.log( this.title, "noteoff gain", this, {gain:this.gainNode})
+        
         // Apply filter fade out
         this.filterNode.frequency.cancelScheduledValues(extendNow)
         this.filterNode.frequency.linearRampToValueAtTime(this.options.filterCutOff, extendNow + this.options.filterRelease )

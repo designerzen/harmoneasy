@@ -1,16 +1,9 @@
 import type { AudioCommandInterface } from "../audio-command-interface"
+import type Timer from "../timing/timer"
+import type { FieldConfig, TransformerConfig, TransformerInterface } from "./trqansformer-interface"
 
-export interface TransformerConfig {
 
-}
-
-export interface FieldConfig {
-    name: string
-    type: string
-    values: Array<string | number | { name: string; value: string | number }>
-}
-
-export abstract class Transformer<Config = TransformerConfig> {
+export abstract class Transformer<Config = TransformerConfig> implements TransformerInterface {
     
     static ID:number = 0
 
@@ -40,7 +33,7 @@ export abstract class Transformer<Config = TransformerConfig> {
         }
     }
 
-    abstract transform(commands: AudioCommandInterface[]): AudioCommandInterface[]
+    abstract transform(commands: AudioCommandInterface[], timer:Timer ): AudioCommandInterface[]
 
     setConfig(c: string, val: unknown):void {
         this.config[c] = val

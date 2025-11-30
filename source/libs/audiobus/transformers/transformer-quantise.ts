@@ -1,4 +1,5 @@
 import type { AudioCommandInterface } from "../audio-command-interface";
+import type Timer from "../timing/timer";
 import { Transformer } from "./abstract-transformer"
 
 export const ID_QUANTISE = "quantise"
@@ -35,7 +36,7 @@ export class TransformerQuantise extends Transformer<{ step: number }>{
     }
 
     // Quanitisation is handles in onTick in index
-    transform(commands:AudioCommandInterface[]):AudioCommandInterface[] {
+    transform(commands:AudioCommandInterface[], timer:Timer ):AudioCommandInterface[] {
         return commands
     }
 }

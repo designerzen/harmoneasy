@@ -50,6 +50,7 @@ import { createGraph } from './components/transformers-graph.tsx'
 import AudioEvent from './libs/audiobus/audio-event.ts'
 import { RecorderAudioEvent } from './libs/audiobus/recorder-audio-event.ts'
 import { createReverbImpulseResponse } from './libs/audiobus/effects/reverb.ts'
+import type Timer from './libs/audiobus/timing/timer.ts'
 
 // import { AudioContext, BiquadFilterNode } from "standardized-audio-context"
 const ALL_MIDI_CHANNELS = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15, 16]
@@ -315,8 +316,8 @@ export const noteOff = (noteModel:NoteModel, velocity:number=1, fromDevice:strin
     console.log("Note OFF", noteModel, velocity, {now} )
 }   
 
-const exeecuteAudioCommands = (commands:AudioCommandInterface[]):AudioEvent[] => {
-    const transformed:AudioCommandInterface[] = transformerManager.transform( commands )
+const exeecuteAudioCommands = (commands:AudioCommandInterface[], timing:Timer ):AudioEvent[] => {
+    const transformed:AudioCommandInterface[] = transformerManager.transform( commands, timing )
     const events = convertAudioCommandsToAudioEvents( transformed )
     recorder.addEvents( events )
     return triggerAudioCommandsOnDevice(events)
@@ -347,7 +348,7 @@ const executeQueueAndClearComplete = (queue:AudioCommand[]) => {
         const shouldTrigger = audioCommand.startAt <= now
         if (shouldTrigger)
         {
-            const triggers = exeecuteAudioCommands([audioCommand])
+            const triggers = exeecuteAudioCommands([audioCommand], timer)
             // console.info("AudioCommand triggered in time domain", {audioCommand, transformerManager, triggers, timer} )
         }else{
             remainingCommands.push(audioCommand)
@@ -370,7 +371,7 @@ const onNoteOnRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=ON
         console.error("Note On DEFER buffer", audioCommandQueue, { audioCommand, transformerManager} )
     }else{
         // dispatch NOW!
-        const triggers = exeecuteAudioCommands([audioCommand])
+        const triggers = exeecuteAudioCommands([audioCommand], timer)
         console.error("Note ON NOW", {audioCommand, triggers})
     }
 }
@@ -389,7 +390,7 @@ const onNoteOffRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=O
         audioCommandQueue.push(audioCommand)
         console.info("AudioCommand created - waiting for next tick", audioCommand )
     }else{
-        const triggers = exeecuteAudioCommands([audioCommand])
+        const triggers = exeecuteAudioCommands([audioCommand], timer)
         console.info("AudioCommand triggered immediately", {audioCommand, transformerManager, triggers} )
     }
 }

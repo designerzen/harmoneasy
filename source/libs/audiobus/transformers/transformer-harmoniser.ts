@@ -16,6 +16,7 @@ import {
 } from "../tuning/intervals.js"
 import { TUNING_MODE_IONIAN } from "../tuning/scales.js";
 import { getIntervalFormulaForMode } from "../tuning/chords/modal-chords.js"
+import type Timer from "../timing/timer.js";
 
 export const ID_QUANTISE = "harmonise"
 
@@ -83,7 +84,7 @@ export class TransformerHarmoniser extends Transformer<Config>{
         super( {...DEFAULT_OPTIONS, ...config} )
     }
 
-    transform(commands:AudioCommandInterface[]):AudioCommandInterface[] {
+    transform(commands:AudioCommandInterface[], timer:Timer ):AudioCommandInterface[] {
         if (commands.length === 0) {
             return commands
         }

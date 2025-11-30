@@ -2,6 +2,7 @@ import type { AudioCommandInterface } from "../audio-command-interface"
 import { Transformer } from "./abstract-transformer"
 import AudioCommand from "../audio-command"
 import * as Commands from "../../../commands"
+import type Timer from "../timing/timer"
 
 export const ID_NOTE_REPEATER = "note-repeater"
 
@@ -88,7 +89,7 @@ export class TransformerNoteRepeater extends Transformer<Config> {
         super({ ...DEFAULT_OPTIONS, ...config })
     }
 
-    transform(commands: AudioCommandInterface[]): AudioCommandInterface[] {
+    transform(commands: AudioCommandInterface[], timer:Timer ): AudioCommandInterface[] {
         if (!this.config.enabled || commands.length === 0) {
             return commands
         }

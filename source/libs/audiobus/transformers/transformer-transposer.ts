@@ -12,6 +12,7 @@ import {
 
 import { TUNING_MODE_IONIAN } from "../tuning/scales.js"
 import { getIntervalFormulaForMode } from "../tuning/chords/modal-chords.js"
+import type Timer from "../timing/timer.js"
 
 export const ID_QUANTISE = "transposer"
 
@@ -74,11 +75,11 @@ export class TransformerTransposer extends Transformer<Config>{
         super( {...DEFAULT_OPTIONS, ...config} )
     }
 
-    transform(commands:AudioCommandInterface[]):AudioCommandInterface[] {
+    transform(commands:AudioCommandInterface[], timer:Timer ):AudioCommandInterface[] {
         const intervalFormula = getIntervalFormulaForMode(this.config.mode)
         const rootNote = this.config.root
 
-        console.log('ROOT NOTE', rootNote)
+        // console.log('ROOT NOTE', rootNote)
 
         // Create a set of all valid notes in the scale across all octaves
         const scaleNotes = this.generateScaleNotes(rootNote, intervalFormula)

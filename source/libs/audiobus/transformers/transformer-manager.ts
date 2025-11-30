@@ -8,10 +8,14 @@ import { IdentityTransformer } from "./id-transformer.ts"
 import { TransformerHarmoniser } from "./transformer-harmoniser.ts"
 import { TransformerTransposer } from "./transformer-transposer.ts"
 import { ID_QUANTISE, TransformerQuantise } from "./transformer-quantise.ts"
+import type { TransformerInterface } from "./trqansformer-interface.ts"
+import type Timer from "../timing/timer.ts"
+
+export const EVENT_TRANSFORMERS_UPDATED = "transformersHaveBeenUpdated"
 
 type Callback = () => void
 
-export class TransformerManager {
+export class TransformerManager extends EventTarget implements TransformerInterface {
      
     public name: string = 'TransformerManager'
    
@@ -37,6 +41,7 @@ export class TransformerManager {
     }
   
     constructor(initialTransformers?: Array<Transformer>) {
+        super()
         this.setTransformers([ ...this.transformers, ...(initialTransformers??[]) ])     
     }
     
@@ -48,6 +53,7 @@ export class TransformerManager {
         this.transformers.push(transformerToAdd)
         this.transformersMap.set(transformerToAdd.id, transformerToAdd)
         this.onChangeFns.forEach(t => t())
+        this.dispatchEvent( new CustomEvent(EVENT_TRANSFORMERS_UPDATED) )
     }
 
     /**
@@ -58,6 +64,7 @@ export class TransformerManager {
         this.transformers = this.transformers.filter(transformer => transformer !== transformerToRemove)
         this.transformersMap.delete(transformerToRemove.id)
         this.onChangeFns.forEach(t => t())
+        this.dispatchEvent( new CustomEvent(EVENT_TRANSFORMERS_UPDATED) )
     }
 
     /**
@@ -69,34 +76,22 @@ export class TransformerManager {
         this.transformersMap = new Map()
         this.transformers.forEach( (transformer:Transformer) => this.transformersMap.set(transformer.id, transformer) )
         this.onChangeFns.forEach(t => t())
+        this.dispatchEvent( new CustomEvent(EVENT_TRANSFORMERS_UPDATED) )
     }
 
+    /**
+     * 
+     * @param id 
+     * @returns 
+     */
     getTransformer( id:string ): Transformer|undefined {
         return this.transformersMap.get(id)
     }
 
-    moveOneStepBefore(el: Transformer) {
-        const idx = this.transformers.indexOf(el)
-        if (idx <= 0) return // already at the start or not found
-
-        const newList = [...this.transformers]
-        // swap el with the one before it
-        [newList[idx - 1], newList[idx]] = [newList[idx], newList[idx - 1]]
-
-        this.setTransformers(newList)
-    }
-
-    moveOneStepAfter(el: Transformer) {
-        const idx = this.transformers.indexOf(el)
-        if (idx === -1 || idx >= this.transformers.length - 1) return // end or not found
-
-        const newList = [...this.transformers]
-        // swap el with the one after it
-        [newList[idx + 1], newList[idx]] = [newList[idx], newList[idx + 1]]
-
-        this.setTransformers(newList)
-    }
-
+    /**
+     * 
+     * @returns 
+     */
     getTransformers(): Array<Transformer> {
         return this.transformers
     }
@@ -145,6 +140,29 @@ export class TransformerManager {
         return { nodes: [...nodes, ...alwaysNodes], edges: [...edges, ...alwaysEdges] }
     }
 
+    moveOneStepBefore(el: Transformer) {
+        const idx = this.transformers.indexOf(el)
+        if (idx <= 0) return // already at the start or not found
+
+        const newList = [...this.transformers]
+        // swap el with the one before it
+        [newList[idx - 1], newList[idx]] = [newList[idx], newList[idx - 1]]
+
+        this.setTransformers(newList)
+    }
+
+    moveOneStepAfter(el: Transformer) {
+        const idx = this.transformers.indexOf(el)
+        if (idx === -1 || idx >= this.transformers.length - 1) return // end or not found
+
+        const newList = [...this.transformers]
+        // swap el with the one after it
+        [newList[idx + 1], newList[idx]] = [newList[idx], newList[idx + 1]]
+
+        this.setTransformers(newList)
+    }
+
+
     /**
      * INTERFACE : 
      * Advance through every single registered transformer and pass the
@@ -152,11 +170,10 @@ export class TransformerManager {
      * @param command 
      * @returns AudioCommandInterface
      */
-    transform(command: AudioCommandInterface[]) {
-       return this.transformers.reduce((v, t) => t.transform(v), command)
+    transform(command: AudioCommandInterface[], timer:Timer ) {
+       return this.transformers.reduce((v, t) => t.transform(v, timer), command)
     }
 
-    
     onChange(fn: () => void) {
         this.onChangeFns.push(fn)
         return () => {

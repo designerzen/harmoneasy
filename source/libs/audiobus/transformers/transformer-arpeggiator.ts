@@ -2,6 +2,7 @@ import type { AudioCommandInterface } from "../audio-command-interface"
 import { Transformer } from "./abstract-transformer"
 import AudioCommand from "../audio-command"
 import * as Commands from "../../../commands"
+import type Timer from "../timing/timer"
 
 export const ID_ARPEGGIATOR = "arpeggiator"
 
@@ -111,7 +112,7 @@ export class TransformerArpeggiator extends Transformer<Config> {
         super({ ...DEFAULT_OPTIONS, ...config })
     }
 
-    transform(commands: AudioCommandInterface[]): AudioCommandInterface[] {
+    transform(commands: AudioCommandInterface[], timer:Timer ): AudioCommandInterface[] {
         console.log('[ARPEGGIATOR] Transform called', {
             enabled: this.config.enabled,
             commandCount: commands.length,

@@ -480,7 +480,7 @@ export default class Timer {
 
 		// console.error(type, "timer.processor loaded", { type, processor} ) 
 		// const wrklet = await import(type) 
-		const Worklet = await import("../timing/timing.audioworklet.js")
+		const Worklet = await import("./timing.audioworklet.js")
 		// set worker in global space
 		this.timingWorkHandler = new Worklet.default( audioContext )
 			
