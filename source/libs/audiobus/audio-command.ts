@@ -48,6 +48,7 @@ export default class AudioCommand implements AudioCommandInterface {
 	subtype:string
 
 	text:string
+	from:string
 	
 	constructor() {
 		this.id = AudioCommand.counter++
