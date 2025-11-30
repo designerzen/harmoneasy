@@ -9,6 +9,8 @@ import { TransformerHarmoniser } from "./transformer-harmoniser.ts"
 import { TransformerTransposer } from "./transformer-transposer.ts"
 import { ID_QUANTISE, TransformerQuantise } from "./transformer-quantise.ts"
 import type { TransformerInterface } from "./trqansformer-interface.ts"
+import { TransformerRandomiser } from "./transformer-randomiser.ts"
+import type Timer from "../timing/timer.ts"
 
 type Callback = () => void
 
@@ -42,6 +44,7 @@ export class TransformerManager extends EventTarget implements TransformerInterf
     }
   
     constructor(initialTransformers?: Array<Transformer>) {
+        super()
         this.setTransformers([ ...this.transformers, ...(initialTransformers??[]) ])     
     }
     
@@ -172,6 +175,7 @@ export class TransformerManager extends EventTarget implements TransformerInterf
      * @returns AudioCommandInterface
      */
     transform(command: AudioCommandInterface[], timer:Timer ) {
+        console.log('TRANSFORM', command)
        return this.transformers.reduce((v, t) => t.transform(v, timer), command)
     }
 

@@ -33,7 +33,7 @@ export abstract class Transformer<Config = TransformerConfig> implements Transfo
         }
     }
 
-    abstract transform(commands: AudioCommandInterface[]): AudioCommandInterface[]
+    abstract transform(commands: AudioCommandInterface[], timer: Timer): AudioCommandInterface[]
 
     setConfig(c: string, val: unknown):void {
         this.config[c] = val

@@ -1,14 +1,5 @@
 import type { AudioCommandInterface } from "../audio-command-interface"
 import { Transformer } from "./abstract-transformer"
-import {
-    IONIAN_INTERVALS,
-    DORIAN_INTERVALS,
-    PHRYGIAN_INTERVALS,
-    LYDIAN_INTERVALS,
-    MIXOLYDIAN_INTERVALS,
-    AEOLIAN_INTERVALS,
-    LOCRIAN_INTERVALS
-} from "../tuning/intervals.js"
 
 import { TUNING_MODE_IONIAN } from "../tuning/scales.js"
 import { getIntervalFormulaForMode } from "../tuning/chords/modal-chords.js"
