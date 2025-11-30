@@ -1,7 +1,7 @@
 import { NOTE_OFF, NOTE_ON } from "../../commands.ts"
 import AudioEvent from "./audio-event.ts"
 
-const GAP = 0
+const GAP = 0.5
     
 export class RecorderAudioEvent {
 

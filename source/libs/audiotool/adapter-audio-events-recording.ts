@@ -63,9 +63,9 @@ export const createAudioToolProjectFromAudioEventRecording = async (recording:Re
             track: track.location,
             region: {
                 positionTicks: 0,
-                durationTicks: Ticks.Beat * 4 * 10,
+                durationTicks: duration,
                 displayName: "harmoneasy",
-                loopDurationTicks: Ticks.Beat * 4 * 10
+                loopDurationTicks: duration
             }
         })
 
