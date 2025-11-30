@@ -8,17 +8,20 @@ import { IdentityTransformer } from "./id-transformer.ts"
 import { TransformerHarmoniser } from "./transformer-harmoniser.ts"
 import { TransformerTransposer } from "./transformer-transposer.ts"
 import { ID_QUANTISE, TransformerQuantise } from "./transformer-quantise.ts"
+import { TransformerRandomiser } from "./transformer-randomiser.ts"
 
 type Callback = () => void
 
 export class TransformerManager {
-     
+
     public name: string = 'TransformerManager'
-   
+    public timer: any = null // Reference to AudioTimer for BPM-synced transformers
+
     private transformers: Array<Transformer> = [
         new IdentityTransformer({}),
         new TransformerTransposer(),
-        new TransformerHarmoniser()
+        new TransformerHarmoniser(),
+        new TransformerRandomiser()
     ]
 
     private transformersMap:Map<string, Transformer> = new Map()
@@ -31,13 +34,14 @@ export class TransformerManager {
     get quantiseTransformer():TransformerQuantise|undefined{
         return this.transformersMap.get(ID_QUANTISE) as TransformerQuantise
     }
-  
+
     get quantiseFidelity():number{
         return this.quantiseTransformer?.options.step ?? 0
     }
-  
-    constructor(initialTransformers?: Array<Transformer>) {
-        this.setTransformers([ ...this.transformers, ...(initialTransformers??[]) ])     
+
+    constructor(initialTransformers?: Array<Transformer>, timer?: any) {
+        this.timer = timer
+        this.setTransformers([ ...this.transformers, ...(initialTransformers??[]) ])
     }
     
     /**
@@ -146,14 +150,14 @@ export class TransformerManager {
     }
 
     /**
-     * INTERFACE : 
+     * INTERFACE :
      * Advance through every single registered transformer and pass the
-     * command 
-     * @param command 
+     * command
+     * @param command
      * @returns AudioCommandInterface
      */
     transform(command: AudioCommandInterface[]) {
-       return this.transformers.reduce((v, t) => t.transform(v), command)
+       return this.transformers.reduce((v, t) => t.transform(v, this.timer), command)
     }
 
     

@@ -35,7 +35,7 @@ export class TransformerQuantise extends Transformer<{ step: number }>{
     }
 
     // Quanitisation is handles in onTick in index
-    transform(commands:AudioCommandInterface[]):AudioCommandInterface[] {
+    transform(commands:AudioCommandInterface[], timer?: any):AudioCommandInterface[] {
         return commands
     }
 }

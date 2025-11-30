@@ -81,6 +81,13 @@ let audioCommandQueue:AudioCommand[] = []
 const recorder:RecorderAudioEvent = new RecorderAudioEvent()
 let currentRecordingMeasure = 0
 
+// Scheduled commands buffer for arpeggiator and other time-delayed events
+interface ScheduledCommand {
+    command: AudioCommandInterface
+    executeAt: number // absolute time in audio context
+}
+let scheduledCommandsBuffer: ScheduledCommand[] = []
+
 const BARS_TO_RECORD = 1
 const NOTES_IN_CHORDS = 3 // -1
 
@@ -211,23 +218,135 @@ const convertAudioCommandsToAudioEvents = ( commands:AudioCommandInterface[] ):A
     return (commands ?? []).map( (command:AudioCommandInterface) => new AudioEvent( command, timer ))
 }
 
+const executeCommandNow = (command: AudioCommandInterface) => {
+    switch(command.type)
+    {
+        case Commands.NOTE_ON:
+            const velocity = command.velocity || 100
+            console.warn("[TRIGGER] NOTE ON NOW", {
+                noteNumber: command.number,
+                velocity,
+                commandVelocity: command.velocity,
+                time: timer.now
+            })
+            noteOn( new NoteModel( command.number ), velocity / 127, ONSCREEN_KEYBOARD_NAME )
+            break
+
+        case Commands.NOTE_OFF:
+            console.warn("[TRIGGER] NOTE OFF NOW", {
+                noteNumber: command.number,
+                scheduledBufferSize: scheduledCommandsBuffer.length
+            })
+
+            // Cancel any future scheduled NOTE_ON commands for this note
+            const beforeCancel = scheduledCommandsBuffer.length
+            const canceledCommands: any[] = []
+
+            scheduledCommandsBuffer = scheduledCommandsBuffer.filter(scheduled => {
+                const shouldCancel = scheduled.command.type === Commands.NOTE_ON &&
+                                   scheduled.command.number === command.number
+                if (shouldCancel) {
+                    canceledCommands.push({
+                        noteNumber: scheduled.command.number,
+                        executeAt: scheduled.executeAt,
+                        currentTime: timer.now,
+                        wasInFuture: scheduled.executeAt > timer.now
+                    })
+                }
+                return !shouldCancel
+            })
+
+            const canceledCount = beforeCancel - scheduledCommandsBuffer.length
+
+            if (canceledCount > 0) {
+                console.warn("[TRIGGER] Canceled scheduled NOTE_ON", {
+                    noteNumber: command.number,
+                    canceledCount,
+                    canceledCommands,
+                    remainingBufferSize: scheduledCommandsBuffer.length
+                })
+            }
+
+            // Always send NOTE_OFF to synth to stop any playing notes
+            noteOff( new NoteModel( command.number ) )
+            break
+
+        default:
+            console.error("UNKNOWN Audio Command", command.type, Commands )
+    }
+}
+
 const triggerAudioCommandsOnDevice = ( commands:AudioCommandInterface[] ) => {
+    const currentTime = timer.now
+
+    console.warn("[TRIGGER] Processing commands", {
+        commandCount: commands.length,
+        currentTime,
+        scheduledBufferSize: scheduledCommandsBuffer.length,
+        commands: commands.map(c => ({
+            type: c.type,
+            number: c.number,
+            time: c.time,
+            startAt: c.startAt
+        }))
+    })
+
     commands.forEach( command => {
+        // If command has a startAt time in the future, schedule it
+        // Allow small tolerance for timing jitter (50ms in the past is ok)
+        const PAST_TOLERANCE = 0.05 // 50ms
 
-        switch(command.type)
-        {
-            case Commands.NOTE_ON:  
-                console.warn("Executing Audio Command: NOTE ON", command )
-                noteOn( new NoteModel( command.number ) )
-                break
-            
-            case Commands.NOTE_OFF:
-                console.warn("Executing Audio Command: NOTE OFF", command )
-                noteOff( new NoteModel( command.number ) )
-                break
+        if (command.startAt && command.startAt > (currentTime - PAST_TOLERANCE)) {
+            if (command.startAt > currentTime) {
+                // Check for duplicate scheduling
+                const alreadyScheduled = scheduledCommandsBuffer.some(scheduled =>
+                    scheduled.command.type === command.type &&
+                    scheduled.command.number === command.number &&
+                    Math.abs(scheduled.executeAt - command.startAt) < 0.001 // Within 1ms
+                )
 
-            default:
-                console.error("UNKNOWN Audio Command", command.type, Commands )
+                if (alreadyScheduled) {
+                    console.warn("[TRIGGER] SKIPPING duplicate schedule", {
+                        type: command.type,
+                        noteNumber: command.number,
+                        startAt: command.startAt
+                    })
+                } else {
+                    // Schedule for future
+                    console.warn("[TRIGGER] SCHEDULING for later", {
+                        type: command.type,
+                        noteNumber: command.number,
+                        currentTime,
+                        startAt: command.startAt,
+                        delay: command.startAt - currentTime,
+                        bufferSize: scheduledCommandsBuffer.length
+                    })
+                    scheduledCommandsBuffer.push({
+                        command,
+                        executeAt: command.startAt
+                    })
+                }
+            } else {
+                // Within tolerance window - execute immediately
+                console.warn("[TRIGGER] EXECUTING immediately (within tolerance)", {
+                    type: command.type,
+                    noteNumber: command.number,
+                    currentTime,
+                    startAt: command.startAt,
+                    lateness: currentTime - command.startAt
+                })
+                executeCommandNow(command)
+            }
+        } else {
+            // Execute immediately (no startAt or too far in the past)
+            console.warn("[TRIGGER] EXECUTING immediately", {
+                type: command.type,
+                noteNumber: command.number,
+                currentTime,
+                startAt: command.startAt,
+                reason: command.startAt ? 'too old' : 'no startAt'
+            })
+            executeCommandNow(command)
         }
     })
     return commands
@@ -315,19 +434,64 @@ export const noteOff = (noteModel:NoteModel, velocity:number=1, fromDevice:strin
     console.log("Note OFF", noteModel, velocity, {now} )
 }   
 
-const exeecuteAudioCommands = (commands:AudioCommandInterface[]):AudioEvent[] => {
+const exeecuteAudioCommands = (commands:AudioCommandInterface[]):AudioCommandInterface[] => {
     const transformed:AudioCommandInterface[] = transformerManager.transform( commands )
+    // Don't convert to AudioEvents before triggering - AudioEvent.trigger() overwrites startAt!
+    // Pass transformed commands directly so scheduling works correctly
+    triggerAudioCommandsOnDevice(transformed)
+
+    // Create events for recording AFTER triggering, to preserve original timing
     const events = convertAudioCommandsToAudioEvents( transformed )
     recorder.addEvents( events )
-    return triggerAudioCommandsOnDevice(events)
+
+    return transformed
+}
+
+/**
+ * Process scheduled commands buffer and execute any that are due
+ */
+const processScheduledCommands = () => {
+    const currentTime = timer.now
+    const readyCommands: ScheduledCommand[] = []
+    const futureCommands: ScheduledCommand[] = []
+
+    // Split into ready and future commands
+    scheduledCommandsBuffer.forEach(scheduled => {
+        if (scheduled.executeAt <= currentTime) {
+            readyCommands.push(scheduled)
+        } else {
+            futureCommands.push(scheduled)
+        }
+    })
+
+    // Execute ready commands
+    if (readyCommands.length > 0) {
+        console.warn("[SCHEDULER] Executing scheduled commands", {
+            count: readyCommands.length,
+            currentTime,
+            commands: readyCommands.map(s => ({
+                type: s.command.type,
+                noteNumber: s.command.number,
+                executeAt: s.executeAt,
+                latency: currentTime - s.executeAt
+            }))
+        })
+
+        readyCommands.forEach(scheduled => {
+            executeCommandNow(scheduled.command)
+        })
+    }
+
+    // Keep only future commands
+    scheduledCommandsBuffer = futureCommands
 }
 
 /**
  * Actions every single Command with a startAt set in the past
- * and returns the commands in order of creation that are in the 
- * future or not yet set to trigger 
+ * and returns the commands in order of creation that are in the
+ * future or not yet set to trigger
  * TODO: Add enabled / disabled
- * @param queue 
+ * @param queue
  */
 const executeQueueAndClearComplete = (queue:AudioCommand[]) => {
 
@@ -397,16 +561,19 @@ const onNoteOffRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=O
 /**
  * EVENT:
  * Bar TICK - 24 divisions per quarter note
- * @param values 
+ * @param values
  */
 const onTick = (values) => {
 
-    const { 
+    const {
         divisionsElapsed,
-        bar, bars, 
-        barsElapsed, timePassed, 
+        bar, bars,
+        barsElapsed, timePassed,
         elapsed, expected, drift, level, intervals, lag
     } = values
+
+    // Process scheduled commands first
+    processScheduledCommands()
 
     ui.updateClock( values )
 
@@ -766,12 +933,27 @@ const onAudioContextAvailable = async (event) => {
     // await handleConnectWithPAT( (document.getElementById('pat-input') as HTMLInputElement).value.trim() )
 
     // Hackday hack!
-    transformerManager = new TransformerManager()
+    transformerManager = new TransformerManager(undefined, timer)
     window.transformerManager = transformerManager
     createGraph('#graph')
 
     // start the clock going
     timer.startTimer( onTick )
+
+    // Start high-frequency scheduler for precise arpeggiator timing
+    startSchedulerLoop()
+}
+
+/**
+ * High-frequency loop for processing scheduled commands with better timing precision
+ * Runs at ~60fps via requestAnimationFrame
+ */
+const startSchedulerLoop = () => {
+    const schedulerLoop = () => {
+        processScheduledCommands()
+        requestAnimationFrame(schedulerLoop)
+    }
+    requestAnimationFrame(schedulerLoop)
 }
 
 const sendMIDINoteToAllDevices = (fromDevice:String, noteModel:NoteModel , action="noteOn", velocity=1) => {

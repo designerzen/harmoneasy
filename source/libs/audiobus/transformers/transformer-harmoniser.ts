@@ -83,7 +83,7 @@ export class TransformerHarmoniser extends Transformer<Config>{
         super( {...DEFAULT_OPTIONS, ...config} )
     }
 
-    transform(commands:AudioCommandInterface[]):AudioCommandInterface[] {
+    transform(commands:AudioCommandInterface[], timer?: any):AudioCommandInterface[] {
         if (commands.length === 0) {
             return commands
         }

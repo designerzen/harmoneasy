@@ -74,7 +74,7 @@ export class TransformerTransposer extends Transformer<Config>{
         super( {...DEFAULT_OPTIONS, ...config} )
     }
 
-    transform(commands:AudioCommandInterface[]):AudioCommandInterface[] {
+    transform(commands:AudioCommandInterface[], timer?: any):AudioCommandInterface[] {
         const intervalFormula = getIntervalFormulaForMode(this.config.mode)
         const rootNote = this.config.root
 

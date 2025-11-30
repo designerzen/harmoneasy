@@ -88,7 +88,7 @@ export class TransformerNoteRepeater extends Transformer<Config> {
         super({ ...DEFAULT_OPTIONS, ...config })
     }
 
-    transform(commands: AudioCommandInterface[]): AudioCommandInterface[] {
+    transform(commands: AudioCommandInterface[], timer?: any): AudioCommandInterface[] {
         if (!this.config.enabled || commands.length === 0) {
             return commands
         }
