@@ -6,7 +6,7 @@ import type AudioCommand from "../audiobus/audio-command.js"
 import type AudioEvent from "../audiobus/audio-event.js"
 import type Timer from "../audiobus/timing/timer.js"
 
-const HARDCODED_PROJECT_URL =  ""
+const HARDCODED_PROJECT_URL =  "d8x95k99"
 const PAT_TOKEN = "at_pat_q3xW2Xt7iyeeQuFttBx3DcGuIRZOtsDO0JqJZCkVOq0"
 
 /**
@@ -61,6 +61,8 @@ export const createAudioToolProjectFromAudioEventRecording = async (recording:Re
                 positionTicks
             })
         })
+
+        collection
     })
 
     const transaction = await nexus.createTransaction()

@@ -305,12 +305,12 @@ export const noteOff = (noteModel:NoteModel, velocity:number=1, fromDevice:strin
     {
         synth.noteOff( noteModel )
     }
-    
+
     if (MIDIDevice.length > 0)
     {
         sendMIDINoteToAllDevices(fromDevice, noteModel, Commands.NOTE_OFF,  1)
     }
-        
+
     if (bluetoothMIDICharacteristic)
     {
         // Send actual note from keyboard to BLE MIDI device
@@ -319,18 +319,108 @@ export const noteOff = (noteModel:NoteModel, velocity:number=1, fromDevice:strin
                 console.log('Sent MIDI NOTE OFF to BLE device!', { note: noteModel.noteNumber, channel: selectedMIDIChannel, result } )
             })
             .catch( err => {
-                console.error('Failed to send MIDI NOTE OFF to BLE device!', { 
-                    note: noteModel.noteNumber, 
+                console.error('Failed to send MIDI NOTE OFF to BLE device!', {
+                    note: noteModel.noteNumber,
                     channel: selectedMIDIChannel,
                     error: err && err.message ? err.message : String(err),
                     device: bluetoothMIDICharacteristic
                 })
             })
 
-    } 
-    
+    }
+
     console.log("Note OFF", noteModel, velocity, {now} )
-}   
+}
+
+/**
+ * Kill Switch - Send note off for all possible MIDI notes (0-127)
+ * This cleans up any stuck notes and simulates an "All Notes Off" command
+ */
+export const allNotesOff = async () => {
+    console.log("KILL SWITCH: Sending note off for all 128 MIDI notes")
+
+    // Clear the audio command queue of pending note commands
+    audioCommandQueue = audioCommandQueue.filter(cmd =>
+        cmd.type !== Commands.NOTE_ON && cmd.type !== Commands.NOTE_OFF
+    )
+
+    // Turn off all notes in the internal synth
+    if (synth)
+    {
+        // If the synth has an all notes off method, use it
+        // Otherwise, iterate through all possible notes
+        for (let noteNumber = 0; noteNumber < 128; noteNumber++)
+        {
+            const noteModel = new NoteModel(noteNumber)
+            synth.noteOff(noteModel)
+        }
+    }
+
+    // Turn off all actively tracked notes in all MIDI devices
+    MIDIDevices.forEach(device => {
+        // Clear active notes from the device's tracking
+        device.activeNotes.forEach((noteEvent: NoteModel) => {
+            const now = timer ? timer.now : audioContext.currentTime
+            device.noteOff(noteEvent, now)
+        })
+        // Also clear any scheduled commands
+        device.requestedCommands.clear()
+    })
+
+    // Send note off for all 128 MIDI notes to BLE device
+    if (bluetoothMIDICharacteristic)
+    {
+        console.log('Sending all notes off to BLE device on channel', selectedMIDIChannel)
+
+        // Method 1: Send MIDI CC#123 (All Notes Off) - standard MIDI command
+        try {
+            await sendBLEControlChange(
+                bluetoothMIDICharacteristic,
+                selectedMIDIChannel,
+                123,  // CC#123 = All Notes Off
+                0,
+                bluetoothPacketQueue
+            )
+            console.log('Sent CC#123 (All Notes Off) to BLE device')
+        } catch (err) {
+            console.error('Failed to send CC#123 to BLE device:', err)
+        }
+
+        // Method 2: Explicitly send note off for all 128 notes (belt and suspenders approach)
+        const noteOffPromises = []
+        for (let noteNumber = 0; noteNumber < 128; noteNumber++)
+        {
+            noteOffPromises.push(
+                sendBLENoteOff(
+                    bluetoothMIDICharacteristic,
+                    selectedMIDIChannel,
+                    noteNumber,
+                    0,
+                    bluetoothPacketQueue
+                ).catch(() => {
+                    // Don't log individual note errors to avoid console spam
+                    // Just silently continue
+                })
+            )
+        }
+
+        try {
+            await Promise.all(noteOffPromises)
+            console.log('Sent note off for all 128 notes to BLE device')
+        } catch (err) {
+            console.error('Error sending all notes off to BLE device:', err)
+        }
+    }
+
+    // Update UI to reflect all notes are off
+    for (let noteNumber = 0; noteNumber < 128; noteNumber++)
+    {
+        const noteModel = new NoteModel(noteNumber)
+        ui.noteOff(noteModel)
+    }
+
+    console.log("KILL SWITCH: Complete")
+}
 
 /**
  * Actions every single Command with a startAt set in the past
@@ -682,6 +772,11 @@ const onAudioContextAvailable = async (event) => {
     ui.whenAudioToolExportRequested( async ()=>{
         const output = await createAudioToolProjectFromAudioEventRecording( recorder, timer )
         console.info("Exporting Data to AudioTool", {recorder, output })
+    })
+
+    ui.whenKillSwitchRequested( async ()=>{
+        console.log('[Kill Switch] All notes off requested')
+        await allNotesOff()
     })
 
     // Random timbre button

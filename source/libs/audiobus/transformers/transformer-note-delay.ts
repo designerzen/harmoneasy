@@ -170,6 +170,7 @@ export class TransformerNoteDelay extends Transformer<Config> {
         const delaySeconds = delayMs / 1000
 
         // Convert accumulate to boolean (it might come as 0/1 from UI)
+        console.log('ACCUMULATE?', this.config)
         const shouldAccumulate = Boolean(this.config.accumulate)
 
         console.log('[NOTE_DELAY] Transform called', {
@@ -191,7 +192,7 @@ export class TransformerNoteDelay extends Transformer<Config> {
         let noteOnIndex = 0
 
         // Delay all commands by the specified amount
-        const delayed: AudioCommandInterface[] = commands.map(command => {
+        const delayed: AudioCommandInterface[] = commands.map((command, i) => {
             const delayedCommand = { ...command }
 
             // Calculate delay: if accumulate is on, multiply by note index
@@ -199,7 +200,7 @@ export class TransformerNoteDelay extends Transformer<Config> {
 
             if (shouldAccumulate) {
                 if (command.type === Commands.NOTE_ON) {
-                    currentDelay = delaySeconds * noteOnIndex
+                    currentDelay = delaySeconds * i
                     // Remember which delay index this note number got
                     noteDelayMap.set(command.number, noteOnIndex)
                     noteOnIndex++
