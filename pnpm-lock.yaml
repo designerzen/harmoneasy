@@ -32,6 +32,9 @@ importers:
       standardized-audio-context:
         specifier: ^25.3.77
         version: 25.3.77
+      uWebSockets.js:
+        specifier: github:uNetworking/uWebSockets.js
+        version: https://codeload.github.com/uNetworking/uWebSockets.js/tar.gz/ff48755d2f5428973d87f166f40ede34995bee5a
       webmidi:
         specifier: ^3.1.14
         version: 3.1.14
@@ -887,6 +890,10 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
+  uWebSockets.js@https://codeload.github.com/uNetworking/uWebSockets.js/tar.gz/ff48755d2f5428973d87f166f40ede34995bee5a:
+    resolution: {tarball: https://codeload.github.com/uNetworking/uWebSockets.js/tar.gz/ff48755d2f5428973d87f166f40ede34995bee5a}
+    version: 0.0.0
+
   undici-types@7.16.0:
     resolution: {integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==}
 
@@ -1724,6 +1731,8 @@ snapshots:
   tslib@2.8.1: {}
 
   typescript@5.9.3: {}
+
+  uWebSockets.js@https://codeload.github.com/uNetworking/uWebSockets.js/tar.gz/ff48755d2f5428973d87f166f40ede34995bee5a: {}
 
   undici-types@7.16.0:
     optional: true
