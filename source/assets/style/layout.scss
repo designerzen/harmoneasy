@@ -105,6 +105,16 @@ header {
   font-weight: 600;
 }
 
+.backlink{
+  width:100%;
+  display: flex;
+  margin-bottom: calc( var(--pad) / 2 );
+
+  h2{
+    margin-left:auto;
+  }
+}
+
 
 .device-buttons {
   display: flex;
