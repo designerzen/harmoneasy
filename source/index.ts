@@ -49,6 +49,7 @@ import { createAudioCommand } from './libs/audiobus/audio-command-factory.ts'
 import { createGraph } from './components/transformers-graph.tsx'
 import AudioEvent from './libs/audiobus/audio-event.ts'
 import { RecorderAudioEvent } from './libs/audiobus/recorder-audio-event.ts'
+import { createReverbImpulseResponse } from './libs/audiobus/effects/reverb.ts'
 
 // import { AudioContext, BiquadFilterNode } from "standardized-audio-context"
 const ALL_MIDI_CHANNELS = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15, 16]
@@ -607,22 +608,29 @@ const toggleWebMIDI = async () => {
     }
 }
 
+
 /**
  * AudioContext is now available
  * @param event 
  */
 const onAudioContextAvailable = async (event) => {
 
-    audioContext = new AudioContext() 
+     audioContext = new AudioContext() 
 
-    const mixer:GainNode = audioContext.createGain()
-    mixer.gain.value = 0.5
-    mixer.connect(audioContext.destination)
+     const mixer:GainNode = audioContext.createGain()
+     mixer.gain.value = 0.5
+     
+     // Create reverb with 3 second decay
+     const reverb = audioContext.createConvolver()
+     reverb.buffer = createReverbImpulseResponse(audioContext, 1, 7)
+     
+     mixer.connect( reverb )
+     reverb.connect(audioContext.destination)
 
-    synth = new PolySynth( audioContext )
-    // synth = new SynthOscillator( audioContext )
+     synth = new PolySynth( audioContext )
+     // synth = new SynthOscillator( audioContext )
 
-    synth.output.connect( mixer )
+     synth.output.connect( mixer )
     // synth.addTremolo(0.5)
 
     // this handles the audio timing
@@ -638,11 +646,20 @@ const onAudioContextAvailable = async (event) => {
     ui.whenBluetoothDeviceRequested( handleBluetoothConnect ) 
     ui.whenWebMIDIToggled(toggleWebMIDI)
     ui.whenMIDIChannelSelected((channel:number) => {
-        selectedMIDIChannel = channel
-        console.log(`[MIDI Channel] Selected channel ${channel}`)
-    })
+         selectedMIDIChannel = channel
+         console.log(`[MIDI Channel] Selected channel ${channel}`)
+     })
 
-    ui.whenUserRequestsManualBLECodes((rawString:string) => { 
+     // Random timbre button
+     const btnRandomTimbre = document.getElementById('btn-random-timbre')
+     if (btnRandomTimbre) {
+         btnRandomTimbre.addEventListener('click', () => {
+             synth.setRandomTimbre()
+             console.log('[Timbre] Changed to random timbre')
+         })
+     }
+
+     ui.whenUserRequestsManualBLECodes((rawString:string) => {
         /* parse rawString into numbers and create Uint8Array, then send to BLE */ 
      
         // sendBLECommand(rawString)

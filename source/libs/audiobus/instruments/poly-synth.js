@@ -2,7 +2,7 @@
  * Lets you play many synths at once.
  * Can be of any instrument but currently limited to only one 
  */
-import SynthOscillator from "./synth-oscillator"
+import SynthOscillator, { OSCILLATORS } from "./synth-oscillator"
 
 export default class PolySynth {
 
@@ -89,5 +89,12 @@ export default class PolySynth {
             this.instrumentActivity.delete( note.number )
         } 
         return instrument
+    }
+
+    /**
+     * Set a random oscillator timbre from the collection
+     */
+    setRandomTimbre(){
+          this.instruments.every( instrument =>  instrument.shape = OSCILLATORS[Math.floor(Math.random() * OSCILLATORS.length)] )
     }
 }
