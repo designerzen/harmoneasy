@@ -51,6 +51,7 @@ import AudioEvent from './libs/audiobus/audio-event.ts'
 import { RecorderAudioEvent } from './libs/audiobus/recorder-audio-event.ts'
 import { createReverbImpulseResponse } from './libs/audiobus/effects/reverb.ts'
 import type Timer from './libs/audiobus/timing/timer.ts'
+import { createAudioToolProjectFromAudioEventRecording } from './libs/audiotool/adapter-audio-events-recording.ts'
 
 // import { AudioContext, BiquadFilterNode } from "standardized-audio-context"
 const ALL_MIDI_CHANNELS = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15, 16]
@@ -649,18 +650,23 @@ const onAudioContextAvailable = async (event) => {
     ui.whenMIDIChannelSelected((channel:number) => {
          selectedMIDIChannel = channel
          console.log(`[MIDI Channel] Selected channel ${channel}`)
-     })
+    })
 
-     // Random timbre button
-     const btnRandomTimbre = document.getElementById('btn-random-timbre')
-     if (btnRandomTimbre) {
-         btnRandomTimbre.addEventListener('click', () => {
-             synth.setRandomTimbre()
-             console.log('[Timbre] Changed to random timbre')
-         })
-     }
+    ui.whenAudioToolExportRequested( async ()=>{
+        const output = await createAudioToolProjectFromAudioEventRecording( recorder, timer )
+        console.info("Exporting Data to AudioTool", {recorder, output })
+    })
 
-     ui.whenUserRequestsManualBLECodes((rawString:string) => {
+    // Random timbre button
+    const btnRandomTimbre = document.getElementById('btn-random-timbre')
+    if (btnRandomTimbre) {
+        btnRandomTimbre.addEventListener('click', () => {
+            synth.setRandomTimbre()
+            console.log('[Timbre] Changed to random timbre')
+        })
+    }
+
+    ui.whenUserRequestsManualBLECodes((rawString:string) => {
         /* parse rawString into numbers and create Uint8Array, then send to BLE */ 
      
         // sendBLECommand(rawString)

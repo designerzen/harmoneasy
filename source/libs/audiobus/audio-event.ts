@@ -14,7 +14,7 @@ export default class AudioEvent extends AudioCommand implements AudioCommandInte
 		return this.endAt - this.startAt
 	}
 
-    constructor( audioCommand:AudioCommand, timer ) {
+    constructor( audioCommand:AudioCommand, timer:Timer ) {
         super()
         this.copyAllParametersFromCommand( audioCommand )
         this.trigger( timer.now )

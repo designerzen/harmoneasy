@@ -89,6 +89,14 @@ header {
   }
 }
 
+#btn-audiotool-export{
+  position: fixed;
+  z-index: 909;
+  top:var(--pad);
+  right:var(--pad);
+}
+
+
 #tempo-control {
 
 }
@@ -96,6 +104,7 @@ header {
 #bpm {
   font-weight: 600;
 }
+
 
 .device-buttons {
   display: flex;

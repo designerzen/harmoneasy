@@ -18,6 +18,9 @@ export const createAudioToolProjectFromAudioEventRecording = async (recording:Re
     // Take the timing
     const BPM = timer.BPM
     const data:AudioEvent[] = recording.exportData()
+
+    console.info("Converting data to AudiTool Format", data )
+
     const client = await createAudiotoolClient({ token: PAT_TOKEN })
 
     // Create synced document
@@ -26,16 +29,20 @@ export const createAudioToolProjectFromAudioEventRecording = async (recording:Re
         project: HARDCODED_PROJECT_URL
     })
     
-    // 
+    // create the neccessary instruments and note regions
     await nexus.modify(t => {
+
+        // simplest instrument
         const tonematrix = t.create("tonematrix", {})
+       
+        // note track for channel
         const track = t.create("noteTrack", {
             player: tonematrix.location
         })
 
         const collection = t.create("noteCollection", {})
 
-        const region = t.create("noteRegion", {
+        const noteRegion = t.create("noteRegion", {
             collection: collection.location,
             track: track.location,
             region: {
@@ -45,58 +52,17 @@ export const createAudioToolProjectFromAudioEventRecording = async (recording:Re
             }
         })
 
-        const commands: AudioCommand[] = []
-
-        commands.forEach(command => {
+        data.forEach(command => {
+            const positionTicks = secondsToTicks(command.startAt/1_000_000, 120)
             t.create("note", {
                 collection: collection.location,
                 pitch: 1,
                 durationTicks: 0,
-                positionTicks: 0
+                positionTicks
             })
         })
     })
 
-    const devices = nexus.queryEntities.ofTypes("tonematrix").get()
-
-    if (devices.length === 0) {
-      throw Error('No devices found. Create a tonematrix first!')
-    }
-
-    
-    const result = await nexus.modify((t) => {
-      // Create a note track
-      const noteTrack = t.create("noteTrack", {
-        orderAmongTracks: 0,
-        player: device.location,
-      })
-
-      // Add a note region
-      const noteRegion = t.create("noteRegion", {
-        track: noteTrack.location,
-        region: {
-          positionTicks: 15360, // One 1/4 note in a 4/4 bar
-          durationTicks: 15360 * 4,
-        }
-      })
-
-      const commands:  AudioCommand[] = []
-      const t = await nexus.createTransaction()
-      t.send()
-      await nexus.modify(t => {
-
-          const b = commands.forEach((command:AudioCommand) => {
-            const positionTicks = secondsToTicks(command.startAt/1_000_000, 120)
-                // create notes
-                t.create("note", {
-                    noteCollection: noteRegion.location,
-                    pitch: 60 + Math.floor(Math.random() * 24), // C4 to B5
-                    positionTicks, // Random position in 4 bars
-                    durationTicks: Ticks.Beat, // Quarter note
-                    velocity: 0.7,
-                    slide: false
-                })
-          })
-      })
-
+    const transaction = await nexus.createTransaction()
+    transaction.send()
 }
