@@ -21,7 +21,7 @@ export class RecorderAudioEvent {
         this.events.length = 0
     }
 
-    exportData(){
+    exportData():AudioEvent[]{
         return this.events
     }
 }
