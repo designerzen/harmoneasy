@@ -21,7 +21,12 @@ export class TransformerQuantise extends Transformer<{ step: number }>{
 
     get fields() {
         return [
-            { name: 'step', type: 'select', values: [1, 4, 8, 12] }
+            { 
+                name: 'step', 
+                type: 'select', 
+                values: [
+                    1, 2, 3, 4, 6, 8, 12, 16 ]
+            }
         ]
     }
 
@@ -29,6 +34,7 @@ export class TransformerQuantise extends Transformer<{ step: number }>{
         super( {...DEFAULT_OPTIONS, ...config} )
     }
 
+    // Quanitisation is handles in onTick in index
     transform(commands:AudioCommandInterface[]):AudioCommandInterface[] {
         return commands
     }
