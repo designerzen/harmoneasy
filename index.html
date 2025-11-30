@@ -102,15 +102,12 @@
     </div>
   </aside>
 
-  <!-- Main Content -->
   <main>
-    <!-- Graph Container -->
     <div id="graph-container">
       <div id="app"></div>
       <div id="graph"></div>
     </div>
 
-    <!-- Keyboard Container -->
     <div id="keyboard-container">
       <canvas id="wallpaper" width="1920" height="1080"></canvas>
     </div>
@@ -122,12 +119,10 @@
     <fieldset id="midi-controls"></fieldset>
   </form>
 
-
   <footer>
   </footer>
 
-  <!-- Export Overlay -->
-  <div id="export-overlay" class="export-overlay" style="display: none;">
+  <div id="export-overlay" class="export-overlay" hidden>
     <div class="export-overlay-content">
       <div class="spinner"></div>
       <h3>Exporting to AudioTool...</h3>
@@ -135,6 +130,7 @@
     </div>
   </div>
 
+  <dialog id="error-dialog" hidden>
     <h3></h3>
     <p id="error-message"></p>
     <p id="error-solution"></p>
