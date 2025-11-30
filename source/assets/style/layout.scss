@@ -56,6 +56,7 @@ header {
 
 .header-controls {
   display: flex;
+  flex-wrap: wrap;
   gap: 16px;
   align-items: center;
   width: 100%;
@@ -63,6 +64,7 @@ header {
 
 .controls{
   display: flex;
+  flex-grow: 1;
   align-items: center;
   gap: 12px;
   padding: 8px 16px;
@@ -71,9 +73,15 @@ header {
   
   label {
     display: flex;
+    flex-grow: 1;
     align-items: center;
+    justify-content: stretch;
     gap: 8px;
     font-size: 14px;
+
+    input{
+      width: 100%;
+    }
   }
 
   @media (prefers-color-scheme: light) {
@@ -83,10 +91,6 @@ header {
 
 #tempo-control {
 
-}
-
-#tempo {
-  width: 120px;
 }
 
 #bpm {
