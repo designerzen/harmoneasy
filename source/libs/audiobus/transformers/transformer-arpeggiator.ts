@@ -137,6 +137,7 @@ export class TransformerArpeggiator extends Transformer<Config> {
     }
 
     transform(commands: AudioCommandInterface[], timer: Timer): AudioCommandInterface[] {
+        console.log('ARP', timer)
         const bpm = timer?.BPM || 120
 
         console.log('[ARPEGGIATOR] Transform called', {
@@ -297,7 +298,8 @@ export class TransformerArpeggiator extends Transformer<Config> {
 
         console.log('[ARPEGGIATOR] Transform complete', {
             inputCount: commands.length,
-            outputCount: arpeggiated.length
+            outputCount: arpeggiated.length,
+            output: arpeggiated
         })
 
         return arpeggiated
