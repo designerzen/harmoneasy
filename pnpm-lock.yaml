@@ -26,9 +26,6 @@ importers:
       jzz:
         specifier: ^1.9.6
         version: 1.9.6
-      midi-file:
-        specifier: ^1.2.4
-        version: 1.2.4
       react:
         specifier: ^18.3.1
         version: 18.3.1
