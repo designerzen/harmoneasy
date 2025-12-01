@@ -118,9 +118,9 @@ export default class MIDIDevice{
             // overwrite the command
             command.noteOff( noteEvent.number, timestamp )
 
-            console.info( this.name + " MIDI Device Note OFF", noteEvent.number, {noteEvent, command}, this.requestedCommands )
+            // console.info( this.name + " MIDI Device Note OFF", noteEvent.number, {noteEvent, command}, this.requestedCommands )
         }else{
-            console.info( this.name + "MIDI Device requested note off but note not playing", noteEvent)
+            // console.info( this.name + "MIDI Device requested note off but note not playing", noteEvent)
         }
         // this.requestedCommands.delete( noteEvent.number )  
     }
@@ -145,7 +145,7 @@ export default class MIDIDevice{
             {
                 output.push( command )
                 this.requestedCommands.delete( command.number )
-                console.info(this.name + "Quanitsable MIDI Device Command Triggered",timestamp, {command, updated} )
+                // console.info(this.name + "Quanitsable MIDI Device Command Triggered",timestamp, {command, updated} )
             }else{
                 // console.info(this.name + "Quanitsable MIDI Device Tested Command and ignored",timestamp, {command, updated} )
             }

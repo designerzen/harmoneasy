@@ -34,7 +34,6 @@
   }
 }
 
-/* Main Header */
 header {
   background: #2c2c2c;
   color: #fff;
@@ -89,14 +88,6 @@ header {
     background: #3a3a3a;
   }
 }
-
-// #btn-audiotool-export{
-//   position: fixed;
-//   z-index: 909;
-//   top:var(--pad);
-//   right:var(--pad);
-// }
-
 
 #tempo-control {
 
@@ -345,16 +336,6 @@ main {
   border-bottom: 1px solid #444;
   position: relative;
   z-index: 100;
-
-  button {
-    padding: 10px 20px;
-    background: #4a9eff;
-
-    &:hover {
-      background: #3a8eef;
-      border-color: transparent;
-    }
-  }
 
   @media (prefers-color-scheme: light) {
     background: #2c2c2c;
