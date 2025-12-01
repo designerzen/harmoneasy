@@ -21,6 +21,12 @@ const DOM_ID_BUTTON_EXPORT_AUDIOTOOL = "btn-audiotool-export"
 const DOM_ID_BUTTON_EXPORT_OPENDAW = "btn-opendaw-export"
 
 const DOM_ID_BUTTON_KILL_SWITCH = "btn-kill-switch"
+const DOM_ID_BLE_MANUAL_FIELDSET = "ble-manual-send-fieldset"
+const DOM_ID_BLE_MANUAL_INPUT = "ble-manual-input"
+const DOM_ID_BUTTON_SEND_BLE_MANUAL = "btn-send-ble-manual"
+const DOM_ID_BUTTON_RANDOM_TIMBRE = "btn-random-timbre"
+const DOM_ID_EXPORT_OVERLAY = "export-overlay"
+const DOM_ID_WALLPAPER_CANVAS = "wallpaper"
 
 const DOM_ID_DIALOG_ERROR = "error-dialog"
 const DOM_ID_DIALOG_INFO = "info-dialog"
@@ -47,22 +53,22 @@ export default class UI{
         this.elementButtonBluetoothConnect = document.getElementById(DOM_ID_BUTTON_CONNECT_BLUETOOTH)
     
         this.elementButtonWebMIDI = document.getElementById(DOM_ID_BUTTON_TOGGLE_WEBMIDI)
-        this.elementBLEManualFields = document.getElementById('ble-manual-send-fieldset')
-        this.elementBLEManualInput = document.getElementById('ble-manual-input')
-        this.elementBLEManualSendButton = document.getElementById('btn-send-ble-manual')
+        this.elementBLEManualFields = document.getElementById(DOM_ID_BLE_MANUAL_FIELDSET)
+        this.elementBLEManualInput = document.getElementById(DOM_ID_BLE_MANUAL_INPUT)
+        this.elementBLEManualSendButton = document.getElementById(DOM_ID_BUTTON_SEND_BLE_MANUAL)
         this.elementButtonKillSwitch = document.getElementById(DOM_ID_BUTTON_KILL_SWITCH)
         
         this.elementMidiExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_MIDI_FILE)
         this.elementAudioToolExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_AUDIOTOOL)
         this.elementOpenDAWExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_OPENDAW)
 
-        this.elementButtonRandomTimbre = document.getElementById("btn-random-timbre")
-    
-        this.elementOverlayExport = document.getElementById("export-overlay" )
-        this.elementInfoDialog = document.getElementById(DOM_ID_DIALOG_INFO )
-        this.elementErrorDialog = document.getElementById(DOM_ID_DIALOG_ERROR )
+        this.elementButtonRandomTimbre = document.getElementById(DOM_ID_BUTTON_RANDOM_TIMBRE)
         
-        this.wallpaperCanvas = document.getElementById("wallpaper")
+        this.elementOverlayExport = document.getElementById(DOM_ID_EXPORT_OVERLAY)
+        this.elementInfoDialog = document.getElementById(DOM_ID_DIALOG_INFO)
+        this.elementErrorDialog = document.getElementById(DOM_ID_DIALOG_ERROR)
+        
+        this.wallpaperCanvas = document.getElementById(DOM_ID_WALLPAPER_CANVAS)
         this.noteVisualiser = new NoteVisualiser( keyboardNotes, this.wallpaperCanvas, false, 0 ) // ALL_KEYBOARD_NOTES
         // wallpaperCanvas.addEventListener( "dblclick", e => scale === SCALES[ (SCALES.indexOf(scale) + 1) % SCALES.length] )
 

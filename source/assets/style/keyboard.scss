@@ -3,7 +3,7 @@
 .piano-key{
 	transition: 
         opacity var(--time-quick, 90ms) linear,
-        fill var(--time-quick, 90ms) linear;
+        fill 4ms linear;
 
     border-radius: 10%;
 
