@@ -38,7 +38,7 @@ import * as MODES from './libs/audiobus/tuning/chords/modal-chords.js'
 import * as CHORDS from './libs/audiobus/tuning/chords/chords.js'
 import {createChord} from './libs/audiobus/tuning/chords/chords.js'
 import * as INTERVALS from './libs/audiobus/tuning/intervals.js'
-import { convertToIntervalArray } from './libs/audiobus/tuning/chords/describe-chord.ts'
+
 import { TUNING_MODE_NAMES } from './libs/audiobus/tuning/scales.ts'
 import { TransformerManager } from './libs/audiobus/transformers/transformer-manager.ts'
 import { TransformerQuantise } from './libs/audiobus/transformers/transformer-quantise.ts'
@@ -51,7 +51,9 @@ import AudioEvent from './libs/audiobus/audio-event.ts'
 import { RecorderAudioEvent } from './libs/audiobus/recorder-audio-event.ts'
 import { createReverbImpulseResponse } from './libs/audiobus/effects/reverb.ts'
 import type Timer from './libs/audiobus/timing/timer.ts'
-import { createAudioToolProjectFromAudioEventRecording } from './libs/audiotool/adapter-audio-events-recording.ts'
+import { createAudioToolProjectFromAudioEventRecording } from './libs/audiotool/adapter-audiotool-audio-events-recording.ts'
+import { createMIDIFileFromAudioEventRecording, saveBlobToLocalFileSystem } from './libs/audiobus/midi/adapter-midi-file.ts'
+import { createOpenDAWProjectFromAudioEventRecording } from './libs/openDAW/adapter-opendaw-audio-events-recording.ts'
 
 // import { AudioContext, BiquadFilterNode } from "standardized-audio-context"
 const ALL_MIDI_CHANNELS = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15, 16]
@@ -758,43 +760,51 @@ const onAudioContextAvailable = async (event) => {
     // Front End UI -------------------------------
     ui = new UI( ALL_KEYBOARD_NOTES, onNoteOnRequestedFromKeyboard, onNoteOffRequestedFromKeyboard )
     ui.setTempo( timer.BPM )
+    
+    ui.whenRandomTimbreRequestedRun( synth.setRandomTimbre )
     ui.whenTempoChangesRun( (tempo:number) => timer.BPM = tempo )
-    ui.whenVolumeChangesRun((volume:number) => {
-        mixer.gain.value = (volume / 100) * 0.5
-    })
-    ui.whenBluetoothDeviceRequested( handleBluetoothConnect ) 
-    ui.whenWebMIDIToggled(toggleWebMIDI)
-    ui.whenMIDIChannelSelected((channel:number) => {
+    ui.whenVolumeChangesRun((volume:number) => mixer.gain.value = (volume / 100) * 0.5)
+    ui.whenBluetoothDeviceRequestedRun( handleBluetoothConnect ) 
+    ui.whenWebMIDIToggledRun(toggleWebMIDI)
+    ui.whenMIDIChannelSelectedRun((channel:number) => {
          selectedMIDIChannel = channel
          console.log(`[MIDI Channel] Selected channel ${channel}`)
     })
 
-    ui.whenAudioToolExportRequested( async ()=>{
+    ui.whenMIDIFileExportRequestedRun( async ()=>{
+        ui.showExportOverlay()
+        const blob = await createMIDIFileFromAudioEventRecording( recorder, timer )
+        saveBlobToLocalFileSystem(blob, recorder.name)
+        console.info("Exporting Data to MIDI File", {recorder,  blob })
+        ui.hideExportOverlay()
+    })
+    ui.whenAudioToolExportRequestedRun( async ()=>{
+        ui.showExportOverlay()
         const output = await createAudioToolProjectFromAudioEventRecording( recorder, timer )
         console.info("Exporting Data to AudioTool", {recorder, output })
+        ui.hideExportOverlay()
+    })
+    ui.whenOpenDAWExportRequestedRun( async ()=>{
+        ui.showExportOverlay()
+        const script = await createOpenDAWProjectFromAudioEventRecording( recorder, timer )
+        console.info("Exporting Data to AudioTool", {recorder, script })
+        ui.setExportOverlayText( "Copy and paste this into openDAW script editor" )
+        ui.hideExportOverlay()
     })
 
-    ui.whenKillSwitchRequested( async ()=>{
+    ui.whenKillSwitchRequestedRun( async ()=>{
         console.log('[Kill Switch] All notes off requested')
         await allNotesOff()
     })
 
-    // Random timbre button
-    const btnRandomTimbre = document.getElementById('btn-random-timbre')
-    if (btnRandomTimbre) {
-        btnRandomTimbre.addEventListener('click', () => {
-            synth.setRandomTimbre()
-            console.log('[Timbre] Changed to random timbre')
-        })
-    }
-
-    ui.whenUserRequestsManualBLECodes((rawString:string) => {
+    ui.whenUserRequestsManualBLECodesRun((rawString:string) => {
         /* parse rawString into numbers and create Uint8Array, then send to BLE */ 
      
         // sendBLECommand(rawString)
        
-        console.info("BLE MANUAL SEND", t)
+        console.info("BLE MANUAL SEND", rawString)
     })
+
 
     // ui.whenNewScaleIsSelected( (scaleNName:string, select:HTMLElement ) => {
     //     console.log("New scale selected:", scaleNName)

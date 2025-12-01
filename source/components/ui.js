@@ -15,7 +15,11 @@ const DOM_ID_RANGE_VOLUME = "volume"
 const DOM_ID_VOLUME_OUTPUT = "volume-output"
 const DOM_ID_BUTTON_CONNECT_BLUETOOTH = "btn-connect-to-ble"
 const DOM_ID_BUTTON_TOGGLE_WEBMIDI = "btn-toggle-webmidi"
+
+const DOM_ID_BUTTON_EXPORT_MIDI_FILE= "btn-midi-export"
 const DOM_ID_BUTTON_EXPORT_AUDIOTOOL = "btn-audiotool-export"
+const DOM_ID_BUTTON_EXPORT_OPENDAW = "btn-opendaw-export"
+
 const DOM_ID_BUTTON_KILL_SWITCH = "btn-kill-switch"
 
 const DOM_ID_DIALOG_ERROR = "error-dialog"
@@ -43,9 +47,15 @@ export default class UI{
         this.elementBLEManualFields = document.getElementById('ble-manual-send-fieldset')
         this.elementBLEManualInput = document.getElementById('ble-manual-input')
         this.elementBLEManualSendButton = document.getElementById('btn-send-ble-manual')
-        this.elementAudioToolExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_AUDIOTOOL)
         this.elementButtonKillSwitch = document.getElementById(DOM_ID_BUTTON_KILL_SWITCH)
+        
+        this.elementMidiExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_MIDI_FILE)
+        this.elementAudioToolExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_AUDIOTOOL)
+        this.elementOpenDAWExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_OPENDAW)
+
+        this.elementButtonRandomTimbre = document.getElementById("btn-random-timbre")
     
+        this.elementOverlayExport = document.getElementById("export-overlay" )
         this.elementErrorDialog = document.getElementById(DOM_ID_DIALOG_ERROR )
         
         this.wallpaperCanvas = document.getElementById("wallpaper")
@@ -87,7 +97,11 @@ export default class UI{
         this.elementTempo.classList.toggle("playing", isPlaying)
     }
 
-    whenBluetoothDeviceRequested(callback){
+
+
+    // Bluetooth --------------------------------------------------------------------
+
+    whenBluetoothDeviceRequestedRun(callback){
         this.elementButtonBluetoothConnect.addEventListener("click", e=>{
             callback && callback() 
         })
@@ -97,33 +111,38 @@ export default class UI{
         this.elementButtonBluetoothConnect.textContent = text
     }
 
-    setWebMIDIButtonText(text = "Enable WebMIDI"){
-        if (this.elementButtonWebMIDI) this.elementButtonWebMIDI.textContent = text
-    }
-
-    whenWebMIDIToggled(callback){
-        if (!this.elementButtonWebMIDI) return
-        this.elementButtonWebMIDI.addEventListener('click', e => {
-            callback && callback()
-        })
-    }
-
-    whenAudioToolExportRequested(callback){
-        if (!this.elementAudioToolExportButton) return
-        this.elementAudioToolExportButton.addEventListener('click', e => {
-            callback && callback()
-        })
-    }
-
     /**
-     * Register a callback for when the kill switch (all notes off) button is clicked
-     * @param {Function} callback () => void
+     * Show error/status message in the devices panel
+     * @param {String} message
      */
-    whenKillSwitchRequested(callback){
-        if (!this.elementButtonKillSwitch) return
-        this.elementButtonKillSwitch.addEventListener('click', e => {
-            callback && callback()
-        })
+    showBluetoothStatus( message ){
+        this.elementButtonBluetoothConnect.textContent = message
+    }
+    
+    /**
+     * Display BLE device info and capabilities
+     * @param {BluetoothDevice} device
+     * @param {Object} capabilities { services: Array }
+     */
+    addBluetoothDevice( device, capabilities ){
+        let html = `<strong>BLE Device: ${device.name || 'Unknown'}</strong><br>`
+        html += `UUID: ${device.id}<br>`
+        if (capabilities && capabilities.services) {
+            html += `<details><summary>Services & Characteristics (${capabilities.services.length})</summary>`
+            capabilities.services.forEach(svc => {
+                html += `<div style="margin-left: 1em;">`
+                html += `<strong>Service:</strong> ${svc.uuid}<br>`
+                if (svc.characteristics) {
+                    svc.characteristics.forEach(ch => {
+                        const props = ch.properties ? Object.keys(ch.properties).filter(k => ch.properties[k]) : []
+                        html += `<div style="margin-left: 1em;"><code>${ch.uuid}</code> [${props.join(', ')}]</div>`
+                    })
+                }
+                html += `</div>`
+            })
+            html += `</details>`
+        }
+        this.devices.innerHTML += html
     }
 
     /**
@@ -132,7 +151,7 @@ export default class UI{
      * into a Uint8Array or other form for sending.
      * @param {Function} callback (value: string) => void
      */
-    whenUserRequestsManualBLECodes(callback){
+    whenUserRequestsManualBLECodesRun(callback){
         if (!this.elementBLEManualSendButton || !this.elementBLEManualInput) return
         const doSend = () => {
             const raw = String(this.elementBLEManualInput.value || '').trim()
@@ -161,6 +180,71 @@ export default class UI{
      */
     showBLEManualInputOnBluetoothConnected(){
         this.setBLEManualInputVisible(true)
+    }
+
+
+    setWebMIDIButtonText(text = "Enable WebMIDI"){
+        if (this.elementButtonWebMIDI) this.elementButtonWebMIDI.textContent = text
+    }
+
+    whenWebMIDIToggledRun(callback){
+        if (!this.elementButtonWebMIDI) return
+        this.elementButtonWebMIDI.addEventListener('click', e => {
+            callback && callback(e)
+        })
+    }
+
+
+    // Exporting --------------------------------------------------------------------
+    hideExportOverlay(){
+        this.elementOverlayExport.hidden = true
+    }
+    showExportOverlay( text ){
+        // this.elementOverlayExport.textContent = text
+        this.elementOverlayExport.hidden = false
+    }
+    setExportOverlayText(text){
+        if (this.elementOverlayExportText)
+        { 
+            this.elementOverlayExportText.textContent = text
+        }
+    }
+
+    // Export Buttons 
+    whenAudioToolExportRequestedRun(callback){
+        if (!this.elementAudioToolExportButton) return
+        this.elementAudioToolExportButton.addEventListener('click', e => {
+            callback && callback(e)
+        })
+    }
+    whenMIDIFileExportRequestedRun(callback){
+        if (!this.elementMidiExportButton) return
+        this.elementMidiExportButton.addEventListener('click', e => {
+            callback && callback(e)
+        })
+    }
+    whenOpenDAWExportRequestedRun(callback){
+        if (!this.elementOpenDAWExportButton) return
+        this.elementOpenDAWExportButton.addEventListener('click', e => {
+            callback && callback(e)
+        })
+    }
+
+    whenRandomTimbreRequestedRun(callback){
+          this.elementButtonRandomTimbre.addEventListener('click', e => {
+            callback && callback(e)
+        })
+    }
+
+    /**
+     * Register a callback for when the kill switch (all notes off) button is clicked
+     * @param {Function} callback () => void
+     */
+    whenKillSwitchRequestedRun(callback){
+        if (!this.elementButtonKillSwitch) return
+        this.elementButtonKillSwitch.addEventListener('pointerdown', e => {
+            callback && callback(e)
+        })
     }
 
     whenTempoChangesRun(callback){
@@ -196,7 +280,7 @@ export default class UI{
      * Register a callback when MIDI channel selection changes.
      * @param {Function} callback (channel: number) => void
      */
-    whenMIDIChannelSelected(callback){
+    whenMIDIChannelSelectedRun(callback){
         if (!this.elementMIDIChannelSelector) return
         this.elementMIDIChannelSelector.addEventListener("change", e => {
             const channel = Number(this.elementMIDIChannelSelector.value)
@@ -280,40 +364,6 @@ export default class UI{
         console.error(errorMessage)
     }
 
-    /**
-     * Display BLE device info and capabilities
-     * @param {BluetoothDevice} device
-     * @param {Object} capabilities { services: Array }
-     */
-    addBluetoothDevice( device, capabilities ){
-        let html = `<strong>BLE Device: ${device.name || 'Unknown'}</strong><br>`
-        html += `UUID: ${device.id}<br>`
-        if (capabilities && capabilities.services) {
-            html += `<details><summary>Services & Characteristics (${capabilities.services.length})</summary>`
-            capabilities.services.forEach(svc => {
-                html += `<div style="margin-left: 1em;">`
-                html += `<strong>Service:</strong> ${svc.uuid}<br>`
-                if (svc.characteristics) {
-                    svc.characteristics.forEach(ch => {
-                        const props = ch.properties ? Object.keys(ch.properties).filter(k => ch.properties[k]) : []
-                        html += `<div style="margin-left: 1em;"><code>${ch.uuid}</code> [${props.join(', ')}]</div>`
-                    })
-                }
-                html += `</div>`
-            })
-            html += `</details>`
-        }
-        html += `<hr>`
-        this.devices.innerHTML += html
-    }
-
-    /**
-     * Show error/status message in the devices panel
-     * @param {String} message
-     */
-    showBluetoothStatus( message ){
-        this.elementButtonBluetoothConnect.textContent = message
-    }
 
     onDoubleClick( callback){
         this.wallpaperCanvas.addEventListener( "dblclick", e => callback && callback(e) )   
