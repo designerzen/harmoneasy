@@ -7,12 +7,17 @@ export class RecorderAudioEvent {
 
     events:AudioEvent[] = []
 
-    duration:number = 0
+    #duration:number = 0
 
-    #name = ""
+    #name:string = ""
         
     get name():string{
-        return this.events[0]?.name || this.#name
+        return this.#name
+    }
+
+    get duration():number
+    {
+        return this.#duration + GAP
     }
 
     constructor(name:string = "Harmoneasy"){
@@ -26,9 +31,9 @@ export class RecorderAudioEvent {
 
     addEvent( event:AudioEvent){
         this.events.push(event)
-        if (this.duration < event.startAt )
+        if (this.#duration < event.startAt )
         {
-            this.duration = event.startAt + GAP
+            this.#duration = event.startAt
         }
     }
 
@@ -36,7 +41,11 @@ export class RecorderAudioEvent {
         this.events.length = 0
     }
 
-    // we need to add the end times to all of the AudioEvents :(
+   
+    /**
+     * 
+     * @returns Array
+     */
     exportData():AudioEvent[]{
 
         const allEvents = this.events.slice()
@@ -87,7 +96,7 @@ export class RecorderAudioEvent {
             }
            
         }
-        console.info("Note events", allEvents)
+        // console.info("Note events", allEvents)
         return allEvents
     }
 }

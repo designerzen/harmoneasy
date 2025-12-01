@@ -53,7 +53,7 @@
   </div>
 
   <div id="action-bar">
-    <button type="button" id="btn-midi-export">Export as MIDI file</button>
+    <button class="primary" type="button" id="btn-midi-export">Export as MIDI file</button>
     <button type="button" id="btn-audiotool-export">Open in AudioTool</button>
     <button type="button" id="btn-opendaw-export">Open in OpenDAW</button>
   </div>
@@ -131,14 +131,25 @@
     </div>
   </div>
 
+  
+  <dialog id="info-dialog" hidden>
+    <h5></h5>
+    <p id="info-message" class="selectable"></p>
+    <form>
+      <button class="close-button" type="dialog">Close</button>
+    </form>
+  </dialog>
+
+
   <dialog id="error-dialog" hidden>
-    <h3></h3>
+    <h5>Error</h5>
     <p id="error-message"></p>
     <p id="error-solution"></p>
     <form>
-      <button class="error-close-button" type="dialog">Close</button>
+      <button class="close-button" type="dialog">Close</button>
     </form>
   </dialog>
+
 
   <script type="module" src="/source/index.ts"></script>
   <script>
