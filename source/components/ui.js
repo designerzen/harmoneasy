@@ -23,8 +23,11 @@ const DOM_ID_BUTTON_EXPORT_OPENDAW = "btn-opendaw-export"
 const DOM_ID_BUTTON_KILL_SWITCH = "btn-kill-switch"
 
 const DOM_ID_DIALOG_ERROR = "error-dialog"
+const DOM_ID_DIALOG_INFO = "info-dialog"
 
 export default class UI{
+
+    clockAnimationFrame = -1
 
     constructor( keyboardNotes, onNoteOn, onNoteOff ){
         this.devices = document.getElementById(DOM_ID_MIDI_DEVICES)
@@ -56,6 +59,7 @@ export default class UI{
         this.elementButtonRandomTimbre = document.getElementById("btn-random-timbre")
     
         this.elementOverlayExport = document.getElementById("export-overlay" )
+        this.elementInfoDialog = document.getElementById(DOM_ID_DIALOG_INFO )
         this.elementErrorDialog = document.getElementById(DOM_ID_DIALOG_ERROR )
         
         this.wallpaperCanvas = document.getElementById("wallpaper")
@@ -97,6 +101,42 @@ export default class UI{
         this.elementTempo.classList.toggle("playing", isPlaying)
     }
 
+    // Dialogs ----------------------------------------------------------------------
+    
+
+    showInfoDialog( title, message ){
+        this.elementInfoDialog.querySelector("h5").textContent = title
+        this.elementInfoDialog.querySelector("#info-message").innerHTML = message
+        this.elementInfoDialog.hidden = false
+        this.elementInfoDialog.showModal()
+        // this.elementInfoDialog.showModal()
+    }
+
+    /**
+     * Displays an error on the screen
+     * @param {String} errorMessage 
+     * @param {Boolean} fatal - does this break the app?
+     */
+    showError( errorMessage, solution="", fatal=false )
+    {
+        this.inputs.innerHTML = errorMessage
+        this.inputs.classList.toggle("error", true)
+
+        const elementIssue = this.elementErrorDialog.querySelector("#error-message")
+        const elementSolution = this.elementErrorDialog.querySelector("#error-solution")
+        
+        elementIssue.innerHTML = errorMessage
+        if (solution && solution.length > 0)
+        {
+            elementSolution.innerHTML = solution
+            elementSolution.hidden = false
+        }else{
+            elementSolution.hidden = true
+        }
+      
+        this.elementErrorDialog.open = true
+        console.error(errorMessage)
+    }
 
 
     // Bluetooth --------------------------------------------------------------------
@@ -214,19 +254,25 @@ export default class UI{
     whenAudioToolExportRequestedRun(callback){
         if (!this.elementAudioToolExportButton) return
         this.elementAudioToolExportButton.addEventListener('click', e => {
+            this.showExportOverlay()
             callback && callback(e)
+            this.hideExportOverlay()
         })
     }
     whenMIDIFileExportRequestedRun(callback){
         if (!this.elementMidiExportButton) return
         this.elementMidiExportButton.addEventListener('click', e => {
+            this.showExportOverlay()
             callback && callback(e)
+            this.hideExportOverlay()
         })
     }
     whenOpenDAWExportRequestedRun(callback){
         if (!this.elementOpenDAWExportButton) return
         this.elementOpenDAWExportButton.addEventListener('click', e => {
+            this.showExportOverlay()
             callback && callback(e)
+            this.hideExportOverlay()
         })
     }
 
@@ -313,14 +359,18 @@ export default class UI{
             elapsed, expected, drift, level, intervals, lag
         } = values
 
-        this.elementClock.textContent = `${String(bar).padStart(2, '0')}:${bars}:${String(barsElapsed).padStart(3, '0')} [${String(divisionsElapsed).padStart(2, '0')}] ${formatTimeStampFromSeconds(elapsed)} seconds`
-        // this.elementClock.innerHTML = `${String(bar).padStart(2, '0')}:${bars}:${String(barsElapsed).padStart(3, '0')} [${String(divisionsElapsed).padStart(2, '0')}] ${formatTimeStampFromSeconds(elapsed)} seconds`
-        // this.elementClock.innerHTML = `${bar}:${bars}:${barsElapsed} [${divisionsElapsed}] ${intervals}, ${elapsed.toFixed(2)} seconds`
+        cancelAnimationFrame(this.clockAnimationFrame)
+
+        this.clockAnimationFrame = requestAnimationFrame( ()=>{
+            this.elementClock.textContent = `${String(bar).padStart(2, '0')}:${bars}:${String(barsElapsed).padStart(3, '0')} [${String(divisionsElapsed).padStart(2, '0')}] ${formatTimeStampFromSeconds(elapsed)} seconds`
+            // this.elementClock.innerHTML = `${String(bar).padStart(2, '0')}:${bars}:${String(barsElapsed).padStart(3, '0')} [${String(divisionsElapsed).padStart(2, '0')}] ${formatTimeStampFromSeconds(elapsed)} seconds`
+            // this.elementClock.innerHTML = `${bar}:${bars}:${barsElapsed} [${divisionsElapsed}] ${intervals}, ${elapsed.toFixed(2)} seconds`
+        } )
     }
 
     /**
      * Show Note On
-     * @param {*} note 
+     * @param {NoteModel} note 
      */
     noteOn(note) {
         this.noteVisualiser.noteOn( note )
@@ -330,7 +380,7 @@ export default class UI{
 
     /**
      * Show Note Off
-     * @param {*} note 
+     * @param {NoteModel} note 
      */
     noteOff(note) {
         this.noteVisualiser.noteOff( note )
@@ -338,32 +388,13 @@ export default class UI{
         this.removeCommand("NoteOff #" + note.number )
     }
 
-    /**
-     * Displays an error on the screen
-     * @param {String} errorMessage 
-     * @param {Boolean} fatal - does this break the app?
-     */
-    showError( errorMessage, solution="", fatal=false )
-    {
-        this.inputs.innerHTML = errorMessage
-        this.inputs.classList.toggle("error", true)
-
-        const elementIssue = this.elementErrorDialog.querySelector("#error-message")
-        const elementSolution = this.elementErrorDialog.querySelector("#error-solution")
-        
-        elementIssue.innerHTML = errorMessage
-        if (solution && solution.length > 0)
+    allNotesOff(){
+        for (let noteNumber = 0; noteNumber < 128; noteNumber++)
         {
-            elementSolution.innerHTML = solution
-            elementSolution.hidden = false
-        }else{
-            elementSolution.hidden = true
+            const noteModel = new NoteModel(noteNumber)
+            this.noteOff(noteModel)
         }
-      
-        this.elementErrorDialog.open = true
-        console.error(errorMessage)
     }
-
 
     onDoubleClick( callback){
         this.wallpaperCanvas.addEventListener( "dblclick", e => callback && callback(e) )   
