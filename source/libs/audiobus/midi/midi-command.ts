@@ -22,10 +22,10 @@ export default class MIDICommand extends AudioCommand{
      * @param {Number} timestamp 
      */
     noteOn( noteNumber, velocity, timestamp ){
-        super.number = noteNumber
-        super.velocity = velocity
-        super.startAt = timestamp
-        super.type = "noteOn"
+        this.number = noteNumber
+        this.velocity = velocity
+        this.startAt = timestamp
+        this.type = "noteOn"
     }
     
     /**
@@ -36,7 +36,7 @@ export default class MIDICommand extends AudioCommand{
     noteOff( noteNumber, timestamp ){
         this.number = noteNumber
         this.endAt = timestamp
-        super.type = "noteOff"
+        this.type = "noteOff"
     }
 
     /**
@@ -53,7 +53,7 @@ export default class MIDICommand extends AudioCommand{
 	 * @returns copy of this
 	 */
 	clone( timestampOffset=0 ){
-		const copy = this.copyAllParametersToCommand( new MIDICommand(this.velocity) )
+		const copy:MIDICommand = this.copyAllParametersToCommand( new MIDICommand(this.velocity) )
         copy.noteOn( this.number, this.velocity, timestampOffset  )
         copy.noteOff( this.number, timestampOffset )
         return copy
