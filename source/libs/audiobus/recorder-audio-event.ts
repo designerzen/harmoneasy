@@ -8,9 +8,15 @@ export class RecorderAudioEvent {
     events:AudioEvent[] = []
 
     duration:number = 0
-    
-    constructor(){
-        this.events = []
+
+    #name = ""
+        
+    get name():string{
+        return this.events[0]?.name || this.#name
+    }
+
+    constructor(name:string = "Harmoneasy"){
+        this.#name = name
     }
 
     addEvents( events:AudioEvent[] ){

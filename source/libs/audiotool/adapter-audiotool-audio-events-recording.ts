@@ -1,14 +1,14 @@
-import { RecorderAudioEvent } from "../audiobus/recorder-audio-event"
+import { RecorderAudioEvent } from "../audiobus/recorder-audio-event.js"
 import { createAudiotoolClient, secondsToTicks, Ticks } from "@audiotool/nexus"
 import type { AudiotoolClient, SyncedDocument } from "@audiotool/nexus"
-import { STORAGE_KEYS } from '../audiotool/audio-tool-settings.js'
+import { STORAGE_KEYS } from './audio-tool-settings.js'
 import type AudioCommand from "../audiobus/audio-command.js"
 import type AudioEvent from "../audiobus/audio-event.js"
 import type Timer from "../audiobus/timing/timer.js"
 import { NOTE_ON } from "../../commands.js"
 import { noteNumberToFrequency } from "../audiobus/note-model.js"
 
-const HARDCODED_PROJECT_URL =  "https://beta.audiotool.com/studio?project=fe824261-7d93-4a75-95ec-3603d5891546"
+const HARDCODED_PROJECT_URL = "https://beta.audiotool.com/studio?project=fe824261-7d93-4a75-95ec-3603d5891546"
 const PAT_TOKEN = "at_pat_sFoMCeBSURZQA8YuWHWKYtpYviWgd4fCVCwPKqxnjmA"
 
 /**
@@ -16,12 +16,6 @@ const PAT_TOKEN = "at_pat_sFoMCeBSURZQA8YuWHWKYtpYviWgd4fCVCwPKqxnjmA"
  * @param recording
  */
 export const createAudioToolProjectFromAudioEventRecording = async (recording:RecorderAudioEvent, timer:Timer ) => {
-
-    // Show export overlay
-    const overlay = document.getElementById('export-overlay')
-    if (overlay) {
-        overlay.style.display = 'flex'
-    }
 
     try {
         // Take the timing
@@ -63,8 +57,6 @@ export const createAudioToolProjectFromAudioEventRecording = async (recording:Re
 
             const duration = secondsToTicks(recording.duration, 120)
 
-            console.log('DURATION', duration)
-
             const noteRegion = t.create("noteRegion", {
                 collection: collection.location,
                 track: track.location,
@@ -95,17 +87,12 @@ export const createAudioToolProjectFromAudioEventRecording = async (recording:Re
                 }
 
             })
-
-            collection
         })
 
         const transaction = await nexus.createTransaction()
         transaction.send()
 
-    } finally {
-        // Hide export overlay
-        if (overlay) {
-            overlay.style.display = 'none'
-        }
+    } catch (error) {
+        console.error("Error creating Audiotool project", error)
     }
 }
