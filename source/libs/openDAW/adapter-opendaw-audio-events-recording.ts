@@ -17,7 +17,7 @@ const createOpenDAWNotesScript = (data:AudioEvent[]) => {
                 output.push( `{
                     position:${command.startAt},
                     pitch:${command.noteNumber},
-                    velocity:${command.velocity ?? 127},
+                    velocity:${(command.velocity ?? 1)/127},
                     duration:${command.duration}
                 }`)
                 break
