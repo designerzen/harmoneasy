@@ -55,7 +55,7 @@ export const createAudioToolProjectFromAudioEventRecording = async (recording:Re
 
             const collection = t.create("noteCollection", {})
 
-            const duration = secondsToTicks(recording.duration, 120)
+            const duration = secondsToTicks(recording.duration, BPM)
 
             const noteRegion = t.create("noteRegion", {
                 collection: collection.location,
@@ -72,8 +72,8 @@ export const createAudioToolProjectFromAudioEventRecording = async (recording:Re
                 switch( command.type )
                 {
                     case NOTE_ON :
-                        const positionTicks = secondsToTicks(command.startAt, 120)
-                        const durationTicks =  secondsToTicks(command.duration, 120)
+                        const positionTicks = secondsToTicks(command.startAt, BPM)
+                        const durationTicks =  secondsToTicks(command.duration, BPM)
 
                         t.create("note", {
                             collection: collection.location,
