@@ -90,6 +90,10 @@ details div {
     }
 }
 
+.selectable{
+    user-select: all;
+}
+
 [hidden]{
     display: none !important;
 }
