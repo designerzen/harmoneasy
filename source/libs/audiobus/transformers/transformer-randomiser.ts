@@ -1,6 +1,7 @@
 import type { AudioCommandInterface } from "../audio-command-interface"
 import { Transformer } from "./abstract-transformer"
 import * as Commands from "../../../commands"
+import type { TransformerInterface } from "./transformer-interface"
 
 export const ID_RANDOMISER = "randomiser"
 
@@ -23,7 +24,7 @@ const DEFAULT_OPTIONS: Config = {
  *
  * Tracks active notes to ensure NOTE_OFF commands turn off the correct randomised notes.
  */
-export class TransformerRandomiser extends Transformer<Config> {
+export class TransformerRandomiser extends Transformer<Config> implements TransformerInterface {
 
     id = ID_RANDOMISER
 

@@ -2,15 +2,16 @@
  * TRANSFORMER -----------------------------------------------
  * GOBOTS IN DISGUISE
  */
-import type { AudioCommandInterface } from "../audio-command-interface.ts"
 import { Transformer } from "./abstract-transformer.ts"
-import { IdentityTransformer } from "./id-transformer.ts"
+import { IdentityTransformer } from "./transformer-identity.ts"
 import { TransformerHarmoniser } from "./transformer-harmoniser.ts"
 import { TransformerTransposer } from "./transformer-transposer.ts"
 import { ID_QUANTISE, TransformerQuantise } from "./transformer-quantise.ts"
-import type { TransformerInterface } from "./trqansformer-interface.ts"
 import { TransformerRandomiser } from "./transformer-randomiser.ts"
+
 import type Timer from "../timing/timer.ts"
+import type { FieldConfig, TransformerInterface } from "./transformer-interface.ts"
+import type { AudioCommandInterface } from "../audio-command-interface.ts"
 
 type Callback = () => void
 
@@ -18,18 +19,22 @@ const EVENT_TRANSFORMERS_UPDATED = "EVENT_TRANSFORMERS_UPDATED"
 
 export class TransformerManager extends EventTarget implements TransformerInterface {
      
+    public id: string = Transformer.getUniqueID()
     public name: string = 'TransformerManager'
-    public timer: any = null // Reference to AudioTimer for BPM-synced transformers
+    public timer:Timer|undefined // Reference to AudioTimer for BPM-synced transformers
 
     private transformers: Array<Transformer> = [
         new IdentityTransformer({}),
-        new TransformerTransposer(),
-        new TransformerHarmoniser(),
-        new TransformerRandomiser()
+        new TransformerHarmoniser()
     ]
 
     private transformersMap:Map<string, Transformer> = new Map()
     private onChangeFns: Callback[] = []
+
+    // FIXME: Make a compositie of all the transformers
+    get fields(): FieldConfig[] {
+        return []
+    }
 
     get isQuantised(){
         return this.transformersMap.has(ID_QUANTISE)
@@ -99,6 +104,8 @@ export class TransformerManager extends EventTarget implements TransformerInterf
         return this.transformers
     }
 
+
+    // GUI stuff?
     getStructure() {
 
         // Calculate positions with better spacing and centering
@@ -170,7 +177,6 @@ export class TransformerManager extends EventTarget implements TransformerInterf
         this.setTransformers(newList)
     }
 
-
     /**
      * INTERFACE :
      * Advance through every single registered transformer and pass the
@@ -180,7 +186,7 @@ export class TransformerManager extends EventTarget implements TransformerInterf
      */
     transform(command: AudioCommandInterface[], timer:Timer ) {
         console.log('TRANSFORM', command)
-       return this.transformers.reduce((v, t) => t.transform(v, timer), command)
+        return this.transformers.reduce((v, t) => t.transform(v, timer), command)
     }
 
     onChange(fn: () => void) {

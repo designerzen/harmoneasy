@@ -3,6 +3,7 @@ import { Transformer } from "./abstract-transformer"
 import AudioCommand from "../audio-command"
 import * as Commands from "../../../commands"
 import type Timer from "../timing/timer"
+import type { TransformerInterface } from "./transformer-interface"
 
 export const ID_ARPEGGIATOR = "arpeggiator"
 
@@ -36,7 +37,7 @@ const DEFAULT_OPTIONS: Config = {
  * - random: Random order
  * - chord: All notes at once (passthrough)
  */
-export class TransformerArpeggiator extends Transformer<Config> {
+export class TransformerArpeggiator extends Transformer<Config> implements TransformerInterface {
 
     id = ID_ARPEGGIATOR
 
@@ -116,10 +117,7 @@ export class TransformerArpeggiator extends Transformer<Config> {
      * Calculate delay in milliseconds based on note division and BPM
      */
     private calculateDelayMs(rate: string, bpm: number): number {
-        // Default to 120 BPM if not available
-        const tempo = bpm || 120
-        const beatDurationMs = (60 / tempo) * 1000 // Duration of one quarter note in ms
-
+        const beatDurationMs = (60 / bpm) * 1000 // Duration of one quarter note in ms
         switch (rate) {
             case '1/4':
                 return beatDurationMs
@@ -137,8 +135,8 @@ export class TransformerArpeggiator extends Transformer<Config> {
     }
 
     transform(commands: AudioCommandInterface[], timer: Timer): AudioCommandInterface[] {
-        console.log('ARP', timer)
-        const bpm = timer?.BPM || 120
+      
+        const bpm = timer.BPM
 
         console.log('[ARPEGGIATOR] Transform called', {
             enabled: this.config.enabled,
@@ -148,7 +146,7 @@ export class TransformerArpeggiator extends Transformer<Config> {
         })
 
         if (!this.config.enabled || commands.length === 0) {
-            console.log('[ARPEGGIATOR] Bypassing - disabled or no commands')
+            //console.log('[ARPEGGIATOR] Bypassing - disabled or no commands')
             return commands
         }
 

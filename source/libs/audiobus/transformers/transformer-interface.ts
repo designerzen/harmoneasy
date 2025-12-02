@@ -5,11 +5,13 @@ export interface TransformerInterface {
     id: string
     fields: FieldConfig[]
     transform(commands: AudioCommandInterface[], timer:Timer ): AudioCommandInterface[]
+    reset():void
 }
 
 export interface FieldConfig {
     name: string
     type: string
+    enabled:boolean
     values: Array<string | number | { name: string; value: string | number }>
 }
 

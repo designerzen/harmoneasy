@@ -3,6 +3,7 @@ import { Transformer } from "./abstract-transformer"
 import AudioCommand from "../audio-command"
 import * as Commands from "../../../commands"
 import type Timer from "../timing/timer"
+import type { TransformerInterface } from "./transformer-interface"
 
 export const ID_NOTE_REPEATER = "note-repeater"
 
@@ -27,7 +28,7 @@ const DEFAULT_OPTIONS: Config = {
  * Generates NOTE_ON and NOTE_OFF pairs immediately for each repeat.
  * Uses the same delay approach as the arpeggiator.
  */
-export class TransformerNoteRepeater extends Transformer<Config> {
+export class TransformerNoteRepeater extends Transformer<Config> implements TransformerInterface{
 
     id = ID_NOTE_REPEATER
 

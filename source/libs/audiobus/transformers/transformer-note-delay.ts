@@ -3,6 +3,7 @@ import { Transformer } from "./abstract-transformer"
 import AudioCommand from "../audio-command"
 import * as Commands from "../../../commands"
 import type Timer from "../timing/timer"
+import type { TransformerInterface } from "./transformer-interface"
 
 export const ID_NOTE_DELAY = "note-delay"
 
@@ -31,7 +32,7 @@ const DEFAULT_OPTIONS: Config = {
  * - delayMs: The delay in milliseconds when in millisecond mode
  * - accumulate: When enabled, each note gets progressively more delay (spread effect)
  */
-export class TransformerNoteDelay extends Transformer<Config> {
+export class TransformerNoteDelay extends Transformer<Config> implements TransformerInterface {
 
     id = ID_NOTE_DELAY
 
@@ -239,9 +240,5 @@ export class TransformerNoteDelay extends Transformer<Config> {
         })
 
         return delayed
-    }
-
-    reset(): void {
-        // No state to reset for this transformer
     }
 }

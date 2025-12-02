@@ -1,6 +1,7 @@
 import type { AudioCommandInterface } from "../audio-command-interface";
 import type Timer from "../timing/timer";
 import { Transformer } from "./abstract-transformer"
+import type { TransformerInterface } from "./transformer-interface";
 
 export const ID_QUANTISE = "quantise"
 
@@ -12,7 +13,7 @@ const DEFAULT_OPTIONS: Config = {
    step: 4
 }
 
-export class TransformerQuantise extends Transformer<{ step: number }>{
+export class TransformerQuantise extends Transformer<{ step: number }> implements TransformerInterface{
 
     id = ID_QUANTISE
 

@@ -3,6 +3,7 @@ import { Transformer } from "./abstract-transformer"
 import AudioCommand from "../audio-command"
 import * as Commands from "../../../commands"
 import type Timer from "../timing/timer"
+import type { TransformerInterface } from "./transformer-interface"
 
 export const ID_NOTE_SHORTENER = "note-shortener"
 
@@ -22,7 +23,7 @@ const DEFAULT_OPTIONS: Config = {
  * Shortens the duration of notes by generating NOTE_OFF commands after a fixed delay.
  * The delay is configurable based on beat speed (e.g., 1/16, 1/8, etc.).
  */
-export class TransformerNoteShortener extends Transformer<Config> {
+export class TransformerNoteShortener extends Transformer<Config> implements TransformerInterface{
 
     id = ID_NOTE_SHORTENER
 

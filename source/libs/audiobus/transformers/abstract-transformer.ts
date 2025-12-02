@@ -1,14 +1,13 @@
 import type { AudioCommandInterface } from "../audio-command-interface"
 import type Timer from "../timing/timer"
-import type { FieldConfig, TransformerConfig, TransformerInterface } from "./trqansformer-interface"
-
+import type { FieldConfig, TransformerConfig, TransformerInterface } from "./transformer-interface"
 
 export abstract class Transformer<Config = TransformerConfig> implements TransformerInterface {
     
     static ID:number = 0
 
     static getUniqueID() {
-        return "Transformer-" + (++Transformer.ID)
+        return "Transformer-" + this.name + "-" + (++Transformer.ID).toFixed(8)
     }
     
     public id: string = Transformer.getUniqueID()
@@ -23,17 +22,19 @@ export abstract class Transformer<Config = TransformerConfig> implements Transfo
         return this.config
     }
 
-    abstract get name(): string
+    get name(): string{
+        return this.id
+    }
 
     constructor(config: Config) {
         this.config = config
-        if (!this.id)
-        {
-            throw Error("No ID specified for this Transformer!")
-        }
     }
 
     abstract transform(commands: AudioCommandInterface[], timer: Timer): AudioCommandInterface[]
+
+    reset():void{
+        // No state to reset for this transformer
+    }
 
     setConfig(c: string, val: unknown):void {
         this.config[c] = val

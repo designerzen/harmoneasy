@@ -17,8 +17,9 @@ import {
 import { TUNING_MODE_IONIAN } from "../tuning/scales.js";
 import { getIntervalFormulaForMode } from "../tuning/chords/modal-chords.js"
 import type Timer from "../timing/timer.js";
+import type { TransformerInterface } from "./transformer-interface.js";
 
-export const ID_QUANTISE = "harmonise"
+export const ID_HARMONISER = "harmonise"
 
 const NOTES_IN_CHORDS = 3
 
@@ -36,9 +37,9 @@ const DEFAULT_OPTIONS: Config = {
     mode: TUNING_MODE_IONIAN
 }
 
-export class TransformerHarmoniser extends Transformer<Config>{
+export class TransformerHarmoniser extends Transformer<Config> implements TransformerInterface {
 
-    id = ID_QUANTISE
+    id = ID_HARMONISER
 
     get name(): string {
         return 'Harmoniser'
