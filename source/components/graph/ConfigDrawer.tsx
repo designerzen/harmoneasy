@@ -1,6 +1,6 @@
 import React from "react";
 import type { TransformerManager } from "../../libs/audiobus/transformers/transformer-manager";
-import { IdentityTransformer } from "../../libs/audiobus/transformers/id-transformer";
+import { IdentityTransformer } from "../../libs/audiobus/transformers/transformer-identity";
 import { TransformerQuantise } from "../../libs/audiobus/transformers/transformer-quantise";
 import { TransformerHarmoniser } from "../../libs/audiobus/transformers/transformer-harmoniser";
 import { TransformerArpeggiator } from "../../libs/audiobus/transformers/transformer-arpeggiator";
