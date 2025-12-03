@@ -11,7 +11,7 @@ const initialNodes = [
   { id: 'n1', position: { x: 0, y: 0 }, data: { label: 'Node 1' } },
   { id: 'n2', position: { x: 0, y: 100 }, data: { label: 'Node 2' } },
 ];
-const initialEdges = [{ id: 'n1-n2', source: 'n1', target: 'n2' }];
+const initialEdges = [{ id: 'n1-n2', source: 'n1', target: 'n2' }]
 
 const nodeTypes = {
   start: StartNode,
@@ -20,9 +20,9 @@ const nodeTypes = {
 }
 
 function FlowComponent() {
-  const [nodes, setNodes] = useState(initialNodes);
-  const [edges, setEdges] = useState(initialEdges);
-  const { fitView } = useReactFlow();
+  const [nodes, setNodes] = useState(initialNodes)
+  const [edges, setEdges] = useState(initialEdges)
+  const { fitView } = useReactFlow()
 
   useEffect(() => {
     console.log('EFFECT')
@@ -69,11 +69,10 @@ function FlowComponent() {
   );
 
   return (
-    <div style={{width: '100%', height: '100%', display: 'flex', gap: '16px'}}>
-      <div style={{padding: '16px'}}>
+    <div className="graph-container">
+    
         <ConfigDrawer />
-      </div>
-      <div style={{flex: 1}}>
+
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -85,9 +84,9 @@ function FlowComponent() {
           maxZoom={2}
           defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
         />
-      </div>
+        
     </div>
-  );
+  )
 }
 
 export default function App() {
@@ -95,5 +94,5 @@ export default function App() {
     <ReactFlowProvider>
       <FlowComponent />
     </ReactFlowProvider>
-  );
+  )
 }

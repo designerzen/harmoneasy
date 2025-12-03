@@ -1,30 +1,9 @@
-import React from "react";
-import type { TransformerManager } from "../../libs/audiobus/transformers/transformer-manager";
-import { IdentityTransformer } from "../../libs/audiobus/transformers/transformer-identity";
-import { TransformerQuantise } from "../../libs/audiobus/transformers/transformer-quantise";
-import { TransformerHarmoniser } from "../../libs/audiobus/transformers/transformer-harmoniser";
-import { TransformerArpeggiator } from "../../libs/audiobus/transformers/transformer-arpeggiator";
-import { TransformerNoteShortener } from "../../libs/audiobus/transformers/transformer-note-shortener";
-import { TransformerNoteRepeater } from "../../libs/audiobus/transformers/transformer-note-repeater";
-import { TransformerRandomiser } from "../../libs/audiobus/transformers/transformer-randomiser";
-import { TransformerTransposer } from "../../libs/audiobus/transformers/transformer-transposer";
-import { TransformerNoteDelay } from "../../libs/audiobus/transformers/transformer-note-delay";
-
-const tranformerFactory = (s: string) => {
-    switch (s) {
-        case 'quantise': return new TransformerQuantise()
-        case 'harmonise': return new TransformerHarmoniser()
-        case 'arpeggiator': return new TransformerArpeggiator()
-        case 'note-shortener': return new TransformerNoteShortener()
-        case 'note-repeater': return new TransformerNoteRepeater()
-        case 'note-delay': return new TransformerNoteDelay()
-        case 'randomiser': return new TransformerRandomiser()
-        case 'transposer': return new TransformerTransposer()
-        default: return new IdentityTransformer({})
-
-    }
-}
-
+import React from "react"
+import type { TransformerManager } from "../../libs/audiobus/transformers/transformer-manager"
+import { 
+    tranformerFactory,
+    TRANSFORMER_TYPE
+} from "../../libs/audiobus/transformers/transformer-factory"
 
 export function ConfigDrawer() {
 
@@ -41,48 +20,47 @@ export function ConfigDrawer() {
         tM.setTransformers(transformers.map(tranformerFactory))
     }
 
-    return (<div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
-        <button onClick={onAdd('arpeggiator')}>Arpeggiator</button>
-        <button onClick={onAdd('quantise')}>Quantise</button>
-        <button onClick={onAdd('harmonise')}>Harmonise</button>
-        <button onClick={onAdd('note-shortener')}>Note Shortener</button>
-        <button onClick={onAdd('note-repeater')}>Note Repeater</button>
-        <button onClick={onAdd('note-delay')}>Note Delay</button>
-        <button onClick={onAdd('randomiser')}>Randomiser</button>
-        <button onClick={onAdd('transposer')}>Transposer</button>
+    return (<aside className="transformers-drawer">
+        
+        <details open className="transformers">
+            <summary><h6>Transformers</h6></summary>
+            
+            <button onClick={onAdd(TRANSFORMER_TYPE.ID_ARPEGGIATOR)}>Arpeggiator</button>
+            <button onClick={onAdd(TRANSFORMER_TYPE.ID_QUANTISE)}>Quantise</button>
+            <button onClick={onAdd(TRANSFORMER_TYPE.ID_CHORDIFIER)}>Chordifier</button>
+            <button onClick={onAdd(TRANSFORMER_TYPE.ID_HARMONISER)}>Harmoniser</button>
+            <button onClick={onAdd(TRANSFORMER_TYPE.ID_NOTE_SHORTENER)}>Note Shortener</button>
+            <button onClick={onAdd(TRANSFORMER_TYPE.ID_NOTE_REPEATER)}>Note Repeater</button>
+            <button onClick={onAdd(TRANSFORMER_TYPE.ID_NOTE_DELAY)}>Note Delay</button>
+            <button onClick={onAdd(TRANSFORMER_TYPE.ID_RANDOMISER)}>Randomiser</button>
+        </details>
 
-        <div style={{
-            marginTop: '16px',
-            paddingTop: '16px',
-            borderTop: '2px solid #444'
-        }}>
-            <div style={{fontSize: '12px', fontWeight: 'bold', color: '#888', marginBottom: '8px'}}>PRESETS</div>
+        <details open className="presets">
+            <summary><h6>Presets</h6></summary>
 
-            <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
-                <button onClick={onSetPreset(['quantise', 'harmonise', 'arpeggiator'])}>
-                    Chord Arpeggiator
-                </button>
+            <button onClick={onSetPreset([TRANSFORMER_TYPE.ID_QUANTISE, TRANSFORMER_TYPE.ID_CHORDIFIER, TRANSFORMER_TYPE.ID_ARPEGGIATOR])}>
+                Chord Arpeggiator
+            </button>
 
-                <button onClick={onSetPreset(['randomiser', 'quantise', 'note-shortener'])}>
-                    Random Patch
-                </button>
+            <button onClick={onSetPreset([TRANSFORMER_TYPE.ID_RANDOMISER, TRANSFORMER_TYPE.ID_QUANTISE, TRANSFORMER_TYPE.ID_NOTE_SHORTENER])}>
+                Random Patch
+            </button>
 
-                <button onClick={onSetPreset(['quantise', 'harmonise', 'note-repeater'])}>
-                    Chord Repeater
-                </button>
+            <button onClick={onSetPreset([TRANSFORMER_TYPE.ID_QUANTISE, TRANSFORMER_TYPE.ID_CHORDIFIER, TRANSFORMER_TYPE.ID_NOTE_REPEATER])}>
+                Chord Repeater
+            </button>
 
-                <button onClick={onSetPreset(['transposer', 'randomiser', 'harmonise'])}>
-                    Harmonic Randomiser
-                </button>
+            <button onClick={onSetPreset([TRANSFORMER_TYPE.ID_QUANTISE, TRANSFORMER_TYPE.ID_RANDOMISER, TRANSFORMER_TYPE.ID_CHORDIFIER])}>
+                Harmonic Randomiser
+            </button>
 
-                <button onClick={onSetPreset(['quantise', 'arpeggiator', 'note-shortener'])}>
-                    Staccato Arp
-                </button>
+            <button onClick={onSetPreset([TRANSFORMER_TYPE.ID_QUANTISE, TRANSFORMER_TYPE.ID_ARPEGGIATOR, TRANSFORMER_TYPE.ID_NOTE_SHORTENER])}>
+                Staccato Arp
+            </button>
 
-                <button onClick={onSetPreset(['randomiser', 'harmonise', 'arpeggiator', 'note-repeater'])}>
-                    Complex Pattern
-                </button>
-            </div>
-        </div>
-    </div>)
+            <button onClick={onSetPreset([TRANSFORMER_TYPE.ID_RANDOMISER, TRANSFORMER_TYPE.ID_HARMONISER, TRANSFORMER_TYPE.ID_ARPEGGIATOR, TRANSFORMER_TYPE.ID_NOTE_REPEATER])}>
+                Complex Pattern
+            </button>
+        </details>
+    </aside>)
 }
