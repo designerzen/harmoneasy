@@ -3,7 +3,6 @@
  * To allow hybrid timing events and for multiple
  * clocks to run at different rates
  */
-
 import {
 	CMD_START,CMD_STOP,CMD_UPDATE,
 	EVENT_READY, EVENT_STARTING, EVENT_STOPPING, EVENT_TICK
@@ -11,17 +10,25 @@ import {
 
 import AUDIOCONTEXT_WORKER_URI from './timing.audiocontext.worker.js?url'
 import { tapTempoQuick } from './tap-tempo.js'
+import { Ticks } from './ticks.js'
+
 // import AUDIOCONTEXT_WORKER_URI from './timing.audiocontext.worker.js?worker&url'
 // import AUDIOTIMER_WORKLET_URI from './timing.audioworklet.js?worker&url'
 // import AUDIOTIMER_PROCESSOR_URI from './timing.audioworklet-processor.js?worker&url'
 // import { createTimingProcessor } from './timing.audioworklet.js'
 
+
+// Timing Constants and conversions
+export const SECONDS_PER_MINUTE = 60
+export const MICROSECONDS_PER_MINUTE = SECONDS_PER_MINUTE * 1_000
+
 export const MAX_BARS_ALLOWED = 32
 
 const DEFAULT_TIMER_OPTIONS = {
+
 	bars:16,
 	// keep this at 24 to match MIDI1.0 spec
-	// where there are 24 ticks per quarternote
+	// where there are 24 ticks per quarternote (one beat)
 	divisions:24,
 
 	bpm:90,
@@ -39,14 +46,14 @@ const DEFAULT_TIMER_OPTIONS = {
  * @param {Number} bpm beats per minute
  * @returns {Number} time in milliseconds
  */
-export const convertBPMToPeriod = bpm => 60000 / parseFloat(bpm)
+export const convertBPMToPeriod = (bpm) => MICROSECONDS_PER_MINUTE / parseFloat(bpm)
 
 /**
  * Convert a period in ms to a BPM
  * @param {Number} period millisecods
  * @returns {Number} time in milliseconds
  */
-export const convertPeriodToBPM = period => 60000 / parseFloat(period)
+export const convertPeriodToBPM = (period) => MICROSECONDS_PER_MINUTE / parseFloat(period)
 
 /**
  * Convert a midi clock to BPM
@@ -68,10 +75,24 @@ export const convertMIDIClockIntervalToBPM = (millisecondsPerClockEvent, pulsesP
 }
 
 /**
+ * Converts seconds to ticks at a given bpm.
+ * Uses internal tick resolution where 3840 ticks = 1 quarter note
+ * @param seconds Time in seconds
+ * @param bpm Beats per minute
+ * @param resolution Optional: ticks per quarter note (default: 3840)
+ * @returns Number of ticks (internal timing units)
+ */
+export const secondsToTicks = (seconds: number, bpm: number, resolution: number = Ticks.Beat): number => {
+    const quarterNoteDurationSeconds = SECONDS_PER_MINUTE / bpm
+    const ticksPerSecond = resolution / quarterNoteDurationSeconds
+    return seconds * ticksPerSecond
+}
+
+/**
  * Pass in a Timer, return a formatted time
  * such as HH:MM:SS
  */
-export const formatTimeStampFromSeconds = (seconds) => {
+export const formatTimeStampFromSeconds = (seconds:number) => {
 	const hours = Math.floor(seconds / 3600)
     const minutes = Math.floor((seconds % 3600) / 60)
     const remainingSeconds = (seconds % 60)
@@ -227,18 +248,30 @@ export default class Timer {
 	 * @returns {Number} BPM
 	 */
 	get BPM (){
-		return 60000 / this.timePerBar
+		return MICROSECONDS_PER_MINUTE / this.timePerBar
 	}
 	get bpm (){
 		return this.BPM
 	}
 
+
+
+
 	/**
-	 * Get the current timing as a Microtempo 
+	 * Get the duration of one beat (quarternote) 
+	 * in microseconds
 	 * @returns {Number} Microtempo
 	 */
-	get quarterNoteLength (){ 
-		return this.timePerBar * 0.25
+	get quarterNoteDuration (){ 
+		return MICROSECONDS_PER_MINUTE / this.bpm
+	}
+	
+	/**
+	 * Get the duration of one beat (quarternote) 
+	 * in seconds
+	 */
+	get quarterNoteDurationInSeconds (){ 
+		return SECONDS_PER_MINUTE / this.bpm
 	}
 
 	/**
@@ -251,12 +284,22 @@ export default class Timer {
 
 	/**
 	 * Get the current timing in Micros per MIDI clock
-	 * MicrosPerMIDIClock = MicroTempo / 24 
+	 * MicrosPerMIDIClock = MicroTempo / 24 (MIDI 1.0 has 24 divisions)
 	 * @returns {Number} Microtempo
 	 */
 	get microsPerMIDIClock(){
-		return this.microTempo / 24
+		return this.microTempo / this.divisions
 	}
+
+	/**
+	 * How many Ticks are there every second?
+	 */
+	get ticksPerSecond(){
+		return Ticks.Beat / this.quarterNoteDurationInSeconds
+	}
+	
+
+
 
 	get isAtStartOfBar(){
 		return this.barProgress === 0
@@ -452,6 +495,27 @@ export default class Timer {
 
 		return trigger
 	}
+
+	// CONVERSIONS --------------------------------------------------------------------------------
+	
+	/**
+	 * Convert seconds to MIDI clock ticks based on current BPM
+	 * @param seconds Time in seconds
+	 * @returns Number of MIDI clock ticks (24 ticks per quarter note)
+	 */
+	secondsToTicks(seconds: number): number {
+   		return seconds * this.ticksPerSecond
+	}
+
+	/**
+	 * Convert time to ticks using the current tick per second rate
+	 * @param time 
+	 * @returns 
+	 */
+	convertToTicks( time ) {
+		return time / this.ticksPerSecond
+	}
+
 
 	// WORKLET ------------------------------------------------------------------------------------
 
@@ -817,18 +881,20 @@ export default class Timer {
 		this.divisionsElapsed++
 	}
 
+	// EVENTS =============================================================================
+
 	/**
 	 * EVENT: Timer is available
 	 */
 	onAvailable(){
-		console.info("Timer is available")
+		// console.info("Timer is available")
 	}
 
 	/**
 	 * EVENT: Timer is unavailable
 	 */
 	onUnavailable(){
-		console.error("Timer is unavailable")
+		// console.error("Timer is unavailable")
 	}
 
 	/**
@@ -844,7 +910,6 @@ export default class Timer {
 	onTick(timePassed, expected, drift=0, level=0, intervals=0, lag=0){
 		
 		//console.info("Timer:onTick", {timePassed, expected, drift, level, intervals, lag} )
-
 		this.lastRecordedTime = timePassed
 
 		// check if bar has completed
@@ -854,7 +919,6 @@ export default class Timer {
 			this.currentBar = (this.currentBar+1) % this.bars
 			this.divisionsElapsed = 0
 		}
-
 	
 		// let us determine if we are on a swung beat
 		const swung = this.divisionsElapsed%this.swingOffset === 0
