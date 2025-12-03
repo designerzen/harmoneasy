@@ -3,7 +3,6 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/designerzen.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Harmoneasy</title>
   <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
@@ -15,13 +14,17 @@
 </head>
 
 <body>
+
   <header>
     <a class="backlink" href="/">
       <img class="logo" src="/source/assets/logos/harmoneasy.svg" alt=""> 
       <h1>Harmoneasy</h1>
       <h2>Play with friends</h2>
+      <p aria-summary class="sr-only">Harmoneasy is a web-based MIDI sequencer that allows you to play with friends in real-time and your music will be transformed in many ways to improve it, from synchronising the timing to transposing into key.</p>
     </a>
-    <div class="header-controls">
+
+    <menu class="header-controls">
+
       <div id="tempo-control" class="controls">
          <label>
            Tempo:
@@ -30,6 +33,7 @@
            BPM
          </label>
        </div>
+
        <div id="volume-control" class="controls">
          <label>
            Volume:
@@ -38,32 +42,35 @@
            %
          </label>
        </div>
+
       <div class="device-buttons">
         <button type="button" id="btn-random-timbre">Random Timbre</button>
         <button type="button" id="btn-connect-to-ble">Connect Bluetooth</button>
         <button type="button" id="btn-toggle-webmidi">Connect WebMIDI</button>
         <button type="button" id="btn-kill-switch" class="kill-switch">All Notes Off</button>
       </div>
-    </div>
+
+    </menu>
   </header>
 
   <div id="timer-bar">
     <strong>TIMER</strong>
-    <time id="clock"></time>
+    <time id="clock">...</time>
   </div>
 
-  <div id="action-bar">
+  <menu id="action-bar">
     <button class="primary" type="button" id="btn-midi-export">Export as MIDI file</button>
     <button type="button" id="btn-audiotool-export">Open in AudioTool</button>
     <button type="button" id="btn-opendaw-export">Open in OpenDAW</button>
-  </div>
+  </menu>
 
   <!-- Sidebar for MIDI Events -->
   <aside id="sidebar">
-    <div id="sidebar-header">
+
+    <header id="sidebar-header">
       <h4>MIDI Events</h4>
-      <button id="sidebar-close">&times;</button>
-    </div>
+      <button id="sidebar-close"><span class="sr-only">close</span>&times;</button>
+    </header>
 
     <div id="sidebar-content">
       <output id="midi-devices"></output>
@@ -101,27 +108,19 @@
         <button type="button" id="btn-send-ble-manual">Send BLE</button>
       </div>
     </div>
+
   </aside>
 
-  <main>
-    <div id="graph-container">
-      <div id="app"></div>
-      <div id="graph"></div>
-    </div>
 
+  <main>
+
+    <div id="graph"></div>
+   
     <div id="keyboard-container">
       <canvas id="wallpaper" width="1920" height="1080"></canvas>
     </div>
+
   </main>
-
-  <!-- Hidden form for backward compatibility -->
-  <form id="options" style="display: none;">
-    <fieldset id="midi-settings-fieldset"></fieldset>
-    <fieldset id="midi-controls"></fieldset>
-  </form>
-
-  <footer>
-  </footer>
 
   <div id="export-overlay" class="export-overlay" hidden>
     <div class="export-overlay-content">
@@ -133,48 +132,30 @@
 
   
   <dialog id="info-dialog" hidden>
-    <h5></h5>
-    <p id="info-message" class="selectable"></p>
-    <form>
+    <h5>Information</h5>
+    <pre id="info-message" class="selectable"></pre>
+    <form action="/" onsubmit="return false">
       <button class="close-button" type="dialog">Close</button>
     </form>
   </dialog>
-
 
   <dialog id="error-dialog" hidden>
     <h5>Error</h5>
     <p id="error-message"></p>
     <p id="error-solution"></p>
-    <form>
+    <form action="/" onsubmit="return false">
       <button class="close-button" type="dialog">Close</button>
     </form>
   </dialog>
 
-
   <script type="module" src="/source/index.ts"></script>
-  <script>
-    // Sidebar toggle functionality
-    const timerBar = document.getElementById('timer-bar');
-    const sidebar = document.getElementById('sidebar');
-    const sidebarClose = document.getElementById('sidebar-close');
+  
+  <!-- Hidden form for backward compatibility -->
+  <form id="options" style="display: none;">
+    <fieldset id="midi-settings-fieldset"></fieldset>
+    <fieldset id="midi-controls"></fieldset>
+  </form>
 
-    timerBar.addEventListener('click', () => {
-      sidebar.classList.toggle('open');
-    });
-
-    sidebarClose.addEventListener('click', () => {
-      sidebar.classList.remove('open');
-    });
-
-    // Close sidebar when clicking outside of it
-    document.addEventListener('click', (e) => {
-      if (sidebar.classList.contains('open') &&
-          !sidebar.contains(e.target) &&
-          !timerBar.contains(e.target)) {
-        sidebar.classList.remove('open');
-      }
-    });
-  </script>
 </body>
 
 </html>

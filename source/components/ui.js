@@ -68,12 +68,37 @@ export default class UI{
         this.elementInfoDialog = document.getElementById(DOM_ID_DIALOG_INFO)
         this.elementErrorDialog = document.getElementById(DOM_ID_DIALOG_ERROR)
         
+        this.activateSidebar()
+
         this.wallpaperCanvas = document.getElementById(DOM_ID_WALLPAPER_CANVAS)
         this.noteVisualiser = new NoteVisualiser( keyboardNotes, this.wallpaperCanvas, false, 0 ) // ALL_KEYBOARD_NOTES
         // wallpaperCanvas.addEventListener( "dblclick", e => scale === SCALES[ (SCALES.indexOf(scale) + 1) % SCALES.length] )
 
         this.keyboard = new SVGKeyboard( keyboardNotes, onNoteOn, onNoteOff )
         this.keyboardElement = document.body.appendChild( this.keyboard.asElement )
+    }
+
+
+    activateSidebar(){
+          // Sidebar toggle functionality
+        const timerBar = document.getElementById('timer-bar')
+        const sidebar = document.getElementById('sidebar')
+        const sidebarClose = document.getElementById('sidebar-close')
+
+        timerBar.addEventListener('click', () => {
+            sidebar.classList.toggle('open')
+        })
+
+        sidebarClose.addEventListener('click', () => sidebar.classList.remove('open'))
+
+        // Close sidebar when clicking outside of it
+        document.addEventListener('click', (e) => {
+            if (sidebar.classList.contains('open') &&
+                !sidebar.contains(e.target) &&
+                !timerBar.contains(e.target)) {
+                sidebar.classList.remove('open')
+            }
+        })
     }
 
     /**
@@ -246,11 +271,11 @@ export default class UI{
         this.elementOverlayExport.hidden = true
     }
     showExportOverlay( text ){
-        // this.elementOverlayExport.textContent = text
+        // this.setExportOverlayText( text 
         this.elementOverlayExport.hidden = false
     }
     setExportOverlayText(text){
-        if (this.elementOverlayExportText)
+        if (text && this.elementOverlayExportText)
         { 
             this.elementOverlayExportText.textContent = text
         }
@@ -259,25 +284,25 @@ export default class UI{
     // Export Buttons 
     whenAudioToolExportRequestedRun(callback){
         if (!this.elementAudioToolExportButton) return
-        this.elementAudioToolExportButton.addEventListener('click', e => {
+        this.elementAudioToolExportButton.addEventListener('click', async ( e ) => {
             this.showExportOverlay()
-            callback && callback(e)
+            callback && await callback(e)
             this.hideExportOverlay()
         })
     }
     whenMIDIFileExportRequestedRun(callback){
         if (!this.elementMidiExportButton) return
-        this.elementMidiExportButton.addEventListener('click', e => {
+        this.elementMidiExportButton.addEventListener('click', async ( e ) => {
             this.showExportOverlay()
-            callback && callback(e)
+            callback && await callback(e)
             this.hideExportOverlay()
         })
     }
     whenOpenDAWExportRequestedRun(callback){
         if (!this.elementOpenDAWExportButton) return
-        this.elementOpenDAWExportButton.addEventListener('click', e => {
+        this.elementOpenDAWExportButton.addEventListener('click', async ( e ) => {
             this.showExportOverlay()
-            callback && callback(e)
+            callback && await callback(e)
             this.hideExportOverlay()
         })
     }
