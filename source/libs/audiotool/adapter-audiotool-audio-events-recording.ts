@@ -1,15 +1,29 @@
+// import { createAudiotoolClient, secondsToTicks, Ticks } from "@audiotool/nexus"
+
 import { RecorderAudioEvent } from "../audiobus/recorder-audio-event.js"
-import { createAudiotoolClient, secondsToTicks, Ticks } from "@audiotool/nexus"
-import type { AudiotoolClient, SyncedDocument } from "@audiotool/nexus"
-import { STORAGE_KEYS } from './audio-tool-settings.js'
+import { AUDIOTOOL_STORAGE_KEYS } from './audio-tool-settings.ts'
+import { NOTE_ON } from "../../commands.js"
+
 import type AudioCommand from "../audiobus/audio-command.js"
 import type AudioEvent from "../audiobus/audio-event.js"
 import type Timer from "../audiobus/timing/timer.js"
-import { NOTE_ON } from "../../commands.js"
-import { noteNumberToFrequency } from "../audiobus/note-model.js"
 
-const HARDCODED_PROJECT_URL = "https://beta.audiotool.com/studio?project=fe824261-7d93-4a75-95ec-3603d5891546"
-const PAT_TOKEN = "at_pat_sFoMCeBSURZQA8YuWHWKYtpYviWgd4fCVCwPKqxnjmA"
+import type { AudiotoolClient, SyncedDocument, Ticks } from "@audiotool/nexus"
+
+// lazily imported AudioToolSDK
+let createAudiotoolClient:Function
+let secondsToTicks:Function
+
+export const lazyLoadAutioToolSDK = async () => {
+    if (createAudiotoolClient && secondsToTicks)
+    {
+        return false
+    }
+    const nexus = await import("@audiotool/nexus")
+    createAudiotoolClient = nexus.createAudiotoolClient
+    secondsToTicks = nexus.secondsToTicks
+    return true
+}
 
 /**
  *
@@ -17,12 +31,16 @@ const PAT_TOKEN = "at_pat_sFoMCeBSURZQA8YuWHWKYtpYviWgd4fCVCwPKqxnjmA"
  */
 export const createAudioToolProjectFromAudioEventRecording = async (recording:RecorderAudioEvent, timer:Timer ) => {
 
+    const HARDCODED_PROJECT_URL = AUDIOTOOL_STORAGE_KEYS.PROJECT_URL
+
     try {
+        // Load the GIANT SDK
+        await lazyLoadAutioToolSDK()
+    
         // Take the timing
         const BPM = timer.BPM
         const data:AudioEvent[] = recording.exportData()
-
-        const client = await createAudiotoolClient({ token: PAT_TOKEN })
+        const client = await createAudiotoolClient({ token: AUDIOTOOL_STORAGE_KEYS.PAT_TOKEN })
 
         // Create synced document
         const nexus = await client.createSyncedDocument({
@@ -56,15 +74,15 @@ export const createAudioToolProjectFromAudioEventRecording = async (recording:Re
             const collection = t.create("noteCollection", {})
 
             const duration = secondsToTicks(recording.duration, BPM)
-
+   
             const noteRegion = t.create("noteRegion", {
                 collection: collection.location,
                 track: track.location,
                 region: {
                     positionTicks: 0,
-                    durationTicks: duration,
+                    durationTicks: durationTest,
                     displayName: "harmoneasy",
-                    loopDurationTicks: duration
+                    loopDurationTicks: durationTest
                 }
             })
 
