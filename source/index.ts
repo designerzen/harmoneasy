@@ -53,6 +53,7 @@ import { createReverbImpulseResponse } from './libs/audiobus/effects/reverb.ts'
 import { createAudioToolProjectFromAudioEventRecording } from './libs/audiotool/adapter-audiotool-audio-events-recording.ts'
 import { createMIDIFileFromAudioEventRecording, saveBlobToLocalFileSystem } from './libs/audiobus/midi/adapter-midi-file.ts'
 import { createOpenDAWProjectFromAudioEventRecording } from './libs/openDAW/adapter-opendaw-audio-events-recording.ts'
+import { secondsToTicks } from './libs/audiobus/timing/timer.ts'
 
 // import { AudioContext, BiquadFilterNode } from "standardized-audio-context"
 const ALL_MIDI_CHANNELS = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15, 16]
@@ -542,7 +543,6 @@ const initialiseApplication = (onEveryTimingTick) => {
          console.log(`[MIDI Channel] Selected channel ${channel}`)
     })
     ui.whenMIDIFileExportRequestedRun( async ()=>{
-
         const blob = await createMIDIFileFromAudioEventRecording( recorder, timer )
         saveBlobToLocalFileSystem(blob, recorder.name)
         console.info("Exporting Data to MIDI File", {recorder,  blob })
@@ -550,6 +550,8 @@ const initialiseApplication = (onEveryTimingTick) => {
     ui.whenAudioToolExportRequestedRun( async ()=>{
         const output = await createAudioToolProjectFromAudioEventRecording( recorder, timer )
         console.info("Exporting Data to AudioTool", {recorder, output })
+        ui.setExportOverlayText( "Open this project in AudioTool" )
+        ui.showInfoDialog("Open the file in AudioTool", "audiotool.com" )
     })
     ui.whenOpenDAWExportRequestedRun( async ()=>{
         const script = await createOpenDAWProjectFromAudioEventRecording( recorder, timer )
@@ -558,10 +560,8 @@ const initialiseApplication = (onEveryTimingTick) => {
         ui.showInfoDialog("Exporting Data to OpenDAW", script )
     })
     ui.whenKillSwitchRequestedRun( async ()=>{
-        ui.showExportOverlay()
         console.log('[Kill Switch] All notes off requested')
         await allNotesOff()
-        ui.hideExportOverlay()
     })
     
     ui.whenUserRequestsManualBLECodesRun((rawString:string) => {
