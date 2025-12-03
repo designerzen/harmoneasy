@@ -24,4 +24,6 @@ export interface AudioCommandInterface {
     timeCode:number
 
 	text:string
+
+	clone():AudioCommandInterface
 }
