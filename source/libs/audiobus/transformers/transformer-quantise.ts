@@ -7,13 +7,17 @@ export const ID_QUANTISE = "quantise"
 
 interface Config {
     step: number
+    expiration: number
+    swing: number
 }
 
 const DEFAULT_OPTIONS: Config = {
-   step: 4
+   step: 4,
+   expiration: 16,
+   swing: 0
 }
 
-export class TransformerQuantise extends Transformer<{ step: number }> implements TransformerInterface{
+export class TransformerQuantise extends Transformer<Config> implements TransformerInterface{
 
     id = ID_QUANTISE
 

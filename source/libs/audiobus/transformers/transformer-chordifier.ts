@@ -1,5 +1,7 @@
 /**
- * Harmoniser transposes into a specific key and mode
+ * Takes one note and a chord type and create
+ * a chord with the given root note and chord type
+ * and the length specified in simultaneous
  */
 import type { AudioCommandInterface } from "../audio-command-interface";
 import { Transformer } from "./abstract-transformer"
@@ -22,14 +24,13 @@ import { getIntervalFormulaForMode } from "../tuning/chords/modal-chords.js"
 import type Timer from "../timing/timer.js"
 import type { TransformerInterface } from "./transformer-interface.js"
 
-export const ID_HARMONISER = "harmoniser"
-
-const NOTES_IN_CHORDS = 3
+export const ID_CHORDIFIER = "chordifier"
 
 // Full keyboard with all notes
 const keyboardKeys = (new Array(128)).fill("")
 const ALL_KEYBOARD_NOTES = keyboardKeys.map((_, index) => new NoteModel(index))
 
+const NOTES_IN_CHORDS = 3
 
 interface Config {
     simultaneous: number,
@@ -43,12 +44,12 @@ const DEFAULT_OPTIONS: Config = {
     mode: TUNING_MODE_IONIAN
 }
 
-export class TransformerHarmoniser extends Transformer<Config> implements TransformerInterface {
+export class TransformerChordifier extends Transformer<Config> implements TransformerInterface {
 
-    id = ID_HARMONISER
+    id = ID_CHORDIFIER
 
     get name(): string {
-        return 'Harmoniser'
+        return 'Chordifier'
     }
 
     get fields() {
