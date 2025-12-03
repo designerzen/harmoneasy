@@ -2,7 +2,7 @@ import { createAudiotoolClient } from "@audiotool/nexus"
 import type { AudiotoolClient, SyncedDocument } from "@audiotool/nexus"
 import { log } from '../log.ts'
 // @ts-ignore
-import { STORAGE_KEYS } from '../audiotool/audio-tool-settings.js'
+import { AUDIOTOOL_STORAGE_KEYS } from './audio-tool-settings.js'
 // @ts-ignore
 import { edoScaleMicroTuningOctave } from "../pitfalls/edo.mjs"
 // @ts-ignore
@@ -139,7 +139,7 @@ export const handleConnectWithPAT = async (patToken: string): Promise<void> => {
     await initializeClient(patToken);
 
     // Save token to localStorage
-    localStorage.setItem(STORAGE_KEYS.PAT_TOKEN, patToken);
+    localStorage.setItem(AUDIOTOOL_STORAGE_KEYS.PAT_TOKEN, patToken);
     log('PAT token saved to localStorage');
 
     log('Client initialized successfully!');
@@ -223,7 +223,7 @@ export const handleOpenProject = async (projectUrl: string): Promise<void> => {
     log('Connecting to project...');
 
     // Save project URL to localStorage immediately when attempting to connect
-    localStorage.setItem(STORAGE_KEYS.PROJECT_URL, projectUrl);
+    localStorage.setItem(AUDIOTOOL_STORAGE_KEYS.PROJECT_URL, projectUrl);
     log('Project URL saved to localStorage');
 
     await connectToNexusProject(projectUrl);
@@ -312,7 +312,7 @@ export const handleCreateNoteTrack = async (): Promise<void> => {
  * 
  */
 export const handleClearToken = (): void => {
-  localStorage.removeItem(STORAGE_KEYS.PAT_TOKEN);
+  localStorage.removeItem(AUDIOTOOL_STORAGE_KEYS.PAT_TOKEN);
   (document.getElementById('pat-input') as HTMLInputElement).value = '';
   log('Stored PAT token cleared');
 }
@@ -322,8 +322,8 @@ export const handleClearToken = (): void => {
  * @returns 
  */
 export const handleAutoConnect = async (): Promise<void> => {
-  const savedToken = localStorage.getItem(STORAGE_KEYS.PAT_TOKEN);
-  const savedProjectUrl = localStorage.getItem(STORAGE_KEYS.PROJECT_URL);
+  const savedToken = localStorage.getItem(AUDIOTOOL_STORAGE_KEYS.PAT_TOKEN);
+  const savedProjectUrl = localStorage.getItem(AUDIOTOOL_STORAGE_KEYS.PROJECT_URL);
 
   if (!savedToken) {
     log('No stored PAT token found. Please enter a token and connect first.');

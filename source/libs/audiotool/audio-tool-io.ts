@@ -1,7 +1,7 @@
 import { log } from '../log.ts'
 import { handleAutoConnect, handleClearToken, handleConnectWithPAT, handleCreateNote, handleCreateNoteTrack, handleListNotes, handleListProjects, handleOpenProject, handleOpenSelectedProject, handleQueryDevices } from './audio-tool-connect.js';
 // @ts-ignore
-import { STORAGE_KEYS } from '../audiotool/audio-tool-settings.js'
+import { AUDIOTOOL_STORAGE_KEYS } from './audio-tool-settings.js'
 
 // Initialize the app
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
@@ -52,8 +52,8 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 
 // Load saved values from localStorage
 export const loadSavedValues = (): Boolean => {
-  const savedToken = localStorage.getItem(STORAGE_KEYS.PAT_TOKEN);
-  const savedProjectUrl = localStorage.getItem(STORAGE_KEYS.PROJECT_URL);
+  const savedToken = localStorage.getItem(AUDIOTOOL_STORAGE_KEYS.PAT_TOKEN);
+  const savedProjectUrl = localStorage.getItem(AUDIOTOOL_STORAGE_KEYS.PROJECT_URL);
 
   if (savedToken) {
     (document.getElementById('pat-input') as HTMLInputElement).value = savedToken;
@@ -69,7 +69,7 @@ export const loadSavedValues = (): Boolean => {
 }
 
 export const handleClearProject = (): void => {
-  localStorage.removeItem(STORAGE_KEYS.PROJECT_URL);
+  localStorage.removeItem(AUDIOTOOL_STORAGE_KEYS.PROJECT_URL);
   (document.getElementById('project-url') as HTMLInputElement).value = '';
   log('Stored project URL cleared');
 }
