@@ -16,8 +16,8 @@
     "@types/react": "^19.2.7",
     "sass-embedded": "^1.93.3",
     "typescript": "~5.9.3",
-    "vite": "^7.2.4",
-    "vitest": "^4.0.14"
+    "vite": "^7.2.6",
+    "vitest": "^4.0.15"
   },
   "dependencies": {
     "@audiotool/nexus": "file:audiotool-nexus-0.0.5.tgz",
