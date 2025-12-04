@@ -36,8 +36,10 @@ const DEFAULT_TIMER_OPTIONS = {
 	bpm:90,
 
 	contexts:null,
-	// 
+
+	// can be base64 encoded too
 	type:AUDIOCONTEXT_WORKER_URI,
+
 	// type:AUDIOTIMER_WORKLET_URI,
 	// processor:AUDIOTIMER_PROCESSOR_URI,
 	callback:null
@@ -100,6 +102,23 @@ export const formatTimeStampFromSeconds = (seconds:number) => {
     const remainingSeconds = (seconds % 60)
     const milliseconds = (remainingSeconds%1).toFixed(2).slice(2)
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(Math.floor(remainingSeconds)).padStart(2, '0')}:${String(milliseconds).padStart(2, '0')}`
+}
+
+/**
+ * Simple boolean test to work out if this is a Worklet
+ * or a simple Worker file (not very smart - may break in future)
+ * @param file 
+ * @returns 
+ */
+export const isFileWorklet = (file) => {
+	
+	if (file.indexOf("orklet") > -1 ) {
+		return true
+	}
+	if (file.indexOf("data:text/javascript;base64,") > -1 ) {
+		return true
+	}
+	return false
 }
 
 
@@ -424,7 +443,7 @@ export default class Timer {
 		}
 
 		// 
-		const isWorklet = options.type ? options.type.indexOf("orklet") > -1 : false
+		const isWorklet = isFileWorklet(options.type)
 		console.info("Timer:", options.type, this.timingWorkHandler, {isWorklet, options} )
 
 		if (isWorklet)
@@ -434,6 +453,8 @@ export default class Timer {
 			this.loaded = this.setTimingWorker( options.type )
 		}		
 	}
+
+
 
 	/**
 	 * Set the function that gets called on every divixional tick
@@ -537,8 +558,6 @@ export default class Timer {
 		this.timingWorkHandler = await createTimingProcessor( audioContext )	
 		// this.timingWorkHandler = new Worklet( audioContext )
 	
-		debugger
-
 		// console.error(type, "timer.audioworklet", {module, audioContext}, this.timingWorker ) 
 		if (wasRunning)
 		{
