@@ -17,7 +17,8 @@
     "sass-embedded": "^1.93.3",
     "typescript": "~5.9.3",
     "vite": "^7.2.6",
-    "vitest": "^4.0.15"
+    "vitest": "^4.0.15",
+    "partykit": "0.0.115"
   },
   "dependencies": {
     "@audiotool/nexus": "file:audiotool-nexus-0.0.5.tgz",
@@ -30,6 +31,7 @@
     "react-dom": "^18.3.1",
     "standardized-audio-context": "^25.3.77",
     "uWebSockets.js": "github:uNetworking/uWebSockets.js",
-    "webmidi": "^3.1.14"
+    "webmidi": "^3.1.14",
+    "partysocket": "1.1.6"
   }
 }
