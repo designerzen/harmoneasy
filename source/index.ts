@@ -533,7 +533,7 @@ const initialiseApplication = (onEveryTimingTick) => {
     ui = new UI( ALL_KEYBOARD_NOTES, onNoteOnRequestedFromKeyboard, onNoteOffRequestedFromKeyboard )
     ui.setTempo( timer.BPM )
     
-    ui.whenRandomTimbreRequestedRun( synth.setRandomTimbre )
+    ui.whenRandomTimbreRequestedRun( e => synth.setRandomTimbre() )
     ui.whenTempoChangesRun( (tempo:number) => timer.BPM = tempo )
     ui.whenVolumeChangesRun((volume:number) => mixer.gain.value = (volume / 100) * 0.5)
     ui.whenBluetoothDeviceRequestedRun( handleBluetoothConnection ) 
