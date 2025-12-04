@@ -9,6 +9,8 @@ import {
 } from './timing.events.js'
 
 import AUDIOCONTEXT_WORKER_URI from './timing.audiocontext.worker.js?url'
+import AUDIOCONTEXT_WORKLET_URI from './timing.audioworklet.js?url'
+
 import { tapTempoQuick } from './tap-tempo.js'
 import { Ticks } from './ticks.js'
 
@@ -528,23 +530,15 @@ export default class Timer {
 			await this.unsetTimingWorker()
 		}
 
-		try{
-			await audioContext.audioWorklet.addModule(processor)
-		}catch(error){
-			console.error("AudioWorklet processor cannot be added", error)
-			throw Error ("Timing Worklet failed to load processor:"+processor+ " type:" + type)
-		}
+		const imports = await import( AUDIOCONTEXT_WORKLET_URI )
+		const Worklet = imports.default
+		const {createTimingProcessor} = imports 
 
-		// console.error(type, "timer.processor loaded", { type, processor} ) 
-		// const wrklet = await import(type) 
-		const Worklet = await import("./timing.audioworklet.js")
-		// set worker in global space
-		this.timingWorkHandler = new Worklet.default( audioContext )
-			
-		// console.error(type, "timer.audioworklet", wrklet, this.timingWorker ) 
+		this.timingWorkHandler = await createTimingProcessor( audioContext )	
+		// this.timingWorkHandler = new Worklet( audioContext )
 	
-		//const timing = module.createTimingProcessor( audioContext )
-		// this.timingWorker = timing
+		debugger
+
 		// console.error(type, "timer.audioworklet", {module, audioContext}, this.timingWorker ) 
 		if (wasRunning)
 		{
@@ -612,7 +606,7 @@ export default class Timer {
 	}
 
 	/**
-	 * 
+	 * Unregister any Worker set
 	 * @returns {Boolean}
 	 */
 	async unsetTimingWorker(){
@@ -659,7 +653,6 @@ export default class Timer {
 					break
 
 				case EVENT_TICK:
-					
 					const timeBetweenPeriod = this.timeBetween * 0.001
 					// How many ticks have occured yet
 					const intervals = data.intervals
@@ -721,6 +714,8 @@ export default class Timer {
 			time:this.now
 		})
 	}
+
+	//--------------------------------------------------
 
 	/**
 	 * Reset the timer and start from the beginning

@@ -1,3 +1,22 @@
+import AUDIOTIMER_PROCESSOR_URI from './timing.audioworklet-processor.js?worker&url'
+
+/**
+ * Wrap the above in a single call
+ * @param {AudioContext} context 
+ * @returns 
+ */
+export const createTimingProcessor = async (context) =>{
+	try{
+		await context.audioWorklet.addModule(AUDIOTIMER_PROCESSOR_URI)
+	}catch(error){
+		console.error("AudioWorklet processor cannot be added", error)
+	}
+	const worker = new TimingAudioWorkletNode(context)
+
+	return worker
+}
+
+
 import {
 	CMD_INITIALISE,
 	CMD_START,CMD_STOP,CMD_UPDATE,
@@ -81,28 +100,3 @@ export default class TimingAudioWorkletNode extends AudioWorkletNode {
 		}
 	}
 }
-
-import AUDIOTIMER_PROCESSOR_URI from './timing.audioworklet-processor.js?worker&url'
-
-/**
- * Wrap the above in a single call
- * @param {AudioContext} context 
- * @returns 
- */
-export const createTimingProcessor = async (context) =>{
-	try{
-		await context.audioWorklet.addModule(AUDIOTIMER_PROCESSOR_URI)
-	}catch(error){
-		console.error("AudioWorklet processor cannot be added", error)
-	}
-	const worker = new TimingAudioWorkletNode(context)
-
-	return worker
-}
-
-  // const timingContext = new AudioContext()
-    // // const timing = createTimingProcessor( timingContext )
-
-    // await timingContext.audioWorklet.addModule(AUDIOTIMER_PROCESSOR_URI)
-    // const TimingAudioWorklet = await import("./timing/timing.audioworklet.js")
-    // const timing = new TimingAudioWorklet.default(timingContext)
