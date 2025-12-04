@@ -254,9 +254,6 @@ export default class Timer {
 		return this.BPM
 	}
 
-
-
-
 	/**
 	 * Get the duration of one beat (quarternote) 
 	 * in microseconds
@@ -298,8 +295,12 @@ export default class Timer {
 		return Ticks.Beat / this.quarterNoteDurationInSeconds
 	}
 	
+	get swing(){
+		return this.swingOffset / this.divisions
+	}
 
-
+	
+	// Positions 
 
 	get isAtStartOfBar(){
 		return this.barProgress === 0
@@ -307,15 +308,12 @@ export default class Timer {
 	get isStartBar(){
 		return this.currentBar === 0
 	}
-
 	get isAtStart(){
 		return this.divisionsElapsed === 0
 	}
-
 	get isAtMiddleOfBar(){
 		return this.barProgress === 0.5
 	}
-
 	get isQuarterNote(){
 		return this.beatProgress % 0.25 === 0 
 	}
@@ -325,15 +323,11 @@ export default class Timer {
 	get isSwungBeat(){
 		return this.divisionsElapsed % this.swingOffset === 0
 	}
-	
-	get swing(){
-		return this.swingOffset / this.divisions
-	}
-
 	get isUsingExternalTrigger(){
 		return this.isBypassed
 	}
-	// Setters
+
+	// Setters ------------------------------------------------------
 
 	/**
 	 * Fetch current bar
@@ -435,18 +429,17 @@ export default class Timer {
 		{
 			this.loaded = this.setTimingWorklet( options.type, options.processor, this.audioContext )
 		}else{
-			this.loaded = this.setTimingWorker( options.type, options.processor, this.audioContext )
+			this.loaded = this.setTimingWorker( options.type )
 		}		
 	}
 
 	/**
-	 * 
+	 * Set the function that gets called on every divixional tick
 	 * @param {Function} callback Method to call when the timer ticks
 	 */
 	setCallback( callback ){
 		this.callback = callback
 	}
-
 
 	/**
 	 * Allows us to disable the existing route to send our own
@@ -618,26 +611,22 @@ export default class Timer {
 		return null
 	}
 
-	// SHARED WORKER / WORKLET CDE ------------------------------------------------------------------------------------
-	
 	/**
 	 * 
-	 * @param {String} type 
 	 * @returns {Boolean}
 	 */
-	async unsetTimingWorker(type){
-		// timer.onmessage = this.timingWorker.onmessage 
-		// timer.onerror = this.timingWorker.onerror 
-
-		// // TODO: clone the methods into new worker
-		// this.timingWorker.onmessage = (e) => {}
-		// this.timingWorker.onerror = (e) => {}
+	async unsetTimingWorker(){
+		// TODO: clone the methods into new worker
 		this.stopTimer()
 		this.timingWorkHandler.terminate()
+		this.timingWorkHandler.onmessage = (e) => {}
+		this.timingWorkHandler.onerror = (e) => {}
 		this.timingWorkHandler = null
 		return true
 	}
 
+	// SHARED WORKER / WORKLET CDE ------------------------------------------------------------------------------------
+	
 	/**
 	 * Add a worker or worklet into the pipeline
 	 * and monitor it's events and messages
@@ -699,7 +688,7 @@ export default class Timer {
 		// Worker Loading Error!
 		worker.onerror = error =>{
 			const payload = {error:error.message, time:this.now }
-			console.error("error...", payload )
+			console.error("Timer:Worker error", error, payload )
 			worker.postMessage( payload )
 		}
 	}
@@ -739,7 +728,6 @@ export default class Timer {
 	resetTimer(){
 		this.totalBarsElapsed = 0
 		this.divisionsElapsed = 0
-		this.flipped = false
 	}
 
 	/**
@@ -757,7 +745,6 @@ export default class Timer {
 		{
 			// FIXME: Alter this behaviour for rolling count
 			this.totalBarsElapsed = 0
-			this.flipped = false
 		}
 
 		if (callback)
@@ -818,11 +805,14 @@ export default class Timer {
 	}
 
 	/**
-	 * start the timer if it is paused...
+	 * Start the timer if it is paused...
 	 * or stop the timer if it is running
+	 * 
+	 * @param callback 
+	 * @param options 
 	 * @returns {Boolean} is the timer running
 	 */
-	async toggleTimer(){
+	async toggleTimer( callback, options={} ){
 		if (this.isBypassed)
 		{
 			// we are using an external timer!
@@ -830,7 +820,7 @@ export default class Timer {
 		}
 		if (!this.isRunning)
 		{
-			await this.startTimer()
+			await this.startTimer( callback, options )
 		}else{
 			await this.stopTimer()
 		}
