@@ -551,7 +551,7 @@ export default class Timer {
 			await this.unsetTimingWorker()
 		}
 
-		const imports = await import( AUDIOCONTEXT_WORKLET_URI )
+		const imports = await import( './timing.audioworklet.js' )
 		const Worklet = imports.default
 		const {createTimingProcessor} = imports 
 
