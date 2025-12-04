@@ -50,13 +50,13 @@ export default class AudioCommand implements AudioCommandInterface {
 	text:string
 	from:string
 	
-	constructor() {
-		this.id = AudioCommand.counter++
-	}
-
 	// for linked lists
 	previous:AudioCommand
 	next:AudioCommand
+
+	constructor() {
+		this.id = AudioCommand.counter++
+	}
 
 	remove(){
 		this.previous.next = this.next
@@ -72,7 +72,7 @@ export default class AudioCommand implements AudioCommandInterface {
 	 * 
 	 * @returns copy of this
 	 */
-	clone():AudioCommand{
+	clone():AudioCommandInterface{
 		return this.copyAllParametersToCommand( new AudioCommand() )
 	}
 
@@ -83,6 +83,7 @@ export default class AudioCommand implements AudioCommandInterface {
 		}
 		return command
 	}
+
 	copyAllParametersFromCommand(command:AudioCommand):AudioCommand{
 		for (let i in this)
 		{

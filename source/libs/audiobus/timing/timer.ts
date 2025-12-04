@@ -147,7 +147,7 @@ export default class Timer {
 
 	timingWorkHandler
 
-	loaded = new Promise( this.onAvailable, this.onUnavailable)
+	loaded = new Promise( this.onAvailable, this.onUnavailable )
 	
 	callback
 
@@ -243,7 +243,6 @@ export default class Timer {
 		return this.currentBar / this.bars
 	}
 
-	
 	/**
 	 * Percentage duration of beat progress 0->1
 	 * @returns {Number} percentage elapsed
@@ -321,7 +320,7 @@ export default class Timer {
 	}
 
 	
-	// Positions 
+	// Positions & booleans
 
 	get isAtStartOfBar(){
 		return this.barProgress === 0
@@ -453,8 +452,6 @@ export default class Timer {
 			this.loaded = this.setTimingWorker( options.type )
 		}		
 	}
-
-
 
 	/**
 	 * Set the function that gets called on every divixional tick

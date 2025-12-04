@@ -14,6 +14,10 @@ import type { AudiotoolClient, SyncedDocument, Ticks } from "@audiotool/nexus"
 let createAudiotoolClient:Function
 let secondsToTicks:Function
 
+/**
+ * imports the SDK for AuioTool and caches it in memory
+ * @returns {Boolean} has the SDK loaded from the cache?
+ */
 export const lazyLoadAutioToolSDK = async () => {
     if (createAudiotoolClient && secondsToTicks)
     {
@@ -23,6 +27,16 @@ export const lazyLoadAutioToolSDK = async () => {
     createAudiotoolClient = nexus.createAudiotoolClient
     secondsToTicks = nexus.secondsToTicks
     return true
+}
+
+/**
+ * Log a User in and connect them to the AudioTooll SKD
+ */
+export const connectAndAuthoriseAudioTool = async () => {
+    // Load the GIANT SDK
+    await lazyLoadAutioToolSDK()
+
+    return false
 }
 
 /**
@@ -40,7 +54,9 @@ export const createAudioToolProjectFromAudioEventRecording = async (recording:Re
         // Take the timing
         const BPM = timer.BPM
         const data:AudioEvent[] = recording.exportData()
-        const client = await createAudiotoolClient({ token: AUDIOTOOL_STORAGE_KEYS.PAT_TOKEN })
+        const client = await createAudiotoolClient({ 
+            token: AUDIOTOOL_STORAGE_KEYS.PAT_TOKEN // authManager.mustGetToken,
+        })
 
         // Create synced document
         const nexus = await client.createSyncedDocument({
