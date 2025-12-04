@@ -3,21 +3,19 @@ import { Transformer } from "./abstract-transformer"
 import AudioCommand from "../audio-command"
 import * as Commands from "../../../commands"
 import type Timer from "../timing/timer"
-import type { TransformerInterface } from "./transformer-interface"
+import type { TransformerInterface } from "./interface-transformer"
 
 export const ID_ARPEGGIATOR = "arpeggiator"
 
 type ArpPattern = 'up' | 'down' | 'up-down' | 'down-up' | 'random' | 'chord'
 
 interface Config {
-    enabled: boolean
     pattern: ArpPattern
     rate: string // Note division: '1/4', '1/8', '1/16', '1/32', or 'triplet'
     octaves: number // how many octaves to span (1-4)
 }
 
 const DEFAULT_OPTIONS: Config = {
-    enabled: true,
     pattern: 'up',
     rate: '1/16', // 16th notes
     octaves: 1

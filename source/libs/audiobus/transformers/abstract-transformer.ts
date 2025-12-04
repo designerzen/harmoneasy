@@ -1,6 +1,18 @@
 import type { AudioCommandInterface } from "../audio-command-interface"
 import type Timer from "../timing/timer"
-import type { FieldConfig, TransformerConfig, TransformerInterface } from "./transformer-interface"
+import type { FieldConfig, TransformerConfig, TransformerInterface } from "./interface-transformer"
+
+
+
+export interface TransformerConfig {
+    available: false
+    enabled: true
+}
+
+const DEFAULT_OPTIONS: TransformerConfig = {
+    available: false,
+    enabled: true
+}
 
 export abstract class Transformer<Config = TransformerConfig> implements TransformerInterface {
     
@@ -25,9 +37,13 @@ export abstract class Transformer<Config = TransformerConfig> implements Transfo
     get name(): string{
         return this.id
     }
+    get description(): string{
+        return "Pass-through"
+    }
 
     constructor(config: Config) {
-        this.config = config
+        this.config = {...DEFAULT_OPTIONS, ...config}
+        this.setConfig("available", true)
     }
 
     abstract transform(commands: AudioCommandInterface[], timer: Timer): AudioCommandInterface[]

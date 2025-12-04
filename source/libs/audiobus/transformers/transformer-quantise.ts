@@ -1,7 +1,7 @@
 import type { AudioCommandInterface } from "../audio-command-interface";
 import type Timer from "../timing/timer";
 import { Transformer } from "./abstract-transformer"
-import type { TransformerInterface } from "./transformer-interface";
+import type { TransformerInterface } from "./interface-transformer";
 
 export const ID_QUANTISE = "quantise"
 

@@ -3,19 +3,17 @@ import { Transformer } from "./abstract-transformer"
 import AudioCommand from "../audio-command"
 import * as Commands from "../../../commands"
 import type Timer from "../timing/timer"
-import type { TransformerInterface } from "./transformer-interface"
+import type { TransformerInterface } from "./interface-transformer"
 
 export const ID_NOTE_REPEATER = "note-repeater"
 
 interface Config {
-    enabled: boolean
     repeats: number // how many times to repeat (1 = no repeat, 2 = one repeat, etc.)
     delay: number // milliseconds between each repeat
     noteDuration: number // milliseconds - how long each repeated note plays
 }
 
 const DEFAULT_OPTIONS: Config = {
-    enabled: true,
     repeats: 2,
     delay: 125, // 125ms = 16th notes at 120 BPM
     noteDuration: 100 // Each note plays for 100ms
@@ -38,6 +36,10 @@ export class TransformerNoteRepeater extends Transformer<Config> implements Tran
 
     get name(): string {
         return 'Note Repeater'
+    }
+
+    get description():string{
+        return "Repeat all notes a specified amount of times"
     }
 
     get fields() {

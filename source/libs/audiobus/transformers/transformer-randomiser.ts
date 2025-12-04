@@ -1,7 +1,7 @@
 import type { AudioCommandInterface } from "../audio-command-interface"
 import { Transformer } from "./abstract-transformer"
 import * as Commands from "../../../commands"
-import type { TransformerInterface } from "./transformer-interface"
+import type { TransformerInterface } from "./interface-transformer"
 
 export const ID_RANDOMISER = "randomiser"
 

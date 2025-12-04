@@ -3,17 +3,15 @@ import { Transformer } from "./abstract-transformer"
 import AudioCommand from "../audio-command"
 import * as Commands from "../../../commands"
 import type Timer from "../timing/timer"
-import type { TransformerInterface } from "./transformer-interface"
+import type { TransformerInterface } from "./interface-transformer"
 
 export const ID_NOTE_SHORTENER = "note-shortener"
 
 interface Config {
-    enabled: boolean
     duration: string // Note division: '1/4', '1/8', '1/16', '1/32', or 'triplet'
 }
 
 const DEFAULT_OPTIONS: Config = {
-    enabled: true,
     duration: '1/16', // 16th notes
 }
 

@@ -20,7 +20,7 @@ import {
 import { TUNING_MODE_IONIAN } from "../tuning/scales.js"
 import { getIntervalFormulaForMode } from "../tuning/chords/modal-chords.js"
 import type Timer from "../timing/timer.js"
-import type { TransformerInterface } from "./transformer-interface.js"
+import type { TransformerInterface } from "./interface-transformer.js"
 
 export const ID_HARMONISER = "harmoniser"
 
@@ -49,6 +49,10 @@ export class TransformerHarmoniser extends Transformer<Config> implements Transf
 
     get name(): string {
         return 'Harmoniser'
+    }
+
+    get description(): string{
+        return "Transposes the note "
     }
 
     get fields() {

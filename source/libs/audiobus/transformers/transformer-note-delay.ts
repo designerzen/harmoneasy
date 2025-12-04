@@ -3,12 +3,11 @@ import { Transformer } from "./abstract-transformer"
 import AudioCommand from "../audio-command"
 import * as Commands from "../../../commands"
 import type Timer from "../timing/timer"
-import type { TransformerInterface } from "./transformer-interface"
+import type { TransformerInterface } from "./interface-transformer"
 
 export const ID_NOTE_DELAY = "note-delay"
 
 interface Config {
-    enabled: boolean
     useTimeDivision: boolean // true = time division, false = milliseconds
     timeDivision: string // Note division: '1/4', '1/8', '1/16', '1/32', or 'triplet'
     delayMs: number // Delay in milliseconds
@@ -16,7 +15,6 @@ interface Config {
 }
 
 const DEFAULT_OPTIONS: Config = {
-    enabled: true,
     useTimeDivision: true,
     timeDivision: '1/16', // 16th notes
     delayMs: 100, // 100ms
@@ -38,6 +36,10 @@ export class TransformerNoteDelay extends Transformer<Config> implements Transfo
 
     get name(): string {
         return 'Note Delay'
+    }
+
+    get description():string{
+        return " Delays notes by a time division"
     }
 
     get fields() {

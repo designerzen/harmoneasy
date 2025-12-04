@@ -1,10 +1,14 @@
+/**
+ * Forces by transposition the entered note into
+ * the specified key and scale
+ */
 import type { AudioCommandInterface } from "../audio-command-interface"
 import { Transformer } from "./abstract-transformer"
 
 import { TUNING_MODE_IONIAN } from "../tuning/scales.js"
 import { getIntervalFormulaForMode } from "../tuning/chords/modal-chords.js"
 import type Timer from "../timing/timer.js"
-import type { TransformerInterface } from "./transformer-interface.js"
+import type { TransformerInterface } from "./interface-transformer.js"
 
 export const ID_QUANTISE = "transposer"
 
@@ -68,13 +72,10 @@ export class TransformerTransposer extends Transformer<Config> implements Transf
     }
 
     transform(commands:AudioCommandInterface[], timer:Timer ):AudioCommandInterface[] {
-        const intervalFormula = getIntervalFormulaForMode(this.config.mode)
-        const rootNote = this.config.root
+         const rootNote = this.config.root
 
         // console.log('ROOT NOTE', rootNote)
 
-        // Create a set of all valid notes in the scale across all octaves
-        const scaleNotes = this.generateScaleNotes(rootNote, intervalFormula)
 
         // Quantise each command's note to the closest scale note
         return commands.map(command => {
@@ -112,8 +113,10 @@ export class TransformerTransposer extends Transformer<Config> implements Transf
     }
 
     private findClosestNoteInScale(noteNumber: number, scaleNotes: Set<number>): number {
+        
         // If the note is already in the scale, return it
-        if (scaleNotes.has(noteNumber)) {
+        if (scaleNotes.has(noteNumber)) 
+        {
             return noteNumber
         }
 
@@ -121,6 +124,7 @@ export class TransformerTransposer extends Transformer<Config> implements Transf
         let minDistance = Infinity
 
         // Search within a reasonable range (1 octave up and down)
+        // TODO: use a smarter algo
         for (let offset = -12; offset <= 12; offset++) {
             const candidateNote = noteNumber + offset
 
@@ -135,6 +139,15 @@ export class TransformerTransposer extends Transformer<Config> implements Transf
         }
 
         return closestNote
+    }
+
+    override setConfig(c: string, val: unknown): void {
+                
+        // Create a set of all valid notes in the scale across all octaves
+        const intervalFormula = getIntervalFormulaForMode(this.config.mode)
+        const scaleNotes = this.generateScaleNotes(rootNote, intervalFormula)
+
+        super.setConfig(c, val)
     }
 
 }

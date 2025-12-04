@@ -10,7 +10,7 @@ import { ID_QUANTISE, TransformerQuantise } from "./transformer-quantise.ts"
 import { TransformerRandomiser } from "./transformer-randomiser.ts"
 
 import type Timer from "../timing/timer.ts"
-import type { FieldConfig, TransformerInterface } from "./transformer-interface.ts"
+import type { FieldConfig, TransformerInterface } from "./interface-transformer.ts"
 import type { AudioCommandInterface } from "../audio-command-interface.ts"
 
 type Callback = () => void
