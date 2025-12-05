@@ -5,8 +5,8 @@ import { DEFAULT_OPTIONS } from './options.ts'
 import * as Commands from './commands.ts'
 
 import State from './libs/state.ts'
-import UI from './components/ui.js'
 
+import jzz from 'jzz'
 import { WebMidi } from 'webmidi'
 import {
     sendBLENoteOn, sendBLENoteOff,
@@ -15,6 +15,9 @@ import {
     sendBLEPitchBend,
     startBLECharacteristicStream
 } from './libs/midi-ble/midi-ble.ts'
+
+import { BLE_SERVICE_UUID_DEVICE_INFO, BLE_SERVICE_UUID_MIDI } from './libs/midi-ble/ble-constants.ts'
+
 import { 
     connectToBLEDevice, 
     disconnectBLEDevice, 
@@ -22,49 +25,48 @@ import {
     describeDevice 
 } from './libs/midi-ble/ble-connection.ts' // disconnectDevice may be used for cleanup
 
+// audio libs 
+import * as MODES from './libs/audiobus/tuning/chords/modal-chords.js'
+import * as CHORDS from './libs/audiobus/tuning/chords/chords.js'
+import * as INTERVALS from './libs/audiobus/tuning/intervals.js'
+import { TUNING_MODE_NAMES } from './libs/audiobus/tuning/scales.ts'
+
+import AudioEvent from './libs/audiobus/audio-event.ts'
+import AudioCommand from './libs/audiobus/audio-command.ts'
 import AudioTimer from './libs/audiobus/timing/timer.audio.js'
 import MIDIDevice from './libs/audiobus/midi/midi-device.ts'
 import SynthOscillator from './libs/audiobus/instruments/synth-oscillator.js'
 import PolySynth from './libs/audiobus/instruments/poly-synth.js'
+
 import NoteModel from './libs/audiobus/note-model.ts'
 
-import { parseEdoScaleMicroTuningOctave } from './libs/pitfalls/ts/index.ts'
-import { addKeyboardDownEvents } from './libs/keyboard.ts'
-import { BLE_SERVICE_UUID_DEVICE_INFO, BLE_SERVICE_UUID_MIDI } from './libs/midi-ble/ble-constants.ts'
-
-import jzz from 'jzz'
-
-import * as MODES from './libs/audiobus/tuning/chords/modal-chords.js'
-import * as CHORDS from './libs/audiobus/tuning/chords/chords.js'
-import {createChord} from './libs/audiobus/tuning/chords/chords.js'
-import * as INTERVALS from './libs/audiobus/tuning/intervals.js'
-
-import { TUNING_MODE_NAMES } from './libs/audiobus/tuning/scales.ts'
 import { TransformerManager } from './libs/audiobus/transformers/transformer-manager.ts'
-import { TransformerQuantise } from './libs/audiobus/transformers/transformer-quantise.ts'
-import AudioCommand from './libs/audiobus/audio-command.ts'
-import type { AudioCommandInterface } from './libs/audiobus/audio-command-interface.ts'
 import { createAudioCommand } from './libs/audiobus/audio-command-factory.ts'
-// import { createGraph } from './components/transformers-graph.ts'
-import { createGraph } from './components/transformers-graph.tsx'
-import AudioEvent from './libs/audiobus/audio-event.ts'
 import { RecorderAudioEvent } from './libs/audiobus/recorder-audio-event.ts'
 import { createReverbImpulseResponse } from './libs/audiobus/effects/reverb.ts'
 import { createAudioToolProjectFromAudioEventRecording } from './libs/audiotool/adapter-audiotool-audio-events-recording.ts'
 import { createMIDIFileFromAudioEventRecording, saveBlobToLocalFileSystem } from './libs/audiobus/midi/adapter-midi-file.ts'
 import { createOpenDAWProjectFromAudioEventRecording } from './libs/openDAW/adapter-opendaw-audio-events-recording.ts'
-import { secondsToTicks } from './libs/audiobus/timing/timer.ts'
+
+import { addKeyboardDownEvents } from './libs/keyboard.ts'
+
+import type { AudioCommandInterface } from './libs/audiobus/audio-command-interface.ts'
+
+// FrontEnd
+import { createGraph } from './components/transformers-graph.tsx'
+import UI from './components/ui.js'
 
 // import { AudioContext, BiquadFilterNode } from "standardized-audio-context"
-const ALL_MIDI_CHANNELS = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15, 16]
+const ALL_MIDI_CHANNELS = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
 
 // All connected MIDI Devices
 const MIDIDevices:MIDIDevice[] = []
-
-let transformerManager:TransformerManager
 let timer:AudioTimer = null
 let timeLastBarBegan = 0
 let audioContext:AudioContext
+let synth:SynthOscillator|PolySynth = null
+
+let transformerManager:TransformerManager
 
 // BLE devices and characteristics
 // TODO: Move into a MIDIDevice wrapper to allow for multiple
@@ -82,15 +84,11 @@ let onscreenKeyboardMIDIDevice:MIDIDevice
 
 // Feed this for X amount of BARS
 let audioCommandQueue:AudioCommandInterface[] = []
-const recorder:RecorderAudioEvent = new RecorderAudioEvent()
-let currentRecordingMeasure = 0
 
-const BARS_TO_RECORD = 1
-const NOTES_IN_CHORDS = 3 // -1
+const recorder:RecorderAudioEvent = new RecorderAudioEvent()
 
 // visuals
 let ui:UI = null
-let synth:SynthOscillator|PolySynth = null
 
 
 // For onscreen interactive keyboard
@@ -100,10 +98,9 @@ const ALL_KEYBOARD_NOTES = keyboardKeys.map((keyboardKeys,index)=> new NoteModel
 // Grab a good sounding part (not too bassy, not too trebly)
 const KEYBOARD_NOTES = ALL_KEYBOARD_NOTES.slice( 41, 94 )
 
+// Types of MIDI Devices
 const ONSCREEN_KEYBOARD_NAME = "SVG Keyboard"
 const LETTER_KEYBOARD_NAME = "Keyboard"
-
-let mictrotonalPitches = parseEdoScaleMicroTuningOctave(60, 3, "LLsLLLs", 2, 1)
 
 let state
 
@@ -676,17 +673,12 @@ const onNoteOnRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=ON
     const audioCommand:AudioCommand = createAudioCommand( Commands.NOTE_ON, noteModel, timer, fromDevice )
 
     // Apply transformations immediately when the command comes in
-    const transformedCommands:AudioCommandInterface[] = transformerManager.transform( [audioCommand], timer )
-
-    // Convert transformed commands to AudioCommand instances for the queue
-    const transformedAudioCommands = transformedCommands.map(cmd => {
-        const ac = new AudioCommand()
-        Object.assign(ac, cmd)
-        return ac
-    })
+    // const transformedAudioCommands:AudioCommandInterface[] = transformerManager.transform( [audioCommand], timer )
 
     // Always use the queue for proper scheduling
-    audioCommandQueue.push(...transformedAudioCommands)
+    audioCommandQueue.push(audioCommand)
+    // audioCommandQueue.push(...transformedAudioCommands)
+    
     console.error("Note On queued (transformed)", audioCommandQueue, {
         audioCommand,
         transformedCommands: transformedAudioCommands,
@@ -705,11 +697,13 @@ const onNoteOffRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=O
     const audioCommand:AudioCommand = createAudioCommand( Commands.NOTE_OFF, noteModel, timer )
 
     // Apply transformations immediately when the command comes in
-    const transformedCommands:AudioCommandInterface[] = transformerManager.transform( [audioCommand], timer )
+    // const transformedCommands:AudioCommandInterface[] = transformerManager.transform( [audioCommand], timer )
 
     // Always use the queue for proper scheduling
-    audioCommandQueue.push(...transformedCommands)
-    console.info("Note Off queued (transformed)", {
+    audioCommandQueue.push(audioCommand)
+    // audioCommandQueue.push(...transformedCommands)
+
+    console.info("Note Off added (transformed)", {
         audioCommand,
         transformedCommands,
         transformerManager,
@@ -800,7 +794,7 @@ const onRecordingMusicalEventsLoopBegin = ( activeAudioEvents ) => {
         const musicalEvents = activeAudioEvents.map( audioEvent => {
             return audioEvent.clone( timeLastBarBegan )
         })
-         console.info("Active musicalEvents", musicalEvents)
+        // console.info("Active musicalEvents", musicalEvents)
     }
 }
 
@@ -842,35 +836,6 @@ const onTick = (values) => {
         audioCommandQueue = executeQueueAndClearComplete(audioCommandQueue)
         // console.info("TICK:IMMEDIATE", {buffer: audioCommandQueue})
     }
-
-    // let hasUpdates = false
-    // // check to see if any events have happened since
-    // // the last bar
-    // const updates = MIDIDevices.map( (midiDevice, index) => {
-    //     const deviceCommandsReadyToTrigger = midiDevice.update( timer.now, divisionsElapsed )
-        
-    //     if (deviceCommandsReadyToTrigger.length > 0)
-    //     {
-    //         hasUpdates = true
-    //         // create copies of the triggers and ensure they start at same position in time
-    //         buffer.push(...deviceCommandsReadyToTrigger)
-    //         console.info(index, "TICK:MusicalEvents", midiDevice.name, {deviceCommandsReadyToTrigger} )
-    //     }
-        
-    //     return deviceCommandsReadyToTrigger
-    // })
-
-    // console.info("TICK:MIDIDevices", MIDIDevices )
-
-    // Do we have any events that we need to trigger in this period?
-    // if (hasUpdates)
-    // {
-    //     console.info("TICK:hasUpdates", {buffer, updates, MIDIDevices} )
-    //     // UPDATE UI with all midi events
-    //     // that are going to be triggered at this stage
-    // }else{
-    //     // console.info("TICK:NO UPDATES", updates )
-    // }
 }
 
 /**
@@ -882,11 +847,5 @@ const onAudioContextAvailable = async (event) => {
     await initialiseApplication(onTick)
 }
 
-
-
 // Wait for user to initiate an action so that we can use AudioContext
 document.addEventListener("mousedown", onAudioContextAvailable, {once:true} )
-
-// load and complete some tests!
-// import { parseEdoScaleMicroTuningOctave } from "index.ts"
-// console.warn( "TEST", mictrotonalPitches, 60, 3, "LLsLLLs", 2, 1 )

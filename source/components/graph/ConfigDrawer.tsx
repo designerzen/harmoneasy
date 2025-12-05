@@ -26,7 +26,7 @@ export function ConfigDrawer() {
         <details open className="transformers">
             <summary><h6>Transformers</h6></summary>
             { 
-                TRANSFORMERS.map( transformer => ( <button onClick={onAdd(transformer)}>{transformer}</button>) ) 
+                TRANSFORMERS.map( (transformer, index) => ( <button key={transformer} onClick={onAdd(transformer)}>{transformer}</button>) ) 
             }
         </details>
 
