@@ -30,6 +30,14 @@ export class TransformerQuantise extends Transformer<Config> implements Transfor
 
     get fields() {
         return [
+             {
+                name: 'enabled',
+                type: 'select',
+                values: [
+                    { name: 'On', value: 1 },
+                    { name: 'Off', value: 0 }
+                ]
+            },
             { 
                 name: 'step', 
                 type: 'select', 

@@ -59,6 +59,14 @@ export class TransformerHarmoniser extends Transformer<Config> implements Transf
     get fields() {
         return [
             {
+                name: 'enabled',
+                type: 'select',
+                values: [
+                    { name: 'On', value: 1 },
+                    { name: 'Off', value: 0 }
+                ]
+            },
+            {
                 name: 'root',
                 type: 'select',
                 values: [
