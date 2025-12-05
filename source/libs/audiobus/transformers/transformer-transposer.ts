@@ -27,6 +27,8 @@ export class TransformerTransposer extends Transformer<Config> implements Transf
 
     id = ID_QUANTISE
 
+    notesInScale: Set<number>
+
     get name(): string {
         return 'Transposer'
     }
@@ -79,7 +81,7 @@ export class TransformerTransposer extends Transformer<Config> implements Transf
 
         // Quantise each command's note to the closest scale note
         return commands.map(command => {
-            const quantisedNote = this.findClosestNoteInScale(command.number, scaleNotes)
+            const quantisedNote = this.findClosestNoteInScale(command.number, this.notesInScale )
 
             // If the note is already in the scale, return unchanged
             if (quantisedNote === command.number) {
@@ -96,7 +98,7 @@ export class TransformerTransposer extends Transformer<Config> implements Transf
         })
     }
 
-    private generateScaleNotes(root: number, intervals: number[]): Set<number> {
+    private generateNotesInScale(root: number, intervals: number[]): Set<number> {
         const scaleNotes = new Set<number>()
 
         // Generate notes for all octaves (MIDI range 0-127)
@@ -141,12 +143,14 @@ export class TransformerTransposer extends Transformer<Config> implements Transf
         return closestNote
     }
 
-    override setConfig(c: string, val: unknown): void {
-                
+    private setScaleNotes (){
         // Create a set of all valid notes in the scale across all octaves
         const intervalFormula = getIntervalFormulaForMode(this.config.mode)
-        const scaleNotes = this.generateScaleNotes(this.config.root, intervalFormula)
+        this.notesInScale = this.generateNotesInScale(this.config.root, intervalFormula)
+    }
 
+    override setConfig(c: string, val: unknown): void {
+        this.setScaleNotes()
         super.setConfig(c, val)
     }
 

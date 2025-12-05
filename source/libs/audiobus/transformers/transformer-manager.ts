@@ -3,11 +3,9 @@
  * GOBOTS IN DISGUISE
  */
 import { Transformer } from "./abstract-transformer.ts"
-import { IdentityTransformer } from "./transformer-identity.ts"
 import { TransformerHarmoniser } from "./transformer-harmoniser.ts"
 import { TransformerTransposer } from "./transformer-transposer.ts"
 import { ID_QUANTISE, TransformerQuantise } from "./transformer-quantise.ts"
-import { TransformerRandomiser } from "./transformer-randomiser.ts"
 
 import type Timer from "../timing/timer.ts"
 import type { FieldConfig, TransformerInterface } from "./interface-transformer.ts"
@@ -16,6 +14,8 @@ import type { AudioCommandInterface } from "../audio-command-interface.ts"
 type Callback = () => void
 
 const EVENT_TRANSFORMERS_UPDATED = "EVENT_TRANSFORMERS_UPDATED"
+const EVENT_TRANSFORMERS_ADDED = "EVENT_TRANSFORMER_ADDED"
+const EVENT_TRANSFORMERS_REMOVED = "EVENT_TRANSFORMER_REMOVED"
 
 export class TransformerManager extends EventTarget implements TransformerInterface {
      
@@ -23,12 +23,11 @@ export class TransformerManager extends EventTarget implements TransformerInterf
     public name: string = 'TransformerManager'
     public timer:Timer|undefined // Reference to AudioTimer for BPM-synced transformers
 
+    private transformersMap:Map<string, Transformer> = new Map()
     private transformers: Array<Transformer> = [
-        new IdentityTransformer({}),
-        new TransformerHarmoniser()
+        new TransformerTransposer()
     ]
 
-    private transformersMap:Map<string, Transformer> = new Map()
     private onChangeFns: Callback[] = []
 
     // FIXME: Make a compositie of all the transformers
@@ -61,6 +60,7 @@ export class TransformerManager extends EventTarget implements TransformerInterf
         this.transformers.push(transformerToAdd)
         this.transformersMap.set(transformerToAdd.id, transformerToAdd)
         this.onChangeFns.forEach(t => t())
+        this.dispatchEvent( new CustomEvent(EVENT_TRANSFORMERS_ADDED) )
         this.dispatchEvent( new CustomEvent(EVENT_TRANSFORMERS_UPDATED) )
     }
 
@@ -72,6 +72,7 @@ export class TransformerManager extends EventTarget implements TransformerInterf
         this.transformers = this.transformers.filter(transformer => transformer !== transformerToRemove)
         this.transformersMap.delete(transformerToRemove.id)
         this.onChangeFns.forEach(t => t())
+        this.dispatchEvent( new CustomEvent(EVENT_TRANSFORMERS_REMOVED) )
         this.dispatchEvent( new CustomEvent(EVENT_TRANSFORMERS_UPDATED) )
     }
 
@@ -90,7 +91,7 @@ export class TransformerManager extends EventTarget implements TransformerInterf
     /**
      * 
      * @param id 
-     * @returns 
+     * @returns specific registered Transformer
      */
     getTransformer( id:string ): Transformer|undefined {
         return this.transformersMap.get(id)
@@ -98,14 +99,13 @@ export class TransformerManager extends EventTarget implements TransformerInterf
 
     /**
      * 
-     * @returns 
+     * @returns All transformers
      */
     getTransformers(): Array<Transformer> {
         return this.transformers
     }
 
-
-    // GUI stuff?
+    // GUI stuff
     getStructure() {
 
         // Calculate positions with better spacing and centering
@@ -181,12 +181,19 @@ export class TransformerManager extends EventTarget implements TransformerInterf
      * INTERFACE :
      * Advance through every single registered transformer and pass the
      * command
-     * @param command
+     * @param commands
      * @returns AudioCommandInterface
      */
-    transform(command: AudioCommandInterface[], timer:Timer ) {
-        console.log('TRANSFORM', command)
-        return this.transformers.reduce((v, t) => t.transform(v, timer), command)
+    transform(commands: AudioCommandInterface[], timer:Timer ) {
+        return this.transformers.reduce((v, t) => t.transform(v, timer), commands)
+    }
+
+    /**
+     * INTERFACE :
+     * Reset the state of all Transformers
+     */
+    reset():void{
+       this.transformers.forEach(t => t.reset())
     }
 
     onChange(fn: () => void) {
