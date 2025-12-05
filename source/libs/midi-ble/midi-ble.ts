@@ -364,6 +364,28 @@ export const sendBLENoteOff = async (
 }
 
 /**
+ * Send MIDI Note Off message via BLE
+ * 
+ * @param characteristic 
+ * @param channel (1-16)
+ * @param note 
+ * @param velocity 
+ * @returns {Promise}
+ */
+export const sendBLEAllNoteOff = async (
+    characteristic: BluetoothRemoteGATTCharacteristic,
+    channel: number | null,
+    note: number = 123,
+    velocity: number = 0,
+    _runningTotal: Array<number> | undefined = undefined
+): Promise<boolean | null> => {
+    if (channel === null) { return null }
+    return _runningTotal ?
+        await queueBLEPacket(_runningTotal, characteristic, getMIDIStatusBytesFromNibbleAndChannel(MIDI_NOTE_OFF, channel), note, velocity) :
+        await dispatchBLEPacket(characteristic, getMIDIStatusBytesFromNibbleAndChannel(MIDI_NOTE_OFF, channel), note, velocity)
+}
+
+/**
  * Send MIDI Control Change message via BLE
  * 
  * @param characteristic 

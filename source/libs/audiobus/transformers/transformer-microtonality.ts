@@ -11,10 +11,11 @@ import { parseEdoScaleMicroTuningOctave } from "../../pitfalls/ts/index.ts"
 
 export const ID_MICROTONALITY = "Micro-Tonality" 
 
-let mictrotonalPitches = parseEdoScaleMicroTuningOctave(60, 3, "LLsLLLs", 2, 1)
 
-// load and complete some tests!
-// import { parseEdoScaleMicroTuningOctave } from "index.ts"
+// const detune = mictrotonalPitches.freqs[noteModel.noteNumber]
+// const microntonal = noteModel.clone()
+// microntonal.detune = detune
+// synth.noteOn( microntonal, 1 )
 // console.warn( "TEST", mictrotonalPitches, 60, 3, "LLsLLLs", 2, 1 )
 
 export class MicroTonalityTransformer extends Transformer<{}> implements TransformerInterface{
@@ -29,6 +30,17 @@ export class MicroTonalityTransformer extends Transformer<{}> implements Transfo
         return "Detune to a specific microtonal scale"
     }
 
+    constructor(config:Config){
+        super(config)
+        const mictrotonalPitches = parseEdoScaleMicroTuningOctave(60, 3, "LLsLLLs", 2, 1)
+    }
+
+    /**
+     * 
+     * @param commands 
+     * @param timer 
+     * @returns 
+     */
     transform( commands:AudioCommand[], timer:Timer ): AudioCommand[] {
           
         if (!this.config.enabled || commands.length === 0)

@@ -13,7 +13,8 @@ import {
     sendBLEControlChange, sendBLEProgramChange,
     sendBLEPolyphonicAftertouch, sendBLEChannelAftertouch,
     sendBLEPitchBend,
-    startBLECharacteristicStream
+    startBLECharacteristicStream,
+    sendBLEAllNoteOff
 } from './libs/midi-ble/midi-ble.ts'
 
 import { BLE_SERVICE_UUID_DEVICE_INFO, BLE_SERVICE_UUID_MIDI } from './libs/midi-ble/ble-constants.ts'
@@ -64,7 +65,7 @@ const MIDIDevices:MIDIDevice[] = []
 let timer:AudioTimer = null
 let timeLastBarBegan = 0
 let audioContext:AudioContext
-let synth:SynthOscillator|PolySynth = null
+let synthesizer:SynthOscillator|PolySynth = null
 
 let transformerManager:TransformerManager
 
@@ -89,7 +90,6 @@ const recorder:RecorderAudioEvent = new RecorderAudioEvent()
 
 // visuals
 let ui:UI = null
-
 
 // For onscreen interactive keyboard
 const keyboardKeys = ( new Array(128) ).fill("")
@@ -186,17 +186,13 @@ const noteOn = (noteModel:NoteModel, velocity:number=1, fromDevice:string=ONSCRE
   
     //console.info("Key pressed - send out MIDI", e )
     ui.noteOn( noteModel )
-    onscreenKeyboardMIDIDevice.noteOn( noteModel, timer.now )
-   
-    // const detune = mictrotonalPitches.freqs[noteModel.noteNumber]
-    // const microntonal = noteModel.clone()
-    // microntonal.detune = detune
 
-    if (synth)
+    onscreenKeyboardMIDIDevice.noteOn( noteModel, timer.now )
+
+    if (synthesizer)
     {
-        synth.noteOn( noteModel, velocity )
-        // synth.noteOn( microntonal, 1 )
-        // synth.detune = detune
+        console.log("Note ON", noteModel, velocity, {now} )
+        synthesizer.noteOn( noteModel, velocity )
     }
 
     if (MIDIDevice.length > 0)
@@ -204,6 +200,7 @@ const noteOn = (noteModel:NoteModel, velocity:number=1, fromDevice:string=ONSCRE
         sendMIDIActionToAllDevices( fromDevice, noteModel, Commands.NOTE_ON,  1)
     }
 
+    // FIXME: Move this into its own device
     if (bluetoothMIDICharacteristic)
     {
         // Send actual note from keyboard to BLE MIDI device
@@ -220,7 +217,6 @@ const noteOn = (noteModel:NoteModel, velocity:number=1, fromDevice:string=ONSCRE
                 })
             })
     }
-    // console.log("Note ON", noteModel, velocity, {now} )
 }
 
 /**
@@ -233,9 +229,10 @@ export const noteOff = (noteModel:NoteModel, velocity:number=1, fromDevice:strin
     const now = timer.now
     ui.noteOff( noteModel)
     onscreenKeyboardMIDIDevice.noteOff( noteModel, now )
-    if (synth)
+    if (synthesizer)
     {
-        synth.noteOff( noteModel )
+        console.log("Note OFF", noteModel, velocity, {now} )
+        synthesizer.noteOff( noteModel )
     }
 
     if (MIDIDevice.length > 0)
@@ -259,7 +256,6 @@ export const noteOff = (noteModel:NoteModel, velocity:number=1, fromDevice:strin
                 })
             })
     }
-    // console.log("Note OFF", noteModel, velocity, {now} )
 }
 
 /**
@@ -274,9 +270,9 @@ export const allNotesOff = async () => {
     )
 
     // Turn off all notes in the internal synth
-    if (synth)
+    if (synthesizer)
     {
-        synth.allNotesOff()
+        synthesizer.allNotesOff()
     }
 
     // Turn off all actively tracked notes in all MIDI devices
@@ -293,17 +289,8 @@ export const allNotesOff = async () => {
     // Send note off for all 128 MIDI notes to BLE device
     if (bluetoothMIDICharacteristic)
     {
-        console.log('Sending all notes off to BLE device on channel', selectedMIDIChannel)
-
-        // Method 1: Send MIDI CC#123 (All Notes Off) - standard MIDI command
         try {
-            await sendBLEControlChange(
-                bluetoothMIDICharacteristic,
-                selectedMIDIChannel,
-                123,  // CC#123 = All Notes Off
-                0,
-                bluetoothPacketQueue
-            )
+            await sendBLEAllNoteOff( bluetoothMIDICharacteristic, selectedMIDIChannel,  123, 0, bluetoothPacketQueue )
             console.log('Sent CC#123 (All Notes Off) to BLE device')
         } catch (err) {
             console.error('Failed to send CC#123 to BLE device:', err)
@@ -444,32 +431,46 @@ const handleBluetoothConnection = async () => {
 }
 
 /**
+ * Turn on MIDI connection
+ */
+const enableMIDI = async () => {
+  try {
+        await WebMidi.enable()
+        webMIDIEnabled = true
+        ui.setWebMIDIButtonText('Disable WebMIDI')
+        onMIDIDevicesAvailable(undefined as any)
+    } catch (err:any) {
+        // onUltimateFailure(err)
+        ui.showError( `WebMIDI could not be established: ${err.message || 'Failed to connect'}` )
+    }
+}
+
+/**
+ * Turn off MIDI connection
+ */
+const disableMIDI = async () => {
+  try {
+        await WebMidi.disable()
+        webMIDIEnabled = false
+        ui.setWebMIDIButtonText('Enable WebMIDI')
+        // clear any connected MIDIDevices
+        MIDIDevices.length = 0
+        ui.inputs.innerHTML = ''
+        ui.outputs.innerHTML = ''
+    } catch (err:any) {
+        ui.showError( `WebMIDI connection would not disconnect: ${err.message || 'Failed to connect'}` )
+    }
+}
+
+/**
  *  WebMIDI will be enabled/disabled with the UI toggle button
  *  also now monitor for MIDI inputs...
  */
 const toggleWebMIDI = async () => {
     if (!webMIDIEnabled) {
-        try {
-            await WebMidi.enable()
-            webMIDIEnabled = true
-            ui.setWebMIDIButtonText('Disable WebMIDI')
-            onMIDIDevicesAvailable(undefined as any)
-        } catch (err:any) {
-            // onUltimateFailure(err)
-            ui.showError( `WebMIDI could not be established: ${err.message || 'Failed to connect'}` )
-        }
+      await enableMIDI()
     } else {
-        try {
-            await WebMidi.disable()
-            webMIDIEnabled = false
-            ui.setWebMIDIButtonText('Enable WebMIDI')
-            // clear any connected MIDIDevices
-            MIDIDevices.length = 0
-            ui.inputs.innerHTML = ''
-            ui.outputs.innerHTML = ''
-        } catch (err:any) {
-            ui.showError( `WebMIDI connection would not disconnect: ${err.message || 'Failed to connect'}` )
-        }
+      await disableMIDI()
     }
 }
 
@@ -508,10 +509,10 @@ const initialiseApplication = (onEveryTimingTick) => {
     mixer.connect( reverb )
     reverb.connect(audioContext.destination)
 
-    synth = new PolySynth( audioContext )
+    synthesizer = new PolySynth( audioContext )
     // synth = new SynthOscillator( audioContext )
 
-    synth.output.connect( mixer )
+    synthesizer.output.connect( mixer )
     // synth.addTremolo(0.5)
 
     // this handles the audio timing
@@ -521,7 +522,7 @@ const initialiseApplication = (onEveryTimingTick) => {
     ui = new UI( ALL_KEYBOARD_NOTES, onNoteOnRequestedFromKeyboard, onNoteOffRequestedFromKeyboard )
     ui.setTempo( timer.BPM )
     
-    ui.whenRandomTimbreRequestedRun( e => synth.setRandomTimbre() )
+    ui.whenRandomTimbreRequestedRun( e => synthesizer.setRandomTimbre() )
     ui.whenTempoChangesRun( (tempo:number) => timer.BPM = tempo )
     ui.whenVolumeChangesRun((volume:number) => mixer.gain.value = (volume / 100) * 0.5)
     ui.whenBluetoothDeviceRequestedRun( handleBluetoothConnection ) 
@@ -569,7 +570,7 @@ const initialiseApplication = (onEveryTimingTick) => {
     // })
 
     ui.onDoubleClick( () => {
-        synth.setRandomTimbre()
+        synthesizer.setRandomTimbre()
     })
 
     onscreenKeyboardMIDIDevice = new MIDIDevice(ONSCREEN_KEYBOARD_NAME)
@@ -661,7 +662,8 @@ const initialiseApplication = (onEveryTimingTick) => {
  */
 const onNoteOnRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=ONSCREEN_KEYBOARD_NAME ) => {
     const audioCommand:AudioCommand = createAudioCommand( Commands.NOTE_ON, noteModel, timer, fromDevice )
-    audioCommandQueue.push(audioCommand)
+    const transformedAudioCommands:AudioCommandInterface[] = transformerManager.transform( [audioCommand], timer )
+    audioCommandQueue.push(...transformedAudioCommands)
 }
 
 /**
@@ -670,7 +672,8 @@ const onNoteOnRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=ON
  */
 const onNoteOffRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=ONSCREEN_KEYBOARD_NAME) => {
     const audioCommand:AudioCommand = createAudioCommand( Commands.NOTE_OFF, noteModel, timer, fromDevice )
-    audioCommandQueue.push(audioCommand)
+    const transformedAudioCommands:AudioCommandInterface[] = transformerManager.transform( [audioCommand], timer )
+    audioCommandQueue.push(...transformedAudioCommands)
 }
 
 /**
@@ -743,20 +746,6 @@ const onMIDIEvent = ( event, activeMIDIDevice, connectedMIDIDevice, index ) => {
             break
 
         // TODO: Don't ignore stuff like pitch bend
-    }
-}
-
-/**
- * EVENT: Buffer is full of data... restarting LOOP!
- */
-const onRecordingMusicalEventsLoopBegin = ( activeAudioEvents ) => {
-
-    if (activeAudioEvents.length > 0)
-    {
-        const musicalEvents = activeAudioEvents.map( audioEvent => {
-            return audioEvent.clone( timeLastBarBegan )
-        })
-        // console.info("Active musicalEvents", musicalEvents)
     }
 }
 

@@ -45,8 +45,7 @@ export default class SynthOscillator{
     
     startedAt = -1
     oscillatorsActive = false
-    activeNote = -1
-
+    activeNote = null
 
     get isNoteDown(){
         return this.activeNote !== null
@@ -434,9 +433,9 @@ export default class SynthOscillator{
             // }, (killOscillatorTime - now) * 1000)
         }
 
-        this.timerInterval = setTimeout(()=> this.isNoteDown = false, this.options.release )
-        this.activeNote = null
+        this.timerInterval = setTimeout(()=> this.activeNote = null, this.options.release )
         this.startedAt = -1
+
         return this
     }
 
