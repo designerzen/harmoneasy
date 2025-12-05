@@ -8,8 +8,12 @@ import type Timer from "../timing/timer.ts"
 import type { TransformerInterface } from "./interface-transformer.ts"
 import { Transformer } from "./abstract-transformer.ts"
 
+export const ID_MICROTONALITY = "Micro-Tonality" 
+
 export class MicroTonalityTransformer extends Transformer<{}> implements TransformerInterface{
  
+    id = ID_MICROTONALITY
+    
     get name(): string {
         return 'Micro Tonality Transformer'
     }
@@ -24,7 +28,6 @@ export class MicroTonalityTransformer extends Transformer<{}> implements Transfo
         {
             return commands
         }
-
         return commands
     }
 }

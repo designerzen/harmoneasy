@@ -6,7 +6,7 @@ import type Timer from "../timing/timer";
 import { Transformer } from "./abstract-transformer"
 import type { TransformerInterface } from "./interface-transformer";
 
-export const ID_QUANTISE = "quantise"
+export const ID_QUANTISE = "Quantiser"
 
 interface Config {
     step: number

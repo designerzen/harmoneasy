@@ -13,7 +13,7 @@ import { Transformer } from "./abstract-transformer"
 import * as Commands from "../../../commands"
 import type { TransformerInterface } from "./interface-transformer"
 
-export const ID_RANDOMISER = "randomiser"
+export const ID_RANDOMISER = "Randomiser"
 
 interface Config {
     uncertainty: number // Probability (0-100) that a note will be shifted

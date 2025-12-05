@@ -10,7 +10,7 @@ import type { TransformerInterface } from "./interface-transformer.js"
 import type { AudioCommandInterface } from "../audio-command-interface"
 import type Timer from "../timing/timer.js"
 
-export const ID_QUANTISE = "transposer"
+export const ID_TRANSPOSER = "Transposer"
 
 interface Config extends TransformerConfig {
     root: number,
@@ -25,7 +25,7 @@ const DEFAULT_OPTIONS: Config = {
 
 export class TransformerTransposer extends Transformer<Config> implements TransformerInterface {
 
-    id = ID_QUANTISE
+    id = ID_TRANSPOSER
 
     notesInScale: Set<number>
 

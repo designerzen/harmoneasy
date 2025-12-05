@@ -2,7 +2,8 @@ import React from "react"
 import type { TransformerManager } from "../../libs/audiobus/transformers/transformer-manager"
 import { 
     tranformerFactory,
-    TRANSFORMER_TYPE
+    TRANSFORMER_TYPE,
+    TRANSFORMERS
 } from "../../libs/audiobus/transformers/transformer-factory"
 
 export function ConfigDrawer() {
@@ -24,15 +25,9 @@ export function ConfigDrawer() {
         
         <details open className="transformers">
             <summary><h6>Transformers</h6></summary>
-            
-            <button onClick={onAdd(TRANSFORMER_TYPE.ID_ARPEGGIATOR)}>Arpeggiator</button>
-            <button onClick={onAdd(TRANSFORMER_TYPE.ID_QUANTISE)}>Quantise</button>
-            <button onClick={onAdd(TRANSFORMER_TYPE.ID_CHORDIFIER)}>Chordifier</button>
-            <button onClick={onAdd(TRANSFORMER_TYPE.ID_HARMONISER)}>Harmoniser</button>
-            <button onClick={onAdd(TRANSFORMER_TYPE.ID_NOTE_SHORTENER)}>Note Shortener</button>
-            <button onClick={onAdd(TRANSFORMER_TYPE.ID_NOTE_REPEATER)}>Note Repeater</button>
-            <button onClick={onAdd(TRANSFORMER_TYPE.ID_NOTE_DELAY)}>Note Delay</button>
-            <button onClick={onAdd(TRANSFORMER_TYPE.ID_RANDOMISER)}>Randomiser</button>
+            { 
+                TRANSFORMERS.map( transformer => ( <button onClick={onAdd(transformer)}>{transformer}</button>) ) 
+            }
         </details>
 
         <details open className="presets">

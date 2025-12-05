@@ -5,7 +5,7 @@ import * as Commands from "../../../commands"
 import type Timer from "../timing/timer"
 import type { TransformerInterface } from "./interface-transformer"
 
-export const ID_NOTE_REPEATER = "note-repeater"
+export const ID_NOTE_REPEATER = "Note-Repeater"
 
 interface Config {
     repeats: number // how many times to repeat (1 = no repeat, 2 = one repeat, etc.)

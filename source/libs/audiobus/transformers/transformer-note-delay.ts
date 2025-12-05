@@ -5,7 +5,7 @@ import * as Commands from "../../../commands"
 import type Timer from "../timing/timer"
 import type { TransformerInterface } from "./interface-transformer"
 
-export const ID_NOTE_DELAY = "note-delay"
+export const ID_NOTE_DELAY = "Note-Delay"
 
 interface Config {
     useTimeDivision: boolean // true = time division, false = milliseconds

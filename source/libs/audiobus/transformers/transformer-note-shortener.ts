@@ -5,7 +5,7 @@ import * as Commands from "../../../commands"
 import type Timer from "../timing/timer"
 import type { TransformerInterface } from "./interface-transformer"
 
-export const ID_NOTE_SHORTENER = "note-shortener"
+export const ID_NOTE_SHORTENER = "Note-Shortener"
 
 interface Config {
     duration: string // Note division: '1/4', '1/8', '1/16', '1/32', or 'triplet'

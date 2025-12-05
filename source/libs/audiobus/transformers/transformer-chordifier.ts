@@ -25,7 +25,7 @@ import type { AudioCommandInterface } from "../audio-command-interface"
 import type Timer from "../timing/timer.js"
 import type { TransformerInterface } from "./interface-transformer.js"
 
-export const ID_CHORDIFIER = "chordifier"
+export const ID_CHORDIFIER = "Chordifier"
 
 // Full keyboard with all notes
 const keyboardKeys = (new Array(128)).fill("")

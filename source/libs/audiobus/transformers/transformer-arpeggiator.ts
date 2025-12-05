@@ -5,7 +5,7 @@ import * as Commands from "../../../commands"
 import type Timer from "../timing/timer"
 import type { TransformerInterface } from "./interface-transformer"
 
-export const ID_ARPEGGIATOR = "arpeggiator"
+export const ID_ARPEGGIATOR = "Arpeggiator"
 
 type ArpPattern = 'up' | 'down' | 'up-down' | 'down-up' | 'random' | 'chord'
 
