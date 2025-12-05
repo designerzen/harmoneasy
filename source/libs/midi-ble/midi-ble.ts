@@ -242,9 +242,7 @@ export const dispatchBLEPacket = async (
 
     const { header, messageTimestamp }: TimestampBytes = getTimestampBytes(timestamp)
     const packet: Array<number> = createBLEPacket(messageTimestamp, midiStatus, midiFirstCommand, midiSecondCommand, header)
-
     describePacket(characteristic, header, messageTimestamp, midiStatus, midiFirstCommand, midiSecondCommand, packet )
-
     return sendBLEPacket(characteristic, new Uint8Array(packet))
 }
 
@@ -287,6 +285,28 @@ export const parseToUint8 = (s:string) :Uint8Array=> {
     return new Uint8Array(bytes)
 }
 
+/**
+ * 
+ * @param characteristic 
+ * @param midiStatus 
+ * @param midiFirstCommand 
+ * @param midiSecondCommand 
+ * @param _runningTotal 
+ * @returns 
+ */
+const sendOrQueueBLEPacket = (
+    characteristic: BluetoothRemoteGATTCharacteristic,
+    midiStatus: number,
+    midiFirstCommand: number,
+    midiSecondCommand: number = 0,
+    _runningTotal: Array<number> | undefined = undefined
+) => {
+    if (_runningTotal) {
+        return queueBLEPacket(_runningTotal, characteristic, midiStatus, midiFirstCommand, midiSecondCommand)
+    } else {
+        return dispatchBLEPacket(characteristic, midiStatus, midiFirstCommand, midiSecondCommand)
+    }
+}
 
 /**
  * Send MIDI Note On message via BLE
@@ -307,14 +327,12 @@ export const sendBLECommand = async (
 ): Promise<boolean | null> => {
     // no channel to send to, so exit early
     if (channel === null) { return null }
-        const t = parseToUint8(data)
-        if (t.length > 0) 
-        {
-            return null
-        }
-    return _runningTotal ?
-        await queueBLEPacket(_runningTotal, characteristic, getMIDIStatusBytesFromNibbleAndChannel(MIDI_NOTE_ON, channel), note, velocity) :
-        await dispatchBLEPacket(characteristic, getMIDIStatusBytesFromNibbleAndChannel(MIDI_NOTE_ON, channel), note, velocity)
+    const t = parseToUint8(data)
+    if (t.length > 0) 
+    {
+        return null
+    }
+    return await sendOrQueueBLEPacket(characteristic, getMIDIStatusBytesFromNibbleAndChannel(MIDI_NOTE_ON, channel), t, value, _runningTotal)
 }
 
 /**
@@ -334,11 +352,8 @@ export const sendBLENoteOn = async (
     velocity: number = 127,
     _runningTotal: Array<number> | undefined = undefined
 ): Promise<boolean | null> => {
-    // no channel to send to, so exit early
     if (channel === null) { return null }
-    return _runningTotal ?
-        await queueBLEPacket(_runningTotal, characteristic, getMIDIStatusBytesFromNibbleAndChannel(MIDI_NOTE_ON, channel), note, velocity) :
-        await dispatchBLEPacket(characteristic, getMIDIStatusBytesFromNibbleAndChannel(MIDI_NOTE_ON, channel), note, velocity)
+    return await sendOrQueueBLEPacket(characteristic, getMIDIStatusBytesFromNibbleAndChannel(MIDI_NOTE_ON, channel), note, velocity, _runningTotal)
 }
 
 /**
@@ -358,9 +373,7 @@ export const sendBLENoteOff = async (
     _runningTotal: Array<number> | undefined = undefined
 ): Promise<boolean | null> => {
     if (channel === null) { return null }
-    return _runningTotal ?
-        await queueBLEPacket(_runningTotal, characteristic, getMIDIStatusBytesFromNibbleAndChannel(MIDI_NOTE_OFF, channel), note, velocity) :
-        await dispatchBLEPacket(characteristic, getMIDIStatusBytesFromNibbleAndChannel(MIDI_NOTE_OFF, channel), note, velocity)
+    return await sendOrQueueBLEPacket(characteristic, getMIDIStatusBytesFromNibbleAndChannel(MIDI_NOTE_OFF, channel), note, velocity, _runningTotal)
 }
 
 /**
@@ -380,9 +393,7 @@ export const sendBLEAllNoteOff = async (
     _runningTotal: Array<number> | undefined = undefined
 ): Promise<boolean | null> => {
     if (channel === null) { return null }
-    return _runningTotal ?
-        await queueBLEPacket(_runningTotal, characteristic, getMIDIStatusBytesFromNibbleAndChannel(MIDI_NOTE_OFF, channel), note, velocity) :
-        await dispatchBLEPacket(characteristic, getMIDIStatusBytesFromNibbleAndChannel(MIDI_NOTE_OFF, channel), note, velocity)
+    return await sendOrQueueBLEPacket(characteristic, getMIDIStatusBytesFromNibbleAndChannel(MIDI_NOTE_OFF, channel), note, velocity, _runningTotal)
 }
 
 /**
@@ -401,11 +412,8 @@ export const sendBLEControlChange = async (
     value: number,
     _runningTotal: Array<number> | undefined = undefined
 ): Promise<boolean | null> => {
-    // no channel to send to, so exit early
     if (channel === null) { return null }
-    return _runningTotal ?
-        await queueBLEPacket(_runningTotal, characteristic, getMIDIStatusBytesFromByteAndChannel(MIDI_CONTROL_CHANGE, channel), controlNumber, value) :
-        await dispatchBLEPacket(characteristic, getMIDIStatusBytesFromByteAndChannel(MIDI_CONTROL_CHANGE, channel), controlNumber, value)
+    return await sendOrQueueBLEPacket(characteristic, getMIDIStatusBytesFromByteAndChannel(MIDI_CONTROL_CHANGE, channel), controlNumber, value, _runningTotal)
 }
 
 /**
@@ -422,11 +430,8 @@ export const sendBLEProgramChange = async (
     program: number,
     _runningTotal: Array<number> | undefined = undefined
 ): Promise<boolean | null> => {
-    // no channel to send to, so exit early
     if (channel === null) { return null }
-    return _runningTotal ?
-        await queueBLEPacket(_runningTotal, characteristic, getMIDIStatusBytesFromByteAndChannel(MIDI_PROGRAM_CHANGE, channel), program) :
-        await dispatchBLEPacket(characteristic, getMIDIStatusBytesFromByteAndChannel(MIDI_PROGRAM_CHANGE, channel), program)
+    return await sendOrQueueBLEPacket(characteristic, getMIDIStatusBytesFromByteAndChannel(MIDI_PROGRAM_CHANGE, channel), program, 0, _runningTotal)
 }
 
 
@@ -446,11 +451,8 @@ export const sendBLEPolyphonicAftertouch = async (
     pressure: number,
     _runningTotal: Array<number> | undefined = undefined
 ): Promise<boolean | null> => {
-    // no channel to send to, so exit early
     if (channel === null) { return null }
-    return _runningTotal ?
-        await queueBLEPacket(_runningTotal, characteristic, getMIDIStatusBytesFromByteAndChannel(MIDI_POLYPHONIC_KEY_PRESSURE, channel), note, pressure) :
-        await dispatchBLEPacket(characteristic, getMIDIStatusBytesFromByteAndChannel(MIDI_POLYPHONIC_KEY_PRESSURE, channel), note, pressure)
+    return await sendOrQueueBLEPacket(characteristic, getMIDIStatusBytesFromByteAndChannel(MIDI_POLYPHONIC_KEY_PRESSURE, channel), note, pressure, _runningTotal)
 }
 
 /**
@@ -467,11 +469,8 @@ export const sendBLEChannelAftertouch = async (
     pressure: number,
     _runningTotal: Array<number> | undefined = undefined
 ): Promise<boolean | null> => {
-    // no channel to send to, so exit early
     if (channel === null) { return null }
-    return _runningTotal ?
-        await queueBLEPacket(_runningTotal, characteristic, getMIDIStatusBytesFromByteAndChannel(MIDI_CHANNEL_PRESSURE, channel), pressure) :
-        await dispatchBLEPacket(characteristic, getMIDIStatusBytesFromByteAndChannel(MIDI_CHANNEL_PRESSURE, channel), pressure)
+    return await sendOrQueueBLEPacket(characteristic, getMIDIStatusBytesFromByteAndChannel(MIDI_CHANNEL_PRESSURE, channel), pressure, 0, _runningTotal)
 }
 
 /**
@@ -490,11 +489,8 @@ export const sendBLEPitchBend = async (
     msb: number,
     _runningTotal: Array<number> | undefined = undefined
 ): Promise<boolean | null> => {
-    // no channel to send to, so exit early
     if (channel === null) { return null }
-    return _runningTotal ?
-        await queueBLEPacket(_runningTotal, characteristic, getMIDIStatusBytesFromByteAndChannel(MIDI_PITCH_BEND, channel), lsb, msb) :
-        await dispatchBLEPacket(characteristic, getMIDIStatusBytesFromByteAndChannel(MIDI_PITCH_BEND, channel), lsb, msb)
+    return await sendOrQueueBLEPacket(characteristic, getMIDIStatusBytesFromByteAndChannel(MIDI_PITCH_BEND, channel), lsb, msb, _runningTotal)
 }
 
 
