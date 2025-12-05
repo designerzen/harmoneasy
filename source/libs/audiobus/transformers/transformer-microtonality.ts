@@ -7,8 +7,15 @@ import type Timer from "../timing/timer.ts"
 
 import type { TransformerInterface } from "./interface-transformer.ts"
 import { Transformer } from "./abstract-transformer.ts"
+import { parseEdoScaleMicroTuningOctave } from "../../pitfalls/ts/index.ts"
 
 export const ID_MICROTONALITY = "Micro-Tonality" 
+
+let mictrotonalPitches = parseEdoScaleMicroTuningOctave(60, 3, "LLsLLLs", 2, 1)
+
+// load and complete some tests!
+// import { parseEdoScaleMicroTuningOctave } from "index.ts"
+// console.warn( "TEST", mictrotonalPitches, 60, 3, "LLsLLLs", 2, 1 )
 
 export class MicroTonalityTransformer extends Transformer<{}> implements TransformerInterface{
  
