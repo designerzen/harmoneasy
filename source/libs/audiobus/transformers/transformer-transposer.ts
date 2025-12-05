@@ -82,30 +82,37 @@ export class TransformerTransposer extends Transformer<Config> implements Transf
 
         // Quantise each command's note to the closest scale note
         return commands.map(command => {
-            const quantisedNote = findClosestNoteInScale(command.number, this.notesInScale )
+            const transposedNote = findClosestNoteInScale(command.number, this.notesInScale )
 
             // If the note is already in the scale, return unchanged
-            if (quantisedNote === command.number) {
+            if (transposedNote === command.number) {
                 return command
             }
 
             // Create a new command with the quantised note
-            const quantisedCommand = { ...command }
-            quantisedCommand.number = quantisedNote
+            const quantisedCommand = command.clone()
+            quantisedCommand.number = transposedNote
 
-            console.log(`Quantised note ${command.number} to ${quantisedNote}`)
+            console.log(`Transposed note ${command.number} to ${transposedNote}`)
 
             return quantisedCommand
         })
     }
 
-
+    /**
+     * 
+     */
     private setScaleNotes (){
         // Create a set of all valid notes in the scale across all octaves
-        const intervalFormula = getIntervalFormulaForMode(this.config.mode)
+        const intervalFormula:number[] = getIntervalFormulaForMode(this.config.mode)
         this.notesInScale = generateNotesInScale(this.config.root, intervalFormula)
     }
 
+    /**
+     * 
+     * @param c 
+     * @param val 
+     */
     override setConfig(c: string, val: unknown): void {
         this.setScaleNotes()
         super.setConfig(c, val)
