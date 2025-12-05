@@ -1,3 +1,6 @@
+/**
+ * Put into time domain
+ */
 import type { AudioCommandInterface } from "../audio-command-interface";
 import type Timer from "../timing/timer";
 import { Transformer } from "./abstract-transformer"
@@ -46,7 +49,7 @@ export class TransformerQuantise extends Transformer<Config> implements Transfor
         super( {...DEFAULT_OPTIONS, ...config} )
     }
 
-    // Quanitisation is handles in onTick in index
+    // Quanitisation is mainly handled in onTick in index
     transform(commands:AudioCommandInterface[], timer: Timer):AudioCommandInterface[] {
         return commands
     }

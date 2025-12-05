@@ -1,3 +1,13 @@
+/**
+ * Randomiser Transformer
+ *
+ * Randomly shifts notes within a specified range.
+ * - uncertainty: Probability (0-100) that a note will be randomised
+ * - offset: Maximum range in semitones for random shift (both up and down)
+ *
+ * Tracks active notes to ensure NOTE_OFF commands turn off the correct randomised notes.
+ */
+
 import type { AudioCommandInterface } from "../audio-command-interface"
 import { Transformer } from "./abstract-transformer"
 import * as Commands from "../../../commands"
@@ -15,15 +25,6 @@ const DEFAULT_OPTIONS: Config = {
     offset: 12           // Up to 1 octave up or down by default
 }
 
-/**
- * Randomiser Transformer
- *
- * Randomly shifts notes within a specified range.
- * - random: Probability (0-100) that a note will be randomised
- * - offset: Maximum range in semitones for random shift (both up and down)
- *
- * Tracks active notes to ensure NOTE_OFF commands turn off the correct randomised notes.
- */
 export class TransformerRandomiser extends Transformer<Config> implements TransformerInterface {
 
     id = ID_RANDOMISER
@@ -154,7 +155,7 @@ export class TransformerRandomiser extends Transformer<Config> implements Transf
                 const randomisedCommand = command.clone()
                 randomisedCommand.number = randomisedNote
 
-                console.log(`[RANDOMISER] NOTE_OFF: Turning off randomised note ${randomisedNote} (original: ${command.number})`)
+                //console.log(`[RANDOMISER] NOTE_OFF: Turning off randomised note ${randomisedNote} (original: ${command.number})`)
 
                 return randomisedCommand
             }

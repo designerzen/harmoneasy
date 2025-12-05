@@ -3,7 +3,6 @@
  * a chord with the given root note and chord type
  * and the length specified in simultaneous
  */
-import type { AudioCommandInterface } from "../audio-command-interface";
 import { Transformer } from "./abstract-transformer"
 import NoteModel from "../note-model"
 import AudioCommand from "../audio-command"
@@ -21,6 +20,8 @@ import {
 } from "../tuning/intervals.js"
 import { TUNING_MODE_IONIAN } from "../tuning/scales.js"
 import { getIntervalFormulaForMode } from "../tuning/chords/modal-chords.js"
+
+import type { AudioCommandInterface } from "../audio-command-interface"
 import type Timer from "../timing/timer.js"
 import type { TransformerInterface } from "./interface-transformer.js"
 
@@ -28,8 +29,8 @@ export const ID_CHORDIFIER = "chordifier"
 
 // Full keyboard with all notes
 const keyboardKeys = (new Array(128)).fill("")
+const ALL_KEYBOARD_NUMBERS = keyboardKeys.map((_, index) => index )
 const ALL_KEYBOARD_NOTES = keyboardKeys.map((_, index) => new NoteModel(index))
-
 const NOTES_IN_CHORDS = 3
 
 interface Config {
@@ -55,7 +56,6 @@ export class TransformerChordifier extends Transformer<Config> implements Transf
     get description(): string{
         return "Adds harmonic triads to your notes"
     }
-
 
     get fields() {
         return [
@@ -98,10 +98,8 @@ export class TransformerChordifier extends Transformer<Config> implements Transf
     }
 
     private harmonizeNote(command: AudioCommandInterface) {
-        // Get the first audio command to generate chord from
 
-        // Create note model from the first command's note number
-        // const noteModel = new NoteModel(command.number)
+        // Fetch note model from the first command's note number
         const noteModel = ALL_KEYBOARD_NOTES[command.number]
 
         // Get interval formula based on the configured mode
@@ -114,24 +112,21 @@ export class TransformerChordifier extends Transformer<Config> implements Transf
         const finalRotation = rotation === -1 ? 0 : rotation
 
         // Generate chord based on the first command's note
-        const chord = createChord(ALL_KEYBOARD_NOTES, intervalFormula, noteModel.noteNumber, finalRotation, this.config.simultaneous, true, true)
-        const chordNotes = chord.map((c: NoteModel) => c.number)
+        const chordNotes:number[] = createChord(ALL_KEYBOARD_NUMBERS, intervalFormula, noteModel.noteNumber, finalRotation, this.config.simultaneous, true, true)
         const intervals = convertToIntervalArray(chordNotes)
 
         console.log("Root", noteModel.noteNumber)
-        console.log("Chord", noteModel, chord, chordNotes)
+        console.log("Chord", noteModel, chordNotes )
         console.log("Intervals?", intervals, intervalFormula)
         // console.log("Chord Ionian", noteModel, MODES.createIonianChord(ALL_KEYBOARD_NOTES, noteModel.noteNumber, 0, 3))
 
         // Transform commands: create new audio commands for each chord note
-        const harmonisedCommands: AudioCommandInterface[] = []
-
-        for (const chordNote of chord) {
+        const harmonisedCommands: AudioCommandInterface[] = chordNotes.map((chordNote:number) => {
             const newCommand = command.clone()
             // Set the new note number from the chord
-            newCommand.number = chordNote.number
-            harmonisedCommands.push(newCommand)
-        }
+            newCommand.number = chordNote
+            return newCommand
+        })
 
         // Return the harmonised chord commands
         return harmonisedCommands
@@ -139,7 +134,8 @@ export class TransformerChordifier extends Transformer<Config> implements Transf
 
     transform(commands:AudioCommandInterface[], timer:Timer ):AudioCommandInterface[] {
 
-        if (commands.length === 0) {
+        if (!this.config.enabled || commands.length === 0)
+        {
             return commands
         }
 

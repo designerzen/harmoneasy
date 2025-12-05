@@ -164,6 +164,7 @@ export class TransformerNoteDelay extends Transformer<Config> implements Transfo
     }
 
     transform(commands: AudioCommandInterface[], timer: Timer): AudioCommandInterface[] {
+        
         if (!this.config.enabled || commands.length === 0) {
             return commands
         }
