@@ -12,8 +12,10 @@
   user-select: none;
   border-bottom: 1px solid #333;
   position: relative;
-  z-index: 100;
+  z-index: 202;
   order:-1;
+  position: sticky;
+  top: 0;
 
   &:hover {
     background: #252525;
