@@ -22,6 +22,18 @@ const DEFAULT_OPTIONS: Config = {
 }
 
 /**
+ * Fisher-Yates shuffle for randomising array entries
+ */
+const shuffleArray = <T>(array: T[]): T[] => {
+    const shuffled = [...array]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    }
+    return shuffled
+}
+
+/**
  * Arpeggiator Transformer
  *
  * Takes incoming note commands and generates arpeggiated patterns.
@@ -107,6 +119,10 @@ export class TransformerArpeggiator extends Transformer<Config> implements Trans
         ]
     }
 
+    get description():string{
+        return "Arpeggiate incoming notes based on the selected pattern and rate."
+    }
+
     constructor(config: Partial<Config> = {}) {
         super({ ...DEFAULT_OPTIONS, ...config })
     }
@@ -133,6 +149,11 @@ export class TransformerArpeggiator extends Transformer<Config> implements Trans
     }
 
     transform(commands: AudioCommandInterface[], timer: Timer): AudioCommandInterface[] {
+
+        if (!this.config.enabled || commands.length === 0) {
+            //console.log('[ARPEGGIATOR] Bypassing - disabled or no commands')
+            return commands
+        }
       
         const bpm = timer.BPM
 
@@ -142,11 +163,6 @@ export class TransformerArpeggiator extends Transformer<Config> implements Trans
             config: this.config,
             bpm
         })
-
-        if (!this.config.enabled || commands.length === 0) {
-            //console.log('[ARPEGGIATOR] Bypassing - disabled or no commands')
-            return commands
-        }
 
         const arpeggiated: AudioCommandInterface[] = []
 
@@ -392,24 +408,13 @@ export class TransformerArpeggiator extends Transformer<Config> implements Trans
                 return [[...notes].reverse(), ...upPart].flat()
 
             case 'random':
-                return this.shuffleArray([...notes])
+                return shuffleArray([...notes])
 
             default:
                 return notes
         }
     }
 
-    /**
-     * Fisher-Yates shuffle for random pattern
-     */
-    private shuffleArray<T>(array: T[]): T[] {
-        const shuffled = [...array]
-        for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-        }
-        return shuffled
-    }
 
     /**
      * Create a new audio command with specified note and delay
@@ -420,18 +425,8 @@ export class TransformerArpeggiator extends Transformer<Config> implements Trans
         delayMs: number,
         baseTime: number
     ): AudioCommandInterface {
-        const command = new AudioCommand()
 
-        // Copy properties from original
-        command.type = original.type
-        command.subtype = original.subtype
-        command.velocity = original.velocity || 100 // Ensure velocity is always set
-        command.value = original.value
-        command.pitchBend = original.pitchBend
-        command.time = original.time
-        command.timeCode = original.timeCode
-        command.text = original.text
-        command.raw = original.raw
+        const command = original.clone()
 
         // Set the arpeggiated note number
         command.number = noteNumber
@@ -442,12 +437,12 @@ export class TransformerArpeggiator extends Transformer<Config> implements Trans
         command.startAt = baseTime + delaySeconds
         command.endAt = original.endAt
 
-        console.log('[ARPEGGIATOR] Command created', {
-            noteNumber,
-            velocity: command.velocity,
-            originalVelocity: original.velocity,
-            startAt: command.startAt
-        })
+        // console.log('[ARPEGGIATOR] Command created', {
+        //     noteNumber,
+        //     velocity: command.velocity,
+        //     originalVelocity: original.velocity,
+        //     startAt: command.startAt
+        // })
 
         return command
     }
