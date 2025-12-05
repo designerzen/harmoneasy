@@ -20,7 +20,7 @@ describe('All Transformers', () => {
                 octaves: 1
             }),
             new TransformerRandomiser({
-                random: 50,
+                uncertainty: 50,
                 offset: 12
             })
         ]
@@ -58,7 +58,7 @@ describe('All Transformers', () => {
                 octaves: 1
             }), expectedName: 'Arpeggiator' },
             { t: new TransformerRandomiser({
-                random: 50,
+                uncertainty: 50,
                 offset: 12
             }), expectedName: 'Randomiser' }
         ]
@@ -90,7 +90,7 @@ describe('All Transformers', () => {
                 octaves: 1
             }),
             new TransformerRandomiser({
-                random: 50,
+                uncertainty: 50,
                 offset: 12
             })
         ]
@@ -122,7 +122,7 @@ describe('All Transformers', () => {
                 octaves: 1
             }),
             new TransformerRandomiser({
-                random: 50,
+                uncertainty: 50,
                 offset: 12
             })
         ]

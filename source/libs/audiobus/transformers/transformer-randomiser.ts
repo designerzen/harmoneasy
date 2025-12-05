@@ -6,13 +6,13 @@ import type { TransformerInterface } from "./interface-transformer"
 export const ID_RANDOMISER = "randomiser"
 
 interface Config {
-    random: number  // Probability (0-100) that a note will be shifted
-    offset: number  // Maximum range in semitones the note can be moved (up or down)
+    uncertainty: number // Probability (0-100) that a note will be shifted
+    offset: number      // Maximum range in semitones the note can be moved (up or down)
 }
 
 const DEFAULT_OPTIONS: Config = {
-    random: 50,     // 50% chance by default
-    offset: 12      // Up to 1 octave up or down by default
+    uncertainty: 50,     // 50% chance by default
+    offset: 12           // Up to 1 octave up or down by default
 }
 
 /**
@@ -33,6 +33,10 @@ export class TransformerRandomiser extends Transformer<Config> implements Transf
 
     get name(): string {
         return 'Randomiser'
+    }
+
+    get description():string{
+        return "Randomises notes within a specified range."
     }
 
     get fields() {
@@ -83,11 +87,16 @@ export class TransformerRandomiser extends Transformer<Config> implements Transf
     }
 
     transform(commands: AudioCommandInterface[], timer?: any): AudioCommandInterface[] {
+        if (!this.config.enabled || commands.length === 0)
+        {
+            return commands
+        }
+
         return commands.map(command => {
             // Handle NOTE_ON commands
             if (command.type === Commands.NOTE_ON) {
                 // Check if we should randomise this note based on the random probability
-                const shouldRandomise = Math.random() * 100 < this.config.random
+                const shouldRandomise = Math.random() * 100 < this.config.uncertainty
 
                 if (!shouldRandomise) {
                     // Store the original note as is (no randomisation)
@@ -114,7 +123,7 @@ export class TransformerRandomiser extends Transformer<Config> implements Transf
                 }
 
                 // Create a new command with the randomised note
-                const randomisedCommand = { ...command }
+                const randomisedCommand = command.clone()
                 randomisedCommand.number = clampedNoteNumber
 
                 console.log(`[RANDOMISER] NOTE_ON: Shifted note ${command.number} by ${shift} to ${clampedNoteNumber}`)
@@ -142,7 +151,7 @@ export class TransformerRandomiser extends Transformer<Config> implements Transf
                 }
 
                 // Create NOTE_OFF for the randomised note
-                const randomisedCommand = { ...command }
+                const randomisedCommand = command.clone()
                 randomisedCommand.number = randomisedNote
 
                 console.log(`[RANDOMISER] NOTE_OFF: Turning off randomised note ${randomisedNote} (original: ${command.number})`)

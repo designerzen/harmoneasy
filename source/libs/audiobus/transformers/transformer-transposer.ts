@@ -69,6 +69,10 @@ export class TransformerTransposer extends Transformer<Config> implements Transf
         ]
     }
 
+    get description():string{
+        return "Ensure that all played notes are in the specified scale."
+    }
+
     constructor(config = { root: 0, mode: TUNING_MODE_IONIAN }) {
         super( {...DEFAULT_OPTIONS, ...config} )
     }
@@ -93,7 +97,7 @@ export class TransformerTransposer extends Transformer<Config> implements Transf
             const quantisedCommand = command.clone()
             quantisedCommand.number = transposedNote
 
-            console.log(`Transposed note ${command.number} to ${transposedNote}`)
+            //console.log(`Transposed note ${command.number} to ${transposedNote}`)
 
             return quantisedCommand
         })

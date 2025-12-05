@@ -15,7 +15,7 @@ describe('TransformerRandomiser', () => {
 
     beforeEach(() => {
         transformer = new TransformerRandomiser({
-            random: 50,
+            uncertainty: 50,
             offset: 12
         })
     })
@@ -26,7 +26,7 @@ describe('TransformerRandomiser', () => {
 
     it('should disable randomisation at 0%', () => {
         transformer = new TransformerRandomiser({
-            random: 0,
+            uncertainty: 0,
             offset: 12
         })
 
@@ -38,7 +38,7 @@ describe('TransformerRandomiser', () => {
 
     it('should always randomise at 100%', () => {
         transformer = new TransformerRandomiser({
-            random: 100,
+            uncertainty: 100,
             offset: 12
         })
 
@@ -51,7 +51,7 @@ describe('TransformerRandomiser', () => {
 
     it('should keep randomised notes within MIDI range', () => {
         transformer = new TransformerRandomiser({
-            random: 100,
+            uncertainty: 100,
             offset: 12
         })
 
@@ -73,7 +73,7 @@ describe('TransformerRandomiser', () => {
     it('should respect offset range', () => {
         // With offset of 0, note should not move
         transformer = new TransformerRandomiser({
-            random: 100,
+            uncertainty: 100,
             offset: 0
         })
 
@@ -85,7 +85,7 @@ describe('TransformerRandomiser', () => {
 
     it('should track NOTE_ON notes for corresponding NOTE_OFF', () => {
         transformer = new TransformerRandomiser({
-            random: 50,
+            uncertainty: 50,
             offset: 12
         })
 
@@ -108,7 +108,7 @@ describe('TransformerRandomiser', () => {
 
     it('should preserve command properties', () => {
         transformer = new TransformerRandomiser({
-            random: 0,  // No randomisation
+            uncertainty: 0,  // No randomisation
             offset: 12
         })
 
@@ -130,7 +130,7 @@ describe('TransformerRandomiser', () => {
 
     it('should not randomise NOTE_OFF commands', () => {
         transformer = new TransformerRandomiser({
-            random: 100,  // Always randomise
+            uncertainty: 100,  // Always randomise
             offset: 12
         })
 
@@ -154,7 +154,7 @@ describe('TransformerRandomiser', () => {
 
     it('should allow config update', () => {
         transformer.setConfig('random', 75)
-        expect(transformer.options.random).toBe(75)
+        expect(transformer.options.uncertainty).toBe(75)
         
         transformer.setConfig('offset', 6)
         expect(transformer.options.offset).toBe(6)
@@ -162,7 +162,7 @@ describe('TransformerRandomiser', () => {
 
     it('should handle multiple notes', () => {
         transformer = new TransformerRandomiser({
-            random: 0,  // No randomisation
+            uncertainty: 0,  // No randomisation
             offset: 12
         })
 
