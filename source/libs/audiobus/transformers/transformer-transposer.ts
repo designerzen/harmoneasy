@@ -100,7 +100,9 @@ export class TransformerTransposer extends Transformer<Config> implements Transf
     }
 
     /**
-     * 
+     * Sets the scale that this transposer operates im
+     * Currently takes a formula and a root note as the 
+     * inputs to decide what keys are permissable
      */
     private setScaleNotes (){
         // Create a set of all valid notes in the scale across all octaves
