@@ -1,5 +1,5 @@
 //const OSCILLATORS = [ "sine", "triangle"]
-import { noteNumberToFrequency } from "../note-model.js"
+import NoteModel, { noteNumberToFrequency } from "../note-model.js"
 import { loadWaveTable } from "./wave-tables.js"
 // import { BiquadFilterNode, OscillatorNode, AudioContext } from "standardized-audio-context"
 
@@ -42,14 +42,20 @@ export default class SynthOscillator{
     customWave = null
 
     #id = "SynthOscillator"
-    isNoteDown = false
+    
     startedAt = -1
-    active = false
+    oscillatorsActive = false
+    activeNote = -1
 
 
+    get isNoteDown(){
+        return this.activeNote !== null
+    }
+    
     get id(){
         return this.#id
     }
+
     set id(value){
         this.#id = value
     }
@@ -222,7 +228,7 @@ export default class SynthOscillator{
         oscillator.stop()
         oscillator.disconnect()
         oscillator = null
-        this.active = false
+        this.oscillatorsActive = false
     }
 
     /**
@@ -252,10 +258,9 @@ export default class SynthOscillator{
             
             this.tremoloGain.connect(this.oscillator.frequency)
             console.info("tremoloActive", this.shape )
-            
         }
 
-        this.active = true
+        this.oscillatorsActive = true
     }
 
     /**
@@ -267,8 +272,8 @@ export default class SynthOscillator{
 
     /**
      * 
-     * @param {*} tonic 
-     * @param {*} intervals 
+     * @param {Number} tonic 
+     * @param {Array<Number>} intervals 
      * @param {Number} repetitions 
      */
     addArpeggioAtIntervals( tonic, intervals=[], repetitions=24 ){
@@ -358,6 +363,7 @@ export default class SynthOscillator{
                 }
                 this.createOscillator( frequency, startTime )	
             }
+           
          
         }else{
             // reuse existing and glide
@@ -369,8 +375,8 @@ export default class SynthOscillator{
         {
              this.addArpeggioAtIntervals( note, arp )
         }
-       
-        this.isNoteDown = true
+
+        this.activeNote = note
         this.startedAt = startTime
         return this
     }
@@ -429,7 +435,7 @@ export default class SynthOscillator{
         }
 
         this.timerInterval = setTimeout(()=> this.isNoteDown = false, this.options.release )
-       
+        this.activeNote = null
         this.startedAt = -1
         return this
     }
@@ -438,6 +444,13 @@ export default class SynthOscillator{
         const now = this.now
         this.oscillator.frequency.cancelScheduledValues(now)
         this.oscillator.frequency.linearRampToValueAtTime( value, now + duration )
+    }
+
+    /**
+     * Stop all notes on this instrument
+     */
+    allNotesOff(){
+        this.noteOff( new NoteModel(note.noteNumber) )
     }
 
     async loadWaveTable(waveTableName=TB303_Square){

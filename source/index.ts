@@ -267,7 +267,6 @@ export const noteOff = (noteModel:NoteModel, velocity:number=1, fromDevice:strin
  * This cleans up any stuck notes and simulates an "All Notes Off" command
  */
 export const allNotesOff = async () => {
-    console.log("KILL SWITCH: Sending note off for all 128 MIDI notes")
 
     // Clear the audio command queue of pending note commands
     audioCommandQueue = audioCommandQueue.filter(cmd =>
@@ -277,13 +276,7 @@ export const allNotesOff = async () => {
     // Turn off all notes in the internal synth
     if (synth)
     {
-        // If the synth has an all notes off method, use it
-        // Otherwise, iterate through all possible notes
-        for (let noteNumber = 0; noteNumber < 128; noteNumber++)
-        {
-            const noteModel = new NoteModel(noteNumber)
-            synth.noteOff(noteModel)
-        }
+        synth.allNotesOff()
     }
 
     // Turn off all actively tracked notes in all MIDI devices
@@ -321,7 +314,6 @@ export const allNotesOff = async () => {
     console.log("KILL SWITCH: Complete")
 }
 
-
 /**
  * Connect to ALL MIDI Devices currently connected
  */
@@ -336,7 +328,6 @@ const connectToMIDIDevice = ( connectedMIDIDevice, index:number ) => {
     console.info("connectToMIDIDevices", { device, connectedMIDIDevice, index})
     return device
 }
-
 
 /**
  * Disconnect BLE device and clean up
@@ -557,7 +548,7 @@ const initialiseApplication = (onEveryTimingTick) => {
         ui.showInfoDialog("Exporting Data to OpenDAW", script )
     })
     ui.whenKillSwitchRequestedRun( async ()=>{
-        console.log('[Kill Switch] All notes off requested')
+        console.info('[Kill Switch] All notes off requested')
         await allNotesOff()
     })
     
@@ -586,7 +577,7 @@ const initialiseApplication = (onEveryTimingTick) => {
     MIDIDevices.push( onscreenKeyboardMIDIDevice )
 
     // now watch for keydowns and tie into MIDI
-    addKeyboardDownEvents( (command:string, key:string, value:Number ) => {
+    addKeyboardDownEvents( (command:string, key:string, value:number ) => {
         switch(command)
         {
             case Commands.PLAYBACK_TOGGLE:
@@ -664,27 +655,13 @@ const initialiseApplication = (onEveryTimingTick) => {
 
 // EVENTS ------------------------------------------------------------------------
 
-
 /**
  * EVEMT: Note On requested from onscreen keyboard / external keyboard
  * @param noteModel
  */
 const onNoteOnRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=ONSCREEN_KEYBOARD_NAME ) => {
     const audioCommand:AudioCommand = createAudioCommand( Commands.NOTE_ON, noteModel, timer, fromDevice )
-
-    // Apply transformations immediately when the command comes in
-    // const transformedAudioCommands:AudioCommandInterface[] = transformerManager.transform( [audioCommand], timer )
-
-    // Always use the queue for proper scheduling
     audioCommandQueue.push(audioCommand)
-    // audioCommandQueue.push(...transformedAudioCommands)
-    
-    console.error("Note On queued (transformed)", audioCommandQueue, {
-        audioCommand,
-        transformedCommands: transformedAudioCommands,
-        transformerManager,
-        isQuantised: transformerManager.isQuantised
-    })
 }
 
 /**
@@ -692,23 +669,8 @@ const onNoteOnRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=ON
  * @param noteModel:NoteModel
  */
 const onNoteOffRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=ONSCREEN_KEYBOARD_NAME) => {
-
-    // create an AudioCommand for this NoteModel
-    const audioCommand:AudioCommand = createAudioCommand( Commands.NOTE_OFF, noteModel, timer )
-
-    // Apply transformations immediately when the command comes in
-    // const transformedCommands:AudioCommandInterface[] = transformerManager.transform( [audioCommand], timer )
-
-    // Always use the queue for proper scheduling
+    const audioCommand:AudioCommand = createAudioCommand( Commands.NOTE_OFF, noteModel, timer, fromDevice )
     audioCommandQueue.push(audioCommand)
-    // audioCommandQueue.push(...transformedCommands)
-
-    console.info("Note Off added (transformed)", {
-        audioCommand,
-        transformedCommands,
-        transformerManager,
-        isQuantised: transformerManager.isQuantised
-    })
 }
 
 /**

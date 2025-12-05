@@ -92,6 +92,20 @@ export default class PolySynth {
     }
 
     /**
+     * Stop all notes on all instruments
+     */
+    allNotesOff(){
+        this.instrumentActivity.forEach( (instrument, noteNumber) => instrument.allNotesOff() )
+        // If the synth has an all notes off method, use it
+        // Otherwise, iterate through all possible notes
+        // for (let noteNumber = 0; noteNumber < 128; noteNumber++)
+        // {
+        //     const noteModel = new NoteModel(noteNumber)
+        //     synth.noteOff(noteModel)
+        // }
+    }
+
+    /**
      * Set a random oscillator timbre from the collection
      */
     setRandomTimbre(){
