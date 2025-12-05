@@ -2,7 +2,7 @@
  * Forces by transposition the entered note into
  * the specified key and scale by finding the nearest note
  */
-import { Transformer, type TransformerConfig } from "./abstract-transforme.ts"
+import { Transformer, type TransformerConfig } from "./abstract-transformer.ts"
 import { findClosestNoteInScale, generateNotesInScale, TUNING_MODE_IONIAN } from "../tuning/scales.js"
 import { getIntervalFormulaForMode } from "../tuning/chords/modal-chords.js"
 

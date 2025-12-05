@@ -18,7 +18,13 @@ export class MicroTonalityTransformer extends Transformer<{}> implements Transfo
         return "Detune to a specific microtonal scale"
     }
 
-    transform( command:AudioCommand[], timer:Timer ): AudioCommand[] {
-        return command
+    transform( commands:AudioCommand[], timer:Timer ): AudioCommand[] {
+          
+        if (!this.config.enabled || commands.length === 0)
+        {
+            return commands
+        }
+
+        return commands
     }
 }
