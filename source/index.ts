@@ -104,10 +104,12 @@ const LETTER_KEYBOARD_NAME = "Keyboard"
 
 let state
 
-// this should be set per user
 let intervalFormula = INTERVALS.IONIAN_INTERVALS
 
+// TODO: this should be set per user
 let pausedQueue:number = 0
+
+// Scheduling =====================================================================
 
 const convertAudioCommandsToAudioEvents = ( commands:AudioCommandInterface[] ):AudioEvent[] => {
     return (commands ?? []).map( (command:AudioCommandInterface) => new AudioEvent( command, timer ))
@@ -134,7 +136,6 @@ const triggerAudioCommandsOnDevice = ( commands:AudioCommandInterface[] ) => {
     })
     return commands
 }
-
 
 /**
  * Actions every single Command with a startAt set in the past
@@ -174,6 +175,9 @@ const executeQueueAndClearComplete = (queue:AudioCommand[]) => {
     return remainingCommands
 }
 
+
+// Musical Commands =========================================================
+
 /**
  * Called from MIDI Devices and on screen keyboard and 
  * other augmented devices such as the qwerty keyboard
@@ -187,11 +191,11 @@ const noteOn = (noteModel:NoteModel, velocity:number=1, fromDevice:string=ONSCRE
     //console.info("Key pressed - send out MIDI", e )
     ui.noteOn( noteModel )
 
-    onscreenKeyboardMIDIDevice.noteOn( noteModel, timer.now )
+    onscreenKeyboardMIDIDevice.noteOn( noteModel, now )
 
     if (synthesizer)
     {
-        console.log("Note ON", noteModel, velocity, {now} )
+        //console.log("Note ON", noteModel, velocity, {now} )
         synthesizer.noteOn( noteModel, velocity )
     }
 
@@ -231,7 +235,7 @@ export const noteOff = (noteModel:NoteModel, velocity:number=1, fromDevice:strin
     onscreenKeyboardMIDIDevice.noteOff( noteModel, now )
     if (synthesizer)
     {
-        console.log("Note OFF", noteModel, velocity, {now} )
+        //console.log("Note OFF", noteModel, velocity, {now} )
         synthesizer.noteOff( noteModel )
     }
 
@@ -301,11 +305,14 @@ export const allNotesOff = async () => {
     console.log("KILL SWITCH: Complete")
 }
 
+// MIDI =========================================================
+
 /**
  * Connect to ALL MIDI Devices currently connected
  */
 const connectToMIDIDevice = ( connectedMIDIDevice, index:number ) => {
     const device = new MIDIDevice( `${connectedMIDIDevice.manufacturer} ${connectedMIDIDevice.name}` )
+    
     connectedMIDIDevice.addListener("noteon", event => onMIDIEvent( event, device, connectedMIDIDevice, index ), {channels:ALL_MIDI_CHANNELS })
     connectedMIDIDevice.addListener("noteoff", event => onMIDIEvent( event, device, connectedMIDIDevice, index ), {channels:ALL_MIDI_CHANNELS })
     connectedMIDIDevice.addListener("controlchange", event => onMIDIEvent( event, device, connectedMIDIDevice, index ), {channels:ALL_MIDI_CHANNELS })
@@ -315,6 +322,8 @@ const connectToMIDIDevice = ( connectedMIDIDevice, index:number ) => {
     console.info("connectToMIDIDevices", { device, connectedMIDIDevice, index})
     return device
 }
+
+// Bluetooth MIDI =========================================================
 
 /**
  * Disconnect BLE device and clean up
@@ -343,13 +352,13 @@ const disconnectBluetoothDevice = async () => {
     
     // Update UI
     ui.showBluetoothStatus('✓ Disconnected from device')
-    ui.whenBluetoothDeviceRequested(handleBluetoothConnection)
+    ui.whenBluetoothDeviceRequested(connectBluetoothDevice)
 }
 
 /**
  * Connect to BLE device and set up MIDI
  */
-const handleBluetoothConnection = async () => {
+const connectBluetoothDevice = async () => {
     try {
 
         ui.showBluetoothStatus('Opening device chooser...')
@@ -429,6 +438,17 @@ const handleBluetoothConnection = async () => {
         console.error("`Bluetooth connection could not be established",error )
     }
 }
+
+
+const toggleBluetoothDevice = async () => {
+    if (!bluetoothDevice) {
+      await connectBluetoothDevice()
+    } else {
+      await disconnectBluetoothDevice()
+    }
+}
+
+// WebMIDI =========================================================
 
 /**
  * Turn on MIDI connection
@@ -511,7 +531,6 @@ const initialiseApplication = (onEveryTimingTick) => {
 
     synthesizer = new PolySynth( audioContext )
     // synth = new SynthOscillator( audioContext )
-
     synthesizer.output.connect( mixer )
     // synth.addTremolo(0.5)
 
@@ -525,7 +544,7 @@ const initialiseApplication = (onEveryTimingTick) => {
     ui.whenRandomTimbreRequestedRun( e => synthesizer.setRandomTimbre() )
     ui.whenTempoChangesRun( (tempo:number) => timer.BPM = tempo )
     ui.whenVolumeChangesRun((volume:number) => mixer.gain.value = (volume / 100) * 0.5)
-    ui.whenBluetoothDeviceRequestedRun( handleBluetoothConnection ) 
+    ui.whenBluetoothDeviceRequestedRun( connectBluetoothDevice ) 
     ui.whenWebMIDIToggledRun(toggleWebMIDI)
     ui.whenMIDIChannelSelectedRun((channel:number) => {
          selectedMIDIChannel = channel
