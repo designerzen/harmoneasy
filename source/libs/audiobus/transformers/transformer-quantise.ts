@@ -31,7 +31,8 @@ export class TransformerQuantise extends Transformer<Config> implements Transfor
                 name: 'step', 
                 type: 'select', 
                 values: [
-                    1, 2, 3, 4, 6, 8, 12, 16 ]
+                    1, 2, 3, 4, 6, 8, 12, 16 
+                ]
             }
         ]
     }

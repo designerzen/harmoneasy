@@ -1,5 +1,3 @@
-
-
 // Scale type keys as constants
 export const TUNING_MODE_MAJOR = 'major'
 export const TUNING_MODE_IONIAN = 'ionian'
@@ -22,3 +20,66 @@ export const TUNING_MODE_NAMES = [
     TUNING_MODE_AEOLIAN,		    // Start from sixth degree (same as natural minor)
     TUNING_MODE_LOCRIAN			// Start from seventh degree
 ]
+
+/**
+ * 
+ * @param noteNumber 
+ * @param scaleNotes 
+ * @param range 
+ * @returns 
+ */
+export const findClosestNoteInScale = (noteNumber: number, scaleNotes: Set<number>, range:number=12 ): number => {
+    
+    // No comparison scale
+    if (!scaleNotes)
+    {
+        return noteNumber
+    }
+
+    // luckily this note is part of this scale
+    if (scaleNotes.has(noteNumber)) 
+    {
+        return noteNumber
+    }
+
+    let closestNote = noteNumber
+    let minDistance = Infinity
+
+    // Search within a reasonable range (1 octave up and down)
+    // TODO: use a smarter algo
+    for (let offset = -range; offset <= range; offset++) {
+        const candidateNote = noteNumber + offset
+
+        if (scaleNotes.has(candidateNote)) {
+            const distance = Math.abs(offset)
+
+            if (distance < minDistance) {
+                minDistance = distance
+                closestNote = candidateNote
+            }
+        }
+    }
+
+    return closestNote
+}
+
+/**
+ * 
+ * @param root root note / tonic
+ * @param intervals array of numbered intervals
+ * @returns 
+ */
+export const generateNotesInScale = (root: number, intervals: number[]): Set<number> => {
+    const scaleNotes = new Set<number>()
+
+    // Generate notes for all octaves (MIDI range 0-127)
+    for (let octave = 0; octave < 11; octave++) {
+        for (const interval of intervals) {
+            const note:number = root + (octave * 12) + interval
+            if (note >= 0 && note <= 127) {
+                scaleNotes.add(note)
+            }
+        }
+    }
+    return scaleNotes
+}

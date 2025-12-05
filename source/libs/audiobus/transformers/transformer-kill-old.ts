@@ -17,8 +17,13 @@ export class KillOldTransformer extends Transformer<{}> implements TransformerIn
         return "Remove stale & everlasting notes"
     }
 
-    transform(command: AudioCommand[], timer:Timer): AudioCommand[] {
-       // check to see how old this command is
-        return command
+    transform(commands: AudioCommand[], timer:Timer): AudioCommand[] {
+         if (!this.config.enabled || commands.length === 0)
+        {
+            return commands
+        }
+
+        // check to see how old this command is
+        return commands
     }
 }

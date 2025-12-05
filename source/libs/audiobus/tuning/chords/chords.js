@@ -26,14 +26,14 @@ export const findRotationFromNote = ( noteNumber, rootNote, intervalsFormula ) =
 /**
  * Export a chord from a root note and a scale
  * 
- * @param {Array<Number>} notes Note to use as the basis for the formula (usually full keyboard)
+ * @param {Array<NoteModel|Number>} notes Note to use as the basis for the formula (usually full keyboard)
  * @param {Array<Number>} intervalsFormula Interval spacing between selected notes
  * @param {Number} offset Starting Note number
  * @param {Number} rotation If you want the formula to rotate
  * @param {Number} length If you want a specific amount of notes in your chord
  * @param {Boolean} cutOff ignore all keys after provided index
  * @param {Boolean} accumulate add to previous index
- * @returns {Array<Number>} Audio Note Numbers
+ * @returns {Array<NoteModel|Number>} Audio Note Numbers
  */
 export const createChord = (notes, intervalsFormula=IONIAN_INTERVALS, offset=0, rotation=0, length=-1, cutOff=true, accumulate=false) => {
 

@@ -7,7 +7,7 @@ export interface TransformerConfig {
     enabled: true
 }
 
-const DEFAULT_OPTIONS: TransformerConfig = {
+const DEFAULT_TRANSFORMER_OPTIONS: TransformerConfig = {
     available: false,
     enabled: true
 }
@@ -35,13 +35,13 @@ export abstract class Transformer<Config = TransformerConfig> implements Transfo
     get name(): string{
         return this.id
     }
-    
+
     get description(): string{
         return "Pass-through"
     }
 
     constructor(config: Config) {
-        this.config = {...DEFAULT_OPTIONS, ...config}
+        this.config = {...DEFAULT_TRANSFORMER_OPTIONS, ...config}
         this.setConfig("available", true)
     }
 
@@ -49,6 +49,7 @@ export abstract class Transformer<Config = TransformerConfig> implements Transfo
 
     reset():void{
         // No state to reset for this transformer
+        throw Error("Reset not implemented for Transformer " + this.name)
     }
 
     setConfig(c: string, val: unknown):void {

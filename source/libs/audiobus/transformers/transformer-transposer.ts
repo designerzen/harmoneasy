@@ -1,18 +1,18 @@
 /**
  * Forces by transposition the entered note into
- * the specified key and scale
+ * the specified key and scale by finding the nearest note
  */
-import type { AudioCommandInterface } from "../audio-command-interface"
-import { Transformer } from "./abstract-transformer"
-
-import { TUNING_MODE_IONIAN } from "../tuning/scales.js"
+import { Transformer, type TransformerConfig } from "./abstract-transforme.ts"
+import { findClosestNoteInScale, generateNotesInScale, TUNING_MODE_IONIAN } from "../tuning/scales.js"
 import { getIntervalFormulaForMode } from "../tuning/chords/modal-chords.js"
-import type Timer from "../timing/timer.js"
+
 import type { TransformerInterface } from "./interface-transformer.js"
+import type { AudioCommandInterface } from "../audio-command-interface"
+import type Timer from "../timing/timer.js"
 
 export const ID_QUANTISE = "transposer"
 
-interface Config {
+interface Config extends TransformerConfig {
     root: number,
     mode: string,
     [key: string]: any
@@ -74,14 +74,15 @@ export class TransformerTransposer extends Transformer<Config> implements Transf
     }
 
     transform(commands:AudioCommandInterface[], timer:Timer ):AudioCommandInterface[] {
-         const rootNote = this.config.root
-
-        // console.log('ROOT NOTE', rootNote)
-
+           
+        if (!this.config.enabled || commands.length === 0)
+        {
+            return commands
+        }
 
         // Quantise each command's note to the closest scale note
         return commands.map(command => {
-            const quantisedNote = this.findClosestNoteInScale(command.number, this.notesInScale )
+            const quantisedNote = findClosestNoteInScale(command.number, this.notesInScale )
 
             // If the note is already in the scale, return unchanged
             if (quantisedNote === command.number) {
@@ -98,60 +99,15 @@ export class TransformerTransposer extends Transformer<Config> implements Transf
         })
     }
 
-    private generateNotesInScale(root: number, intervals: number[]): Set<number> {
-        const scaleNotes = new Set<number>()
-
-        // Generate notes for all octaves (MIDI range 0-127)
-        for (let octave = 0; octave < 11; octave++) {
-            for (const interval of intervals) {
-                const note:number = root + (octave * 12) + interval
-                if (note >= 0 && note <= 127) {
-                    scaleNotes.add(note)
-                }
-            }
-        }
-
-        return scaleNotes
-    }
-
-    private findClosestNoteInScale(noteNumber: number, scaleNotes: Set<number>): number {
-        
-        // If the note is already in the scale, return it
-        if (scaleNotes.has(noteNumber)) 
-        {
-            return noteNumber
-        }
-
-        let closestNote = noteNumber
-        let minDistance = Infinity
-
-        // Search within a reasonable range (1 octave up and down)
-        // TODO: use a smarter algo
-        for (let offset = -12; offset <= 12; offset++) {
-            const candidateNote = noteNumber + offset
-
-            if (scaleNotes.has(candidateNote)) {
-                const distance = Math.abs(offset)
-
-                if (distance < minDistance) {
-                    minDistance = distance
-                    closestNote = candidateNote
-                }
-            }
-        }
-
-        return closestNote
-    }
 
     private setScaleNotes (){
         // Create a set of all valid notes in the scale across all octaves
         const intervalFormula = getIntervalFormulaForMode(this.config.mode)
-        this.notesInScale = this.generateNotesInScale(this.config.root, intervalFormula)
+        this.notesInScale = generateNotesInScale(this.config.root, intervalFormula)
     }
 
     override setConfig(c: string, val: unknown): void {
         this.setScaleNotes()
         super.setConfig(c, val)
     }
-
 }
