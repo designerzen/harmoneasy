@@ -145,7 +145,7 @@ export class TransformerTransposer extends Transformer<Config> implements Transf
                 
         // Create a set of all valid notes in the scale across all octaves
         const intervalFormula = getIntervalFormulaForMode(this.config.mode)
-        const scaleNotes = this.generateScaleNotes(rootNote, intervalFormula)
+        const scaleNotes = this.generateScaleNotes(this.config.root, intervalFormula)
 
         super.setConfig(c, val)
     }

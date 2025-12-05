@@ -1,8 +1,6 @@
 import type { AudioCommandInterface } from "../audio-command-interface"
 import type Timer from "../timing/timer"
-import type { FieldConfig, TransformerConfig, TransformerInterface } from "./interface-transformer"
-
-
+import type { FieldConfig, TransformerInterface } from "./interface-transformer"
 
 export interface TransformerConfig {
     available: false
@@ -37,6 +35,7 @@ export abstract class Transformer<Config = TransformerConfig> implements Transfo
     get name(): string{
         return this.id
     }
+    
     get description(): string{
         return "Pass-through"
     }
