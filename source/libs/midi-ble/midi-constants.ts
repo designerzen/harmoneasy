@@ -39,6 +39,7 @@ export const MIDI_STOP = 0xFC
 export const MIDI_ACTIVE_SENSING = 0xFE
 export const MIDI_RESET = 0xFF
 
+// useful for debugging
 export const MIDI_TYPES: Record<number, string> = {
     [MIDI_NOTE_OFF]: 'noteoff',
     [MIDI_NOTE_ON]: 'noteon',

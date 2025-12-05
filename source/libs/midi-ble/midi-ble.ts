@@ -48,8 +48,6 @@ interface TimestampBytes {
 
 const MIDI_LOG_PREFIX = '[MIDI-BLE]'
 
-
-
 // TX MIDI Data Creator --------------------------------------------------------------------------------------
 
 /**
@@ -100,7 +98,6 @@ const getTimestampBytes = (time?: number | undefined): TimestampBytes => {
 const toHex = (n: number, prependOx:boolean=false): string => `${prependOx ? '0x' : ''}${n.toString(16).padStart(2, '0')}`
 
 // MIDI Transactions --------------------------------------------------------------------------------------
-
 
 /**
  * Take a packet and inspect it for what it is meant to achieve
@@ -182,7 +179,6 @@ export const sendBLEPacket = async (characteristic: BluetoothRemoteGATTCharacter
     }
     return false
 }
-
 
 /**
  * Add data to the runningTotal which allows for many
@@ -434,7 +430,6 @@ export const sendBLEProgramChange = async (
     return await sendOrQueueBLEPacket(characteristic, getMIDIStatusBytesFromByteAndChannel(MIDI_PROGRAM_CHANGE, channel), program, 0, _runningTotal)
 }
 
-
 /**
  * Send MIDI Polyphonic Aftertouch message via BLE
  * 
@@ -492,8 +487,6 @@ export const sendBLEPitchBend = async (
     if (channel === null) { return null }
     return await sendOrQueueBLEPacket(characteristic, getMIDIStatusBytesFromByteAndChannel(MIDI_PITCH_BEND, channel), lsb, msb, _runningTotal)
 }
-
-
 
 
 
