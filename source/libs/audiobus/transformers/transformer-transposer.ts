@@ -74,9 +74,15 @@ export class TransformerTransposer extends Transformer<Config> implements Transf
     }
 
     constructor(config = { root: 0, mode: TUNING_MODE_IONIAN }) {
-        super( {...DEFAULT_OPTIONS, ...config} )
+        super( { ...DEFAULT_OPTIONS, ...config } )
     }
 
+    /**
+     * 
+     * @param commands 
+     * @param timer 
+     * @returns 
+     */
     transform(commands:AudioCommandInterface[], timer:Timer ):AudioCommandInterface[] {
            
         if (!this.config.enabled || commands.length === 0)
@@ -98,18 +104,17 @@ export class TransformerTransposer extends Transformer<Config> implements Transf
             quantisedCommand.number = transposedNote
 
             //console.log(`Transposed note ${command.number} to ${transposedNote}`)
-
             return quantisedCommand
         })
     }
 
     /**
+     * Create a set of all valid notes in the scale across all octaves
      * Sets the scale that this transposer operates im
      * Currently takes a formula and a root note as the 
      * inputs to decide what keys are permissable
      */
     private setScaleNotes (){
-        // Create a set of all valid notes in the scale across all octaves
         const intervalFormula:number[] = getIntervalFormulaForMode(this.config.mode)
         this.notesInScale = generateNotesInScale(this.config.root, intervalFormula)
     }
@@ -120,7 +125,7 @@ export class TransformerTransposer extends Transformer<Config> implements Transf
      * @param val 
      */
     override setConfig(c: string, val: unknown): void {
-        this.setScaleNotes()
         super.setConfig(c, val)
+        this.setScaleNotes()
     }
 }
