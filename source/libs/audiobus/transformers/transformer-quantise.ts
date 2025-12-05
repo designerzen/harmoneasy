@@ -37,6 +37,11 @@ export class TransformerQuantise extends Transformer<Config> implements Transfor
         ]
     }
 
+    get description():string{
+        return "Ensure that all notes are quantised to the nearest time step."
+    }
+
+
     constructor(config = { step: 4 }) {
         super( {...DEFAULT_OPTIONS, ...config} )
     }
