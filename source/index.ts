@@ -56,6 +56,7 @@ import type { AudioCommandInterface } from './libs/audiobus/audio-command-interf
 // FrontEnd
 import { createGraph } from './components/transformers-graph.tsx'
 import UI from './components/ui.js'
+import OPFSStorage, { hasOPFS } from './libs/audiobus/storage/opfs-storage.ts'
 
 // import { AudioContext, BiquadFilterNode } from "standardized-audio-context"
 const ALL_MIDI_CHANNELS = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
@@ -86,7 +87,10 @@ let onscreenKeyboardMIDIDevice:MIDIDevice
 // Feed this for X amount of BARS
 let audioCommandQueue:AudioCommandInterface[] = []
 
+const storage = hasOPFS() ? new OPFSStorage() : null
 const recorder:RecorderAudioEvent = new RecorderAudioEvent()
+
+
 
 // visuals
 let ui:UI = null
@@ -175,10 +179,10 @@ const executeQueueAndClearComplete = (queue:AudioCommand[]) => {
     return remainingCommands
 }
 
-
 // Musical Commands =========================================================
 
 /**
+ * Play a note
  * Called from MIDI Devices and on screen keyboard and 
  * other augmented devices such as the qwerty keyboard
  * @param noteModel The Note
@@ -224,7 +228,7 @@ const noteOn = (noteModel:NoteModel, velocity:number=1, fromDevice:string=ONSCRE
 }
 
 /**
- * 
+ * End a playing Note
  * @param noteModel 
  * @param velocity 
  * @param fromDevice 
@@ -439,7 +443,6 @@ const connectBluetoothDevice = async () => {
     }
 }
 
-
 const toggleBluetoothDevice = async () => {
     if (!bluetoothDevice) {
       await connectBluetoothDevice()
@@ -522,7 +525,6 @@ const initialiseApplication = (onEveryTimingTick) => {
     const mixer:GainNode = audioContext.createGain()
     mixer.gain.value = 0.5
     
-    // Create reverb with 3 second decay
     const reverb = audioContext.createConvolver()
     reverb.buffer = createReverbImpulseResponse(audioContext, 1, 7)
     
@@ -530,9 +532,9 @@ const initialiseApplication = (onEveryTimingTick) => {
     reverb.connect(audioContext.destination)
 
     synthesizer = new PolySynth( audioContext )
-    // synth = new SynthOscillator( audioContext )
+    // synthesizer = new SynthOscillator( audioContext )
     synthesizer.output.connect( mixer )
-    // synth.addTremolo(0.5)
+    // synthesizer.addTremolo(0.5)
 
     // this handles the audio timing
     timer = new AudioTimer( audioContext )
@@ -576,6 +578,11 @@ const initialiseApplication = (onEveryTimingTick) => {
         /* parse rawString into numbers and create Uint8Array, then send to BLE */ 
         // sendBLECommand(rawString)   
         console.info("BLE MANUAL SEND", rawString)
+    })
+
+    ui.whenResetRequestedRun( async () => {
+        recorder.clear()
+        timer.resetTimer()
     })
 
     // ui.whenNewScaleIsSelected( (scaleNName:string, select:HTMLElement ) => {
@@ -815,6 +822,26 @@ const onTick = (values) => {
  */
 const onAudioContextAvailable = async (event) => {
     await initialiseApplication(onTick)
+}
+
+// Background data load
+// If we have OPFS backend, initialize and load any previously recorded data
+if (storage) {
+    recorder.setStorage(storage)
+    // Initialize storage and load existing commands on app startup
+    storage.prepare('harmoneasy-commands.bin').then(success => {
+        if (success) {
+            // console.info('OPFS storage initialized, loading existing commands...')
+            recorder.loadDataFromStorage()
+            // TODO: add timer starts at position from recorder.duration
+            // TODO: SET AS LOADED
+            // ui.setLoaded()
+        } else {
+            console.warn('Failed to initialize OPFS storage')
+        }
+    }).catch(error => {
+        console.error('Error initializing OPFS storage:', error)
+    })
 }
 
 // Wait for user to initiate an action so that we can use AudioContext

@@ -16,6 +16,7 @@
 <body>
 
   <header>
+    
     <a class="backlink" href="/">
       <img class="logo" src="/source/assets/logos/harmoneasy.svg" alt=""> 
       <h1>Harmoneasy</h1>
@@ -25,32 +26,28 @@
 
     <menu class="header-controls">
 
-      <div id="tempo-control" class="controls">
-         <label>
-           Tempo:
-           <input id="tempo" type="range" min=10 max=303>
-           <output id="bpm"></output>
-           BPM
-         </label>
-       </div>
+      <label id="tempo-control" class="controls">
+        Tempo:
+        <input id="tempo" type="range" min=10 max=303>
+        <output id="bpm"></output> BPM
+      </label>
 
-       <div id="volume-control" class="controls">
-         <label>
-           Volume:
-           <input id="volume" type="range" min=0 max=100 value=50>
-           <output id="volume-output">50</output>
-           %
-         </label>
-       </div>
+      <label id="volume-control" class="controls">
+        Volume:
+        <input id="volume" type="range" min=0 max=100 value=100>
+        <output id="volume-output">100</output> %
+      </label>
 
       <div class="device-buttons">
         <button type="button" id="btn-random-timbre">Random Timbre</button>
         <button type="button" id="btn-connect-to-ble">Connect Bluetooth</button>
         <button type="button" id="btn-toggle-webmidi">Connect WebMIDI</button>
-        <button type="button" id="btn-kill-switch" class="kill-switch">All Notes Off</button>
+        <button type="button" id="btn-kill-switch" class="kill-switch primary">Panic</button>
+        <button type="button" id="btn-reset" class="primary">Reset</button>
       </div>
 
     </menu>
+
   </header>
 
   <div id="timer-bar">

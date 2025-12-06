@@ -21,6 +21,7 @@ const DOM_ID_BUTTON_EXPORT_AUDIOTOOL = "btn-audiotool-export"
 const DOM_ID_BUTTON_EXPORT_OPENDAW = "btn-opendaw-export"
 
 const DOM_ID_BUTTON_KILL_SWITCH = "btn-kill-switch"
+const DOM_ID_BUTTON_RESET = "btn-reset"
 const DOM_ID_BLE_MANUAL_FIELDSET = "ble-manual-send-fieldset"
 const DOM_ID_BLE_MANUAL_INPUT = "ble-manual-input"
 const DOM_ID_BUTTON_SEND_BLE_MANUAL = "btn-send-ble-manual"
@@ -57,6 +58,7 @@ export default class UI{
         this.elementBLEManualInput = document.getElementById(DOM_ID_BLE_MANUAL_INPUT)
         this.elementBLEManualSendButton = document.getElementById(DOM_ID_BUTTON_SEND_BLE_MANUAL)
         this.elementButtonKillSwitch = document.getElementById(DOM_ID_BUTTON_KILL_SWITCH)
+        this.elementButtonReset = document.getElementById(DOM_ID_BUTTON_RESET)
         
         this.elementMidiExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_MIDI_FILE)
         this.elementAudioToolExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_AUDIOTOOL)
@@ -321,6 +323,21 @@ export default class UI{
         if (!this.elementButtonKillSwitch) return
         this.elementButtonKillSwitch.addEventListener('pointerdown', e => {
             callback && callback(e)
+        })
+    }
+
+    /**
+     * Register a callback for when the reset button is clicked
+     * Clears all AudioCommands from memory and OPFS storage
+     * @param {Function} callback () => void
+     */
+    whenResetRequestedRun(callback){
+        if (!this.elementButtonReset) return
+        this.elementButtonReset.addEventListener('click', e => {
+            const confirmed = confirm('Are you sure? This will delete all recorded AudioCommands from memory and OPFS storage.')
+            if (confirmed) {
+                callback && callback(e)
+            }
         })
     }
 

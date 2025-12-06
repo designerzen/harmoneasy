@@ -7,6 +7,8 @@ export interface AudioCommandInterface {
 	subtype:string
     number:number
 
+    channel:number
+
     // velocity / amplitude value
     velocity:number
     startAt:number

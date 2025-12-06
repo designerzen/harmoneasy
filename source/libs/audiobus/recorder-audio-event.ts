@@ -1,58 +1,227 @@
+/**
+ * Record any sequence of audio commands
+ */
+
 import { NOTE_OFF, NOTE_ON } from "../../commands.ts"
 import AudioEvent from "./audio-event.ts"
+import type OPFSStorage from "./storage/opfs-storage.ts"
+import AudioCommand from "./audio-command.ts"
+import type { AudioCommandInterface } from "./audio-command-interface.ts"
+
+interface SessionMetadata {
+  name: string
+  duration: number
+  createdAt: number
+  updatedAt: number
+}
 
 const GAP = 0.5
     
-export class RecorderAudioEvent {
+export class RecorderAudioEvent extends EventTarget{
 
-    events:AudioEvent[] = []
-
+    events:AudioCommandInterface[] = []
+    #enabled:boolean = true
     #duration:number = 0
+    #name:string = "Recording"
 
-    #name:string = ""
+    #storage:OPFSStorage | null = null
         
     get name():string{
         return this.#name
     }
 
-    get duration():number
-    {
+    get duration():number{
         return this.#duration + GAP
     }
 
+    get enabled():boolean{
+        return this.#enabled
+    }
+
+    set enabled(value:boolean){
+        this.#enabled = value
+    }
+
     constructor(name:string = "Harmoneasy"){
+        super()
         this.#name = name
     }
 
+    setStorage(storage:OPFSStorage){
+        this.#storage = storage
+    }
+
     addEvents( events:AudioEvent[] ){
-        events.forEach( event => this.addEvent(event))
+        if (this.#enabled)
+        {
+            events.forEach( event => this.addEvent(event))
+        }
         return this.events
     }
 
     addEvent( event:AudioEvent){
-        this.events.push(event)
-        if (this.#duration < event.startAt )
+
+        if (!this.#enabled)
         {
+            return
+        }
+
+        this.events.push(event)
+
+        if (this.#storage) {
+            this.saveEventToStorage(event)
+            // Update metadata on each event
+            this.updateMetadata()
+        }
+
+        if (this.#duration < event.startAt ) {
             this.#duration = event.startAt
         }
     }
 
+    /**
+     * Save AudioEvent to OPFS storage in real-time
+     */
+    private async saveEventToStorage(event:AudioEvent): Promise<void> {
+        if (!this.#storage) return
+        
+        try {
+            // Convert AudioEvent to AudioCommand for storage
+            const command = event as unknown as AudioCommand
+            await this.#storage.addEvent(command)
+        } catch (error) {
+            console.error('Error saving event to storage:', error)
+        }
+    }
+
+    /**
+     * Update and save session metadata
+     */
+    private async updateMetadata(): Promise<void> {
+        if (!this.#storage)
+        {
+            console.warn('Storage not initialized')
+            return
+        } 
+        
+        try {
+            const metadata: SessionMetadata = {
+                name: this.#name,
+                duration: this.duration,
+                createdAt: Date.now(),
+                updatedAt: Date.now()
+            }
+            await this.#storage.saveMetadata(metadata)
+        } catch (error) {
+            console.error('Error updating metadata:', error)
+        }
+    }
+
+    /**
+     * Clear all events and storage
+     * and reset the recording
+     */
     clear(){
         this.events.length = 0
+        if (this.#storage)
+        {
+            this.#storage.clear()
+        }
+    }
+
+    /**
+     * Load all saved data from OPFS storage and add to existing memory
+     * Chunks data to prevent UI blocking on large datasets
+     */
+    async loadDataFromStorage( log:bolean=true ): Promise<void> {
+        if (!this.#storage) {
+            console.warn('Storage not initialized')
+            return
+        }
+
+        try {
+            // Load metadata first
+            const metadata = await this.#storage.readMetadata()
+            if (metadata) {
+                const m = metadata as SessionMetadata
+                if (log)
+                {
+                    console.info(`📊 OPFS Session: "${m.name}"`)
+                    console.info(`   Duration: ${m.duration.toFixed(2)}s`)
+                    console.info(`   Last updated: ${new Date(m.updatedAt).toLocaleString()}`)     
+                }
+            }
+
+            const commands = await this.#storage.readAll()
+            
+            if (commands.length === 0) {
+                if (log)
+                {
+                    console.info('✅ No previous commands found in storage')           
+                }
+                return
+            }
+
+            if (log)
+            {
+                console.info(`🔄 Loading ${commands.length} commands from OPFS storage...`)
+            }
+
+            // Chunk the data to prevent blocking
+            const CHUNK_SIZE = 1024 // arbitrary number
+            let processedCount = 0
+
+            for (let i = 0; i < commands.length; i += CHUNK_SIZE) {
+                const chunk = commands.slice(i, i + CHUNK_SIZE)
+                
+                // Add commands to in-memory events
+                chunk.forEach(command => {
+                    const event = new AudioCommand()
+                    event.type = command.type
+                    event.subtype = command.subtype
+                    event.number = command.number
+                    event.velocity = command.velocity
+                    event.startAt = command.startAt
+                    event.endAt = command.endAt
+                    event.time = command.time
+                    
+                    // const event = new AudioEvent()
+                    this.events.push(event)
+                    processedCount++
+                    
+                    if (command.startAt > this.#duration) {
+                        this.#duration = command.startAt
+                    }
+                })
+
+                // Yield to main thread periodically
+                if (i + CHUNK_SIZE < commands.length) {
+                    await new Promise(resolve => setTimeout(resolve, 0))
+                }
+            }
+
+            console.info(`✨ Successfully loaded ${processedCount} commands`)
+        } catch (error) {
+            console.error('Error loading data from storage:', error)
+        }
     }
 
    
     /**
+     * Sures up each AudioEvent with a finish time
+     * sp that the duration for each command is saved within 
+     * the event itself
      * 
-     * @returns Array
+     * @returns Array of AudioEvents
      */
-    exportData():AudioEvent[]{
+    exportData():AudioCommandInterface[]{
 
         const allEvents = this.events.slice()
         const quantity = allEvents.length -1
         const currentlyPlaying = new Map()
 
-        for (let i=quantity; i > 0 ; --i)
+        // Reverse Loop through array 
+        for (let i=quantity; i >= 0 ; --i)
         {
             // find all note off events and find their assoc
             const event = allEvents[i]
@@ -61,10 +230,10 @@ export class RecorderAudioEvent {
             {
                 case NOTE_ON :
 
-                    const hasNoteOn = currentlyPlaying.has( event.noteNumber )
+                    const hasNoteOn = currentlyPlaying.has( event.number )
                     if (hasNoteOn)
                     {
-                        const noteOffCommand = currentlyPlaying.get( event.noteNumber )
+                        const noteOffCommand:AudioCommandInterface = currentlyPlaying.get( event.number )
                         const duration:number = noteOffCommand.startAt - event.startAt
 
                         // set the end at to the start at time of the note off
@@ -77,7 +246,7 @@ export class RecorderAudioEvent {
 
                         if (isNaN(duration))
                         {
-                            console.info("BAD DURATION NOTE ON Reorganised data", event,event.duration, duration, { playing: currentlyPlaying })
+                            console.info("BAD DURATION NOTE ON Reorganised data", event, duration, { playing: currentlyPlaying })
                         }else{
                             // console.info("FOUND NOTE ON Reorganised data", event,event.duration, duration, { playing: currentlyPlaying })
                         }
@@ -86,16 +255,16 @@ export class RecorderAudioEvent {
                         // console.info("ORPHAN NOTE ON Reorganised data", event, {playing: currentlyPlaying })
                     }
 
-                    currentlyPlaying.delete( event.noteNumber )
+                    currentlyPlaying.delete( event.number )
                     break
 
                 case NOTE_OFF :
-                    currentlyPlaying.set( event.noteNumber, event )
+                    currentlyPlaying.set( event.number, event )
                     // console.info("NOTE OFF Reorganised data", event, {playing: currentlyPlaying } )
                     break
             }
-           
         }
+
         // console.info("Note events", allEvents)
         return allEvents
     }
