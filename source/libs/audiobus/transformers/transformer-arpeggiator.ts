@@ -54,25 +54,12 @@ export class TransformerArpeggiator extends Transformer<Config> implements Trans
     // Track currently held notes to build the arpeggio sequence
     private heldNotes: Set<number> = new Set()
 
-    // Track the last arpeggio index for continuous patterns
-    private currentArpIndex: number = 0
-
     // Track when notes were pressed to handle timing
     private noteOnTimes: Map<number, number> = new Map()
 
     // Track which arpeggiated notes were generated for each original note
     // Map: original note number -> Array of {noteNumber, startAt} for each arpeggiated note
     private arpeggiatedNotesMap: Map<number, Array<{noteNumber: number, startAt: number}>> = new Map()
-
-    // Time window (in seconds) to consider notes as part of the same chord
-    private readonly CHORD_DETECT_WINDOW = 0.05 // 50ms
-
-    // Track if we're currently building a chord
-    private pendingChordNotes: Map<number, AudioCommandInterface> = new Map()
-    private chordTimer: number | null = null
-
-    // Track the last time a chord was processed
-    private lastChordTime: number = 0
 
     get name(): string {
         return 'Arpeggiator'
@@ -157,12 +144,12 @@ export class TransformerArpeggiator extends Transformer<Config> implements Trans
       
         const bpm = timer.BPM
 
-        console.log('[ARPEGGIATOR] Transform called', {
-            enabled: this.config.enabled,
-            commandCount: commands.length,
-            config: this.config,
-            bpm
-        })
+        // console.log('[ARPEGGIATOR] Transform called', {
+        //     enabled: this.config.enabled,
+        //     commandCount: commands.length,
+        //     config: this.config,
+        //     bpm
+        // })
 
         const arpeggiated: AudioCommandInterface[] = []
 
@@ -179,16 +166,21 @@ export class TransformerArpeggiator extends Transformer<Config> implements Trans
                 // Generate NOTE_OFF for all arpeggiated notes from this original note
                 const arpeggiatedNotes = this.arpeggiatedNotesMap.get(command.number)
 
-                console.log('[ARPEGGIATOR] NOTE_OFF received', {
-                    originalNote: command.number,
-                    arpeggiatedNotes: arpeggiatedNotes ? arpeggiatedNotes.map(n => n.noteNumber) : []
-                })
+                // console.log('[ARPEGGIATOR] NOTE_OFF received', {
+                //     originalNote: command.number,
+                //     arpeggiatedNotes: arpeggiatedNotes ? arpeggiatedNotes.map(n => n.noteNumber) : []
+                // })
 
                 if (arpeggiatedNotes) {
                     // Create NOTE_OFF for each unique arpeggiated note
                     // Use a Set to avoid duplicate NOTE_OFFs for the same note number
                     const uniqueNoteNumbers = new Set<number>()
                     const currentTime = command.time
+
+                    // Find the latest startAt time among arpeggiated notes to schedule NOTE_OFF after them
+                    const lastArpeggioTime = arpeggiatedNotes.length > 0 
+                        ? Math.max(...arpeggiatedNotes.map(n => n.startAt))
+                        : currentTime
 
                     arpeggiatedNotes.forEach(({noteNumber, startAt}) => {
                         // Only send NOTE_OFF once per unique note number
@@ -202,17 +194,18 @@ export class TransformerArpeggiator extends Transformer<Config> implements Trans
                             noteOffCmd.velocity = command.velocity || 100
                             noteOffCmd.time = currentTime
 
-                            // NOTE_OFF happens immediately when user releases
-                            // Don't schedule it - let it execute right away
-                            noteOffCmd.startAt = currentTime
+                            // Schedule NOTE_OFF after the last arpeggiated note starts
+                            // This ensures arpeggiated notes play before being released
+                            noteOffCmd.startAt = lastArpeggioTime
 
-                            console.log('[ARPEGGIATOR] Generating NOTE_OFF', {
-                                noteNumber,
-                                velocity: noteOffCmd.velocity,
-                                noteOnStartAt: startAt,
-                                currentTime,
-                                noteOffStartAt: noteOffCmd.startAt
-                            })
+                            // console.log('[ARPEGGIATOR] Generating NOTE_OFF', {
+                            //     noteNumber,
+                            //     velocity: noteOffCmd.velocity,
+                            //     noteOnStartAt: startAt,
+                            //     currentTime,
+                            //     lastArpeggioTime,
+                            //     noteOffStartAt: noteOffCmd.startAt
+                            // })
 
                             arpeggiated.push(noteOffCmd)
                         }
@@ -229,52 +222,43 @@ export class TransformerArpeggiator extends Transformer<Config> implements Trans
             }
         }
 
-        console.log('[ARPEGGIATOR] Detected commands', {
-            noteOnCount: noteOnCommands.length,
-            heldNotes: Array.from(this.heldNotes),
-            pattern: this.config.pattern
-        })
+        // console.log('[ARPEGGIATOR] Detected commands', {
+        //     noteOnCount: noteOnCommands.length,
+        //     heldNotes: Array.from(this.heldNotes),
+        //     pattern: this.config.pattern
+        // })
 
         // If we have multiple note-on commands at the same time, treat as chord
         if (noteOnCommands.length > 1) {
-            console.log('[ARPEGGIATOR] CHORD DETECTED - generating arpeggio', {
-                chordSize: noteOnCommands.length,
-                notes: noteOnCommands.map(c => c.number)
-            })
+            // console.log('[ARPEGGIATOR] CHORD DETECTED - generating arpeggio', {
+            //     chordSize: noteOnCommands.length,
+            //     notes: noteOnCommands.map(c => c.number)
+            // })
 
             // Use the first command as the template for timing
             const templateCommand = noteOnCommands[0]
             const arpeggio = this.generateArpeggio(templateCommand, bpm)
 
-            console.log('[ARPEGGIATOR] Generated arpeggio', {
-                inputNotes: noteOnCommands.length,
-                outputCommands: arpeggio.length,
-                bpm
-            })
+            // console.log('[ARPEGGIATOR] Generated arpeggio', {
+            //     inputNotes: noteOnCommands.length,
+            //     outputCommands: arpeggio.length,
+            //     bpm
+            // })
 
             // Track which arpeggiated notes came from which original notes
-            // All original notes in the chord share the same arpeggiated notes
             const arpeggiatedNotesData = arpeggio.map(cmd => ({
                 noteNumber: cmd.number,
                 startAt: cmd.startAt
             }))
 
-            // Store the chord members so we can clear them all when any note is released
             const chordMembers = noteOnCommands.map(c => c.number)
+            this.updateArpeggiatedNotesMappings(arpeggiatedNotesData, chordMembers)
 
-            // Only the first note gets the full mapping, others get empty to prevent duplicates
-            this.arpeggiatedNotesMap.set(noteOnCommands[0].number, arpeggiatedNotesData)
-
-            // Store chord members reference for cleanup
-            for (let i = 1; i < noteOnCommands.length; i++) {
-                this.arpeggiatedNotesMap.set(noteOnCommands[i].number, [])
-            }
-
-            console.log('[ARPEGGIATOR] Tracking arpeggiated notes', {
-                originalNotes: chordMembers,
-                primaryNote: noteOnCommands[0].number,
-                arpeggiatedNotes: arpeggiatedNotesData.map(n => `${n.noteNumber}@${n.startAt.toFixed(3)}s`)
-            })
+            // console.log('[ARPEGGIATOR] Tracking arpeggiated notes', {
+            //     originalNotes: chordMembers,
+            //     primaryNote: noteOnCommands[0].number,
+            //     arpeggiatedNotes: arpeggiatedNotesData.map(n => `${n.noteNumber}@${n.startAt.toFixed(3)}s`)
+            // })
 
             arpeggiated.push(...arpeggio)
         } else if (noteOnCommands.length === 1) {
@@ -286,16 +270,17 @@ export class TransformerArpeggiator extends Transformer<Config> implements Trans
                 })
                 const arpeggio = this.generateArpeggio(noteOnCommands[0], bpm)
 
-                // Track arpeggiated notes with timing
                 const arpeggiatedNotesData = arpeggio.map(cmd => ({
                     noteNumber: cmd.number,
                     startAt: cmd.startAt
                 }))
-                this.arpeggiatedNotesMap.set(noteOnCommands[0].number, arpeggiatedNotesData)
+
+                const heldNotesList = Array.from(this.heldNotes).sort((a, b) => a - b)
+                this.updateArpeggiatedNotesMappings(arpeggiatedNotesData, heldNotesList)
 
                 arpeggiated.push(...arpeggio)
             } else {
-                console.log('[ARPEGGIATOR] Single note - pass through')
+                // console.log('[ARPEGGIATOR] Single note - pass through')
                 // Track that this note maps to itself with its original timing
                 this.arpeggiatedNotesMap.set(noteOnCommands[0].number, [{
                     noteNumber: noteOnCommands[0].number,
@@ -308,11 +293,14 @@ export class TransformerArpeggiator extends Transformer<Config> implements Trans
         // Add other commands (note-offs, etc.)
         arpeggiated.push(...otherCommands)
 
-        console.log('[ARPEGGIATOR] Transform complete', {
-            inputCount: commands.length,
-            outputCount: arpeggiated.length,
-            output: arpeggiated
-        })
+        // console.log('[ARPEGGIATOR] Transform complete', {
+        //     inputCount: commands.length,
+        //     outputCount: arpeggiated.length,
+        //     output: arpeggiated
+        // })
+
+        // Sort by startAt time to ensure NOTE_OFFs are never scheduled before their NOTE_ONs
+        arpeggiated.sort((a, b) => (a.startAt || 0) - (b.startAt || 0))
 
         return arpeggiated
     }
@@ -346,18 +334,18 @@ export class TransformerArpeggiator extends Transformer<Config> implements Trans
         const result = patternedSequence.map((noteNumber, index) => {
             const delay = index * delayMs
             const cmd = this.createCommand(originalCommand, noteNumber, delay, baseTime)
-            console.log('[ARPEGGIATOR] Creating arpeggio note', {
-                index,
-                noteNumber,
-                delayMs: delay,
-                baseTime,
-                rate: this.config.rate,
-                bpm,
-                calculatedDelayMs: delayMs,
-                originalStartAt: originalCommand.startAt,
-                newStartAt: cmd.startAt,
-                originalTime: originalCommand.time
-            })
+            // console.log('[ARPEGGIATOR] Creating arpeggio note', {
+            //     index,
+            //     noteNumber,
+            //     delayMs: delay,
+            //     baseTime,
+            //     rate: this.config.rate,
+            //     bpm,
+            //     calculatedDelayMs: delayMs,
+            //     originalStartAt: originalCommand.startAt,
+            //     newStartAt: cmd.startAt,
+            //     originalTime: originalCommand.time
+            // })
             return cmd
         })
         return result
@@ -391,27 +379,36 @@ export class TransformerArpeggiator extends Transformer<Config> implements Trans
      */
     private applyPattern(notes: number[]): number[] {
         switch (this.config.pattern) {
-            case 'up':
-                return notes
-
             case 'down':
                 return [...notes].reverse()
 
             case 'up-down':
-                // Avoid duplicating the top note
                 const downPart = [...notes].reverse().slice(1)
                 return [...notes, ...downPart]
 
             case 'down-up':
-                // Avoid duplicating the bottom note
                 const upPart = [...notes].slice(1)
-                return [[...notes].reverse(), ...upPart].flat()
+                return [...[...notes].reverse(), ...upPart]
 
             case 'random':
                 return shuffleArray([...notes])
 
+            case 'up':
             default:
                 return notes
+        }
+    }
+
+    /**
+     * Update arpeggiatedNotesMap for all held notes to ensure proper NOTE_OFF generation
+     */
+    private updateArpeggiatedNotesMappings(arpeggiatedNotesData: Array<{noteNumber: number, startAt: number}>, heldNotesList: number[]): void {
+        // Primary note (first) gets the full arpeggio mapping
+        this.arpeggiatedNotesMap.set(heldNotesList[0], arpeggiatedNotesData)
+        
+        // Other notes get empty arrays to prevent duplicate NOTE_OFFs
+        for (let i = 1; i < heldNotesList.length; i++) {
+            this.arpeggiatedNotesMap.set(heldNotesList[i], [])
         }
     }
 
@@ -433,7 +430,7 @@ export class TransformerArpeggiator extends Transformer<Config> implements Trans
 
         // Apply timing delay (in milliseconds converted to seconds for audio context)
         // Use baseTime (current audio context time) as the reference point
-        const delaySeconds = delayMs / 1000
+        const delaySeconds = delayMs * 0.001
         command.startAt = baseTime + delaySeconds
         command.endAt = original.endAt
 
@@ -454,6 +451,5 @@ export class TransformerArpeggiator extends Transformer<Config> implements Trans
         this.heldNotes.clear()
         this.noteOnTimes.clear()
         this.arpeggiatedNotesMap.clear()
-        this.currentArpIndex = 0
     }
 }
