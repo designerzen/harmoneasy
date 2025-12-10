@@ -1,4 +1,4 @@
-export interface AudioCommandInterface {
+export interface IAudioCommand {
     
     // Handy places to store information about this command
 	id:number
@@ -27,5 +27,5 @@ export interface AudioCommandInterface {
 
 	text:string
 
-	clone():AudioCommandInterface
+	clone():IAudioCommand
 }

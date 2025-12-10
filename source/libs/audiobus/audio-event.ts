@@ -5,11 +5,11 @@
  * and response.
  * 
  */
-import type { AudioCommandInterface } from "./audio-command-interface.ts"
+import type { IAudioCommand } from "./audio-command-interface.ts"
 import AudioCommand from "./audio-command.ts"
 import type Timer from "./timing/timer.ts"
 
-export default class AudioEvent extends AudioCommand implements AudioCommandInterface { 
+export default class AudioEvent extends AudioCommand implements IAudioCommand { 
 
 	get duration():number{
         // fallback to always having *some* duration

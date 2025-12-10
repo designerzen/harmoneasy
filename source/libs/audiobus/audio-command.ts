@@ -1,4 +1,4 @@
-import type { AudioCommandInterface } from "./audio-command-interface"
+import type { IAudioCommand } from "./audio-command-interface"
 
 /**
 * A single musical command.
@@ -13,7 +13,7 @@ import type { AudioCommandInterface } from "./audio-command-interface"
 * 
 * This is based on the MIDI protocol and uses the same nomenclature
 */
-export default class AudioCommand implements AudioCommandInterface {
+export default class AudioCommand implements IAudioCommand {
 
 	static counter = 1
 
@@ -83,7 +83,7 @@ export default class AudioCommand implements AudioCommandInterface {
 	 * 
 	 * @returns copy of this
 	 */
-	clone():AudioCommandInterface{
+	clone():IAudioCommand{
 		return this.copyAllParametersToCommand( new AudioCommand() )
 	}
 
