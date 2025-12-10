@@ -20,8 +20,7 @@ import {
 import { BLE_SERVICE_UUID_DEVICE_INFO, BLE_SERVICE_UUID_MIDI } from './libs/midi-ble/ble-constants.ts'
 
 import { 
-    connectToBLEDevice, 
-    disconnectBLEDevice, 
+    connectToBLEDevice, disconnectBLEDevice, 
     listCharacteristics, extractCharacteristics, extractMIDICharacteristic, watchCharacteristics,
     describeDevice 
 } from './libs/midi-ble/ble-connection.ts' // disconnectDevice may be used for cleanup
@@ -38,7 +37,6 @@ import AudioTimer from './libs/audiobus/timing/timer.audio.js'
 import MIDIDevice from './libs/audiobus/midi/midi-device.ts'
 import SynthOscillator from './libs/audiobus/instruments/synth-oscillator.js'
 import PolySynth from './libs/audiobus/instruments/poly-synth.js'
-
 import NoteModel from './libs/audiobus/note-model.ts'
 
 import { TransformerManager } from './libs/audiobus/transformers/transformer-manager.ts'
@@ -47,16 +45,20 @@ import { RecorderAudioEvent } from './libs/audiobus/recorder-audio-event.ts'
 import { createReverbImpulseResponse } from './libs/audiobus/effects/reverb.ts'
 import { createAudioToolProjectFromAudioEventRecording } from './libs/audiotool/adapter-audiotool-audio-events-recording.ts'
 import { createMIDIFileFromAudioEventRecording, saveBlobToLocalFileSystem } from './libs/audiobus/midi/adapter-midi-file.ts'
+import { createMIDIMarkdownFromAudioEventRecording, saveMarkdownToLocalFileSystem } from './libs/audiobus/midi/adapter-midi-markdown.ts'
+import { createMusicXMLFromAudioEventRecording, saveBlobToLocalFileSystem as saveMusicXMLBlobToLocalFileSystem } from './libs/audiobus/midi/adapter-musicxml.ts'
 import { createOpenDAWProjectFromAudioEventRecording } from './libs/openDAW/adapter-opendaw-audio-events-recording.ts'
 
 import { addKeyboardDownEvents } from './libs/keyboard.ts'
 
-import type { AudioCommandInterface } from './libs/audiobus/audio-command-interface.ts'
+import type { IAudioCommand } from './libs/audiobus/audio-command-interface.ts'
 
-// FrontEnd
+// Back End
 import { createGraph } from './components/transformers-graph.tsx'
-import UI from './components/ui.js'
+import UI from './ui.ts'
+import { SongVisualiser } from './components/song-visualiser.ts'
 import OPFSStorage, { hasOPFS } from './libs/audiobus/storage/opfs-storage.ts'
+import noteModel from './libs/audiobus/note-model.ts'
 
 // import { AudioContext, BiquadFilterNode } from "standardized-audio-context"
 const ALL_MIDI_CHANNELS = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
@@ -85,15 +87,14 @@ let selectedMIDIChannel:number = 1  // User-selected MIDI output channel (1-16)
 let onscreenKeyboardMIDIDevice:MIDIDevice
 
 // Feed this for X amount of BARS
-let audioCommandQueue:AudioCommandInterface[] = []
+let audioCommandQueue:IAudioCommand[] = []
 
 const storage = hasOPFS() ? new OPFSStorage() : null
 const recorder:RecorderAudioEvent = new RecorderAudioEvent()
 
-
-
 // visuals
 let ui:UI = null
+let songVisualiser:SongVisualiser | null = null
 
 // For onscreen interactive keyboard
 const keyboardKeys = ( new Array(128) ).fill("")
@@ -115,11 +116,11 @@ let pausedQueue:number = 0
 
 // Scheduling =====================================================================
 
-const convertAudioCommandsToAudioEvents = ( commands:AudioCommandInterface[] ):AudioEvent[] => {
-    return (commands ?? []).map( (command:AudioCommandInterface) => new AudioEvent( command, timer ))
+const convertAudioCommandsToAudioEvents = ( commands:IAudioCommand[] ):AudioEvent[] => {
+    return (commands ?? []).map( (command:IAudioCommand) => new AudioEvent( command, timer ))
 }
 
-const triggerAudioCommandsOnDevice = ( commands:AudioCommandInterface[] ) => {
+const triggerAudioCommandsOnDevice = ( commands:IAudioCommand[] ) => {
     commands.forEach( command => {
 
         switch(command.type)
@@ -190,12 +191,17 @@ const executeQueueAndClearComplete = (queue:AudioCommand[]) => {
  * @param fromDevice Dpecify an id for which device created it
  */
 const noteOn = (noteModel:NoteModel, velocity:number=1, fromDevice:string=ONSCREEN_KEYBOARD_NAME) => {
-    const now = timer.now
-  
-    //console.info("Key pressed - send out MIDI", e )
-    ui.noteOn( noteModel )
+     const now = timer.now
+   
+     //console.info("Key pressed - send out MIDI", e )
+     ui.noteOn( noteModel )
 
-    onscreenKeyboardMIDIDevice.noteOn( noteModel, now )
+     // Add note to song visualiser in realtime
+     if (songVisualiser) {
+        songVisualiser.noteOn(noteModel.noteNumber, velocity)
+     }
+
+     onscreenKeyboardMIDIDevice.noteOn( noteModel, now )
 
     if (synthesizer)
     {
@@ -234,9 +240,15 @@ const noteOn = (noteModel:NoteModel, velocity:number=1, fromDevice:string=ONSCRE
  * @param fromDevice 
  */
 export const noteOff = (noteModel:NoteModel, velocity:number=1, fromDevice:string=ONSCREEN_KEYBOARD_NAME) => {
-    const now = timer.now
-    ui.noteOff( noteModel)
-    onscreenKeyboardMIDIDevice.noteOff( noteModel, now )
+     const now = timer.now
+     ui.noteOff( noteModel)
+
+	// Remove note from song visualiser in realtime
+	if (songVisualiser) {
+		songVisualiser.noteOff(noteModel.noteNumber)
+	}
+
+     onscreenKeyboardMIDIDevice.noteOff( noteModel, now )
     if (synthesizer)
     {
         //console.log("Note OFF", noteModel, velocity, {now} )
@@ -518,8 +530,23 @@ const sendMIDIActionToAllDevices = (fromDevice:String, noteModel:NoteModel , act
  * @param onEveryTimingTick 
  * @returns 
  */
-const initialiseApplication = (onEveryTimingTick) => {
+const initialiseApplication = async (onEveryTimingTick) => {
+   
+    // STATE MANAGEMENT -------------------------------
+    // Get state from session and URL
+    const elementMain = document.querySelector('main')
+    state = State.getInstance(elementMain)
+    state.addEventListener( event => {
+        const bookmark = state.asURI
+        console.info(bookmark, "State Changed", {event, bookmark} ) 
+    })
 
+    //state.setDefaults(defaultOptions)
+    state.loadFromLocation( DEFAULT_OPTIONS )
+
+    // updates the URL with the current state (true - encoded)
+    state.updateLocation()
+    
     audioContext = new AudioContext() 
 
     const mixer:GainNode = audioContext.createGain()
@@ -538,13 +565,17 @@ const initialiseApplication = (onEveryTimingTick) => {
 
     // this handles the audio timing
     timer = new AudioTimer( audioContext )
+    timer.BPM = state.get('tempo')
 
     // Front End UI -------------------------------
     ui = new UI( ALL_KEYBOARD_NOTES, onNoteOnRequestedFromKeyboard, onNoteOffRequestedFromKeyboard )
     ui.setTempo( timer.BPM )
     
     ui.whenRandomTimbreRequestedRun( e => synthesizer.setRandomTimbre() )
-    ui.whenTempoChangesRun( (tempo:number) => timer.BPM = tempo )
+    ui.whenTempoChangesRun( (tempo:number) =>{
+         timer.BPM = tempo 
+         state.set('tempo', tempo)
+    })
     ui.whenVolumeChangesRun((volume:number) => mixer.gain.value = (volume / 100) * 0.5)
     ui.whenBluetoothDeviceRequestedRun( connectBluetoothDevice ) 
     ui.whenWebMIDIToggledRun(toggleWebMIDI)
@@ -556,6 +587,16 @@ const initialiseApplication = (onEveryTimingTick) => {
         const blob = await createMIDIFileFromAudioEventRecording( recorder, timer )
         saveBlobToLocalFileSystem(blob, recorder.name)
         console.info("Exporting Data to MIDI File", {recorder,  blob })
+    })
+    ui.whenMIDIMarkdownExportRequestedRun( async ()=>{
+        const markdown = createMIDIMarkdownFromAudioEventRecording( recorder, timer )
+        saveMarkdownToLocalFileSystem(markdown, recorder.name)
+        console.info("Exporting Data to MIDI Markdown", {recorder, markdown })
+    })
+    ui.whenMusicXMLExportRequestedRun( async ()=>{
+        const blob = await createMusicXMLFromAudioEventRecording( recorder, timer )
+        saveMusicXMLBlobToLocalFileSystem(blob, recorder.name)
+        console.info("Exporting Data to MusicXML", {recorder, blob })
     })
     ui.whenAudioToolExportRequestedRun( async ()=>{
         const output = await createAudioToolProjectFromAudioEventRecording( recorder, timer )
@@ -583,6 +624,9 @@ const initialiseApplication = (onEveryTimingTick) => {
     ui.whenResetRequestedRun( async () => {
         recorder.clear()
         timer.resetTimer()
+		if (songVisualiser) {
+			songVisualiser.reset()
+		}
     })
 
     // ui.whenNewScaleIsSelected( (scaleNName:string, select:HTMLElement ) => {
@@ -595,12 +639,13 @@ const initialiseApplication = (onEveryTimingTick) => {
     //     intervalFormula = INTERVALS.MODAL_SCALES[TUNING_MODE_NAMES.indexOf(scaleNName) ]
     // })
 
-    ui.onDoubleClick( () => {
+    ui.whenNoteVisualiserDoubleClickedRun( () => {
         synthesizer.setRandomTimbre()
     })
 
+    await ui.addSongVisualser( recorder.exportData() )
+
     onscreenKeyboardMIDIDevice = new MIDIDevice(ONSCREEN_KEYBOARD_NAME)
-    
     MIDIDevices.push( onscreenKeyboardMIDIDevice )
 
     // now watch for keydowns and tie into MIDI
@@ -625,16 +670,19 @@ const initialiseApplication = (onEveryTimingTick) => {
             case Commands.TEMPO_TAP:
                 timer.tapTempo()
                 ui.setTempo( timer.BPM )
+                state.set('tempo', timer.BPM)
                 break
             
             case Commands.TEMPO_INCREASE:
                 timer.BPM++
                 ui.setTempo( timer.BPM )
+                state.set('tempo', timer.BPM)
                 break
 
             case Commands.TEMPO_DECREASE:
                 timer.BPM--
                 ui.setTempo( timer.BPM )
+                state.set('tempo', timer.BPM)
                 break
             
             case Commands.PITCH_BEND:
@@ -650,21 +698,7 @@ const initialiseApplication = (onEveryTimingTick) => {
         }
     })
     
-    // STATE MANAGEMENT -------------------------------
-    // Get state from session and URL
-    const elementMain = document.querySelector('main')
-    state = State.getInstance(elementMain)
-    state.addEventListener( event => {
-        const bookmark = state.asURI
-        console.info(bookmark, "State Changed", {event, bookmark} ) 
-    })
-
-    //state.setDefaults(defaultOptions)
-    state.loadFromLocation( DEFAULT_OPTIONS )
-
-    // updates the URL with the current state (true - encoded)
-    state.updateLocation()
-    
+ 
     // Update UI - this will check all the inputs according to our state	
     state.updateFrontEnd()
     // state.set( value, button.checked )
@@ -688,7 +722,7 @@ const initialiseApplication = (onEveryTimingTick) => {
  */
 const onNoteOnRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=ONSCREEN_KEYBOARD_NAME ) => {
     const audioCommand:AudioCommand = createAudioCommand( Commands.NOTE_ON, noteModel, timer, fromDevice )
-    const transformedAudioCommands:AudioCommandInterface[] = transformerManager.transform( [audioCommand], timer )
+    const transformedAudioCommands:IAudioCommand[] = transformerManager.transform( [audioCommand], timer )
     audioCommandQueue.push(...transformedAudioCommands)
 }
 
@@ -698,7 +732,7 @@ const onNoteOnRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=ON
  */
 const onNoteOffRequestedFromKeyboard = (noteModel:NoteModel, fromDevice:string=ONSCREEN_KEYBOARD_NAME) => {
     const audioCommand:AudioCommand = createAudioCommand( Commands.NOTE_OFF, noteModel, timer, fromDevice )
-    const transformedAudioCommands:AudioCommandInterface[] = transformerManager.transform( [audioCommand], timer )
+    const transformedAudioCommands:IAudioCommand[] = transformerManager.transform( [audioCommand], timer )
     audioCommandQueue.push(...transformedAudioCommands)
 }
 
@@ -789,11 +823,11 @@ const onTick = (values) => {
         elapsed, expected, drift, level, intervals, lag
     } = values
 
-    ui.updateClock( values )
-
+ 
     // Always process the queue, with or without quantisation
     if ( transformerManager.isQuantised )
     {
+        //console.info("TICK:QUANTISED", {buffer: audioCommandQueue, divisionsElapsed, quantisationFidelity:transformerManager.quantiseFidelity})
         // When quantised, only trigger events on the grid
         const gridSize = transformerManager.quantiseFidelity
         if ((pausedQueue === 0) && (divisionsElapsed % gridSize) === 0)
@@ -809,10 +843,14 @@ const onTick = (values) => {
             // console.info( pausedQueue, "TICK:IGNORED", {buffer: audioCommandQueue, divisionsElapsed, quantisationFidelity:transformerManager.quantiseFidelity})
         }
     }else{
+         
+       	//console.info("TICK:IMMEDIATE", {buffer: audioCommandQueue, divisionsElapsed})
+       
         // When not quantised, process queue immediately on every tick
         audioCommandQueue = executeQueueAndClearComplete(audioCommandQueue)
         // console.info("TICK:IMMEDIATE", {buffer: audioCommandQueue})
     }
+    ui.updateClock( values )
 }
 
 /**
