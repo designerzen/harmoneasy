@@ -24,16 +24,12 @@ export const addKeyboardDownEvents = ( callback:Function ) => {
 		const isNumber = !isNaN( parseInt(event.key) )
 		const focussedElement = document.activeElement
 
-		// Allow Tab to continue to perform its default function
-		if ( event.key !== 'Tab' ){
-			event.preventDefault()
-		}
-
 		if ( keysPressed.has(event.key) )
 		{
 			// already pressed so ignore
 			return
 		}
+
 
 		// Contextual hotkeys - if something is focussed then different keys!
 		if (focussedElement && focussedElement !== document.documentElement )
@@ -47,8 +43,10 @@ export const addKeyboardDownEvents = ( callback:Function ) => {
 
 				// 
 				case "DIALOG":
-
-					break
+				case "INPUT":
+				case "SELECT":
+					console.info("Ignoring key input due to focus")
+					return
 				
 			}
 
@@ -62,11 +60,21 @@ export const addKeyboardDownEvents = ( callback:Function ) => {
 		{
 			const noteNumber = keyboardMap.get(event.key)
 			keysPressed.set(event.key, noteNumber)
-			console.log("Key down", Commands.NOTE_ON, event.key, noteNumber )
+			console.log("Key already down", Commands.NOTE_ON, event.key, noteNumber )
 			callback( Commands.NOTE_ON, event.key, noteNumber )
 			return
 		}
 		
+		// Allow Tab to continue to perform its default function
+		// switch(event.key)
+		// {
+		// 	case 'Tab':
+		// 		break
+
+		// 	default:
+		// 		//event.preventDefault()
+		// }
+
 		switch(event.key)
 		{
 			case 'CapsLock':
@@ -86,10 +94,7 @@ export const addKeyboardDownEvents = ( callback:Function ) => {
 				command = Commands.TEMPO_TAP
 				break;
 			case 'QuestionMark':
-				event.preventDefault();
-				break;
 			case '?':
-				event.preventDefault();
 				break;
 			case 'ArrowLeft':
 				command = Commands.PITCH_BEND
@@ -106,111 +111,69 @@ export const addKeyboardDownEvents = ( callback:Function ) => {
 				command = Commands.TEMPO_DECREASE
 				break;
 			case ',':
-				event.preventDefault();
 				break;
 			case '.':
-				event.preventDefault();
 				break;
 			case 'a':
-				event.preventDefault();
 				break;
 			case 'b':
-				event.preventDefault();
 				break;
 			case 'c':
-				event.preventDefault();
 				break;
 			case 'd':
-				event.preventDefault();
 				break;
 			case 'e':
-				event.preventDefault();
 				break;
 			case 'f':
-				event.preventDefault();
 				break;
 			case 'g':
-				event.preventDefault();
 				break;
 			case 'h':
-				event.preventDefault();
 				break;
 			case 'i':
-				event.preventDefault();
 				break;
 			case 'j':
-				event.preventDefault();
 				break;
 			case 'k':
-				event.preventDefault();
 				break;
 			case 'l':
-				event.preventDefault();
 				break;
 			case 'm':
-				event.preventDefault();
 				break;
 			case 'n':
-				event.preventDefault();
 				break;
 			case 'o':
-				event.preventDefault();
 				break;
 			case 'p':
-				event.preventDefault();
 				break;
 			case 'q':
-				event.preventDefault();
 				break;
 			case 'r':
-				event.preventDefault();
 				break;
 			case 's':
-				event.preventDefault();
 				break;
 			case 't':
-				event.preventDefault();
 				break;
 			case 'u':
-				event.preventDefault();
 				break;
-
 			case 'v':
-				event.preventDefault()
 				break
-
 			case 'w':
-				event.preventDefault()
 				break
-		
 			case 'x':
-				event.preventDefault()
 				break
-
 			case 'y':
-				event.preventDefault()
 				break
-		
 			case 'z':
-				event.preventDefault()
 				break
-				
 			case "F1":
-				event.preventDefault()
 				break
-
 			case "F2":
-				event.preventDefault()
 				break
-
 			case "F3":
-				event.preventDefault()
 				break
-
 			case "F4":
-				event.preventDefault()
 				break
-		
 			// Select Players only
 			case "F5":
 				event.preventDefault()
@@ -337,9 +300,9 @@ export const addKeyboardDownEvents = ( callback:Function ) => {
 	// depress notes held
 	window.addEventListener('keyup', async (event)=>{
 
-		if ( event.key !== 'Tab' ){
-			event.preventDefault()
-		}
+		// if ( event.key !== 'Tab' ){
+		// 	event.preventDefault()
+		// }
 
 		if (keyboardMap.has(event.key))
 		{
