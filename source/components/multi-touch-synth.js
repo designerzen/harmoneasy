@@ -1,7 +1,7 @@
 export const registerMultiTouchSynth = ( notes=[], noteOnCallback=null, noteOffCallback=null, onAvailableNoteChange=null) => {
 
     const controller = new AbortController()
-    const canvas = document.getElementById("wallpaper")
+    const canvas = document.getElementById("note-visualiser")
     // const ctx = canvas.getContext('2d')
     const activeNotes = new Map()
     let availableNote

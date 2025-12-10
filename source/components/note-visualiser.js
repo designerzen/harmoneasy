@@ -1,6 +1,7 @@
 /**
  * Scrolling note on / off visualisation
  */
+
 import NOTE_VISUALISER_CANVAS_WORKER from "./note-visualiser-worker.js?url"
 import { AbstractResizeable } from "./abstract-resizeable-canvas.js"
 
@@ -37,7 +38,6 @@ export default class NoteVisualiser extends AbstractResizeable{
     }
 
     constructor( notes, canvas, vertical=false, wave=0 ){
-        
         super(canvas, NOTE_VISUALISER_CANVAS_WORKER, {vertical, notes})
 
         this.notes = notes

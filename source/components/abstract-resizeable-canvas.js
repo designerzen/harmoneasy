@@ -37,12 +37,12 @@ export class AbstractResizeable{
         
         // Add error listeners for the worker
         this.worker.onerror = (error) => {
-            console.error("NoteVisualiser Worker Error:", error.message, error.filename, error.lineno, error);
+            console.error("Worker Error:", error.message, error.filename, error.lineno, error);
             // You might want to add logic here to try and recover or display a message
         }
 
         this.worker.onmessageerror = (event) => {
-            console.error("NoteVisualiser Worker Message Error:", event);
+            console.error("Worker Message Error:", event);
         }
 
         if (this.optional.resize)
