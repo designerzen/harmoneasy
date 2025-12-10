@@ -50,13 +50,15 @@
 
   </header>
 
-  <div id="timer-bar">
+  <div id="timer-bar" aria-hide>
     <strong>TIMER</strong>
     <time id="clock">...</time>
   </div>
 
   <menu id="action-bar">
     <button class="primary" type="button" id="btn-midi-export">Export as MIDI file</button>
+    <button class="primary" type="button" id="btn-midi-markdown-export">Export as Markdown</button>
+    <button class="primary" type="button" id="btn-musicxml-export">Export to MusicXML</button>
     <button type="button" id="btn-audiotool-export">Open in AudioTool</button>
     <button type="button" id="btn-opendaw-export">Open in OpenDAW</button>
   </menu>
@@ -108,15 +110,11 @@
 
   </aside>
 
-
   <main>
-
     <div id="graph"></div>
-   
-    <div id="keyboard-container">
-      <canvas id="wallpaper" width="1920" height="1080"></canvas>
-    </div>
-
+    <canvas id="note-visualiser" width="1920" height="1080"></canvas> 
+    <!-- <song-explorer></song-explorer> -->
+    <!-- <canvas id="song-explorer" width="1920" height="1080"></canvas> -->
   </main>
 
   <div id="export-overlay" class="export-overlay" hidden>
@@ -127,7 +125,6 @@
     </div>
   </div>
 
-  
   <dialog id="info-dialog" hidden>
     <h5>Information</h5>
     <pre id="info-message" class="selectable"></pre>

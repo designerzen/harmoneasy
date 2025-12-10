@@ -68,12 +68,20 @@
         &::before{
             content:'x';
             font-size: 1rem;
+			font-weight: 900;
             margin: auto;
         }
         &:hover {
             background: rgba(185, 28, 28, 1);
         }
     }
+}
+
+.filter-label{
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	gap: var(--gap);
 }
 
 .buttons-back {
@@ -122,4 +130,10 @@
 
 .category-timing{
 	--hue-accent:280;
+}
+
+
+
+.no-matches{
+	color: rgb(221, 60, 60);
 }
