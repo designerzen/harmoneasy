@@ -1,11 +1,11 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { ReactFlow, applyNodeChanges, applyEdgeChanges, addEdge, useReactFlow, ReactFlowProvider } from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
-import type { TransformerManager } from '../../libs/audiobus/transformers/transformer-manager';
-import { ConfigDrawer } from './ConfigDrawer';
-import { StartNode } from './nodes/StartNode';
-import { EndNode } from './nodes/EndNode';
-import { TransformerNode } from './nodes/TransformerNode';
+import React, { useState, useCallback, useEffect } from 'react'
+import { ReactFlow, applyNodeChanges, applyEdgeChanges, addEdge, useReactFlow, ReactFlowProvider } from '@xyflow/react'
+import '@xyflow/react/dist/style.css'
+import type { TransformerManager } from '../../libs/audiobus/transformers/transformer-manager'
+import { ConfigDrawer } from './ConfigDrawer'
+import { StartNode } from './nodes/StartNode'
+import { EndNode } from './nodes/EndNode'
+import { TransformerNode } from './nodes/TransformerNode'
 
 const initialNodes = [
   { id: 'n1', position: { x: 0, y: 0 }, data: { label: 'Node 1' } },
@@ -25,10 +25,8 @@ function FlowComponent() {
   const { fitView } = useReactFlow()
 
   useEffect(() => {
-    console.log('EFFECT')
     const tM = (window as any).transformerManager as TransformerManager
     tM.onChange(() => {
-      console.log('CHANGED!!!')
       const structure = tM.getStructure()
       setNodes(structure.nodes)
       setEdges(structure.edges)
@@ -53,8 +51,6 @@ function FlowComponent() {
     }
   }, [nodes, fitView])
 
-  
- 
   const onNodesChange = useCallback(
     (changes) => setNodes((nodesSnapshot) => applyNodeChanges(changes, nodesSnapshot)),
     [],
@@ -69,10 +65,8 @@ function FlowComponent() {
   );
 
   return (
-    <div className="graph-container">
-    
+    <>
         <ConfigDrawer />
-
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -84,8 +78,7 @@ function FlowComponent() {
           maxZoom={2}
           defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
         />
-        
-    </div>
+    </>
   )
 }
 
