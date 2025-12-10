@@ -8,6 +8,7 @@ import type Timer from "../timing/timer.ts"
 import type { TransformerInterface } from "./interface-transformer.ts"
 import { Transformer } from "./abstract-transformer.ts"
 import { parseEdoScaleMicroTuningOctave } from "../../pitfalls/ts/index.ts"
+import { TRANSFORMER_CATEGORY_TUNING } from "./transformer-categories.ts"
 
 export const ID_MICROTONALITY = "Micro-Tonality" 
 
@@ -20,7 +21,8 @@ export const ID_MICROTONALITY = "Micro-Tonality"
 
 export class MicroTonalityTransformer extends Transformer<{}> implements TransformerInterface{
  
-    id = ID_MICROTONALITY
+    protected type = ID_MICROTONALITY
+	category = TRANSFORMER_CATEGORY_TUNING
     
     get name(): string {
         return 'Micro Tonality Transformer'

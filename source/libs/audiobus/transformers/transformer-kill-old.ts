@@ -6,9 +6,16 @@ import type AudioCommand from "../audio-command.ts"
 import type Timer from "../timing/timer.ts"
 import type { TransformerInterface } from "./interface-transformer.ts"
 import { Transformer } from "./abstract-transformer.ts"
+import { TRANSFORMER_CATEGORY_TIMING } from "./transformer-categories.ts"
+
+const ID_KILL_OLD = 'kill-old'
 
 export class KillOldTransformer extends Transformer<{}> implements TransformerInterface{
    
+	id = ID_KILL_OLD
+    protected type = ID_KILL_OLD
+	category = TRANSFORMER_CATEGORY_TIMING
+
     get name(): string {
         return 'Kill Old Transformer'
     }

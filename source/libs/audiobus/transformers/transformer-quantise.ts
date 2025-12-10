@@ -1,10 +1,11 @@
 /**
  * Put into time domain
  */
-import type { AudioCommandInterface } from "../audio-command-interface";
+import type { IAudioCommand } from "../audio-command-interface";
 import type Timer from "../timing/timer";
 import { Transformer } from "./abstract-transformer"
 import type { TransformerInterface } from "./interface-transformer";
+import { TRANSFORMER_CATEGORY_TIMING } from "./transformer-categories";
 
 export const ID_QUANTISE = "Quantiser"
 
@@ -22,7 +23,8 @@ const DEFAULT_OPTIONS: Config = {
 
 export class TransformerQuantise extends Transformer<Config> implements TransformerInterface{
 
-    id = ID_QUANTISE
+    protected type = ID_QUANTISE
+	category = TRANSFORMER_CATEGORY_TIMING
 
     get name(): string {
         return 'Quantiser'
@@ -49,16 +51,19 @@ export class TransformerQuantise extends Transformer<Config> implements Transfor
     }
 
     get description():string{
-        return "Ensure that all notes are quantised to the nearest time step."
+        return "Locks all notes to the nearest time groove."
     }
 
+    get isEnabled():boolean{
+        return this.config.enabled === true
+    }
 
     constructor(config = { step: 4 }) {
         super( {...DEFAULT_OPTIONS, ...config} )
     }
 
     // Quanitisation is mainly handled in onTick in index
-    transform(commands:AudioCommandInterface[], timer: Timer):AudioCommandInterface[] {
+    transform(commands:IAudioCommand[], timer: Timer):IAudioCommand[] {
         return commands
     }
 }

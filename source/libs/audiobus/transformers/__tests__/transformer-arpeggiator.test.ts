@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { TransformerArpeggiator } from '../transformer-arpeggiator'
-import type { AudioCommandInterface } from '../../audio-command-interface'
+import type { IAudioCommand } from '../../audio-command-interface'
 import AudioCommand from '../../audio-command'
 import * as Commands from '../../../../commands'
 
@@ -226,7 +226,7 @@ function createAudioCommand(
     velocity: number = 100,
     startAt: number = 0,
     time: number = 0
-): AudioCommandInterface {
+): IAudioCommand {
     const cmd = new AudioCommand()
     cmd.type = type
     cmd.subtype = type

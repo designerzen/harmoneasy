@@ -1,4 +1,4 @@
-import type { AudioCommandInterface } from "../audio-command-interface"
+import type { IAudioCommand } from "../audio-command-interface"
 import type Timer from "../timing/timer"
 import type { FieldConfig, TransformerInterface } from "./interface-transformer"
 
@@ -20,8 +20,13 @@ export abstract class Transformer<Config = TransformerConfig> implements Transfo
         return "Transformer-" + this.name + "-" + (++Transformer.ID).toFixed(8)
     }
     
-    public id: string = Transformer.getUniqueID()
+	// order in Transformer sequence
+	index:number = -1
+    #id: string = Transformer.getUniqueID()
     
+	protected type:string = "AbstractTransformer"
+	protected category:string = "Uncategorised"
+
     protected config: Config
 
     get fields(): FieldConfig[] {
@@ -33,11 +38,15 @@ export abstract class Transformer<Config = TransformerConfig> implements Transfo
     }
 
     get name(): string{
-        return this.id
+        return "Transformer"
     }
 
     get description(): string{
         return "Pass-through"
+    }
+
+    get uuid(): string {
+        return this.#id
     }
 
     constructor(config: Config) {
@@ -45,14 +54,14 @@ export abstract class Transformer<Config = TransformerConfig> implements Transfo
         this.setConfig("available", true)
     }
 
-    abstract transform(commands: AudioCommandInterface[], timer: Timer): AudioCommandInterface[]
+    abstract transform(commands: IAudioCommand[], timer: Timer): IAudioCommand[]
 
     reset():void{
         // No state to reset for this transformer
         throw Error("Reset not implemented for Transformer " + this.name)
     }
 
-    setConfig(c: string, val: unknown):void {
-        this.config[c] = val
+    setConfig(key: string, value: unknown):void {
+        this.config[key] = value
     }
 }

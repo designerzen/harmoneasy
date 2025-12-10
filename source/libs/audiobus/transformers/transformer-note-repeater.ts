@@ -1,9 +1,10 @@
-import type { AudioCommandInterface } from "../audio-command-interface"
+import type { IAudioCommand } from "../audio-command-interface"
 import { Transformer } from "./abstract-transformer"
 import AudioCommand from "../audio-command"
 import * as Commands from "../../../commands"
 import type Timer from "../timing/timer"
 import type { TransformerInterface } from "./interface-transformer"
+import { TRANSFORMER_CATEGORY_TIMING } from "./transformer-categories"
 
 export const ID_NOTE_REPEATER = "Note-Repeater"
 
@@ -28,7 +29,8 @@ const DEFAULT_OPTIONS: Config = {
  */
 export class TransformerNoteRepeater extends Transformer<Config> implements TransformerInterface{
 
-    id = ID_NOTE_REPEATER
+    protected type = ID_NOTE_REPEATER
+	category = TRANSFORMER_CATEGORY_TIMING
 
     // Track which repeated notes were generated for each original note
     // Map: original note number -> Array of {noteNumber, startAt} for each repeated note
@@ -92,13 +94,13 @@ export class TransformerNoteRepeater extends Transformer<Config> implements Tran
         super({ ...DEFAULT_OPTIONS, ...config })
     }
 
-    transform(commands: AudioCommandInterface[], timer:Timer ): AudioCommandInterface[] {
+    transform(commands: IAudioCommand[], timer:Timer ): IAudioCommand[] {
 
         if (!this.config.enabled || commands.length === 0) {
             return commands
         }
 
-        const repeated: AudioCommandInterface[] = []
+        const repeated: IAudioCommand[] = []
 
         for (const command of commands) {
             if (command.type === Commands.NOTE_ON) {
@@ -149,10 +151,10 @@ export class TransformerNoteRepeater extends Transformer<Config> implements Tran
      * Create a new audio command with specified delay
      */
     private createCommand(
-        original: AudioCommandInterface,
+        original: IAudioCommand,
         delayMs: number,
         baseTime: number
-    ): AudioCommandInterface {
+    ): IAudioCommand {
         const command = new AudioCommand()
 
         // Copy properties from original

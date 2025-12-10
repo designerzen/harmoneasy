@@ -9,7 +9,7 @@ import { ID_QUANTISE, TransformerQuantise } from "./transformer-quantise.ts"
 
 import type Timer from "../timing/timer.ts"
 import type { FieldConfig, TransformerInterface } from "./interface-transformer.ts"
-import type { AudioCommandInterface } from "../audio-command-interface.ts"
+import type { IAudioCommand } from "../audio-command-interface.ts"
 
 type Callback = () => void
 
@@ -17,51 +17,58 @@ const EVENT_TRANSFORMERS_UPDATED = "EVENT_TRANSFORMERS_UPDATED"
 const EVENT_TRANSFORMERS_ADDED = "EVENT_TRANSFORMER_ADDED"
 const EVENT_TRANSFORMERS_REMOVED = "EVENT_TRANSFORMER_REMOVED"
 
+const DEFAULT_TRANSFORMERS = [
+    new TransformerTransposer()
+]
+
 export class TransformerManager extends EventTarget implements TransformerInterface {
      
     public id: string = Transformer.getUniqueID()
     public name: string = 'TransformerManager'
     public timer:Timer|undefined // Reference to AudioTimer for BPM-synced transformers
 
-    private transformersMap:Map<string, Transformer> = new Map()
-    private transformers: Array<Transformer> = [
-        new TransformerTransposer()
-    ]
-
     private onChangeFns: Callback[] = []
+
+    private transformersMap:Map<string, Array<Transformer> > = new Map()
+    private transformers: Array<Transformer> = []
 
     // FIXME: Make a compositie of all the transformers
     get fields(): FieldConfig[] {
         return []
     }
 
-    get isQuantised(){
-        return this.transformersMap.has(ID_QUANTISE)
+    get isQuantised():boolean{
+        return this.transformersMap.has(ID_QUANTISE) && this.quantiseTransformer?.isEnabled
     }
 
     get quantiseTransformer():TransformerQuantise|undefined{
-        return this.transformersMap.get(ID_QUANTISE) as TransformerQuantise
+        // NB. it doesn't matter how many you add, they shouldn't double up
+        return this.transformersMap.get(ID_QUANTISE)?.[0] as TransformerQuantise
     }
 
     get quantiseFidelity():number{
         return this.quantiseTransformer?.options.step ?? 0
     }
   
-    constructor(initialTransformers?: Array<Transformer>) {
+    constructor(initialTransformers?: Array<Transformer>=DEFAULT_TRANSFORMERS) {
         super()
         this.setTransformers([ ...this.transformers, ...(initialTransformers??[]) ])     
     }
     
     /**
-     * Add a transformer to the pipeline
+     * Append to the end of the queue the specified transformer
      * @param transformerToAdd 
      */
-    addTransformer(transformerToAdd: Transformer) {
-        this.transformers.push(transformerToAdd)
-        this.transformersMap.set(transformerToAdd.id, transformerToAdd)
+    appendTransformer(transformerToAdd: Transformer, dispatchEvents:boolean=true ) {
+        const collection:Transformer[] = this.transformersMap.has(transformerToAdd.type) ? [...this.transformersMap.get(transformerToAdd.type), transformerToAdd] : [transformerToAdd]
+        this.transformersMap.set(transformerToAdd.type, collection )
+		transformerToAdd.index = this.transformers.push(transformerToAdd) - 1
         this.onChangeFns.forEach(t => t())
-        this.dispatchEvent( new CustomEvent(EVENT_TRANSFORMERS_ADDED) )
-        this.dispatchEvent( new CustomEvent(EVENT_TRANSFORMERS_UPDATED) )
+        if (dispatchEvents)
+        {
+            this.dispatchEvent( new CustomEvent(EVENT_TRANSFORMERS_ADDED) )
+            this.dispatchEvent( new CustomEvent(EVENT_TRANSFORMERS_UPDATED) )
+        }
     }
 
     /**
@@ -69,8 +76,18 @@ export class TransformerManager extends EventTarget implements TransformerInterf
      * @param transformerToRemove 
      */
     removeTransformer(transformerToRemove: Transformer) {
-        this.transformers = this.transformers.filter(transformer => transformer !== transformerToRemove)
-        this.transformersMap.delete(transformerToRemove.id)
+        this.transformers = this.transformers.filter(transformer => transformer.uuid !== transformerToRemove.uuid)
+        
+		transformerToRemove.index = -1
+
+        // Update the map: filter out the removed transformer, delete key if no more exist
+        const remaining = this.transformersMap.get(transformerToRemove.type)?.filter(t => t.uuid !== transformerToRemove.uuid)
+        if (remaining && remaining.length > 0) {
+            this.transformersMap.set(transformerToRemove.type, remaining)
+        } else {
+            this.transformersMap.delete(transformerToRemove.type)
+        }
+
         this.onChangeFns.forEach(t => t())
         this.dispatchEvent( new CustomEvent(EVENT_TRANSFORMERS_REMOVED) )
         this.dispatchEvent( new CustomEvent(EVENT_TRANSFORMERS_UPDATED) )
@@ -81,10 +98,8 @@ export class TransformerManager extends EventTarget implements TransformerInterf
      * @param transformers 
      */
     setTransformers(transformers: Array<Transformer>): void {
-        this.transformers = transformers
-        this.transformersMap = new Map()
-        this.transformers.forEach( (transformer:Transformer) => this.transformersMap.set(transformer.id, transformer) )
-        this.onChangeFns.forEach(t => t())
+        this.clear()
+        transformers.forEach( (transformer:Transformer) => this.appendTransformer( transformer, false) )
         this.dispatchEvent( new CustomEvent(EVENT_TRANSFORMERS_UPDATED) )
     }
 
@@ -109,7 +124,7 @@ export class TransformerManager extends EventTarget implements TransformerInterf
     getStructure() {
 
         // Calculate positions with better spacing and centering
-        const HORIZONTAL_SPACING = 250
+        const HORIZONTAL_SPACING = 280
         const NODE_HEIGHT = 100
 
         const nodes = this.transformers.map((t, i) => ({
@@ -151,19 +166,22 @@ export class TransformerManager extends EventTarget implements TransformerInterf
         return { nodes: [...nodes, ...alwaysNodes], edges: [...edges, ...alwaysEdges] }
     }
 
+	// FIXME: This is done in a very slow fashion creating a whole new sequence everytime
     moveOneStepBefore(el: Transformer) {
-        const idx = this.transformers.indexOf(el)
-        if (idx <= 0) return // already at the start or not found
+        
+        const index:number = this.transformers.indexOf(el)
+        if (index <= 0) return // already at the start or not found
 
         const newList = [...this.transformers]
         // swap el with the one before it
-        const temp = newList[idx - 1]
-        newList[idx - 1] = newList[idx]
-        newList[idx] = temp
+        const temp = newList[index - 1]
+        newList[index - 1] = newList[index]
+        newList[index] = temp
 
         this.setTransformers(newList)
     }
 
+	// FIXME: This is done in a very slow fashion creating a whole new sequence everytime
     moveOneStepAfter(el: Transformer) {
         const idx = this.transformers.indexOf(el)
         if (idx === -1 || idx >= this.transformers.length - 1) return // end or not found
@@ -182,9 +200,9 @@ export class TransformerManager extends EventTarget implements TransformerInterf
      * Advance through every single registered transformer and pass the
      * command
      * @param commands
-     * @returns AudioCommandInterface
+     * @returns IAudioCommand
      */
-    transform(commands: AudioCommandInterface[], timer:Timer ) {
+    transform(commands: IAudioCommand[], timer:Timer ) {
         return this.transformers.reduce((v, t) => t.transform(v, timer), commands)
     }
 
@@ -194,6 +212,11 @@ export class TransformerManager extends EventTarget implements TransformerInterf
      */
     reset():void{
        this.transformers.forEach(t => t.reset())
+    }
+
+    clear(){
+        this.transformers = []
+        this.transformersMap = new Map()
     }
 
     onChange(fn: () => void) {

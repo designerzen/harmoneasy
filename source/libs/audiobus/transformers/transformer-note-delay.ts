@@ -1,9 +1,10 @@
-import type { AudioCommandInterface } from "../audio-command-interface"
+import type { IAudioCommand } from "../audio-command-interface"
 import { Transformer } from "./abstract-transformer"
 import AudioCommand from "../audio-command"
 import * as Commands from "../../../commands"
 import type Timer from "../timing/timer"
 import type { TransformerInterface } from "./interface-transformer"
+import { TRANSFORMER_CATEGORY_TIMING } from "./transformer-categories"
 
 export const ID_NOTE_DELAY = "Note-Delay"
 
@@ -32,7 +33,8 @@ const DEFAULT_OPTIONS: Config = {
  */
 export class TransformerNoteDelay extends Transformer<Config> implements TransformerInterface {
 
-    id = ID_NOTE_DELAY
+    protected type = ID_NOTE_DELAY
+	category = TRANSFORMER_CATEGORY_TIMING
 
     get name(): string {
         return 'Note Delay'
@@ -171,7 +173,7 @@ export class TransformerNoteDelay extends Transformer<Config> implements Transfo
         }
     }
 
-    transform(commands: AudioCommandInterface[], timer: Timer): AudioCommandInterface[] {
+    transform(commands: IAudioCommand[], timer: Timer): IAudioCommand[] {
         
         if (!this.config.enabled || commands.length === 0) {
             return commands
@@ -204,7 +206,7 @@ export class TransformerNoteDelay extends Transformer<Config> implements Transfo
         let noteOnIndex = 0
 
         // Delay all commands by the specified amount
-        const delayed: AudioCommandInterface[] = commands.map((command, i) => {
+        const delayed: IAudioCommand[] = commands.map((command, i) => {
             const delayedCommand = { ...command }
 
             // Calculate delay: if accumulate is on, multiply by note index

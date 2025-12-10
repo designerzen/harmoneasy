@@ -8,10 +8,11 @@
  * Tracks active notes to ensure NOTE_OFF commands turn off the correct randomised notes.
  */
 
-import type { AudioCommandInterface } from "../audio-command-interface"
+import type { IAudioCommand } from "../audio-command-interface"
 import { Transformer } from "./abstract-transformer"
 import * as Commands from "../../../commands"
 import type { TransformerInterface } from "./interface-transformer"
+import { TRANSFORMER_CATEGORY_TUNING } from "./transformer-categories"
 
 export const ID_RANDOMISER = "Randomiser"
 
@@ -27,7 +28,9 @@ const DEFAULT_OPTIONS: Config = {
 
 export class TransformerRandomiser extends Transformer<Config> implements TransformerInterface {
 
-    id = ID_RANDOMISER
+    protected type = ID_RANDOMISER
+
+	category = TRANSFORMER_CATEGORY_TUNING
 
     // Map: original note number -> randomised note number
     private activeNotes: Map<number, number> = new Map()
@@ -95,7 +98,7 @@ export class TransformerRandomiser extends Transformer<Config> implements Transf
         super({ ...DEFAULT_OPTIONS, ...config })
     }
 
-    transform(commands: AudioCommandInterface[], timer?: any): AudioCommandInterface[] {
+    transform(commands: IAudioCommand[], timer?: any): IAudioCommand[] {
         if (!this.config.enabled || commands.length === 0)
         {
             return commands

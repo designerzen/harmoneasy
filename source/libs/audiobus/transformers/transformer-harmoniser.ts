@@ -1,7 +1,7 @@
 /**
  * Harmoniser transposes into a specific key and mode
  */
-import type { AudioCommandInterface } from "../audio-command-interface";
+import type { IAudioCommand } from "../audio-command-interface";
 import { Transformer } from "./abstract-transformer"
 import NoteModel from "../note-model"
 import AudioCommand from "../audio-command"
@@ -21,6 +21,7 @@ import { TUNING_MODE_IONIAN } from "../tuning/scales.js"
 import { getIntervalFormulaForMode } from "../tuning/chords/modal-chords.js"
 import type Timer from "../timing/timer.js"
 import type { TransformerInterface } from "./interface-transformer.js"
+import { TRANSFORMER_CATEGORY_TUNING } from "./transformer-categories.js";
 
 export const ID_HARMONISER = "harmoniser"
 
@@ -46,7 +47,8 @@ const DEFAULT_OPTIONS: Config = {
 
 export class TransformerHarmoniser extends Transformer<Config> implements TransformerInterface {
 
-    id = ID_HARMONISER
+    protected type = ID_HARMONISER
+	category = TRANSFORMER_CATEGORY_TUNING
 
     get name(): string {
         return 'Harmoniser'
@@ -104,7 +106,7 @@ export class TransformerHarmoniser extends Transformer<Config> implements Transf
         super( {...DEFAULT_OPTIONS, ...config} )
     }
 
-    private harmonizeNote(command: AudioCommandInterface) {
+    private harmonizeNote(command: IAudioCommand) {
         // Get the first audio command to generate chord from
 
         // Create note model from the first command's note number
@@ -130,7 +132,7 @@ export class TransformerHarmoniser extends Transformer<Config> implements Transf
         // console.log("Chord Ionian", noteModel, MODES.createIonianChord(ALL_KEYBOARD_NOTES, noteModel.noteNumber, 0, 3))
 
         // Transform commands: create new audio commands for each chord note
-        const harmonisedCommands: AudioCommandInterface[] = chordNotes.map((chordNote:number) => {
+        const harmonisedCommands: IAudioCommand[] = chordNotes.map((chordNote:number) => {
             const newCommand = command.clone()
             // Set the new note number from the chord
             newCommand.number = chordNote
@@ -147,7 +149,7 @@ export class TransformerHarmoniser extends Transformer<Config> implements Transf
      * @param timer 
      * @returns 
      */
-    transform(commands:AudioCommandInterface[], timer:Timer ):AudioCommandInterface[] {
+    transform(commands:IAudioCommand[], timer:Timer ):IAudioCommand[] {
 
         if (!this.config.enabled)
         {

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { TransformerTransposer } from '../transformer-transposer'
-import type { AudioCommandInterface } from '../../audio-command-interface'
+import type { IAudioCommand } from '../../audio-command-interface'
 import AudioCommand from '../../audio-command'
 import * as Commands from '../../../../commands'
 import { TUNING_MODE_IONIAN, TUNING_MODE_AEOLIAN } from '../../tuning/scales'
@@ -131,7 +131,7 @@ function createAudioCommand(
     noteNumber: number,
     velocity: number = 100,
     startAt: number = 0
-): AudioCommandInterface {
+): IAudioCommand {
     const cmd = new AudioCommand()
     cmd.type = type
     cmd.subtype = type

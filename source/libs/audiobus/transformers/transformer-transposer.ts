@@ -7,8 +7,9 @@ import { findClosestNoteInScale, generateNotesInScale, TUNING_MODE_IONIAN } from
 import { getIntervalFormulaForMode } from "../tuning/chords/modal-chords.js"
 
 import type { TransformerInterface } from "./interface-transformer.js"
-import type { AudioCommandInterface } from "../audio-command-interface"
+import type { IAudioCommand } from "../audio-command-interface"
 import type Timer from "../timing/timer.js"
+import { TRANSFORMER_CATEGORY_TUNING } from "./transformer-categories.ts"
 
 export const ID_TRANSPOSER = "Transposer"
 
@@ -25,7 +26,9 @@ const DEFAULT_OPTIONS: Config = {
 
 export class TransformerTransposer extends Transformer<Config> implements TransformerInterface {
 
-    id = ID_TRANSPOSER
+    protected type = ID_TRANSPOSER
+
+	category = TRANSFORMER_CATEGORY_TUNING
 
     notesInScale: Set<number>
 
@@ -91,7 +94,7 @@ export class TransformerTransposer extends Transformer<Config> implements Transf
      * @param timer 
      * @returns 
      */
-    transform(commands:AudioCommandInterface[], timer:Timer ):AudioCommandInterface[] {
+    transform(commands:IAudioCommand[], timer:Timer ):IAudioCommand[] {
            
         if (!this.config.enabled || commands.length === 0)
         {

@@ -1,4 +1,4 @@
-import type { AudioCommandInterface } from "../audio-command-interface"
+import type { IAudioCommand } from "../audio-command-interface"
 import type Timer from "../timing/timer"
 
 export interface TransformerInterface {
@@ -6,7 +6,7 @@ export interface TransformerInterface {
     description:string
     id: string
     fields: FieldConfig[]
-    transform(commands: AudioCommandInterface[], timer:Timer ): AudioCommandInterface[]
+    transform(commands: IAudioCommand[], timer:Timer ): IAudioCommand[]
     reset():void
 }
 

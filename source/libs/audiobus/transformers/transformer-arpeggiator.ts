@@ -1,9 +1,10 @@
-import type { AudioCommandInterface } from "../audio-command-interface"
+import type { IAudioCommand } from "../audio-command-interface"
 import { Transformer } from "./abstract-transformer"
 import AudioCommand from "../audio-command"
 import * as Commands from "../../../commands"
 import type Timer from "../timing/timer"
 import type { TransformerInterface } from "./interface-transformer"
+import { TRANSFORMER_CATEGORY_TIMING } from "./transformer-categories"
 
 export const ID_ARPEGGIATOR = "Arpeggiator"
 
@@ -49,7 +50,9 @@ const shuffleArray = <T>(array: T[]): T[] => {
  */
 export class TransformerArpeggiator extends Transformer<Config> implements TransformerInterface {
 
-    id = ID_ARPEGGIATOR
+    protected type = ID_ARPEGGIATOR
+
+	category = TRANSFORMER_CATEGORY_TIMING
 
     // Track currently held notes to build the arpeggio sequence
     private heldNotes: Set<number> = new Set()
@@ -135,7 +138,7 @@ export class TransformerArpeggiator extends Transformer<Config> implements Trans
         }
     }
 
-    transform(commands: AudioCommandInterface[], timer: Timer): AudioCommandInterface[] {
+    transform(commands: IAudioCommand[], timer: Timer): IAudioCommand[] {
 
         if (!this.config.enabled || commands.length === 0) {
             //console.log('[ARPEGGIATOR] Bypassing - disabled or no commands')
@@ -151,11 +154,11 @@ export class TransformerArpeggiator extends Transformer<Config> implements Trans
         //     bpm
         // })
 
-        const arpeggiated: AudioCommandInterface[] = []
+        const arpeggiated: IAudioCommand[] = []
 
         // Group note-on commands that occur at the same time (chord detection)
-        const noteOnCommands: AudioCommandInterface[] = []
-        const otherCommands: AudioCommandInterface[] = []
+        const noteOnCommands: IAudioCommand[] = []
+        const otherCommands: IAudioCommand[] = []
 
         for (const command of commands) {
             if (command.type === Commands.NOTE_ON) {
@@ -308,7 +311,7 @@ export class TransformerArpeggiator extends Transformer<Config> implements Trans
     /**
      * Generate arpeggiated note sequence from held notes
      */
-    private generateArpeggio(originalCommand: AudioCommandInterface, bpm: number): AudioCommandInterface[] {
+    private generateArpeggio(originalCommand: IAudioCommand, bpm: number): IAudioCommand[] {
         const baseNotes = Array.from(this.heldNotes).sort((a, b) => a - b)
 
         if (baseNotes.length === 0) {
@@ -417,11 +420,11 @@ export class TransformerArpeggiator extends Transformer<Config> implements Trans
      * Create a new audio command with specified note and delay
      */
     private createCommand(
-        original: AudioCommandInterface,
+        original: IAudioCommand,
         noteNumber: number,
         delayMs: number,
         baseTime: number
-    ): AudioCommandInterface {
+    ): IAudioCommand {
 
         const command = original.clone()
 

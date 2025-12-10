@@ -1,9 +1,10 @@
-import type { AudioCommandInterface } from "../audio-command-interface"
+import type { IAudioCommand } from "../audio-command-interface"
 import { Transformer } from "./abstract-transformer"
 import AudioCommand from "../audio-command"
 import * as Commands from "../../../commands"
 import type Timer from "../timing/timer"
 import type { TransformerInterface } from "./interface-transformer"
+import { TRANSFORMER_CATEGORY_TIMING } from "./transformer-categories"
 
 export const ID_NOTE_SHORTENER = "Note-Shortener"
 
@@ -23,7 +24,8 @@ const DEFAULT_OPTIONS: Config = {
  */
 export class TransformerNoteShortener extends Transformer<Config> implements TransformerInterface{
 
-    id = ID_NOTE_SHORTENER
+    protected type = ID_NOTE_SHORTENER
+	category = TRANSFORMER_CATEGORY_TIMING
 
     // Track NOTE_ON commands with their scheduled NOTE_OFF times
     private noteOnMap: Map<number, {startAt: number, originalEndAt?: number}> = new Map()
@@ -84,7 +86,7 @@ export class TransformerNoteShortener extends Transformer<Config> implements Tra
         }
     }
 
-    transform(commands: AudioCommandInterface[], timer: Timer ): AudioCommandInterface[] {
+    transform(commands: IAudioCommand[], timer: Timer ): IAudioCommand[] {
         const bpm = timer?.BPM || 120
         const durationMs = this.calculateDurationMs(this.config.duration, bpm)
 
@@ -100,7 +102,7 @@ export class TransformerNoteShortener extends Transformer<Config> implements Tra
             return commands
         }
 
-        const shortened: AudioCommandInterface[] = []
+        const shortened: IAudioCommand[] = []
 
         for (const command of commands) {
             if (command.type === Commands.NOTE_ON) {

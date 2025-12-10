@@ -9,10 +9,12 @@ import { TransformerNoteDelay, ID_NOTE_DELAY } from "./transformer-note-delay"
 import { TransformerChordifier, ID_CHORDIFIER } from "./transformer-chordifier"
 import { ID_TRANSPOSER, TransformerTransposer } from "./transformer-transposer"
 import { ID_MICROTONALITY } from "./transformer-microtonality"
+import { ID_CHANNELER, TransformerChanneler } from "./transformer-channeler"
 
-export const tranformerFactory = (s: string) => {
-    switch (s) {
+export const tranformerFactory = (type: string) => {
+    switch (type) {
         case ID_QUANTISE: return new TransformerQuantise()
+        case ID_CHANNELER: return new TransformerChanneler({})
         case ID_CHORDIFIER: return new TransformerChordifier()
         case ID_HARMONISER: return new TransformerHarmoniser()
         case ID_ARPEGGIATOR: return new TransformerArpeggiator()
@@ -27,6 +29,7 @@ export const tranformerFactory = (s: string) => {
 
 export const TRANSFORMER_TYPE = {
     ID_QUANTISE,
+    ID_CHANNELER,
     ID_CHORDIFIER,
     ID_HARMONISER,
     ID_ARPEGGIATOR,
@@ -40,6 +43,7 @@ export const TRANSFORMER_TYPE = {
 
 export const TRANSFORMERS = [
     ID_QUANTISE,
+    ID_CHANNELER,
     ID_CHORDIFIER,
     ID_HARMONISER,
     ID_ARPEGGIATOR,
