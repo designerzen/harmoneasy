@@ -280,7 +280,7 @@ export default class OPFSStorage {
       const timeout = setTimeout(() => {
         this.pendingCallbacks.delete(id)
         reject(new Error(`Message timeout: ${type}`))
-      }, 5000)
+      }, 30000)
 
       this.pendingCallbacks.set(id, (result: WorkerResponse) => {
         clearTimeout(timeout)
