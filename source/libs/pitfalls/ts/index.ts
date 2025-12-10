@@ -45,21 +45,39 @@ import KEY_MAPPING from './key-mappings.ts'
  * @example parseEdoScaleMicroTuningOctave(60, 3, "LLsLLLs", 2, 1)
  * @example parseEdoScaleMicroTuningOctave(60, 2, "LLsLLL", 3, 1)
  */
-const pitchesCache = new Map()
-export const parseEdoScaleMicroTuningOctave = (baseNoteMidi:number, rootOctave:number, sequence:string, large:number, small:number, rootFrequency:number=440 ) => {
+const pitchesCache = new Map<string, Pitches>()
+
+/**
+ * Parse EDO scale and return micro-tuning octave mappings
+ * 
+ * @param baseNoteMidi - MIDI note number for base note
+ * @param rootOctave - Root octave number
+ * @param sequence - Ls notation sequence (e.g., "LLsLLLs")
+ * @param large - Large step size
+ * @param small - Small step size
+ * @param rootFrequency - Reference frequency (default: 440Hz)
+ * @returns Pitches object with micro-tuning data
+ */
+export const parseEdoScaleMicroTuningOctave = (
+  baseNoteMidi: number,
+  rootOctave: number,
+  sequence: string,
+  large: number,
+  small: number,
+  rootFrequency: number = 440
+): Pitches => {
 
   // cache key (unique to these arguments)
   const key = `${baseNoteMidi}:${rootOctave}:${sequence}:${large}:${small}`
 
   if (pitchesCache.has(key)) {
-    return pitchesCache.get(key)
+    return pitchesCache.get(key)!
   }
 
-  // create the neccessary interval and pitch components
+  // create the necessary interval and pitch components
   const scale = new EdoScale(large, small, sequence)
   const intervals = new Intervals(scale)
   const pitches = new Pitches(scale, intervals, rootFrequency, baseNoteMidi, rootOctave, KEY_MAPPING)
-
 
   console.info("parseEdoScaleMicroTuningOctave", {scale, intervals, pitches} )
 

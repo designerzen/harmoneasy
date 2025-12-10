@@ -117,25 +117,25 @@ export default class EdoScale {
         this.sequence = sequence
     }
 
-    getStepSize(i):string {
-        return LABELS[this.#step[this.getOffset(i)]]
-    }
+    getStepSize(i: number): string {
+         return LABELS[this.#step[this.getOffset(i)]]
+     }
 
-    getStepValue(i:number):number{
-        const step = this.#step[this.getOffset(i)];
-        return step === L ? this.#large : step === M ? this.#medium : this.#small;
-    }
+     getStepValue(i: number): number {
+         const step = this.#step[this.getOffset(i)];
+         return step === L ? this.#large : step === M ? this.#medium : this.#small;
+     }
 
-    getOffset(i:number):number {
-        if (this.#mode === 1) {
-            return i
-        } else {
-            const offset = (this.#mode - 1 + i) % this.#length
-            return offset === 0 ? this.#length : offset
-        }
-    }
-    
-    setLength( d:number ){
+     getOffset(i: number): number {
+         if (this.#mode === 1) {
+             return i
+         } else {
+             const offset = (this.#mode - 1 + i) % this.#length
+             return offset === 0 ? this.#length : offset
+         }
+     }
+     
+     setLength(d: number): boolean {
         const orig:number = this.#length
         if (d === 1) {
             this.#length = Math.min(this.#length + 1, this.#maxSteps)
@@ -156,19 +156,19 @@ export default class EdoScale {
         return changed
     }
 
-    setMode(d:number):boolean {
+    setMode(d: number): boolean {
         const orig = this.#mode
         this.#mode = Math.max(1, Math.min(orig + d, this.#length))
         return orig !== this.#mode
     }
 
-    setTonic(d):boolean {
+    setTonic(d: number): boolean {
         const orig = this.#tonic
         this.#tonic = Math.max(1, Math.min(orig + d, this.edivisions))
         return orig !== this.#tonic
     }
 
-    setStep(d, i:number) {
+    setStep(d: number, i: number): boolean {
         const index = this.getOffset(i)
         const orig = this.#step[index]
         this.#step[index] = Math.max(S, Math.min(this.#step[index] + d, M))
@@ -180,7 +180,7 @@ export default class EdoScale {
         return changed
     }
 
-    setLarge(d) {
+    setLarge(d: number): boolean {
         const orig = this.#large
         this.large = Math.max(this.#small + 1, Math.min(this.#large + d, this.#large + 1))
         const changed = this.#large !== orig
@@ -193,7 +193,7 @@ export default class EdoScale {
         return changed
     }
 
-    setMedium(d) {
+    setMedium(d: number): boolean {
         const orig = this.#medium
         this.medium = (Math.max(this.#small + 1, Math.min(this.#medium + d, this.#large - 1)))
         const changed = this.#medium !== orig
@@ -203,7 +203,7 @@ export default class EdoScale {
         return changed
     }
 
-    setSmall(d) {
+    setSmall(d: number): boolean {
         const orig = this.#small
         const value = this.#small + d
 
@@ -224,12 +224,12 @@ export default class EdoScale {
     }
         
     /**
-     * 
-     * @returns boolean
+     * Update EDO divisions
+     * @returns boolean - true if divisions changed
      */
-    updateEdo() {
+    updateEdo(): boolean {
         const orig = this.edivisions
-        this.edivisions = this.#step.reduce((sum, _, i) => {
+        this.edivisions = this.#step.reduce((sum: number, _: number, i: number) => {
             this.divisions[i] = sum
             return sum + this.getStepValue(i)
         }, 0)

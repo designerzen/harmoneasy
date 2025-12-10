@@ -5,27 +5,28 @@ import { get_freq, hz_to_midi, midi_to_hz } from './utils'
 
 export default class Pitches {
 
-    #baseFrequency:Number
-    #rootOctave:Number
-    #scaleLength:Number
+    #baseFrequency: number
+    #rootOctave: number
+    #scaleLength: number
 
-    #edoScale:EdoScale
-    #intervals
+    #edoScale: EdoScale
+    #intervals: Intervals
 
     // Frequencies
-    freqs = {}
-    midis = {}
-    degrees = {}
-    octdegfreqs = {}
-    octdegmidis = {}
-    midiMappings = {}
+    freqs: Record<number, string> = {}
+    midis: Record<number, number> = {}
+    degrees: Record<number, number> = {}
+    octdegfreqs: Record<number, Record<number, string>> = {}
+    octdegmidis: Record<number, Record<number, number>> = {}
+    midiMappings: Array<[number, number]> = []
+    keyMappings?: Map<number, number>
 
     // array of offsets in cents for each 12 notes in octave C is first offset
-    tuningOctaveOffsets:Number[] = []
+    tuningOctaveOffsets: number[] = []
 
     // first value MIDI note
     // 2nd value cents offset 0-100
-    octaveTuning = new Map([
+    octaveTuning: Map<number, number> = new Map([
         [60, 0],
         [61, 0],
         [62, 0],
@@ -44,7 +45,7 @@ export default class Pitches {
         return this.#intervals
     }
 
-    constructor(scale:EdoScale, intervals:Intervals, tuning, midi_start:Number, root_octave:Number, key_mappings) {
+    constructor(scale: EdoScale, intervals: Intervals, tuning: number, midi_start: number, root_octave: number, key_mappings: Map<number, Map<number, number>>) {
 
         this.#edoScale = scale
         this.#intervals = intervals
@@ -55,7 +56,7 @@ export default class Pitches {
         this.#rootOctave = root_octave
 
         let index = 0
-        let f = null
+        let f: number | null = null
 
         // Loop through octaves
         for (let oct = 0; oct <= 8; oct++) {
@@ -71,7 +72,7 @@ export default class Pitches {
 
                 ++index
                 // fixme: string conversion v slow
-                const ratio = f * intervals.getRatioAtIndex(deg)
+                const ratio = (f as number) * intervals.getRatioAtIndex(deg)
                
                 this.freqs[index] = parseFloat( ratio ).toFixed(3)
                 this.midis[index] = parseFloat(hz_to_midi(ratio, tuning).toFixed(4))
@@ -93,15 +94,15 @@ export default class Pitches {
         this.#baseFrequency = parseFloat(this.#baseFrequency).toFixed(4)
     }
   
-    getDegree(index) {
+    getDegree(index: number): number {
         return this.degrees[index]
     }
 
-    getFrequency(index) {
+    getFrequency(index: number): string {
         return this.freqs[index]
     }
 
-    octdeg(deg) {
+    octdeg(deg: number): [number, number] {
         const higherOcatve = deg > this.#edoScale.length
         const octave = this.#rootOctave + (higherOcatve ? Math.floor((deg - 1) / this.#edoScale.length) : 0)
         const degree = higherOcatve ? (deg % this.#edoScale.length === 0 ? this.#edoScale.length : deg % this.#edoScale.length) : deg
@@ -109,7 +110,7 @@ export default class Pitches {
         return [octave, degree]
     }
 
-    octdegfreq(oct, deg) {
+    octdegfreq(oct: number, deg: number): string | null {
         if (this.octdegfreqs[oct]) {
             return this.octdegfreqs[oct][deg]
         } else {
@@ -117,7 +118,7 @@ export default class Pitches {
         }
     }
 
-    octdegmidi(oct, deg) {
+    octdegmidi(oct: number, deg: number): number | null {
         if (this.octdegmidis[oct]) {
             return this.octdegmidis[oct][deg]
         } else {

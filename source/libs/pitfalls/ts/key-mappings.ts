@@ -1,4 +1,4 @@
-const KEY_MAPPING = new Map([
+const KEY_MAPPING: Map<number, Map<number, number>> = new Map([
   [3, new Map([
     [1, 1],
     [2, 2],

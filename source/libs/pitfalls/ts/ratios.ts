@@ -59,48 +59,45 @@ const INTERVALS = new Map([
   [2, ['P8', 'P8', 'P8', 2, 1]] // octave P8
 ])
 
-class IntervalRatio{
-
-
-    title
-    intervals
-
-    constructor(){
-
-    }
+interface IntervalData {
+    key: string
+    label: string
+    fjs: string
+    nominator: number
+    denominator: number
 }
 
 export class IntervalRatios {
 
-    #intervals
+    #intervals: Map<number, [string, string, string, number, number]>
 
-    constructor( intervals ){
+    constructor(intervals: Map<number, [string, string, string, number, number]>) {
         this.#intervals = intervals
     }
 
-    getKey(ratio):String {
+    getKey(ratio: number | null): string {
         return ratio == null ? '' : this.#intervals.get(ratio)?.[0] || ''
     }
 
-    getLabel(ratio):String {
+    getLabel(ratio: number | null): string {
         return ratio == null ? '' : this.#intervals.get(ratio)?.[1] || ''
     }
 
-    fjs(ratio):String {
+    fjs(ratio: number | null): string {
         return ratio == null ? '' : this.#intervals.get(ratio)?.[2] || ''
     }
 
-    nom(ratio):String {
+    nom(ratio: number | null): number | null {
         return ratio == null ? null : this.#intervals.get(ratio)?.[3] || null
     }
 
-    denom(ratio):String {
+    denom(ratio: number | null): number | null {
         return ratio == null ? null : this.#intervals.get(ratio)?.[4] || null
     }
 
-    getNearestInterval(v:Number) {
+    getNearestInterval(v: number): [number | null, number | null] {
         let min = 1
-        let match = null
+        let match: number | null = null
         for (const [ratio, _labels] of this.#intervals) {
             const diff = Math.abs((ratio - v) / ratio)
             if (diff < min) {
