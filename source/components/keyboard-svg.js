@@ -242,7 +242,7 @@ export default class SVGKeyboard extends AbstractInteractive{
 		if (key)
 		{
 			key.classList.toggle("active", true)
-			this.title = noteModel.toString()
+			//this.title = noteModel.toString()
 		}else{
 			// console.warn("Key "+noteNumber+" not found")
 		}
