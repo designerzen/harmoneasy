@@ -13,11 +13,30 @@ html{
 
 // h2 {
 // }
+h1,h2,h3,h4,h5,h6, summary{
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
 
 h1,h2{
     font-size: 24px;
     font-weight: 600;
     margin: 0;
     line-height: 1.1;
-    text-transform: uppercase;
 }
+
+h3 {
+    margin: 20px 0 10px;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+summary{
+    font-weight: 900;
+   
+}
+
+  legend {
+    font-weight: 600;
+    padding: 0 calc(var(--pad));
+  }

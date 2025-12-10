@@ -1,108 +1,125 @@
-#graph {
-    background: #FFF;
-}
 .react-flow__attribution{
-  display: none;
+	display: none;
 }
+
 .graph-node {
     border: 2px solid #333;
-    border-radius: 8px;
-    padding: 1em;
+    border-radius: var(--curve);
+    padding: var(--pad);
     font-size: 0.9em;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    min-width: 200px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    font-weight: bold;
+	   
+    text-transform: uppercase;
+    letter-spacing: 1px;
 
-    > div:first-child {
+    background: linear-gradient(
+        0deg, 
+        oklch(50% 0.16392 var(--hue-accent)) 0%, 
+        oklch(50% 0.1385  var(--hue-accent)) 100%);
+
+    color: white;
+    min-width: var(--size, 200px);
+    min-height:var(--size);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    
+	display: flex;
+    flex-direction: column;
+    gap: var(--gap);
+
+    > h6 {
         display: flex;
         justify-content: space-between;
         align-items: center;
         font-weight: bold;
-        margin-bottom: 0.75em;
-        padding-bottom: 0.5em;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+	    font-size: 1.5rem;
+	    padding-right: calc(44px + var(--pad));
+        margin-bottom:  var(--gap);
+        padding-bottom: var(--pad);
+        border-bottom: var(--border);
+    }
+
+    > *{
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+	> label + label{
+		margin-top: var(--gap);
+	}
+
+	select{
+		margin-left: var(--gap);
+	}
+
+    .btn-remove {
+        background: rgba(220, 38, 38, 0.9);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background 0.2s;
+        font-size: 0;
+        position: absolute;
+        right: var(--pad);
+        top: var(--pad);
+
+        &::before{
+            content:'x';
+            font-size: 1rem;
+            margin: auto;
+        }
+        &:hover {
+            background: rgba(185, 28, 28, 1);
+        }
     }
 }
 
 .buttons-back {
-    font-size: 0.6em;
-    display: flex;
-    margin-top: 1em;
+
+	gap:var(--gap);
+	margin-top: var(--pad);
+	padding-top: var(--pad);
+    border-top: var(--border);
+
     button {
-        background: transparent;
+        font-size: 66%;
     }
 
-    .prev {
-        margin-right: auto;
-    }
-}
-
-.graph-node .button-remove {
-    background: rgba(220, 38, 38, 0.9);
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 0.25em 0.5em;
-    cursor: pointer;
-    font-weight: bold;
-    transition: background 0.2s;
-
-    &:hover {
-        background: rgba(185, 28, 28, 1);
-    }
-}
-
-.graph-node > div > div {
-    margin-bottom: 0.5em;
-
-    > div:first-child {
-        font-size: 0.85em;
-        text-transform: uppercase;
-        opacity: 0.9;
-        margin-bottom: 0.25em;
+    .btn-previous {
+        &::before{
+            content:'◀ ';    
+        }
     }
 
-    select {
-        width: 100%;
-        padding: 0.5em;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        border-radius: 4px;
-        background: rgba(255, 255, 255, 0.95);
-        color: #333;
-        font-size: 0.9em;
-        cursor: pointer;
-
-        &:focus {
-            outline: none;
-            border-color: rgba(255, 255, 255, 0.6);
-            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+    .btn-next{
+        &::after{
+            content:' ▶';    
         }
     }
 }
 
 .node-start,
 .node-end {
-    border: 2px solid #333;
-    border-radius: 50%;
-    padding: 1.5em;
-    font-size: 0.9em;
-    color: white;
-    min-width: 100px;
-    min-height: 100px;
-    display: flex;
+    --size:69px;
+    border-radius: 999px;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 1px;
 }
 
 .node-start {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+	--hue-accent:162;	// green
 }
 
 .node-end {
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+	--hue-accent:25;	// red
+}
+
+.category-tuning{
+	--hue-accent:219;
+}
+
+.category-timing{
+	--hue-accent:280;
 }

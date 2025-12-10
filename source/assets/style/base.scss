@@ -4,11 +4,17 @@
     box-sizing: border-box;
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
 body {
     margin: 0;
     min-width: 320px;
     min-height: 100vh;
     overflow-x: hidden;
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory;
     background-color: #fafafa;
     color: #333;
     display: flex;
@@ -35,12 +41,17 @@ button {
     border-radius: 8px;
     border: 1px solid transparent;
     padding: 0.6em 1.2em;
+    // ios a11y guidelines
+    min-width: 44px;
+    min-height: 44px;
     font-size: 1em;
     font-weight: 500;
     font-family: inherit;
     background-color: #1a1a1a;
     color: #ffffff;
     cursor: pointer;
+    box-sizing: border-box;
+
     transition: 
         background 0.2s ease,
         border-color 0.25s;
@@ -75,6 +86,10 @@ details div {
 
 summary{
     display: inline-block;
+    padding:var(--pad) 0;
+    ::marker {
+        // content: '';
+    }
 }
 
 dialog{
@@ -86,6 +101,10 @@ dialog{
 
 }
 
+canvas{
+    max-width: 100%;
+    height: 100%;
+}
 
 @media (prefers-color-scheme: light) {
     :root {
@@ -102,6 +121,37 @@ dialog{
         color: #213547;
     }
 }
+
+select{
+	padding: calc( var(--pad) / 1 ) calc( var(--pad) / 2);
+	border: 1px solid rgba(255, 255, 255, 0.3);
+	border-radius: 4px;
+	background: rgba(255, 255, 255, 0.95);
+	color: #333;
+	font-size: 0.9em;
+	cursor: pointer;
+
+	&:focus {
+		outline: none;
+		border-color: rgba(255, 255, 255, 0.6);
+		box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+	}
+}
+
+/*
+// Chrome now supports CUSTOM select
+// with all kinds of inner styles
+@supports (appearance: base-select){
+    select, ::picker(select) {
+        appearance: base-select;
+        font-family: inherit;
+        font-size: inherit;
+        color: inherit;
+        padding:var(--pad, 0.5rem);
+        background: inherit;
+    }	
+}
+    */
 
 .selectable{
      user-select: all;

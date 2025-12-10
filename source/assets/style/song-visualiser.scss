@@ -1,0 +1,184 @@
+/**
+ * Song Visualiser Styles
+ */
+
+song-visualiser {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  &::part(container) {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+  }
+
+  &::part(canvas) {
+    flex: 1;
+    cursor: crosshair;
+  }
+
+  /* Light mode */
+  &:not([data-dark-mode]) {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --text-primary: #333333;
+    --text-secondary: #666666;
+    --border-color: #dddddd;
+    --grid-color: #eeeeee;
+  }
+
+  /* Dark mode */
+  &[data-dark-mode] {
+    --bg-primary: #1e1e1e;
+    --bg-secondary: #2d2d2d;
+    --text-primary: #ffffff;
+    --text-secondary: #aaaaaa;
+    --border-color: #444444;
+    --grid-color: #333333;
+  }
+}
+
+/* Info panel below visualiser */
+.song-visualiser-info {
+  padding: 1rem;
+  background: var(--bg-secondary, #f5f5f5);
+  border-top: 1px solid var(--border-color, #ddd);
+  font-size: 0.875rem;
+  color: var(--text-secondary, #666);
+
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+
+  &__item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  &__label {
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary, #999);
+  }
+
+  &__value {
+    font-size: 1rem;
+    color: var(--text-primary, #333);
+    font-family: monospace;
+  }
+}
+
+/* Controls for visualiser */
+.song-visualiser-controls {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: var(--bg-secondary, #f5f5f5);
+  border-bottom: 1px solid var(--border-color, #ddd);
+  flex-wrap: wrap;
+
+  &__group {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+
+    &__label {
+      font-size: 0.875rem;
+      color: var(--text-secondary, #666);
+      padding: 0 0.5rem;
+    }
+  }
+}
+
+/* Buttons for visualiser control */
+.song-visualiser-btn {
+  padding: 0.5rem 1rem;
+  background: var(--bg-primary, #fff);
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--text-primary, #333);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--border-color, #eee);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &--primary {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+
+    &:hover {
+      background: #0056b3;
+      border-color: #0056b3;
+    }
+  }
+
+  &--danger {
+    background: #dc3545;
+    color: white;
+    border-color: #dc3545;
+
+    &:hover {
+      background: #c82333;
+      border-color: #c82333;
+    }
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+
+    &:hover {
+      background: var(--bg-primary, #fff);
+    }
+  }
+}
+
+/* Range input styling */
+.song-visualiser-range {
+  padding: 0.5rem 0;
+
+  input[type="range"] {
+    width: 150px;
+    cursor: pointer;
+  }
+}
+
+/* Legend for note visualization */
+.song-visualiser-legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 0.5rem;
+  padding: 0.5rem;
+  font-size: 0.75rem;
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+  }
+
+  &__label {
+    color: var(--text-secondary, #666);
+  }
+}
