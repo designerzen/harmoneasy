@@ -6,6 +6,7 @@
 
 html {
     scroll-behavior: smooth;
+	accent-color: var(--accent-color);
 }
 
 body {
@@ -85,13 +86,16 @@ details div {
 }
 
 summary{
-    display: inline-block;
+    // display: inline-block;
     padding:var(--pad) 0;
-    ::marker {
-        // content: '';
-    }
+   
 }
-
+::marker {
+    content: '+ ';
+}
+[open] ::marker {
+    content: '- ';
+}
 dialog{
     margin: auto;
 
@@ -120,6 +124,14 @@ canvas{
         background-color: #f9f9f9;
         color: #213547;
     }
+}
+
+input{
+	flex:1;
+	padding: calc( var(--pad) / 1 ) calc( var(--pad) / 2);
+}
+
+input[type="search"]{
 }
 
 select{
