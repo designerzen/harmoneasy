@@ -1,24 +1,27 @@
-import { Handle, Position } from "@xyflow/react";
-import React from "react";
+import { Handle, Position } from "@xyflow/react"
+import React from "react"
 
+// Chrome and later browsers allow for custom selects!
 function SelectField({ values, onChange }) {
     return <select onChange={onChange}>
-        {values.map(v => {
-            const isObject = typeof v === 'object' && v !== null;
-            const value = isObject ? v.value : v;
-            const name = isObject ? v.name : v;
-            return <option key={value} value={value}>{name}</option>;
+
+		<button>Close</button>
+
+        {values.map((v) => {
+            const isObject = typeof v === 'object' && v !== null
+            const value = isObject ? v.value : v
+            const name = isObject ? v.name : v
+            return <option key={value} value={value}>{name}</option>
         })}
     </select>
 }
 
 function ConfigField({ config, element}) {
-    return <div>
-        <div>{config.name}</div>
+    return <label>{config.name}
         { config.type === 'select' ? <SelectField values={config.values} onChange={(v) => {
             element.setConfig(config.name, v.target.value)
         }} /> : 'unknown' }
-        </div>
+        </label>
 }
 
 export function TransformerNode(props) {
@@ -34,18 +37,24 @@ export function TransformerNode(props) {
         window.transformerManager.moveOneStepAfter(props.data.element)
     }
 
-    return <div className="node-transformer graph-node">
-        <div>{props.data.label} <button className="button-remove" onClick={removeNode}>X</button></div>
+
+	console.info("TransformerNode", props )
+
+    return <div className={`node-transformer graph-node category-${props.data.element.category.toLowerCase()}`}>
+        <h6 title={props.data.description}>{props.data.label}</h6>
+      
+        <button type="button" className="btn-remove" onClick={removeNode}>Remove</button>
+      
         {props.data.fields.map(f => (
             <ConfigField key={f.name} config={f} element={props.data.element} />
         ))}
 
-        <div className="buttons-back">
-            <button className="prev" onClick={movePrev}>«</button>
-            <button onClick={moveNext}>»</button>
-        </div>
+        <menu className="buttons-back">
+            <button className="btn-previous" onClick={movePrev}>Move before</button>
+            <button className="btn-next" onClick={moveNext}>Move after</button>
+        </menu>
 
         <Handle type="source" position={Position.Right} />
-      <Handle type="target" position={Position.Left} />
+        <Handle type="target" position={Position.Left} />
     </div>
 }
