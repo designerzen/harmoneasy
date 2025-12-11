@@ -17,9 +17,6 @@ importers:
       '@tonejs/midi':
         specifier: ^2.0.28
         version: 2.0.28
-      '@types/web-bluetooth':
-        specifier: ^0.0.21
-        version: 0.0.21
       '@xyflow/react':
         specifier: ^12.10.0
         version: 12.10.0(@types/react@19.2.7)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -51,6 +48,9 @@ importers:
       '@types/react':
         specifier: ^19.2.7
         version: 19.2.7
+      '@types/web-bluetooth':
+        specifier: ^0.0.21
+        version: 0.0.21
       partykit:
         specifier: 0.0.115
         version: 0.0.115

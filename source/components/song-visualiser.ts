@@ -97,7 +97,7 @@ export class SongVisualiser extends HTMLElement {
   private initWorker() {
     try {
       this.worker = new Worker(
-        new URL( SONG_VISUALISER_WORKER, import.meta.url),
+        new URL(SONG_VISUALISER_WORKER, import.meta.url),
         { type: "module" }
       )
 
