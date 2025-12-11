@@ -6,7 +6,7 @@ import { NOTE_OFF, NOTE_ON } from "../../commands.ts"
 import AudioEvent from "./audio-event.ts"
 import type OPFSStorage from "./storage/opfs-storage.ts"
 import AudioCommand from "./audio-command.ts"
-import type { AudioCommandInterface } from "./audio-command-interface.ts"
+import type { IAudioCommand } from "./audio-command-interface.ts"
 
 interface SessionMetadata {
   name: string
@@ -19,7 +19,7 @@ const GAP = 0.5
     
 export class RecorderAudioEvent extends EventTarget{
 
-    events:AudioCommandInterface[] = []
+    events:IAudioCommand[] = []
     #enabled:boolean = true
     #duration:number = 0
     #name:string = "Recording"
@@ -214,7 +214,7 @@ export class RecorderAudioEvent extends EventTarget{
      * 
      * @returns Array of AudioEvents
      */
-    exportData():AudioCommandInterface[]{
+    exportData():IAudioCommand[]{
 
         const allEvents = this.events.slice()
         const quantity = allEvents.length -1
@@ -233,7 +233,7 @@ export class RecorderAudioEvent extends EventTarget{
                     const hasNoteOn = currentlyPlaying.has( event.number )
                     if (hasNoteOn)
                     {
-                        const noteOffCommand:AudioCommandInterface = currentlyPlaying.get( event.number )
+                        const noteOffCommand:IAudioCommand = currentlyPlaying.get( event.number )
                         const duration:number = noteOffCommand.startAt - event.startAt
 
                         // set the end at to the start at time of the note off
