@@ -18,7 +18,7 @@ const EVENT_TRANSFORMERS_ADDED = "EVENT_TRANSFORMER_ADDED"
 const EVENT_TRANSFORMERS_REMOVED = "EVENT_TRANSFORMER_REMOVED"
 
 const DEFAULT_TRANSFORMERS = [
-    new TransformerTransposer()
+    new TransformerHarmoniser()
 ]
 
 export class TransformerManager extends EventTarget implements TransformerInterface {
@@ -49,6 +49,10 @@ export class TransformerManager extends EventTarget implements TransformerInterf
     get quantiseFidelity():number{
         return this.quantiseTransformer?.options.step ?? 0
     }
+
+	get description():string{
+		return "Transformers Manager:\n" + this.transformers.map(t => t.description).join('\n')
+	}
   
     constructor(initialTransformers?: Array<Transformer>=DEFAULT_TRANSFORMERS) {
         super()

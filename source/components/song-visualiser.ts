@@ -9,7 +9,7 @@
  * Uses a Worker for rendering to keep main thread responsive
  */
 
-import SONG_VISUALISER_WORKER from "./song-visualiser-worker.ts?url"
+import workerCode from "./song-visualiser-worker.js?raw"
 import { NOTE_ON, NOTE_OFF } from "../commands.js"
 
 import type AudioCommand from "../libs/audiobus/audio-command.js"
@@ -97,7 +97,10 @@ export class SongVisualiser extends HTMLElement {
 
 	private initWorker() {
 		try {
-			this.worker = new Worker(SONG_VISUALISER_WORKER, { type: "module" })
+			// Create worker from inline code to avoid MIME type issues on static servers
+			const blob = new Blob([workerCode], { type: 'application/javascript' })
+			const workerUrl = URL.createObjectURL(blob)
+			this.worker = new Worker(workerUrl, { type: 'module' })
 
 			this.worker.onmessage = (event) => this.handleWorkerMessage(event)
 			this.worker.onerror = (error) => {
