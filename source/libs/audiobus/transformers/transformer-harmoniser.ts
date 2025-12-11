@@ -66,18 +66,18 @@ export class TransformerHarmoniser extends Transformer<Config> implements Transf
                 name: 'root',
                 type: 'select',
                 values: [
-                    { name: 'A', value: 0 },
-                    { name: 'A#/Bb', value: 1 },
-                    { name: 'B', value: 2 },
-                    { name: 'C', value: 3 },
-                    { name: 'C#/Db', value: 4 },
-                    { name: 'D', value: 5 },
-                    { name: 'D#/Eb', value: 6 },
-                    { name: 'E', value: 7 },
-                    { name: 'F', value: 8 },
-                    { name: 'F#/Gb', value: 9 },
-                    { name: 'G', value: 10 },
-                    { name: 'G#/Ab', value: 11 }
+                    { name: 'A', value: 9 },
+                    { name: 'A#/Bb', value: 10 },
+                    { name: 'B', value: 11 },
+                    { name: 'C', value: 0 },
+                    { name: 'C#/Db', value: 1 },
+                    { name: 'D', value: 2 },
+                    { name: 'D#/Eb', value: 3 },
+                    { name: 'E', value: 4 },
+                    { name: 'F', value: 5 },
+                    { name: 'F#/Gb', value: 6 },
+                    { name: 'G', value: 7 },
+                    { name: 'G#/Ab', value: 8 }
                 ]
             },
             {
@@ -116,12 +116,6 @@ export class TransformerHarmoniser extends Transformer<Config> implements Transf
 		// Quantise each command's note to the closest scale note
 		return commands.map(command => {
 			const transposedNote = findClosestNoteInScale(command.number, this.notesInScale )
-
-			// If the note is already in the scale, return unchanged
-			if (transposedNote === command.number) {
-				return command
-			}
-			// directly mutate the original command
 			command.number = transposedNote 
 			return command
 		})
@@ -135,7 +129,8 @@ export class TransformerHarmoniser extends Transformer<Config> implements Transf
 	 */
 	private setScaleNotes ():Set<number>{
 		const intervalFormula:number[] = getIntervalFormulaForMode(this.config.mode)
-		return generateNotesInScale( parseInt(this.config.root), intervalFormula)
+		const midiRoot = parseInt(this.config.root)
+		return generateNotesInScale( midiRoot, intervalFormula)
 	}
 
 	/**
