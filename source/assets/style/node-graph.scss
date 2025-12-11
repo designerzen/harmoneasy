@@ -3,12 +3,12 @@
 }
 
 .graph-node {
+    color: white;
     border: 2px solid #333;
     border-radius: var(--curve);
     padding: var(--pad);
     font-size: 0.9em;
     font-weight: bold;
-	   
     text-transform: uppercase;
     letter-spacing: 1px;
 
@@ -17,7 +17,6 @@
         oklch(50% 0.16392 var(--hue-accent)) 0%, 
         oklch(50% 0.1385  var(--hue-accent)) 100%);
 
-    color: white;
     min-width: var(--size, 200px);
     min-height:var(--size);
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -25,6 +24,33 @@
 	display: flex;
     flex-direction: column;
     gap: var(--gap);
+
+    .btn-remove {
+        background: rgba(220, 38, 38, 0.9);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background 0.2s;
+        font-size: 0;
+        position: absolute;
+        right: var(--pad);
+        top: var(--pad);
+
+        &::before{
+            content:'x';
+            font-size: 1rem;
+			font-weight: 900;
+            margin: auto;
+        }
+        &:hover {
+            background: rgba(185, 28, 28, 1);
+        }
+    }
+}
+
+.node-transformer{
 
     > h6 {
         display: flex;
@@ -51,30 +77,6 @@
 	select{
 		margin-left: var(--gap);
 	}
-
-    .btn-remove {
-        background: rgba(220, 38, 38, 0.9);
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-weight: bold;
-        transition: background 0.2s;
-        font-size: 0;
-        position: absolute;
-        right: var(--pad);
-        top: var(--pad);
-
-        &::before{
-            content:'x';
-            font-size: 1rem;
-			font-weight: 900;
-            margin: auto;
-        }
-        &:hover {
-            background: rgba(185, 28, 28, 1);
-        }
-    }
 }
 
 .filter-label{
