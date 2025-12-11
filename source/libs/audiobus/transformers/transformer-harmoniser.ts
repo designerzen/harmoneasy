@@ -2,7 +2,7 @@
  * Harmoniser transposes into a specific key and mode
  */
 import type { IAudioCommand } from "../audio-command-interface";
-import { Transformer } from "./abstract-transformer"
+import { Transformer, type TransformerConfig } from "./abstract-transformer"
 import NoteModel from "../note-model"
 import AudioCommand from "../audio-command"
 import { createChord, findRotationFromNote } from "../tuning/chords/chords.js"
@@ -17,32 +17,24 @@ import {
     AEOLIAN_INTERVALS,
     LOCRIAN_INTERVALS
 } from "../tuning/intervals.js"
-import { TUNING_MODE_IONIAN } from "../tuning/scales.js"
+import { findClosestNoteInScale, generateNotesInScale, TUNING_MODE_IONIAN } from "../tuning/scales.js"
 import { getIntervalFormulaForMode } from "../tuning/chords/modal-chords.js"
 import type Timer from "../timing/timer.js"
 import type { TransformerInterface } from "./interface-transformer.js"
 import { TRANSFORMER_CATEGORY_TUNING } from "./transformer-categories.js";
 
-export const ID_HARMONISER = "harmoniser"
+export const ID_HARMONISER = "Harmoniser"
 
-const NOTES_IN_CHORDS = 3
-
-// Full keyboard with all notes
-const keyboardKeys = (new Array(128)).fill("")
-const ALL_KEYBOARD_NUMBERS = keyboardKeys.map((_, index) => index )
-const ALL_KEYBOARD_NOTES = keyboardKeys.map((_, index) => new NoteModel(index))
-
-
-interface Config {
-    simultaneous: number,
-    root: number,
-    mode: string
+interface Config extends TransformerConfig {
+	root: number,
+	mode: string,
+	[key: string]: any
 }
 
+
 const DEFAULT_OPTIONS: Config = {
-    simultaneous:NOTES_IN_CHORDS,
-    root: 69,
-    mode: TUNING_MODE_IONIAN
+	root: 69,
+	mode: TUNING_MODE_IONIAN
 }
 
 export class TransformerHarmoniser extends Transformer<Config> implements TransformerInterface {
@@ -50,17 +42,19 @@ export class TransformerHarmoniser extends Transformer<Config> implements Transf
     protected type = ID_HARMONISER
 	category = TRANSFORMER_CATEGORY_TUNING
 
+    notesInScale: Set<number>
+
     get name(): string {
         return 'Harmoniser'
     }
 
-    get description(): string{
-        return "Transposes the note "
+	get description():string{
+        return "Ensure that all played notes are in the specified scale."
     }
 
     get fields() {
         return [
-            {
+             {
                 name: 'enabled',
                 type: 'select',
                 values: [
@@ -106,60 +100,51 @@ export class TransformerHarmoniser extends Transformer<Config> implements Transf
         super( {...DEFAULT_OPTIONS, ...config} )
     }
 
-    private harmonizeNote(command: IAudioCommand) {
-        // Get the first audio command to generate chord from
+	/**
+	 * 
+	 * @param commands 
+	 * @param timer 
+	 * @returns 
+	 */
+	transform(commands:IAudioCommand[], timer:Timer ):IAudioCommand[] {
+		   
+		if (!this.config.enabled || commands.length === 0)
+		{
+			return commands
+		}
 
-        // Create note model from the first command's note number
-        // const noteModel = new NoteModel(command.number)
-        const noteModel = ALL_KEYBOARD_NOTES[command.number]
+		// Quantise each command's note to the closest scale note
+		return commands.map(command => {
+			const transposedNote = findClosestNoteInScale(command.number, this.notesInScale )
 
-        // Get interval formula based on the configured mode
-        const intervalFormula = getIntervalFormulaForMode(this.config.mode)
+			// If the note is already in the scale, return unchanged
+			if (transposedNote === command.number) {
+				return command
+			}
+			// directly mutate the original command
+			command.number = transposedNote 
+			return command
+		})
+	}
 
-        // Calculate rotation: -1 if note is outside of the scale
-        const rotation = findRotationFromNote(noteModel.noteNumber, this.config.root, intervalFormula)
+	/**
+	 * Create a set of all valid notes in the scale across all octaves
+	 * Sets the scale that this transposer operates im
+	 * Currently takes a formula and a root note as the 
+	 * inputs to decide what keys are permissable
+	 */
+	private setScaleNotes ():Set<number>{
+		const intervalFormula:number[] = getIntervalFormulaForMode(this.config.mode)
+		return generateNotesInScale( parseInt(this.config.root), intervalFormula)
+	}
 
-        // If rotation is -1, the note is outside the scale, use 0 as fallback
-        const finalRotation = rotation === -1 ? 0 : rotation
-
-        // Generate chord based on the first command's note
-        const chordNotes:number[] = createChord(ALL_KEYBOARD_NUMBERS, intervalFormula, noteModel.noteNumber, finalRotation, this.config.simultaneous, true, true)
-        const intervals = convertToIntervalArray(chordNotes)
-
-        console.log("Root", noteModel.noteNumber)
-        console.log("Chord", noteModel, chordNotes )
-        console.log("Intervals?", intervals, intervalFormula)
-        // console.log("Chord Ionian", noteModel, MODES.createIonianChord(ALL_KEYBOARD_NOTES, noteModel.noteNumber, 0, 3))
-
-        // Transform commands: create new audio commands for each chord note
-        const harmonisedCommands: IAudioCommand[] = chordNotes.map((chordNote:number) => {
-            const newCommand = command.clone()
-            // Set the new note number from the chord
-            newCommand.number = chordNote
-            return newCommand
-        })
-
-        // Return the harmonised chord commands
-        return harmonisedCommands
-    }
-
-    /**
-     * Interface:
-     * @param commands 
-     * @param timer 
-     * @returns 
-     */
-    transform(commands:IAudioCommand[], timer:Timer ):IAudioCommand[] {
-
-        if (!this.config.enabled)
-        {
-            return commands
-        }
-
-        if (commands.length === 0) {
-            return commands
-        }
-
-        return commands.flatMap(c => this.harmonizeNote(c))
-    }
+	/**
+	 * 
+	 * @param key 
+	 * @param value 
+	 */
+	override setConfig(key: string, value: unknown): void {
+		super.setConfig(key, value)
+		this.notesInScale = this.setScaleNotes()
+	}
 }

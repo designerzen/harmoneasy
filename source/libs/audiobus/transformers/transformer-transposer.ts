@@ -27,13 +27,16 @@ const DEFAULT_OPTIONS: Config = {
 export class TransformerTransposer extends Transformer<Config> implements TransformerInterface {
 
     protected type = ID_TRANSPOSER
-
 	category = TRANSFORMER_CATEGORY_TUNING
 
     notesInScale: Set<number>
 
     get name(): string {
         return 'Transposer'
+    }
+
+	get description(): string{
+        return "Transposes the note by the specified parammeters."
     }
 
     get fields() {
@@ -44,24 +47,6 @@ export class TransformerTransposer extends Transformer<Config> implements Transf
                 values: [
                     { name: 'On', value: 1 },
                     { name: 'Off', value: 0 }
-                ]
-            },
-            {
-                name: 'root',
-                type: 'select',
-                values: [
-                    { name: 'A', value: 0 },
-                    { name: 'A#/Bb', value: 1 },
-                    { name: 'B', value: 2 },
-                    { name: 'C', value: 3 },
-                    { name: 'C#/Db', value: 4 },
-                    { name: 'D', value: 5 },
-                    { name: 'D#/Eb', value: 6 },
-                    { name: 'E', value: 7 },
-                    { name: 'F', value: 8 },
-                    { name: 'F#/Gb', value: 9 },
-                    { name: 'G', value: 10 },
-                    { name: 'G#/Ab', value: 11 }
                 ]
             },
             {
@@ -80,9 +65,6 @@ export class TransformerTransposer extends Transformer<Config> implements Transf
         ]
     }
 
-    get description():string{
-        return "Ensure that all played notes are in the specified scale."
-    }
 
     constructor(config = { root: 0, mode: TUNING_MODE_IONIAN }) {
         super( { ...DEFAULT_OPTIONS, ...config } )

@@ -133,7 +133,14 @@ export class TransformerChordifier extends Transformer<Config> implements Transf
 
         // Transform commands: create new audio commands for each chord note
         const harmonisedCommands: IAudioCommand[] = chordNotes.map((chordNote:number) => {
-            const newCommand = command.clone()
+            
+			if (!command || !command.clone)
+			{
+				console.error("No command or clone method available")
+				throw new Error("No command or clone method available")
+			}
+
+			const newCommand = command.clone()
             // Set the new note number from the chord
             newCommand.number = chordNote
             return newCommand
