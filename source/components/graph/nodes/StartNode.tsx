@@ -3,7 +3,7 @@ import React from "react"
 
 export function StartNode() {
     return <div className="node-start graph-node">
-        <h5>Start</h5>
+        <h6>Start</h6>
       	<Handle type="source" position={Position.Right} />
     </div>
 }

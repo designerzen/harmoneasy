@@ -1,91 +1,96 @@
+import '@xyflow/react/dist/style.css'
 import React, { useState, useCallback, useEffect } from 'react'
 import { ReactFlow, applyNodeChanges, applyEdgeChanges, addEdge, useReactFlow, ReactFlowProvider } from '@xyflow/react'
-import '@xyflow/react/dist/style.css'
-import type { TransformerManager } from '../../libs/audiobus/transformers/transformer-manager'
 import { ConfigDrawer } from './ConfigDrawer'
 import { StartNode } from './nodes/StartNode'
 import { EndNode } from './nodes/EndNode'
 import { TransformerNode } from './nodes/TransformerNode'
 
+import type { TransformerManager } from '../../libs/audiobus/transformers/transformer-manager'
+
 const initialNodes = [
-  { id: 'n1', position: { x: 0, y: 0 }, data: { label: 'Node 1' } },
-  { id: 'n2', position: { x: 0, y: 100 }, data: { label: 'Node 2' } },
+	{ id: 'n1', position: { x: 0, y: 200 }, data: { label: 'Start' } },
+	{ id: 'n2', position: { x: 500, y: 200 }, data: { label: 'End' } },
 ];
 const initialEdges = [{ id: 'n1-n2', source: 'n1', target: 'n2' }]
 
 const nodeTypes = {
-  start: StartNode,
-  end: EndNode,
-  transformer: TransformerNode
+	start: StartNode,
+	end: EndNode,
+	transformer: TransformerNode
+}
+
+const DEFAULT_GRAPH_OPTIONS = {
+	minZoom: 0.3,
+	maxZoom: 1.5
 }
 
 function FlowComponent() {
-  const [nodes, setNodes] = useState(initialNodes)
-  const [edges, setEdges] = useState(initialEdges)
-  const { fitView } = useReactFlow()
+	const [nodes, setNodes] = useState(initialNodes)
+	const [edges, setEdges] = useState(initialEdges)
+	const { fitView } = useReactFlow()
 
-  useEffect(() => {
-    const tM = (window as any).transformerManager as TransformerManager
-    tM.onChange(() => {
-      const structure = tM.getStructure()
-      setNodes(structure.nodes)
-      setEdges(structure.edges)
-    })
-    const structure = tM.getStructure()
-      setNodes(structure.nodes)
-      setEdges(structure.edges)
-  }, [setNodes, setEdges])
+	useEffect(() => {
+		const tM = (window as any).transformerManager as TransformerManager
+		tM.onChange(() => {
+			const structure = tM.getStructure()
+			setNodes(structure.nodes)
+			setEdges(structure.edges)
+		})
+		const structure = tM.getStructure()
+		setNodes(structure.nodes)
+		setEdges(structure.edges)
+	}, [setNodes, setEdges])
 
-  // Auto-fit view whenever nodes change
-  useEffect(() => {
-    if (nodes.length > 0) {
-      // Use setTimeout to ensure nodes are rendered before fitting
-      setTimeout(() => {
-        fitView({
-          padding: 0.2,
-          minZoom: 0.5,
-          maxZoom: 1.5,
-          duration: 200
-        });
-      }, 0);
-    }
-  }, [nodes, fitView])
+	// Auto-fit view whenever nodes change
+	useEffect(() => {
+		if (nodes.length > 0) {
+			// Use setTimeout to ensure nodes are rendered before fitting
+			setTimeout(() => {
+				fitView({
+					padding: 0.2,
+					minZoom: DEFAULT_GRAPH_OPTIONS.minZoom,
+					maxZoom: DEFAULT_GRAPH_OPTIONS.maxZoom,
+					duration: 100
+				})
+			}, 0)
+		}
+	}, [nodes, fitView])
 
-  const onNodesChange = useCallback(
-    (changes) => setNodes((nodesSnapshot) => applyNodeChanges(changes, nodesSnapshot)),
-    [],
-  );
-  const onEdgesChange = useCallback(
-    (changes) => setEdges((edgesSnapshot) => applyEdgeChanges(changes, edgesSnapshot)),
-    [],
-  );
-  const onConnect = useCallback(
-    (params) => setEdges((edgesSnapshot) => addEdge(params, edgesSnapshot)),
-    [],
-  );
+	const onNodesChange = useCallback(
+		(changes) => setNodes((nodesSnapshot) => applyNodeChanges(changes, nodesSnapshot)), []
+	)
 
-  return (
-    <>
-        <ConfigDrawer />
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          nodeTypes={nodeTypes}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          minZoom={0.3}
-          maxZoom={2}
-          defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
-        />
-    </>
-  )
+	const onEdgesChange = useCallback(
+		(changes) => setEdges((edgesSnapshot) => applyEdgeChanges(changes, edgesSnapshot)), []
+	)
+
+	const onConnect = useCallback(
+		(params) => setEdges((edgesSnapshot) => addEdge(params, edgesSnapshot)), []
+	)
+
+	return (
+		<>
+			<ConfigDrawer />
+			<ReactFlow
+				nodes={nodes}
+				edges={edges}
+				nodeTypes={nodeTypes}
+				minZoom={DEFAULT_GRAPH_OPTIONS.minZoom}
+				maxZoom={DEFAULT_GRAPH_OPTIONS.maxZoom}
+				defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
+				onNodesChange={onNodesChange}
+				onEdgesChange={onEdgesChange}
+				onConnect={onConnect}
+			/>
+		</>
+	)
 }
 
 export default function App() {
-  return (
-    <ReactFlowProvider>
-      <FlowComponent />
-    </ReactFlowProvider>
-  )
+	return (
+		<ReactFlowProvider>
+			<FlowComponent />
+		</ReactFlowProvider>
+	)
 }

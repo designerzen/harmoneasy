@@ -3,7 +3,7 @@ import React from "react"
 
 export function EndNode() {
     return <div className="node-end graph-node">
-        <h5>End</h5>
+        <h6>End</h6>
         <Handle type="target" position={Position.Left} />
     </div>
 }

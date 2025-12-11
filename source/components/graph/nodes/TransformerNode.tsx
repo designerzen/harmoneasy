@@ -29,14 +29,13 @@ export function TransformerNode(props) {
         window.transformerManager.removeTransformer(props.data.element)
     }
 
-    const movePrev = () => {
+    const moveBack = () => {
         window.transformerManager.moveOneStepBefore(props.data.element)
     }
 
-    const moveNext = () => {
+    const moveForwards = () => {
         window.transformerManager.moveOneStepAfter(props.data.element)
     }
-
 
 	console.info("TransformerNode", props )
 
@@ -50,8 +49,8 @@ export function TransformerNode(props) {
         ))}
 
         <menu className="buttons-back">
-            <button className="btn-previous" onClick={movePrev}>Move before</button>
-            <button className="btn-next" onClick={moveNext}>Move after</button>
+            <button className="btn-previous" onClick={moveBack}>Move before</button>
+            <button className="btn-next" onClick={moveForwards}>Move after</button>
         </menu>
 
         <Handle type="source" position={Position.Right} />
