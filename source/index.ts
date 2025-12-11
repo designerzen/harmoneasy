@@ -543,9 +543,7 @@ const initialiseApplication = async (onEveryTimingTick) => {
 
     //state.setDefaults(defaultOptions)
     state.loadFromLocation( DEFAULT_OPTIONS )
-
-    // updates the URL with the current state (true - encoded)
-    state.updateLocation()
+	 state.updateLocation()
     
     audioContext = new AudioContext() 
 
@@ -597,6 +595,7 @@ const initialiseApplication = async (onEveryTimingTick) => {
         const blob = await createMusicXMLFromAudioEventRecording( recorder, timer )
         saveMusicXMLBlobToLocalFileSystem(blob, recorder.name)
         console.info("Exporting Data to MusicXML", {recorder, blob })
+		 ui.showInfoDialog("MusicXML File created and saved", "musicxml.org" )
     })
     ui.whenAudioToolExportRequestedRun( async ()=>{
         const output = await createAudioToolProjectFromAudioEventRecording( recorder, timer )
