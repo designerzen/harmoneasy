@@ -2,8 +2,8 @@
  * Adds a bit of off grid wobble to your timinig
  */
 
-import type AudioCommand from "../audio-command.ts"
-import type Timer from "../timing/timer.ts"
+import type AudioCommand from "../../audio-command.ts"
+import type Timer from "../../timing/timer.ts"
 import type { TransformerInterface } from "./interface-transformer.ts"
 import { Transformer } from "./abstract-transformer.ts"
 import { TRANSFORMER_CATEGORY_TIMING } from "./transformer-categories.ts"

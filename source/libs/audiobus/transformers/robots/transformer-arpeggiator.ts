@@ -1,10 +1,10 @@
-import type { IAudioCommand } from "../audio-command-interface"
-import { Transformer } from "./abstract-transformer"
-import AudioCommand from "../audio-command"
-import * as Commands from "../../../commands"
-import type Timer from "../timing/timer"
-import type { TransformerInterface } from "./interface-transformer"
-import { TRANSFORMER_CATEGORY_TIMING } from "./transformer-categories"
+import type { IAudioCommand } from "../../audio-command-interface.ts"
+import { Transformer } from "./abstract-transformer.ts"
+import AudioCommand from "../../audio-command.ts"
+import * as Commands from "../../../../commands.ts"
+import type Timer from "../../timing/timer.ts"
+import type { TransformerInterface } from "./interface-transformer.ts"
+import { TRANSFORMER_CATEGORY_TIMING } from "./transformer-categories.ts"
 
 export const ID_ARPEGGIATOR = "Arpeggiator"
 

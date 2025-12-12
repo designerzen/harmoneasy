@@ -2,12 +2,12 @@
  * Take note Ons and detune the note to match the specified
  * microtonal scale.
  */
-import type AudioCommand from "../audio-command.ts"
-import type Timer from "../timing/timer.ts"
+import type AudioCommand from "../../audio-command.ts"
+import type Timer from "../../timing/timer.ts"
 
 import type { TransformerInterface } from "./interface-transformer.ts"
 import { Transformer } from "./abstract-transformer.ts"
-import { parseEdoScaleMicroTuningOctave } from "../../pitfalls/ts/index.ts"
+import { parseEdoScaleMicroTuningOctave } from "../../../pitfalls/ts/index.ts"
 import { TRANSFORMER_CATEGORY_TUNING } from "./transformer-categories.ts"
 
 export const ID_MICROTONALITY = "Micro-Tonality" 

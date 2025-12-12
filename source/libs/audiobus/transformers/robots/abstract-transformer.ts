@@ -1,6 +1,6 @@
-import type { IAudioCommand } from "../audio-command-interface"
-import type Timer from "../timing/timer"
-import type { FieldConfig, TransformerInterface } from "./interface-transformer"
+import type { IAudioCommand } from "../../audio-command-interface.ts"
+import type Timer from "../../timing/timer.ts"
+import type { FieldConfig, TransformerInterface } from "./interface-transformer.ts"
 
 export interface TransformerConfig {
     available: false
@@ -60,6 +60,10 @@ export abstract class Transformer<Config = TransformerConfig> implements Transfo
         // No state to reset for this transformer
         throw Error("Reset not implemented for Transformer " + this.name)
     }
+
+	exportConfig(): string {
+		return JSON.stringify(this.config)
+	}
 
     setConfig(key: string, value: unknown):void {
         this.config[key] = value

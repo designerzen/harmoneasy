@@ -8,11 +8,11 @@
  * Tracks active notes to ensure NOTE_OFF commands turn off the correct randomised notes.
  */
 
-import type { IAudioCommand } from "../audio-command-interface"
-import { Transformer } from "./abstract-transformer"
-import * as Commands from "../../../commands"
-import type { TransformerInterface } from "./interface-transformer"
-import { TRANSFORMER_CATEGORY_TUNING } from "./transformer-categories"
+import type { IAudioCommand } from "../../audio-command-interface.ts"
+import { Transformer } from "./abstract-transformer.ts"
+import * as Commands from "../../../../commands.ts"
+import type { TransformerInterface } from "./interface-transformer.ts"
+import { TRANSFORMER_CATEGORY_TUNING } from "./transformer-categories.ts"
 
 export const ID_RANDOMISER = "Randomiser"
 

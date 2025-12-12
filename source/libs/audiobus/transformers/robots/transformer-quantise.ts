@@ -1,11 +1,11 @@
 /**
  * Put into time domain
  */
-import type { IAudioCommand } from "../audio-command-interface";
-import type Timer from "../timing/timer";
-import { Transformer } from "./abstract-transformer"
-import type { TransformerInterface } from "./interface-transformer";
-import { TRANSFORMER_CATEGORY_TIMING } from "./transformer-categories";
+import type { IAudioCommand } from "../../audio-command-interface.ts";
+import type Timer from "../../timing/timer.ts";
+import { Transformer } from "./abstract-transformer.ts"
+import type { TransformerInterface } from "./interface-transformer.ts";
+import { TRANSFORMER_CATEGORY_TIMING } from "./transformer-categories.ts";
 
 export const ID_QUANTISE = "Quantiser"
 

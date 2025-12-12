@@ -1,13 +1,13 @@
 /**
  * Harmoniser transposes into a specific key and mode
  */
-import type { IAudioCommand } from "../audio-command-interface";
-import { Transformer, type TransformerConfig } from "./abstract-transformer"
-import NoteModel from "../note-model"
-import AudioCommand from "../audio-command"
-import { createChord, findRotationFromNote } from "../tuning/chords/chords.js"
-import { convertToIntervalArray } from "../tuning/chords/describe-chord"
-import * as MODES from "../tuning/chords/modal-chords.js"
+import type { IAudioCommand } from "../../audio-command-interface.ts";
+import { Transformer, type TransformerConfig } from "./abstract-transformer.ts"
+import NoteModel from "../../note-model.ts"
+import AudioCommand from "../../audio-command.ts"
+import { createChord, findRotationFromNote } from "../../tuning/chords/chords.js"
+import { convertToIntervalArray } from "../../tuning/chords/describe-chord.ts"
+import * as MODES from "../../tuning/chords/modal-chords.js"
 import {
     IONIAN_INTERVALS,
     DORIAN_INTERVALS,
@@ -16,12 +16,12 @@ import {
     MIXOLYDIAN_INTERVALS,
     AEOLIAN_INTERVALS,
     LOCRIAN_INTERVALS
-} from "../tuning/intervals.js"
-import { findClosestNoteInScale, generateNotesInScale, TUNING_MODE_IONIAN } from "../tuning/scales.js"
-import { getIntervalFormulaForMode } from "../tuning/chords/modal-chords.js"
-import type Timer from "../timing/timer.js"
-import type { TransformerInterface } from "./interface-transformer.js"
-import { TRANSFORMER_CATEGORY_TUNING } from "./transformer-categories.js";
+} from "../../tuning/intervals.js"
+import { findClosestNoteInScale, generateNotesInScale, TUNING_MODE_IONIAN } from "../../tuning/scales.ts"
+import { getIntervalFormulaForMode } from "../../tuning/chords/modal-chords.js"
+import type Timer from "../../timing/timer.ts"
+import type { TransformerInterface } from "./interface-transformer.ts"
+import { TRANSFORMER_CATEGORY_TUNING } from "./transformer-categories.ts";
 
 export const ID_HARMONISER = "Harmoniser"
 
