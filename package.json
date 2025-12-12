@@ -22,15 +22,17 @@
     "vitest": "^4.0.15"
   },
   "dependencies": {
-    "@audiotool/nexus": "file:audiotool-nexus-0.0.5.tgz",
+    "@audiotool/nexus": "^0.0.8",
     "@msgpack/msgpack": "^3.1.2",
     "@tonejs/midi": "^2.0.28",
     "@xyflow/react": "^12.10.0",
     "fflate": "^0.8.2",
     "jzz": "^1.9.6",
+    "lz-string": "^1.5.0",
+    "npm": "^11.7.0",
     "partysocket": "1.1.6",
-    "react": "^19.2.1",
-    "react-dom": "^19.2.1",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
     "standardized-audio-context": "^25.3.77",
     "uWebSockets.js": "github:uNetworking/uWebSockets.js",
     "webmidi": "^3.1.14"
