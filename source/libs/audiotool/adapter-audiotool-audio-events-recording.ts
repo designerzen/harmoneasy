@@ -9,10 +9,12 @@ import type AudioEvent from "../audiobus/audio-event.js"
 import type Timer from "../audiobus/timing/timer.js"
 
 import type { AudiotoolClient, SyncedDocument, Ticks } from "@audiotool/nexus"
+import type { IAudioCommand } from "../audiobus/audio-command-interface.ts"
 
 // lazily imported AudioToolSDK
 let createAudiotoolClient:Function
 let secondsToTicks:Function
+let getLoginStatus:Function
 
 /**
  * imports the SDK for AuioTool and caches it in memory
@@ -26,6 +28,7 @@ export const lazyLoadAutioToolSDK = async () => {
     const nexus = await import("@audiotool/nexus")
     createAudiotoolClient = nexus.createAudiotoolClient
     secondsToTicks = nexus.secondsToTicks
+    getLoginStatus = nexus.getLoginStatus
     return true
 }
 
@@ -50,13 +53,29 @@ export const createAudioToolProjectFromAudioEventRecording = async (recording:Re
     try {
         // Load the GIANT SDK
         await lazyLoadAutioToolSDK()
-    
+
         // Take the timing
         const BPM = timer.BPM
-        const data:AudioEvent[] = recording.exportData()
-        const client = await createAudiotoolClient({ 
-            token: AUDIOTOOL_STORAGE_KEYS.PAT_TOKEN // authManager.mustGetToken,
-        })
+        const data:IAudioCommand[] = recording.exportData()
+        		
+		// get current login status
+		const status = await getLoginStatus({
+			clientId:AUDIOTOOL_STORAGE_KEYS.CLIENT_ID,
+			redirectUrl: "http://127.0.0.1:5173/",
+			scope: "project:write",
+		})
+
+		//  Check if user if logged in, create login/logout buttons
+		if (status.loggedIn) {
+
+		}else{
+			
+		}
+
+		// Now connect to the Audio Tool SDK
+		// const client = await createAudiotoolClient({ 
+        //     token: AUDIOTOOL_STORAGE_KEYS.PAT_TOKEN // authManager.mustGetToken,
+        // })
 
         // Create synced document
         const nexus = await client.createSyncedDocument({
@@ -130,3 +149,20 @@ export const createAudioToolProjectFromAudioEventRecording = async (recording:Re
         console.error("Error creating Audiotool project", error)
     }
 }
+
+/*
+
+
+
+//  Check if user if logged in, create login/logout buttons
+if (status.loggedIn) {
+  console.debug("Logged in as", await status.getUserName())
+  createButton("Logout", () => status.logout())
+  const client = createAudiotoolClient({authorization: status})
+  ...
+} else {
+  console.debug("Logged out.")
+  createButton("Login", () => status.login())
+}
+
+*/
