@@ -22,11 +22,12 @@ export const TUNING_MODE_NAMES = [
 ]
 
 /**
- * 
+ * This should take the noteNumber provided and find the
+ * closest note that exists in the provided scale
  * @param noteNumber 
  * @param scaleNotes 
  * @param range 
- * @returns 
+ * @returns {Number}
  */
 export const findClosestNoteInScale = (noteNumber: number, scaleNotes: Set<number>, range:number=12 ): number => {
     
@@ -35,7 +36,7 @@ export const findClosestNoteInScale = (noteNumber: number, scaleNotes: Set<numbe
     {
         return noteNumber
     }
-
+	
     // luckily this note is part of this scale
     if (scaleNotes.has(noteNumber)) 
     {
