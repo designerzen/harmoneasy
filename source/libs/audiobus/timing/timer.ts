@@ -529,6 +529,23 @@ export default class Timer {
 		return time / this.ticksPerSecond
 	}
 
+	createTick( intervals, timePased ){
+		const timeBetweenPeriod = this.timeBetween * 0.001
+		// Expected time stamp
+		const expected = intervals * timeBetweenPeriod
+		// How long has elapsed according to our worker
+		const timePassed = timePased
+		// how much spill over the expected timestamp is there
+		const lag = timePassed % timeBetweenPeriod
+		// should be 0 if the timer is working...
+		const drift = timePassed - this.timeElapsed
+		// deterministic intervals not neccessary
+		const level = Math.floor(timePassed / this.timeBetween)
+		// elapsed should === time
+		if (this.isRunning){
+			this.onTick(timePassed,expected, drift, level, intervals, lag)
+		}
+	}
 
 	// WORKLET ------------------------------------------------------------------------------------
 
@@ -669,24 +686,25 @@ export default class Timer {
 					break
 
 				case EVENT_TICK:
-					const timeBetweenPeriod = this.timeBetween * 0.001
-					// How many ticks have occured yet
-					const intervals = data.intervals
-					// Expected time stamp
-					const expected = intervals * timeBetweenPeriod
+					// const timeBetweenPeriod = this.timeBetween * 0.001
+					// // How many ticks have occured yet
+					// const intervals = data.intervals
+					// // Expected time stamp
+					// const expected = intervals * timeBetweenPeriod
 					
-					// How long has elapsed according to our worker
-					const timePassed = data.time
-					// how much spill over the expected timestamp is there
-					const lag = timePassed % timeBetweenPeriod
-					// should be 0 if the timer is working...
-					const drift = timePassed - this.timeElapsed
-					// deterministic intervals not neccessary
-					const level = Math.floor(timePassed / this.timeBetween)
-					// elapsed should === time
-				
-					this.onTick(timePassed,expected, drift, level, intervals, lag)
+					// // How long has elapsed according to our worker
+					// const timePassed = data.time
+					// // how much spill over the expected timestamp is there
+					// const lag = timePassed % timeBetweenPeriod
+					// // should be 0 if the timer is working...
+					// const drift = timePassed - this.timeElapsed
+					// // deterministic intervals not neccessary
+					// const level = Math.floor(timePassed / this.timeBetween)
+					// // elapsed should === time
+					// this.onTick(timePassed,expected, drift, level, intervals, lag)
+
 					// timingWorker.postMessage({command:CMD_UPDATE, time:currentTime, interval})
+					this.createTick( data.intervals, data.time )
 					break
 
 				default:
@@ -854,7 +872,7 @@ export default class Timer {
 	 * Use an external device to send clock signals to and through this timer
 	 * such as the MIDI clock signal
 	 */
-	externalTrigger( ){
+	externalTrigger( advance=true ){
 		// How long has elapsed according to our clock
 		const timestamp = this.now
 		this.lastRecordedExternalTime = timestamp
@@ -879,7 +897,19 @@ export default class Timer {
 		{
 			this.onTick(elapsedSinceLastClock, expected, drift, level, this.divisionsElapsed, lag)
 		}
-		this.divisionsElapsed++
+		if (advance)
+		{
+			this.divisionsElapsed++
+		}
+	}
+
+
+	/**
+	 * Repeat previous clock tick but do not advance
+	 */
+	retrigger(){
+		this.externalTrigger(false)
+		// this.createTick( data.intervals, data.time )			
 	}
 
 	// EVENTS =============================================================================
