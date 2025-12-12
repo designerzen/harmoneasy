@@ -4,7 +4,7 @@ import { SongVisualiserUI } from './components/song-visualiser-ui.ts'
 import SVGKeyboard from './components/keyboard-svg.js'
 import NoteVisualiser from './components/note-visualiser.js'
 import type { IAudioCommand } from "./libs/audiobus/audio-command-interface.ts"
-import type NoteModel from "./libs/audiobus/note-model.ts"
+import NoteModel from "./libs/audiobus/note-model.ts"
 
 const DOM_ID_MIDI_INPUTS = "midi-input-commands"
 const DOM_ID_MIDI_OUTPUTS = "midi-output-commands"
