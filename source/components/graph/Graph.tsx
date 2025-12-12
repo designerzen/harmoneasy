@@ -25,21 +25,68 @@ const DEFAULT_GRAPH_OPTIONS = {
 	maxZoom: 1.5
 }
 
+// Calculate positions with better spacing and centering
+const HORIZONTAL_SPACING = 342
+const NODE_HEIGHT = 323
+
+// GUI stuff
+function getStructure( transformers: Array<Transformer> ) {
+
+	const nodes = transformers.map((t, i) => ({
+		id: 'node-' + i,
+		type: 'transformer',
+		data: { label: t.name, fields: t.fields, element: t },
+		position: { x: HORIZONTAL_SPACING * i, y: 0 }
+	}))
+
+	const alwaysNodes = [{
+		id: 'start',
+		type: 'start',
+		data: { label: 'START' },
+		position: { x: -140, y: NODE_HEIGHT / 2  }
+	}, {
+		id: 'end',
+		type: 'end',
+		data: { label: 'END' },
+		position: { x: HORIZONTAL_SPACING * (transformers.length) , y: NODE_HEIGHT / 2 }
+	}]
+
+	const edges = transformers.map((_, i) => ({
+		id: 'edge-' + i,
+		source: 'node-' + i,
+		target: 'node-' + (i + 1)
+	}))
+	edges.pop()
+
+	const alwaysEdges = transformers.length <= 0 ? [{ id: 'connect', source: 'start', target: 'end'}] : [{
+		id: 'edge-start',
+		source: 'start',
+		target: 'node-0'
+	}, {
+		id: 'edge-end',
+		source: 'node-' + (transformers.length - 1),
+		target: 'end'
+	}]
+
+	return { nodes: [...nodes, ...alwaysNodes], edges: [...edges, ...alwaysEdges] }
+}
+
 function FlowComponent() {
-	const [nodes, setNodes] = useState(initialNodes)
-	const [edges, setEdges] = useState(initialEdges)
+	const [ nodes, setNodes] = useState(initialNodes)
+	const [ edges, setEdges] = useState(initialEdges)
 	const { fitView } = useReactFlow()
 
 	useEffect(() => {
-		const tM = (window as any).transformerManager as TransformerManager
-		tM.onChange(() => {
-			const structure = tM.getStructure()
+		const transformerManager = (window as any).transformerManager as TransformerManager
+		const onChange = () => {
+			const structure = getStructure( transformerManager.activeTransformers )
 			setNodes(structure.nodes)
 			setEdges(structure.edges)
-		})
-		const structure = tM.getStructure()
-		setNodes(structure.nodes)
-		setEdges(structure.edges)
+		}
+		
+		transformerManager.onChange(onChange)
+		onChange()
+
 	}, [setNodes, setEdges])
 
 	// Auto-fit view whenever nodes change
