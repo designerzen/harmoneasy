@@ -125,20 +125,183 @@
     </div>
   </div>
 
-  <dialog id="info-dialog" hidden>
-    <h5>Information</h5>
-    <pre id="info-message" class="selectable"></pre>
+  <dialog id="info-dialog" hidden aria-labelledby="info-dialog-title" aria-describedby="info-message">
+    <h5 id="info-dialog-title">Information</h5>
+    <pre id="info-message" class="selectable" role="status" aria-live="polite"></pre>
     <form action="/" onsubmit="return false">
-      <button class="close-button" type="dialog">Close</button>
+      <button 
+        class="close-button" 
+        type="button" 
+        aria-label="Close information dialog"
+        onclick="document.getElementById('info-dialog').close()"
+      >
+        Close
+      </button>
     </form>
   </dialog>
 
-  <dialog id="error-dialog" hidden>
-    <h5>Error</h5>
-    <p id="error-message"></p>
-    <p id="error-solution"></p>
+  <dialog id="error-dialog" hidden aria-labelledby="error-dialog-title" aria-describedby="error-message">
+    <h5 id="error-dialog-title">Error</h5>
+    <div role="alert">
+      <p id="error-message"></p>
+      <p id="error-solution"></p>
+    </div>
     <form action="/" onsubmit="return false">
-      <button class="close-button" type="dialog">Close</button>
+      <button 
+        class="close-button" 
+        type="dialog" 
+      >
+        Close
+      </button>
+    </form>
+  </dialog>
+
+  <dialog id="auth-dialog" hidden aria-labelledby="auth-dialog-title">
+    <h5 id="auth-dialog-title">Authentication</h5>
+    
+    <form id="auth-form" action="/" onsubmit="return false">
+      
+      <button class="close-button" type="dialog">
+        Close
+      </button>
+
+      <!-- Username Field -->
+      <fieldset>
+        <legend>Login Credentials</legend>
+        
+        <label for="auth-username">
+          Username
+          <span aria-label="required">*</span>
+        </label>
+        <input 
+          id="auth-username" 
+          type="text" 
+          name="username" 
+          placeholder="Enter your username"
+          required
+          aria-required="true"
+          aria-describedby="username-error"
+        >
+        <span id="username-error" role="alert"></span>
+        
+        <!-- Password Field -->
+        <label for="auth-password">
+          Password
+          <span aria-label="required">*</span>
+        </label>
+        <input 
+          id="auth-password" 
+          type="password" 
+          name="password" 
+          placeholder="Enter your password"
+          required
+          aria-required="true"
+          aria-describedby="password-error"
+        >
+        <span id="password-error" role="alert"></span>
+        
+      </fieldset>
+
+      <!-- Additional Options -->
+      <fieldset>
+        <legend>Options</legend>
+        
+        <label for="auth-remember">
+          <input 
+            id="auth-remember" 
+            type="checkbox" 
+            name="remember" 
+            aria-describedby="remember-help"
+          >
+          Remember me
+        </label>
+        <span id="remember-help" class="sr-only">Keep me logged in on this device</span>
+        
+        <label for="auth-2fa">
+          <input 
+            id="auth-2fa" 
+            type="checkbox" 
+            name="enable2fa" 
+            aria-describedby="2fa-help"
+          >
+          Enable two-factor authentication
+        </label>
+        <span id="2fa-help" class="sr-only">Use an authenticator app for enhanced security</span>
+        
+      </fieldset>
+
+      <!-- 2FA Code Field (hidden by default) -->
+      <fieldset id="auth-2fa-fieldset" hidden>
+        <legend>Two-Factor Authentication</legend>
+        
+        <label for="auth-2fa-code">
+          2FA Code
+          <span aria-label="required">*</span>
+        </label>
+        <input 
+          id="auth-2fa-code" 
+          type="text" 
+          name="twoFactorCode" 
+          placeholder="Enter 6-digit code"
+          maxlength="6"
+          pattern="[0-9]{6}"
+          aria-required="false"
+          aria-describedby="2fa-code-help 2fa-code-error"
+        >
+        <span id="2fa-code-help" class="sr-only">Enter the 6-digit code from your authenticator app</span>
+        <span id="2fa-code-error" role="alert"></span>
+        
+      </fieldset>
+
+      <!-- Server/Endpoint Field -->
+      <fieldset>
+        <legend>Server Configuration</legend>
+        
+        <label for="auth-server">
+          Server URL
+          <span aria-label="optional">(optional)</span>
+        </label>
+        <input 
+          id="auth-server" 
+          type="url" 
+          name="serverUrl" 
+          placeholder="https://auth.example.com"
+          aria-describedby="server-help server-error"
+        >
+        <span id="server-help" class="sr-only">Leave blank to use the default server</span>
+        <span id="server-error" role="alert"></span>
+        
+      </fieldset>
+
+      <!-- Form Actions -->
+      <div class="form-actions" role="group" aria-label="Form controls">
+        <button 
+          id="auth-submit" 
+          type="submit" 
+          class="primary"
+          aria-busy="false"
+        >
+          Sign In
+        </button>
+        <button 
+          type="reset" 
+          class="secondary"
+        >
+          Clear
+        </button>
+        <button 
+          id="auth-close" 
+          type="button" 
+          class="close-button"
+          aria-label="Close authentication dialog"
+        >
+          Cancel
+        </button>
+      </div>
+
+      <!-- Form Status Message -->
+      <span id="auth-status" role="status" aria-live="polite" aria-atomic="true"></span>
+
     </form>
   </dialog>
 
