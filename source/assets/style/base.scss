@@ -132,6 +132,15 @@ input{
 }
 
 input[type="search"]{
+	appearance: none;
+    background: transparent;
+    border: none;
+    padding-left: var(--pad);
+    outline: none;
+	color:white;
+	text-decoration: underline;
+	text-decoration-color: currentColor;
+	text-underline-offset: 2px;
 }
 
 select{

@@ -208,6 +208,9 @@ header {
 
 main {
   display: grid;
+  grid-template-areas:
+  	"menu"
+	"graph";
   min-height: 100vh;
   position: relative;
   scroll-snap-align: start;
@@ -218,11 +221,10 @@ main {
   width: 100%;
   height: 100%;
   max-width: 100%;
-  grid-area: 1/1/-1/-1;
+  grid-area:graph;
   background: #fafafa;
   display: flex;
   overflow: auto;
-  
   @media (prefers-color-scheme: dark) {
     background: #1e1e1e;
     color: #e0e0e0;
@@ -236,22 +238,14 @@ main {
   justify-content: center;
   align-items: center;
   grid-area: 1/1/-1/-1;
+  z-index: -1;
+  pointer-events: none;
+  object-fit: cover;
 
   @media (prefers-color-scheme: dark) {
     background: #2a2a2a;
     border-top-color: #444;
   }
-}
-
-#note-visoaliser {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 9999;
-  pointer-events: none;
-  object-fit: cover;
 }
 
 /* Hidden Options Form */
@@ -318,6 +312,7 @@ main {
   color: #fff;
   padding: 12px 24px;
   display: flex;
+  grid-area: menu;
   justify-content: flex-end;
   align-items: center;
   gap: 12px;

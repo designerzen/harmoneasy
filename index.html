@@ -50,20 +50,27 @@
 
   </header>
 
+  <main>
+	<menu id="action-bar">
+		<button class="primary" type="button" id="btn-midi-export">Export as MIDI file</button>
+		<button class="primary" type="button" id="btn-midi-markdown-export">Export as Markdown</button>
+		<button class="primary" type="button" id="btn-musicxml-export">Export to MusicXML</button>
+		<button type="button" id="btn-audiotool-export">Open in AudioTool</button>
+		<button type="button" id="btn-opendaw-export">Open in OpenDAW</button>
+	</menu>
+
+    <div id="graph"></div>
+    <canvas id="note-visualiser" width="1920" height="1080"></canvas> 
+    <!-- <song-explorer></song-explorer> -->
+    <!-- <canvas id="song-explorer" width="1920" height="1080"></canvas> -->
+  </main>
+
+  <!-- Sidebars for MIDI Events -->
   <div id="timer-bar" aria-hide>
     <strong>TIMER</strong>
     <time id="clock">...</time>
   </div>
 
-  <menu id="action-bar">
-    <button class="primary" type="button" id="btn-midi-export">Export as MIDI file</button>
-    <button class="primary" type="button" id="btn-midi-markdown-export">Export as Markdown</button>
-    <button class="primary" type="button" id="btn-musicxml-export">Export to MusicXML</button>
-    <button type="button" id="btn-audiotool-export">Open in AudioTool</button>
-    <button type="button" id="btn-opendaw-export">Open in OpenDAW</button>
-  </menu>
-
-  <!-- Sidebar for MIDI Events -->
   <aside id="sidebar">
 
     <header id="sidebar-header">
@@ -110,13 +117,7 @@
 
   </aside>
 
-  <main>
-    <div id="graph"></div>
-    <canvas id="note-visualiser" width="1920" height="1080"></canvas> 
-    <!-- <song-explorer></song-explorer> -->
-    <!-- <canvas id="song-explorer" width="1920" height="1080"></canvas> -->
-  </main>
-
+  <!-- Overlays -->
   <div id="export-overlay" class="export-overlay" hidden>
     <div class="export-overlay-content">
       <div class="spinner"></div>
