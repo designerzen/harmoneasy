@@ -45,7 +45,7 @@ export function TransformerNode(props) {
         <button type="button" className="btn-remove" onClick={removeNode}>Remove</button>
       
         {props.data.fields.map(f => (
-            <ConfigField key={f.name} config={f} element={props.data.element} />
+            <ConfigField key={f.uuid} config={f} element={props.data.element} />
         ))}
 
         <menu className="buttons-back">
