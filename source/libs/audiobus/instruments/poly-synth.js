@@ -7,7 +7,7 @@ import SynthOscillator, { OSCILLATORS } from "./synth-oscillator"
 export default class PolySynth {
 
     options = {
-        maxPolyphony: 10,
+        maxPolyphony: 24,
         class:SynthOscillator
     }
 
