@@ -3,12 +3,7 @@
 import { RecorderAudioEvent } from "../audiobus/recorder-audio-event.js"
 import { AUDIOTOOL_STORAGE_KEYS } from './audio-tool-settings.ts'
 import { NOTE_ON } from "../../commands.js"
-
-import type AudioCommand from "../audiobus/audio-command.js"
-import type AudioEvent from "../audiobus/audio-event.js"
 import type Timer from "../audiobus/timing/timer.js"
-
-import type { AudiotoolClient, SyncedDocument, Ticks } from "@audiotool/nexus"
 import type { IAudioCommand } from "../audiobus/audio-command-interface.ts"
 
 // lazily imported AudioToolSDK
@@ -32,15 +27,37 @@ export const lazyLoadAutioToolSDK = async () => {
     return true
 }
 
+
+export const checkAudioToolUserStatus = async () => {
+	return await getLoginStatus({
+		clientId:AUDIOTOOL_STORAGE_KEYS.CLIENT_ID,
+		redirectUrl: "http://127.0.0.1:5173/",
+		scope: "project:write"
+	})
+}
+
 /**
  * Log a User in and connect them to the AudioTooll SKD
  */
 export const connectAndAuthoriseAudioTool = async () => {
-    // Load the GIANT SDK
+    // Load the SDK
     await lazyLoadAutioToolSDK()
-
+	// see if the user is already logged in
+	const userStatus = await checkAudioToolUserStatus()
+	// get current login status
+	// Check if user if logged in, create login/logout buttons
+	if (userStatus.loggedIn) 
+	{
+		console.debug("Logged in as", userStatus.userName)
+		// userStatus.logOut()
+		return createAudiotoolClient({authorization: userStatus.authorization})
+	}else{
+		// wait here until user has logged in...
+		userStatus.login()
+	}
     return false
 }
+
 
 /**
  *
@@ -51,27 +68,12 @@ export const createAudioToolProjectFromAudioEventRecording = async (recording:Re
     const HARDCODED_PROJECT_URL = AUDIOTOOL_STORAGE_KEYS.PROJECT_URL
 
     try {
-        // Load the GIANT SDK
-        await lazyLoadAutioToolSDK()
+        const client = await connectAndAuthoriseAudioTool()
 
         // Take the timing
         const BPM = timer.BPM
         const data:IAudioCommand[] = recording.exportData()
         		
-		// get current login status
-		const status = await getLoginStatus({
-			clientId:AUDIOTOOL_STORAGE_KEYS.CLIENT_ID,
-			redirectUrl: "http://127.0.0.1:5173/",
-			scope: "project:write",
-		})
-
-		//  Check if user if logged in, create login/logout buttons
-		if (status.loggedIn) {
-
-		}else{
-			
-		}
-
 		// Now connect to the Audio Tool SDK
 		// const client = await createAudiotoolClient({ 
         //     token: AUDIOTOOL_STORAGE_KEYS.PAT_TOKEN // authManager.mustGetToken,
@@ -115,9 +117,9 @@ export const createAudioToolProjectFromAudioEventRecording = async (recording:Re
                 track: track.location,
                 region: {
                     positionTicks: 0,
-                    durationTicks: durationTest,
+                    durationTicks: duration,
                     displayName: "harmoneasy",
-                    loopDurationTicks: durationTest
+                    loopDurationTicks: duration
                 }
             })
 
@@ -130,7 +132,7 @@ export const createAudioToolProjectFromAudioEventRecording = async (recording:Re
 
                         t.create("note", {
                             collection: collection.location,
-                            pitch: command.noteNumber,
+                            pitch: command.number,
                             durationTicks,
                             positionTicks
                         })
@@ -149,20 +151,3 @@ export const createAudioToolProjectFromAudioEventRecording = async (recording:Re
         console.error("Error creating Audiotool project", error)
     }
 }
-
-/*
-
-
-
-//  Check if user if logged in, create login/logout buttons
-if (status.loggedIn) {
-  console.debug("Logged in as", await status.getUserName())
-  createButton("Logout", () => status.logout())
-  const client = createAudiotoolClient({authorization: status})
-  ...
-} else {
-  console.debug("Logged out.")
-  createButton("Login", () => status.login())
-}
-
-*/
