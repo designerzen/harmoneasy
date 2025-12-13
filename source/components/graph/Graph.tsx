@@ -120,6 +120,12 @@ function FlowComponent() {
 		<>
 			<ConfigDrawer />
 			<ReactFlow
+				panOnScroll={true}
+				panOnDrag={false}
+				selectionOnDrag={true}
+				nodesFocusable={true}
+				edgesFocusable={true}
+				disableKeyboardA11y={false}
 				nodes={nodes}
 				edges={edges}
 				nodeTypes={nodeTypes}
