@@ -55,14 +55,6 @@ export class TransformerNoteDelay extends Transformer<Config> implements Transfo
                 ]
             },
             {
-                name: 'enabled',
-                type: 'select',
-                values: [
-                    { name: 'On', value: 1 },
-                    { name: 'Off', value: 0 }
-                ]
-            },
-            {
                 name: 'useTimeDivision',
                 type: 'select',
                 values: [

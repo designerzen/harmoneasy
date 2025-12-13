@@ -14,7 +14,7 @@ export class TransformerConstrictor extends Transformer<{}> implements Transform
 	
 
 	get name(): string {
-		return 'Constrictor Transformer'
+		return 'Constrictor'
 	}
 	
 	get description():string{

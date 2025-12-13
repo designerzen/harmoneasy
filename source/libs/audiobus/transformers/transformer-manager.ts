@@ -182,13 +182,14 @@ export class TransformerManager extends EventTarget implements TransformerInterf
 		return JSON.stringify(this.#transformers.map(t => t.exportConfig()))
 	}
 
+	// TODO:
 	importData( encoded: string ): void {
 		// const encoded = new URLSearchParams(location.search).get('state')
 		const compressed = atob(encoded)
 		const json = decompress(compressed)
 		const data = JSON.parse(json)
-		const transformers = data.map(t => this.#transformersMap.get(t.type))
-		this.setTransformers(transformers)
+		// const transformers = data.map(t => this.#transformersMap.get(t.type))
+		// this.setTransformers(transformers)
 	}
 
 	exportData(): string {

@@ -41,10 +41,6 @@ export class TransformerChanneler extends Transformer<{}> implements Transformer
         ]
     }
 
-    constructor(config: {}) {
-        super(config)
-    }
-
     transform(command: AudioCommand[], timer:Timer): AudioCommand[] {
         return command.map((cmd) => {
             if (this.config.channel === "ALL") {

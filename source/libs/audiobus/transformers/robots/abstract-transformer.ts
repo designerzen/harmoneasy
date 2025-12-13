@@ -49,7 +49,7 @@ export abstract class Transformer<Config = TransformerConfig> implements Transfo
         return this.#id
     }
 
-    constructor(config: Config) {
+    constructor(config: Config = DEFAULT_TRANSFORMER_OPTIONS) {
         this.config = {...DEFAULT_TRANSFORMER_OPTIONS, ...config}
         this.setConfig("available", true)
     }
@@ -62,7 +62,7 @@ export abstract class Transformer<Config = TransformerConfig> implements Transfo
     }
 
 	exportConfig(): string {
-		return JSON.stringify(this.config)
+		return JSON.stringify({...this.config, type:this.type })
 	}
 
     setConfig(key: string, value: unknown):void {

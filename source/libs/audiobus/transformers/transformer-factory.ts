@@ -8,49 +8,43 @@ import { TransformerRandomiser, ID_RANDOMISER } from "./robots/transformer-rando
 import { TransformerNoteDelay, ID_NOTE_DELAY } from "./robots/transformer-note-delay.ts"
 import { TransformerChordifier, ID_CHORDIFIER } from "./robots/transformer-chordifier.ts"
 import { ID_TRANSPOSER, TransformerTransposer } from "./robots/transformer-transposer.ts"
-import { ID_MICROTONALITY } from "./robots/transformer-microtonality.ts"
+import { ID_MICROTONALITY, TransformerMicroTonality } from "./robots/transformer-microtonality.ts"
 import { ID_CHANNELER, TransformerChanneler } from "./robots/transformer-channeler.ts"
+import { ID_CONSTRICTOR, TransformerConstrictor } from "./robots/transformer-constrictor.ts"
+import { ID_TIMING_HUMANISER, TransformerTimingHumaniser } from "./robots/transformer-timing-humaniser.ts"
 
-export const tranformerFactory = (type: string) => {
+export const tranformerFactory = (type: string, config: any={} ) => {
     switch (type) {
-        case ID_QUANTISE: return new TransformerQuantise()
-        case ID_CHANNELER: return new TransformerChanneler({})
-        case ID_CHORDIFIER: return new TransformerChordifier()
-        case ID_HARMONISER: return new TransformerHarmoniser()
-        case ID_ARPEGGIATOR: return new TransformerArpeggiator()
-        case ID_NOTE_SHORTENER: return new TransformerNoteShortener()
-        case ID_NOTE_REPEATER: return new TransformerNoteRepeater()
-        case ID_NOTE_DELAY: return new TransformerNoteDelay()
-        case ID_RANDOMISER: return new TransformerRandomiser()
-        case ID_TRANSPOSER: return new TransformerTransposer()
-        default: return new IdentityTransformer({})
+        case ID_ARPEGGIATOR: return new TransformerArpeggiator(config)
+		case ID_CHANNELER: return new TransformerChanneler(config)
+        case ID_CHORDIFIER: return new TransformerChordifier(config)
+        case ID_CONSTRICTOR: return new TransformerConstrictor(config)
+        case ID_HARMONISER: return new TransformerHarmoniser(config)
+        case ID_MICROTONALITY: return new TransformerMicroTonality(config)
+        case ID_NOTE_DELAY: return new TransformerNoteDelay(config)
+		case ID_NOTE_REPEATER: return new TransformerNoteRepeater(config)
+		case ID_NOTE_SHORTENER: return new TransformerNoteShortener(config)
+        case ID_QUANTISE: return new TransformerQuantise(config)
+		case ID_RANDOMISER: return new TransformerRandomiser(config)
+		case ID_TIMING_HUMANISER: return new TransformerTimingHumaniser(config)
+        case ID_TRANSPOSER: return new TransformerTransposer(config)
+        default: return new IdentityTransformer(config)
     }
 }
 
 export const TRANSFORMER_TYPE = {
-    ID_QUANTISE,
+    ID_ARPEGGIATOR,
     ID_CHANNELER,
     ID_CHORDIFIER,
+	ID_CONSTRICTOR,
     ID_HARMONISER,
-    ID_ARPEGGIATOR,
     ID_MICROTONALITY,
     ID_NOTE_SHORTENER,
     ID_NOTE_REPEATER,
     ID_NOTE_DELAY,
+	ID_QUANTISE,
     ID_RANDOMISER,
     ID_TRANSPOSER
 }
 
-export const TRANSFORMERS = [
-    ID_QUANTISE,
-    ID_CHANNELER,
-    ID_CHORDIFIER,
-    ID_HARMONISER,
-    ID_ARPEGGIATOR,
-    ID_MICROTONALITY,
-    ID_NOTE_SHORTENER,
-    ID_NOTE_REPEATER,
-    ID_NOTE_DELAY,
-    ID_RANDOMISER,
-    ID_TRANSPOSER
-]
+export const TRANSFORMERS = Object.values(TRANSFORMER_TYPE)
