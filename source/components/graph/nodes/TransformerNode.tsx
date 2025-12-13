@@ -48,10 +48,12 @@ export function TransformerNode(props) {
             <ConfigField key={f.uuid} config={f} element={props.data.element} />
         ))}
 
-        <menu className="buttons-back">
-            <button className="btn-previous" onClick={moveBack}>Move before</button>
-            <button className="btn-next" onClick={moveForwards}>Move after</button>
-        </menu>
+		{ window.transformerManager.quantity > 1 ? 
+			(<menu className="buttons-back">
+					<button className="btn-previous" onClick={moveBack}>Move before</button>
+					<button className="btn-next" onClick={moveForwards}>Move after</button>
+			</menu>) : null 
+		}
 
         <Handle type="source" position={Position.Right} />
         <Handle type="target" position={Position.Left} />

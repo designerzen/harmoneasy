@@ -59,6 +59,10 @@ export class TransformerManager extends EventTarget implements TransformerInterf
 	get activeTransformers(){
 		return this.#transformers
 	}
+
+	get quantity(){
+		return this.#transformers.length
+	}
   
     constructor(initialTransformers?: Array<Transformer>=DEFAULT_TRANSFORMERS) {
         super()
