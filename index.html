@@ -2,317 +2,266 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Harmoneasy</title>
-  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="shortcut icon" href="/favicon.ico" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-  <meta name="apple-mobile-web-app-title" content="Harmoneasy" />
-  <link rel="manifest" href="/site.webmanifest" />
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Harmoneasy</title>
+	<link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+	<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+	<link rel="shortcut icon" href="/favicon.ico" />
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+	<meta name="apple-mobile-web-app-title" content="Harmoneasy" />
+	<link rel="manifest" href="/site.webmanifest" />
 </head>
 
 <body>
 
-  <header>
-    
-    <a class="backlink" href="/">
-      <img class="logo" src="/source/assets/logos/harmoneasy.svg" alt=""> 
-      <h1>Harmoneasy</h1>
-      <h2>Putting the Unity in Community</h2>
-      <p aria-summary class="sr-only">Play with friends. Harmoneasy is a web-based MIDI sequencer that allows you to play with friends in real-time and your music will be transformed in many ways to improve it, from synchronising the timing to transposing into key.</p>
-    </a>
+	<header>
 
-    <menu class="header-controls">
+		<a class="backlink" href="/">
+			<img class="logo" src="/source/assets/logos/harmoneasy.svg" alt="">
+			<h1>Harmoneasy</h1>
+			<h2>Putting the Unity in Community</h2>
+			<p aria-summary class="sr-only">Play with friends. Harmoneasy is a web-based MIDI sequencer that allows you
+				to play with friends in real-time and your music will be transformed in many ways to improve it, from
+				synchronising the timing to transposing into key.
+			</p>
+		</a>
 
-      <label id="tempo-control" class="controls">
-        Tempo:
-        <input id="tempo" type="range" min=10 max=303>
-        <output id="bpm"></output> BPM
-      </label>
+		<menu class="header-controls">
 
-      <label id="volume-control" class="controls">
-        Volume:
-        <input id="volume" type="range" min=0 max=100 value=100>
-        <output id="volume-output">100</output> %
-      </label>
+			<label id="tempo-control" class="controls">
+				Tempo:
+				<input id="tempo" type="range" min=10 max=303>
+				<output id="bpm"></output> BPM
+			</label>
 
-      <div class="device-buttons">
-        <button type="button" id="btn-random-timbre">Random Timbre</button>
-        <button type="button" id="btn-connect-to-ble">Connect Bluetooth</button>
-        <button type="button" id="btn-toggle-webmidi">Connect WebMIDI</button>
-        <button type="button" id="btn-kill-switch" class="kill-switch primary">Panic</button>
-        <button type="button" id="btn-reset" class="primary">Reset</button>
-      </div>
+			<label id="volume-control" class="controls">
+				Volume:
+				<input id="volume" type="range" min=0 max=100 value=100>
+				<output id="volume-output">100</output> %
+			</label>
 
-    </menu>
+			<div class="device-buttons">
+				<button type="button" id="btn-random-timbre">Random Timbre</button>
+				<button type="button" id="btn-connect-to-ble">Connect Bluetooth</button>
+				<button type="button" id="btn-toggle-webmidi">Connect WebMIDI</button>
+				<button type="button" id="btn-kill-switch" class="kill-switch primary">Panic</button>
+				<button type="button" id="btn-reset" class="primary">Reset</button>
+			</div>
 
-  </header>
+		</menu>
 
-  <main>
-	<menu id="action-bar">
-		<button class="primary" type="button" id="btn-midi-export">Export as MIDI file</button>
-		<button class="primary" type="button" id="btn-midi-markdown-export">Export as Markdown</button>
-		<button class="primary" type="button" id="btn-musicxml-export">Export to MusicXML</button>
-		<button type="button" id="btn-audiotool-export">Open in AudioTool</button>
-		<button type="button" id="btn-opendaw-export">Open in OpenDAW</button>
-	</menu>
+	</header>
 
-    <div id="graph"></div>
-    <canvas id="note-visualiser" width="1920" height="1080"></canvas> 
-    <!-- <song-explorer></song-explorer> -->
-    <!-- <canvas id="song-explorer" width="1920" height="1080"></canvas> -->
-  </main>
+	<main>
+		<menu id="action-bar">
+			<button class="primary" type="button" id="btn-midi-export">Export as MIDI file</button>
+			<button class="primary" type="button" id="btn-midi-markdown-export">Export as Markdown</button>
+			<button class="primary" type="button" id="btn-musicxml-export">Export to MusicXML</button>
+			<button class="primary" type="button" id="btn-vexflow-export">Export to VexFlow</button>
+			<button type="button" id="btn-audiotool-export">Open in AudioTool</button>
+			<button type="button" id="btn-opendaw-export">Open in OpenDAW</button>
+		</menu>
 
-  <!-- Sidebars for MIDI Events -->
-  <div id="timer-bar" aria-hide>
-    <strong>TIMER</strong>
-    <time id="clock">...</time>
-  </div>
+		<div id="graph"></div>
+		<canvas id="note-visualiser" width="1920" height="1080"></canvas>
+		<!-- <song-explorer></song-explorer> -->
+		<!-- <canvas id="song-explorer" width="1920" height="1080"></canvas> -->
+	</main>
 
-  <aside id="sidebar">
+	<!-- Sidebars for MIDI Events -->
+	<div id="timer-bar" aria-hide>
+		<strong>TIMER</strong>
+		<time id="clock">...</time>
+	</div>
 
-    <header id="sidebar-header">
-      <h4>MIDI Events</h4>
-      <button id="sidebar-close"><span class="sr-only">close</span>&times;</button>
-    </header>
+	<aside id="sidebar">
 
-    <div id="sidebar-content">
-      <output id="midi-devices"></output>
-      <output id="midi-input-commands"></output>
-      <output id="midi-output-commands"></output>
+		<header id="sidebar-header">
+			<h4>MIDI Events</h4>
+			<button type="button" id="sidebar-close" class="btn-close">
+				<span class="sr-only">close</span>&times;
+			</button>
+		</header>
 
-      <div id="ble-manual-send-fieldset" hidden>
-        <legend>Manual BLE Send</legend>
+		<div id="sidebar-content">
+			<output id="midi-devices"></output>
+			<output id="midi-input-commands"></output>
+			<output id="midi-output-commands"></output>
 
-        <label for="midi-channel-selector">BLE MIDI Channel:
-          <select id="midi-channel-selector">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-            <option value="6">6</option>
-            <option value="7">7</option>
-            <option value="8">8</option>
-            <option value="9">9</option>
-            <option value="10">10</option>
-            <option value="11">11</option>
-            <option value="12">12</option>
-            <option value="13">13</option>
-            <option value="14">14</option>
-            <option value="15">15</option>
-            <option value="16">16</option>
-          </select>
-        </label>
+			<div id="ble-manual-send-fieldset" hidden>
+				<legend>Manual BLE Send</legend>
 
-        <label for="ble-manual-input">Manual BLE Send
-          <input id="ble-manual-input" type="text" placeholder="Enter bytes e.g. 144,60,127">
-        </label>
+				<label for="midi-channel-selector">BLE MIDI Channel:
+					<select id="midi-channel-selector">
+						<option value="1">1</option>
+						<option value="2">2</option>
+						<option value="3">3</option>
+						<option value="4">4</option>
+						<option value="5">5</option>
+						<option value="6">6</option>
+						<option value="7">7</option>
+						<option value="8">8</option>
+						<option value="9">9</option>
+						<option value="10">10</option>
+						<option value="11">11</option>
+						<option value="12">12</option>
+						<option value="13">13</option>
+						<option value="14">14</option>
+						<option value="15">15</option>
+						<option value="16">16</option>
+					</select>
+				</label>
 
-        <button type="button" id="btn-send-ble-manual">Send BLE</button>
-      </div>
-    </div>
+				<label for="ble-manual-input">Manual BLE Send
+					<input id="ble-manual-input" type="text" placeholder="Enter bytes e.g. 144,60,127">
+				</label>
 
-  </aside>
+				<button type="button" id="btn-send-ble-manual">Send BLE</button>
+			</div>
+		</div>
 
-  <!-- Overlays -->
-  <div id="export-overlay" class="export-overlay" hidden>
-    <div class="export-overlay-content">
-      <div class="spinner"></div>
-      <h3>Exporting to AudioTool...</h3>
-      <p>Please wait while we create your project</p>
-    </div>
-  </div>
+	</aside>
 
-  <dialog id="info-dialog" hidden aria-labelledby="info-dialog-title" aria-describedby="info-message">
-    <h5 id="info-dialog-title">Information</h5>
-    <pre id="info-message" class="selectable" role="status" aria-live="polite"></pre>
-    <form action="/" onsubmit="return false">
-      <button 
-        class="close-button" 
-        type="button" 
-        aria-label="Close information dialog"
-        onclick="document.getElementById('info-dialog').close()"
-      >
-        Close
-      </button>
-    </form>
-  </dialog>
+	<!-- Overlays -->
+	<div id="export-overlay" class="export-overlay" hidden>
+		<div class="export-overlay-content">
+			<div class="spinner"></div>
+			<h5>Exporting...</h5>
+			<p>Please wait while we create your project</p>
+		</div>
+	</div>
 
-  <dialog id="error-dialog" hidden aria-labelledby="error-dialog-title" aria-describedby="error-message">
-    <h5 id="error-dialog-title">Error</h5>
-    <div role="alert">
-      <p id="error-message"></p>
-      <p id="error-solution"></p>
-    </div>
-    <form action="/" onsubmit="return false">
-      <button 
-        class="close-button" 
-        type="dialog" 
-      >
-        Close
-      </button>
-    </form>
-  </dialog>
+	<dialog id="info-dialog" hidden aria-labelledby="info-dialog-title" aria-describedby="info-message">
+		<h5 id="info-dialog-title">Information</h5>
+		<pre id="info-message" class="selectable" role="status" aria-live="polite"></pre>
+		<form action="/" onsubmit="return false">
+			<button class="btn-close" type="dialog">
+				Close
+			</button>
+		</form>
+	</dialog>
 
-  <dialog id="auth-dialog" hidden aria-labelledby="auth-dialog-title">
-    <h5 id="auth-dialog-title">Authentication</h5>
-    
-    <form id="auth-form" action="/" onsubmit="return false">
-      
-      <button class="close-button" type="dialog">
-        Close
-      </button>
+	<dialog id="error-dialog" hidden aria-labelledby="error-dialog-title" aria-describedby="error-message">
+		<h5 id="error-dialog-title">Error</h5>
+		<div role="alert">
+			<p id="error-message"></p>
+			<p id="error-solution"></p>
+		</div>
+		<form action="/" onsubmit="return false">
+			<button class="btn-close" type="dialog">
+				Close
+			</button>
+		</form>
+	</dialog>
 
-      <!-- Username Field -->
-      <fieldset>
-        <legend>Login Credentials</legend>
-        
-        <label for="auth-username">
-          Username
-          <span aria-label="required">*</span>
-        </label>
-        <input 
-          id="auth-username" 
-          type="text" 
-          name="username" 
-          placeholder="Enter your username"
-          required
-          aria-required="true"
-          aria-describedby="username-error"
-        >
-        <span id="username-error" role="alert"></span>
-        
-        <!-- Password Field -->
-        <label for="auth-password">
-          Password
-          <span aria-label="required">*</span>
-        </label>
-        <input 
-          id="auth-password" 
-          type="password" 
-          name="password" 
-          placeholder="Enter your password"
-          required
-          aria-required="true"
-          aria-describedby="password-error"
-        >
-        <span id="password-error" role="alert"></span>
-        
-      </fieldset>
+	<dialog id="auth-dialog" hidden aria-labelledby="auth-dialog-title">
+		<h5 id="auth-dialog-title">Authentication</h5>
 
-      <!-- Additional Options -->
-      <fieldset>
-        <legend>Options</legend>
-        
-        <label for="auth-remember">
-          <input 
-            id="auth-remember" 
-            type="checkbox" 
-            name="remember" 
-            aria-describedby="remember-help"
-          >
-          Remember me
-        </label>
-        <span id="remember-help" class="sr-only">Keep me logged in on this device</span>
-        
-        <label for="auth-2fa">
-          <input 
-            id="auth-2fa" 
-            type="checkbox" 
-            name="enable2fa" 
-            aria-describedby="2fa-help"
-          >
-          Enable two-factor authentication
-        </label>
-        <span id="2fa-help" class="sr-only">Use an authenticator app for enhanced security</span>
-        
-      </fieldset>
+		<form id="auth-form" action="/" onsubmit="return false">
 
-      <!-- 2FA Code Field (hidden by default) -->
-      <fieldset id="auth-2fa-fieldset" hidden>
-        <legend>Two-Factor Authentication</legend>
-        
-        <label for="auth-2fa-code">
-          2FA Code
-          <span aria-label="required">*</span>
-        </label>
-        <input 
-          id="auth-2fa-code" 
-          type="text" 
-          name="twoFactorCode" 
-          placeholder="Enter 6-digit code"
-          maxlength="6"
-          pattern="[0-9]{6}"
-          aria-required="false"
-          aria-describedby="2fa-code-help 2fa-code-error"
-        >
-        <span id="2fa-code-help" class="sr-only">Enter the 6-digit code from your authenticator app</span>
-        <span id="2fa-code-error" role="alert"></span>
-        
-      </fieldset>
+			<button class="close-button" type="dialog">
+				Close
+			</button>
 
-      <!-- Server/Endpoint Field -->
-      <fieldset>
-        <legend>Server Configuration</legend>
-        
-        <label for="auth-server">
-          Server URL
-          <span aria-label="optional">(optional)</span>
-        </label>
-        <input 
-          id="auth-server" 
-          type="url" 
-          name="serverUrl" 
-          placeholder="https://auth.example.com"
-          aria-describedby="server-help server-error"
-        >
-        <span id="server-help" class="sr-only">Leave blank to use the default server</span>
-        <span id="server-error" role="alert"></span>
-        
-      </fieldset>
+			<!-- Username Field -->
+			<fieldset>
+				<legend>Login Credentials</legend>
 
-      <!-- Form Actions -->
-      <div class="form-actions" role="group" aria-label="Form controls">
-        <button 
-          id="auth-submit" 
-          type="submit" 
-          class="primary"
-          aria-busy="false"
-        >
-          Sign In
-        </button>
-        <button 
-          type="reset" 
-          class="secondary"
-        >
-          Clear
-        </button>
-        <button 
-          id="auth-close" 
-          type="button" 
-          class="close-button"
-          aria-label="Close authentication dialog"
-        >
-          Cancel
-        </button>
-      </div>
+				<label for="auth-username">
+					Username
+					<span aria-label="required">*</span>
+				</label>
+				<input id="auth-username" type="text" name="username" placeholder="Enter your username" required
+					aria-required="true" aria-describedby="username-error">
+				<span id="username-error" role="alert"></span>
 
-      <!-- Form Status Message -->
-      <span id="auth-status" role="status" aria-live="polite" aria-atomic="true"></span>
+				<!-- Password Field -->
+				<label for="auth-password">
+					Password
+					<span aria-label="required">*</span>
+				</label>
+				<input id="auth-password" type="password" name="password" placeholder="Enter your password" required
+					aria-required="true" aria-describedby="password-error">
+				<span id="password-error" role="alert"></span>
 
-    </form>
-  </dialog>
+			</fieldset>
 
-  <script type="module" src="/source/index.ts"></script>
-  
-  <!-- Hidden form for backward compatibility -->
-  <form id="options" style="display: none;">
-    <fieldset id="midi-settings-fieldset"></fieldset>
-    <fieldset id="midi-controls"></fieldset>
-  </form>
+			<!-- Additional Options -->
+			<fieldset>
+				<legend>Options</legend>
+
+				<label for="auth-remember">
+					<input id="auth-remember" type="checkbox" name="remember" aria-describedby="remember-help">
+					Remember me
+				</label>
+				<span id="remember-help" class="sr-only">Keep me logged in on this device</span>
+
+				<label for="auth-2fa">
+					<input id="auth-2fa" type="checkbox" name="enable2fa" aria-describedby="2fa-help">
+					Enable two-factor authentication
+				</label>
+				<span id="2fa-help" class="sr-only">Use an authenticator app for enhanced security</span>
+
+			</fieldset>
+
+			<!-- 2FA Code Field (hidden by default) -->
+			<fieldset id="auth-2fa-fieldset" hidden>
+				<legend>Two-Factor Authentication</legend>
+
+				<label for="auth-2fa-code">
+					2FA Code
+					<span aria-label="required">*</span>
+				</label>
+				<input id="auth-2fa-code" type="text" name="twoFactorCode" placeholder="Enter 6-digit code"
+					maxlength="6" pattern="[0-9]{6}" aria-required="false"
+					aria-describedby="2fa-code-help 2fa-code-error">
+				<span id="2fa-code-help" class="sr-only">Enter the 6-digit code from your authenticator app</span>
+				<span id="2fa-code-error" role="alert"></span>
+
+			</fieldset>
+
+			<!-- Server/Endpoint Field -->
+			<fieldset>
+				<legend>Server Configuration</legend>
+
+				<label for="auth-server">
+					Server URL
+					<span aria-label="optional">(optional)</span>
+				</label>
+				<input id="auth-server" type="url" name="serverUrl" placeholder="https://auth.example.com"
+					aria-describedby="server-help server-error">
+				<span id="server-help" class="sr-only">Leave blank to use the default server</span>
+				<span id="server-error" role="alert"></span>
+
+			</fieldset>
+
+			<!-- Form Actions -->
+			<div class="form-actions" role="group" aria-label="Form controls">
+				<button id="auth-submit" type="submit" class="primary" aria-busy="false">
+					Sign In
+				</button>
+				<button type="reset" class="secondary">
+					Clear
+				</button>
+				<button id="auth-close" type="dialog" class="btn-close">
+					Cancel
+				</button>
+			</div>
+
+			<!-- Form Status Message -->
+			<span id="auth-status" role="status" aria-live="polite" aria-atomic="true"></span>
+
+		</form>
+	</dialog>
+
+	<script type="module" src="/source/index.ts"></script>
+
+	<!-- Hidden form for backward compatibility -->
+	<form id="options" style="display: none;">
+		<fieldset id="midi-settings-fieldset"></fieldset>
+		<fieldset id="midi-controls"></fieldset>
+	</form>
 
 </body>
 

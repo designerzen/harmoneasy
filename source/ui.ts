@@ -23,6 +23,7 @@ const DOM_ID_BUTTON_TOGGLE_WEBMIDI = "btn-toggle-webmidi"
 const DOM_ID_BUTTON_EXPORT_MIDI_FILE = "btn-midi-export"
 const DOM_ID_BUTTON_EXPORT_MIDI_MARKDOWN = "btn-midi-markdown-export"
 const DOM_ID_BUTTON_EXPORT_MUSICXML = "btn-musicxml-export"
+const DOM_ID_BUTTON_EXPORT_VEXFLOW = "btn-vexflow-export"
 const DOM_ID_BUTTON_EXPORT_AUDIOTOOL = "btn-audiotool-export"
 const DOM_ID_BUTTON_EXPORT_OPENDAW = "btn-opendaw-export"
 
@@ -63,11 +64,13 @@ export default class UI{
     elementMidiExportButton: HTMLElement | null
     elementMidiMarkdownExportButton: HTMLElement | null
     elementMusicXMLExportButton: HTMLElement | null
+    elementVexFlowExportButton: HTMLElement | null
     elementAudioToolExportButton: HTMLElement | null
     elementOpenDAWExportButton: HTMLElement | null
     elementButtonRandomTimbre: HTMLElement | null
     elementOverlayExport: HTMLElement | null
     elementInfoDialog: HTMLElement | null
+    elementErrorDialog: HTMLElement | null
     noteVisualiserCanvas: HTMLElement | null
     noteVisualiser: any
     keyboard: any
@@ -100,6 +103,7 @@ export default class UI{
         this.elementMidiExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_MIDI_FILE)
         this.elementMidiMarkdownExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_MIDI_MARKDOWN)
         this.elementMusicXMLExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_MUSICXML)
+        this.elementVexFlowExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_VEXFLOW)
         this.elementAudioToolExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_AUDIOTOOL)
         this.elementOpenDAWExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_OPENDAW)
 
@@ -107,7 +111,7 @@ export default class UI{
         
         this.elementOverlayExport = document.getElementById(DOM_ID_EXPORT_OVERLAY)
         this.elementInfoDialog = document.getElementById(DOM_ID_DIALOG_INFO)
-        this.elementInfoDialog = document.getElementById(DOM_ID_DIALOG_ERROR)
+        this.elementErrorDialog = document.getElementById(DOM_ID_DIALOG_ERROR)
         
         this.activateSidebar()
 
@@ -362,6 +366,14 @@ export default class UI{
     whenMusicXMLExportRequestedRun(callback){
         if (!this.elementMusicXMLExportButton) return
         this.elementMusicXMLExportButton.addEventListener('click', async ( e ) => {
+            this.showExportOverlay()
+            callback && await callback(e)
+            this.hideExportOverlay()
+        })
+    }
+    whenVexFlowExportRequestedRun(callback){
+        if (!this.elementVexFlowExportButton) return
+        this.elementVexFlowExportButton.addEventListener('click', async ( e ) => {
             this.showExportOverlay()
             callback && await callback(e)
             this.hideExportOverlay()

@@ -222,13 +222,8 @@ main {
   height: 100%;
   max-width: 100%;
   grid-area:graph;
-  background: #fafafa;
   display: flex;
   overflow: auto;
-  @media (prefers-color-scheme: dark) {
-    background: #1e1e1e;
-    color: #e0e0e0;
-  }
 }
 
 #note-visualiser {
