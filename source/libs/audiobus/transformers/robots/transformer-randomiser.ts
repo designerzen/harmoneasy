@@ -11,7 +11,7 @@
 import type { IAudioCommand } from "../../audio-command-interface.ts"
 import { Transformer } from "./abstract-transformer.ts"
 import * as Commands from "../../../../commands.ts"
-import type { TransformerInterface } from "./interface-transformer.ts"
+import type { ITransformer } from "./interface-transformer.ts"
 import { TRANSFORMER_CATEGORY_TUNING } from "./transformer-categories.ts"
 
 export const ID_RANDOMISER = "Randomiser"
@@ -26,7 +26,7 @@ const DEFAULT_OPTIONS: Config = {
     offset: 12           // Up to 1 octave up or down by default
 }
 
-export class TransformerRandomiser extends Transformer<Config> implements TransformerInterface {
+export class TransformerRandomiser extends Transformer<Config> implements ITransformer {
 
     protected type = ID_RANDOMISER
 

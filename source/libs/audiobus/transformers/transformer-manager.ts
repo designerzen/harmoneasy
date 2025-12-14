@@ -10,7 +10,7 @@ import { TransformerTransposer } from "./robots/transformer-transposer.ts"
 import { ID_QUANTISE, TransformerQuantise } from "./robots/transformer-quantise.ts"
 
 import type Timer from "../timing/timer.ts"
-import type { FieldConfig, TransformerInterface } from "./robots/interface-transformer.ts"
+import type { FieldConfig, ITransformer } from "./robots/interface-transformer.ts"
 import type { IAudioCommand } from "../audio-command-interface.ts"
 
 type Callback = () => void
@@ -23,7 +23,7 @@ const DEFAULT_TRANSFORMERS = [
     new TransformerHarmoniser()
 ]
 
-export class TransformerManager extends EventTarget implements TransformerInterface {
+export class TransformerManager extends EventTarget implements ITransformer {
      
     public id: string = Transformer.getUniqueID()
     public name: string = 'TransformerManager'

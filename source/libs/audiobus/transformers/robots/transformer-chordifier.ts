@@ -23,7 +23,7 @@ import { getIntervalFormulaForMode } from "../../tuning/chords/modal-chords.js"
 
 import type { IAudioCommand } from "../../audio-command-interface.ts"
 import type Timer from "../../timing/timer.ts"
-import type { TransformerInterface } from "./interface-transformer.ts"
+import type { ITransformer } from "./interface-transformer.ts"
 import { TRANSFORMER_CATEGORY_TUNING } from "./transformer-categories.ts"
 
 export const ID_CHORDIFIER = "Chordifier"
@@ -46,7 +46,7 @@ const DEFAULT_OPTIONS: Config = {
     mode: TUNING_MODE_IONIAN
 }
 
-export class TransformerChordifier extends Transformer<Config> implements TransformerInterface {
+export class TransformerChordifier extends Transformer<Config> implements ITransformer {
 
     protected type = ID_CHORDIFIER
 

@@ -8,7 +8,7 @@ import { TransformerRandomiser } from '../transformer-randomiser'
 import { TUNING_MODE_IONIAN } from '../../tuning/scales'
 
 describe('All Transformers', () => {
-    it('should all implement TransformerInterface', () => {
+    it('should all implement ITransformer', () => {
         const transformers = [
             new IdentityTransformer({}),
             new TransformerQuantise({ step: 4 }),

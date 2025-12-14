@@ -20,7 +20,7 @@ import {
 import { findClosestNoteInScale, generateNotesInScale, TUNING_MODE_IONIAN } from "../../tuning/scales.ts"
 import { getIntervalFormulaForMode } from "../../tuning/chords/modal-chords.js"
 import type Timer from "../../timing/timer.ts"
-import type { TransformerInterface } from "./interface-transformer.ts"
+import type { ITransformer } from "./interface-transformer.ts"
 import { TRANSFORMER_CATEGORY_TUNING } from "./transformer-categories.ts";
 
 export const ID_HARMONISER = "Harmoniser"
@@ -37,7 +37,7 @@ const DEFAULT_OPTIONS: Config = {
 	mode: TUNING_MODE_IONIAN
 }
 
-export class TransformerHarmoniser extends Transformer<Config> implements TransformerInterface {
+export class TransformerHarmoniser extends Transformer<Config> implements ITransformer {
 
     protected type = ID_HARMONISER
 	category = TRANSFORMER_CATEGORY_TUNING

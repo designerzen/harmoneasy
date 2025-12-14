@@ -3,7 +3,7 @@ import { Transformer } from "./abstract-transformer.ts"
 import AudioCommand from "../../audio-command.ts"
 import * as Commands from "../../../../commands.ts"
 import type Timer from "../../timing/timer.ts"
-import type { TransformerInterface } from "./interface-transformer.ts"
+import type { ITransformer } from "./interface-transformer.ts"
 import { TRANSFORMER_CATEGORY_TIMING } from "./transformer-categories.ts"
 
 export const ID_ARPEGGIATOR = "Arpeggiator"
@@ -48,7 +48,7 @@ const shuffleArray = <T>(array: T[]): T[] => {
  * - random: Random order
  * - chord: All notes at once (passthrough)
  */
-export class TransformerArpeggiator extends Transformer<Config> implements TransformerInterface {
+export class TransformerArpeggiator extends Transformer<Config> implements ITransformer {
 
     protected type = ID_ARPEGGIATOR
 
@@ -138,10 +138,15 @@ export class TransformerArpeggiator extends Transformer<Config> implements Trans
         }
     }
 
+	/**
+	 * 
+	 * @param commands 
+	 * @param timer 
+	 * @returns 
+	 */
     transform(commands: IAudioCommand[], timer: Timer): IAudioCommand[] {
 
         if (!this.config.enabled || commands.length === 0) {
-            //console.log('[ARPEGGIATOR] Bypassing - disabled or no commands')
             return commands
         }
       
@@ -303,7 +308,7 @@ export class TransformerArpeggiator extends Transformer<Config> implements Trans
         // })
 
         // Sort by startAt time to ensure NOTE_OFFs are never scheduled before their NOTE_ONs
-        arpeggiated.sort((a, b) => (a.startAt || 0) - (b.startAt || 0))
+        //arpeggiated.sort((a, b) => (a.startAt || 0) - (b.startAt || 0))
 
         return arpeggiated
     }
@@ -425,7 +430,6 @@ export class TransformerArpeggiator extends Transformer<Config> implements Trans
         delayMs: number,
         baseTime: number
     ): IAudioCommand {
-
         const command = original.clone()
 
         // Set the arpeggiated note number
@@ -436,14 +440,6 @@ export class TransformerArpeggiator extends Transformer<Config> implements Trans
         const delaySeconds = delayMs * 0.001
         command.startAt = baseTime + delaySeconds
         command.endAt = original.endAt
-
-        // console.log('[ARPEGGIATOR] Command created', {
-        //     noteNumber,
-        //     velocity: command.velocity,
-        //     originalVelocity: original.velocity,
-        //     startAt: command.startAt
-        // })
-
         return command
     }
 

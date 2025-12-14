@@ -3,7 +3,7 @@
  * the specified key and scale by finding the nearest note
  */
 import { Transformer, type TransformerConfig } from "./abstract-transformer.ts"
-import type { TransformerInterface } from "./interface-transformer.ts"
+import type { ITransformer } from "./interface-transformer.ts"
 import type { IAudioCommand } from "../../audio-command-interface.ts"
 import type Timer from "../../timing/timer.ts"
 import { TRANSFORMER_CATEGORY_TUNING } from "./transformer-categories.ts"
@@ -19,7 +19,7 @@ const DEFAULT_OPTIONS: Config = {
     distance: 0
 }
 
-export class TransformerTransposer extends Transformer<Config> implements TransformerInterface {
+export class TransformerTransposer extends Transformer<Config> implements ITransformer {
 
     protected type = ID_TRANSPOSER
 	category = TRANSFORMER_CATEGORY_TUNING

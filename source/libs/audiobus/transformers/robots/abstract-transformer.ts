@@ -1,6 +1,6 @@
 import type { IAudioCommand } from "../../audio-command-interface.ts"
 import type Timer from "../../timing/timer.ts"
-import type { FieldConfig, TransformerInterface } from "./interface-transformer.ts"
+import type { FieldConfig, ITransformer } from "./interface-transformer.ts"
 
 export interface TransformerConfig {
     available: false
@@ -12,7 +12,7 @@ const DEFAULT_TRANSFORMER_OPTIONS: TransformerConfig = {
     enabled: true
 }
 
-export abstract class Transformer<Config = TransformerConfig> implements TransformerInterface {
+export abstract class Transformer<Config = TransformerConfig> implements ITransformer {
     
     static ID:number = 0
 
@@ -22,6 +22,7 @@ export abstract class Transformer<Config = TransformerConfig> implements Transfo
     
 	// order in Transformer sequence
 	index:number = -1
+	
     #id: string = Transformer.getUniqueID()
     
 	protected type:string = "AbstractTransformer"

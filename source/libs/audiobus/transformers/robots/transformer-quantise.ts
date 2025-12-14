@@ -4,7 +4,7 @@
 import type { IAudioCommand } from "../../audio-command-interface.ts";
 import type Timer from "../../timing/timer.ts";
 import { Transformer } from "./abstract-transformer.ts"
-import type { TransformerInterface } from "./interface-transformer.ts";
+import type { ITransformer } from "./interface-transformer.ts";
 import { TRANSFORMER_CATEGORY_TIMING } from "./transformer-categories.ts";
 
 export const ID_QUANTISE = "Quantiser"
@@ -21,7 +21,7 @@ const DEFAULT_OPTIONS: Config = {
    swing: 0
 }
 
-export class TransformerQuantise extends Transformer<Config> implements TransformerInterface{
+export class TransformerQuantise extends Transformer<Config> implements ITransformer{
 
     protected type = ID_QUANTISE
 	category = TRANSFORMER_CATEGORY_TIMING

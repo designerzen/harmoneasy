@@ -1,11 +1,11 @@
 import type { IAudioCommand } from "../../audio-command-interface.ts"
 import type Timer from "../../timing/timer.ts"
 
-export interface TransformerInterface {
-    name:string
+export interface ITransformer {
+    uuid: string
+	fields: FieldConfig[]
+	name:string
     description:string
-    id: string
-    fields: FieldConfig[]
     transform(commands: IAudioCommand[], timer:Timer ): IAudioCommand[]
     reset():void
 	exportConfig():string

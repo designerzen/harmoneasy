@@ -5,10 +5,11 @@
 import type AudioCommand from "../../audio-command.ts"
 import type Timer from "../../timing/timer.ts"
 
-import type { TransformerInterface } from "./interface-transformer.ts"
+import type { ITransformer } from "./interface-transformer.ts"
 import { Transformer } from "./abstract-transformer.ts"
 import { parseEdoScaleMicroTuningOctave } from "../../../pitfalls/ts/index.ts"
 import { TRANSFORMER_CATEGORY_TUNING } from "./transformer-categories.ts"
+import type { IAudioCommand } from "../../audio-command-interface.ts"
 
 export const ID_MICROTONALITY = "Micro-Tonality" 
 
@@ -23,7 +24,7 @@ const DEFAULT_OPTIONS = {
 // synth.noteOn( microntonal, 1 )
 // console.warn( "TEST", mictrotonalPitches, 60, 3, "LLsLLLs", 2, 1 )
 
-export class TransformerMicroTonality extends Transformer<{}> implements TransformerInterface{
+export class TransformerMicroTonality extends Transformer<{}> implements ITransformer{
  
     protected type = ID_MICROTONALITY
 	category = TRANSFORMER_CATEGORY_TUNING
@@ -134,7 +135,7 @@ export class TransformerMicroTonality extends Transformer<{}> implements Transfo
      * @param timer 
      * @returns 
      */
-    transform( commands:AudioCommand[], timer:Timer ): AudioCommand[] {
+    transform( commands:IAudioCommandudioCommand[], timer:Timer ): AudioCommand[] {
           
         if (!this.config.enabled || commands.length === 0)
         {

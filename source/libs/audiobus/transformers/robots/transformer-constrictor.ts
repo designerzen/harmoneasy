@@ -1,13 +1,13 @@
 import type AudioCommand from "../../audio-command.ts"
 import type Timer from "../../timing/timer.ts"
-import type { TransformerInterface } from "./interface-transformer.ts"
+import type { ITransformer } from "./interface-transformer.ts"
 import { Transformer } from "./abstract-transformer.ts"
 import { TRANSFORMER_CATEGORY_TUNING } from "./transformer-categories.ts"
 import type { IAudioCommand } from "../../audio-command-interface.ts"
 
-export const ID_CONSTRICTOR = 'constrictor'
+export const ID_CONSTRICTOR = 'Constrictor'
 
-export class TransformerConstrictor extends Transformer<{}> implements TransformerInterface{
+export class TransformerConstrictor extends Transformer<{}> implements ITransformer{
 	
 	protected type = ID_CONSTRICTOR
 	category = TRANSFORMER_CATEGORY_TUNING

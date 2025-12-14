@@ -1,12 +1,13 @@
 import type AudioCommand from "../../audio-command.ts"
 import type Timer from "../../timing/timer.ts"
-import type { TransformerInterface } from "./interface-transformer.ts"
+import type { ITransformer } from "./interface-transformer.ts"
 import { Transformer } from "./abstract-transformer.ts"
 import { TRANSFORMER_CATEGORY_TUNING } from "./transformer-categories.ts"
+import type { IAudioCommand } from "../../audio-command-interface.ts"
 
 export const ID_CHANNELER = "Channeler"
 
-export class TransformerChanneler extends Transformer<{}> implements TransformerInterface{
+export class TransformerChanneler extends Transformer<{}> implements ITransformer{
     
     protected type = ID_CHANNELER
     
@@ -41,7 +42,7 @@ export class TransformerChanneler extends Transformer<{}> implements Transformer
         ]
     }
 
-    transform(command: AudioCommand[], timer:Timer): AudioCommand[] {
+    transform(command: IAudioCommandudioCommand[], timer:Timer): AudioCommand[] {
         return command.map((cmd) => {
             if (this.config.channel === "ALL") {
                 cmd.channel = 0
