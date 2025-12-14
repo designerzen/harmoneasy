@@ -93,7 +93,8 @@ export const createAudioToolProjectFromAudioEventRecording = async (recording:Re
                 t.removeWithDependencies(track.id)
             })
 
-            const channel = t.create("mixerChannel", {})
+            const duration = secondsToTicks(recording.duration, BPM)
+			const channel = t.create("mixerChannel", {})
 
             // simplest instrument
             const tonematrix = t.create("tonematrix", {})
@@ -110,8 +111,7 @@ export const createAudioToolProjectFromAudioEventRecording = async (recording:Re
 
             const collection = t.create("noteCollection", {})
 
-            const duration = secondsToTicks(recording.duration, BPM)
-   
+           
             const noteRegion = t.create("noteRegion", {
                 collection: collection.location,
                 track: track.location,
@@ -128,7 +128,7 @@ export const createAudioToolProjectFromAudioEventRecording = async (recording:Re
                 {
                     case NOTE_ON :
                         const positionTicks = secondsToTicks(command.startAt, BPM)
-                        const durationTicks =  secondsToTicks(command.duration, BPM)
+                        const durationTicks = secondsToTicks(command.duration, BPM)
 
                         t.create("note", {
                             collection: collection.location,
@@ -147,7 +147,9 @@ export const createAudioToolProjectFromAudioEventRecording = async (recording:Re
         const transaction = await nexus.createTransaction()
         transaction.send()
 
+		return true
     } catch (error) {
         console.error("Error creating Audiotool project", error)
+		return false
     }
 }
