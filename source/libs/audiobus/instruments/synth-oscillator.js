@@ -449,7 +449,10 @@ export default class SynthOscillator{
      * Stop all notes on this instrument
      */
     allNotesOff(){
-        this.noteOff( new NoteModel( this.activeNote.noteNumber ) )
+		if ( this.activeNote?.noteNumber )
+		{
+			this.noteOff( new NoteModel( this.activeNote.noteNumber ) )
+		}
     }
 
     async loadWaveTable(waveTableName=TB303_Square){
