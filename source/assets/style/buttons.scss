@@ -1,0 +1,42 @@
+.btn-close{
+
+	font-size: 0;
+
+	&::before{
+		content:'x';
+		font-size: 1rem;
+		font-weight: 900;
+		margin: auto;
+	}
+
+	&dialog{
+		position: absolute;
+		right: var(--pad);
+		top: var(--pad);
+	}
+}
+
+.btn-remove {
+	background: rgba(220, 38, 38, 0.9);
+	color: white;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	transition: background 0.2s;
+	font-size: 0;
+	
+	position: absolute;
+	right: var(--pad);
+	top: var(--pad);
+
+	&::before{
+		content:'x';
+		font-size: 1rem;
+		font-weight: 900;
+		margin: auto;
+	}
+	
+	&:hover {
+		background: rgba(185, 28, 28, 1);
+	}
+}
