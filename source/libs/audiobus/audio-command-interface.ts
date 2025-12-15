@@ -28,4 +28,5 @@ export interface IAudioCommand {
 	text:string
 
 	clone():IAudioCommand
+	destroy():void
 }

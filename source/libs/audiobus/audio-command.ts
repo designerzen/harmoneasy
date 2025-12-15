@@ -58,20 +58,28 @@ export default class AudioCommand implements IAudioCommand {
 
 	text:string
 
+	// CUSTOM (UNOFFICAl) : 
 	// which device created this command (e.g. "MIDI", "OSC", "WebRTC")
 	from:string = "Unknown"
+	patch:number
 	
 	// for linked lists
-	previous:AudioCommand
-	next:AudioCommand
+	previous:IAudioCommand = undefined
+	next:IAudioCommand = undefined
 
 	constructor() {
-		this.id = "ac-" + AudioCommand.counter++
+		this.id = "C-" + AudioCommand.counter++
 	}
 
 	remove(){
-		this.previous.next = this.next
-		this.next.previous = this.previous
+		if (this.previous)
+		{
+			this.previous.next = this.next
+		}
+		if (this.next)
+		{
+			this.next.previous = this.previous
+		}
 	}
 
 	append(tail:AudioCommand){
@@ -80,17 +88,27 @@ export default class AudioCommand implements IAudioCommand {
 	}
 
 	/**
-	 * 
+	 * IAudioCommand:clone
 	 * @returns copy of this
 	 */
 	clone():IAudioCommand{
 		return this.copyAllParametersToCommand( new AudioCommand() )
 	}
 
+	/**
+	 *  IAudioCommand:destroy
+	 */
+	destroy():void{
+		this.remove()
+	}
+
 	copyAllParametersToCommand(command:AudioCommand):AudioCommand{
 		for (let i in this)
 		{
-			command[i] = this[i]
+			if (command.hasOwnProperty(i))
+			{
+				command[i] = this[i]
+			}
 		}
 		return command
 	}
@@ -98,7 +116,10 @@ export default class AudioCommand implements IAudioCommand {
 	copyAllParametersFromCommand(command:AudioCommand):AudioCommand{
 		for (let i in this)
 		{
-			this[i] = command[i]
+			if (command.hasOwnProperty(i))
+			{
+				this[i] = command[i]
+			}
 		}
 		return command
 	}
