@@ -2,23 +2,23 @@ import { Handle, Position } from "@xyflow/react"
 import React from "react"
 
 // Chrome and later browsers allow for custom selects!
-function SelectField({ values, onChange }) {
-    return <select onChange={onChange}>
+function SelectField({ values, onChange, defaultValue }) {
+    return <select onChange={onChange} defaultValue={defaultValue ?? ''}>
 
-		<button>Close</button>
+		<button type="button" className="btn-close">Close</button>
 
         {values.map((v) => {
             const isObject = typeof v === 'object' && v !== null
             const value = isObject ? v.value : v
             const name = isObject ? v.name : v
-            return <option key={value} value={value}>{name}</option>
+            return <option key={value} value={value} selected={value === defaultValue}>{name}</option>
         })}
     </select>
 }
 
 function ConfigField({ config, element}) {
     return <label>{config.name}
-        { config.type === 'select' ? <SelectField values={config.values} onChange={(v) => {
+        { config.type === 'select' ? <SelectField values={config.values} defaultValue={config.default} onChange={(v) => {
             element.setConfig(config.name, v.target.value)
         }} /> : 'unknown' }
         </label>
