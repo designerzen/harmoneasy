@@ -28,6 +28,7 @@ export default class PolySynth {
        
         this.SynthClass = this.options.class
         this.#gainNode = audioContext.createGain()
+		this.#gainNode.gain.setTargetAtTime( 1 / this.options.maxPolyphony, audioContext.currentTime, 0.01)
         this.factory( this.SynthClass, this.options.maxPolyphony)
     }
 
