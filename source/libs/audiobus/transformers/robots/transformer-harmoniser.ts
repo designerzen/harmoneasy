@@ -8,32 +8,22 @@ import AudioCommand from "../../audio-command.ts"
 import { createChord, findRotationFromNote } from "../../tuning/chords/chords.js"
 import { convertToIntervalArray } from "../../tuning/chords/describe-chord.ts"
 import * as MODES from "../../tuning/chords/modal-chords.js"
-import {
-    IONIAN_INTERVALS,
-    DORIAN_INTERVALS,
-    PHRYGIAN_INTERVALS,
-    LYDIAN_INTERVALS,
-    MIXOLYDIAN_INTERVALS,
-    AEOLIAN_INTERVALS,
-    LOCRIAN_INTERVALS
-} from "../../tuning/intervals.js"
+
+import { TRANSFORMER_CATEGORY_TUNING } from "./transformer-categories.ts"
 import { findClosestNoteInScale, generateNotesInScale, TUNING_MODE_IONIAN } from "../../tuning/scales.ts"
 import { getIntervalFormulaForMode } from "../../tuning/chords/modal-chords.js"
 import type Timer from "../../timing/timer.ts"
 import type { ITransformer } from "./interface-transformer.ts"
-import { TRANSFORMER_CATEGORY_TUNING } from "./transformer-categories.ts";
 
 export const ID_HARMONISER = "Harmoniser"
 
 interface Config extends TransformerConfig {
 	root: number,
-	mode: string,
-	[key: string]: any
+	mode: string
 }
 
-
 const DEFAULT_OPTIONS: Config = {
-	root: 69,
+	root: 0,
 	mode: TUNING_MODE_IONIAN
 }
 
@@ -60,7 +50,8 @@ export class TransformerHarmoniser extends Transformer<Config> implements ITrans
                 values: [
                     { name: 'On', value: 1 },
                     { name: 'Off', value: 0 }
-                ]
+                ],
+                default: 1
             },
             {
                 name: 'root',
@@ -78,26 +69,29 @@ export class TransformerHarmoniser extends Transformer<Config> implements ITrans
                     { name: 'F#/Gb', value: 6 },
                     { name: 'G', value: 7 },
                     { name: 'G#/Ab', value: 8 }
-                ]
+                ],
+                default: DEFAULT_OPTIONS.root
             },
             {
                 name: 'mode',
                 type: 'select',
                 values: [
-                    { name: 'Major (Ionian)', value: 'ionian' },
-                    { name: 'Dorian', value: 'dorian' },
-                    { name: 'Phrygian', value: 'phrygian' },
-                    { name: 'Lydian', value: 'lydian' },
-                    { name: 'Mixolydian', value: 'mixolydian' },
-                    { name: 'Natural Minor (Aeolian)', value: 'aeolian' },
-                    { name: 'Locrian', value: 'locrian' }
-                ]
+                    { name: 'Major (Ionian)', value:MODES.IONIAN },
+                    { name: 'Dorian', value: MODES.DORIAN },
+                    { name: 'Phrygian', value: MODES.PHRYGIAN },
+                    { name: 'Lydian', value: MODES.LYDIAN },
+                    { name: 'Mixolydian', value: MODES.MIXOLYDIAN },
+                    { name: 'Natural Minor (Aeolian)', value: MODES.AEOLIAN },
+                    { name: 'Locrian', value: MODES.LOCRIAN }
+                ],
+                default: DEFAULT_OPTIONS.mode
             }
         ]
     }
 
     constructor(config = {}) {
         super( {...DEFAULT_OPTIONS, ...config} )
+        this.notesInScale = this.setScaleNotes()
     }
 
 	/**
@@ -134,7 +128,7 @@ export class TransformerHarmoniser extends Transformer<Config> implements ITrans
 	}
 
 	/**
-	 * 
+	 * Override and use to set notes in scale Set
 	 * @param key 
 	 * @param value 
 	 */

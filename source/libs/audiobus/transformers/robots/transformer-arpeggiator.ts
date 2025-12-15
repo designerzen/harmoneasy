@@ -76,7 +76,8 @@ export class TransformerArpeggiator extends Transformer<Config> implements ITran
                 values: [
                     { name: 'On', value: 1 },
                     { name: 'Off', value: 0 }
-                ]
+                ],
+                default: 1
             },
             {
                 name: 'pattern',
@@ -88,7 +89,8 @@ export class TransformerArpeggiator extends Transformer<Config> implements ITran
                     { name: 'Down-Up', value: 'down-up' },
                     { name: 'Random', value: 'random' },
                     { name: 'Chord', value: 'chord' }
-                ]
+                ],
+                default: DEFAULT_OPTIONS.pattern
             },
             {
                 name: 'rate',
@@ -99,12 +101,14 @@ export class TransformerArpeggiator extends Transformer<Config> implements ITran
                     { name: '1/16', value: '1/16' },
                     { name: '1/32', value: '1/32' },
                     { name: 'Triplet', value: 'triplet' }
-                ]
+                ],
+                default: DEFAULT_OPTIONS.rate
             },
             {
                 name: 'octaves',
                 type: 'select',
-                values: [1, 2, 3, 4]
+                values: [1, 2, 3, 4],
+                default: DEFAULT_OPTIONS.octaves
             }
         ]
     }

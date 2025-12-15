@@ -47,7 +47,7 @@ export class TransformerChanneler extends Transformer<{}> implements ITransforme
             if (this.config.channel === "ALL") {
                 cmd.channel = 0
             }else{
-                cmd.channel = this.config.channel
+                cmd.channel = parseInt( this.config.channel )
             }
             return cmd
         })

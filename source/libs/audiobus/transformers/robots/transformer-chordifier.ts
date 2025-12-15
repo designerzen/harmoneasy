@@ -42,7 +42,7 @@ interface Config {
 
 const DEFAULT_OPTIONS: Config = {
     simultaneous:NOTES_IN_CHORDS,
-    root: 69,
+    root: 0,
     mode: TUNING_MODE_IONIAN
 }
 
@@ -68,7 +68,8 @@ export class TransformerChordifier extends Transformer<Config> implements ITrans
                 values: [
                     { name: 'On', value: 1 },
                     { name: 'Off', value: 0 }
-                ]
+                ],
+                default: 1
             },
             {
                 name: 'root',
@@ -86,7 +87,8 @@ export class TransformerChordifier extends Transformer<Config> implements ITrans
                     { name: 'F#/Gb', value: 9 },
                     { name: 'G', value: 10 },
                     { name: 'G#/Ab', value: 11 }
-                ]
+                ],
+                default: DEFAULT_OPTIONS.root
             },
             {
                 name: 'mode',
@@ -99,7 +101,8 @@ export class TransformerChordifier extends Transformer<Config> implements ITrans
                     { name: 'Mixolydian', value: 'mixolydian' },
                     { name: 'Natural Minor (Aeolian)', value: 'aeolian' },
                     { name: 'Locrian', value: 'locrian' }
-                ]
+                ],
+                default: DEFAULT_OPTIONS.mode
             }
         ]
     }
@@ -124,11 +127,13 @@ export class TransformerChordifier extends Transformer<Config> implements ITrans
 
         // Generate chord based on the first command's note
         const chordNotes:number[] = createChord(ALL_KEYBOARD_NUMBERS, intervalFormula, noteModel.noteNumber, finalRotation, this.config.simultaneous, true, true)
-        const intervals = convertToIntervalArray(chordNotes)
+        
+		
+		// const intervals = convertToIntervalArray(chordNotes)
 
-        console.log("Root", noteModel.noteNumber)
-        console.log("Chord", noteModel, chordNotes )
-        console.log("Intervals?", intervals, intervalFormula)
+        // console.log("Root", noteModel.noteNumber)
+        // console.log("Chord", noteModel, chordNotes )
+        // console.log("Intervals?", intervals, intervalFormula)
         // console.log("Chord Ionian", noteModel, MODES.createIonianChord(ALL_KEYBOARD_NOTES, noteModel.noteNumber, 0, 3))
 
         // Transform commands: create new audio commands for each chord note
@@ -145,6 +150,9 @@ export class TransformerChordifier extends Transformer<Config> implements ITrans
             newCommand.number = chordNote
             return newCommand
         })
+
+		command.destroy()
+		command = null
 
         // Return the harmonised chord commands
         return harmonisedCommands

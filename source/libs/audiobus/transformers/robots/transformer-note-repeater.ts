@@ -52,7 +52,8 @@ export class TransformerNoteRepeater extends Transformer<Config> implements ITra
                 values: [
                     { name: 'On', value: 1 },
                     { name: 'Off', value: 0 }
-                ]
+                ],
+                default: 1
             },
             {
                 name: 'repeats',
@@ -63,7 +64,8 @@ export class TransformerNoteRepeater extends Transformer<Config> implements ITra
                     { name: '4x', value: 4 },
                     { name: '8x', value: 8 },
                     { name: '16x', value: 16 }
-                ]
+                ],
+                default: DEFAULT_OPTIONS.repeats
             },
             {
                 name: 'delay',
@@ -74,7 +76,8 @@ export class TransformerNoteRepeater extends Transformer<Config> implements ITra
                     { name: 'Triplet', value: 166.67 },
                     { name: '1/8', value: 250 },
                     { name: '1/4', value: 500 }
-                ]
+                ],
+                default: DEFAULT_OPTIONS.delay
             },
             {
                 name: 'noteDuration',
@@ -85,7 +88,8 @@ export class TransformerNoteRepeater extends Transformer<Config> implements ITra
                     { name: '150ms', value: 150 },
                     { name: '200ms', value: 200 },
                     { name: '250ms', value: 250 }
-                ]
+                ],
+                default: DEFAULT_OPTIONS.noteDuration
             }
         ]
     }

@@ -22,7 +22,7 @@ export abstract class Transformer<Config = TransformerConfig> implements ITransf
     
 	// order in Transformer sequence
 	index:number = -1
-	
+
     #id: string = Transformer.getUniqueID()
     
 	protected type:string = "AbstractTransformer"
@@ -52,21 +52,39 @@ export abstract class Transformer<Config = TransformerConfig> implements ITransf
 
     constructor(config: Config = DEFAULT_TRANSFORMER_OPTIONS) {
         this.config = {...DEFAULT_TRANSFORMER_OPTIONS, ...config}
+        this.setFieldDefaults( this.config )
         this.setConfig("available", true)
-    }
-
-    abstract transform(commands: IAudioCommand[], timer: Timer): IAudioCommand[]
-
-    reset():void{
-        // No state to reset for this transformer
-        throw Error("Reset not implemented for Transformer " + this.name)
     }
 
 	exportConfig(): string {
 		return JSON.stringify({...this.config, type:this.type })
 	}
 
+	/**
+	 *  loop through and set the default fields in the config
+	 * @param config 
+	 */
+	setFieldDefaults(config: Config):void{
+		for (const field of this.fields) {
+			if (config[field.name] !== undefined) {
+				field.default = config[field.name]
+			}
+		}
+	}
+
+	/**
+	 * Overwrite a field in the config (and cause side effects)
+	 * @param key 
+	 * @param value 
+	 */
     setConfig(key: string, value: unknown):void {
         this.config[key] = value
+    }
+
+	abstract transform(commands: IAudioCommand[], timer: Timer): IAudioCommand[]
+
+    reset():void{
+        // No state to reset for this transformer
+        throw Error("Reset not implemented for Transformer " + this.name)
     }
 }

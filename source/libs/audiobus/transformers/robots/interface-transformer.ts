@@ -16,4 +16,5 @@ export interface FieldConfig {
     type: string
     enabled:boolean
     values: Array<string | number | { name: string; value: string | number }>
+    default?: string | number
 }

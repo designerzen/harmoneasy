@@ -46,7 +46,8 @@ export class TransformerConstrictor extends Transformer<{}> implements ITransfor
                     { name: '8', value: 8 },
                     { name: '9', value: 9 },
                     { name: '10', value: 10 }
-                ]
+                ],
+				default: 3
             },
             {
                 name: 'highest octave',
@@ -63,7 +64,8 @@ export class TransformerConstrictor extends Transformer<{}> implements ITransfor
                     { name: '8', value: 8 },
                     { name: '9', value: 9 },
                     { name: '10', value: 10 }
-                ]
+                ],
+				default: 8
             }
         ]
     }

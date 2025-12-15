@@ -42,7 +42,8 @@ export class TransformerNoteShortener extends Transformer<Config> implements ITr
                 values: [
                     { name: 'On', value: 1 },
                     { name: 'Off', value: 0 }
-                ]
+                ],
+                default: 1
             },
             {
                 name: 'duration',
@@ -53,7 +54,8 @@ export class TransformerNoteShortener extends Transformer<Config> implements ITr
                     { name: 'Triplet', value: 'triplet' },
                     { name: '1/8', value: '1/8' },
                     { name: '1/4', value: '1/4' }
-                ]
+                ],
+                default: DEFAULT_OPTIONS.duration
             }
         ]
     }

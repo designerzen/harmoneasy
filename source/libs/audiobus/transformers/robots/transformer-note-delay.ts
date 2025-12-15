@@ -52,7 +52,8 @@ export class TransformerNoteDelay extends Transformer<Config> implements ITransf
                 values: [
                     { name: 'On', value: 1 },
                     { name: 'Off', value: 0 }
-                ]
+                ],
+                default: 1
             },
             {
                 name: 'useTimeDivision',
@@ -60,7 +61,8 @@ export class TransformerNoteDelay extends Transformer<Config> implements ITransf
                 values: [
                     { name: 'Time Division', value: 1 },
                     { name: 'Milliseconds', value: 0 }
-                ]
+                ],
+                default: DEFAULT_OPTIONS.useTimeDivision
             },
             {
                 name: 'timeDivision',
@@ -73,7 +75,8 @@ export class TransformerNoteDelay extends Transformer<Config> implements ITransf
                     { name: '1/4', value: '1/4' },
                     { name: '1/2', value: '1/2' },
                     { name: '1 bar', value: '1' }
-                ]
+                ],
+                default:DEFAULT_OPTIONS.timeDivision
             },
             {
                 name: 'delayMs',
@@ -92,7 +95,8 @@ export class TransformerNoteDelay extends Transformer<Config> implements ITransf
                     { name: '500ms', value: 500 },
                     { name: '750ms', value: 750 },
                     { name: '1000ms', value: 1000 }
-                ]
+                ],
+                default: DEFAULT_OPTIONS.delayMs
             },
             {
                 name: 'accumulate',
@@ -100,7 +104,8 @@ export class TransformerNoteDelay extends Transformer<Config> implements ITransf
                 values: [
                     { name: 'Accumulate On', value: 1 },
                     { name: 'Accumulate Off', value: 0 }
-                ]
+                ],
+                default: DEFAULT_OPTIONS.accumulate
             }
         ]
     }

@@ -38,14 +38,16 @@ export class TransformerQuantise extends Transformer<Config> implements ITransfo
                 values: [
                     { name: 'On', value: 1 },
                     { name: 'Off', value: 0 }
-                ]
+                ],
+                default: 1
             },
             { 
                 name: 'step', 
                 type: 'select', 
                 values: [
                     1, 2, 3, 4, 6, 8, 12, 16 
-                ]
+                ],
+                default: DEFAULT_OPTIONS.step
             }
         ]
     }

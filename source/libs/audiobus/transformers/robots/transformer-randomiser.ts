@@ -17,12 +17,12 @@ import { TRANSFORMER_CATEGORY_TUNING } from "./transformer-categories.ts"
 export const ID_RANDOMISER = "Randomiser"
 
 interface Config {
-    uncertainty: number // Probability (0-100) that a note will be shifted
+    random: number // Probability (0-100) that a note will be shifted
     offset: number      // Maximum range in semitones the note can be moved (up or down)
 }
 
 const DEFAULT_OPTIONS: Config = {
-    uncertainty: 50,     // 50% chance by default
+    random: 50,     // 50% chance by default
     offset: 12           // Up to 1 octave up or down by default
 }
 
@@ -51,7 +51,8 @@ export class TransformerRandomiser extends Transformer<Config> implements ITrans
                 values: [
                     { name: 'On', value: 1 },
                     { name: 'Off', value: 0 }
-                ]
+                ],
+                default: 1
             },
             {
                 name: 'random',
@@ -68,7 +69,8 @@ export class TransformerRandomiser extends Transformer<Config> implements ITrans
                     { name: '80%', value: 80 },
                     { name: '90%', value: 90 },
                     { name: '100%', value: 100 }
-                ]
+                ],
+                default: DEFAULT_OPTIONS.random
             },
             {
                 name: 'offset',
@@ -89,7 +91,8 @@ export class TransformerRandomiser extends Transformer<Config> implements ITrans
                     { name: '12 semitones (1 octave)', value: 12 },
                     { name: '18 semitones', value: 18 },
                     { name: '24 semitones (2 octaves)', value: 24 }
-                ]
+                ],
+                default: DEFAULT_OPTIONS.offset
             }
         ]
     }

@@ -40,7 +40,8 @@ export class TransformerTransposer extends Transformer<Config> implements ITrans
                 values: [
                     { name: 'On', value: 1 },
                     { name: 'Off', value: 0 }
-                ]
+                ],
+                default: 1
             },
             {
                 name: 'distance',
@@ -59,7 +60,8 @@ export class TransformerTransposer extends Transformer<Config> implements ITrans
 
                     { name: 'Up Fifth', value: 7 },
                     { name: 'Down Fifth', value: -7 }
-                ]
+                ],
+                default: DEFAULT_OPTIONS.distance
             }
         ]
     }
