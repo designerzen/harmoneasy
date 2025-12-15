@@ -20,12 +20,14 @@ const DOM_ID_VOLUME_OUTPUT = "volume-output"
 const DOM_ID_BUTTON_CONNECT_BLUETOOTH = "btn-connect-to-ble"
 const DOM_ID_BUTTON_TOGGLE_WEBMIDI = "btn-toggle-webmidi"
 
+const DOM_ID_BUTTON_IMPORT_MIDI_FILE = "btn-midi-import"
 const DOM_ID_BUTTON_EXPORT_MIDI_FILE = "btn-midi-export"
 const DOM_ID_BUTTON_EXPORT_MIDI_MARKDOWN = "btn-midi-markdown-export"
 const DOM_ID_BUTTON_EXPORT_MUSICXML = "btn-musicxml-export"
 const DOM_ID_BUTTON_EXPORT_VEXFLOW = "btn-vexflow-export"
 const DOM_ID_BUTTON_EXPORT_AUDIOTOOL = "btn-audiotool-export"
 const DOM_ID_BUTTON_EXPORT_OPENDAW = "btn-opendaw-export"
+const DOM_ID_BUTTON_EXPORT_DAWPROJECT = "btn-dawproject-export"
 
 const DOM_ID_BUTTON_KILL_SWITCH = "btn-kill-switch"
 const DOM_ID_BUTTON_RESET = "btn-reset"
@@ -61,12 +63,14 @@ export default class UI{
     elementBLEManualSendButton: HTMLElement | null
     elementButtonKillSwitch: HTMLElement | null
     elementButtonReset: HTMLElement | null
+    elementMidiImportButton: HTMLElement | null
     elementMidiExportButton: HTMLElement | null
     elementMidiMarkdownExportButton: HTMLElement | null
     elementMusicXMLExportButton: HTMLElement | null
     elementVexFlowExportButton: HTMLElement | null
     elementAudioToolExportButton: HTMLElement | null
     elementOpenDAWExportButton: HTMLElement | null
+    elementDawProjectExportButton: HTMLElement | null
     elementButtonRandomTimbre: HTMLElement | null
     elementOverlayExport: HTMLElement | null
     elementInfoDialog: HTMLElement | null
@@ -100,12 +104,14 @@ export default class UI{
         this.elementButtonKillSwitch = document.getElementById(DOM_ID_BUTTON_KILL_SWITCH)
         this.elementButtonReset = document.getElementById(DOM_ID_BUTTON_RESET)
         
+        this.elementMidiImportButton = document.getElementById(DOM_ID_BUTTON_IMPORT_MIDI_FILE)
         this.elementMidiExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_MIDI_FILE)
         this.elementMidiMarkdownExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_MIDI_MARKDOWN)
         this.elementMusicXMLExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_MUSICXML)
         this.elementVexFlowExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_VEXFLOW)
         this.elementAudioToolExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_AUDIOTOOL)
         this.elementOpenDAWExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_OPENDAW)
+        this.elementDawProjectExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_DAWPROJECT)
 
         this.elementButtonRandomTimbre = document.getElementById(DOM_ID_BUTTON_RANDOM_TIMBRE)
         
@@ -125,6 +131,58 @@ export default class UI{
         // Create Note Explorer & visualiser
         // const visualiser = new SongVisualiser()
         // this.wallpaperCanvas.parentNode.appendChild(visualiser)
+
+        this.setupDragAndDrop()
+    }
+
+    /**
+     * Setup drag and drop file handling for MIDI files
+     */
+    private setupDragAndDrop(): void {
+        const dropZone = document.body
+
+        // Prevent default drag behaviors
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            dropZone.classList.add('drag-over')
+        })
+
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            dropZone.classList.remove('drag-over')
+        })
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            dropZone.classList.remove('drag-over')
+            
+            const files = e.dataTransfer?.files
+            if (files && files.length > 0) {
+                this.handleMIDIFileDrop(files[0])
+            }
+        })
+    }
+
+    /**
+     * Handle dropped MIDI file
+     */
+    private handleMIDIFileDrop(file: File): void {
+        if (!file.type.includes('audio') && !file.name.toLowerCase().endsWith('.mid') && !file.name.toLowerCase().endsWith('.midi')) {
+            this.showError('Invalid file type', 'Please drop a MIDI file (.mid or .midi)')
+            return
+        }
+
+        window.onMIDIFileDropped?.(file)
+    }
+
+    /**
+     * Register callback for when MIDI file is dropped
+     */
+    whenMIDIFileDroppedRun(callback: (file: File) => void): void {
+        window.onMIDIFileDropped = callback
     }
 
     /**
@@ -224,7 +282,8 @@ export default class UI{
             elementSolution.hidden = true
         }
       
-        this.elementErrorDialog.open = true
+        this.elementErrorDialog.hidden = false
+        this.elementErrorDialog.showModal()
         console.error(errorMessage)
     }
 
@@ -349,6 +408,35 @@ export default class UI{
             this.hideExportOverlay()
         })
     }
+    /**
+     * Register callback for when MIDI file import button is clicked
+     */
+    whenMIDIFileImportRequestedRun(callback: (files: FileList) => void): void {
+        if (!this.elementMidiImportButton) return
+        
+        // Create a hidden file input element
+        const fileInput = document.createElement('input')
+        fileInput.type = 'file'
+        fileInput.accept = '.mid,.midi,audio/midi'
+        fileInput.style.display = 'none'
+        document.body.appendChild(fileInput)
+        
+        // When button is clicked, trigger the file input
+        this.elementMidiImportButton.addEventListener('click', () => {
+            fileInput.click()
+        })
+        
+        // When file is selected, call the callback
+        fileInput.addEventListener('change', (e) => {
+            const files = (e.target as HTMLInputElement).files
+            if (files && files.length > 0) {
+                callback && callback(files)
+            }
+            // Reset the input so the same file can be selected again
+            fileInput.value = ''
+        })
+    }
+
     whenMIDIFileExportRequestedRun(callback){
         if (!this.elementMidiExportButton) return
         this.elementMidiExportButton.addEventListener('click', async ( e ) => {
@@ -382,6 +470,14 @@ export default class UI{
     whenOpenDAWExportRequestedRun(callback){
         if (!this.elementOpenDAWExportButton) return
         this.elementOpenDAWExportButton.addEventListener('click', async ( e ) => {
+            this.showExportOverlay()
+            callback && await callback(e)
+            this.hideExportOverlay()
+        })
+    }
+    whenDawProjectExportRequestedRun(callback){
+        if (!this.elementDawProjectExportButton) return
+        this.elementDawProjectExportButton.addEventListener('click', async ( e ) => {
             this.showExportOverlay()
             callback && await callback(e)
             this.hideExportOverlay()

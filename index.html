@@ -55,23 +55,25 @@
 
 	<main>
 		<menu id="action-bar">
+			<button class="primary" type="button" id="btn-midi-import">Import MIDI file</button>
 			<button class="primary" type="button" id="btn-midi-export">Export as MIDI file</button>
 			<button class="primary" type="button" id="btn-midi-markdown-export">Export as Markdown</button>
 			<button class="primary" type="button" id="btn-musicxml-export">Export to MusicXML</button>
 			<button class="primary" type="button" id="btn-vexflow-export">Export to VexFlow</button>
 			<button type="button" id="btn-audiotool-export">Open in AudioTool</button>
 			<button type="button" id="btn-opendaw-export">Open in OpenDAW</button>
+			<button class="primary" type="button" id="btn-dawproject-export">Export as .dawProject</button>
 		</menu>
 
 		<div id="graph"></div>
-		<canvas id="note-visualiser" width="1920" height="1080"></canvas>
+		<canvas id="note-visualiser" width="1080" height="512"></canvas>
 		<!-- <song-explorer></song-explorer> -->
 		<!-- <canvas id="song-explorer" width="1920" height="1080"></canvas> -->
 	</main>
 
 	<!-- Sidebars for MIDI Events -->
 	<div id="timer-bar" aria-hide>
-		<strong>TIMER</strong>
+		<strong>Timer</strong>
 		<time id="clock">...</time>
 	</div>
 
@@ -135,8 +137,8 @@
 	<dialog id="info-dialog" hidden aria-labelledby="info-dialog-title" aria-describedby="info-message">
 		<h5 id="info-dialog-title">Information</h5>
 		<pre id="info-message" class="selectable" role="status" aria-live="polite"></pre>
-		<form action="/" onsubmit="return false">
-			<button class="btn-close" type="dialog">
+		<form method="dialog">
+			<button class="btn-close" type="submit">
 				Close
 			</button>
 		</form>
@@ -148,8 +150,8 @@
 			<p id="error-message"></p>
 			<p id="error-solution"></p>
 		</div>
-		<form action="/" onsubmit="return false">
-			<button class="btn-close" type="dialog">
+		<form method="dialog">
+			<button class="btn-close" type="submit">
 				Close
 			</button>
 		</form>
@@ -158,11 +160,7 @@
 	<dialog id="auth-dialog" hidden aria-labelledby="auth-dialog-title">
 		<h5 id="auth-dialog-title">Authentication</h5>
 
-		<form id="auth-form" action="/" onsubmit="return false">
-
-			<button class="close-button" type="dialog">
-				Close
-			</button>
+		<form id="auth-form" method="dialog">
 
 			<!-- Username Field -->
 			<fieldset>
@@ -244,7 +242,7 @@
 				<button type="reset" class="secondary">
 					Clear
 				</button>
-				<button id="auth-close" type="dialog" class="btn-close">
+				<button type="submit" class="btn-close" value="cancel">
 					Cancel
 				</button>
 			</div>

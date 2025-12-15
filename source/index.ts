@@ -48,7 +48,9 @@ import { createMIDIFileFromAudioEventRecording, saveBlobToLocalFileSystem } from
 import { createMIDIMarkdownFromAudioEventRecording, saveMarkdownToLocalFileSystem } from './libs/audiobus/midi/adapter-midi-markdown.ts'
 import { createMusicXMLFromAudioEventRecording, saveBlobToLocalFileSystem as saveMusicXMLBlobToLocalFileSystem } from './libs/audiobus/midi/adapter-musicxml.ts'
 import { renderVexFlowToContainer, createVexFlowHTMLFromAudioEventRecording, saveBlobToLocalFileSystem as saveVexFlowBlobToLocalFileSystem } from './libs/audiobus/midi/adapter-vexflow.ts'
+import { Midi } from '@tonejs/midi'
 import { createOpenDAWProjectFromAudioEventRecording } from './libs/openDAW/adapter-opendaw-audio-events-recording.ts'
+import { createDawProjectFromAudioEventRecording, saveDawProjectToLocalFileSystem } from './libs/audiobus/midi/adapter-dawproject.ts'
 
 import { addKeyboardDownEvents } from './libs/keyboard.ts'
 
@@ -126,13 +128,11 @@ const triggerAudioCommandsOnDevice = (commands: IAudioCommand[]) => {
 
         switch (command.type) {
             case Commands.NOTE_ON:
-                //console.warn("Executing Audio Command: NOTE ON", command )
-                noteOn(new NoteModel(command.number))
+                noteOn(new NoteModel(command.number), command.velocity)
                 break
 
             case Commands.NOTE_OFF:
-                //console.warn("Executing Audio Command: NOTE OFF", command )
-                noteOff(new NoteModel(command.number))
+                noteOff(new NoteModel(command.number), command.velocity)
                 break
 
             default:
@@ -149,7 +149,7 @@ const triggerAudioCommandsOnDevice = (commands: IAudioCommand[]) => {
  * TODO: Add enabled / disabled
  * @param queue
  */
-const executeQueueAndClearComplete = (queue: AudioCommand[]) => {
+const executeQueueAndClearComplete = (queue: AudioCommand[], accumulatorLimit=24 ) => {
 
     if (!queue || queue.length === 0) {
         return []
@@ -162,8 +162,11 @@ const executeQueueAndClearComplete = (queue: AudioCommand[]) => {
     const remainingCommands: AudioCommand[] = []
 
     // act on all data in the buffer...
-    queue.forEach((audioCommand: AudioCommand, index: number) => {
-        const shouldTrigger = audioCommand.startAt <= now
+	let unplayedAccumulator = 0
+	const quantity = queue.length
+	for (let i = 0; i < quantity && unplayedAccumulator < accumulatorLimit; i++) {
+		const audioCommand: AudioCommand = queue[i]
+		   const shouldTrigger = audioCommand.startAt <= now
         if (shouldTrigger) {
             // Transformations already applied at input time, just execute
             const events = convertAudioCommandsToAudioEvents([audioCommand])
@@ -171,9 +174,10 @@ const executeQueueAndClearComplete = (queue: AudioCommand[]) => {
             const triggers = triggerAudioCommandsOnDevice(events)
             // console.info("AudioCommand triggered in time domain", {audioCommand, triggers, timer} )
         } else {
+			unplayedAccumulator++
             remainingCommands.push(audioCommand)
         }
-    })
+	}
 
     return remainingCommands
 }
@@ -512,6 +516,82 @@ const sendMIDIActionToAllDevices = (fromDevice: String, noteModel: NoteModel, ac
     })
 }
 
+const importMIDIFile = async(file: File) => {
+	const arrayBuffer = await file.arrayBuffer()
+
+	// Parse MIDI using @tonejs/midi
+	const midi = new Midi(arrayBuffer)
+
+	// Convert MIDI tracks to audio events
+	const commands: IAudioCommand[] = []
+	let noteCount = 0
+
+	// Process all tracks
+	for (const track of midi.tracks) {
+		// Process all notes in the track
+		for (const note of track.notes) {
+			noteCount++
+			
+			// Create NOTE_ON
+			const noteOn = new AudioCommand()
+			noteOn.type = Commands.NOTE_ON
+			noteOn.number = note.midi
+			noteOn.velocity = note.velocity * 127 || 100  // @tonejs/midi uses 0-1, convert to 0-127
+			noteOn.startAt = note.time
+			noteOn.from = file.name
+			noteOn.channel = track.channel
+			noteOn.patch = track.instrument.number
+			commands.push(noteOn)
+			console.info("note", {note}, "track", {track})
+			
+			// Create NOTE_OFF
+			const noteOff = new AudioCommand()
+			noteOff.type = Commands.NOTE_OFF
+			noteOff.number = note.midi
+			noteOff.velocity = note.velocity * 127 || 100
+			noteOff.startAt = note.time + note.duration
+			noteOff.from = file.name
+			noteOff.channel = track.channel
+			noteOff.patch = track.instrument.number
+			commands.push(noteOff)
+		}
+	}
+
+	// Sort by start time
+	// allEvents.sort((a, b) => (a.startAt || 0) - (b.startAt || 0))
+
+	console.info("MIDI file loaded successfully", { 
+		fileName: file.name, 
+		noteCount, 
+		duration: midi.duration,
+		tracks: midi.tracks.length,
+		tempo: midi.header.tempos[0]?.bpm
+	})
+
+	return {
+		commands,
+		noteCount
+	}
+}
+
+const addCommandToFuture = (commands: IAudioCommand[], transform=false, startDelay=3): IAudioCommand[] => {
+	// shift it into the future
+	commands.forEach(command => {
+		command.startAt += timer.now + startDelay
+		// inject into the queue...
+		if (!transform){
+			 audioCommandQueue.push(command)
+		}
+	})
+	if (transform)
+	{
+		const transformedAudioCommands: IAudioCommand[] = transformerManager.transform(commands, timer)
+		audioCommandQueue.push(...transformedAudioCommands)
+	}
+
+	return commands
+}
+
 /**
  * Connect the parts of our application
  * @param onEveryTimingTick 
@@ -568,6 +648,7 @@ const initialiseApplication = async (onEveryTimingTick) => {
         selectedMIDIChannel = channel
         console.log(`[MIDI Channel] Selected channel ${channel}`)
     })
+ 
     ui.whenMIDIFileExportRequestedRun(async () => {
         const blob = await createMIDIFileFromAudioEventRecording(recorder, timer)
         saveBlobToLocalFileSystem(blob, recorder.name)
@@ -620,6 +701,40 @@ const initialiseApplication = async (onEveryTimingTick) => {
             ui.showInfoDialog("Error", "Failed to render VexFlow score. Check console for details.")
         }
     })
+	   ui.whenMIDIFileImportRequestedRun(async (files: FileList) => {
+        if (files.length > 0) {
+            // Trigger the drop handler by manually calling the MIDI import logic
+            const file = files[0]
+            try {
+                ui.showExportOverlay("Loading MIDI file...")
+               	const { commands, noteCount } = await importMIDIFile(file)
+				addCommandToFuture(commands, true)
+				
+				console.info("Loading MIDI file from import:", file.name, {commands, noteCount})
+				
+                ui.showInfoDialog("MIDI Loaded", `Successfully loaded ${file.name} with ${noteCount} notes`)
+            } catch (error) {
+                console.error("Error loading MIDI file from import:", error)
+                ui.showError("Failed to load MIDI file", error instanceof Error ? error.message : String(error))
+            } finally{
+				ui.hideExportOverlay()
+			}
+        }
+    })
+    ui.whenMIDIFileDroppedRun(async (file: File) => {
+        try {
+            ui.showExportOverlay("Found MIDI File")
+            console.info("Loading MIDI file from drop:", file.name)
+			const { commands, noteCount } = await importMIDIFile(file)
+			addCommandToFuture(commands, true)
+			
+        } catch (error) {
+            console.error("Error loading MIDI file from drop:", error)
+            ui.showError("Failed to load MIDI file", error instanceof Error ? error.message : String(error))
+       	} finally{
+			ui.hideExportOverlay()
+		}
+    })
     ui.whenAudioToolExportRequestedRun(async () => {
         const output = await createAudioToolProjectFromAudioEventRecording(recorder, timer)
         console.info("Exporting Data to AudioTool", { recorder, output })
@@ -632,9 +747,14 @@ const initialiseApplication = async (onEveryTimingTick) => {
         ui.setExportOverlayText("Copy and paste this into openDAW script editor")
         ui.showInfoDialog("Exporting Data to OpenDAW", script)
     })
+    ui.whenDawProjectExportRequestedRun(async () => {
+        const blob = await createDawProjectFromAudioEventRecording(recorder, timer)
+        const filename = (recorder.name ?? 'project').replace(/\s+/g, '_')
+        await saveDawProjectToLocalFileSystem(blob, filename)
+        console.info("Exporting Data to .dawProject", { recorder, blob })
+    })
     ui.whenKillSwitchRequestedRun(async () => {
         console.info('[Kill Switch] All notes off requested', transformerManager.exportConfig())
-
         await allNotesOff()
     })
 
@@ -651,8 +771,6 @@ const initialiseApplication = async (onEveryTimingTick) => {
             songVisualiser.reset()
         }
     })
-
-
 
     // ui.whenNewScaleIsSelected( (scaleNName:string, select:HTMLElement ) => {
     //     console.log("New scale selected:", scaleNName)
