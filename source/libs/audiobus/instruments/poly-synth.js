@@ -110,6 +110,7 @@ export default class PolySynth {
      * Set a random oscillator timbre from the collection
      */
     setRandomTimbre(){
-          this.instruments.every( instrument =>  instrument.shape = OSCILLATORS[Math.floor(Math.random() * OSCILLATORS.length)] )
+		const randomShape = OSCILLATORS[Math.floor(Math.random() * (OSCILLATORS.length - 1))]
+		this.instruments.forEach( instrument => instrument.shape = randomShape )
     }
 }
