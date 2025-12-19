@@ -25,6 +25,7 @@ import type { IAudioCommand } from "../../audio-command-interface.ts"
 import type Timer from "../../timing/timer.ts"
 import type { ITransformer } from "./interface-transformer.ts"
 import { TRANSFORMER_CATEGORY_TUNING } from "./transformer-categories.ts"
+import { cloneAudioCommand } from "../../audio-command-factory.ts"
 
 export const ID_CHORDIFIER = "Chordifier"
 
@@ -139,19 +140,19 @@ export class TransformerChordifier extends Transformer<Config> implements ITrans
         // Transform commands: create new audio commands for each chord note
         const harmonisedCommands: IAudioCommand[] = chordNotes.map((chordNote:number) => {
             
-			if (!command || !command.clone)
+			if (!command)
 			{
 				console.error("No command or clone method available")
 				throw new Error("No command or clone method available")
 			}
 
-			const newCommand = command.clone()
-            // Set the new note number from the chord
+			const newCommand:IAudioCommand = cloneAudioCommand( command )
+			
+			// Set the new note number from the chord
             newCommand.number = chordNote
             return newCommand
         })
 
-		command.destroy()
 		command = null
 
         // Return the harmonised chord commands

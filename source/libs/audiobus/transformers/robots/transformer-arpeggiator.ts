@@ -1,10 +1,12 @@
-import type { IAudioCommand } from "../../audio-command-interface.ts"
+
+import { TRANSFORMER_CATEGORY_TIMING } from "./transformer-categories.ts"
+import { cloneAudioCommand, createAudioCommand } from "../../audio-command-factory.ts"
 import { Transformer } from "./abstract-transformer.ts"
-import AudioCommand from "../../audio-command.ts"
 import * as Commands from "../../../../commands.ts"
+
+import type { IAudioCommand } from "../../audio-command-interface.ts"
 import type Timer from "../../timing/timer.ts"
 import type { ITransformer } from "./interface-transformer.ts"
-import { TRANSFORMER_CATEGORY_TIMING } from "./transformer-categories.ts"
 
 export const ID_ARPEGGIATOR = "Arpeggiator"
 
@@ -154,7 +156,7 @@ export class TransformerArpeggiator extends Transformer<Config> implements ITran
             return commands
         }
       
-        const bpm = timer.BPM
+        const bpm = timer.bpm
 
         // console.log('[ARPEGGIATOR] Transform called', {
         //     enabled: this.config.enabled,
@@ -187,7 +189,7 @@ export class TransformerArpeggiator extends Transformer<Config> implements ITran
                     // Create NOTE_OFF for each unique arpeggiated note
                     // Use a Set to avoid duplicate NOTE_OFFs for the same note number
                     const uniqueNoteNumbers = new Set<number>()
-                    const currentTime = command.time
+                    const currentTime = command.startAt ?? 0
 
                     // Find the latest startAt time among arpeggiated notes to schedule NOTE_OFF after them
                     const lastArpeggioTime = arpeggiatedNotes.length > 0 
@@ -199,17 +201,14 @@ export class TransformerArpeggiator extends Transformer<Config> implements ITran
                         if (!uniqueNoteNumbers.has(noteNumber)) {
                             uniqueNoteNumbers.add(noteNumber)
 
-                            const noteOffCmd = new AudioCommand()
-                            noteOffCmd.type = Commands.NOTE_OFF
-                            noteOffCmd.subtype = Commands.NOTE_OFF
-                            noteOffCmd.number = noteNumber
-                            noteOffCmd.velocity = command.velocity || 100
-                            noteOffCmd.time = currentTime
-
                             // Schedule NOTE_OFF after the last arpeggiated note starts
                             // This ensures arpeggiated notes play before being released
-                            noteOffCmd.startAt = lastArpeggioTime
-
+                            const noteOffCmd = cloneAudioCommand(command)
+                            noteOffCmd.type = Commands.NOTE_OFF
+                            noteOffCmd.number = noteNumber
+                            noteOffCmd.startAt = lastArpeggioTime ?? currentTime
+                            noteOffCmd.velocity = command.velocity ?? 100
+                           	
                             // console.log('[ARPEGGIATOR] Generating NOTE_OFF', {
                             //     noteNumber,
                             //     velocity: noteOffCmd.velocity,
@@ -273,7 +272,9 @@ export class TransformerArpeggiator extends Transformer<Config> implements ITran
             // })
 
             arpeggiated.push(...arpeggio)
+
         } else if (noteOnCommands.length === 1) {
+
             // Single note - check if there are already held notes to arpeggiate
             if (this.heldNotes.size > 1) {
                 console.log('[ARPEGGIATOR] Single note added to existing chord - generating arpeggio', {
@@ -292,13 +293,13 @@ export class TransformerArpeggiator extends Transformer<Config> implements ITran
 
                 arpeggiated.push(...arpeggio)
             } else {
-                // console.log('[ARPEGGIATOR] Single note - pass through')
-                // Track that this note maps to itself with its original timing
-                this.arpeggiatedNotesMap.set(noteOnCommands[0].number, [{
-                    noteNumber: noteOnCommands[0].number,
-                    startAt: noteOnCommands[0].startAt || noteOnCommands[0].time
-                }])
-                arpeggiated.push(noteOnCommands[0])
+                 // console.log('[ARPEGGIATOR] Single note - pass through')
+                 // Track that this note maps to itself with its original timing
+                 this.arpeggiatedNotesMap.set(noteOnCommands[0].number, [{
+                     noteNumber: noteOnCommands[0].number,
+                     startAt: noteOnCommands[0].startAt ?? 0
+                 }])
+                 arpeggiated.push(noteOnCommands[0])
             }
         }
 
@@ -329,7 +330,7 @@ export class TransformerArpeggiator extends Transformer<Config> implements ITran
 
         // Chord mode: play all notes simultaneously
         if (this.config.pattern === 'chord') {
-            return baseNotes.map(noteNumber => this.createCommand(originalCommand, noteNumber, 0, originalCommand.time))
+            return baseNotes.map(noteNumber => this.createCommand(originalCommand, noteNumber, 0, originalCommand.startAt || 0))
         }
 
         // Build full note sequence including octaves
@@ -340,27 +341,9 @@ export class TransformerArpeggiator extends Transformer<Config> implements ITran
 
         // Create delayed commands for each note in the sequence
         // Use the current time from the command as the base time
-        const baseTime = originalCommand.time
+        const baseTime = originalCommand.startAt || 0
         const delayMs = this.calculateDelayMs(this.config.rate, bpm)
-
-        const result = patternedSequence.map((noteNumber, index) => {
-            const delay = index * delayMs
-            const cmd = this.createCommand(originalCommand, noteNumber, delay, baseTime)
-            // console.log('[ARPEGGIATOR] Creating arpeggio note', {
-            //     index,
-            //     noteNumber,
-            //     delayMs: delay,
-            //     baseTime,
-            //     rate: this.config.rate,
-            //     bpm,
-            //     calculatedDelayMs: delayMs,
-            //     originalStartAt: originalCommand.startAt,
-            //     newStartAt: cmd.startAt,
-            //     originalTime: originalCommand.time
-            // })
-            return cmd
-        })
-        return result
+        return patternedSequence.map( (noteNumber, index) => this.createCommand(originalCommand, noteNumber, index * delayMs, baseTime) )
     }
 
     /**
@@ -434,7 +417,8 @@ export class TransformerArpeggiator extends Transformer<Config> implements ITran
         delayMs: number,
         baseTime: number
     ): IAudioCommand {
-        const command = original.clone()
+
+        const command:IAudioCommand = cloneAudioCommand(original )
 
         // Set the arpeggiated note number
         command.number = noteNumber

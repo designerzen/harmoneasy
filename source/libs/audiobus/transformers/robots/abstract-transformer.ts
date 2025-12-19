@@ -17,7 +17,8 @@ export abstract class Transformer<Config = TransformerConfig> implements ITransf
     static ID:number = 0
 
     static getUniqueID() {
-        return "Transformer-" + this.name + "-" + (++Transformer.ID).toFixed(8)
+		return `Transformer-${this.name}-${++Transformer.ID}`
+        // return "Transformer-" + this.name + "-" + String(Transformer.ID).padStart(16, "0")
     }
     
 	// order in Transformer sequence
@@ -87,4 +88,8 @@ export abstract class Transformer<Config = TransformerConfig> implements ITransf
         // No state to reset for this transformer
         throw Error("Reset not implemented for Transformer " + this.name)
     }
+
+	destroy():void{
+	
+	}
 }

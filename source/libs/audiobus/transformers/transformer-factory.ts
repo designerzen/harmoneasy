@@ -12,6 +12,8 @@ import { ID_MICROTONALITY, TransformerMicroTonality } from "./robots/transformer
 import { ID_CHANNELER, TransformerChanneler } from "./robots/transformer-channeler.ts"
 import { ID_CONSTRICTOR, TransformerConstrictor } from "./robots/transformer-constrictor.ts"
 import { ID_TIMING_HUMANISER, TransformerTimingHumaniser } from "./robots/transformer-timing-humaniser.ts"
+import { ID_VIBRATOR, TransformerVibrator } from "./robots/transformer-vibrator.ts"
+import { ID_FILTER, TransformerFilter } from "./robots/transformer-filter.ts"
 
 export const tranformerFactory = (type: string, config: any={} ) => {
     switch (type) {
@@ -19,6 +21,7 @@ export const tranformerFactory = (type: string, config: any={} ) => {
 		case ID_CHANNELER: return new TransformerChanneler(config)
         case ID_CHORDIFIER: return new TransformerChordifier(config)
         case ID_CONSTRICTOR: return new TransformerConstrictor(config)
+		case ID_FILTER: return new TransformerFilter(config)
         case ID_HARMONISER: return new TransformerHarmoniser(config)
         case ID_MICROTONALITY: return new TransformerMicroTonality(config)
         case ID_NOTE_DELAY: return new TransformerNoteDelay(config)
@@ -27,8 +30,9 @@ export const tranformerFactory = (type: string, config: any={} ) => {
         case ID_QUANTISE: return new TransformerQuantise(config)
 		case ID_RANDOMISER: return new TransformerRandomiser(config)
 		case ID_TIMING_HUMANISER: return new TransformerTimingHumaniser(config)
-        case ID_TRANSPOSER: return new TransformerTransposer(config)
-        default: return new IdentityTransformer(config)
+		case ID_TRANSPOSER: return new TransformerTransposer(config)
+		case ID_VIBRATOR: return new TransformerVibrator(config)
+		default: return new IdentityTransformer(config)
     }
 }
 
@@ -37,6 +41,7 @@ export const TRANSFORMER_TYPE = {
     ID_CHANNELER,
     ID_CHORDIFIER,
 	ID_CONSTRICTOR,
+	ID_FILTER,
     ID_HARMONISER,
     ID_MICROTONALITY,
     ID_NOTE_SHORTENER,
@@ -46,5 +51,8 @@ export const TRANSFORMER_TYPE = {
     ID_RANDOMISER,
     ID_TRANSPOSER
 }
+
+// Add the transformers that require certain functionality
+TRANSFORMER_TYPE[ID_VIBRATOR] = ID_VIBRATOR
 
 export const TRANSFORMERS = Object.values(TRANSFORMER_TYPE)

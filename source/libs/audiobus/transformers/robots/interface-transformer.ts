@@ -8,6 +8,7 @@ export interface ITransformer {
     description:string
     transform(commands: IAudioCommand[], timer:Timer ): IAudioCommand[]
     reset():void
+    destroy():void
 	exportConfig():string
 }
 

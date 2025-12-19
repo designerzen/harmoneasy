@@ -166,12 +166,12 @@ export class TransformerManager extends EventTarget implements ITransformer {
     /**
      * INTERFACE :
      * Advance through every single registered transformer and pass the
-     * command
+     * command. Returns a Promise for API compatibility with TransformerManagerWorker.
      * @param commands
-     * @returns IAudioCommand
+     * @returns Promise<IAudioCommand[]>
      */
-    transform(commands: IAudioCommand[], timer:Timer ) {
-        return this.#transformers.reduce((v, t) => t.transform(v, timer), commands)
+    transform(commands: IAudioCommand[], timer:Timer ): Promise<IAudioCommand[]> {
+        return Promise.resolve(this.#transformers.reduce((v, t) => t.transform(v, timer), commands))
     }
 
     /**

@@ -5,6 +5,7 @@ import * as Commands from "../../../../commands.ts"
 import type Timer from "../../timing/timer.ts"
 import type { ITransformer } from "./interface-transformer.ts"
 import { TRANSFORMER_CATEGORY_TIMING } from "./transformer-categories.ts"
+import { createAudioCommand } from "../../audio-command-factory.ts"
 
 export const ID_NOTE_REPEATER = "Note-Repeater"
 
@@ -118,18 +119,15 @@ export class TransformerNoteRepeater extends Transformer<Config> implements ITra
                     // Create NOTE_ON with delay
                     const noteOnCmd = this.createCommand(command, delayMs, command.time)
                     repeated.push(noteOnCmd)
-
-                    // Create corresponding NOTE_OFF with delay + duration
-                    const noteOffCmd = new AudioCommand()
-                    noteOffCmd.type = Commands.NOTE_OFF
-                    noteOffCmd.subtype = Commands.NOTE_OFF
-                    noteOffCmd.number = command.number
-                    noteOffCmd.velocity = command.velocity || 100
-                    noteOffCmd.time = command.time
-
+  
                     // Schedule NOTE_OFF after the note duration
                     const noteDurationSeconds = this.config.noteDuration / 1000
-                    noteOffCmd.startAt = noteOnTime + delaySeconds + noteDurationSeconds
+                    const startAt = noteOnTime + delaySeconds + noteDurationSeconds
+                 
+					// Create corresponding NOTE_OFF with delay + duration
+					const noteOffCmd = createAudioCommand( Commands.NOTE_OFF, command.number, startAt )
+     				noteOffCmd.velocity = command.velocity || 100
+                    noteOffCmd.time = command.time
 
                     repeated.push(noteOffCmd)
                 }

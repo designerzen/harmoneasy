@@ -5,6 +5,7 @@ import * as Commands from "../../../../commands.ts"
 import type Timer from "../../timing/timer.ts"
 import type { ITransformer } from "./interface-transformer.ts"
 import { TRANSFORMER_CATEGORY_TIMING } from "./transformer-categories.ts"
+import { createAudioCommand } from "../../audio-command-factory.ts"
 
 export const ID_NOTE_SHORTENER = "Note-Shortener"
 
@@ -114,18 +115,12 @@ export class TransformerNoteShortener extends Transformer<Config> implements ITr
                 // Add the original NOTE_ON
                 shortened.push(command)
 
-                // Create a NOTE_OFF scheduled after the configured duration (tempo-synced)
-                const noteOffCmd = new AudioCommand()
-                noteOffCmd.type = Commands.NOTE_OFF
-                noteOffCmd.subtype = Commands.NOTE_OFF
-                noteOffCmd.number = command.number
-                noteOffCmd.velocity = command.velocity || 100
-                noteOffCmd.time = command.time
-
-                // Convert duration from milliseconds to seconds and schedule NOTE_OFF
+				// Convert duration from milliseconds to seconds and schedule NOTE_OFF
                 const durationSeconds = durationMs / 1000
-                noteOffCmd.startAt = noteOnTime + durationSeconds
-
+                // Create a NOTE_OFF scheduled after the configured duration (tempo-synced)
+                const noteOffCmd = createAudioCommand(  Commands.NOTE_OFF, command.number, noteOnTime + durationSeconds )
+                noteOffCmd.velocity = command.velocity || 100
+             
                 console.log('[NOTE_SHORTENER] Creating scheduled NOTE_OFF', {
                     noteNumber: command.number,
                     noteOnTime,

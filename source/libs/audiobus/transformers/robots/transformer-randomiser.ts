@@ -13,6 +13,7 @@ import { Transformer } from "./abstract-transformer.ts"
 import * as Commands from "../../../../commands.ts"
 import type { ITransformer } from "./interface-transformer.ts"
 import { TRANSFORMER_CATEGORY_TUNING } from "./transformer-categories.ts"
+import { cloneAudioCommand } from "../../audio-command-factory.ts"
 
 export const ID_RANDOMISER = "Randomiser"
 
@@ -138,7 +139,7 @@ export class TransformerRandomiser extends Transformer<Config> implements ITrans
                 }
 
                 // Create a new command with the randomised note
-                const randomisedCommand = command.clone()
+                const randomisedCommand = cloneAudioCommand( command )
                 randomisedCommand.number = clampedNoteNumber
 
                 console.log(`[RANDOMISER] NOTE_ON: Shifted note ${command.number} by ${shift} to ${clampedNoteNumber}`)
@@ -166,7 +167,7 @@ export class TransformerRandomiser extends Transformer<Config> implements ITrans
                 }
 
                 // Create NOTE_OFF for the randomised note
-                const randomisedCommand = command.clone()
+                const randomisedCommand = cloneAudioCommand( command )
                 randomisedCommand.number = randomisedNote
 
                 //console.log(`[RANDOMISER] NOTE_OFF: Turning off randomised note ${randomisedNote} (original: ${command.number})`)
