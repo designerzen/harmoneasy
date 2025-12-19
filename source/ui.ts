@@ -20,7 +20,7 @@ const DOM_ID_VOLUME_OUTPUT = "volume-output"
 const DOM_ID_BUTTON_CONNECT_BLUETOOTH = "btn-connect-to-ble"
 const DOM_ID_BUTTON_TOGGLE_WEBMIDI = "btn-toggle-webmidi"
 
-const DOM_ID_BUTTON_IMPORT_MIDI_FILE = "btn-midi-import"
+const DOM_ID_BUTTON_IMPORT = "btn-import"
 const DOM_ID_BUTTON_EXPORT_MIDI_FILE = "btn-midi-export"
 const DOM_ID_BUTTON_EXPORT_MIDI_MARKDOWN = "btn-midi-markdown-export"
 const DOM_ID_BUTTON_EXPORT_MUSICXML = "btn-musicxml-export"
@@ -118,7 +118,7 @@ export default class UI{
         this.elementButtonExport = document.getElementById(DOM_ID_BUTTON_EXPORT)
         this.elementExportDialog = document.getElementById(DOM_ID_EXPORT_DIALOG)
         
-        this.elementMidiImportButton = document.getElementById(DOM_ID_BUTTON_IMPORT_MIDI_FILE)
+        this.elementMidiImportButton = document.getElementById(DOM_ID_BUTTON_IMPORT)
         this.elementMidiExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_MIDI_FILE)
         this.elementMidiMarkdownExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_MIDI_MARKDOWN)
         this.elementMusicXMLExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_MUSICXML)
@@ -192,16 +192,26 @@ export default class UI{
     }
 
     /**
-     * Handle dropped MIDI file
-     */
-    private handleMIDIFileDrop(file: File): void {
-        if (!file.type.includes('audio') && !file.name.toLowerCase().endsWith('.mid') && !file.name.toLowerCase().endsWith('.midi')) {
-            this.showError('Invalid file type', 'Please drop a MIDI file (.mid or .midi)')
-            return
-        }
+      * Handle dropped file (MIDI, MusicXML, or .dawProject)
+      */
+     private handleMIDIFileDrop(file: File): void {
+         const fileName = file.name.toLowerCase()
+         const isValidType = 
+             file.type.includes('audio') || 
+             file.type.includes('xml') ||
+             fileName.endsWith('.mid') || 
+             fileName.endsWith('.midi') ||
+             fileName.endsWith('.musicxml') ||
+             fileName.endsWith('.xml') ||
+             fileName.endsWith('.dawproject')
 
-        window.onMIDIFileDropped?.(file)
-    }
+         if (!isValidType) {
+             this.showError('Invalid file type', 'Please drop a supported file: MIDI (.mid, .midi), MusicXML (.musicxml, .xml), or .dawProject')
+             return
+         }
+
+         window.onMIDIFileDropped?.(file)
+     }
 
     /**
      * Register callback for when MIDI file is dropped
@@ -433,31 +443,42 @@ export default class UI{
          }, { signal: this.abortController.signal })
      }
     /**
-     * Register callback for when MIDI file import button is clicked
-     */
-    whenMIDIFileImportRequestedRun(callback: (files: FileList) => void): void {
-         if (!this.elementMidiImportButton) return
-         const fileInput = document.createElement('input')
-         fileInput.type = 'file'
-         fileInput.accept = '.mid,.midi,audio/midi'
-         fileInput.style.display = 'none'
-         document.body.appendChild(fileInput)
-         
-         // When button is clicked, trigger the file input
-         this.elementMidiImportButton.addEventListener('click', () => {
-             fileInput.click()
-         }, { signal: this.abortController.signal })
-         
-         // When file is selected, call the callback
-         fileInput.addEventListener('change', (e) => {
-             const files = (e.target as HTMLInputElement).files
-             if (files && files.length > 0) {
-                 callback && callback(files)
-             }
-             // Reset the input so the same file can be selected again
-             fileInput.value = ''
-         }, { signal: this.abortController.signal })
-     }
+      * Register callback for when import button is clicked (supports MIDI, MusicXML, .dawProject files)
+      */
+     whenFileImportRequestedRun(callback: (file: File) => void): void {
+          if (!this.elementMidiImportButton) return
+          const fileInput = document.createElement('input')
+          fileInput.type = 'file'
+          fileInput.accept = '.mid,.midi,audio/midi,.musicxml,.xml,.dawproject'
+          fileInput.style.display = 'none'
+          document.body.appendChild(fileInput)
+          
+          // When button is clicked, trigger the file input
+          this.elementMidiImportButton.addEventListener('click', () => {
+              fileInput.click()
+          }, { signal: this.abortController.signal })
+          
+          // When file is selected, call the callback
+          fileInput.addEventListener('change', (e) => {
+              const files = (e.target as HTMLInputElement).files
+              if (files && files.length > 0) {
+                  callback && callback(files[0])
+              }
+              // Reset the input so the same file can be selected again
+              fileInput.value = ''
+          }, { signal: this.abortController.signal })
+      }
+
+      /**
+       * Backwards compatibility - route to new method
+       */
+      whenMIDIFileImportRequestedRun(callback: (files: FileList) => void): void {
+          this.whenFileImportRequestedRun((file: File) => {
+              const fileList = new DataTransfer()
+              fileList.items.add(file)
+              callback(fileList.files)
+          })
+      }
 
     whenMIDIFileExportRequestedRun(callback){
          this.elementMidiExportButton && this.elementMidiExportButton.addEventListener('click', async ( e ) => {

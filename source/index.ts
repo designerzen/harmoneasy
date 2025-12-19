@@ -52,6 +52,8 @@ import { renderVexFlowToContainer, createVexFlowHTMLFromAudioEventRecording, sav
 import { Midi } from '@tonejs/midi'
 import { createOpenDAWProjectFromAudioEventRecording } from './libs/openDAW/adapter-opendaw-audio-events-recording.ts'
 import { createDawProjectFromAudioEventRecording, saveDawProjectToLocalFileSystem } from './libs/audiobus/midi/adapter-dawproject.ts'
+import { importDawProjectFile } from './libs/audiobus/midi/adapter-dawproject-import.ts'
+import { importMusicXMLFile } from './libs/audiobus/midi/adapter-musicxml-import.ts'
 
 import { addKeyboardDownEvents } from './libs/keyboard.ts'
 
@@ -575,6 +577,24 @@ const importMIDIFile = async(file: File) => {
 	}
 }
 
+/**
+ * Universal import handler - routes to appropriate importer based on file type
+ */
+const importFile = async (file: File): Promise<{ commands: IAudioCommand[], noteCount: number }> => {
+	const fileName = file.name.toLowerCase()
+	
+	// Determine file type and route to appropriate importer
+	if (fileName.endsWith('.mid') || fileName.endsWith('.midi') || file.type.includes('midi')) {
+		return importMIDIFile(file)
+	} else if (fileName.endsWith('.musicxml') || fileName.endsWith('.xml')) {
+		return importMusicXMLFile(file)
+	} else if (fileName.endsWith('.dawproject')) {
+		return importDawProjectFile(file)
+	} else {
+		throw new Error(`Unsupported file type: ${file.type || fileName}. Supported formats: MIDI (.mid, .midi), MusicXML (.musicxml, .xml), .dawProject`)
+	}
+}
+
 const addCommandToFuture = (commands: IAudioCommand[], transform=false, startDelay=3): IAudioCommand[] => {
 	// shift it into the future
 	commands.forEach(command => {
@@ -714,36 +734,35 @@ const initialiseApplication = async (onEveryTimingTick) => {
             ui.showInfoDialog("Error", "Failed to render VexFlow score. Check console for details.")
         }
     })
-	   ui.whenMIDIFileImportRequestedRun(async (files: FileList) => {
-        if (files.length > 0) {
-            // Trigger the drop handler by manually calling the MIDI import logic
-            const file = files[0]
-            try {
-                ui.showExportOverlay("Loading MIDI file...")
-               	const { commands, noteCount } = await importMIDIFile(file)
-				addCommandToFuture(commands, true)
-				
-				console.info("Loading MIDI file from import:", file.name, {commands, noteCount})
-				
-                ui.showInfoDialog("MIDI Loaded", `Successfully loaded ${file.name} with ${noteCount} notes`)
-            } catch (error) {
-                console.error("Error loading MIDI file from import:", error)
-                ui.showError("Failed to load MIDI file", error instanceof Error ? error.message : String(error))
-            } finally{
-				ui.hideExportOverlay()
-			}
+	   ui.whenFileImportRequestedRun(async (file: File) => {
+        try {
+            const fileType = file.name.split('.').pop()?.toUpperCase() || 'file'
+            ui.showExportOverlay(`Loading ${fileType} file...`)
+            console.info(`Loading ${fileType} file from import:`, file.name)
+            
+            const { commands, noteCount } = await importFile(file)
+            addCommandToFuture(commands, true)
+            
+            console.info(`${fileType} file loaded successfully:`, file.name, { commands, noteCount })
+            ui.showInfoDialog("File Loaded", `Successfully loaded ${file.name} with ${noteCount} notes`)
+        } catch (error) {
+            console.error("Error loading file from import:", error)
+            ui.showError("Failed to load file", error instanceof Error ? error.message : String(error))
+        } finally {
+            ui.hideExportOverlay()
         }
     })
     ui.whenMIDIFileDroppedRun(async (file: File) => {
         try {
-            ui.showExportOverlay("Found MIDI File")
-            console.info("Loading MIDI file from drop:", file.name)
-			const { commands, noteCount } = await importMIDIFile(file)
+            const fileType = file.name.split('.').pop()?.toUpperCase() || 'file'
+            ui.showExportOverlay(`Found ${fileType} File`)
+            console.info(`Loading ${fileType} file from drop:`, file.name)
+			const { commands, noteCount } = await importFile(file)
 			addCommandToFuture(commands, true)
 			
         } catch (error) {
-            console.error("Error loading MIDI file from drop:", error)
-            ui.showError("Failed to load MIDI file", error instanceof Error ? error.message : String(error))
+            console.error("Error loading file from drop:", error)
+            ui.showError("Failed to load file", error instanceof Error ? error.message : String(error))
        	} finally{
 			ui.hideExportOverlay()
 		}
