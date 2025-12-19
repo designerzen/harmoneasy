@@ -4,10 +4,9 @@
 
 .graph-node {
     color: white;
-    border: 2px solid #333;
+    border: var(--border);
     border-radius: var(--curve);
     padding: var(--pad);
-    font-size: 0.9em;
     font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -17,7 +16,9 @@
         oklch(50% 0.16392 var(--hue-accent)) 0%, 
         oklch(50% 0.1385  var(--hue-accent)) 100%);
 
-    min-width: var(--size, 200px);
+     min-width:150px;
+   
+	min-width: var(--size, 303px);
     min-height:var(--size);
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     
