@@ -47,46 +47,6 @@ a:hover {
 }
 
 
-button {
-    border-radius: 8px;
-    border: 1px solid transparent;
-    padding: 0.6em 1.2em;
-    // ios a11y guidelines
-    min-width: 44px;
-    min-height: 44px;
-    font-size: 1em;
-    font-weight: 500;
-    font-family: inherit;
-    background-color: #1a1a1a;
-    color: #ffffff;
-    cursor: pointer;
-    box-sizing: border-box;
-
-    transition: 
-        background 0.2s ease,
-        border-color 0.25s;
-
-    &.primary{
-        background: #ff6b4a;
-        &:hover {
-            background: #ef5b3a;
-        }
-    }
-
-    &.secondary{
-
-    }
-}
-
-button:hover {
-    border-color: #646cff;
-}
-
-button:focus,
-button:focus-visible {
-    outline: 4px auto -webkit-focus-ring-color;
-}
-
 
 details,
 details div {
@@ -97,7 +57,7 @@ details div {
 summary{
     display:flex;
 	flex-wrap:nowrap;
-    padding:var(--pad) 0;
+    padding:calc(var(--pad)/2) calc(var(--pad));
 
    
 }
@@ -108,17 +68,16 @@ summary{
     content: '- ';
 }
 dialog{
-    margin: auto;
-    padding: var(--pad);
+     margin: auto;
+     padding: var(--pad);
 
-    &::backdrop{
-        background-color: rgba(0, 0, 0, 0.5);
-    }
+     &::backdrop{
+         background-color: rgba(0, 0, 0, 0.5);
+     }
 }
-
 svg{
 	overflow: visible;
-	max-width: 100%;;
+	max-width: 100%;
 }
 canvas{
     max-width: 100%;
@@ -159,13 +118,17 @@ input[type="search"]{
 }
 
 select{
-	padding: calc( var(--pad) / 1 ) calc( var(--pad) / 2);
-	border: 1px solid rgba(255, 255, 255, 0.3);
-	border-radius: 4px;
-	background: rgba(255, 255, 255, 0.95);
-	color: #333;
-	font-size: 0.9em;
 	cursor: pointer;
+	// appearance: none;
+	padding: calc( var(--pad) ) calc( var(--pad) );
+	border:var(--border);
+	border-width: 4px;
+	border-radius: var(--curve,4px);
+	font-family: inherit;
+    font-size: inherit;
+
+	color: inherit;
+	background: inherit;
 
 	&:focus {
 		outline: none;
@@ -174,20 +137,37 @@ select{
 	}
 }
 
+option{
+	background: inherit;
+	background: white;
+	color:black;
+	padding: calc( var(--pad) ) calc( var(--pad) );
+	&:hover{
+		color:var(--col-accent, red);
+	}
+	&:checked{
+		// color:var(--col-accent, red);
+		font-weight: 900;
+	}
+}
+
 /*
 // Chrome now supports CUSTOM select
 // with all kinds of inner styles
+// BREAKS REACT ;(
 @supports (appearance: base-select){
-    select, ::picker(select) {
+	select, ::picker(select) {
         appearance: base-select;
-        font-family: inherit;
-        font-size: inherit;
-        color: inherit;
-        padding:var(--pad, 0.5rem);
-        background: inherit;
+       
+		button{
+			color: inherit;
+			background: inherit;
+		}
     }	
+	option{
+	}
 }
-    */
+*/
 
 .selectable{
      user-select: all;

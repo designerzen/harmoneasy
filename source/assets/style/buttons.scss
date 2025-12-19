@@ -1,3 +1,51 @@
+
+button {
+    border-radius: 8px;
+    border: 1px solid transparent;
+    padding: calc(var(--pad)/2) calc(var(--pad));
+    // ios a11y guidelines
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 1em;
+    font-weight: 500;
+    font-family: inherit;
+    background-color: #1a1a1a;
+    color: #ffffff;
+    cursor: pointer;
+    box-sizing: border-box;
+
+    transition: 
+        background 0.2s ease,
+        border-color 0.25s;
+
+    &.primary{
+        background: #ff6b4a;
+        &:hover {
+            background: #ef5b3a;
+        }
+    }
+
+    &.secondary{
+
+    }
+}
+
+button:hover {
+    border-color: #646cff;
+}
+
+button:active{
+	transform: scale(0.96);
+}
+
+button:focus{
+	outline: none;
+}
+button:focus-visible {
+    outline: 4px auto var(--col-accent, yellow);
+}
+
+
 .btn-close{
 
 	font-size: 0;
@@ -9,11 +57,26 @@
 		margin: auto;
 	}
 
-	&dialog{
-		position: absolute;
-		right: var(--pad);
-		top: var(--pad);
+	& dialog{
+
 	}
+}
+
+dialog .btn-close{
+	position: absolute;
+    top: var(--pad);
+    right: calc(var(--pad));
+    z-index: 999;
+}
+
+.logo-inline {
+	display: inline-block;
+	height: 1.5em;
+	height: 1lh;
+	width: auto;
+	margin-right: 0.5em;
+	vertical-align: middle;
+	filter:invert(100%);
 }
 
 .btn-remove {
@@ -35,7 +98,7 @@
 		font-weight: 900;
 		margin: auto;
 	}
-	
+
 	&:hover {
 		background: rgba(185, 28, 28, 1);
 	}

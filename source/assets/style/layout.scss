@@ -1,5 +1,5 @@
 /* Timer Bar at the very top */
-#timer-bar {
+#transport {
 	background: #1a1a1a;
 	color: #fff;
 	padding: 8px 16px;
@@ -169,19 +169,6 @@ header {
 	}
 }
 
-#sidebar-close {
-	background: transparent;
-	border: none;
-	color: white;
-	font-size: 24px;
-	cursor: pointer;
-	padding: calc(var(--pad) / 2) calc(var(--pad));
-
-	&:hover {
-		border-color: transparent;
-	}
-}
-
 #sidebar-content {
 	padding: 16px;
 
@@ -208,21 +195,61 @@ main {
 	display: grid;
 	grid-template-areas:
 		"menu"
-		"graph";
+		"graph"
+		"explorer";
+	grid-template-rows: 
+		0fr 
+		minmax(auto, calc(100dvh - 9%)) 
+		auto;
+
 	position: relative;
 	scroll-snap-align: start;
 	scroll-snap-stop: always;
 }
 
+#action-bar {
+	padding: calc(var(--pad)/2) calc(var(--pad));
+	display: flex;
+	grid-area: menu;
+	height: fit-content;
+	justify-content: flex-end;
+	justify-content: center;
+
+	flex-wrap: wrap;
+
+	align-items: stretch;
+	gap: var(--gap);
+	border-bottom: var(--border);
+	position: relative;
+	z-index: 100;
+
+	@media (prefers-color-scheme: light) {
+		background: #2c2c2c;
+		color: #fff;
+		border-bottom: 1px solid #444;
+	}
+		
+	@media (max-width: 768px) {
+		flex-wrap: wrap;
+			justify-content: center;
+
+			button {
+				flex: 1;
+				min-width: 150px;
+			}
+	}
+}
+
 #graph {
-	width: 100%;
-	height: 100%;
-	max-width: 100%;
-	max-height:calc(100dvh - 13%);
+	// width: 100%;
+	// height: 100%;
+	// max-width: 100%;
 	grid-area: graph;
 	display: flex;
 	overflow: auto;
 }
+
+
 
 #note-visualiser {
 	background: #e0e0e0;
@@ -230,15 +257,23 @@ main {
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	grid-area: 2/1/-1/-1;
+	grid-area: 2/1/2/-1;
+	grid-area:graph;
+	width: 100%;
+	max-width: 100vw;
+	height: 100%;
 	z-index: -1;
 	pointer-events: none;
-	object-fit: cover;
 
 	@media (prefers-color-scheme: dark) {
 		background: #2a2a2a;
 		border-top-color: #444;
 	}
+}
+
+
+song-explorer{
+	grid-area: explorer;
 }
 
 /* Hidden Options Form */
@@ -299,31 +334,6 @@ main {
 	}
 }
 
-/* Action Bar */
-#action-bar {
-	background: #2c2c2c;
-	color: #fff;
-	padding: 12px 24px;
-	display: flex;
-	grid-area: menu;
-	justify-content: flex-end;
-	justify-content: center;
-
-	flex-wrap: wrap;
-
-	align-items: stretch;
-	gap: 12px;
-	border-bottom: 1px solid #444;
-	position: relative;
-	z-index: 100;
-
-	@media (prefers-color-scheme: light) {
-		background: #2c2c2c;
-		color: #fff;
-		border-bottom: 1px solid #444;
-	}
-}
-
 /* Responsive */
 @media (max-width: 768px) {
 
@@ -351,16 +361,8 @@ main {
 		flex-direction: column;
 	}
 
-	#action-bar {
-		flex-wrap: wrap;
-		justify-content: center;
-
-		button {
-			flex: 1;
-			min-width: 150px;
-		}
-	}
 }
+
 
 /* Export Overlay */
 .export-overlay {
@@ -450,8 +452,50 @@ song-explorer {
 	}
 }
 
-@keyframes spin {
-	to {
-		transform: rotate(360deg);
-	}
+
+// Overlays
+
+#export-dialog {
+     min-width: 300px;
+     max-width: 90vw;
+}
+
+.export-menu {
+     display: flex;
+     flex-direction: column;
+     gap: 0.5rem;
+     margin: 1rem 0;
+     list-style: none;
+     padding: 0;
+
+     .export-option {
+         width: 100%;
+         text-align: left;
+         padding: 0.75em 1em;
+         background-color: #f0f0f0;
+         color: #333;
+         border: 1px solid #ddd;
+         transition: all 0.2s ease;
+
+         &:hover {
+             background-color: #ff6b4a;
+             color: white;
+             border-color: #ff6b4a;
+         }
+
+         &:active {
+             transform: scale(0.98);
+         }
+
+         @media (prefers-color-scheme: dark) {
+             background-color: #2a2a2a;
+             color: #e0e0e0;
+             border-color: #444;
+
+             &:hover {
+                 background-color: #ff6b4a;
+                 color: white;
+             }
+         }
+     }
 }
