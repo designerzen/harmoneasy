@@ -55,12 +55,12 @@ details div {
 }
 
 summary{
+	
     display:flex;
 	flex-wrap:nowrap;
     padding:calc(var(--pad)/2) calc(var(--pad));
-
-   
 }
+
 ::marker {
     content: '+ ';
 }
