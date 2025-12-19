@@ -28,6 +28,8 @@ const DOM_ID_BUTTON_EXPORT_VEXFLOW = "btn-vexflow-export"
 const DOM_ID_BUTTON_EXPORT_AUDIOTOOL = "btn-audiotool-export"
 const DOM_ID_BUTTON_EXPORT_OPENDAW = "btn-opendaw-export"
 const DOM_ID_BUTTON_EXPORT_DAWPROJECT = "btn-dawproject-export"
+const DOM_ID_BUTTON_EXPORT = "btn-export"
+const DOM_ID_EXPORT_DIALOG = "export-dialog"
 
 const DOM_ID_BUTTON_KILL_SWITCH = "btn-kill-switch"
 const DOM_ID_BUTTON_RESET = "btn-reset"
@@ -42,8 +44,14 @@ const DOM_ID_NOTE_VISUALISER_CANVAS = "note-visualiser"
 const DOM_ID_DIALOG_ERROR = "error-dialog"
 const DOM_ID_DIALOG_INFO = "info-dialog"
 
+const DEFAULT_OPTIONS = {
+	verticalNoteBars:false
+}
+
 export default class UI{
 
+	options:object
+    abortController = new AbortController()
     clockAnimationFrame = -1
     devices: HTMLElement | null
     inputs: HTMLElement | null
@@ -63,6 +71,8 @@ export default class UI{
     elementBLEManualSendButton: HTMLElement | null
     elementButtonKillSwitch: HTMLElement | null
     elementButtonReset: HTMLElement | null
+    elementButtonExport: HTMLElement | null
+    elementExportDialog: HTMLElement | null
     elementMidiImportButton: HTMLElement | null
     elementMidiExportButton: HTMLElement | null
     elementMidiMarkdownExportButton: HTMLElement | null
@@ -80,8 +90,10 @@ export default class UI{
     keyboard: any
     keyboardElement: any
  
-    constructor( keyboardNotes, onNoteOn, onNoteOff ){
-        this.devices = document.getElementById(DOM_ID_MIDI_DEVICES)
+    constructor( keyboardNotes:Array<NoteModel>, onNoteOn:Function, onNoteOff:Function, options=DEFAULT_OPTIONS ){
+        
+		this.options = {...DEFAULT_OPTIONS,...options}
+		this.devices = document.getElementById(DOM_ID_MIDI_DEVICES)
         
         this.inputs = document.getElementById(DOM_ID_MIDI_INPUTS)
         this.outputs = document.getElementById(DOM_ID_MIDI_OUTPUTS)
@@ -103,6 +115,8 @@ export default class UI{
         this.elementBLEManualSendButton = document.getElementById(DOM_ID_BUTTON_SEND_BLE_MANUAL)
         this.elementButtonKillSwitch = document.getElementById(DOM_ID_BUTTON_KILL_SWITCH)
         this.elementButtonReset = document.getElementById(DOM_ID_BUTTON_RESET)
+        this.elementButtonExport = document.getElementById(DOM_ID_BUTTON_EXPORT)
+        this.elementExportDialog = document.getElementById(DOM_ID_EXPORT_DIALOG)
         
         this.elementMidiImportButton = document.getElementById(DOM_ID_BUTTON_IMPORT_MIDI_FILE)
         this.elementMidiExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_MIDI_FILE)
@@ -122,7 +136,7 @@ export default class UI{
         this.activateSidebar()
 
         this.noteVisualiserCanvas = document.getElementById(DOM_ID_NOTE_VISUALISER_CANVAS)
-        this.noteVisualiser = new NoteVisualiser( keyboardNotes, this.noteVisualiserCanvas, true, 0 ) // ALL_KEYBOARD_NOTES
+        this.noteVisualiser = new NoteVisualiser( keyboardNotes, this.noteVisualiserCanvas, this.options.verticalNoteBars, 0 ) // ALL_KEYBOARD_NOTES
         // wallpaperCanvas.addEventListener( "dblclick", e => scale === SCALES[ (SCALES.indexOf(scale) + 1) % SCALES.length] )
 
         this.keyboard = new SVGKeyboard( keyboardNotes, onNoteOn, onNoteOff )
@@ -136,6 +150,17 @@ export default class UI{
     }
 
     /**
+     * Register callback for when the export button is clicked to open the export menu
+     */
+    whenExportMenuRequestedRun(callback): void {
+        this.elementButtonExport && this.elementExportDialog && this.elementButtonExport.addEventListener('click', () => {
+            this.elementExportDialog.hidden = false
+			this.elementExportDialog.showModal()
+            callback && callback()
+        }, { signal: this.abortController.signal })
+    }
+
+    /**
      * Setup drag and drop file handling for MIDI files
      */
     private setupDragAndDrop(): void {
@@ -146,13 +171,13 @@ export default class UI{
             e.preventDefault()
             e.stopPropagation()
             dropZone.classList.add('drag-over')
-        })
+        }, { signal: this.abortController.signal })
 
         dropZone.addEventListener('dragleave', (e) => {
             e.preventDefault()
             e.stopPropagation()
             dropZone.classList.remove('drag-over')
-        })
+        }, { signal: this.abortController.signal })
 
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault()
@@ -163,7 +188,7 @@ export default class UI{
             if (files && files.length > 0) {
                 this.handleMIDIFileDrop(files[0])
             }
-        })
+        }, { signal: this.abortController.signal })
     }
 
     /**
@@ -198,15 +223,15 @@ export default class UI{
 
     activateSidebar(){
           // Sidebar toggle functionality
-        const timerBar = document.getElementById('timer-bar')
+        const timerBar = document.getElementById('transport')
         const sidebar = document.getElementById('sidebar')
         const sidebarClose = document.getElementById('sidebar-close')
 
         timerBar.addEventListener('click', () => {
             sidebar.classList.toggle('open')
-        })
+        }, { signal: this.abortController.signal })
 
-        sidebarClose.addEventListener('click', () => sidebar.classList.remove('open'))
+        sidebarClose.addEventListener('click', () => sidebar.classList.remove('open'), { signal: this.abortController.signal })
 
         // Close sidebar when clicking outside of it
         document.addEventListener('click', (e) => {
@@ -215,7 +240,7 @@ export default class UI{
                 !timerBar.contains(e.target)) {
                 sidebar.classList.remove('open')
             }
-        })
+        }, { signal: this.abortController.signal })
     }
 
     /**
@@ -291,10 +316,10 @@ export default class UI{
     // Bluetooth --------------------------------------------------------------------
 
     whenBluetoothDeviceRequestedRun(callback){
-        this.elementButtonBluetoothConnect.addEventListener("click", e=>{
-            callback && callback() 
-        })
-    }
+         this.elementButtonBluetoothConnect.addEventListener("click", e=>{
+             callback && callback() 
+         }, { signal: this.abortController.signal })
+     }
 
     setBluetoothButtonText(text = "Connect Bluetooth"){
         this.elementButtonBluetoothConnect.textContent = text
@@ -341,17 +366,17 @@ export default class UI{
      * @param {Function} callback (value: string) => void
      */
     whenUserRequestsManualBLECodesRun(callback){
-        if (!this.elementBLEManualSendButton || !this.elementBLEManualInput) return
-        const doSend = () => {
-            const raw = String(this.elementBLEManualInput.value || '').trim()
-            callback && callback(raw)
-        }
-        this.elementBLEManualSendButton.addEventListener('click', e => doSend())
-        // allow Enter key in the input to trigger send
-        this.elementBLEManualInput.addEventListener('keydown', e => {
-            if (e.key === 'Enter') { e.preventDefault(); doSend() }
-        })
-    }
+         if (!(this.elementBLEManualSendButton && this.elementBLEManualInput)) return
+         const doSend = () => {
+             const raw = String(this.elementBLEManualInput.value || '').trim()
+             callback && callback(raw)
+         }
+         this.elementBLEManualSendButton.addEventListener('click', e => doSend(), { signal: this.abortController.signal })
+         // allow Enter key in the input to trigger send
+         this.elementBLEManualInput.addEventListener('keydown', e => {
+             if (e.key === 'Enter') { e.preventDefault(); doSend() }
+         }, { signal: this.abortController.signal })
+     }
 
     /**
      * Toggle visibility of the manual BLE input and send button.
@@ -377,21 +402,21 @@ export default class UI{
     }
 
     whenWebMIDIToggledRun(callback){
-        if (!this.elementButtonWebMIDI) return
-        this.elementButtonWebMIDI.addEventListener('click', e => {
-            callback && callback(e)
-        })
-    }
+         this.elementButtonWebMIDI && this.elementButtonWebMIDI.addEventListener('click', e => {
+             callback && callback(e)
+         }, { signal: this.abortController.signal })
+     }
 
 
     // Exporting --------------------------------------------------------------------
-    hideExportOverlay(){
-        this.elementOverlayExport.hidden = true
-    }
     showExportOverlay( text ){
-        // this.setExportOverlayText( text 
         this.elementOverlayExport.hidden = false
     }
+
+	hideExportOverlay(){
+         this.elementOverlayExport.hidden = true
+    }
+ 
     setExportOverlayText(text){
         if (text && this.elementOverlayExportText)
         { 
@@ -401,105 +426,95 @@ export default class UI{
 
     // Export Buttons 
     whenAudioToolExportRequestedRun(callback){
-        if (!this.elementAudioToolExportButton) return
-        this.elementAudioToolExportButton.addEventListener('click', async ( e ) => {
-            this.showExportOverlay()
-            callback && await callback(e)
-            this.hideExportOverlay()
-        })
-    }
+         this.elementAudioToolExportButton && this.elementAudioToolExportButton.addEventListener('click', async ( e ) => {
+             this.showExportOverlay()
+             callback && await callback(e)
+             this.hideExportOverlay()
+         }, { signal: this.abortController.signal })
+     }
     /**
      * Register callback for when MIDI file import button is clicked
      */
     whenMIDIFileImportRequestedRun(callback: (files: FileList) => void): void {
-        if (!this.elementMidiImportButton) return
-        
-        // Create a hidden file input element
-        const fileInput = document.createElement('input')
-        fileInput.type = 'file'
-        fileInput.accept = '.mid,.midi,audio/midi'
-        fileInput.style.display = 'none'
-        document.body.appendChild(fileInput)
-        
-        // When button is clicked, trigger the file input
-        this.elementMidiImportButton.addEventListener('click', () => {
-            fileInput.click()
-        })
-        
-        // When file is selected, call the callback
-        fileInput.addEventListener('change', (e) => {
-            const files = (e.target as HTMLInputElement).files
-            if (files && files.length > 0) {
-                callback && callback(files)
-            }
-            // Reset the input so the same file can be selected again
-            fileInput.value = ''
-        })
-    }
+         if (!this.elementMidiImportButton) return
+         const fileInput = document.createElement('input')
+         fileInput.type = 'file'
+         fileInput.accept = '.mid,.midi,audio/midi'
+         fileInput.style.display = 'none'
+         document.body.appendChild(fileInput)
+         
+         // When button is clicked, trigger the file input
+         this.elementMidiImportButton.addEventListener('click', () => {
+             fileInput.click()
+         }, { signal: this.abortController.signal })
+         
+         // When file is selected, call the callback
+         fileInput.addEventListener('change', (e) => {
+             const files = (e.target as HTMLInputElement).files
+             if (files && files.length > 0) {
+                 callback && callback(files)
+             }
+             // Reset the input so the same file can be selected again
+             fileInput.value = ''
+         }, { signal: this.abortController.signal })
+     }
 
     whenMIDIFileExportRequestedRun(callback){
-        if (!this.elementMidiExportButton) return
-        this.elementMidiExportButton.addEventListener('click', async ( e ) => {
-            this.showExportOverlay()
-            callback && await callback(e)
-            this.hideExportOverlay()
-        })
-    }
+         this.elementMidiExportButton && this.elementMidiExportButton.addEventListener('click', async ( e ) => {
+             this.showExportOverlay()
+             callback && await callback(e)
+             this.hideExportOverlay()
+         }, { signal: this.abortController.signal })
+     }
     whenMIDIMarkdownExportRequestedRun(callback){
-        if (!this.elementMidiMarkdownExportButton) return
-        this.elementMidiMarkdownExportButton.addEventListener('click', async ( e ) => {
-            callback && await callback(e)
-        })
-    }
+         this.elementMidiMarkdownExportButton && this.elementMidiMarkdownExportButton.addEventListener('click', async ( e ) => {
+             callback && await callback(e)
+         }, { signal: this.abortController.signal })
+     }
     whenMusicXMLExportRequestedRun(callback){
-        if (!this.elementMusicXMLExportButton) return
-        this.elementMusicXMLExportButton.addEventListener('click', async ( e ) => {
-            this.showExportOverlay()
-            callback && await callback(e)
-            this.hideExportOverlay()
-        })
-    }
+         this.elementMusicXMLExportButton && this.elementMusicXMLExportButton.addEventListener('click', async ( e ) => {
+             this.showExportOverlay()
+             callback && await callback(e)
+             this.hideExportOverlay()
+         }, { signal: this.abortController.signal })
+     }
     whenVexFlowExportRequestedRun(callback){
-        if (!this.elementVexFlowExportButton) return
-        this.elementVexFlowExportButton.addEventListener('click', async ( e ) => {
-            this.showExportOverlay()
-            callback && await callback(e)
-            this.hideExportOverlay()
-        })
-    }
+         this.elementVexFlowExportButton && this.elementVexFlowExportButton.addEventListener('click', async ( e ) => {
+             this.showExportOverlay()
+             callback && await callback(e)
+             this.hideExportOverlay()
+         }, { signal: this.abortController.signal })
+     }
     whenOpenDAWExportRequestedRun(callback){
-        if (!this.elementOpenDAWExportButton) return
-        this.elementOpenDAWExportButton.addEventListener('click', async ( e ) => {
-            this.showExportOverlay()
-            callback && await callback(e)
-            this.hideExportOverlay()
-        })
-    }
+         this.elementOpenDAWExportButton && this.elementOpenDAWExportButton.addEventListener('click', async ( e ) => {
+             this.showExportOverlay()
+             callback && await callback(e)
+             this.hideExportOverlay()
+         }, { signal: this.abortController.signal })
+     }
     whenDawProjectExportRequestedRun(callback){
-        if (!this.elementDawProjectExportButton) return
-        this.elementDawProjectExportButton.addEventListener('click', async ( e ) => {
-            this.showExportOverlay()
-            callback && await callback(e)
-            this.hideExportOverlay()
-        })
-    }
+         this.elementDawProjectExportButton && this.elementDawProjectExportButton.addEventListener('click', async ( e ) => {
+             this.showExportOverlay()
+             callback && await callback(e)
+             this.hideExportOverlay()
+         }, { signal: this.abortController.signal })
+     }
 
     whenRandomTimbreRequestedRun(callback){
-        this.elementButtonRandomTimbre.addEventListener('click', e => {
-            callback && callback(e)
-        })
-    }
+         this.elementButtonRandomTimbre && this.elementButtonRandomTimbre.addEventListener('click', e => {
+             callback && callback(e)
+         }, { signal: this.abortController.signal })
+     }
 
     /**
      * Register a callback for when the kill switch (all notes off) button is clicked
      * @param {Function} callback () => void
      */
     whenKillSwitchRequestedRun(callback){
-        if (!this.elementButtonKillSwitch) return
-        this.elementButtonKillSwitch.addEventListener('pointerdown', e => {
-            callback && callback(e)
-        })
-    }
+         this.elementButtonKillSwitch && this.elementButtonKillSwitch.addEventListener('pointerdown', e => {
+             callback && callback(e)
+         }, { signal: this.abortController.signal })
+     }
 
     /**
      * Register a callback for when the reset button is clicked
@@ -507,31 +522,35 @@ export default class UI{
      * @param {Function} callback () => void
      */
     whenResetRequestedRun(callback){
-        if (!this.elementButtonReset) return
-        this.elementButtonReset.addEventListener('click', e => {
-            const confirmed = confirm('Are you sure? This will delete all recorded AudioCommands from memory and OPFS storage.')
-            if (confirmed) {
-                callback && callback(e)
-            }
-        })
+		if (!this.elementButtonReset){
+			return
+		}
+        
+		const question = "Are you sure? This will delete all recorded AudioCommands from memory and saved in storage. It will also reset the clock."
+		this.elementButtonReset.addEventListener('click', e => {
+			const confirmed = confirm(question)
+			if (confirmed) {
+				callback && callback(e)
+			}
+		}, { signal: this.abortController.signal })
+	
     }
 
     whenTempoChangesRun(callback){
-         this.elementTempo.addEventListener("input", e=>{
-             const tempo  = this.elementTempo.value
-             callback && callback(tempo) 
-             this.elementBPM.textContent = tempo
-         })
-     }
+          this.elementTempo && this.elementTempo.addEventListener("input", e=>{
+              const tempo  = this.elementTempo.value
+              callback && callback(tempo) 
+              this.elementBPM.textContent = tempo
+          }, { signal: this.abortController.signal })
+      }
 
     whenVolumeChangesRun(callback){
-        if (!this.elementVolume) return
-        this.elementVolume.addEventListener("input", e=>{
-            const volume = this.elementVolume.value
-            callback && callback(volume)
-            if (this.elementVolumeOutput) this.elementVolumeOutput.textContent = volume
-        })
-    }
+         this.elementVolume && this.elementVolume.addEventListener("input", e=>{
+             const volume = this.elementVolume.value
+             callback && callback(volume)
+             if (this.elementVolumeOutput) this.elementVolumeOutput.textContent = volume
+         }, { signal: this.abortController.signal })
+     }
     
     /**
      * 
@@ -550,21 +569,19 @@ export default class UI{
      * @param {Function} callback (channel: number) => void
      */
     whenMIDIChannelSelectedRun(callback){
-        if (!this.elementMIDIChannelSelector) return
-        this.elementMIDIChannelSelector.addEventListener("change", e => {
-            const channel = Number(this.elementMIDIChannelSelector.value)
-            callback && callback(channel)
-        })
-    }
+         this.elementMIDIChannelSelector && this.elementMIDIChannelSelector.addEventListener("change", e => {
+             const channel = Number(this.elementMIDIChannelSelector.value)
+             callback && callback(channel)
+         }, { signal: this.abortController.signal })
+     }
 
     /**
      * When the note visualiser is double pressed call
      * @param callback 
      */    
     whenNoteVisualiserDoubleClickedRun( callback){
-        if (!this.noteVisualiserCanvas) return
-        this.noteVisualiserCanvas.addEventListener( "dblclick", e => callback && callback(e) )   
-    }
+         this.noteVisualiserCanvas && this.noteVisualiserCanvas.addEventListener( "dblclick", e => callback && callback(e), { signal: this.abortController.signal } )   
+     }
 
     /**
      * 
@@ -583,7 +600,7 @@ export default class UI{
         this.inputs.innerHTML = `MIDI Command STOP #${command} <br>`+ this.inputs.innerHTML
     }
 
-    updateClock( values ){
+    updateClock( values, audioCommandQuantity=0 ){
          const { 
             divisionsElapsed,
             bar, bars, 
@@ -594,7 +611,7 @@ export default class UI{
         cancelAnimationFrame(this.clockAnimationFrame)
 
         this.clockAnimationFrame = requestAnimationFrame( ()=>{
-            this.elementClock.textContent = `${String(bar).padStart(2, '0')}:${bars}:${String(barsElapsed).padStart(3, '0')} [${String(divisionsElapsed).padStart(2, '0')}] ${formatTimeStampFromSeconds(elapsed)} seconds`
+            this.elementClock.textContent = `${String(bar).padStart(2, '0')}:${bars}:${String(barsElapsed).padStart(3, '0')} [${String(divisionsElapsed).padStart(2, '0')}] ${formatTimeStampFromSeconds(elapsed)} seconds [${audioCommandQuantity??0} evemts]`
             // this.elementClock.innerHTML = `${String(bar).padStart(2, '0')}:${bars}:${String(barsElapsed).padStart(3, '0')} [${String(divisionsElapsed).padStart(2, '0')}] ${formatTimeStampFromSeconds(elapsed)} seconds`
             // this.elementClock.innerHTML = `${bar}:${bars}:${barsElapsed} [${divisionsElapsed}] ${intervals}, ${elapsed.toFixed(2)} seconds`
         } )
@@ -604,7 +621,7 @@ export default class UI{
      * Show Note On
      * @param {NoteModel} note 
      */
-    noteOn(note) {
+    noteOn(note: NoteModel) {
         this.noteVisualiser.noteOn( note )
         this.keyboard.setKeyAsActive( note )
         this.addCommand("NoteOn #" + note.number )
@@ -614,7 +631,7 @@ export default class UI{
      * Show Note Off
      * @param {NoteModel} note 
      */
-    noteOff(note) {
+    noteOff(note: NoteModel) {
         this.noteVisualiser.noteOff( note )
         this.keyboard.setKeyAsInactive( note )
         this.removeCommand("NoteOff #" + note.number )
@@ -629,6 +646,11 @@ export default class UI{
             const noteModel = new NoteModel(noteNumber)
             this.noteOff(noteModel)
         }
-    }
+	}
 
+	destroy(){
+		this.noteVisualiser.destroy()
+		this.keyboard.destroy()
+		this.abortController.abort()
+	}
 }

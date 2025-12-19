@@ -46,7 +46,6 @@
 				<button type="button" id="btn-connect-to-ble">Connect Bluetooth</button>
 				<button type="button" id="btn-toggle-webmidi">Connect WebMIDI</button>
 				<button type="button" id="btn-kill-switch" class="kill-switch primary">Panic</button>
-				<button type="button" id="btn-reset" class="primary">Reset</button>
 			</div>
 
 		</menu>
@@ -56,13 +55,8 @@
 	<main>
 		<menu id="action-bar">
 			<button class="primary" type="button" id="btn-midi-import">Import MIDI file</button>
-			<button class="primary" type="button" id="btn-midi-export">Export as MIDI file</button>
-			<button class="primary" type="button" id="btn-midi-markdown-export">Export as Markdown</button>
-			<button class="primary" type="button" id="btn-musicxml-export">Export to MusicXML</button>
-			<button class="primary" type="button" id="btn-vexflow-export">Export to VexFlow</button>
-			<button type="button" id="btn-audiotool-export">Open in AudioTool</button>
-			<button type="button" id="btn-opendaw-export">Open in OpenDAW</button>
-			<button class="primary" type="button" id="btn-dawproject-export">Export as .dawProject</button>
+			<button class="primary" type="button" id="btn-import">Import</button>
+			<button class="primary" type="button" id="btn-export">Export</button>
 		</menu>
 
 		<div id="graph"></div>
@@ -71,19 +65,19 @@
 		<!-- <canvas id="song-explorer" width="1920" height="1080"></canvas> -->
 	</main>
 
-	<!-- Sidebars for MIDI Events -->
-	<div id="timer-bar" aria-hide>
+	<!-- Transport -->
+	<div id="transport" aria-hide>
 		<strong>Timer</strong>
 		<time id="clock">...</time>
+		<button type="button" id="btn-reset" class="icon">Reset</button>
 	</div>
 
+	<!-- Sidebars for MIDI Events -->
 	<aside id="sidebar">
 
 		<header id="sidebar-header">
 			<h4>MIDI Events</h4>
-			<button type="button" id="sidebar-close" class="btn-close">
-				<span class="sr-only">close</span>&times;
-			</button>
+			<button type="button" id="sidebar-close" class="btn-close">Hide MIDI Events</button>
 		</header>
 
 		<div id="sidebar-content">
@@ -126,16 +120,10 @@
 	</aside>
 
 	<!-- Overlays -->
-	<div id="export-overlay" class="export-overlay" hidden>
-		<div class="export-overlay-content">
-			<div class="spinner"></div>
-			<h5>Exporting...</h5>
-			<p>Please wait while we create your project</p>
-		</div>
-	</div>
-
-	<dialog id="info-dialog" hidden aria-labelledby="info-dialog-title" aria-describedby="info-message">
-		<h5 id="info-dialog-title">Information</h5>
+	<dialog id="info-dialog" closedby="any" hidden aria-labelledby="info-dialog-title" aria-describedby="info-message">
+		<header>
+			<h5 id="info-dialog-title">Information</h5>
+		</header>
 		<pre id="info-message" class="selectable" role="status" aria-live="polite"></pre>
 		<form method="dialog">
 			<button class="btn-close" type="submit">
@@ -144,8 +132,10 @@
 		</form>
 	</dialog>
 
-	<dialog id="error-dialog" hidden aria-labelledby="error-dialog-title" aria-describedby="error-message">
-		<h5 id="error-dialog-title">Error</h5>
+	<dialog id="error-dialog" hidden closedby="any" aria-labelledby="error-dialog-title" aria-describedby="error-message">
+		<header>
+			<h5 id="error-dialog-title">Error</h5>
+		</header>
 		<div role="alert">
 			<p id="error-message"></p>
 			<p id="error-solution"></p>
@@ -157,101 +147,40 @@
 		</form>
 	</dialog>
 
-	<dialog id="auth-dialog" hidden aria-labelledby="auth-dialog-title">
-		<h5 id="auth-dialog-title">Authentication</h5>
-
-		<form id="auth-form" method="dialog">
-
-			<!-- Username Field -->
-			<fieldset>
-				<legend>Login Credentials</legend>
-
-				<label for="auth-username">
-					Username
-					<span aria-label="required">*</span>
-				</label>
-				<input id="auth-username" type="text" name="username" placeholder="Enter your username" required
-					aria-required="true" aria-describedby="username-error">
-				<span id="username-error" role="alert"></span>
-
-				<!-- Password Field -->
-				<label for="auth-password">
-					Password
-					<span aria-label="required">*</span>
-				</label>
-				<input id="auth-password" type="password" name="password" placeholder="Enter your password" required
-					aria-required="true" aria-describedby="password-error">
-				<span id="password-error" role="alert"></span>
-
-			</fieldset>
-
-			<!-- Additional Options -->
-			<fieldset>
-				<legend>Options</legend>
-
-				<label for="auth-remember">
-					<input id="auth-remember" type="checkbox" name="remember" aria-describedby="remember-help">
-					Remember me
-				</label>
-				<span id="remember-help" class="sr-only">Keep me logged in on this device</span>
-
-				<label for="auth-2fa">
-					<input id="auth-2fa" type="checkbox" name="enable2fa" aria-describedby="2fa-help">
-					Enable two-factor authentication
-				</label>
-				<span id="2fa-help" class="sr-only">Use an authenticator app for enhanced security</span>
-
-			</fieldset>
-
-			<!-- 2FA Code Field (hidden by default) -->
-			<fieldset id="auth-2fa-fieldset" hidden>
-				<legend>Two-Factor Authentication</legend>
-
-				<label for="auth-2fa-code">
-					2FA Code
-					<span aria-label="required">*</span>
-				</label>
-				<input id="auth-2fa-code" type="text" name="twoFactorCode" placeholder="Enter 6-digit code"
-					maxlength="6" pattern="[0-9]{6}" aria-required="false"
-					aria-describedby="2fa-code-help 2fa-code-error">
-				<span id="2fa-code-help" class="sr-only">Enter the 6-digit code from your authenticator app</span>
-				<span id="2fa-code-error" role="alert"></span>
-
-			</fieldset>
-
-			<!-- Server/Endpoint Field -->
-			<fieldset>
-				<legend>Server Configuration</legend>
-
-				<label for="auth-server">
-					Server URL
-					<span aria-label="optional">(optional)</span>
-				</label>
-				<input id="auth-server" type="url" name="serverUrl" placeholder="https://auth.example.com"
-					aria-describedby="server-help server-error">
-				<span id="server-help" class="sr-only">Leave blank to use the default server</span>
-				<span id="server-error" role="alert"></span>
-
-			</fieldset>
-
-			<!-- Form Actions -->
-			<div class="form-actions" role="group" aria-label="Form controls">
-				<button id="auth-submit" type="submit" class="primary" aria-busy="false">
-					Sign In
-				</button>
-				<button type="reset" class="secondary">
-					Clear
-				</button>
-				<button type="submit" class="btn-close" value="cancel">
-					Cancel
-				</button>
-			</div>
-
-			<!-- Form Status Message -->
-			<span id="auth-status" role="status" aria-live="polite" aria-atomic="true"></span>
-
+	<dialog id="export-dialog" hidden closedby="any" aria-labelledby="export-dialog-title">
+		<header>
+			<h5 id="export-dialog-title">Export</h5>	
+		</header>
+		<menu id="export-options" class="export-menu">
+			<button type="button" id="btn-audiotool-export" class="export-option">
+				<img src="source/assets/logos/audiotool.svg" alt="AudioTool" class="logo-inline">
+				Open in AudioTool
+			</button>
+			<button type="button" id="btn-opendaw-export" class="export-option">
+				<img src="source/assets/logos/opendaw.svg" alt="OpenDAW" class="logo-inline">
+				Open in OpenDAW
+			</button>
+			<hr>
+			<button type="button" id="btn-midi-export" class="export-option">Export as MIDI file</button>
+			<button type="button" id="btn-dawproject-export" class="export-option">Export as .dawProject</button>
+			<button type="button" id="btn-midi-markdown-export" class="export-option">Export as Markdown</button>
+			<button type="button" id="btn-musicxml-export" class="export-option">Export to MusicXML</button>
+			<button type="button" id="btn-vexflow-export" class="export-option">Download Sheet Music</button>
+		</menu>
+		<form method="dialog">
+			<button class="btn-close" type="submit">
+				Close
+			</button>
 		</form>
 	</dialog>
+
+	<div id="export-overlay" class="export-overlay" hidden>
+		<div class="export-overlay-content">
+			<div class="spinner"></div>
+			<h5>Exporting...</h5>
+			<p>Please wait while we create your project</p>
+		</div>
+	</div>
 
 	<script type="module" src="/source/index.ts"></script>
 

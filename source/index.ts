@@ -40,6 +40,7 @@ import PolySynth from './libs/audiobus/instruments/poly-synth.js'
 import NoteModel from './libs/audiobus/note-model.ts'
 
 import { TransformerManager } from './libs/audiobus/transformers/transformer-manager.ts'
+import { TransformerManagerWorker } from './libs/audiobus/transformers/transformer-manager-worker.ts'
 import { createAudioCommand } from './libs/audiobus/audio-command-factory.ts'
 import { RecorderAudioEvent } from './libs/audiobus/recorder-audio-event.ts'
 import { createReverbImpulseResponse } from './libs/audiobus/effects/reverb.ts'
@@ -104,7 +105,7 @@ const keyboardKeys = (new Array(128)).fill("")
 // Full keyboard with all notes including those we do not want the user to play
 const ALL_KEYBOARD_NOTES = keyboardKeys.map((keyboardKeys, index) => new NoteModel(index))
 // Grab a good sounding part (not too bassy, not too trebly)
-const KEYBOARD_NOTES = ALL_KEYBOARD_NOTES.slice(41, 94)
+// const KEYBOARD_NOTES = ALL_KEYBOARD_NOTES.slice(41, 94)
 
 // Types of MIDI Devices
 const ONSCREEN_KEYBOARD_NAME = "SVG Keyboard"
@@ -120,7 +121,7 @@ let pausedQueue: number = 0
 // Scheduling =====================================================================
 
 const convertAudioCommandsToAudioEvents = (commands: IAudioCommand[]): AudioEvent[] => {
-    return (commands ?? []).map((command: IAudioCommand) => new AudioEvent(command, timer))
+    return (commands ?? []).map((command: IAudioCommand) => new AudioEvent(command, timer.now ))
 }
 
 const triggerAudioCommandsOnDevice = (commands: IAudioCommand[]) => {
@@ -558,7 +559,7 @@ const importMIDIFile = async(file: File) => {
 	}
 
 	// Sort by start time
-	// allEvents.sort((a, b) => (a.startAt || 0) - (b.startAt || 0))
+	commands.sort((a, b) => (a.startAt || 0) - (b.startAt || 0))
 
 	console.info("MIDI file loaded successfully", { 
 		fileName: file.name, 
@@ -585,8 +586,16 @@ const addCommandToFuture = (commands: IAudioCommand[], transform=false, startDel
 	})
 	if (transform)
 	{
-		const transformedAudioCommands: IAudioCommand[] = transformerManager.transform(commands, timer)
-		audioCommandQueue.push(...transformedAudioCommands)
+		// Transform is now async - queue the promise
+		transformerManager.transform(commands, timer)
+			.then((transformedAudioCommands: IAudioCommand[]) => {
+				audioCommandQueue.push(...transformedAudioCommands)
+			})
+			.catch((error) => {
+				console.error('Transform failed:', error)
+				// Fallback: add untransformed commands
+				audioCommandQueue.push(...commands)
+			})
 	}
 
 	return commands
@@ -647,6 +656,10 @@ const initialiseApplication = async (onEveryTimingTick) => {
     ui.whenMIDIChannelSelectedRun((channel: number) => {
         selectedMIDIChannel = channel
         console.log(`[MIDI Channel] Selected channel ${channel}`)
+    })
+
+    ui.whenExportMenuRequestedRun(() => {
+        console.info("Export menu opened")
     })
  
     ui.whenMIDIFileExportRequestedRun(async () => {
@@ -765,8 +778,10 @@ const initialiseApplication = async (onEveryTimingTick) => {
     })
 
     ui.whenResetRequestedRun(async () => {
-        recorder.clear()
+      
+		recorder.clear()
         timer.resetTimer()
+
         if (songVisualiser) {
             songVisualiser.reset()
         }
@@ -844,8 +859,8 @@ const initialiseApplication = async (onEveryTimingTick) => {
     state.updateFrontEnd()
     // state.set( value, button.checked )
 
-    // Hackday hack!
-    transformerManager = new TransformerManager()
+    // Use worker for async transform operations (avoids blocking main thread)
+    transformerManager = new TransformerManagerWorker()
     window.transformerManager = transformerManager
     createGraph('#graph')
 
@@ -862,9 +877,15 @@ const initialiseApplication = async (onEveryTimingTick) => {
  * @param noteModel
  */
 const onNoteOnRequestedFromKeyboard = (noteModel: NoteModel, fromDevice: string = ONSCREEN_KEYBOARD_NAME) => {
-    const audioCommand: AudioCommand = createAudioCommand(Commands.NOTE_ON, noteModel, timer, fromDevice)
-    const transformedAudioCommands: IAudioCommand[] = transformerManager.transform([audioCommand], timer)
-    audioCommandQueue.push(...transformedAudioCommands)
+    const audioCommand: AudioCommand = createAudioCommand(Commands.NOTE_ON, noteModel.noteNumber, timer.now, fromDevice)
+    transformerManager.transform([audioCommand], timer)
+        .then((transformedAudioCommands: IAudioCommand[]) => {
+            audioCommandQueue.push(...transformedAudioCommands)
+        })
+        .catch((error) => {
+            console.error('Transform failed:', error)
+            audioCommandQueue.push(audioCommand)
+        })
 }
 
 /**
@@ -872,9 +893,15 @@ const onNoteOnRequestedFromKeyboard = (noteModel: NoteModel, fromDevice: string 
  * @param noteModel:NoteModel
  */
 const onNoteOffRequestedFromKeyboard = (noteModel: NoteModel, fromDevice: string = ONSCREEN_KEYBOARD_NAME) => {
-    const audioCommand: AudioCommand = createAudioCommand(Commands.NOTE_OFF, noteModel, timer, fromDevice)
-    const transformedAudioCommands: IAudioCommand[] = transformerManager.transform([audioCommand], timer)
-    audioCommandQueue.push(...transformedAudioCommands)
+    const audioCommand: AudioCommand = createAudioCommand(Commands.NOTE_OFF, noteModel.noteNumber, timer.now, fromDevice)
+    transformerManager.transform([audioCommand], timer)
+        .then((transformedAudioCommands: IAudioCommand[]) => {
+            audioCommandQueue.push(...transformedAudioCommands)
+        })
+        .catch((error) => {
+            console.error('Transform failed:', error)
+            audioCommandQueue.push(audioCommand)
+        })
 }
 
 /**
@@ -962,7 +989,6 @@ const onTick = (values) => {
         elapsed, expected, drift, level, intervals, lag
     } = values
 
-
     // Always process the queue, with or without quantisation
     if (transformerManager.isQuantised) {
         //console.info("TICK:QUANTISED", {buffer: audioCommandQueue, divisionsElapsed, quantisationFidelity:transformerManager.quantiseFidelity})
@@ -987,7 +1013,8 @@ const onTick = (values) => {
         audioCommandQueue = executeQueueAndClearComplete(audioCommandQueue)
         // console.info("TICK:IMMEDIATE", {buffer: audioCommandQueue})
     }
-    ui.updateClock(values)
+
+    ui.updateClock(values, recorder.quantity)
 }
 
 /**
