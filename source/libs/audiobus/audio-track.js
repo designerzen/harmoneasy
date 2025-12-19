@@ -122,7 +122,7 @@ export default class AudioTrack
 	}
 
 	copyCommand( command ) {
-		return command.clone()
+		return Object.assign){}, command )
 	}
 
 	addInstrument(instrumentName){

@@ -26,7 +26,4 @@ export interface IAudioCommand {
     timeCode:number
 
 	text:string
-
-	clone():IAudioCommand
-	destroy():void
 }

@@ -1,6 +1,6 @@
+import type { IAudioCommand } from "./audio-command-interface.ts"
 import AudioCommand from "./audio-command.ts"
 import type NoteModel from "./note-model"
-import { encode, decode } from '@msgpack/msgpack'
 
 /**
  * 
@@ -8,39 +8,26 @@ import { encode, decode } from '@msgpack/msgpack'
  * @param noteModel 
  * @param timer 
  * @param fromDevice 
- * @returns 
+ * @returns Simple Object
  */
-export const createAudioCommand = (type:string, noteModel:NoteModel, timer:any,  fromDevice:string="Unknown" ):AudioCommand => {
+export const createAudioCommand = (type:string, noteNumber:number, scheduledTime:number, fromDevice:string="Unknown" ):IAudioCommand => {
 
      // create an AudioCommand for this NoteModel
-    const audioCommand = new AudioCommand()
+    // const audioCommand = new AudioCommand()
+    const audioCommand:IAudioCommand = {}
     audioCommand.type = type
     audioCommand.subtype = type
-    audioCommand.number = noteModel.noteNumber
-    audioCommand.value = noteModel.noteNumber
+    audioCommand.number = noteNumber
+    audioCommand.value = noteNumber
     audioCommand.velocity = 100 // Fixed: was incorrectly set to noteNumber
-    audioCommand.time = timer.now
-    audioCommand.startAt = timer.now
+    audioCommand.time = scheduledTime
+    audioCommand.startAt = scheduledTime
     audioCommand.from = fromDevice
 
     return audioCommand
 }
 
-/**
- * Encode AudioCommand to MessagePack binary
- * @param command 
- * @returns 
- */
-export const encodeAudioCommand = (command: AudioCommand): Uint8Array => {
-  return encode(command)
-}
 
-/**
- * Decode AudioCommand from MessagePack binary
- */
-export const decodeAudioCommand = (data: Uint8Array | ArrayBuffer): AudioCommand => {
-  const decoded = decode(data)
-  const command = new AudioCommand()
-  Object.assign(command, decoded)
-  return command
+export const cloneAudioCommand = ( command:IAudioCommand ):IAudioCommand => {
+	return Object.assign( {}, command )
 }
