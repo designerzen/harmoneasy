@@ -49,7 +49,11 @@ export class AbstractResizeable{
         {
             const resizeObserver = new ResizeObserver(this.onResize)
             resizeObserver.observe(canvas, {box: 'content-box'})
-        } 
+        }else{
+			// dispatch worker message to resize to known size
+			const payload = { type:"resize", displayWidth:canvas.width, displayHeight:canvas.height, scaleFactor:1, ...this.optional }
+            this.worker.postMessage(payload)
+		}
     }
     
     /**

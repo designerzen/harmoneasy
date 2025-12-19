@@ -8,7 +8,7 @@ let notes
 let firstNoteNumber
 
 let loop = false
-let vertical = true
+let verticalDirection = true
 let notesOn = new Map()
 let wave = 0
 
@@ -124,7 +124,7 @@ function render(time) {
         // Update the previous time
         lastRenderTime = time
 
-        vertical ? 
+        verticalDirection ? 
             renderVertical(dt) : 
             renderHorizontal(dt)
 
@@ -157,7 +157,6 @@ const determineMirrorSize = (isVertical) => {
 
 const setBlendMode = (blendMode)=> {
     context.globalCompositeOperation = blendMode
-    debugger
 }
 
 onmessage = (evt) => {
@@ -173,7 +172,7 @@ onmessage = (evt) => {
         firstNoteNumber = notes[0].number
         // console.info("firstNoteNumber", firstNoteNumber, notes[0], {notes})
 
-        const mirrorDimensions = determineMirrorSize(vertical)
+        const mirrorDimensions = determineMirrorSize(verticalDirection)
       
         // clone the canvas..
         mirror = new OffscreenCanvas( mirrorDimensions.width, mirrorDimensions.height )
@@ -185,7 +184,7 @@ onmessage = (evt) => {
         // mirror.addEventListener("click", setBlendMode )
         // setInterval( setBlendMode, 30000 )
     
-        noteSize = determineNoteSize(vertical)
+        noteSize = determineNoteSize(verticalDirection)
 
         loop = true
 
@@ -201,7 +200,7 @@ onmessage = (evt) => {
         return
     }
 
-    vertical = evt.data.vertical
+    verticalDirection = evt.data.vertical
  
     const transposedNoteNumber = Math.max( firstNoteNumber, evt.data.note - firstNoteNumber )
     // console.info("fillrect", transposedNoteNumber, firstNoteNumber, evt.data.note, firstNoteNumber ) 
@@ -215,7 +214,7 @@ onmessage = (evt) => {
                 context.fillStyle = evt.data.colour
                 lastNoteColour = evt.data.colour
 
-                if (vertical)
+                if (verticalDirection)
                 {
                     context.fillRect( transposedNoteNumber * noteSize, canvas.height - noteDepth, noteSize, noteDepth )
                 }else{
@@ -233,7 +232,7 @@ onmessage = (evt) => {
             {
                 context.fillStyle = VISUALISER_OPTIONS.backgroundColour //  'rgba(255,255,255,0.2)' //
            
-                if (vertical)
+                if (verticalDirection)
                 {
                     // context.clearRect( transposedNoteNumber * noteSize, canvas.height - gap, noteSize, gap )
                     context.fillRect( transposedNoteNumber * noteSize, canvas.height - gap, noteSize, gap )
@@ -254,18 +253,20 @@ onmessage = (evt) => {
             break
     
         case "resize":
+
             // FIXME: If we are on a 4k screen this may be a huge width
             // so we should have a divison factor to scale the canvas for
             // higher than 2048 then divide the size by 2 and use CSS to scale it
-            canvas.width = evt.data.displayWidth
+            canvas.widpindeth = evt.data.displayWidth
             canvas.height = evt.data.displayHeight
             
-            const mirrorDimensions = determineMirrorSize(vertical)
-            mirror.width = mirrorDimensions.width
+            const mirrorDimensions = determineMirrorSize(verticalDirection)
+		mirror.width = mirrorDimensions.width
             mirror.height = mirrorDimensions.height
             
-            noteSize = determineNoteSize(vertical)
-            //console.error("mirror", noteSize, evt.data.displayWidth, evt.data.displayHeight, canvas.width, canvas.height )
+            noteSize = determineNoteSize(verticalDirection)
+            
+			console.error("CANVAS RESIZE:",{ canvas, noteSize}, evt.data.displayWidth, evt.data.displayHeight, canvas.width, canvas.height )
             break
     }
 }

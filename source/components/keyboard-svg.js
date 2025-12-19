@@ -63,9 +63,8 @@ export default class SVGKeyboard extends AbstractInteractive{
         
         // console.error( this.keyElements  )
         // console.error( this.keyMap )
-        // debugger
-       
-       this.firstNoteNumber = notes[0].noteNumber
+
+      	this.firstNoteNumber = notes[0].noteNumber
 		this.svgString = svg
 		this.addInteractivity( this.keyElements, noteOn, noteOff)
 	}
