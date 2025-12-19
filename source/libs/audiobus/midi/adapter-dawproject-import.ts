@@ -1,5 +1,6 @@
 import type { IAudioCommand } from '../audio-command-interface'
 import * as Commands from '../../../commands'
+import { unzipSync } from 'fflate'
 
 /**
  * Import .dawProject file and convert to audio commands
@@ -10,43 +11,42 @@ import * as Commands from '../../../commands'
 export const importDawProjectFile = async (file: File): Promise<{ commands: IAudioCommand[], noteCount: number }> => {
 	try {
 		// .dawProject files are ZIP archives
-		// We'll need to handle this appropriately
-		// For now, attempt to read as ZIP
 		const arrayBuffer = await file.arrayBuffer()
+		const uint8Array = new Uint8Array(arrayBuffer)
 
 		// Check if it's a valid ZIP file (starts with PK)
-		const view = new Uint8Array(arrayBuffer)
-		const isZip = view[0] === 0x50 && view[1] === 0x4B // 'PK'
+		const isZip = uint8Array[0] === 0x50 && uint8Array[1] === 0x4B // 'PK'
 
 		if (!isZip) {
 			throw new Error('.dawProject file must be a valid ZIP archive')
 		}
 
-		// Use JSZip library if available, otherwise parse manually
-		// For now, we'll return a helpful error
 		let projectData: any = null
 
-		// Attempt to extract and parse project.json from the ZIP
+		// Attempt to extract and parse project.json from the ZIP using fflate
 		try {
-			// Import JSZip dynamically
-			const { default: JSZip } = await import('jszip')
-			const zip = new JSZip()
-			await zip.loadAsync(arrayBuffer)
+			const unzipped = unzipSync(uint8Array)
 
 			// Look for project.json or similar
-			const projectFile = zip.file('project.json') || zip.file('project.xml') || Object.values(zip.files)[0]
+			let projectFile = unzipped['project.json'] || unzipped['project.xml']
+			
+			// If no standard names found, get the first file
+			if (!projectFile) {
+				const firstKey = Object.keys(unzipped)[0]
+				projectFile = firstKey ? unzipped[firstKey] : null
+			}
 
 			if (!projectFile) {
 				throw new Error('No project data found in .dawProject file')
 			}
 
-			const content = await projectFile.async('text')
-			projectData = JSON.parse(content)
+			const text = new TextDecoder().decode(projectFile)
+			projectData = JSON.parse(text)
 		} catch (zipError) {
-			console.warn('Could not parse as ZIP with JSZip:', zipError)
+			console.warn('Could not parse as ZIP with fflate:', zipError)
 			// Try treating as JSON directly (some tools export raw JSON)
 			try {
-				const text = new TextDecoder().decode(arrayBuffer)
+				const text = new TextDecoder().decode(uint8Array)
 				projectData = JSON.parse(text)
 			} catch (jsonError) {
 				throw new Error('Invalid .dawProject format: ' + (jsonError as Error).message)
