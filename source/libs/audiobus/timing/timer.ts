@@ -755,6 +755,7 @@ export default class Timer {
 	 * Reset the timer and start from the beginning
 	 */
 	resetTimer(){
+		this.currentBar = 0
 		this.totalBarsElapsed = 0
 		this.divisionsElapsed = 0
 	}
