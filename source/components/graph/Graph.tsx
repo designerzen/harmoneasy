@@ -33,9 +33,9 @@ const NODE_HEIGHT = 323
 function getStructure( transformers: Array<Transformer> ) {
 
 	const nodes = transformers.map((t, i) => ({
-		id: 'node-' + i,
+		id: 'transformer-' + t.uuid,  // Use transformer UUID instead of index to maintain stable node identity
 		type: 'transformer',
-		data: { label: t.name, fields: t.fields, element: t },
+		data: { label: t.name, fields: t.fields, element: t, description: t.description },
 		position: { x: HORIZONTAL_SPACING * i, y: 0 }
 	}))
 
@@ -51,22 +51,31 @@ function getStructure( transformers: Array<Transformer> ) {
 		position: { x: HORIZONTAL_SPACING * (transformers.length) , y: NODE_HEIGHT / 2 }
 	}]
 
-	const edges = transformers.map((_, i) => ({
-		id: 'edge-' + i,
-		source: 'node-' + i,
-		target: 'node-' + (i + 1)
-	}))
-	edges.pop()
+	const edges = transformers.map((t, i) => {
+		const nextTransformer = transformers[i + 1]
+		return {
+			id: 'edge-' + t.uuid,
+			source: 'transformer-' + t.uuid,
+			target: nextTransformer ? 'transformer-' + nextTransformer.uuid : 'end'
+		}
+	})
+	
+	// Remove the last edge since it's handled by alwaysEdges
+	if (transformers.length > 0) {
+		edges.pop()
+	}
 
-	const alwaysEdges = transformers.length <= 0 ? [{ id: 'connect', source: 'start', target: 'end'}] : [{
-		id: 'edge-start',
-		source: 'start',
-		target: 'node-0'
-	}, {
-		id: 'edge-end',
-		source: 'node-' + (transformers.length - 1),
-		target: 'end'
-	}]
+	const alwaysEdges = transformers.length <= 0 
+		? [{ id: 'connect', source: 'start', target: 'end'}] 
+		: [{
+			id: 'edge-start',
+			source: 'start',
+			target: 'transformer-' + transformers[0].uuid
+		}, {
+			id: 'edge-end',
+			source: 'transformer-' + transformers[transformers.length - 1].uuid,
+			target: 'end'
+		}]
 
 	return { nodes: [...nodes, ...alwaysNodes], edges: [...edges, ...alwaysEdges] }
 }
@@ -84,9 +93,11 @@ function FlowComponent() {
 			setEdges(structure.edges)
 		}
 		
-		transformerManager.onChange(onChange)
+		const unsubscribe = transformerManager.onChange(onChange)
 		onChange()
 
+		// Cleanup: unsubscribe when component unmounts
+		return () => unsubscribe()
 	}, [setNodes, setEdges])
 
 	// Auto-fit view whenever nodes change
