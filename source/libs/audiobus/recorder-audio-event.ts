@@ -7,6 +7,7 @@ import AudioEvent from "./audio-event.ts"
 import type OPFSStorage from "./storage/opfs-storage.ts"
 import AudioCommand from "./audio-command.ts"
 import type { IAudioCommand } from "./audio-command-interface.ts"
+import { createAudioCommand } from "./audio-command-factory.ts"
 
 interface SessionMetadata {
   name: string
@@ -38,6 +39,10 @@ export class RecorderAudioEvent extends EventTarget{
         return this.#enabled
     }
 
+	get quantity():number{
+		return this.events.length
+	}
+	
     set enabled(value:boolean){
         this.#enabled = value
     }
@@ -133,7 +138,7 @@ export class RecorderAudioEvent extends EventTarget{
      * Load all saved data from OPFS storage and add to existing memory
      * Chunks data to prevent UI blocking on large datasets
      */
-    async loadDataFromStorage( log:bolean=true ): Promise<void> {
+    async loadDataFromStorage( onProgress=()=>{}, log:bolean=true ): Promise<void> {
         if (!this.#storage) {
             console.warn('Storage not initialized')
             return
@@ -171,27 +176,23 @@ export class RecorderAudioEvent extends EventTarget{
             const CHUNK_SIZE = 1024 // arbitrary number
             let processedCount = 0
 
-            for (let i = 0; i < commands.length; i += CHUNK_SIZE) {
+            for (let i = 0, l=commands.length; i < l; i += CHUNK_SIZE) {
                 const chunk = commands.slice(i, i + CHUNK_SIZE)
                 
                 // Add commands to in-memory events
-                chunk.forEach(command => {
-                    const event = new AudioCommand()
-                    event.type = command.type
-                    event.subtype = command.subtype
-                    event.number = command.number
-                    event.velocity = command.velocity
-                    event.startAt = command.startAt
-                    event.endAt = command.endAt
-                    event.time = command.time
-                    
-                    // const event = new AudioEvent()
+                chunk.forEach((command, index) => {
+
+					const audioCommand:IAudioCommand = createAudioCommand( command.type, command.number, command.startAt, command.from ?? "Storage" )
+
+                    const event = new AudioEvent( audioCommand, audioCommand.startAt )
                     this.events.push(event)
                     processedCount++
-                    
+
+					// extend known duration
                     if (command.startAt > this.#duration) {
-                        this.#duration = command.startAt
+                        this.#duration = audioCommand.startAt
                     }
+					onProgress( i/l + (index/CHUNK_SIZE)*0.1 )
                 })
 
                 // Yield to main thread periodically
