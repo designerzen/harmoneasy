@@ -1,83 +1,217 @@
 import '@xyflow/react/dist/style.css'
+
 import React, { useState, useCallback, useEffect } from 'react'
-import { ReactFlow, applyNodeChanges, applyEdgeChanges, addEdge, useReactFlow, ReactFlowProvider } from '@xyflow/react'
-import { ConfigDrawer } from './ConfigDrawer'
-import { StartNode } from './nodes/StartNode'
-import { EndNode } from './nodes/EndNode'
-import { TransformerNode } from './nodes/TransformerNode'
+import { 
+	ReactFlow, 
+	ReactFlowProvider,
+	Controls, 
+	applyNodeChanges, 
+	applyEdgeChanges, 
+	addEdge, 
+	useReactFlow
+} from '@xyflow/react'
 
-import type { TransformerManager } from '../../libs/audiobus/transformers/transformer-manager'
+import { AnimatedSVGEdge } from './AnimatedSVGEdge.tsx'
+import { ConfigDrawer } from './ConfigDrawer.tsx'
+import { StartNode } from './nodes/StartNode.tsx'
+import { EndNode } from './nodes/EndNode.tsx'
+import { InputNode } from './nodes/InputNode.tsx'
+import { OutputNode } from './nodes/OutputNode.tsx'
+import { TransformerNode } from './nodes/TransformerNode.tsx'
+import { DEFAULT_GRAPH_OPTIONS, DEFAULT_VIEWPORT_OPTIONS, HORIZONTAL_SPACING, NODE_HEIGHT } from './options.ts'
 
-const initialNodes = [
-	{ id: 'n1', position: { x: 0, y: 200 }, data: { label: 'Start' } },
-	{ id: 'n2', position: { x: 500, y: 200 }, data: { label: 'End' } },
-];
-const initialEdges = [{ id: 'n1-n2', source: 'n1', target: 'n2' }]
+import type IOChain from '../../libs/audiobus/IO-chain.ts'
+import type TransformerManager from '../../libs/audiobus/transformers/transformer-manager.ts'
+import type TransformerManagerWorker from '../../libs/audiobus/transformers/transformer-manager-worker.ts'
+import type { IAudioOutput } from '../../libs/audiobus/outputs/output-interface.ts'
+import { EVENT_TRANSFORMERS_UPDATED } from '../../libs/audiobus/transformers/transformer-manager.ts'
 
 const nodeTypes = {
 	start: StartNode,
 	end: EndNode,
+	input:InputNode,
+	output:OutputNode,
 	transformer: TransformerNode
 }
 
-const DEFAULT_GRAPH_OPTIONS = {
-	minZoom: 0.3,
-	maxZoom: 1.5
+const edgeTypes = {
+  	animatedSvg: AnimatedSVGEdge
 }
 
-// Calculate positions with better spacing and centering
-const HORIZONTAL_SPACING = 342
-const NODE_HEIGHT = 323
+// These get overwritten immediately - bit pointless really
+const initialNodes = [
+	{ id: 'node-start', position: { x: 0, y: 200 }, data: { label: 'Start' } },
+	{ id: 'node-end', position: { x: 500, y: 200 }, data: { label: 'End' } }
+]
 
-// GUI stuff
-function getStructure( transformers: Array<Transformer> ) {
+const initialEdges = [
+	{ id: 'edge-start-end', source: initialNodes[0].id, target: initialNodes[1].id }
+]
 
-	const nodes = transformers.map((t, i) => ({
-		id: 'transformer-' + t.uuid,  // Use transformer UUID instead of index to maintain stable node identity
-		type: 'transformer',
-		data: { label: t.name, fields: t.fields, element: t, description: t.description },
-		position: { x: HORIZONTAL_SPACING * i, y: 0 }
-	}))
+// node:transformer-Transformer-Harmoniser-2
+function getNodeID( uuid:string, nodeType:string="node:transformer" ){
+	return nodeType + '[' + uuid + ']'
+}
 
-	const alwaysNodes = [{
-		id: 'start',
-		type: 'start',
-		data: { label: 'START' },
-		position: { x: -140, y: NODE_HEIGHT / 2  }
-	}, {
-		id: 'end',
-		type: 'end',
-		data: { label: 'END' },
-		position: { x: HORIZONTAL_SPACING * (transformers.length) , y: NODE_HEIGHT / 2 }
-	}]
+/**
+ * GUI stuff - create the nodes in our graph from our IOChain
+ * @param transformers 
+ * @returns 
+ */
+function getStructure( chain:IOChain, showInputs:boolean=true, showOutputs:boolean=true ){
 
-	const edges = transformers.map((t, i) => {
-		const nextTransformer = transformers[i + 1]
-		return {
-			id: 'edge-' + t.uuid,
-			source: 'transformer-' + t.uuid,
-			target: nextTransformer ? 'transformer-' + nextTransformer.uuid : 'end'
-		}
-	})
+	const transformManager:TransformerManager|TransformerManagerWorker = chain.transformerManager
+	const transformers = transformManager.activeTransformers
+
+	const firstTransformer = transformers[0]
+	const lastTransformer = transformers[transformers.length - 1]
+	const hasTransformers = transformers.length > 0
+
+	const inputs = chain.inputs
+	const outputs = chain.outputs
 	
-	// Remove the last edge since it's handled by alwaysEdges
-	if (transformers.length > 0) {
-		edges.pop()
+	const inputNodes = showInputs ? inputs.map((input:AbstractInput, index:number) => ({
+		id: 'node-input-'+index,
+		type: 'input',
+		data: { 
+			label: 'INPUT' + input.name 
+		},
+		position: { x: -330 , y: index * NODE_HEIGHT / 2 }
+	})) : []
+
+	// From Inputs to Start
+	const nodeStart = {
+		id: 'node-start',
+		type: 'start',
+		data: { 
+			label: 'START' 
+		},
+		position: { x: -140, y: NODE_HEIGHT / 2  }
 	}
 
-	const alwaysEdges = transformers.length <= 0 
-		? [{ id: 'connect', source: 'start', target: 'end'}] 
-		: [{
-			id: 'edge-start',
-			source: 'start',
-			target: 'transformer-' + transformers[0].uuid
-		}, {
-			id: 'edge-end',
-			source: 'transformer-' + transformers[transformers.length - 1].uuid,
-			target: 'end'
-		}]
+	// Chain through the Transformers
+	const nodesTransformers = transformers.map((transformer:Transformer, index) => ({
+		id: getNodeID(transformer.uuid),
+		type: 'transformer',
+		data: { 
+			label: transformer.name, 
+			fields: transformer.fields, 
+			element: transformer, 
+			description: transformer.description 
+		},
+		position: { x: HORIZONTAL_SPACING * index, y: 0 }
+	}))
 
-	return { nodes: [...nodes, ...alwaysNodes], edges: [...edges, ...alwaysEdges] }
+	// End Graph nodes
+	const nodeEnd =  {
+		id: 'node-end',
+		type: 'end',
+		data: { 
+			label: 'END' 
+		},
+		position: { x: HORIZONTAL_SPACING * (transformers.length) , y: NODE_HEIGHT / 2 }
+	}
+
+	// Add in all our output nodes
+	const outputNodes = showOutputs ? outputs.map((input:AbstractInput, index:number) => ({
+		id: 'node-output-'+index,
+		type: 'output',
+		data: { 
+			label: 'OUTPUT' + input.name 
+		},
+		position: { x: HORIZONTAL_SPACING * (transformers.length ) + 80 + 44 , y: index * NODE_HEIGHT / 2 }
+	})) : []
+
+	
+	const nodes = [
+		...inputNodes,
+		nodeStart, 
+		...nodesTransformers, 
+		nodeEnd,
+		...outputNodes
+	]
+
+
+	// EDGES -----------------------------------------
+
+	const barDuration = '0.8s'
+
+	const inputEdges = inputNodes.map((inputNode, index:number) => ({
+		id: 'edge-input-'+index,
+		source: inputNode.id,
+		target: nodeStart.id,
+		type: 'animatedSvg', 
+		data: { duration: barDuration }
+	}))
+
+	const edgeStart ={
+		id: 'edge-start',
+		source: nodeStart.id,
+		target: getNodeID( firstTransformer.uuid ),
+		type: 'animatedSvg',
+		data: { duration: barDuration }
+	}
+
+	// Now create the edges that link these nodes
+	const edgesTransformers = transformers.map((transformer:Transformer, index:number) => {
+		const nextTransformer:Transformer|null = transformers[index + 1]
+		return {
+			id: getNodeID( transformer.uuid, "edge" ),
+			source: getNodeID( transformer.uuid ),
+			target: nextTransformer ? 
+				getNodeID(nextTransformer.uuid) : 
+				nodeEnd.id,
+			type: 'animatedSvg', 
+			data: { duration: barDuration }
+		}
+	})
+		
+	// Remove the last edge since it's handled by alwaysEdges
+	if (hasTransformers) {
+		edgesTransformers.pop()
+	}
+
+	const edgeEnd = {
+		id: 'edge-end',
+		source: getNodeID(lastTransformer.uuid),
+		target: nodeEnd.id,
+		type: 'animatedSvg',
+		data: { duration: barDuration }
+	}
+
+	const outputEdges = outputNodes.map((outputNode, index:number) => ({
+		id: 'edge-output-'+index,
+		source: nodeEnd.id,
+		target: outputNode.id,
+		type: 'animatedSvg',
+		data: { duration: barDuration }
+	}))
+
+	const edgePassthrough = {
+		id: 'edge-passthrough',
+		source: nodeStart.id,
+		target: nodeEnd.id,
+		type: 'animatedSvg'
+	}
+
+	// If there are no transformers, we just connect
+	// Start to End
+	const edges = !hasTransformers
+		? [ edgePassthrough ] 
+		: [
+			...inputEdges,
+			edgeStart, 
+			...edgesTransformers,
+			edgeEnd, 
+			...outputEdges
+		]
+
+	const output = { 
+		nodes, 
+		edges
+	}
+	
+	return output
 }
 
 function FlowComponent() {
@@ -86,18 +220,29 @@ function FlowComponent() {
 	const { fitView } = useReactFlow()
 
 	useEffect(() => {
-		const transformerManager = (window as any).transformerManager as TransformerManager
-		const onChange = () => {
-			const structure = getStructure( transformerManager.activeTransformers )
+		const chain = (window as any).chain as IOChain
+		const abortController = new AbortController()
+
+		// an event has bubbled from the Chain
+		const onTransformersChanged = (event:CustomEvent) => {
+			const detail = event ? event.detail : null
+			const structure = getStructure( chain )
 			setNodes(structure.nodes)
 			setEdges(structure.edges)
+			console.info("Graph::Transformers Updated", detail )
 		}
 		
-		const unsubscribe = transformerManager.onChange(onChange)
-		onChange()
-
+		// TODO: watch inputs / outputs 
+		// watch for additions / removals of Transformers
+		chain.addEventListener( EVENT_TRANSFORMERS_UPDATED, onTransformersChanged, {signal:abortController.signal} )
+		
+		onTransformersChanged( null )
+		
 		// Cleanup: unsubscribe when component unmounts
-		return () => unsubscribe()
+		const unsubscribe = () => { 
+			abortController.abort()
+		}
+		return unsubscribe
 	}, [setNodes, setEdges])
 
 	// Auto-fit view whenever nodes change
@@ -131,22 +276,25 @@ function FlowComponent() {
 		<>
 			<ConfigDrawer />
 			<ReactFlow
-				panOnScroll={true}
-				panOnDrag={false}
+				panOnScroll={false}
+				panOnDrag={true}
 				selectionOnDrag={true}
 				nodesFocusable={true}
 				edgesFocusable={true}
 				disableKeyboardA11y={false}
 				nodes={nodes}
 				edges={edges}
+				edgeTypes={edgeTypes}
 				nodeTypes={nodeTypes}
 				minZoom={DEFAULT_GRAPH_OPTIONS.minZoom}
 				maxZoom={DEFAULT_GRAPH_OPTIONS.maxZoom}
-				defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
+				defaultViewport={DEFAULT_VIEWPORT_OPTIONS}
 				onNodesChange={onNodesChange}
 				onEdgesChange={onEdgesChange}
 				onConnect={onConnect}
-			/>
+			>
+				<Controls />
+			</ReactFlow>
 		</>
 	)
 }

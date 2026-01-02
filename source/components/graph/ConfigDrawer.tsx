@@ -1,53 +1,18 @@
 import React, { useState } from "react"
-import type { TransformerManager } from "../../libs/audiobus/transformers/transformer-manager"
 import { 
     tranformerFactory,
     TRANSFORMER_TYPE,
     TRANSFORMERS
 } from "../../libs/audiobus/transformers/transformer-factory"
-
-const PRESETS = [
-	{
-		name:"Chord Arpeggiator",
-		transformers: [TRANSFORMER_TYPE.ID_QUANTISE, TRANSFORMER_TYPE.ID_CHORDIFIER, TRANSFORMER_TYPE.ID_ARPEGGIATOR]
-	},
-	{
-		name:"Random Patch",
-		transformers: [TRANSFORMER_TYPE.ID_RANDOMISER, TRANSFORMER_TYPE.ID_QUANTISE, TRANSFORMER_TYPE.ID_NOTE_SHORTENER]
-	},
-	{
-		name:"Chord Repeater",
-		transformers: [TRANSFORMER_TYPE.ID_QUANTISE, TRANSFORMER_TYPE.ID_CHORDIFIER, TRANSFORMER_TYPE.ID_NOTE_REPEATER]
-	},
-	{
-		name:"Harmonic Randomiser",
-		transformers: [TRANSFORMER_TYPE.ID_QUANTISE, TRANSFORMER_TYPE.ID_RANDOMISER, TRANSFORMER_TYPE.ID_CHORDIFIER]
-	},
-	{
-		name:"Staccato Arp",
-		transformers: [TRANSFORMER_TYPE.ID_QUANTISE, TRANSFORMER_TYPE.ID_ARPEGGIATOR, TRANSFORMER_TYPE.ID_NOTE_SHORTENER]
-	},
-	{
-		name:"Complex Pattern",
-		transformers: [TRANSFORMER_TYPE.ID_RANDOMISER, TRANSFORMER_TYPE.ID_HARMONISER, TRANSFORMER_TYPE.ID_CHORDIFIER, TRANSFORMER_TYPE.ID_ARPEGGIATOR, TRANSFORMER_TYPE.ID_NOTE_REPEATER]
-	}
-]
+import { PRESETS } from "./presets"
+import type { TransformerManager } from "../../libs/audiobus/transformers/transformer-manager"
+import type IOChain from "../../libs/audiobus/IO-chain"
 
 export function ConfigDrawer() {
 
     const [transformersFilterText, setTransformersFilterText] = useState("")
     const [presetsFilterText, setPresetFilterText] = useState("")
-
-    const onAdd = (s: string) => () => {
-        const tM = (window as any).transformerManager as TransformerManager
-        tM.appendTransformer( tranformerFactory(s) )
-    }
-
-    const onSetPreset = (transformers: string[]) => () => {
-        const tM = (window as any).transformerManager as TransformerManager
-        tM.setTransformers(transformers.map(tranformerFactory))
-    }
-
+ 
     const filteredTransformers = TRANSFORMERS.filter(transformerId =>
         transformerId.toLowerCase().includes(transformersFilterText.toLowerCase())
     )
@@ -55,6 +20,16 @@ export function ConfigDrawer() {
 		const filterTerm = presetsFilterText.toLowerCase()
 		return preset.name.toLowerCase().includes(filterTerm) || preset.transformers.includes(filterTerm)
     })
+
+	const onAdd = (transformerType: string) => () => {
+		const chain = (window as any).chain as IOChain
+        chain.appendTransformer( tranformerFactory(transformerType) )
+    }
+
+    const onSetPreset = (transformers: string[]) => () => {
+        const chain = (window as any).chain as IOChain
+		chain.setTransformers( transformers.map(tranformerFactory) )
+    }
 
     return (<aside className="transformers-drawer">
         

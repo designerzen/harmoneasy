@@ -4,6 +4,8 @@ import React from "react"
 export function EndNode() {
     return <div className="node-end graph-node">
         <h6>Output</h6>
-        <Handle type="target" position={Position.Left} />
+       
+		<Handle type="source" position={Position.Right} />
+		<Handle type="target" position={Position.Left} />
     </div>
 }
