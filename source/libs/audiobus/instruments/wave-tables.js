@@ -2,7 +2,7 @@
 // import { WAVE_FORM_NAMES_GOOGLE, WAVE_TABLE_LOCATIONS_GOOGLE } from "./tables/wave-table-google"
 // import { generateImageFromWaveTable, loadWaveTableFromImage } from "./wave-table-utils"
 
-import {OSCILLATORS} from "./synth-oscillator.js"
+import {OSCILLATORS} from "./synth-oscillator.ts"
 
 // external dependencies
 import { unzip, strFromU8 } from 'fflate'

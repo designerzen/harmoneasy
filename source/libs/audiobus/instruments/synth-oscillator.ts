@@ -5,7 +5,8 @@ import { loadWaveTable } from "./wave-tables.js"
 
 export const OSCILLATORS = [ "sine", "square", "sawtooth", "triangle" ]
 const SILENCE = 0.00000000009
-export default class SynthOscillator{
+
+export default class SynthOscillator implements IAudioOutput{
 
     options = {
 

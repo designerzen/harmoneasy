@@ -18,9 +18,13 @@ export default class PolySynth {
 
     SynthClass
 
-    get output(){
+    get output():AudioNode{
         return this.#gainNode
     }
+
+	get name():string{
+		return 'PolySynth'
+	}
 
     constructor(audioContext,  options = {}) {
         this.audioContext = audioContext
