@@ -2,29 +2,56 @@
 	display: none;
 }
 
+#graph .beat{
+	pointer-events: none;
+}
+
+// override defaults
+#graph .react-flow__node{
+	--hue-accent:90%;
+	--xy-node-border:transparent;
+	--xy-node-group-background-color-default:transparent;
+	padding:0;
+	background-color: transparent;
+}
+
+#graph .react-flow__edges{
+	width: 100%;
+}
+
 .graph-node {
-    color: white;
+	color:var(--col-fg);
     border: var(--border);
     border-radius: var(--curve);
     padding: var(--pad);
     font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 1px;
-
-    background: linear-gradient(
+	min-width:150px;
+	
+	background-color:   color-mix( in oklch, oklch(50% 0.1385  var(--hue-accent)) 90%, transparent);
+	background-image: linear-gradient(
         0deg, 
-        oklch(50% 0.16392 var(--hue-accent)) 0%, 
-        oklch(50% 0.1385  var(--hue-accent)) 100%);
-
-     min-width:150px;
+        color-mix( in oklch, oklch(50% 0.16392 var(--hue-accent)) 90%, transparent),
+        color-mix( in oklch, oklch(50% 0.1385  var(--hue-accent)) 90%, transparent)
+	);
+	background-blend-mode:hue ;
    
-	min-width: var(--size, 303px);
+   
+	min-width: var(--size, 90px);
     min-height:var(--size);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px light-dark(
+        color-mix(in oklch, var(--col-black) 10%, transparent),
+        color-mix(in oklch, var(--col-black) 10%, transparent)
+    );
     
 	display: flex;
     flex-direction: column;
     gap: var(--gap);
+
+	p{
+		max-width: 30ch;
+	}
 }
 
 .node-transformer{
@@ -56,6 +83,40 @@
 	}
 }
 
+.node-start,
+.node-end {
+    --size:69px;
+    border-radius: 999px;
+    align-items: center;
+    justify-content: center;
+}
+
+.node-start {
+	--hue-accent:162;	// green
+}
+
+.node-end {
+	--hue-accent:25;	// red
+}
+
+.node-input{
+	--hue-accent:162;	// green
+}
+
+.node-output{
+	--hue-accent:25;	// red
+}
+
+.category-tuning{
+	--hue-accent:219;
+}
+
+.category-timing{
+	--hue-accent:280;
+}
+
+
+
 .filter-label{
 	display: flex;
 	flex-direction: row;
@@ -63,7 +124,7 @@
 	gap: var(--gap);
 }
 
-.buttons-back {
+.graph-node-menu {
 
 	gap:var(--gap);
 	margin-top: var(--pad);
@@ -87,32 +148,6 @@
     }
 }
 
-.node-start,
-.node-end {
-    --size:69px;
-    border-radius: 999px;
-    align-items: center;
-    justify-content: center;
-}
-
-.node-start {
-	--hue-accent:162;	// green
-}
-
-.node-end {
-	--hue-accent:25;	// red
-}
-
-.category-tuning{
-	--hue-accent:219;
-}
-
-.category-timing{
-	--hue-accent:280;
-}
-
-
-
 .no-matches{
-	color: rgb(221, 60, 60);
+	color: var(--col-red);
 }

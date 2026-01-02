@@ -1,16 +1,17 @@
 
 button {
     border-radius: 8px;
-    border: 1px solid transparent;
+    border:var(--border);
+	border-color:transparent;
     padding: calc(var(--pad)/2) calc(var(--pad));
     // ios a11y guidelines
     min-width: 44px;
     min-height: 44px;
     font-size: 1em;
-    font-weight: 500;
+    font-weight: 700;
     font-family: inherit;
-    background-color: #1a1a1a;
-    color: #ffffff;
+    background-color:var(--col-bg);
+    color:var(--col-fg);
     cursor: pointer;
     box-sizing: border-box;
 
@@ -19,19 +20,21 @@ button {
         border-color 0.25s;
 
     &.primary{
-        background: #ff6b4a;
+        background-color: light-dark(color-mix(in oklch, var(--col-plum) 40%, #fff), var(--col-plum));
+        color: light-dark(var(--col-plum), #fff);
+
         &:hover {
-            background: #ef5b3a;
+            background-color: light-dark(color-mix(in oklch, var(--col-plum) 60%, #fff), color-mix(in oklch, var(--col-plum) 120%, #fff));
         }
     }
 
     &.secondary{
-
+        // secondary button styles
     }
 }
 
 button:hover {
-    border-color: #646cff;
+    border-color: light-dark(color-mix(in oklch, var(--col-plum) 60%, #fff), var(--col-plum));
 }
 
 button:active{
@@ -42,7 +45,7 @@ button:focus{
 	outline: none;
 }
 button:focus-visible {
-    outline: 4px auto var(--col-accent, yellow);
+    outline: 4px auto var(--col-orange);
 }
 
 
@@ -55,10 +58,11 @@ button:focus-visible {
 		font-size: 1rem;
 		font-weight: 900;
 		margin: auto;
+
 	}
 
 	& dialog{
-
+		// dialog styles
 	}
 }
 
@@ -80,8 +84,8 @@ dialog .btn-close{
 }
 
 .btn-remove {
-	background: rgba(220, 38, 38, 0.9);
-	color: white;
+	background: light-dark(color-mix(in oklch, var(--col-red) 30%, #fff), color-mix(in oklch, var(--col-red) 90%, #000));
+	color: light-dark(var(--col-red), #fff);
 	border: none;
 	border-radius: 4px;
 	cursor: pointer;
@@ -100,6 +104,40 @@ dialog .btn-close{
 	}
 
 	&:hover {
-		background: rgba(185, 28, 28, 1);
+		background: light-dark(color-mix(in oklch, var(--col-red) 50%, #fff), var(--col-red));
 	}
+}
+
+
+.btn-reset{
+	text-decoration: underline;
+	text-decoration-style: dotted;
+	text-underline-offset: 4px;
+	&::before{
+		content:"×";
+		margin-right: 3px;
+		font-size: inherit;
+	}
+	&:hover {
+		color: var(--col-red, red);
+		text-decoration-color: var(--col-red, red);
+	}
+}
+
+.btn-bluetooth{
+	&::before{
+		content:"📡";
+		margin-right: 6px;
+	}
+}
+
+.btn-midi{
+	&::before{
+		content:"🎛";
+		margin-right: 6px;
+	}
+}
+
+.transformer-drawer{
+	--col-bg:rgba(0,0,0,0.5);
 }

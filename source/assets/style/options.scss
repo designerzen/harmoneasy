@@ -1,12 +1,39 @@
-
 :root {
-  --gap:11px;
-  --pad:1rem;
+	color-scheme: light dark;
 
-  --hue-accent:30;
-  --hue-background:50;
+	--gap: 11px;
+	--pad: 1rem;
 
-  --curve:12px;
+	--hue-accent: 30;
+	--hue-background: 50;
 
-  --border: 1px solid rgba(255, 255, 255, 0.3);
+	--col-white: oklch(95.698% 0.02111 241.502);
+	--col-black: oklch(11.813% 0.03195 23.316);
+
+
+	// texts
+	--col-fg: light-dark(var(--col-black), var(--col-white));
+	//  backgrounds
+	--col-bg: light-dark(var(--col-white), var(--col-black));
+
+	--col-red: oklch(48.786% 0.19393 28.533); // Minimoog red panel accent
+	--col-orange: oklch(62% 0.22 55); // Moog Mother-32 warm orange
+	--col-plum: oklch(45% 0.15 310); // Juno-106 deep panel purple
+	--col-pink: oklch(65% 0.18 350); // ARP Odyssey bright pink
+	--col-purple: oklch(52% 0.20 290); // Prophet-5 rich purple
+	--col-blue: oklch(55% 0.19 260); // Roland TR-808 cyan blue
+	--col-green: oklch(58% 0.18 140); // Moog Minitaur classic green
+
+	--curve: 12px;
+
+	--border: 3px solid  light-dark(
+		color-mix(in oklch, var(--col-black) 50%, transparent),
+		color-mix(in oklch, var(--col-white) 50%, transparent)
+	);
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+
+	}
 }

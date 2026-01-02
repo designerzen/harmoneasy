@@ -21,34 +21,59 @@ song-visualiser {
     cursor: crosshair;
   }
 
-  /* Light mode */
-  &:not([data-dark-mode]) {
-    --bg-primary: #ffffff;
-    --bg-secondary: #f5f5f5;
-    --text-primary: #333333;
-    --text-secondary: #666666;
-    --border-color: #dddddd;
-    --grid-color: #eeeeee;
+  /* Light mode (default) */
+  --bg-primary: var(--col-white);
+  --bg-secondary: color-mix(in oklch, var(--col-white) 97%, var(--col-black));
+  --text-primary: #333333;
+  --text-secondary: color-mix(in oklch, var(--col-black) 40%, var(--col-white));
+  --border-color: color-mix(in oklch, var(--col-black) 13%, var(--col-white));
+  --grid-color: color-mix(in oklch, var(--col-black) 8%, transparent);
+  --grid-axis: color-mix(in oklch, var(--col-black) 40%, var(--col-white));
+  --legend-bg: color-mix(in oklch, var(--col-white) 90%, transparent);
+
+  /* Respect user's dark mode preference */
+  @media (prefers-color-scheme: dark) {
+    --bg-primary: color-mix(in oklch, var(--col-black) 87%, #000);
+    --bg-secondary: color-mix(in oklch, var(--col-black) 82%, #000);
+    --text-primary: var(--col-white);
+    --text-secondary: color-mix(in oklch, var(--col-white) 67%, var(--col-black));
+    --border-color: color-mix(in oklch, var(--col-white) 26%, var(--col-black));
+    --grid-color: color-mix(in oklch, var(--col-white) 8%, transparent);
+    --grid-axis: color-mix(in oklch, var(--col-white) 40%, var(--col-black));
+    --legend-bg: color-mix(in oklch, var(--col-black) 90%, transparent);
   }
 
-  /* Dark mode */
-  &[data-dark-mode] {
-    --bg-primary: #1e1e1e;
-    --bg-secondary: #2d2d2d;
-    --text-primary: #ffffff;
-    --text-secondary: #aaaaaa;
-    --border-color: #444444;
-    --grid-color: #333333;
+  /* Allow manual override via data attribute */
+  &[data-theme="light"] {
+    --bg-primary: var(--col-white);
+    --bg-secondary: color-mix(in oklch, var(--col-white) 97%, var(--col-black));
+    --text-primary: #333333;
+    --text-secondary: color-mix(in oklch, var(--col-black) 40%, var(--col-white));
+    --border-color: color-mix(in oklch, var(--col-black) 13%, var(--col-white));
+    --grid-color: color-mix(in oklch, var(--col-black) 8%, transparent);
+    --grid-axis: color-mix(in oklch, var(--col-black) 40%, var(--col-white));
+    --legend-bg: color-mix(in oklch, var(--col-white) 90%, transparent);
+  }
+
+  &[data-theme="dark"] {
+    --bg-primary: color-mix(in oklch, var(--col-black) 87%, #000);
+    --bg-secondary: color-mix(in oklch, var(--col-black) 82%, #000);
+    --text-primary: var(--col-white);
+    --text-secondary: color-mix(in oklch, var(--col-white) 67%, var(--col-black));
+    --border-color: color-mix(in oklch, var(--col-white) 26%, var(--col-black));
+    --grid-color: color-mix(in oklch, var(--col-white) 8%, transparent);
+    --grid-axis: color-mix(in oklch, var(--col-white) 40%, var(--col-black));
+    --legend-bg: color-mix(in oklch, var(--col-black) 90%, transparent);
   }
 }
 
 /* Info panel below visualiser */
 .song-visualiser-info {
   padding: 1rem;
-  background: var(--bg-secondary, #f5f5f5);
-  border-top: 1px solid var(--border-color, #ddd);
+  background-color: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
   font-size: 0.875rem;
-  color: var(--text-secondary, #666);
+  color: var(--text-secondary);
 
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -65,12 +90,12 @@ song-visualiser {
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--text-secondary, #999);
+    color: var(--text-secondary);
   }
 
   &__value {
     font-size: 1rem;
-    color: var(--text-primary, #333);
+    color: var(--text-primary);
     font-family: monospace;
   }
 }
@@ -80,8 +105,8 @@ song-visualiser {
   display: flex;
   gap: 0.5rem;
   padding: 0.5rem;
-  background: var(--bg-secondary, #f5f5f5);
-  border-bottom: 1px solid var(--border-color, #ddd);
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
   flex-wrap: wrap;
 
   &__group {
@@ -91,7 +116,7 @@ song-visualiser {
 
     &__label {
       font-size: 0.875rem;
-      color: var(--text-secondary, #666);
+      color: var(--text-secondary);
       padding: 0 0.5rem;
     }
   }
@@ -100,16 +125,16 @@ song-visualiser {
 /* Buttons for visualiser control */
 .song-visualiser-btn {
   padding: 0.5rem 1rem;
-  background: var(--bg-primary, #fff);
-  border: 1px solid var(--border-color, #ddd);
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.875rem;
-  color: var(--text-primary, #333);
+  color: var(--text-primary);
   transition: all 0.2s ease;
 
   &:hover {
-    background: var(--border-color, #eee);
+    background-color: var(--bg-secondary);
   }
 
   &:active {
@@ -117,24 +142,36 @@ song-visualiser {
   }
 
   &--primary {
-    background: #007bff;
-    color: white;
-    border-color: #007bff;
+    background-color: var(--col-blue);
+    color: var(--col-white);
+    border-color: var(--col-blue);
 
     &:hover {
-      background: #0056b3;
-      border-color: #0056b3;
+      background-color: light-dark(
+        color-mix(in oklch, var(--col-blue) 90%, var(--col-white)),
+        color-mix(in oklch, var(--col-blue) 110%, var(--col-white))
+      );
+      border-color: light-dark(
+        color-mix(in oklch, var(--col-blue) 90%, var(--col-white)),
+        color-mix(in oklch, var(--col-blue) 110%, var(--col-white))
+      );
     }
   }
 
   &--danger {
-    background: #dc3545;
-    color: white;
-    border-color: #dc3545;
+    background-color: var(--col-red);
+    color: var(--col-white);
+    border-color: var(--col-red);
 
     &:hover {
-      background: #c82333;
-      border-color: #c82333;
+      background-color: light-dark(
+        color-mix(in oklch, var(--col-red) 90%, var(--col-white)),
+        color-mix(in oklch, var(--col-red) 110%, var(--col-white))
+      );
+      border-color: light-dark(
+        color-mix(in oklch, var(--col-red) 90%, var(--col-white)),
+        color-mix(in oklch, var(--col-red) 110%, var(--col-white))
+      );
     }
   }
 
@@ -143,7 +180,7 @@ song-visualiser {
     cursor: not-allowed;
 
     &:hover {
-      background: var(--bg-primary, #fff);
+      background-color: var(--bg-primary);
     }
   }
 }
@@ -165,6 +202,8 @@ song-visualiser {
   gap: 0.5rem;
   padding: 0.5rem;
   font-size: 0.75rem;
+  background-color: var(--legend-bg);
+  border-radius: 4px;
 
   &__item {
     display: flex;
@@ -179,6 +218,6 @@ song-visualiser {
   }
 
   &__label {
-    color: var(--text-secondary, #666);
+    color: var(--text-secondary);
   }
 }

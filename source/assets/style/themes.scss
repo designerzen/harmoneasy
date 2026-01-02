@@ -1,0 +1,301 @@
+/**
+ * Theme System - Light and Dark Mode CSS Variables
+ * Respects user system preferences with manual override capability
+ */
+
+// ============================================================================
+// LIGHT THEME (Default)
+// ============================================================================
+
+:root,
+html[data-theme='light'],
+@media (prefers-color-scheme: light) {
+  // Background colors
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --bg-tertiary: #efefef;
+  --bg-hover: #fafafa;
+  --bg-active: #e8e8e8;
+
+  // Text colors
+  --text-primary: #213547;
+  --text-secondary: #666666;
+  --text-tertiary: #999999;
+  --text-muted: #cccccc;
+  --text-inverse: #f0f0f0;
+
+  // Accent colors
+  --accent-primary: #646cff;
+  --accent-hover: #535bf2;
+  --accent-light: #f0f2ff;
+  --accent-dark: #4a52d5;
+
+  // Border colors
+  --border-light: rgba(0, 0, 0, 0.1);
+  --border-medium: rgba(0, 0, 0, 0.15);
+  --border-dark: rgba(0, 0, 0, 0.2);
+
+  // Status colors
+  --status-success: #22c55e;
+  --status-warning: #f59e0b;
+  --status-error: #ef4444;
+  --status-info: #3b82f6;
+
+  // Interactive elements
+  --button-bg: #f9f9f9;
+  --button-text: #213547;
+  --button-border: rgba(0, 0, 0, 0.2);
+  --button-hover-bg: #f0f0f0;
+  --button-active-bg: #e0e0e0;
+
+  // Input elements
+  --input-bg: #ffffff;
+  --input-text: #213547;
+  --input-border: rgba(0, 0, 0, 0.15);
+  --input-focus-border: #646cff;
+  --input-focus-shadow: rgba(100, 108, 255, 0.1);
+
+  // Scrollbar
+  --scrollbar-track: #f5f5f5;
+  --scrollbar-thumb: #cccccc;
+  --scrollbar-thumb-hover: #999999;
+
+  // Shadow
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+
+  // Specific UI components
+  --header-bg: #ffffff;
+  --header-border: rgba(0, 0, 0, 0.1);
+  --sidebar-bg: #f5f5f5;
+  --sidebar-border: rgba(0, 0, 0, 0.1);
+  --modal-bg: #ffffff;
+  --modal-overlay: rgba(0, 0, 0, 0.5);
+
+  // Keyboard visualizer
+  --keyboard-key-bg: #f9f9f9;
+  --keyboard-key-text: #213547;
+  --keyboard-key-border: rgba(0, 0, 0, 0.2);
+  --keyboard-key-active-bg: #646cff;
+  --keyboard-key-active-text: #ffffff;
+
+  // Canvas/Visualizer
+  --canvas-bg: #ffffff;
+  --canvas-grid: rgba(0, 0, 0, 0.08);
+  --canvas-axis: #999999;
+}
+
+// ============================================================================
+// DARK THEME
+// ============================================================================
+
+html[data-theme='dark'],
+@media (prefers-color-scheme: dark) {
+  // Background colors
+  --bg-primary: #1e1e1e;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #3a3a3a;
+  --bg-hover: #333333;
+  --bg-active: #404040;
+
+  // Text colors
+  --text-primary: #e0e0e0;
+  --text-secondary: #b0b0b0;
+  --text-tertiary: #808080;
+  --text-muted: #555555;
+  --text-inverse: #1e1e1e;
+
+  // Accent colors
+  --accent-primary: #646cff;
+  --accent-hover: #7c85ff;
+  --accent-light: #2a2f5f;
+  --accent-dark: #4a52d5;
+
+  // Border colors
+  --border-light: rgba(255, 255, 255, 0.1);
+  --border-medium: rgba(255, 255, 255, 0.15);
+  --border-dark: rgba(255, 255, 255, 0.2);
+
+  // Status colors
+  --status-success: #22c55e;
+  --status-warning: #f59e0b;
+  --status-error: #ef4444;
+  --status-info: #3b82f6;
+
+  // Interactive elements
+  --button-bg: #2d2d2d;
+  --button-text: #e0e0e0;
+  --button-border: rgba(255, 255, 255, 0.2);
+  --button-hover-bg: #363636;
+  --button-active-bg: #404040;
+
+  // Input elements
+  --input-bg: #2d2d2d;
+  --input-text: #e0e0e0;
+  --input-border: rgba(255, 255, 255, 0.15);
+  --input-focus-border: #646cff;
+  --input-focus-shadow: rgba(100, 108, 255, 0.2);
+
+  // Scrollbar
+  --scrollbar-track: #1e1e1e;
+  --scrollbar-thumb: #555555;
+  --scrollbar-thumb-hover: #808080;
+
+  // Shadow
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+
+  // Specific UI components
+  --header-bg: #1e1e1e;
+  --header-border: rgba(255, 255, 255, 0.1);
+  --sidebar-bg: #2d2d2d;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --modal-bg: #2d2d2d;
+  --modal-overlay: rgba(0, 0, 0, 0.7);
+
+  // Keyboard visualizer
+  --keyboard-key-bg: #2d2d2d;
+  --keyboard-key-text: #e0e0e0;
+  --keyboard-key-border: rgba(255, 255, 255, 0.2);
+  --keyboard-key-active-bg: #646cff;
+  --keyboard-key-active-text: #ffffff;
+
+  // Canvas/Visualizer
+  --canvas-bg: #1e1e1e;
+  --canvas-grid: rgba(255, 255, 255, 0.08);
+  --canvas-axis: #666666;
+}
+
+// ============================================================================
+// THEME-AGNOSTIC UTILITIES
+// ============================================================================
+
+// Transition for smooth theme changes
+html {
+  transition: background-color 200ms ease-in-out, color 200ms ease-in-out;
+}
+
+// Ensure body uses theme variables
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 200ms ease-in-out, color 200ms ease-in-out;
+}
+
+// Link colors
+a {
+  color: var(--accent-primary);
+
+  &:hover {
+    color: var(--accent-hover);
+  }
+}
+
+// Button styling
+button {
+  background-color: var(--button-bg);
+  color: var(--button-text);
+  border-color: var(--button-border);
+
+  &:hover {
+    background-color: var(--button-hover-bg);
+  }
+
+  &:active {
+    background-color: var(--button-active-bg);
+  }
+}
+
+// Input styling
+input,
+textarea,
+select {
+  background-color: var(--input-bg);
+  color: var(--input-text);
+  border-color: var(--input-border);
+
+  &:focus {
+    border-color: var(--input-focus-border);
+    box-shadow: 0 0 0 3px var(--input-focus-shadow);
+  }
+}
+
+// Placeholder text
+::placeholder {
+  color: var(--text-tertiary);
+}
+
+// Selection
+::selection {
+  background-color: var(--accent-primary);
+  color: var(--text-inverse);
+}
+
+// Dialog backdrop
+dialog::backdrop {
+  background-color: var(--modal-overlay);
+}
+
+// Details/Summary
+details {
+  border-color: var(--border-medium);
+}
+
+summary {
+  color: var(--text-primary);
+}
+
+// Code blocks
+code,
+pre {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+
+// Helper classes for theme-aware styling
+.text-primary {
+  color: var(--text-primary);
+}
+
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+.text-tertiary {
+  color: var(--text-tertiary);
+}
+
+.bg-primary {
+  background-color: var(--bg-primary);
+}
+
+.bg-secondary {
+  background-color: var(--bg-secondary);
+}
+
+.border {
+  border-color: var(--border-medium);
+}
+
+.accent {
+  color: var(--accent-primary);
+}
+
+.success {
+  color: var(--status-success);
+}
+
+.warning {
+  color: var(--status-warning);
+}
+
+.error {
+  color: var(--status-error);
+}
+
+.info {
+  color: var(--status-info);
+}

@@ -4,6 +4,7 @@
 <head>
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<meta name="color-scheme" content="light dark" />
 	<title>Harmoneasy</title>
 	<link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
 	<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -41,10 +42,10 @@
 				<output id="volume-output">100</output> %
 			</label>
 
-			<div class="device-buttons">
+			<div class="menu-input-devices">
 				<button type="button" id="btn-random-timbre">Random Timbre</button>
-				<button type="button" id="btn-connect-to-ble">Connect Bluetooth</button>
-				<button type="button" id="btn-toggle-webmidi">Connect WebMIDI</button>
+				<button type="button" id="btn-connect-to-ble" class="btn-bluetooth">Connect Bluetooth</button>
+				<button type="button" id="btn-toggle-webmidi" class="btn-midi">Connect WebMIDI</button>
 				<button type="button" id="btn-kill-switch" class="kill-switch primary">Panic</button>
 			</div>
 
@@ -62,15 +63,17 @@
 		<canvas id="note-visualiser" width="1080" height="512"></canvas>
 		<!-- <song-explorer></song-explorer> -->
 		<!-- <canvas id="song-explorer" width="1920" height="1080"></canvas> -->
+	
+
+		<!-- Transport -->
+		<div id="transport" aria-hide>
+			<strong>Timer</strong>
+			<time id="clock">...</time>
+			<button type="button" id="btn-reset" class="icon btn-reset">Reset</button>
+		</div>
+
 	</main>
-
-	<!-- Transport -->
-	<div id="transport" aria-hide>
-		<strong>Timer</strong>
-		<time id="clock">...</time>
-		<button type="button" id="btn-reset" class="icon">Reset</button>
-	</div>
-
+	
 	<!-- Sidebars for MIDI Events -->
 	<aside id="sidebar">
 

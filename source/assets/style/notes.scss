@@ -1,0 +1,44 @@
+
+// [data-number="0"],
+[data-key="A"]{
+    --col-accent: var(--col-orange);
+}
+[data-key="A#"]{
+    --col-accent: var(--col-orange);
+}
+// [data-number="1"],
+[data-key="B"]{
+    --col-accent: var(--col-red);
+}
+// [data-number="2"],
+[data-key="C"]{
+    --col-accent: var(--col-plum);
+}
+[data-key="C#"]{
+    --col-accent: var(--col-plum);
+}
+// [data-number="3"],
+[data-key="D"]{
+    --col-accent: var(--col-pink);
+}
+[data-key="D#"]{
+    --col-accent: var(--col-pink);
+}
+// [data-number="4"],
+[data-key="E"]{
+    --col-accent: var(--col-purple);
+}
+// [data-number="5"],
+[data-key="F"]{
+    --col-accent: var(--col-blue);
+}
+[data-key="F#"]{
+    --col-accent: var(--col-blue);
+}
+// [data-number="6"],
+[data-key="G"]{
+    --col-accent: var(--col-green);
+}
+[data-key="G#"]{
+    --col-accent: var(--col-green);
+}

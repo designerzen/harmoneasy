@@ -7,6 +7,7 @@
 
     border-radius: 10%;
 
+	fill:var(--fill, white);
     will-change: fill;
 
 	.piano-key-name{
@@ -14,17 +15,19 @@
 	}
 
 	&:hover{
-		fill:hsla(168, 70%, 40%, 0.858);
-        opacity: 0.98;
+		fill: var(--col-green);
+        // opacity: 0.98;
 		.piano-key-name{
 			visibility: visible;
 		}		
 	}	
+
     &.active{
-		fill:var( --col-accent, var(--shade-brand, rgba(255, 255, 0, 0.545)) );
+		fill: var(--col-accent, var(--col-orange, orange));
+		// opacity: 0;
 	}
     &.active:hover{
-		fill:var( --col-accent, var(--shade-brand, yellowgreen) );
+		fill: color-mix(in oklch, var(--col-accent) 50%, var(--fill));
 	}
 
 	&:focus{
@@ -34,22 +37,19 @@
 	&:focus-visible{
 		outline: none;
 		stroke-width:4px;
-		stroke:var(--col-accent);
+		stroke: var(--col-orange);
 	} 
 }
 
 .piano-key-white{
-	background-color:white;
-	fill:white;
+	--fill: var(--col-white, white);
 }
 
 .piano-key-black{
-	fill:black;
-	background-color:black;
-	// background-image:linear-gradient(to bottom, #000, #222);
+	--fill: var(--col-black, black);
 	&:focus-visible{
 		stroke-width:4px;
-		stroke:var(--col-accent);
+		stroke: var(--col-orange);
 	}
 }
 
@@ -59,9 +59,9 @@
 
 .piano-note-indicator{
 	transition: opacity var(--time-quick, 90ms) linear;
-	stroke:white;
+	stroke: var(--col-white);
 	stroke-width:0.3;
-	fill:yellow;
+	fill: var(--col-orange);
 	opacity: 0;
 }
 
@@ -161,16 +161,19 @@ input[type="checkbox"]::after{
 	width: var(--visual-size);
 	height: var(--visual-size);
 	border-radius: 4px;
-	background: var(--checkbox-bg, #fff);
-	border: 2px solid var(--checkbox-border, #ccc);
+	background: light-dark(var(--col-white), color-mix(in oklch, var(--col-white) 90%, var(--col-black)));
+	border: 2px solid light-dark(
+		color-mix(in oklch, var(--col-black) 20%, var(--col-white)),
+		color-mix(in oklch, var(--col-white) 20%, var(--col-black))
+	);
 	box-shadow: 0 1px 0 rgba(0,0,0,0.03) inset;
 	transition: background .12s ease, border-color .12s ease, box-shadow .12s ease;
 }
 
 input[type="checkbox"]:checked::after{
-	background: var(--col-accent, #1e90ff);
-	border-color: var(--col-accent, #1e90ff);
-	box-shadow: inset 0 0 0 3px rgba(255,255,255,0.85);
+	background: var(--col-blue);
+	border-color: var(--col-blue);
+	box-shadow: inset 0 0 0 3px var(--col-white);
 }
 
 input[type="checkbox"]:focus-visible{
@@ -178,7 +181,10 @@ input[type="checkbox"]:focus-visible{
 }
 
 input[type="checkbox"]:focus-visible::after{
-	box-shadow: 0 0 0 4px rgba(30,144,255,0.14), inset 0 1px 0 rgba(0,0,0,0.03);
+	box-shadow: 0 0 0 4px light-dark(
+		color-mix(in oklch, var(--col-blue) 14%, transparent),
+		color-mix(in oklch, var(--col-blue) 14%, transparent)
+	), inset 0 1px 0 rgba(0,0,0,0.03);
 }
 
 /* increase hit area for labels that wrap checkboxes as well */
@@ -188,8 +194,14 @@ label > input[type="checkbox"]{
 
 /* When the checkbox is disabled, show a muted style */
 input[type="checkbox"][disabled]::after{
-	background: #f3f3f3;
-	border-color: #ddd;
+	background: light-dark(
+		color-mix(in oklch, var(--col-white) 95%, var(--col-black)),
+		color-mix(in oklch, var(--col-white) 20%, var(--col-black))
+	);
+	border-color: light-dark(
+		color-mix(in oklch, var(--col-black) 13%, var(--col-white)),
+		color-mix(in oklch, var(--col-white) 35%, var(--col-black))
+	);
 	opacity: 0.8;
 }
 
