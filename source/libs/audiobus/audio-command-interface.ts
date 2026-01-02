@@ -18,12 +18,14 @@ export interface IAudioCommand {
 	value:number
 	pitchBend:number
 
-	// UNOFFICAl: Uint8Array
-	raw:Uint8Array
-	// data:
-
 	time:number
     timeCode:number
 
 	text:string
+
+
+	// UNOFFICAl: Uint8Array
+	raw:Uint8Array
+	// UNOFFICIAL: From Device (uuid)
+	from:string
 }

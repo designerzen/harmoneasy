@@ -62,7 +62,7 @@ export default class AudioCommand implements IAudioCommand {
 	// which device created this command (e.g. "MIDI", "OSC", "WebRTC")
 	from:string = "Unknown"
 	patch:number
-	
+
 	// for linked lists
 	previous:IAudioCommand = undefined
 	next:IAudioCommand = undefined
