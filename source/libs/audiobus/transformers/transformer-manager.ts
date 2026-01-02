@@ -15,21 +15,19 @@ import type { IAudioCommand } from "../audio-command-interface.ts"
 
 type Callback = () => void
 
-const EVENT_TRANSFORMERS_UPDATED = "EVENT_TRANSFORMERS_UPDATED"
-const EVENT_TRANSFORMERS_ADDED = "EVENT_TRANSFORMER_ADDED"
-const EVENT_TRANSFORMERS_REMOVED = "EVENT_TRANSFORMER_REMOVED"
+export const EVENT_TRANSFORMERS_UPDATED = "EVENT_TRANSFORMERS_UPDATED"
+export const EVENT_TRANSFORMERS_ADDED = "EVENT_TRANSFORMER_ADDED"
+export const EVENT_TRANSFORMERS_REMOVED = "EVENT_TRANSFORMER_REMOVED"
 
 const DEFAULT_TRANSFORMERS = [
     new TransformerHarmoniser()
 ]
 
-export class TransformerManager extends EventTarget implements ITransformer {
+export default class TransformerManager extends EventTarget implements ITransformer {
      
-    public id: string = Transformer.getUniqueID()
-    public name: string = 'TransformerManager'
-    public timer:Timer|undefined // Reference to AudioTimer for BPM-synced transformers
-
-    private onChangeFns: Callback[] = []
+    protected name: string = 'TransformerManager'
+	protected id: string = Transformer.getUniqueID( this.name )
+    protected timer:Timer|undefined // Reference to AudioTimer for BPM-synced transformers
 
     #transformersMap:Map<string, Array<Transformer> > = new Map()
     #transformers: Array<Transformer> = []
@@ -74,14 +72,20 @@ export class TransformerManager extends EventTarget implements ITransformer {
      * @param transformerToAdd 
      */
     appendTransformer(transformerToAdd: Transformer, dispatchEvents:boolean=true ) {
-        const collection:Transformer[] = this.#transformersMap.has(transformerToAdd.type) ? [...this.#transformersMap.get(transformerToAdd.type), transformerToAdd] : [transformerToAdd]
+      
+		// don't add a quantiser if one is already set
+		if (this.isQuantised && transformerToAdd.type === ID_QUANTISE)
+		{
+			return
+		}
+			
+		const collection:Transformer[] = this.#transformersMap.has(transformerToAdd.type) ? [...this.#transformersMap.get(transformerToAdd.type), transformerToAdd] : [transformerToAdd]
         this.#transformersMap.set(transformerToAdd.type, collection )
 		transformerToAdd.index = this.#transformers.push(transformerToAdd) - 1
-        this.onChangeFns.forEach(t => t())
-        if (dispatchEvents)
-        {
-            this.dispatchEvent( new CustomEvent(EVENT_TRANSFORMERS_ADDED) )
-            this.dispatchEvent( new CustomEvent(EVENT_TRANSFORMERS_UPDATED) )
+       
+        if (dispatchEvents) {
+            this.dispatchEvent(new CustomEvent(EVENT_TRANSFORMERS_ADDED, {detail:{transformer:transformerToAdd}}))
+            this.dispatchEvent(new CustomEvent(EVENT_TRANSFORMERS_UPDATED, {detail:{ added:[transformerToAdd], removed:[], transformers:this.#transformers}} ))
         }
     }
 
@@ -89,7 +93,7 @@ export class TransformerManager extends EventTarget implements ITransformer {
      * Remove a transformer to the pipeline
      * @param transformerToRemove 
      */
-    removeTransformer(transformerToRemove: Transformer) {
+    removeTransformer(transformerToRemove: Transformer, dispatchEvents:boolean=true) {
         this.#transformers = this.#transformers.filter(transformer => transformer.uuid !== transformerToRemove.uuid)
         
 		transformerToRemove.index = -1
@@ -101,10 +105,12 @@ export class TransformerManager extends EventTarget implements ITransformer {
         } else {
             this.#transformersMap.delete(transformerToRemove.type)
         }
-
-        this.onChangeFns.forEach(t => t())
-        this.dispatchEvent( new CustomEvent(EVENT_TRANSFORMERS_REMOVED) )
-        this.dispatchEvent( new CustomEvent(EVENT_TRANSFORMERS_UPDATED) )
+		
+		if (dispatchEvents)
+		{
+			this.dispatchEvent(new CustomEvent(EVENT_TRANSFORMERS_REMOVED, {detail:{transformer:transformerToRemove}}))
+			this.dispatchEvent(new CustomEvent(EVENT_TRANSFORMERS_UPDATED, {detail:{ added:[], removed:[transformerToRemove], transformers:this.#transformers}}))
+		}
     }
 
     /**
@@ -205,12 +211,5 @@ export class TransformerManager extends EventTarget implements ITransformer {
     clear(){
         this.#transformers = []
         this.#transformersMap = new Map()
-    }
-
-    onChange(fn: () => void) {
-        this.onChangeFns.push(fn)
-        return () => {
-            this.onChangeFns = this.onChangeFns.filter(f => f !== fn)
-        }
     }
 }

@@ -33,13 +33,12 @@ interface TransformRequest {
     timeout: NodeJS.Timeout
 }
 
-export class TransformerManagerWorker extends EventTarget implements ITransformer {
+export default class TransformerManagerWorker extends EventTarget implements ITransformer {
      
     public id: string = Transformer.getUniqueID()
     public name: string = 'TransformerManager'
     public timer: Timer | undefined
 
-    private onChangeFns: Callback[] = []
     private worker: Worker | null = null
     private transformRequestMap: Map<string, TransformRequest> = new Map()
     private requestIdCounter: number = 0
@@ -189,21 +188,20 @@ export class TransformerManagerWorker extends EventTarget implements ITransforme
             : [transformerToAdd]
         this.#transformersMap.set(transformerToAdd.type, collection)
         transformerToAdd.index = this.#transformers.push(transformerToAdd) - 1
-        this.onChangeFns.forEach(t => t())
-
+       
         // Sync to worker
         this.syncTransformersToWorker()
-
-        if (dispatchEvents) {
-            this.dispatchEvent(new CustomEvent(EVENT_TRANSFORMERS_ADDED))
-            this.dispatchEvent(new CustomEvent(EVENT_TRANSFORMERS_UPDATED))
-        }
+	
+		if (dispatchEvents) {
+			this.dispatchEvent(new CustomEvent(EVENT_TRANSFORMERS_ADDED, {detail:{transformer:transformerToAdd}}))
+			this.dispatchEvent(new CustomEvent(EVENT_TRANSFORMERS_UPDATED, {detail:{ added:[transformerToAdd], removed:[], transformers:this.#transformers}} ))
+		}
     }
 
     /**
      * Remove a transformer from the pipeline
      */
-    removeTransformer(transformerToRemove: Transformer) {
+    removeTransformer(transformerToRemove: Transformer, dispatchEvents:boolean=true) {
         this.#transformers = this.#transformers.filter(transformer => transformer.uuid !== transformerToRemove.uuid)
         transformerToRemove.index = -1
 
@@ -214,14 +212,15 @@ export class TransformerManagerWorker extends EventTarget implements ITransforme
             this.#transformersMap.delete(transformerToRemove.type)
         }
 
-        this.onChangeFns.forEach(t => t())
-
         // Sync to worker
         this.syncTransformersToWorker()
 
-        this.dispatchEvent(new CustomEvent(EVENT_TRANSFORMERS_REMOVED))
-        this.dispatchEvent(new CustomEvent(EVENT_TRANSFORMERS_UPDATED))
-    }
+		if (dispatchEvents)
+		{
+			this.dispatchEvent(new CustomEvent(EVENT_TRANSFORMERS_REMOVED, {detail:{transformer:transformerToRemove}}))
+			this.dispatchEvent(new CustomEvent(EVENT_TRANSFORMERS_UPDATED, {detail:{ added:[], removed:[transformerToRemove], transformers:this.#transformers}}))
+		}
+	}
 
     /**
      * Overwrite the whole transformers queue stack
@@ -412,13 +411,6 @@ export class TransformerManagerWorker extends EventTarget implements ITransforme
     clear(): void {
         this.#transformers = []
         this.#transformersMap = new Map()
-    }
-
-    onChange(fn: () => void) {
-        this.onChangeFns.push(fn)
-        return () => {
-            this.onChangeFns = this.onChangeFns.filter(f => f !== fn)
-        }
     }
 
     /**
