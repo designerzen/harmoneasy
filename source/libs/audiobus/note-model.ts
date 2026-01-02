@@ -34,6 +34,19 @@ export const isFlat = (noteNumber:number) => isSharp(noteNumber)
 // convert a letter and an octave to a noteNumber
 export const keyAndOctaveAsNoteNumber = (key, octave=4, isAccidental=false) => KEY_NAMES.indexOf(key) + (octave * 12) + (isAccidental ? 1 : 0)
 
+
+const colourMap = new Map()
+export const convertNoteNumberToColour = (noteNumber:number, saturation:number=150, luminance:number=150) => {
+	if (colourMap.has(noteNumber))
+	{ 
+		return colourMap.get(noteNumber)
+	}
+	const colour = "rgb("+360*((noteNumber % QUANTITY_NOTES)%12)/12+","+saturation+","+luminance+")"
+	// return "hsl("+360*(this.sequenceIndex%12)/12+",5%,80%)"
+	colourMap.set(noteNumber,colour)
+	return colour
+}
+
 export default class NoteModel{
 
     // noteName
@@ -57,11 +70,9 @@ export default class NoteModel{
     alternate: any
         
     get colour():string{
-        return "rgb("+360*(this.sequenceIndex%12)/12+",150,150)"
-        return "hsl("+360*(this.sequenceIndex%12)/12+",5%,80%)"
+        return convertNoteNumberToColour( this.number )
     }
-
-
+	
     set noteNumber(noteNumber:number){
         this.number = noteNumber
         this.sequenceIndex = noteNumber % QUANTITY_NOTES
