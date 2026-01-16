@@ -74,8 +74,7 @@ export default class TransformerManager extends EventTarget implements ITransfor
     appendTransformer(transformerToAdd: Transformer, dispatchEvents:boolean=true ) {
       
 		// don't add a quantiser if one is already set
-		if (this.isQuantised && transformerToAdd.type === ID_QUANTISE)
-		{
+		if (this.isQuantised && transformerToAdd.type === ID_QUANTISE){
 			return
 		}
 			
@@ -90,7 +89,7 @@ export default class TransformerManager extends EventTarget implements ITransfor
     }
 
     /**
-     * Remove a transformer to the pipeline
+     * Remove a transformer from the pipeline
      * @param transformerToRemove 
      */
     removeTransformer(transformerToRemove: Transformer, dispatchEvents:boolean=true) {
@@ -106,15 +105,14 @@ export default class TransformerManager extends EventTarget implements ITransfor
             this.#transformersMap.delete(transformerToRemove.type)
         }
 		
-		if (dispatchEvents)
-		{
+		if (dispatchEvents){
 			this.dispatchEvent(new CustomEvent(EVENT_TRANSFORMERS_REMOVED, {detail:{transformer:transformerToRemove}}))
 			this.dispatchEvent(new CustomEvent(EVENT_TRANSFORMERS_UPDATED, {detail:{ added:[], removed:[transformerToRemove], transformers:this.#transformers}}))
 		}
     }
 
     /**
-     * Overwrite the qhole transformers queue stack
+     * Overwrite the whole transformers queue stack
      * @param transformers 
      */
     setTransformers(transformers: Array<Transformer>): void {
@@ -141,11 +139,11 @@ export default class TransformerManager extends EventTarget implements ITransfor
     }
 
 	// FIXME: This is done in a very slow fashion creating a whole new sequence everytime
-    moveOneStepBefore(el: Transformer) {
-        
-        const index:number = this.#transformers.indexOf(el)
-        if (index <= 0) return // already at the start or not found
-
+    moveOneStepBefore(transformer: Transformer) {
+        const index:number = this.#transformers.indexOf(transformer)
+        if (index <= 0){ 
+			return // already at the start or not found
+		}
         const newList = [...this.#transformers]
         // swap el with the one before it
         const temp = newList[index - 1]
@@ -155,16 +153,21 @@ export default class TransformerManager extends EventTarget implements ITransfor
         this.setTransformers(newList)
     }
 
-	// FIXME: This is done in a very slow fashion creating a whole new sequence everytime
-    moveOneStepAfter(el: Transformer) {
-        const idx = this.#transformers.indexOf(el)
-        if (idx === -1 || idx >= this.#transformers.length - 1) return // end or not found
-
+	/**
+	 * 
+	 * @param transformer 
+	 * @returns 
+	 */
+	moveOneStepAfter(transformer: Transformer) {
+        const index = this.#transformers.indexOf(transformer)
+        if (index === -1 || index >= this.#transformers.length - 1){
+			return // end or not found
+		}
         const newList = [...this.#transformers]
         // swap el with the one after it
-        const temp = newList[idx + 1]
-        newList[idx + 1] = newList[idx]
-        newList[idx] = temp
+        const temp = newList[index + 1]
+        newList[index + 1] = newList[index]
+        newList[index] = temp
 
         this.setTransformers(newList)
     }

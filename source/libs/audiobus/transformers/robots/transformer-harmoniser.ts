@@ -1,19 +1,15 @@
 /**
  * Harmoniser transposes into a specific key and mode
  */
-import type { IAudioCommand } from "../../audio-command-interface.ts";
-import { Transformer, type TransformerConfig } from "./abstract-transformer.ts"
-import NoteModel from "../../note-model.ts"
-import AudioCommand from "../../audio-command.ts"
-import { createChord, findRotationFromNote } from "../../tuning/chords/chords.js"
-import { convertToIntervalArray } from "../../tuning/chords/describe-chord.ts"
 import * as MODES from "../../tuning/chords/modal-chords.js"
-
+import { Transformer, type TransformerConfig } from "./abstract-transformer.ts"
 import { TRANSFORMER_CATEGORY_TUNING } from "./transformer-categories.ts"
 import { findClosestNoteInScale, generateNotesInScale, TUNING_MODE_IONIAN } from "../../tuning/scales.ts"
 import { getIntervalFormulaForMode } from "../../tuning/chords/modal-chords.js"
+
 import type Timer from "../../timing/timer.ts"
 import type { ITransformer } from "./interface-transformer.ts"
+import type { IAudioCommand } from "../../audio-command-interface.ts"
 
 export const ID_HARMONISER = "Harmoniser"
 
@@ -42,7 +38,7 @@ export class TransformerHarmoniser extends Transformer<Config> implements ITrans
         return "Ensure that all played notes are in the specified scale."
     }
 
-    get fields() {
+    get fields(): FieldConfig[] {
         return [
              {
                 name: 'enabled',

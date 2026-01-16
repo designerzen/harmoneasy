@@ -16,15 +16,14 @@ export abstract class Transformer<Config = TransformerConfig> implements ITransf
     
     static ID:number = 0
 
-    static getUniqueID() {
-		return `Transformer-${this.name}-${++Transformer.ID}`
-        // return "Transformer-" + this.name + "-" + String(Transformer.ID).padStart(16, "0")
+    static getUniqueID( name: string ) {
+		return `Transformer-${name}-${ String(Transformer.ID++) }`
     }
     
 	// order in Transformer sequence
 	index:number = -1
 
-    #id: string = Transformer.getUniqueID()
+    #id: string = Transformer.getUniqueID(this.name)
     
 	protected type:string = "AbstractTransformer"
 	protected category:string = "Uncategorised"
@@ -57,6 +56,10 @@ export abstract class Transformer<Config = TransformerConfig> implements ITransf
         this.setConfig("available", true)
     }
 
+	/**
+	 * Export the transformer's configuration as a JSON string
+	 * @returns JSON String
+	 */
 	exportConfig(): string {
 		return JSON.stringify({...this.config, type:this.type })
 	}
@@ -84,12 +87,18 @@ export abstract class Transformer<Config = TransformerConfig> implements ITransf
 
 	abstract transform(commands: IAudioCommand[], timer: Timer): IAudioCommand[]
 
+	/**
+	 * Reset the transformer to its initial state
+	 */
     reset():void{
         // No state to reset for this transformer
         throw Error("Reset not implemented for Transformer " + this.name)
     }
 
+	/**
+	 * Destroy the transformer and clean up any resources
+	 */
 	destroy():void{
-	
+		throw Error("Destroy not implemented for Transformer " + this.name)
 	}
 }

@@ -4,7 +4,6 @@
  * and the length specified in simultaneous
  */
 import { Transformer } from "./abstract-transformer.ts"
-import NoteModel from "../../note-model.ts"
 import AudioCommand from "../../audio-command.ts"
 import { createChord, findRotationFromNote } from "../../tuning/chords/chords.js"
 import { convertToIntervalArray } from "../../tuning/chords/describe-chord.ts"
@@ -20,20 +19,15 @@ import {
 } from "../../tuning/intervals.js"
 import { TUNING_MODE_IONIAN } from "../../tuning/scales.ts"
 import { getIntervalFormulaForMode } from "../../tuning/chords/modal-chords.js"
-
-import type { IAudioCommand } from "../../audio-command-interface.ts"
-import type Timer from "../../timing/timer.ts"
-import type { ITransformer } from "./interface-transformer.ts"
 import { TRANSFORMER_CATEGORY_TUNING } from "./transformer-categories.ts"
 import { cloneAudioCommand } from "../../audio-command-factory.ts"
 
-export const ID_CHORDIFIER = "Chordifier"
+import type Timer from "../../timing/timer.ts"
+import type { IAudioCommand } from "../../audio-command-interface.ts"
+import type { ITransformer } from "./interface-transformer.ts"
+import { ALL_KEYBOARD_NUMBERS } from "../../inputs/input-onscreen-keyboard.ts"
 
-// Full keyboard with all notes
-const keyboardKeys = (new Array(128)).fill("")
-const ALL_KEYBOARD_NUMBERS = keyboardKeys.map((_, index) => index )
-const ALL_KEYBOARD_NOTES = keyboardKeys.map((_, index) => new NoteModel(index))
-const NOTES_IN_CHORDS = 3
+export const ID_CHORDIFIER = "Chordifier"
 
 interface Config {
     simultaneous: number,
@@ -41,6 +35,7 @@ interface Config {
     mode: string
 }
 
+const NOTES_IN_CHORDS = 3
 const DEFAULT_OPTIONS: Config = {
     simultaneous:NOTES_IN_CHORDS,
     root: 0,
@@ -112,30 +107,26 @@ export class TransformerChordifier extends Transformer<Config> implements ITrans
         super( {...DEFAULT_OPTIONS, ...config} )
     }
 
+	/**
+	 * 
+	 * @param command 
+	 * @returns 
+	 */
     private harmonizeNote(command: IAudioCommand) {
-
-        // Fetch note model from the first command's note number
-        const noteModel = ALL_KEYBOARD_NOTES[command.number]
 
         // Get interval formula based on the configured mode
         const intervalFormula = getIntervalFormulaForMode(this.config.mode)
 
         // Calculate rotation: -1 if note is outside of the scale
-        const rotation = findRotationFromNote(noteModel.noteNumber, this.config.root, intervalFormula)
+        const rotation = findRotationFromNote(command.number, this.config.root, intervalFormula)
 
         // If rotation is -1, the note is outside the scale, use 0 as fallback
         const finalRotation = rotation === -1 ? 0 : rotation
 
         // Generate chord based on the first command's note
-        const chordNotes:number[] = createChord(ALL_KEYBOARD_NUMBERS, intervalFormula, noteModel.noteNumber, finalRotation, this.config.simultaneous, true, true)
+        const chordNotes:number[] = createChord(ALL_KEYBOARD_NUMBERS, intervalFormula, command.number, finalRotation, this.config.simultaneous, true, true)
         
-		
 		// const intervals = convertToIntervalArray(chordNotes)
-
-        // console.log("Root", noteModel.noteNumber)
-        // console.log("Chord", noteModel, chordNotes )
-        // console.log("Intervals?", intervals, intervalFormula)
-        // console.log("Chord Ionian", noteModel, MODES.createIonianChord(ALL_KEYBOARD_NOTES, noteModel.noteNumber, 0, 3))
 
         // Transform commands: create new audio commands for each chord note
         const harmonisedCommands: IAudioCommand[] = chordNotes.map((chordNote:number) => {
@@ -159,10 +150,15 @@ export class TransformerChordifier extends Transformer<Config> implements ITrans
         return harmonisedCommands
     }
 
+	/**
+	 * 
+	 * @param commands 
+	 * @param timer 
+	 * @returns 
+	 */
     transform(commands:IAudioCommand[], timer:Timer ):IAudioCommand[] {
 
-        if (!this.config.enabled || commands.length === 0)
-        {
+        if (!this.config.enabled || commands.length === 0) {
             return commands
         }
 

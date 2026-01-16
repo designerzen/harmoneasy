@@ -6,6 +6,7 @@ export interface ITransformer {
 	fields: FieldConfig[]
 	name:string
     description:string
+	
     transform(commands: IAudioCommand[], timer:Timer ): IAudioCommand[]
     reset():void
     destroy():void
