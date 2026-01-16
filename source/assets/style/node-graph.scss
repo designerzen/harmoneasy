@@ -27,7 +27,6 @@
     font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 1px;
-	min-width:150px;
 	
 	background-color:   color-mix( in oklch, oklch(50% 0.1385  var(--hue-accent)) 90%, transparent);
 	background-image: linear-gradient(
@@ -37,36 +36,41 @@
 	);
 	background-blend-mode:hue ;
    
-   
-	min-width: var(--size, 90px);
-    min-height:var(--size);
+	position: relative;
+	min-width: var(--size, 150px);
+
+	display: flex;
+    flex-direction: column;
+    gap: var(--gap);
+
     box-shadow: 0 4px 6px light-dark(
         color-mix(in oklch, var(--col-black) 10%, transparent),
         color-mix(in oklch, var(--col-black) 10%, transparent)
     );
     
-	display: flex;
-    flex-direction: column;
-    gap: var(--gap);
-
-	p{
+	h6,h5,p {
 		max-width: 30ch;
 	}
+
+	> label > button{
+		width: 100%;
+	}
+
+	:has(.btn-remove),
+	&.can-remove{
+		> *:first-child {
+			padding-right: calc(44px + var(--pad));
+			margin-bottom:  var(--gap);
+			padding-bottom: var(--pad);
+			border-bottom: var(--border);
+		}
+	}
+
 }
 
 .node-transformer{
 
-    > h6 {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-weight: bold;
-	    font-size: 1.5rem;
-	    padding-right: calc(44px + var(--pad));
-        margin-bottom:  var(--gap);
-        padding-bottom: var(--pad);
-        border-bottom: var(--border);
-    }
+    min-height:var(--size, 150px);
 
     > *{
         display: flex;
@@ -101,10 +105,12 @@
 
 .node-input{
 	--hue-accent:162;	// green
+	min-width:404px;
 }
 
 .node-output{
 	--hue-accent:25;	// red
+	min-width:404px;
 }
 
 .category-tuning{

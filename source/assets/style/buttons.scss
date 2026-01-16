@@ -20,7 +20,10 @@ button {
         border-color 0.25s;
 
     &.primary{
-        background-color: light-dark(color-mix(in oklch, var(--col-plum) 40%, #fff), var(--col-plum));
+        background-color: light-dark(
+			color-mix(in oklch, var(--col-plum) 40%, #fff), 
+			var(--col-plum)
+		);
         color: light-dark(var(--col-plum), #fff);
 
         &:hover {
@@ -137,6 +140,21 @@ dialog .btn-close{
 		margin-right: 6px;
 	}
 }
+
+.btn-connect{
+	--col-bg:var(--col-green);
+	&::before{
+		content:"+";
+	}
+}
+
+.btn-disconnect{
+	--col-bg:var(--col-pink);
+	&::before{
+		content:"-";
+	}
+}
+
 
 .transformer-drawer{
 	--col-bg:rgba(0,0,0,0.5);

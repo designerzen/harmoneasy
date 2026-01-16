@@ -39,13 +39,12 @@
 	}
 }
 
-body > header {
-	background: light-dark(
-		color-mix(in oklch, var(--col-black) 15%, var(--col-white)),
-		color-mix(in oklch, var(--col-black) 85%, #000)
-	);
-	color: light-dark(var(--col-plum), var(--col-white));
-	padding: calc( var(--pad) * 2) calc( var(--pad) );
+.header-main {
+	--col-light:color-mix(in oklch, var(--col-white) 15%, var(--col-white));
+	--col-dark:color-mix(in oklch, var(--col-black) 15%, var(--col-black));
+	color: light-dark( var(--col-black), var(--col-white) );
+	background-color: light-dark( var(--col-light), var(--col-dark) );
+	padding: calc( var(--pad) * 1) calc( var(--pad) );
 	display: flex;
 	flex-direction: row;
 	flex-wrap: wrap;
@@ -53,23 +52,37 @@ body > header {
 	align-items: center;
 	border-bottom:var(--border);
 	position: relative;
-	z-index: 100;
+	z-index: 303;
+	gap: var(--gap);
 }
 
 .header-controls {
 	display: flex;
-	flex-wrap: wrap;
-	gap: 16px;
+	flex-wrap: nowrap;
+	gap: var(--gap);
 	align-items: center;
 	width: 100%;
 }
 
+.backlink {
+	// width: 100%;
+	display: flex;
+	flex-wrap: nowrap;
+	margin-bottom:0;// calc(var(--pad) / 2);
+
+	>*:nth-child(2) {
+		margin-right: auto;
+	}
+}
+
 .controls {
 	display: flex;
-	flex-grow: 1;
+	flex-wrap: wrap;
+	flex: 1 1 100%;
 	align-items: center;
 	gap: 12px;
-	padding: 8px 16px;
+	box-sizing: border-box;
+	padding: 0;
 	background: light-dark(
 		color-mix(in oklch, var(--col-black) 20%, var(--col-white)),
 		color-mix(in oklch, var(--col-black) 80%, #000)
@@ -96,16 +109,7 @@ body > header {
 	font-weight: 600;
 }
 
-.backlink {
-	width: 100%;
-	display: flex;
-	flex-wrap: wrap;
-	margin-bottom: calc(var(--pad) / 2);
 
-	>*:nth-child(2) {
-		margin-right: auto;
-	}
-}
 
 .menu-input-devices {
 	display: flex;
@@ -178,6 +182,7 @@ body > header {
 }
 
 main {
+	--height-graph: calc(100dvh - 3lh);
 	display: grid;
 	grid-template-areas:
 		"transport"
@@ -185,15 +190,22 @@ main {
 		"graph"
 		"explorer";
 
+	// var(--height-graph)
 	grid-template-rows: 
 		0fr
 		0fr 
-		minmax(auto, calc(100dvh - 3lh)) 
+		auto
 		auto;
 
 	position: relative;
 	scroll-snap-align: start;
 	scroll-snap-stop: always;
+}
+
+body > footer{
+	order:999;
+	z-index: 909;
+	padding: calc(var(--pad)/2) calc(var(--pad));
 }
 
 #action-bar {
@@ -232,14 +244,15 @@ main {
 }
 
 #graph {
-	// width: 100%;
-	// height: 100%;
-	// max-width: 100%;
 	grid-area: graph;
 	display: flex;
 	position: sticky;
     top: calc( var(--pad) * 2 + 1lh );
 	overflow: hidden;
+	height: var(--height-graph);
+	max-height: var(--height-graph);
+	// sticky travel
+	padding-bottom:20rem;
 }
 
 
@@ -260,12 +273,23 @@ main {
 	height: 100%;
 	z-index: -1;
 	pointer-events: none;
+	position: sticky;
+	top: 0;
 }
 
 
-song-explorer{
+song-explorer,
+song-visualiser-ui,
+song-explorer-ui{
 	grid-area: explorer;
+	width: 100%;
+	max-width: 100%;
+	overflow: auto;
+	z-index: 202;
+	// margin-top: calc( var(--gap) * 20);
 }
+
+
 
 /* Hidden Options Form */
 #options {
@@ -413,15 +437,6 @@ song-explorer{
 		flex-direction: column;
 	}
 }
-
-song-explorer {
-	width: 100%;
-	max-width: 100%;
-	overflow: auto;
-	z-index: 202;
-	margin-top: calc( var(--gap) * 20);
-}
-
 
 
 /* Spinner Animation */

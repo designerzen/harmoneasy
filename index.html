@@ -16,18 +16,30 @@
 
 <body>
 
-	<header>
+	<dialog open closeby="any">
+		<a class="backlink" href="/">
+			<img class="logo float-left" src="/source/assets/logos/harmoneasy.svg" alt="">
+		</a>
+		<h1 class="h2">Harmoneasy</h1>
+		<h2 class="h2">Putting the Unity in Community</h2>
+		<p aria-summary>Harmoneasy is a web-based music jamming platform that allows you
+			to play with friends and mix it together and tranform it to be in key and in time. 
+			The transformers remix in real-time and can warp, quantise, synch timings, 
+			you can transpose into a shared key or add melodic harmonies.
+		</p>
+		<p><strong>Note:</strong> this software requires WebMIDI or Bluetooth which your bowser will request your permission for - please press 'accept' to allow it.</p>
+		<form method="dialog">
+			<!-- <button class="btn-close" type="submit">Begin</button> -->
+			<button autofocus class="btn-start primary cta" type="submit">Start</button>
+		</form>
+	</dialog>
 
+	<header class="header-main">
 		<a class="backlink" href="/">
 			<img class="logo" src="/source/assets/logos/harmoneasy.svg" alt="">
-			<h1>Harmoneasy</h1>
-			<h2>Putting the Unity in Community</h2>
-			<p aria-summary class="sr-only">Play with friends. Harmoneasy is a web-based MIDI sequencer that allows you
-				to play with friends in real-time and your music will be transformed in many ways to improve it, from
-				synchronising the timing to transposing into key.
-			</p>
+			<p class="h2">Harmoneasy</p>
 		</a>
-
+		
 		<menu class="header-controls">
 
 			<label id="tempo-control" class="controls">
@@ -42,21 +54,16 @@
 				<output id="volume-output">100</output> %
 			</label>
 
-			<div class="menu-input-devices">
-				<button type="button" id="btn-random-timbre">Random Timbre</button>
-				<button type="button" id="btn-connect-to-ble" class="btn-bluetooth">Connect Bluetooth</button>
-				<button type="button" id="btn-toggle-webmidi" class="btn-midi">Connect WebMIDI</button>
-				<button type="button" id="btn-kill-switch" class="kill-switch primary">Panic</button>
-			</div>
-
 		</menu>
 
 	</header>
 
 	<main>
+
 		<menu id="action-bar">
-			<button class="primary" type="button" id="btn-import">Import</button>
-			<button class="primary" type="button" id="btn-export">Export</button>
+			<button class="btn-import primary" type="button" id="btn-import">Import</button>
+			<button class="btn-export primary" type="button" id="btn-export">Export</button>
+			<button class="btn-kill-switch primary" type="button" id="btn-kill-switch">Panic</button>
 		</menu>
 
 		<div id="graph"></div>
@@ -64,11 +71,9 @@
 		<!-- <song-explorer></song-explorer> -->
 		<!-- <canvas id="song-explorer" width="1920" height="1080"></canvas> -->
 	
-
-		<!-- Transport -->
-		<div id="transport" aria-hide>
-			<strong>Timer</strong>
-			<time id="clock">...</time>
+		<div id="transport">
+			<strong aria-hide>Timer</strong>
+			<time id="clock" aria-hide>...</time>
 			<button type="button" id="btn-reset" class="icon btn-reset">Reset</button>
 		</div>
 
@@ -128,7 +133,7 @@
 		</header>
 		<pre id="info-message" class="selectable" role="status" aria-live="polite"></pre>
 		<form method="dialog">
-			<button class="btn-close" type="submit">
+			<button class="btn-close" type="submit" formmethod="dialog">
 				Close
 			</button>
 		</form>
@@ -143,7 +148,7 @@
 			<p id="error-solution"></p>
 		</div>
 		<form method="dialog">
-			<button class="btn-close" type="submit">
+			<button autofocus class="btn-close" type="submit" formmethod="dialog">
 				Close
 			</button>
 		</form>
@@ -162,7 +167,9 @@
 				<img src="source/assets/logos/opendaw.svg" alt="OpenDAW" class="logo-inline">
 				Open in OpenDAW
 			</button>
+
 			<hr>
+
 			<button type="button" id="btn-midi-export" class="export-option">Export as MIDI file</button>
 			<button type="button" id="btn-dawproject-export" class="export-option">Export as .dawProject</button>
 			<button type="button" id="btn-midi-markdown-export" class="export-option">Export as Markdown</button>
@@ -170,28 +177,90 @@
 			<button type="button" id="btn-vexflow-export" class="export-option">Download Sheet Music</button>
 		</menu>
 		<form method="dialog">
-			<button class="btn-close" type="submit">
+			<button autofocus class="btn-close" type="submit" formmethod="dialog">
 				Close
 			</button>
 		</form>
 	</dialog>
 
-	<div id="export-overlay" class="export-overlay" hidden>
-		<div class="export-overlay-content">
-			<div class="spinner"></div>
+	<dialog id="export-overlay" class="export-overlay" hidden>
+		<header>
 			<h5>Exporting...</h5>
-			<p>Please wait while we create your project</p>
+		</header>
+		<p>Please wait while we create your project</p>
+	</dialog>
+
+	<footer>
+		<small>© 2026 </small>
+	</footer>
+
+	<!-- Input Manager -->
+	<template id="add-input-overlay-template">
+		<!-- Shows a collection of buttons to allow selection -->
+		<menu>
+
+		</menu>
+		<form method="dialog">
+			<button class="btn-close" type="submit" formmethod="dialog">
+				Close
+			</button>
+		</form>
+	</template>
+
+	<!-- Output Manager -->
+	<template id="add-output-overlay-template">
+		<!-- Shows a collection of buttons to allow selection -->	
+		<menu>
+			
+		</menu>
+		<form method="dialog">
+			<button class="btn-close" type="submit" formmethod="dialog">
+				Close
+			</button>
+		</form>
+	</template>
+
+	<!-- Importer -->
+	<template id="import-overlay-template">
+		<div class="import-overlay" hidden>
+			<div class="import-overlay-content">
+				<div class="spinner"></div>
+				<h5>Importing...</h5>
+				<p>Please wait while we load your data.</p>
+			</div>
 		</div>
-	</div>
+	</template>
+
+	<!-- Exporter -->
+	<template id="export-overlay-template">
+		<div class="export-overlay" hidden>
+			<div class="export-overlay-content">
+				<div class="spinner"></div>
+				<h5>Exporting...</h5>
+				<p>Please wait while we create your project.</p>
+			</div>
+		</div>
+	</template>
+
+	<template id="error-overlay-template">
+		<dialog hidden closedby="any" aria-labelledby="error-dialog-title" aria-describedby="error-message">
+			<header>
+				<h5 class="error-title">Error</h5>
+			</header>
+			<div role="alert">
+				<p class="error-message"></p>
+				<p class="error-solution"></p>
+			</div>
+			<form method="dialog">
+				<button autofocus class="btn-close" type="submit" formmethod="dialog">
+					Close
+				</button>
+			</form>
+		</dialog>
+
+	</template>
 
 	<script type="module" src="/source/index.ts"></script>
-
-	<!-- Hidden form for backward compatibility -->
-	<form id="options" style="display: none;">
-		<fieldset id="midi-settings-fieldset"></fieldset>
-		<fieldset id="midi-controls"></fieldset>
-	</form>
-
 </body>
 
 </html>

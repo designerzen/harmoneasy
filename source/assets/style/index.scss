@@ -9,32 +9,28 @@
 @use './typography.scss';
 @use './keyframes.scss';
 @use './notes.scss';
+@use './utils.scss';
 
 #app {
-  display: none;
+	display: none;
 }
 
 .logo {
-  height: 1lh;
-  margin-right: calc( var(--pad) / 2 );
-  // padding: 1.5em;
-  // will-change: filter;
-  // transition: filter 300ms;
+	height: 1lh;
+	margin-right: calc(var(--pad) / 2);
+	will-change: filter;
+	transition: filter var(--time-medium);
 }
+
 .logo:hover {
-  // filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.vanilla:hover {
-  // filter: drop-shadow(0 0 2em #3178c6aa);
+	filter: drop-shadow(0 0 2em #646cffaa);
 }
 
 .card {
-  padding: var(--pad);
+	padding: var(--pad);
 }
 
 .read-the-docs {
-  color: light-dark(
-    color-mix(in oklch, var(--col-black) 50%, var(--col-white)),
-    color-mix(in oklch, var(--col-white) 50%, var(--col-black))
-  );
+	color: light-dark(color-mix(in oklch, var(--col-black) 50%, var(--col-white)),
+			color-mix(in oklch, var(--col-white) 50%, var(--col-black)));
 }

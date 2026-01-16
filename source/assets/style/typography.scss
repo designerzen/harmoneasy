@@ -1,42 +1,102 @@
-html{
-    font-family: 'Raleway', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    line-height: 1.6;
-    font-weight: 400;
+html {
 
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
 }
 
-// h1 {
-// }
+// https://nerdy.dev/adjust-perceived-typepace-weight-for-dark-mode-without-layout-shift
+body {
+	--GRAD: 0;
+	font-family: 'Raleway', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+	line-height: 1.6;
+	font-weight: 400;
 
-// h2 {
-// }
-h1,h2,h3,h4,h5,h6, summary{
-    text-transform: uppercase;
-    letter-spacing: 1px;
+	font-variation-settings: "GRAD" var(--GRAD);
 }
 
-h1,h2{
-    font-size: 24px;
-    font-weight: 600;
-    margin: 0;
-    line-height: 1.1;
+@media (prefers-contrast: more) {
+	body {
+		--GRAD: 700
+	}
 }
 
+@media (prefers-contrast: less) {
+	body {
+		--GRAD: -50
+	}
+}
+
+@media (prefers-color-scheme: dark) {
+	body {
+		--GRAD: -50
+	}
+}
+
+@media (prefers-color-scheme: dark) and (prefers-contrast: more) {
+	body {
+		--GRAD: 150
+	}
+}
+
+@media (prefers-color-scheme: dark) and (prefers-contrast: less) {
+	body {
+		--GRAD: -150
+	}
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+summary {
+	text-transform: uppercase;
+	letter-spacing: 1px;
+	margin: 0;
+}
+
+[aria-summary] {
+	margin-top: calc(var(--pad));
+	margin-bottom: calc(var(--pad));
+}
+
+.h1,
+.h2,
+h1,
+h2 {
+	font-size: 1.5rem;
+	font-weight: 600;
+	margin: 0;
+	line-height: 1.1;
+	text-wrap: balance;
+}
+
+.h3,
 h3 {
-    margin: 20px 0 10px;
-    font-size: 24px;
-    font-weight: 600;
+	margin: calc(var(--pad) * 1) calc(var(--pad) * 2);
+	font-size: 1.5rem;
+	font-weight: 600;
 }
 
-summary{
-    font-weight: 900;
-   
+.h4 {}
+
+.h6,
+h6{
+	font-size:1.5rem;
 }
 
-  legend {
-    font-weight: 600;
-    padding: 0 calc(var(--pad));
-  }
+p{
+	text-box: trim-both cap alphabetic;
+}
+
+summary {
+	font-weight: 900;
+
+}
+
+legend {
+	font-weight: 600;
+	padding: 0 calc(var(--pad));
+}

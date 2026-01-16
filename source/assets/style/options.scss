@@ -30,6 +30,10 @@
 		color-mix(in oklch, var(--col-black) 50%, transparent),
 		color-mix(in oklch, var(--col-white) 50%, transparent)
 	);
+
+	--time-short:90ms;
+	--time-medium:145ms;
+	--time-long:450ms;
 }
 
 @media (prefers-color-scheme: dark) {
