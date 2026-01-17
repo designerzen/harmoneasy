@@ -1,5 +1,5 @@
 import { Renderer, Stave, StaveNote, Voice, Formatter, System, GhostNote } from 'vexflow'
-import type { RecorderAudioEvent } from '../recorder-audio-event'
+import type RecorderAudioEvent from '../audio-event-recorder'
 import type AudioEvent from '../audio-event'
 import type Timer from '../timing/timer'
 import { NOTE_ON } from '../../../commands'
