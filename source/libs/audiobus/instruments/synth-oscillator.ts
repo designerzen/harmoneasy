@@ -1,5 +1,6 @@
 //const OSCILLATORS = [ "sine", "triangle"]
-import NoteModel, { noteNumberToFrequency } from "../note-model.js"
+import { noteNumberToFrequency } from "../conversion/note-to-frequency.js"
+import type { IAudioOutput } from "../outputs/output-interface.js"
 import { loadWaveTable } from "./wave-tables.js"
 // import { BiquadFilterNode, OscillatorNode, AudioContext } from "standardized-audio-context"
 
@@ -8,6 +9,7 @@ const SILENCE = 0.00000000009
 
 export default class SynthOscillator implements IAudioOutput{
 
+	static ID:number = 0
     options = {
 
         // default amplitude
@@ -42,7 +44,8 @@ export default class SynthOscillator implements IAudioOutput{
     // arpeggioIntervals = []
     customWave = null
 
-    #id = "SynthOscillator"
+    #uuid = "SynthOscillator-"+(SynthOscillator.ID++)
+    #id = this.#uuid
     
     startedAt = -1
     oscillatorsActive = false
@@ -59,6 +62,21 @@ export default class SynthOscillator implements IAudioOutput{
     set id(value){
         this.#id = value
     }
+
+	get uuid(): string {
+		return this.#uuid
+	}
+	get name(): string {
+		throw new Error("Method not implemented.")
+	}
+	get description(): string {
+		throw new Error("Method not implemented.")
+	}
+	
+	get isConnected(): boolean {
+		return true
+	}
+
 
     get now(){
         return this.audioContext.currentTime
@@ -219,7 +237,7 @@ export default class SynthOscillator implements IAudioOutput{
             this.shape = options.shape
         }
     }
-
+	
     /**
      * 
      * @param {OscillatorNode} oscillator 
@@ -312,14 +330,14 @@ export default class SynthOscillator implements IAudioOutput{
 
     /**
      * Note ON
-     * @param {Note} note - Model data
+     * @param {Number} noteNumber - Model data
      * @param {Number} velocity - strength of the note
      * @param {Array<Number>} arp - intervals
      * @param {Number} delay - number to pause before playing
      */
-    noteOn( note, velocity=1, arp=null, delay=0 ){
+    noteOn( noteNumber:number, velocity:number=1, arp=null, delay:number=0 ){
        
-        const frequency = note.frequency
+        const frequency = noteNumberToFrequency( noteNumber )
         const startTime = this.now + delay
 		const filterPeak = this.options.filterCutOff * this.options.filterOverdrive
         const filterSustain = this.options.filterCutOff + (filterPeak - this.options.filterCutOff) * this.options.filterSustain
@@ -371,12 +389,11 @@ export default class SynthOscillator implements IAudioOutput{
             //  this.glide( frequency, 3 )
         }
 
-        if (arp)
-        {
-             this.addArpeggioAtIntervals( note, arp )
+        if (arp){
+             this.addArpeggioAtIntervals( noteNumber, arp )
         }
 
-        this.activeNote = note
+        this.activeNote = noteNumber
         this.startedAt = startTime
         return this
     }
@@ -386,12 +403,12 @@ export default class SynthOscillator implements IAudioOutput{
      * This starts the process of stopping the note
      * by creating a smooth transition to silence from 
      * the current amplitude via release time.
-     * @param {Note} note - Model data
+     * @param {Number} noteNumber - Model data
      * @returns 
      */
-    noteOff( note ){
+    noteOff( noteNumber:number ){
         if (!this.isNoteDown ){
-            console.warn("noteOff IGNORED - note NOT playing", note, this )
+            console.warn("noteOff IGNORED - note NOT playing", noteNumber, this )
             return
         }
         const releaseDuration = Math.max(this.options.release, this.options.filterRelease)
@@ -441,6 +458,10 @@ export default class SynthOscillator implements IAudioOutput{
     }
 
     glide( value, duration = 0 ){
+        if (!Number.isFinite(value)) {
+            console.warn("[SynthOscillator] glide: invalid frequency value", value)
+            return
+        }
         const now = this.now
         this.oscillator.frequency.cancelScheduledValues(now)
         this.oscillator.frequency.linearRampToValueAtTime( value, now + duration )
@@ -452,7 +473,7 @@ export default class SynthOscillator implements IAudioOutput{
     allNotesOff(){
 		if ( this.activeNote?.noteNumber )
 		{
-			this.noteOff( new NoteModel( this.activeNote.noteNumber ) )
+			this.noteOff( this.activeNote.noteNumber )
 		}
     }
 

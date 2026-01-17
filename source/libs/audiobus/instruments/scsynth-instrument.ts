@@ -1,5 +1,4 @@
-import NoteModel, { noteNumberToFrequency } from "../note-model.js"
-import { loadWaveTable } from "./wave-tables.js"
+import { noteNumberToFrequency } from "../note-model.js"
 
 const SILENCE = 0.00000000009
 
@@ -194,13 +193,13 @@ export default class SCSynthInstrument {
 
     /**
      * Note ON
-     * @param {Note} note - Model data
+     * @param {Number} noteNumber - Model data
      * @param {Number} velocity - strength of the note
      * @param {Array<Number>} arp - intervals
      * @param {Number} delay - number to pause before playing
      */
-    noteOn(note, velocity = 1, arp = null, delay = 0) {
-        const frequency = note.frequency
+    noteOn(noteNumber:number, velocity:number = 1, arp = null, delay:number = 0) {
+        const frequency = noteNumberToFrequency( noteNumber )
         const startTime = this.now + delay
         const amplitude = velocity * this.options.gain
 
@@ -225,7 +224,7 @@ export default class SCSynthInstrument {
             }
         }
 
-        this.activeNote = note
+        this.activeNote = noteNumber
         this.startedAt = startTime
         return this
     }
@@ -234,11 +233,11 @@ export default class SCSynthInstrument {
      * Note OFF
      * Uses SuperCollider gate parameter to trigger release envelope
      * OSC: /n_set synthID gate 0
-     * @param {Note} note - Model data
+     * @param {Note} noteNumber:number - Model data
      */
-    noteOff(note) {
+    noteOff(noteNumber:number) {
         if (!this.isNoteDown) {
-            console.warn("noteOff IGNORED - note NOT playing", note, this)
+            console.warn("noteOff IGNORED - note NOT playing", noteNumber, this)
             return
         }
 
@@ -284,7 +283,7 @@ export default class SCSynthInstrument {
     allNotesOff() {
         // Stop the currently active note
         if (this.activeNote?.noteNumber) {
-            this.noteOff(new NoteModel(this.activeNote.noteNumber))
+            this.noteOff( this.activeNote.noteNumber )
         }
 
         // Free all remaining synth nodes

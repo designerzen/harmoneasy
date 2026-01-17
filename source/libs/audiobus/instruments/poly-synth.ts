@@ -4,7 +4,11 @@
  */
 import SynthOscillator, { OSCILLATORS } from "./synth-oscillator"
 
-export default class PolySynth {
+import type { IAudioOutput } from "../outputs/output-interface"
+
+export default class PolySynth implements IAudioOutput{
+
+	static ID = 0
 
     options = {
         maxPolyphony: 24,
@@ -14,8 +18,12 @@ export default class PolySynth {
     instruments = []
     instrumentActivity = new Map()
 
-    #gainNode
+    #gainNode: GainNode
+	#audioContext: AudioContext
+	#activeVoices = 0
 
+	#uuid : string = 'poly-synth-' + (PolySynth.ID++)
+	
     SynthClass
 
     get output():AudioNode{
@@ -26,13 +34,26 @@ export default class PolySynth {
 		return 'PolySynth'
 	}
 
-    constructor(audioContext,  options = {}) {
-        this.audioContext = audioContext
+	get uuid():string{
+		return this.#uuid
+	}
+
+	get description():string{
+		return 'A polyphonic synthesizer that can play many notes at once.'
+	}
+
+	get isConnected(): boolean {
+		return this.instruments.length > 0
+	}
+
+
+    constructor(audioContext: AudioContext,  options = {}) {
+        this.#audioContext = audioContext
         this.options = Object.assign({}, this.options, options)
        
         this.SynthClass = this.options.class
         this.#gainNode = audioContext.createGain()
-		this.#gainNode.gain.setTargetAtTime( 1 / this.options.maxPolyphony, audioContext.currentTime, 0.01)
+		this.#gainNode.gain.value = 2 // Start at 2 for single voice
         this.factory( this.SynthClass, this.options.maxPolyphony)
     }
 
@@ -41,9 +62,9 @@ export default class PolySynth {
      * @param {Class} InstrumentClass 
      * @param {Number} quantity 
      */
-    factory(InstrumentClass, quantity){
+    factory(InstrumentClass: typeof SynthOscillator, quantity: number){
         for ( let i=0; i < quantity; ++i){
-            const instrument = new InstrumentClass( this.audioContext, { ...this.options, title:'osc-0'+i } )
+            const instrument = new InstrumentClass( this.#audioContext, { ...this.options, title:'osc-0'+i } )
             this.instruments.push( instrument )
             instrument.output.connect( this.#gainNode )
         }
@@ -51,14 +72,14 @@ export default class PolySynth {
     
     /**
      * Note ON
-     * @param {Note} note - Model data
+     * @param {Number} noteNumber - Model data
      * @param {Number} velocity - strength of the note
      * @param {Array<Number>} arp - intervals
      * @param {Number} delay - number to pause before playing
      */
-    noteOn( note, velocity=1, arp=null, delay=0 ){
+    noteOn( noteNumber: number, velocity=1, arp=null, delay=0 ){
        
-        if ( this.instrumentActivity.has(note.number) )
+        if ( this.instrumentActivity.has(noteNumber) )
         {
             // already playing!
         }else{
@@ -66,14 +87,16 @@ export default class PolySynth {
             this.instruments.every( instrument => {
                 if (!instrument.isNoteDown)
                 {
-                    instrument.noteOn( note, velocity, arp, delay )
-                    this.instrumentActivity.set( note.number, instrument )
+                    instrument.noteOn( noteNumber, velocity, arp, delay )
+                    this.instrumentActivity.set( noteNumber, instrument )
+                    this.#activeVoices++
+                    this.updateMasterGain()
                     return false
                 }
                 return true
             })
 
-            return  this.instrumentActivity.get( note.number )
+            return this.instrumentActivity.get( noteNumber )
         }
         return null
     }
@@ -83,15 +106,17 @@ export default class PolySynth {
      * This starts the process of stopping the note
      * by creating a smooth transition to silence from 
      * the current amplitude via release time.
-     * @param {Note} note - Model data
+     * @param {Number} noteNumber - Model data
      * @returns 
      */
-    noteOff( note ){
-        const instrument = this.instrumentActivity.get( note.number )
+    noteOff( noteNumber: number ){
+        const instrument = this.instrumentActivity.get( noteNumber )
         if ( instrument )
         {
-            instrument.noteOff( note )
-            this.instrumentActivity.delete( note.number )
+            instrument.noteOff( noteNumber )
+            this.instrumentActivity.delete( noteNumber )
+            this.#activeVoices--
+            this.updateMasterGain()
         } 
         return instrument
     }
@@ -101,13 +126,23 @@ export default class PolySynth {
      */
     allNotesOff(){
         this.instrumentActivity.forEach( (instrument, noteNumber) => instrument.allNotesOff() )
+        this.#activeVoices = 0
+        this.updateMasterGain()
         // If the synth has an all notes off method, use it
         // Otherwise, iterate through all possible notes
         // for (let noteNumber = 0; noteNumber < 128; noteNumber++)
         // {
-        //     const noteModel = new NoteModel(noteNumber)
-        //     synth.noteOff(noteModel)
+        //     synth.noteOff(noteNumber)
         // }
+    }
+
+    /**
+     * Update master gain based on active voice count
+     * Ensures consistent volume across different polyphony levels
+     */
+    updateMasterGain(){
+        const activeCount = Math.max(1, this.#activeVoices)
+        this.#gainNode.gain.value = 2 / activeCount
     }
 
     /**
