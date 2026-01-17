@@ -4,10 +4,11 @@
 
 import { NOTE_OFF, NOTE_ON } from "../../commands.ts"
 import AudioEvent from "./audio-event.ts"
-import type OPFSStorage from "./storage/opfs-storage.ts"
 import AudioCommand from "./audio-command.ts"
-import type { IAudioCommand } from "./audio-command-interface.ts"
 import { createAudioCommand } from "./audio-command-factory.ts"
+
+import type OPFSStorage from "./storage/opfs-storage.ts"
+import type { IAudioCommand } from "./audio-command-interface.ts"
 
 interface SessionMetadata {
   name: string
@@ -16,11 +17,13 @@ interface SessionMetadata {
   updatedAt: number
 }
 
+// Append a small duration to the end of the duration
 const GAP = 0.5
     
-export class RecorderAudioEvent extends EventTarget{
+export default class AudioEventRecorder extends EventTarget{
 
-    events:IAudioCommand[] = []
+    #events:IAudioCommand[] = []
+
     #enabled:boolean = true
     #duration:number = 0
     #name:string = "Recording"
@@ -40,9 +43,13 @@ export class RecorderAudioEvent extends EventTarget{
     }
 
 	get quantity():number{
-		return this.events.length
+		return this.#events.length
 	}
 	
+	get events():IAudioCommand[]{
+		return this.#events
+	}
+
     set enabled(value:boolean){
         this.#enabled = value
     }
@@ -56,22 +63,21 @@ export class RecorderAudioEvent extends EventTarget{
         this.#storage = storage
     }
 
-    addEvents( events:AudioEvent[] ){
+    addEvents( events:AudioEvent[] ):IAudioCommand[]{
         if (this.#enabled)
         {
             events.forEach( event => this.addEvent(event))
         }
-        return this.events
+        return this.#events
     }
 
-    addEvent( event:AudioEvent){
-
+    addEvent( event:AudioEvent ):IAudioCommand{
         if (!this.#enabled)
         {
-            return
+            return event
         }
 
-        this.events.push(event)
+        this.#events.push(event)
 
         if (this.#storage) {
             this.saveEventToStorage(event)
@@ -82,6 +88,7 @@ export class RecorderAudioEvent extends EventTarget{
         if (this.#duration < event.startAt ) {
             this.#duration = event.startAt
         }
+        return event
     }
 
     /**
@@ -127,7 +134,7 @@ export class RecorderAudioEvent extends EventTarget{
      * and reset the recording
      */
     clear(){
-        this.events.length = 0
+        this.#events.length = 0
         if (this.#storage)
         {
             this.#storage.clear()
@@ -185,7 +192,7 @@ export class RecorderAudioEvent extends EventTarget{
 					const audioCommand:IAudioCommand = createAudioCommand( command.type, command.number, command.startAt, command.from ?? "Storage" )
 
                     const event = new AudioEvent( audioCommand, audioCommand.startAt )
-                    this.events.push(event)
+                    this.#events.push(event)
                     processedCount++
 
 					// extend known duration
@@ -217,7 +224,7 @@ export class RecorderAudioEvent extends EventTarget{
      */
     exportData():IAudioCommand[]{
 
-        const allEvents = this.events.slice()
+        const allEvents = this.#events.slice()
         const quantity = allEvents.length -1
         const currentlyPlaying = new Map()
 
