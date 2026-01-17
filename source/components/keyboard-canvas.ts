@@ -394,8 +394,7 @@ export default class CanvasKeyboard extends AbstractInteractive {
   /**
    * Set a key as active (playing)
    */
-  setKeyAsActive(noteModel: any): void {
-    const noteNumber = noteModel.noteNumber
+  setKeyAsActive(noteNumber:number): void {
     const keyInfo = this.keyMap.get(noteNumber)
 
     if (keyInfo) {
@@ -407,8 +406,7 @@ export default class CanvasKeyboard extends AbstractInteractive {
   /**
    * Set a key as inactive (not playing)
    */
-  setKeyAsInactive(noteModel: any): void {
-    const noteNumber = noteModel.noteNumber
+  setKeyAsInactive(noteNumber:number): void {
     const keyInfo = this.keyMap.get(noteNumber)
 
     if (keyInfo) {

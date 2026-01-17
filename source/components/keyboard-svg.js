@@ -1,21 +1,8 @@
 import AbstractInteractive from "./abstract-interactive"
 
-/**
- * Get the note name (in scientific notation) of the given midi number
- *
- * It uses MIDI's [Tuning Standard](https://en.wikipedia.org/wiki/MIDI_Tuning_Standard)
- * where A4 is 69
- *
- * This method doesn't take into account diatonic spelling. Always the same
- * pitch class is given for the same midi number.
-
- * @param {Integer} midi - the midi number
- * @return {String} the pitch
- */
-export const convertNoteNameToMIDINoteNumber = name => NOTE_NAME_MAP[name]
-
 const DEFAULT_TITLE = "Piano Keyboard with 12 keys"
 
+// import type { IAudioInput } from "./input-interface.ts"
 export default class SVGKeyboard extends AbstractInteractive{
 
 	static uniqueID = 0
@@ -29,6 +16,7 @@ export default class SVGKeyboard extends AbstractInteractive{
 	firstNoteNumber = 0
 
     notes = []
+	smoothID = -1
 
 	get svg(){
 		return this.svgString
@@ -36,6 +24,10 @@ export default class SVGKeyboard extends AbstractInteractive{
 
 	get asElement(){
 		return this.htmlElement
+	}
+
+	get description(){
+		return DEFAULT_TITLE
 	}
 
 	set title( value ){
@@ -88,6 +80,7 @@ export default class SVGKeyboard extends AbstractInteractive{
 					rx="${r}" 
 					role="button"
 					tabindex="0"
+					style="--col-accent: ${key.colour};"
 					oncontextmenu="return false;"
 					class="piano-key piano-key-black" 
 					width="${width}" height="${height}" 
@@ -110,6 +103,7 @@ export default class SVGKeyboard extends AbstractInteractive{
 					rx="${r}" 
 					role="button"
 					tabindex="0"
+					style="--col-accent: ${key.colour};"
 					oncontextmenu="return false;"
 					class="piano-key piano-key-white" 
 					width="${width}" height="${height}" 
@@ -128,6 +122,7 @@ export default class SVGKeyboard extends AbstractInteractive{
 	 * 
 	 * @param {Object} key 
 	 * @param {Number} x 
+	 * 
 	 * @param {Number} y 
 	 * @param {Number} r 
 	 * @returns 
@@ -138,6 +133,7 @@ export default class SVGKeyboard extends AbstractInteractive{
 					cy="${y}" 
 					r="${r}" 
 					class="piano-note-indicator" 
+					style="--col-accent: ${key.colour};"
 					data-note="${key.noteName}" 
 					data-number="${key.noteNumber}" 
 					data-frequency="${key.frequency}"
@@ -234,16 +230,23 @@ export default class SVGKeyboard extends AbstractInteractive{
 	 * 
 	 * @param {Number} noteNumber 
 	 */
-	setKeyAsActive( noteModel ){
-		const noteNumber = noteModel.noteNumber
-        const key = this.keyMap.get( noteNumber ) ?? this.htmlElement.querySelector('[data-number="'+noteNumber+'"]')
+	setKeyAsActive( noteNumber, colour=undefined ){
+	  const key = this.keyMap.get( noteNumber ) ?? this.htmlElement.querySelector('[data-number="'+noteNumber+'"]')
 		// const key = this.keyElements[noteNumber - this.firstNoteNumber]
 		if (key)
 		{
-			key.classList.toggle("active", true)
-			//this.title = noteModel.toString()
+			// this.smoothID = requestAnimationFrame(p=>{
+				key.classList.toggle("active", true)	
+			// })
+			// change colour using style
+			// if (colour)
+			// {
+			// 	// set --col-accent css var to colour
+			// 	key.style.setProperty('--col-accent', colour)
+			// }
 		}else{
 			// console.warn("Key "+noteNumber+" not found")
+			this.keyMap.set( noteNumber, key )
 		}
 	}
 
@@ -251,13 +254,16 @@ export default class SVGKeyboard extends AbstractInteractive{
 	 * 
 	 * @param {Number} noteNumber 
 	 */
-	setKeyAsInactive( noteModel ){
-		const noteNumber = noteModel.noteNumber
-        const key = this.keyMap.get( noteNumber ) ?? this.htmlElement.querySelector('[data-number="'+noteNumber+'"]')
+	setKeyAsInactive( noteNumber ){
+		const key = this.keyMap.get( noteNumber ) ?? this.htmlElement.querySelector('[data-number="'+noteNumber+'"]')
 		// const key = this.keyElements[noteNumber - this.firstNoteNumber]
 		if (key)
 		{
-			key.classList.toggle("active", false)
+			// cancelAnimationFrame(this.smoothID)
+			// this.smoothID = requestAnimationFrame(p=>{	
+				key.classList.toggle("active", false)
+			// })
+		
 		}else{
 			//console.warn("Key "+noteNumber+" outside range")
 		}
