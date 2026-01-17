@@ -18,13 +18,16 @@ import { EndNode } from './nodes/EndNode.tsx'
 import { InputNode } from './nodes/InputNode.tsx'
 import { OutputNode } from './nodes/OutputNode.tsx'
 import { TransformerNode } from './nodes/TransformerNode.tsx'
-import { DEFAULT_GRAPH_OPTIONS, DEFAULT_VIEWPORT_OPTIONS, HORIZONTAL_SPACING, NODE_HEIGHT } from './options.ts'
+
+import { DEFAULT_GRAPH_OPTIONS, DEFAULT_VIEWPORT_OPTIONS } from './options.ts'
+
+import { EVENT_TRANSFORMERS_UPDATED } from '../../libs/audiobus/transformers/transformer-manager.ts'
+import { EVENT_INPUTS_UPDATED } from '../../libs/audiobus/inputs/input-manager.ts'
+import { EVENT_OUTPUTS_UPDATED } from '../../libs/audiobus/outputs/output-manager.ts'
+
+import { getStructure, initialEdges, initialNodes } from './layout.ts'
 
 import type IOChain from '../../libs/audiobus/IO-chain.ts'
-import type TransformerManager from '../../libs/audiobus/transformers/transformer-manager.ts'
-import type TransformerManagerWorker from '../../libs/audiobus/transformers/transformer-manager-worker.ts'
-import type { IAudioOutput } from '../../libs/audiobus/outputs/output-interface.ts'
-import { EVENT_TRANSFORMERS_UPDATED } from '../../libs/audiobus/transformers/transformer-manager.ts'
 
 const nodeTypes = {
 	start: StartNode,
@@ -36,182 +39,6 @@ const nodeTypes = {
 
 const edgeTypes = {
   	animatedSvg: AnimatedSVGEdge
-}
-
-// These get overwritten immediately - bit pointless really
-const initialNodes = [
-	{ id: 'node-start', position: { x: 0, y: 200 }, data: { label: 'Start' } },
-	{ id: 'node-end', position: { x: 500, y: 200 }, data: { label: 'End' } }
-]
-
-const initialEdges = [
-	{ id: 'edge-start-end', source: initialNodes[0].id, target: initialNodes[1].id }
-]
-
-// node:transformer-Transformer-Harmoniser-2
-function getNodeID( uuid:string, nodeType:string="node:transformer" ){
-	return nodeType + '[' + uuid + ']'
-}
-
-/**
- * GUI stuff - create the nodes in our graph from our IOChain
- * @param transformers 
- * @returns 
- */
-function getStructure( chain:IOChain, showInputs:boolean=true, showOutputs:boolean=true ){
-
-	const transformManager:TransformerManager|TransformerManagerWorker = chain.transformerManager
-	const transformers = transformManager.activeTransformers
-
-	const firstTransformer = transformers[0]
-	const lastTransformer = transformers[transformers.length - 1]
-	const hasTransformers = transformers.length > 0
-
-	const inputs = chain.inputs
-	const outputs = chain.outputs
-	
-	const inputNodes = showInputs ? inputs.map((input:AbstractInput, index:number) => ({
-		id: 'node-input-'+index,
-		type: 'input',
-		data: { 
-			label: 'INPUT' + input.name 
-		},
-		position: { x: -330 , y: index * NODE_HEIGHT / 2 }
-	})) : []
-
-	// From Inputs to Start
-	const nodeStart = {
-		id: 'node-start',
-		type: 'start',
-		data: { 
-			label: 'START' 
-		},
-		position: { x: -140, y: NODE_HEIGHT / 2  }
-	}
-
-	// Chain through the Transformers
-	const nodesTransformers = transformers.map((transformer:Transformer, index) => ({
-		id: getNodeID(transformer.uuid),
-		type: 'transformer',
-		data: { 
-			label: transformer.name, 
-			fields: transformer.fields, 
-			element: transformer, 
-			description: transformer.description 
-		},
-		position: { x: HORIZONTAL_SPACING * index, y: 0 }
-	}))
-
-	// End Graph nodes
-	const nodeEnd =  {
-		id: 'node-end',
-		type: 'end',
-		data: { 
-			label: 'END' 
-		},
-		position: { x: HORIZONTAL_SPACING * (transformers.length) , y: NODE_HEIGHT / 2 }
-	}
-
-	// Add in all our output nodes
-	const outputNodes = showOutputs ? outputs.map((input:AbstractInput, index:number) => ({
-		id: 'node-output-'+index,
-		type: 'output',
-		data: { 
-			label: 'OUTPUT' + input.name 
-		},
-		position: { x: HORIZONTAL_SPACING * (transformers.length ) + 80 + 44 , y: index * NODE_HEIGHT / 2 }
-	})) : []
-
-	
-	const nodes = [
-		...inputNodes,
-		nodeStart, 
-		...nodesTransformers, 
-		nodeEnd,
-		...outputNodes
-	]
-
-
-	// EDGES -----------------------------------------
-
-	const barDuration = '0.8s'
-
-	const inputEdges = inputNodes.map((inputNode, index:number) => ({
-		id: 'edge-input-'+index,
-		source: inputNode.id,
-		target: nodeStart.id,
-		type: 'animatedSvg', 
-		data: { duration: barDuration }
-	}))
-
-	const edgeStart ={
-		id: 'edge-start',
-		source: nodeStart.id,
-		target: getNodeID( firstTransformer.uuid ),
-		type: 'animatedSvg',
-		data: { duration: barDuration }
-	}
-
-	// Now create the edges that link these nodes
-	const edgesTransformers = transformers.map((transformer:Transformer, index:number) => {
-		const nextTransformer:Transformer|null = transformers[index + 1]
-		return {
-			id: getNodeID( transformer.uuid, "edge" ),
-			source: getNodeID( transformer.uuid ),
-			target: nextTransformer ? 
-				getNodeID(nextTransformer.uuid) : 
-				nodeEnd.id,
-			type: 'animatedSvg', 
-			data: { duration: barDuration }
-		}
-	})
-		
-	// Remove the last edge since it's handled by alwaysEdges
-	if (hasTransformers) {
-		edgesTransformers.pop()
-	}
-
-	const edgeEnd = {
-		id: 'edge-end',
-		source: getNodeID(lastTransformer.uuid),
-		target: nodeEnd.id,
-		type: 'animatedSvg',
-		data: { duration: barDuration }
-	}
-
-	const outputEdges = outputNodes.map((outputNode, index:number) => ({
-		id: 'edge-output-'+index,
-		source: nodeEnd.id,
-		target: outputNode.id,
-		type: 'animatedSvg',
-		data: { duration: barDuration }
-	}))
-
-	const edgePassthrough = {
-		id: 'edge-passthrough',
-		source: nodeStart.id,
-		target: nodeEnd.id,
-		type: 'animatedSvg'
-	}
-
-	// If there are no transformers, we just connect
-	// Start to End
-	const edges = !hasTransformers
-		? [ edgePassthrough ] 
-		: [
-			...inputEdges,
-			edgeStart, 
-			...edgesTransformers,
-			edgeEnd, 
-			...outputEdges
-		]
-
-	const output = { 
-		nodes, 
-		edges
-	}
-	
-	return output
 }
 
 function FlowComponent() {
@@ -226,16 +53,17 @@ function FlowComponent() {
 		// an event has bubbled from the Chain
 		const onTransformersChanged = (event:CustomEvent) => {
 			const detail = event ? event.detail : null
-			const structure = getStructure( chain )
+			const structure = getStructure( chain, true, true  )
 			setNodes(structure.nodes)
 			setEdges(structure.edges)
 			console.info("Graph::Transformers Updated", detail )
 		}
 		
-		// TODO: watch inputs / outputs 
 		// watch for additions / removals of Transformers
-		chain.addEventListener( EVENT_TRANSFORMERS_UPDATED, onTransformersChanged, {signal:abortController.signal} )
-		
+		chain.transformerManager.addEventListener( EVENT_TRANSFORMERS_UPDATED, onTransformersChanged, {signal:abortController.signal} )
+		chain.inputManager.addEventListener( EVENT_INPUTS_UPDATED, onTransformersChanged, {signal:abortController.signal} )
+		chain.outputManager.addEventListener( EVENT_OUTPUTS_UPDATED, onTransformersChanged, {signal:abortController.signal} )
+
 		onTransformersChanged( null )
 		
 		// Cleanup: unsubscribe when component unmounts

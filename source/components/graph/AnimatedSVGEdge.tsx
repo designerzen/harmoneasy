@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { BaseEdge, getSmoothStepPath, type EdgeProps } from '@xyflow/react'
-import { OUTPUT_EVENT } from '../../commands'
+import { INPUT_EVENT, NOTE_ON, OUTPUT_EVENT } from '../../commands'
+import { convertNoteNumberToColour } from '../../libs/audiobus/conversion/note-to-color'
+import { NOTE_TYPE } from './layout'
 
 import type OutputAudioEvent from '../../libs/audiobus/outputs/output-audio-event'
 import type { IAudioCommand } from '../../libs/audiobus/audio-command-interface'
-import { convertNoteNumberToColour } from '../../libs/audiobus/note-model'
+import type IOChain from '../../libs/audiobus/IO-chain'
+import type InputAudioEvent from '../../libs/audiobus/inputs/input-audio-event'
 
 export function AnimatedSVGEdge({
 	id,
@@ -20,20 +23,54 @@ export function AnimatedSVGEdge({
 	const chain = (window as any).chain as IOChain
 	
 	const [ duration, setDuration ] = useState( (data?.duration as string) || '2s' )
-	const [ colour, setColour ] = useState( (data?.colour as string) || '#ff0073' )
-	const [ radius, setRadius ] = useState( (data?.radius as string) || '8' )
+	const [ colour, setColour ] = useState( (data?.colour as string) || '#fff' )
+	const [ radius, setRadius ] = useState( (data?.radius as number) ?? 8 )
+	const animateMotionRef = useRef<SVGAnimateMotionElement>(null)
 
 	useEffect(() => {
 		const abortController = new AbortController()
-		const onAudioOutputEvent = (outputEvent:OutputAudioEvent) => {
-			const command:IAudioCommand = outputEvent.command	
-			// TODO: Extrapolate the colour and size (noteNumber and velocity)
+		const onAudioEvent = (audioEvent:InputAudioEvent|OutputAudioEvent) => {
+			const command:IAudioCommand = audioEvent.command	
 			const colour = convertNoteNumberToColour( command.number )
+			const radius = ( command.velocity ?? 128) / 16
+			
 			setColour( colour )
-			console.info("AnimatedSVGEdge::onAudioOutputEvent", id, {event: outputEvent, command})
+			setRadius( radius)
+			setDuration( (radius * .1) + 's' )
+				
+			// Restart the animation if it is a NOTE_ON event
+			if (command.type === NOTE_ON && animateMotionRef.current) {
+			// if ( animateMotionRef.current) {
+				animateMotionRef.current.beginElement()
+			}
+			// console.info(command.type, "AnimatedSVGEdge::AudioEvent", id, {audioEvent, command, colour, radius})
 		}
-		chain.addEventListener(OUTPUT_EVENT, onAudioOutputEvent, { signal: abortController.signal })
-	}, [])
+
+		switch (data?.type)
+		{
+			case NOTE_TYPE.input:
+				chain.inputManager.addEventListener(INPUT_EVENT, onAudioEvent, { signal: abortController.signal })
+				break
+
+			default:
+				//chain.outputManager.addEventListener(OUTPUT_EVENT, onAudioEvent, { signal: abortController.signal })
+		}
+
+		return () => abortController.abort()
+	}, [id])
+
+	useEffect(() => {
+		if (!animateMotionRef.current) return
+
+		const onAnimationEnd = () => {
+			// console.info("AnimatedSVGEdge::animationEnd", id)
+			// setColour( 'transparent' )
+			// animateMotionRef.current.removeEventListener('endEvent', onAnimationEnd)
+		}
+
+		animateMotionRef.current.addEventListener('endEvent', onAnimationEnd)
+		return () => animateMotionRef.current?.removeEventListener('endEvent', onAnimationEnd)
+	}, [id])
 
 	// We have altered the destination / source
 	// useEffect(() => {
@@ -53,7 +90,12 @@ export function AnimatedSVGEdge({
 		<>
 			<BaseEdge id={id} path={edgePath} />
 			<circle className='beat' r={radius} fill={colour}>
-				<animateMotion dur={duration} repeatCount="indefinite" path={edgePath} />
+				<animateMotion 
+					ref={animateMotionRef}
+					dur={duration} 
+					repeatCount="1" 
+					path={edgePath}
+				/>
 			</circle>
 		</>
 	)

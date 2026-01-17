@@ -9,7 +9,6 @@ import { ConfigField } from "../Widgets.tsx"
  */
 export function TransformerNode(props) {
 
-	// This is awfully inefficient
 	const chain = (window as any).chain as IOChain
 			
 	const removeNode = useCallback(() => {
@@ -26,7 +25,7 @@ export function TransformerNode(props) {
 
     const shouldShowMoveButtons = chain.transformerQuantity > 1
 
-    return <div className={`node-transformer graph-node category-${props.data.element.category.toLowerCase()}`}>
+    return <div className={`node-transformer graph-node can-remove category-${props.data.element.category.toLowerCase()}`}>
         <h6>{props.data.label}</h6>
       
 	  	<details>
