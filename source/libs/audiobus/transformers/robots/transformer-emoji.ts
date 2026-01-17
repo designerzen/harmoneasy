@@ -181,7 +181,7 @@ export class TransformerEmoji extends Transformer<Config> implements ITransforme
             const newCommand: IAudioCommand = cloneAudioCommand(command)
             newCommand.number = baseNote + interval
             // Scale velocity based on emotion intensity
-            newCommand.velocity = (command.velocity || 100) * emotion.velocity / 100
+            newCommand.velocity = (command.velocity ?? 1) * emotion.velocity
             return newCommand
         })
 
