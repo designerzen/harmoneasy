@@ -4,7 +4,7 @@
  * Provides controls and integration for the SongVisualiser component
  */
 
-import { SongVisualiser } from "./song-visualiser.js"
+import SongVisualiser from "./song-visualiser.js"
 import type AudioCommand from "../libs/audiobus/audio-command.js"
 import type OPFSStorage from "../libs/audiobus/storage/opfs-storage.js"
 
@@ -12,13 +12,54 @@ export class SongVisualiserUI extends HTMLElement {
   private visualiser: SongVisualiser | null = null
   private storage: OPFSStorage | null = null
   private isLoading: boolean = false
+  private darkMode: boolean = false
+  private themeMediaQuery: MediaQueryList | null = null
 
   constructor() {
     super()
   }
 
+  private themeChangeHandler = () => {
+    this.detectAndApplyTheme()
+    this.updateStyles()
+  }
+
+  private detectAndApplyTheme() {
+    // Check for explicit theme attribute
+    const themeAttr = this.getAttribute("data-theme")
+    if (themeAttr === "dark") {
+      this.darkMode = true
+    } else if (themeAttr === "light") {
+      this.darkMode = false
+    } else {
+      // Auto-detect system preference
+      this.darkMode = window.matchMedia("(prefers-color-scheme: dark)").matches
+    }
+  }
+
+  private setupThemeListener() {
+    // Listen for system theme changes
+    this.themeMediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
+    this.themeMediaQuery.addEventListener("change", this.themeChangeHandler)
+  }
+
+  private updateStyles() {
+    const styleEl = this.shadowRoot?.querySelector("style")
+    if (styleEl) {
+      styleEl.textContent = this.getStyles()
+    }
+  }
+
+  disconnectedCallback() {
+    if (this.themeMediaQuery) {
+      this.themeMediaQuery.removeEventListener("change", this.themeChangeHandler)
+    }
+  }
+
   connectedCallback() {
+    this.detectAndApplyTheme()
     this.render()
+    this.setupThemeListener()
   }
 
   private render() {
@@ -233,6 +274,18 @@ export class SongVisualiserUI extends HTMLElement {
    * Load audio commands to visualise
    */
   async loadCommands(commands: AudioCommand[]) {
+    // Wait for visualiser to be initialized if not ready yet
+    if (!this.visualiser) {
+      await new Promise(resolve => {
+        const checkVisualiser = setInterval(() => {
+          if (this.visualiser) {
+            clearInterval(checkVisualiser)
+            resolve(undefined)
+          }
+        }, 10)
+      })
+    }
+    
     if (this.visualiser) {
       await this.visualiser.loadCommands(commands)
       this.updateInfo()
@@ -261,11 +314,22 @@ export class SongVisualiserUI extends HTMLElement {
   }
 
   private getStyles(): string {
+    const bgPrimary = this.darkMode ? "#1e1e1e" : "#ffffff"
+    const bgSecondary = this.darkMode ? "#2d2d2d" : "#f5f5f5"
+    const textPrimary = this.darkMode ? "#ffffff" : "#333333"
+    const textSecondary = this.darkMode ? "#aaaaaa" : "#666666"
+    const borderColor = this.darkMode ? "#444444" : "#dddddd"
+    const inputBg = this.darkMode ? "#333333" : "#ffffff"
+    const inputBorder = this.darkMode ? "#555555" : "#dddddd"
+    const hoverBg = this.darkMode ? "#3d3d3d" : "#eeeeee"
+    const labelColor = this.darkMode ? "#999999" : "#999999"
+
     return `
       :host {
         display: block;
         width: 100%;
         height: 100%;
+        color-scheme: ${this.darkMode ? "dark" : "light"};
       }
 
       .song-visualiser-container {
@@ -280,8 +344,8 @@ export class SongVisualiserUI extends HTMLElement {
         display: flex;
         gap: 0.5rem;
         padding: 0.5rem;
-        background: #f5f5f5;
-        border-bottom: 1px solid #ddd;
+        background: ${bgSecondary};
+        border-bottom: 1px solid ${borderColor};
         flex-wrap: wrap;
         align-items: center;
       }
@@ -294,7 +358,7 @@ export class SongVisualiserUI extends HTMLElement {
 
       .song-visualiser-controls__group__label {
         font-size: 0.875rem;
-        color: #666;
+        color: ${textSecondary};
         white-space: nowrap;
       }
 
@@ -309,27 +373,27 @@ export class SongVisualiserUI extends HTMLElement {
 
       select {
         padding: 0.25rem 0.5rem;
-        border: 1px solid #ddd;
+        border: 1px solid ${inputBorder};
         border-radius: 4px;
-        background: white;
+        background: ${inputBg};
         font-size: 0.875rem;
-        color: #333;
+        color: ${textPrimary};
       }
 
       .song-visualiser-btn {
         padding: 0.5rem 1rem;
-        background: white;
-        border: 1px solid #ddd;
+        background: ${inputBg};
+        border: 1px solid ${inputBorder};
         border-radius: 4px;
         cursor: pointer;
         font-size: 0.875rem;
-        color: #333;
+        color: ${textPrimary};
         transition: all 0.2s ease;
         white-space: nowrap;
       }
 
       .song-visualiser-btn:hover {
-        background: #eee;
+        background: ${hoverBg};
       }
 
       .song-visualiser-btn:active {
@@ -358,10 +422,10 @@ export class SongVisualiserUI extends HTMLElement {
 
       .song-visualiser-info {
         padding: 1rem;
-        background: #f5f5f5;
-        border-top: 1px solid #ddd;
+        background: ${bgSecondary};
+        border-top: 1px solid ${borderColor};
         font-size: 0.875rem;
-        color: #666;
+        color: ${textSecondary};
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
         gap: 1rem;
@@ -378,12 +442,12 @@ export class SongVisualiserUI extends HTMLElement {
         font-size: 0.75rem;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: #999;
+        color: ${labelColor};
       }
 
       .song-visualiser-info__value {
         font-size: 1rem;
-        color: #333;
+        color: ${textPrimary};
         font-family: monospace;
       }
     `

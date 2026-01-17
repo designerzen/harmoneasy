@@ -89,7 +89,6 @@ function drawNoteBarsStacked(width: number, height: number) {
   drawStackedGrid(width, height, minTime, timeRange, MARGIN_LEFT, MARGIN_BOTTOM)
 
   const barHeight = options.barHeight || 1
-  const outlineePath = new Path2D()
 
   for (let i = 0; i < noteBars.length; i++) {
     const bar = noteBars[i]
@@ -106,19 +105,10 @@ function drawNoteBarsStacked(width: number, height: number) {
     context.fillStyle = bar.colour || getColourForNote(bar.noteNumber)
     context.globalAlpha = 0.7 + bar.velocity * 0.3
     context.fillRect(x, y, barWidth, barHeight)
-
-    // Add outline to path
-    outlineePath.rect(x, y, barWidth, barHeight)
   }
 
-  // Draw all outlines in one batch
-  context.strokeStyle = options.darkMode ? "#fff" : "#000"
-  context.lineWidth = 1
-  context.globalAlpha = 0.9
-  context.stroke(outlineePath)
-
-  // Draw axes labels and tickers
-  drawStackedAxes(width, height, minTime, timeRange, MARGIN_LEFT, MARGIN_BOTTOM)
+  // Draw axis tickers
+  drawStackedAxisTicks(MARGIN_LEFT, height - MARGIN_BOTTOM, width - MARGIN_LEFT - 10, minTime, timeRange)
 
   context.globalAlpha = 1
 }
@@ -135,10 +125,11 @@ function drawNoteBarsTimeline(width: number, height: number) {
   const timeRange = maxEndTime - minTime || 1
 
   const noteRange = options.endNote - options.startNote || 1
-  const barHeight = options.barHeight || 1
   
   const MARGIN_LEFT = 80
   const MARGIN_BOTTOM = 40
+  const plotWidth = width - MARGIN_LEFT - 10
+  const plotHeight = height - MARGIN_BOTTOM
 
   // Draw background grid and axes
   drawTimelineGrid(width, height, noteRange, minTime, timeRange, MARGIN_LEFT, MARGIN_BOTTOM)
@@ -149,27 +140,39 @@ function drawNoteBarsTimeline(width: number, height: number) {
     const duration = bar.endTime - bar.startTime || 0.1
     
     // X: time-based position (left to right)
-    const x = MARGIN_LEFT + ((bar.startTime - minTime) / timeRange) * (width - MARGIN_LEFT - 10)
-    const barWidth = Math.max(1, (duration / timeRange) * (width - MARGIN_LEFT - 10))
+    const x = MARGIN_LEFT + ((bar.startTime - minTime) / timeRange) * plotWidth
+    const barWidth = Math.max(1, (duration / timeRange) * plotWidth)
 
     // Y: note-based position (pitch on vertical axis)
     const noteIndex = bar.noteNumber - options.startNote
-    const y = (noteIndex / noteRange) * height
+    const noteHeight = (options.noteHeight || 8)
+    const y = MARGIN_BOTTOM + noteIndex * noteHeight
 
-    // Draw bar fill
+    // Draw bar fill (no gaps between notes)
     context.fillStyle = bar.colour || getColourForNote(bar.noteNumber)
     context.globalAlpha = 0.7 + bar.velocity * 0.3
-    context.fillRect(x, y, barWidth, barHeight)
-
-    // Add outline to path
-    outlineePath.rect(x, y, barWidth, barHeight)
+    context.fillRect(x, y, barWidth, noteHeight)
   }
 
-  // Draw all outlines in one batch
-  context.strokeStyle = options.darkMode ? "#fff" : "#000"
-  context.lineWidth = 1
-  context.globalAlpha = 0.9
-  context.stroke(outlineePath)
+  // Draw subtle separators instead of outlines to avoid visual gaps
+  context.strokeStyle = options.darkMode ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.1)"
+  context.lineWidth = 0.5
+  context.globalAlpha = 0.5
+  
+  for (const bar of noteBars) {
+    const duration = bar.endTime - bar.startTime || 0.1
+    const x = MARGIN_LEFT + ((bar.startTime - minTime) / timeRange) * plotWidth
+    const barWidth = Math.max(1, (duration / timeRange) * plotWidth)
+    const noteIndex = bar.noteNumber - options.startNote
+    const noteHeight = (options.noteHeight || 8)
+    const y = MARGIN_BOTTOM + noteIndex * noteHeight
+
+    // Draw bottom border only
+    context.beginPath()
+    context.moveTo(x, y + noteHeight - 0.5)
+    context.lineTo(x + barWidth, y + noteHeight - 0.5)
+    context.stroke()
+  }
 
   context.globalAlpha = 1
 }
@@ -190,14 +193,15 @@ function drawTimelineGrid(
 
   const plotWidth = width - marginLeft - 10
   const plotHeight = height - marginBottom
+  const noteHeight = options.noteHeight || 8
 
   // Draw background grid
   context.strokeStyle = options.darkMode ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"
   context.lineWidth = 0.5
 
   // Horizontal grid lines (notes)
-  for (let i = 0; i <= noteRange; i += Math.max(1, Math.floor(noteRange / 12))) {
-    const y = (i / noteRange) * plotHeight
+  for (let i = 0; i <= noteRange; i++) {
+    const y = marginBottom + i * noteHeight
     context.beginPath()
     context.moveTo(marginLeft, y)
     context.lineTo(marginLeft + plotWidth, y)
@@ -244,10 +248,10 @@ function drawTimelineGrid(
 
   // X-axis label (Time)
   context.textAlign = "center"
-  context.fillText("Time (ms)", marginLeft + plotWidth / 2, height - 5)
+  context.fillText("Time (s)", marginLeft + plotWidth / 2, height - 5)
 
   // Draw tick marks and labels
-  drawTimelineAxisTicks(marginLeft, plotHeight, plotWidth, noteRange, minTime, timeRange, marginBottom)
+  drawTimelineAxisTicks(marginLeft, plotHeight, plotWidth, noteRange, minTime, timeRange, marginBottom, noteHeight)
 }
 
 /**
@@ -325,7 +329,8 @@ function drawTimelineAxisTicks(
   noteRange: number,
   minTime: number,
   timeRange: number,
-  marginBottom: number
+  marginBottom: number,
+  noteHeight: number
 ) {
   if (!context) return
 
@@ -333,9 +338,10 @@ function drawTimelineAxisTicks(
   context.font = "11px monospace"
   context.textAlign = "right"
 
-  // Y-axis ticks (notes)
-  for (let i = 0; i <= noteRange; i += Math.max(1, Math.floor(noteRange / 12))) {
-    const y = (i / noteRange) * plotHeight
+  // Y-axis ticks (notes) - show every other note to avoid crowding
+  const labelStep = Math.max(1, Math.ceil(noteRange / 12))
+  for (let i = 0; i <= noteRange; i += labelStep) {
+    const y = marginBottom + i * noteHeight
     const noteNum = options.startNote + i
 
     // Tick mark

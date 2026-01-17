@@ -129,7 +129,7 @@ export default class AbstractInteractive{
 				// convert name into MIDI note number
 				// const note = convertNoteNameToMIDINoteNumber(noteName)
 				
-				const starting = noteOn(note, pressure, id) 
+				const starting = noteOn(note.noteNumber, pressure, id) 
                 
                 this.activeNotes.set( id, note )
                 this.activeId.set( id, true )
@@ -180,7 +180,7 @@ export default class AbstractInteractive{
                
                 if (currentlyPlayingNote)
                 {
-                    noteOff(currentlyPlayingNote, 1, id)
+                    noteOff(currentlyPlayingNote.noteNumber, 1, id)
                 }
 				   
                 // console.log(id, "STOP interaction" ) 
@@ -213,7 +213,7 @@ export default class AbstractInteractive{
                 
                 if (currentlyPlayingNote)
                 {
-                    noteOff(currentlyPlayingNote,1,id)   
+                    noteOff(currentlyPlayingNote.noteNumber,1,id)   
                     this.activeNotes.delete( id )
                     this.activeId.set( id, false )
                     this.activeElement.delete( event.target )
@@ -260,7 +260,7 @@ export default class AbstractInteractive{
                     // {
                     //     noteOff(currentlyPlayingNote, 1, id)
                     // } 
-					noteOn(requestedNote, 1, id)
+					noteOn(requestedNote.noteNumber, 1, id)
 
                     // overwrite the pointer
                     this.activeNotes.set( id, requestedNote )
