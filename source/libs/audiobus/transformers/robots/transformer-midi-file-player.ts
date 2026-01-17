@@ -1,10 +1,12 @@
-import type { IAudioCommand } from "../../audio-command-interface.ts"
+import { TRANSFORMER_CATEGORY_TIMING } from "./transformer-categories.ts"
 import { Transformer } from "./abstract-transformer.ts"
 import AudioCommand from "../../audio-command.ts"
 import * as Commands from "../../../../commands.ts"
+import { Midi } from "@tonejs/midi"
+
 import type Timer from "../../timing/timer.ts"
 import type { ITransformer, FieldConfig } from "./interface-transformer.ts"
-import { TRANSFORMER_CATEGORY_TIMING } from "./transformer-categories.ts"
+import type { IAudioCommand } from "../../audio-command-interface.ts"
 
 export const ID_MIDI_FILE_PLAYER = "MIDI-File-Player"
 
@@ -37,9 +39,8 @@ const DEFAULT_OPTIONS: Config = {
 export class TransformerMIDIFilePlayer extends Transformer<Config> implements ITransformer {
 
     protected type = ID_MIDI_FILE_PLAYER
-    category = TRANSFORMER_CATEGORY_TIMING
-
-    private midiTrack: any = null
+  
+    private midiData: any = null
     private midiCommands: IAudioCommand[] = []
     private isLoading = false
 
@@ -50,6 +51,10 @@ export class TransformerMIDIFilePlayer extends Transformer<Config> implements IT
     get description(): string {
         return "Replace notes with commands from a loaded MIDI file"
     }
+
+	get category():string{
+		return TRANSFORMER_CATEGORY_TIMING
+	}
 
     get fields(): FieldConfig[] {
     	return [
@@ -108,19 +113,24 @@ export class TransformerMIDIFilePlayer extends Transformer<Config> implements IT
         this.isLoading = true
 
         try {
-            // Dynamically import the MIDI file loader to avoid Vite resolution issues
-            const { loadMIDIFile } = await import("../../../__midi/midi-file.js")
+            // Fetch the MIDI file from the URL
+            const response = await fetch(url)
+            if (!response.ok) {
+                throw new Error(`Failed to fetch MIDI file: ${response.statusText}`)
+            }
 
-            // Use existing MIDI file loader from the application
-            this.midiTrack = await loadMIDIFile(url, {})
+            const arrayBuffer = await response.arrayBuffer()
 
-            // Extract NOTE_ON and NOTE_OFF commands from the loaded track
+            // Parse MIDI using @tonejs/midi library
+            this.midiData = new Midi(arrayBuffer)
+
+            // Extract NOTE_ON and NOTE_OFF commands from the loaded data
             this.extractMIDICommands()
 
             this.setConfig("midiFileUrl", url)
         } catch (error) {
             console.error(`Failed to load MIDI file from ${url}:`, error)
-            this.midiTrack = null
+            this.midiData = null
             this.midiCommands = []
         } finally {
             this.isLoading = false
@@ -128,49 +138,43 @@ export class TransformerMIDIFilePlayer extends Transformer<Config> implements IT
     }
 
     /**
-     * Extract NOTE_ON and NOTE_OFF commands from the loaded MIDI track
+     * Extract NOTE_ON and NOTE_OFF commands from the loaded MIDI data
      */
     private extractMIDICommands(): void {
         this.midiCommands = []
 
-        if (!this.midiTrack || !this.midiTrack.firstCommand) {
+        if (!this.midiData || !this.midiData.tracks || this.midiData.tracks.length === 0) {
             return
         }
 
-        // Iterate through all commands in the MIDI track
-        let command = this.midiTrack.firstCommand
-        const firstCommandTime = command.time || 0
-
-        while (command) {
-            // Convert MIDI command subtypes to our command types
-            if (
-                command.subtype === "Note on" ||
-                command.subtype === "noteOn"
-            ) {
-                const audioCmd = new AudioCommand()
-                audioCmd.type = Commands.NOTE_ON
-                audioCmd.subtype = "Note on"
-                audioCmd.number = command.number || command.noteNumber || 60
-                audioCmd.velocity = command.velocity || 100
-                audioCmd.time = command.time || 0
-                // Normalize timing relative to first command
-                audioCmd.startAt = (command.time - firstCommandTime) / 1000 || 0
-                this.midiCommands.push(audioCmd)
-            } else if (
-                command.subtype === "Note off" ||
-                command.subtype === "noteOff"
-            ) {
-                const audioCmd = new AudioCommand()
-                audioCmd.type = Commands.NOTE_OFF
-                audioCmd.subtype = "Note off"
-                audioCmd.number = command.number || command.noteNumber || 60
-                audioCmd.velocity = command.velocity || 0
-                audioCmd.time = command.time || 0
-                audioCmd.startAt = (command.time - firstCommandTime) / 1000 || 0
-                this.midiCommands.push(audioCmd)
+        // Process all tracks and extract note events
+        for (const track of this.midiData.tracks) {
+            if (!track.notes || track.notes.length === 0) {
+                continue
             }
 
-            command = command.next
+            for (const note of track.notes) {
+                // Create NOTE_ON command
+                const noteOn = new AudioCommand()
+                noteOn.type = Commands.NOTE_ON
+                noteOn.subtype = "Note on"
+                noteOn.number = note.midi
+                // @tonejs/midi uses 0-1 for velocity, convert to 0-127
+                noteOn.velocity = Math.round((note.velocity || 0.5) * 127)
+                noteOn.startAt = note.time
+                noteOn.time = note.time
+                this.midiCommands.push(noteOn)
+
+                // Create NOTE_OFF command
+                const noteOff = new AudioCommand()
+                noteOff.type = Commands.NOTE_OFF
+                noteOff.subtype = "Note off"
+                noteOff.number = note.midi
+                noteOff.velocity = 0
+                noteOff.startAt = note.time + note.duration
+                noteOff.time = note.time + note.duration
+                this.midiCommands.push(noteOff)
+            }
         }
 
         // Sort commands by start time
@@ -256,7 +260,7 @@ export class TransformerMIDIFilePlayer extends Transformer<Config> implements IT
      * Cleanup resources
      */
     destroy(): void {
-        this.midiTrack = null
+        this.midiData = null
         this.midiCommands = []
     }
 }

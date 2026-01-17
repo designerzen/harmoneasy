@@ -760,6 +760,16 @@ export default class Timer {
 		this.divisionsElapsed = 0
 	}
 
+	start(){
+		this.startTimer( this.callback )
+	}
+	stop(){
+		this.stopTimer()
+	}
+	toggle(){
+		this.toggleTimer( this.callback )
+	}
+
 	/**
 	 * Starts the timer and begins events being dispatched
 	 * 
@@ -909,6 +919,7 @@ export default class Timer {
 	 * Repeat previous clock tick but do not advance
 	 */
 	retrigger(){
+		console.info("retrigger:Timer", this )
 		this.externalTrigger(false)
 		// this.createTick( data.intervals, data.time )			
 	}

@@ -1,7 +1,5 @@
-import type NoteModel from "../../note-model"
-
 /**
- * Pass in an array of NoteModels and this will
+ * Pass in an array of NoteNumbers and this will
  * try and show which scales, keys and musical modes
  * are being used in as much detail as possible
  */
@@ -21,10 +19,7 @@ export const convertToIntervalArray = (notes: Array<number>) => {
 /**
  * Determine Musical Mode (Ionian, Dorian...)
  */
-export const describeMusicalMode = (notes: Array<NoteModel>) => {
-    // will give a series of numbers
-    const intervals = notes.map(note => note.noteNumber)
-
+export const describeMusicalMode = (intervals: Array<Number>) => {
     // which we then use to determine how many numbers are
     // between each entry
     const output = ALL_INTERVALS.filter( interval => interval.contains(intervals))

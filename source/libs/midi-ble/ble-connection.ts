@@ -85,7 +85,6 @@ export const describeDevice = (device:BluetoothDevice) => {
 
 export const hasWebBluetooth = () => (typeof navigator !== 'undefined' && navigator.bluetooth) 
 
-
 export const extractMIDICharacteristic = (characteristics: CapabilityCharacteristic[]): BluetoothRemoteGATTCharacteristic | undefined  => {
     const found = characteristics.find(c => c.uuid.toLowerCase() === MIDI_CHARACTERISTIC_UUID)
     return found?.characteristicRef
@@ -137,6 +136,7 @@ export async function requestBLEConnection(
 
 	// listen for disconnects
 	device.addEventListener(BLUETOOTH_STATE_GATT_DISCONNECTED, onGattDisconnected)
+	console.info( BLUETOOTH_LOG_PREFIX, "Connected to BLE device", { device, server })
 	
 	return { device, server }
 }
@@ -337,18 +337,20 @@ export async function connectToBLEDevice(options: BLERequestOptions = {}): Promi
 		const { device, server } = await requestBLEConnection(options)
 		
 		// ensure this is midi capable
+		console.log( BLUETOOTH_LOG_PREFIX, "Connecting to BLE device", {options, device, server})
 		const service:BluetoothRemoteGATTService = await server.getPrimaryService(BLE_SERVICE_UUID_MIDI)
-		// fetch the MIDI BLE characteristic
+		console.log( BLUETOOTH_LOG_PREFIX, "Fetching MIDI characteristic")
 		const characteristic:BluetoothRemoteGATTCharacteristic = await service.getCharacteristic(MIDI_CHARACTERISTIC_UUID)
-		// wait for notifications
+		console.log( BLUETOOTH_LOG_PREFIX, "Starting notifications on characteristic", {characteristic})
 		await characteristic.startNotifications()
+		console.log( BLUETOOTH_LOG_PREFIX, "Adding value change listener")
 		// Add value change listener
       	characteristic.addEventListener(BLUETOOTH_STATE_CHARACTERISTIC_CHANGED, event => {
 			console.info( BLUETOOTH_LOG_PREFIX, "BLE device data", {event})
 		} )
 		// const capabilities = await getDeviceCapabilities(server)
 		
-		console.info( BLUETOOTH_LOG_PREFIX, "Connecting to BLE device with options", {options,  device, server, service, characteristic})
+		console.info( BLUETOOTH_LOG_PREFIX, "Connected to BLE device", {options,  device, server, service, characteristic})
 
 		return { device, server, characteristic }		
 
