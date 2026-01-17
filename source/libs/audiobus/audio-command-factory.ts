@@ -1,18 +1,17 @@
 import type { IAudioCommand } from "./audio-command-interface.ts"
 import AudioCommand from "./audio-command.ts"
-import type NoteModel from "./note-model"
 
 /**
  * 
  * @param type 
- * @param noteModel 
+ * @param noteNumber 
  * @param timer 
  * @param fromDevice 
  * @returns Simple Object
  */
 export const createAudioCommand = (type:string, noteNumber:number, scheduledTime:number, fromDevice:string="Unknown" ):IAudioCommand => {
 
-     // create an AudioCommand for this NoteModel
+    // create an AudioCommand for this noteNumber
     // const audioCommand = new AudioCommand()
     const audioCommand:IAudioCommand = {}
     audioCommand.type = type
