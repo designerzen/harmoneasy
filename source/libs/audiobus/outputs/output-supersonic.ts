@@ -1,6 +1,5 @@
 import { SuperSonic } from "supersonic-scsynth-bundle"
 import type { IAudioOutput } from "./output-interface"
-import type NoteModel from "../note-model"
 
 // export const superSonic = new OutputSuperSonic()
 
@@ -11,19 +10,58 @@ import type NoteModel from "../note-model"
  */
 export class OutputSuperSonic implements IAudioOutput{
 
+	static ID:number = 0
+
 	private supersonic: SuperSonic | null = null
+
+	#uuid:string
+
+	get uuid(): string {
+		return this.#uuid
+	}
 
 	get name():string {
 		return "OutputSuperSonic"
 	}
 
-	constructor() {	}
+	get description():string {
+		return "SuperSonic SC Synth"
+	}
+	
+	/**
+	 * Get the Web Audio AudioContext
+	 */
+	get audioContext(): AudioContext {
+		const ctx = this.getSupersonic().audioContext
+		if (!ctx) {
+			throw new Error("AudioContext not available")
+		}
+		return ctx
+	}
+
+	/**
+	 * Check if engine is initialized and ready (read-only property)
+	 */
+	get isInitialised(): boolean {
+		return this.supersonic !== null && this.supersonic.initialized
+	}
+
+	/**
+	 * Check if engine is currently initializing (read-only property)
+	 */
+	get isInitialising(): boolean {
+		return this.supersonic !== null && this.supersonic.initializing
+	}
+
+	constructor() {
+		this.#uuid = "Output-SuperSonic-"+(OutputSuperSonic.ID++)
+	}
 
 	// FIXME:
-	noteOn(note:NoteModel, velocity: number): void {
+	noteOn(noteNumber:number, velocity: number): void {
 		throw new Error("Method noteOn not implemented.")
 	}
-	noteOff(note: NoteModel): void {
+	noteOff(noteNumber: number): void {
 		throw new Error("Method noteOff not implemented.")
 	}
 	allNotesOff(): void {
@@ -38,16 +76,16 @@ export class OutputSuperSonic implements IAudioOutput{
 	 */
 	async init(): Promise<SuperSonic> {
 		// Return early if already initialized
-		if (this.isInitialised()) {
+		if (this.isInitialised) {
 			return this.supersonic!
 		}
 
 		// Return existing init if already in progress
-		if (this.isInitialising()) {
+		if (this.isInitialising) {
 			// Wait for existing initialization to complete
 			return new Promise((resolve, reject) => {
 				const checkReady = setInterval(() => {
-					if (this.isInitialised()) {
+					if (this.isInitialised) {
 						clearInterval(checkReady)
 						resolve(this.supersonic!)
 					}
@@ -93,35 +131,11 @@ export class OutputSuperSonic implements IAudioOutput{
 	 */
 	getSupersonic(): SuperSonic {
 		if (!this.supersonic) {
-			throw new Error("SuperSonic not initialized. Call init() first.")
+			throw new Error("SuperSonic not initialised. Call init() first.")
 		}
 		return this.supersonic
 	}
 
-	/**
-	 * Check if engine is initialized and ready (read-only property)
-	 */
-	isInitialised(): boolean {
-		return this.supersonic !== null && this.supersonic.initialized
-	}
-
-	/**
-	 * Check if engine is currently initializing (read-only property)
-	 */
-	isInitialising(): boolean {
-		return this.supersonic !== null && this.supersonic.initializing
-	}
-
-	/**
-	 * Get the Web Audio AudioContext
-	 */
-	getAudioContext(): AudioContext {
-		const ctx = this.getSupersonic().audioContext
-		if (!ctx) {
-			throw new Error("AudioContext not available")
-		}
-		return ctx
-	}
 
 	/**
 	 * Get set of loaded SynthDef names
@@ -290,7 +304,7 @@ export class OutputSuperSonic implements IAudioOutput{
 		if (this.supersonic) {
 			await this.supersonic.destroy()
 			this.supersonic = null
-			this.initialized = false
+			this.#connected = false
 		}
 	}
 
@@ -299,7 +313,7 @@ export class OutputSuperSonic implements IAudioOutput{
 	 */
 	async recover(): Promise<boolean> {
 		if (!this.supersonic) {
-			throw new Error("SuperSonic not initialized. Call init() first.")
+			throw new Error("SuperSonic not initialised. Call init() first.")
 		}
 
 		const isRunning = await this.supersonic.recover()

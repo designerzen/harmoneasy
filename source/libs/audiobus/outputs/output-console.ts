@@ -1,23 +1,39 @@
 import type { IAudioOutput } from "./output-interface"
-import type NoteModel from "../note-model"
 
 export default class OutputConsole extends EventTarget implements IAudioOutput{
 
+	static ID:number = 0
+
+	#uuid:string
+
+	get uuid(): string {
+		return this.#uuid
+	}
+
 	get name():string {
-		return "OutputConsole"
+		return "Console"
+	}
+
+	get description():string {
+		return "Outputs notes to the console"
+	}
+
+	get isConnected(): boolean {
+		return true
 	}
 
 	constructor() {
 		super()
+		this.#uuid = "Output-Console-"+(OutputConsole.ID++)
 	}
 
-	noteOn(note:NoteModel, velocity: number): void {
-		console.info("Note ON: " + note.number + " velocity: " + velocity)
+	noteOn(noteNumber:number, velocity: number): void {
+		console.info( this.uuid, "Note ON: " + noteNumber + " velocity: " + velocity)
 	}
-	noteOff(note: NoteModel): void {
-		console.info("Note OFF: " + note.number )
+	noteOff(noteNumber: number): void {
+		console.info( this.uuid, "Note OFF: " + noteNumber )
 	}
 	allNotesOff(): void {
-		console.info("ALL Notes OFF.")
+		console.info( this.uuid, "ALL Notes OFF.")
 	}
 }

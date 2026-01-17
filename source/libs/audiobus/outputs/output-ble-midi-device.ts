@@ -9,29 +9,51 @@ import {
 	sendBLEPolyphonicAftertouch, sendBLEChannelAftertouch,
 	sendBLEPitchBend, sendBLEAllNoteOff
 } from "../../midi-ble/midi-ble.ts"
+import { 
+	BLE_SERVICE_UUID_DEVICE_INFO, 
+	BLE_SERVICE_UUID_MIDI 
+} from "../../midi-ble/ble-constants.ts"
 
 import type { IAudioOutput } from "./output-interface.ts"
-import type NoteModel from "../note-model.ts"
+import type { IAudioCommand } from "../audio-command-interface.ts"
+import { connectToBLEDevice, describeDevice } from "../../midi-ble/ble-connection.ts"
 
 export const BLE_OUTPUT_ID = "BLE"
 
 export default class OutputBLEMIDIDevice extends EventTarget implements IAudioOutput {
 	
-	#characteristic: BluetoothRemoteGATTCharacteristic | undefined
+	static ID:number = 0
+	
+	#uuid:string
+
+	#bluetoothDevice: BluetoothDevice | undefined
+	#bluetoothMIDICharacteristic: BluetoothRemoteGATTCharacteristic | undefined
 	#selectedMIDIChannel: number = 1
 	#packetQueue: Array<number> = []
-	#activeNotes: Set<number> = new Set()
+
+	#activeNotes: Map<number, number> = new Map()
+	
+	#bluetoothWatchUnsubscribes: any
+
+	get uuid(): string {
+		return this.#uuid
+	}
 
 	get name(): string {
 		return BLE_OUTPUT_ID
 	}
 
+	get description(): string {
+		return "BLE MIDI"
+	}
+
 	get isConnected(): boolean {
-		return this.#characteristic !== undefined
+		return this.#bluetoothMIDICharacteristic !== undefined
 	}
 
 	constructor(characteristic?: BluetoothRemoteGATTCharacteristic, channel: number = 1) {
 		super()
+		this.#uuid = "Output-BLE-MIDI--"+(OutputBLEMIDIDevice.ID++)
 		if (characteristic)
 		{
 			this.setCharacteristic(characteristic)
@@ -42,15 +64,50 @@ export default class OutputBLEMIDIDevice extends EventTarget implements IAudioOu
 	}
 
 	/**
+	 * 
+	 * @returns 
+	 */
+	async connect(): Promise<void> {
+		try {
+			const result = await connectToBLEDevice()
+
+			if (!result || !result.characteristic) {
+				throw new Error("No BLE MIDI characteristic found on device")
+			}
+
+			this.setCharacteristic(result.characteristic)
+			this.#bluetoothDevice = result.device
+		
+			console.info("[BLE Input] Device connected", describeDevice(this.#bluetoothDevice))
+
+			return
+
+		} catch (error: any) {
+			console.error("[BLE Input] Connection failed", error)
+			throw error
+		}
+	}
+
+	/**
+	 * Disconnect from the BLE MIDI device
+	 */
+	async disconnect(): Promise<void> {
+		if (this.#bluetoothDevice) {
+			await this.#bluetoothDevice.gatt.disconnect()
+		}
+		return
+	}
+
+	/**
 	 * Set the BLE characteristic for sending MIDI data
 	 */
 	setCharacteristic(characteristic: BluetoothRemoteGATTCharacteristic): void {
-		this.#characteristic = characteristic
+		this.#bluetoothMIDICharacteristic = characteristic
 	}
 
 	/**
 	 * Set the MIDI channel for outgoing messages (1-16)
-	 */
+	
 	setChannel(channel: number): void {
 		if (channel >= 1 && channel <= 16) {
 			this.#selectedMIDIChannel = channel
@@ -58,29 +115,21 @@ export default class OutputBLEMIDIDevice extends EventTarget implements IAudioOu
 			throw Error("Invalid MIDI channel number")
 		}
 	}
-
-	/**
-	 * FIXME: Get the set of currently active note numbers
-	 */
-	getActiveNotes(): Set<number> {
-		return new Set(this.#activeNotes)
-	}
-
+	*/
 
 	/**
 	 * Send Note On message to BLE MIDI device
 	 */
-	noteOn(note: NoteModel, velocity: number = 127): void {
-		if (!this.#characteristic) {
-			console.warn("[BLE Output] No characteristic available for Note On")
+	noteOn(noteNumber: number, velocity: number = 127): void {
+		if (!this.#bluetoothMIDICharacteristic) {
+			console.warn("[BLE Output] No characteristic available for Note On", this)
 			return
 		}
 
-		const noteNumber = note.noteNumber
-		this.#activeNotes.add(noteNumber)
+		this.#activeNotes.set(noteNumber, velocity)
 
 		sendBLENoteOn(
-			this.#characteristic,
+			this.#bluetoothMIDICharacteristic,
 			this.#selectedMIDIChannel,
 			noteNumber,
 			velocity,
@@ -107,17 +156,16 @@ export default class OutputBLEMIDIDevice extends EventTarget implements IAudioOu
 	/**
 	 * Send Note Off message to BLE MIDI device
 	 */
-	noteOff(note: NoteModel): void {
-		if (!this.#characteristic) {
-			console.warn("[BLE Output] No characteristic available for Note Off")
+	noteOff(noteNumber:number): void {
+		if (!this.#bluetoothMIDICharacteristic) {
+			console.warn("[BLE Output] No characteristic available for Note Off", this)
 			return
 		}
 
-		const noteNumber = note.noteNumber
 		this.#activeNotes.delete(noteNumber)
 
 		sendBLENoteOff(
-			this.#characteristic,
+			this.#bluetoothMIDICharacteristic,
 			this.#selectedMIDIChannel,
 			noteNumber,
 			0,
@@ -143,13 +191,13 @@ export default class OutputBLEMIDIDevice extends EventTarget implements IAudioOu
 	 * Send All Notes Off (CC#123) to clear all active notes
 	 */
 	allNotesOff(): void {
-		if (!this.#characteristic) {
+		if (!this.#bluetoothMIDICharacteristic) {
 			console.warn("[BLE Output] No characteristic available for All Notes Off")
 			return
 		}
 
 		sendBLEAllNoteOff(
-			this.#characteristic,
+			this.#bluetoothMIDICharacteristic,
 			this.#selectedMIDIChannel,
 			123,
 			0,
@@ -174,13 +222,13 @@ export default class OutputBLEMIDIDevice extends EventTarget implements IAudioOu
 	 * Send Control Change message
 	 */
 	sendControlChange(controlNumber: number, value: number): void {
-		if (!this.#characteristic) {
+		if (!this.#bluetoothMIDICharacteristic) {
 			console.warn("[BLE Output] No characteristic available for Control Change")
 			return
 		}
 
 		sendBLEControlChange(
-			this.#characteristic,
+			this.#bluetoothMIDICharacteristic,
 			this.#selectedMIDIChannel,
 			controlNumber,
 			value,
@@ -208,13 +256,13 @@ export default class OutputBLEMIDIDevice extends EventTarget implements IAudioOu
 	 * Send Program Change message
 	 */
 	sendProgramChange(program: number): void {
-		if (!this.#characteristic) {
+		if (!this.#bluetoothMIDICharacteristic) {
 			console.warn("[BLE Output] No characteristic available for Program Change")
 			return
 		}
 
 		sendBLEProgramChange(
-			this.#characteristic,
+			this.#bluetoothMIDICharacteristic,
 			this.#selectedMIDIChannel,
 			program,
 			this.#packetQueue
@@ -239,13 +287,13 @@ export default class OutputBLEMIDIDevice extends EventTarget implements IAudioOu
 	 * Send Polyphonic Aftertouch (Key Pressure)
 	 */
 	sendPolyphonicAftertouch(note: number, pressure: number): void {
-		if (!this.#characteristic) {
+		if (!this.#bluetoothMIDICharacteristic) {
 			console.warn("[BLE Output] No characteristic available for Polyphonic Aftertouch")
 			return
 		}
 
 		sendBLEPolyphonicAftertouch(
-			this.#characteristic,
+			this.#bluetoothMIDICharacteristic,
 			this.#selectedMIDIChannel,
 			note,
 			pressure,
@@ -273,13 +321,13 @@ export default class OutputBLEMIDIDevice extends EventTarget implements IAudioOu
 	 * Send Channel Aftertouch (Channel Pressure)
 	 */
 	sendChannelAftertouch(pressure: number): void {
-		if (!this.#characteristic) {
+		if (!this.#bluetoothMIDICharacteristic) {
 			console.warn("[BLE Output] No characteristic available for Channel Aftertouch")
 			return
 		}
 
 		sendBLEChannelAftertouch(
-			this.#characteristic,
+			this.#bluetoothMIDICharacteristic,
 			this.#selectedMIDIChannel,
 			pressure,
 			this.#packetQueue
@@ -304,13 +352,13 @@ export default class OutputBLEMIDIDevice extends EventTarget implements IAudioOu
 	 * Send Pitch Bend message
 	 */
 	sendPitchBend(lsb: number, msb: number): void {
-		if (!this.#characteristic) {
+		if (!this.#bluetoothMIDICharacteristic) {
 			console.warn("[BLE Output] No characteristic available for Pitch Bend")
 			return
 		}
 
 		sendBLEPitchBend(
-			this.#characteristic,
+			this.#bluetoothMIDICharacteristic,
 			this.#selectedMIDIChannel,
 			lsb,
 			msb,
@@ -345,8 +393,9 @@ export default class OutputBLEMIDIDevice extends EventTarget implements IAudioOu
 	 * Disconnect and cleanup
 	 */
 	destroy(): void {
+		this.disconnect()
 		this.allNotesOff()
-		this.#characteristic = undefined
+		this.#bluetoothMIDICharacteristic = undefined
 		this.#activeNotes.clear()
 	}
 }

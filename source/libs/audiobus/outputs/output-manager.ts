@@ -1,21 +1,48 @@
 import { OUTPUT_EVENT, NOTE_OFF, NOTE_ON } from "../../../commands.ts"
-import NoteModel from "../note-model.ts"
 import OutputAudioEvent from "./output-audio-event.ts"
 
 import type { IAudioOutput } from "./output-interface.ts"
 import type { IAudioCommand } from "../audio-command-interface.ts"
 
+export const EVENT_OUTPUTS_UPDATED = "outputsUpdated"
+
 export default class OutputManager extends EventTarget implements IAudioOutput{
 	
+	static ID:number = 0
+
 	#outputs:IAudioOutput[] = []
+
+	get uuid():string{
+		return "OutputManager-" + OutputManager.ID
+	}
 
 	get outputs():IAudioOutput[] {
 		return this.#outputs
 	}
-	
+
+	get name():string {
+		return "OutputManager"
+	}
+
+	get description():string {
+		return "Manages all connected audio outputs"
+	}
+
+	get isConnected(): boolean {
+		return true
+	}
+
 	constructor(){
 		super()
+		OutputManager.ID++
 	}
+	
+	// connect?(): Promise<Function> | Function {
+	// 	throw new Error("Method not implemented.")
+	// }
+	// disconnect?(): Promise<void> | Function {
+	// 	throw new Error("Method not implemented.")
+	// }
 
 	/**
 	 * After creating an instance of an input device
@@ -24,6 +51,7 @@ export default class OutputManager extends EventTarget implements IAudioOutput{
 	 */
 	add(output:IAudioOutput){
 		this.#outputs.push(output)
+		this.dispatchEvent(new CustomEvent(EVENT_OUTPUTS_UPDATED))
 	}
 
 	/**
@@ -32,6 +60,7 @@ export default class OutputManager extends EventTarget implements IAudioOutput{
 	 */
 	remove(output:IAudioOutput){
 		this.#outputs = this.#outputs.filter(i => i !== output)
+		this.dispatchEvent(new CustomEvent(EVENT_OUTPUTS_UPDATED))
 	}
 
 	// Commands for all connected Outputs ---------------------------
@@ -41,20 +70,29 @@ export default class OutputManager extends EventTarget implements IAudioOutput{
 	 * @param note 
 	 * @param velocity 
 	 */
-	noteOn(note: NoteModel, velocity: number): void{
+	noteOn(noteNumber:number, velocity: number): void{
 		//console.log("noteOn", note, velocity, this.outputs)
-		this.#outputs.forEach(output => output.noteOn(note, velocity))
-		this.dispatchEvent(new OutputAudioEvent({ number: note.number, velocity }))
+		const command:IAudioCommand = {
+			number: noteNumber,
+			velocity,
+			type:NOTE_ON
+		}
+		this.#outputs.forEach(output => output.noteOn(noteNumber, velocity))
+		this.dispatchEvent( new OutputAudioEvent(command) )
 	}
 
 	/**
 	 * Note OFF
 	 * @param note 
 	 */
-	noteOff(note: NoteModel): void{
+	noteOff(noteNumber:number): void{
+		const command:IAudioCommand = {
+			number: noteNumber,
+			type:NOTE_OFF
+		}
 		//console.log("noteOff", note, velocity, this.outputs)
-		this.#outputs.forEach(output => output.noteOff(note))
-		this.dispatchEvent(new OutputAudioEvent({ number: note.number }))
+		this.#outputs.forEach(output => output.noteOff(noteNumber))
+		this.dispatchEvent(new OutputAudioEvent(command))
 	}
 
 	/**
@@ -72,17 +110,21 @@ export default class OutputManager extends EventTarget implements IAudioOutput{
 	 */
 	triggerAudioCommandOnDevice(command:IAudioCommand, output:IAudioOutput):IAudioCommand{
 		//console.info("OutputManager", {command, output})
+		if (!Number.isFinite(command.number)) {
+			console.warn("[OutputManager] Invalid note number in command", command)
+			return command
+		}
 		switch (command.type) {
 			case NOTE_ON:
-				this.noteOn(new NoteModel(command.number), command.velocity)
+				output.noteOn( command.number, command.velocity)
 				break
 
 			case NOTE_OFF:
-				this.noteOff(new NoteModel(command.number), command.velocity)
+				output.noteOff( command.number)
 				break
 
 			default:
-				console.info("NOT IMPLEMENTED: Audio Command", command.type, Commands)
+				console.info("NOT IMPLEMENTED: Audio Command", command.type)
 		}
 		return command
 	}
