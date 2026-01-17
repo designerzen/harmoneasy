@@ -1,6 +1,6 @@
 // import { createAudiotoolClient, secondsToTicks, Ticks } from "@audiotool/nexus"
 
-import { RecorderAudioEvent } from "../audiobus/recorder-audio-event.js"
+import RecorderAudioEvent from "../audiobus/audio-event-recorder.js"
 import { AUDIOTOOL_STORAGE_KEYS } from './audio-tool-settings.ts'
 import { NOTE_ON } from "../../commands.js"
 import type Timer from "../audiobus/timing/timer.js"
@@ -31,7 +31,7 @@ export const lazyLoadAutioToolSDK = async () => {
 export const checkAudioToolUserStatus = async () => {
 	return await getLoginStatus({
 		clientId:AUDIOTOOL_STORAGE_KEYS.CLIENT_ID,
-		redirectUrl: "http://127.0.0.1:5173/",
+		redirectUrl:AUDIOTOOL_STORAGE_KEYS.REDIRECT,
 		scope: "project:write"
 	})
 }

@@ -1,4 +1,4 @@
-import { RecorderAudioEvent } from "../audiobus/recorder-audio-event.js"
+import RecorderAudioEvent from "../audiobus/audio-event-recorder.js"
 import type AudioEvent from "../audiobus/audio-event.js"
 import type Timer from "../audiobus/timing/timer.js"
 import { NOTE_ON } from "../../commands.js"
