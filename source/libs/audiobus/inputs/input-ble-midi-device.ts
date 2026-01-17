@@ -5,21 +5,20 @@
  */
 
 import AbstractInput from "./abstract-input.ts"
-import NoteModel from "../note-model.ts"
 import { createAudioCommand } from "../audio-command-factory.ts"
-import type { IAudioCommand } from "../audio-command-interface.ts"
 import { NOTE_OFF, NOTE_ON } from "../../../commands"
-
 import {
     connectToBLEDevice, disconnectBLEDevice,
     watchCharacteristics, describeDevice
 } from "../../midi-ble/ble-connection.ts"
-
 import { BLE_SERVICE_UUID_DEVICE_INFO, BLE_SERVICE_UUID_MIDI } from "../../midi-ble/ble-constants.ts"
 
-export const BLE_INPUT_ID = "BLE"
+import type { IAudioCommand } from "../audio-command-interface.ts"
+import type { IAudioInput } from "./input-interface.ts"
 
-export default class InputBLEMIDIDevice extends AbstractInput {
+export const BLE_INPUT_ID = "BLE MIDI"
+
+export default class InputBLEMIDIDevice extends AbstractInput implements IAudioInput{
 
     #bluetoothDevice: BluetoothDevice | null = null
     #bluetoothMIDICharacteristic: BluetoothRemoteGATTCharacteristic | undefined
@@ -30,8 +29,12 @@ export default class InputBLEMIDIDevice extends AbstractInput {
         return BLE_INPUT_ID
     }
 
+	get description():string {
+		return "Bluetooth MIDI"
+	}
+
     get isConnected(): boolean {
-        return ((this.#bluetoothDevice !== null ) && this.#bluetoothDevice.gatt?.connected) ?? false
+        return (super.isConnected && (this.#bluetoothDevice !== null ) && this.#bluetoothDevice.gatt?.connected) ?? false
     }
 
     get device(): BluetoothDevice | null {
@@ -79,6 +82,7 @@ export default class InputBLEMIDIDevice extends AbstractInput {
             )
 
             this.#bluetoothWatchUnsubscribes = unsubs
+			this.setAsConnected()
 
         } catch (error: any) {
             console.error("[BLE Input] Connection failed", error)
@@ -112,6 +116,8 @@ export default class InputBLEMIDIDevice extends AbstractInput {
         this.#bluetoothWatchUnsubscribes = []
         this.#bluetoothMIDICharacteristic = undefined
         this.#bluetoothDevice = null
+
+		this.setAsDisconnected()
     }
 
     /**
@@ -129,16 +135,21 @@ export default class InputBLEMIDIDevice extends AbstractInput {
      * Handle incoming MIDI data from BLE characteristic
      */
     onBLEMIDIDataReceived(value: DataView): void {
-        const data = new Uint8Array(value.buffer)
+		const data = new Uint8Array(value.buffer)
        
 		console.log("[BLE Input] MIDI Data received", { data })
 
         // Parse MIDI data according to BLE MIDI spec
         // Format: [header][timestamp][status][data1][data2]...
-        if (data.length < 3) {
+        if (data.length < 3 || ((data[1] & 128) === 0) ) {
             return
         }
 
+		const timestampHigh: number = data[0] & 63
+		const timestampLow: number = data[1] & 127
+		const timestamp: number = (timestampHigh << 7) | timestampLow
+		const midiStatus: number = data[2]
+	
         const status: number = data[2]
         const channel: number = (status & 0xf) + 1
         const type: number = status >> 4
@@ -193,7 +204,7 @@ export default class InputBLEMIDIDevice extends AbstractInput {
         const command: IAudioCommand = createAudioCommand(
             NOTE_ON,
             noteNumber,
-            Date.now(),
+            this.now,
             this.name
         )
 
@@ -208,7 +219,7 @@ export default class InputBLEMIDIDevice extends AbstractInput {
         const command: IAudioCommand = createAudioCommand(
             NOTE_OFF,
             noteNumber,
-            Date.now(),
+            this.now,
             this.name
         )
 

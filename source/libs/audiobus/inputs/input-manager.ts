@@ -9,6 +9,8 @@ import { INPUT_EVENT } from "../../../commands"
 import AbstractInput from "./abstract-input"
 import type InputAudioEvent from "./input-audio-event"
 
+export const EVENT_INPUTS_UPDATED = "EVENT_INPUTS_UPDATED"
+
 export default class InputManager extends AbstractInput {
 	
 	#inputs:AbstractInput[] = []
@@ -34,6 +36,8 @@ export default class InputManager extends AbstractInput {
 		this.#inputs.push(input)
 		this.#inputMap.set(input.name, input)
 		input.addEventListener(INPUT_EVENT, this.onAudioInputEvent, { signal:this.#abortController.signal } )
+
+		this.dispatchEvent(new Event(EVENT_INPUTS_UPDATED))
 	}
 
 	/**
@@ -44,6 +48,7 @@ export default class InputManager extends AbstractInput {
 		this.#inputs = this.#inputs.filter(i => i !== input)
 		this.#inputMap.delete(input.name)
 		input.removeEventListener(INPUT_EVENT, this.onAudioInputEvent )
+		this.dispatchEvent(new Event(EVENT_INPUTS_UPDATED))
 	}
 
 	getInput(name:string):AbstractInput{
@@ -66,6 +71,7 @@ export default class InputManager extends AbstractInput {
 	 * @param event 
 	 */
 	onAudioInputEvent(event:InputAudioEvent):void{
+		//console.info("InputManager::onAudioInputEvent", event)
 		// kill existing event
 		event.preventDefault()
 		// create a clone and dispatch

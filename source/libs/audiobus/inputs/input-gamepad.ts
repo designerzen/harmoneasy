@@ -11,10 +11,11 @@ import { NOTE_OFF, NOTE_ON } from "../../../commands"
 import { COMMANDS, GAME_PAD_CONNECTED, GAME_PAD_DISCONNECTED, GamePadManager } from "../hardware/gamepad/gamepad"
 import AudioCommand from "../audio-command"
 import AbstractInput from "./abstract-input"
+import type { IAudioInput } from "./input-interface"
 
 export const GAMEPAD_INPUT_ID = "GamePad"
 
-export default class InputGamePad extends AbstractInput {
+export default class InputGamePad extends AbstractInput implements IAudioInput {
 
 	gamePadManager: GamePadManager
 	gamepadHeld:Map<string, number> = new Map()
@@ -23,12 +24,17 @@ export default class InputGamePad extends AbstractInput {
 		return GAMEPAD_INPUT_ID
 	}
 
+	get description():string {
+		return "Gamepad"
+	}
+
 	constructor(options: Record<string, any> = {}) { 
 		super(options)
 
 		this.onGamePadEvent = this.onGamePadEvent.bind(this)
 		this.gamePadManager = new GamePadManager()
 		this.gamePadManager.addEventListener( this.onGamePadEvent )
+		this.setAsConnected()
 	}
 
 	/**
@@ -38,6 +44,7 @@ export default class InputGamePad extends AbstractInput {
 		this.gamePadManager.removeEventListener( this.onGamePadEvent )
 		this.gamePadManager.destroy()
 		this.gamepadHeld.clear()
+		this.setAsDisconnected()
 	}
 
 	/**
@@ -56,7 +63,8 @@ export default class InputGamePad extends AbstractInput {
 		command.value = value
 		command.from = GAMEPAD_INPUT_ID + gamePad.id
 		command.text = button
-		command.time = gamePad.timestamp
+		command.time = this.now // ?? gamePad.timestamp // FIXME:
+		command.startAt = this.now // ?? gamePad.timestamp
 
 		switch(button)
 		{
