@@ -1,12 +1,12 @@
 import { formatTimeStampFromSeconds } from "./libs/audiobus/timing/timer.ts"
 import SongVisualiser from './components/song-visualiser.ts'
 import { SongVisualiserUI } from './components/song-visualiser-ui.ts'
-import SVGKeyboard from './components/keyboard-svg.js'
-import NoteVisualiser from './components/note-visualiser.js'
-import NoteModel from "./libs/audiobus/note-model.ts"
+import NoteVisualiser from './components/note-visualiser.ts'
 
+import type NoteModel from "./libs/audiobus/note-model.ts"
 import type { IAudioCommand } from "./libs/audiobus/audio-command-interface.ts"
 import type { IAudioOutput } from "./libs/audiobus/outputs/output-interface.ts"
+import { convertNoteNumberToColour } from "./libs/audiobus/conversion/note-to-color.ts"
 
 const DOM_ID_MIDI_INPUTS = "midi-input-commands"
 const DOM_ID_MIDI_OUTPUTS = "midi-output-commands"
@@ -51,6 +51,8 @@ const DEFAULT_OPTIONS = {
 }
 
 export default class UI implements IAudioOutput {
+	
+	static ID:number = 0
 
 	options: object
 	abortController = new AbortController()
@@ -89,20 +91,25 @@ export default class UI implements IAudioOutput {
 	elementInfoDialog: HTMLElement | null
 	elementErrorDialog: HTMLElement | null
 	noteVisualiserCanvas: HTMLElement | null
-	noteVisualiser: any
+	noteVisualiser: NoteVisualiser
 
-	#keyboard: any
+	#keyboard: SVGKeyboard
 	keyboardElement: any
 
 	get name():string {
 		return "FrontEnd"
 	}
 
-	get keyboard() {
+	get keyboard():SVGKeyboard {
 		return this.#keyboard
 	}
-
-	constructor(keyboardNotes: Array<NoteModel>, onNoteOn: Function, onNoteOff: Function, options = DEFAULT_OPTIONS) {
+	get uuid(): string {
+		return "Output-UI-"+(UI.ID++)
+	}
+	get description(): string {
+		return "Front End"
+	}
+	constructor(keyboardNotes: Array<NoteModel>, options = DEFAULT_OPTIONS) {
 
 		this.options = { ...DEFAULT_OPTIONS, ...options }
 		this.devices = document.getElementById(DOM_ID_MIDI_DEVICES)
@@ -151,11 +158,6 @@ export default class UI implements IAudioOutput {
 		this.noteVisualiser = new NoteVisualiser(keyboardNotes, this.noteVisualiserCanvas, this.options.verticalNoteBars, 0) // ALL_KEYBOARD_NOTES
 		// wallpaperCanvas.addEventListener( "dblclick", e => scale === SCALES[ (SCALES.indexOf(scale) + 1) % SCALES.length] )
 
-		this.#keyboard = new SVGKeyboard(keyboardNotes, onNoteOn, onNoteOff)
-
-		// inject into DOM
-		this.keyboardElement = document.body.appendChild(this.#keyboard.asElement)
-
 		// Create Note Explorer & visualiser
 		// const visualiser = new SongVisualiser()
 		// this.wallpaperCanvas.parentNode.appendChild(visualiser)
@@ -163,10 +165,21 @@ export default class UI implements IAudioOutput {
 		this.setupDragAndDrop()
 	}
 
+	setUIKeyboard( keyboard:SVGKeyboard ){
+
+		const keyboardElement = keyboard.asElement
+
+		// link to note on and note off in a different way!
+		this.#keyboard = keyboard
+
+		// inject into DOM on specified element 
+		this.keyboardElement = document.body.appendChild(keyboardElement)
+	}
+
 	/**
 	 * Register callback for when the export button is clicked to open the export menu
 	 */
-	whenExportMenuRequestedRun(callback): void {
+	whenExportMenuRequestedRun(callback:Function): void {
 		this.elementButtonExport && this.elementExportDialog && this.elementButtonExport.addEventListener('click', () => {
 			this.elementExportDialog.hidden = false
 			this.elementExportDialog.showModal()
@@ -239,8 +252,17 @@ export default class UI implements IAudioOutput {
 	 * @param commands 
 	 */
 	async addSongVisualser(commands: IAudioCommand[]) {
-		const visualiser = new SongVisualiser()
+		const visualiser = new SongVisualiserUI()
 		this.noteVisualiserCanvas.parentNode.appendChild(visualiser)
+		// Wait for connectedCallback to complete
+		await new Promise(resolve => {
+			const checkReady = setInterval(() => {
+				if (visualiser.getVisualiser()) {
+					clearInterval(checkReady)
+					resolve(undefined)
+				}
+			}, 10)
+		})
 		await visualiser.loadCommands(commands)
 	}
 
@@ -289,12 +311,12 @@ export default class UI implements IAudioOutput {
 	 * setTempo(tempo)
 	 * @param {Number} tempo 
 	 */
-	setTempo(tempo) {
+	setTempo(tempo:number) {
 		this.elementTempo.value = tempo
 		this.elementBPM.textContent = tempo
 	}
 
-	setPlaying(isPlaying) {
+	setPlaying(isPlaying:boolean) {
 		this.elementTempo.classList.toggle("playing", isPlaying)
 	}
 
@@ -313,7 +335,7 @@ export default class UI implements IAudioOutput {
 	// Dialogs ----------------------------------------------------------------------
 
 
-	showInfoDialog(title, message) {
+	showInfoDialog(title:string, message:string) {
 		this.elementInfoDialog.querySelector("h5").textContent = title
 		this.elementInfoDialog.querySelector("#info-message").innerHTML = message
 		this.elementInfoDialog.hidden = false
@@ -326,7 +348,7 @@ export default class UI implements IAudioOutput {
 	 * @param {String} errorMessage 
 	 * @param {Boolean} fatal - does this break the app?
 	 */
-	showError(errorMessage, solution = "", fatal = false) {
+	showError(errorMessage:string, solution = "", fatal = false) {
 		this.inputs.innerHTML = errorMessage
 		this.inputs.classList.toggle("error", true)
 
@@ -349,13 +371,16 @@ export default class UI implements IAudioOutput {
 
 	// Bluetooth --------------------------------------------------------------------
 
-	whenBluetoothDeviceRequestedRun(callback) {
-		this.elementButtonBluetoothConnect.addEventListener("click", e => {
-			callback && callback()
-		}, { signal: this.abortController.signal })
+	whenBluetoothDeviceRequestedRun(callback:Function) {
+		if (this.elementButtonBluetoothConnect)
+		{
+			this.elementButtonBluetoothConnect.addEventListener("click", e => {
+				callback && callback()
+			}, { signal: this.abortController.signal })			
+		}
 	}
 
-	setBluetoothButtonText(text = "Connect Bluetooth") {
+	setBluetoothButtonText(text:string = "Connect Bluetooth") {
 		this.elementButtonBluetoothConnect.textContent = text
 	}
 
@@ -363,7 +388,7 @@ export default class UI implements IAudioOutput {
 	 * Show error/status message in the devices panel
 	 * @param {String} message
 	 */
-	showBluetoothStatus(message) {
+	showBluetoothStatus(message:string) {
 		this.elementButtonBluetoothConnect.textContent = message
 	}
 
@@ -372,7 +397,7 @@ export default class UI implements IAudioOutput {
 	 * @param {BluetoothDevice} device
 	 * @param {Object} capabilities { services: Array }
 	 */
-	addBluetoothDevice(device, capabilities) {
+	addBluetoothDevice(device:BluetoothDevice, capabilities) {
 		let html = `<strong>BLE Device: ${device.name || 'Unknown'}</strong><br>`
 		html += `UUID: ${device.id}<br>`
 		if (capabilities && capabilities.services) {
@@ -399,7 +424,7 @@ export default class UI implements IAudioOutput {
 	 * into a Uint8Array or other form for sending.
 	 * @param {Function} callback (value: string) => void
 	 */
-	whenUserRequestsManualBLECodesRun(callback) {
+	whenUserRequestsManualBLECodesRun(callback:Function) {
 		if (!(this.elementBLEManualSendButton && this.elementBLEManualInput)) return
 		const doSend = () => {
 			const raw = String(this.elementBLEManualInput.value || '').trim()
@@ -416,7 +441,7 @@ export default class UI implements IAudioOutput {
 	 * Toggle visibility of the manual BLE input and send button.
 	 * @param {boolean} visible
 	 */
-	setBLEManualInputVisible(visible) {
+	setBLEManualInputVisible(visible:boolean) {
 		if (this.elementBLEManualFields) {
 			this.elementBLEManualFields.hidden = !visible
 		}
@@ -430,11 +455,11 @@ export default class UI implements IAudioOutput {
 	}
 
 
-	setWebMIDIButtonText(text = "Enable WebMIDI") {
+	setWebMIDIButtonText(text:string = "Enable WebMIDI") {
 		if (this.elementButtonWebMIDI) this.elementButtonWebMIDI.textContent = text
 	}
 
-	whenWebMIDIToggledRun(callback) {
+	whenWebMIDIToggledRun(callback:Function) {
 		this.elementButtonWebMIDI && this.elementButtonWebMIDI.addEventListener('click', e => {
 			callback && callback(e)
 		}, { signal: this.abortController.signal })
@@ -442,7 +467,7 @@ export default class UI implements IAudioOutput {
 
 
 	// Exporting --------------------------------------------------------------------
-	showExportOverlay(text) {
+	showExportOverlay(text:string) {
 		this.elementOverlayExport.hidden = false
 	}
 
@@ -450,7 +475,7 @@ export default class UI implements IAudioOutput {
 		this.elementOverlayExport.hidden = true
 	}
 
-	setExportOverlayText(text) {
+	setExportOverlayText(text:string) {
 		if (text && this.elementOverlayExportText) {
 			this.elementOverlayExportText.textContent = text
 		}
@@ -498,7 +523,7 @@ export default class UI implements IAudioOutput {
 	}
 
 	// Export Buttons 
-	whenAudioToolExportRequestedRun(callback) {
+	whenAudioToolExportRequestedRun(callback:Function) {
 		this.elementAudioToolExportButton && this.elementAudioToolExportButton.addEventListener('click', async (e) => {
 			this.showExportOverlay()
 			callback && await callback(e)
@@ -510,7 +535,7 @@ export default class UI implements IAudioOutput {
 	 * 
 	 * @param callback 
 	 */
-	whenMIDIFileExportRequestedRun(callback) {
+	whenMIDIFileExportRequestedRun(callback:Function) {
 		this.elementMidiExportButton && this.elementMidiExportButton.addEventListener('click', async (e) => {
 			this.showExportOverlay()
 			callback && await callback(e)
@@ -522,7 +547,7 @@ export default class UI implements IAudioOutput {
 	 * 
 	 * @param callback 
 	 */
-	whenMIDIMarkdownExportRequestedRun(callback) {
+	whenMIDIMarkdownExportRequestedRun(callback:Function) {
 		this.elementMidiMarkdownExportButton && this.elementMidiMarkdownExportButton.addEventListener('click', async (e) => {
 			callback && await callback(e)
 		}, { signal: this.abortController.signal })
@@ -532,7 +557,7 @@ export default class UI implements IAudioOutput {
 	 * 
 	 * @param callback 
 	 */
-	whenMusicXMLExportRequestedRun(callback) {
+	whenMusicXMLExportRequestedRun(callback:Function) {
 		this.elementMusicXMLExportButton && this.elementMusicXMLExportButton.addEventListener('click', async (e) => {
 			this.showExportOverlay()
 			callback && await callback(e)
@@ -544,7 +569,7 @@ export default class UI implements IAudioOutput {
 	 * 
 	 * @param callback 
 	 */
-	whenVexFlowExportRequestedRun(callback) {
+	whenVexFlowExportRequestedRun(callback:Function) {
 		this.elementVexFlowExportButton && this.elementVexFlowExportButton.addEventListener('click', async (e) => {
 			this.showExportOverlay()
 			callback && await callback(e)
@@ -556,7 +581,7 @@ export default class UI implements IAudioOutput {
 	 * 
 	 * @param callback 
 	 */
-	whenOpenDAWExportRequestedRun(callback) {
+	whenOpenDAWExportRequestedRun(callback:Function) {
 		this.elementOpenDAWExportButton && this.elementOpenDAWExportButton.addEventListener('click', async (e) => {
 			this.showExportOverlay()
 			callback && await callback(e)
@@ -568,7 +593,7 @@ export default class UI implements IAudioOutput {
 	 * 
 	 * @param callback 
 	 */
-	whenDawProjectExportRequestedRun(callback) {
+	whenDawProjectExportRequestedRun(callback:Function) {
 		this.elementDawProjectExportButton && this.elementDawProjectExportButton.addEventListener('click', async (e) => {
 			this.showExportOverlay()
 			callback && await callback(e)
@@ -580,7 +605,7 @@ export default class UI implements IAudioOutput {
 	 * 
 	 * @param callback 
 	 */
-	whenRandomTimbreRequestedRun(callback) {
+	whenRandomTimbreRequestedRun(callback:Function) {
 		this.elementButtonRandomTimbre && this.elementButtonRandomTimbre.addEventListener('click', e => {
 			callback && callback(e)
 		}, { signal: this.abortController.signal })
@@ -590,7 +615,7 @@ export default class UI implements IAudioOutput {
 	 * Register a callback for when the kill switch (all notes off) button is clicked
 	 * @param {Function} callback () => void
 	 */
-	whenKillSwitchRequestedRun(callback) {
+	whenKillSwitchRequestedRun(callback:Function) {
 		this.elementButtonKillSwitch && this.elementButtonKillSwitch.addEventListener('pointerdown', e => {
 			callback && callback(e)
 		}, { signal: this.abortController.signal })
@@ -601,7 +626,7 @@ export default class UI implements IAudioOutput {
 	 * Clears all AudioCommands from memory and OPFS storage
 	 * @param {Function} callback () => void
 	 */
-	whenResetRequestedRun(callback) {
+	whenResetRequestedRun(callback:Function) {
 		if (!this.elementButtonReset) {
 			return
 		}
@@ -613,14 +638,13 @@ export default class UI implements IAudioOutput {
 				callback && callback(e)
 			}
 		}, { signal: this.abortController.signal })
-
 	}
 
 	/**
 	 * Register a callback for when the tempo slider is moved
 	 * @param {Function} callback (tempo: number) => void
 	 */
-	whenTempoChangesRun(callback) {
+	whenTempoChangesRun(callback:Function) {
 		this.elementTempo && this.elementTempo.addEventListener("input", e => {
 			const tempo = this.elementTempo.value
 			callback && callback(tempo)
@@ -632,7 +656,7 @@ export default class UI implements IAudioOutput {
 	 * 
 	 * @param {Function} callback 
 	 */
-	whenVolumeChangesRun(callback) {
+	whenVolumeChangesRun(callback:Function) {
 		this.elementVolume && this.elementVolume.addEventListener("input", e => {
 			const volume = this.elementVolume.value
 			callback && callback(volume)
@@ -644,7 +668,7 @@ export default class UI implements IAudioOutput {
 	 * Register a callback when MIDI channel selection changes.
 	 * @param {Function} callback (channel: number) => void
 	 */
-	whenMIDIChannelSelectedRun(callback) {
+	whenMIDIChannelSelectedRun(callback:Function) {
 		this.elementMIDIChannelSelector && this.elementMIDIChannelSelector.addEventListener("change", e => {
 			const channel = Number(this.elementMIDIChannelSelector.value)
 			callback && callback(channel)
@@ -655,7 +679,7 @@ export default class UI implements IAudioOutput {
 	 * When the note visualiser is double pressed call
 	 * @param callback 
 	 */
-	whenNoteVisualiserDoubleClickedRun(callback) {
+	whenNoteVisualiserDoubleClickedRun(callback:Function) {
 		this.noteVisualiserCanvas && this.noteVisualiserCanvas.addEventListener("dblclick", e => callback && callback(e), { signal: this.abortController.signal })
 	}
 
@@ -676,7 +700,7 @@ export default class UI implements IAudioOutput {
 		this.inputs.innerHTML = `MIDI Command STOP #${command} <br>` + this.inputs.innerHTML
 	}
 
-	updateClock(values, audioCommandQuantity = 0) {
+	updateClock(values, audioCommandQuantity:number = 0) {
 		const {
 			divisionsElapsed,
 			bar, bars,
@@ -693,27 +717,27 @@ export default class UI implements IAudioOutput {
 		})
 	}
 
-
 	// IAudioOutput -------------------------------------------
 
 	/**
 	 * Show Note On
-	 * @param {NoteModel} note 
+	 * @param {Number} note 
 	 */
-	noteOn(note: NoteModel) {
-		this.noteVisualiser.noteOn(note)
-		this.#keyboard.setKeyAsActive(note)
-		this.addCommand("NoteOn #" + note.number)
+	noteOn(noteNumber:number, velocity:number) {
+		const colour = convertNoteNumberToColour(noteNumber)
+		this.noteVisualiser.noteOn(noteNumber, velocity, colour)
+		this.addCommand("NoteOn #" + noteNumber)
+		// console.info("UI::NoteOn", {noteNumber, velocity, colour})
 	}
 
 	/**
 	 * Show Note Off
-	 * @param {NoteModel} note 
+	 * @param {Number} note 
 	 */
-	noteOff(note: NoteModel) {
-		this.noteVisualiser.noteOff(note)
-		this.#keyboard.setKeyAsInactive(note)
-		this.removeCommand("NoteOff #" + note.number)
+	noteOff(noteNumber:number) {
+		this.noteVisualiser.noteOff(noteNumber)
+		this.removeCommand("NoteOff #" + noteNumber)
+		// console.info("UI::NoteOff", noteNumber )
 	}
 
 	/**
@@ -721,8 +745,7 @@ export default class UI implements IAudioOutput {
 	 */
 	allNotesOff() {
 		for (let noteNumber = 0; noteNumber < 128; noteNumber++) {
-			const noteModel = new NoteModel(noteNumber)
-			this.noteOff(noteModel)
+			this.noteOff(noteNumber)
 		}
 	}
 

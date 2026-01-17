@@ -11,5 +11,5 @@ export const DEFAULT_VIEWPORT_OPTIONS = {
 }
 
 // Calculate positions with better spacing and centering
-export const HORIZONTAL_SPACING = 363
+export const HORIZONTAL_SPACING = 373
 export const NODE_HEIGHT = 323
