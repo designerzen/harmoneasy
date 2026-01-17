@@ -3,12 +3,12 @@
  * through the transformerManager
  * into the outputManager
  */
-import InputManager from "./inputs/input-manager"
-import OutputManager from "./outputs/output-manager"
+import InputManager, { EVENT_INPUTS_UPDATED } from "./inputs/input-manager"
+import OutputManager, { EVENT_OUTPUTS_UPDATED } from "./outputs/output-manager"
 import TransformerManager, { EVENT_TRANSFORMERS_UPDATED } from "./transformers/transformer-manager"
 import TransformerManagerWorker from "./transformers/transformer-manager-worker"
 
-import { INPUT_EVENT, NOTE_OFF, NOTE_ON, OUTPUT_EVENT } from "../../commands"
+import { INPUT_EVENT, NOTE_OFF, NOTE_ON, OUTPUT_EVENT, PLAYBACK_START, PLAYBACK_STOP, PLAYBACK_TOGGLE, TEMPO_DECREASE, TEMPO_INCREASE, TEMPO_TAP } from "../../commands"
 import AudioEvent from "./audio-event"
 
 import type { IAudioCommand } from "./audio-command-interface"
@@ -24,10 +24,12 @@ const DEFAULT_OPTIONS = {
 }
 
 export default class IOChain extends EventTarget{
-
+	
 	static convertAudioCommandsToAudioEvents(commands: IAudioCommand[], timestamp:number=0 ): AudioEvent[]{
 		return (commands ?? []).map((command: IAudioCommand) => new AudioEvent(command, timestamp ))
 	}
+
+	#timer: Timer
 
 	#audioCommandQueue:IAudioCommand[] = []
 	#transformerManager:TransformerManagerWorker
@@ -39,35 +41,53 @@ export default class IOChain extends EventTarget{
 
 	#options:object = {}
 
+	#enabled:boolean = true
+
 	get options():object{
 		return this.#options
+	}
+
+	get inputManager():InputManager{ 
+		return this.#inputManager 
 	}
 	get transformerManager():TransformerManagerWorker{ 
 		return this.#transformerManager 
 	}
-	get inputManager():InputManager{ 
-		return this.#inputManager 
+	get outputManager():OutputManager{ 
+		return this.#outputManager 
 	}
+
 	get inputs():AbstractInput[] {
 		return this.#inputManager.inputs
 	}
-	get outputManager():OutputManager{ 
-		return this.#outputManager 
+	get transformers():ITransformer[]{
+		return this.#transformerManager.activeTransformers
 	}
 	get outputs():IAudioOutput[]{ 
 		return this.#outputManager.outputs
 	}
+
 	get transformerQuantity():number{ 
 		return this.#transformerManager.quantity 
 	}
+	get timer():Timer{ 
+		return this.#timer 
+	}
 
-	constructor( options=DEFAULT_OPTIONS ){
+	get isQuantised(): boolean {
+		return this.#transformerManager.isQuantised
+	}
+
+	constructor( timer:Timer, options=DEFAULT_OPTIONS ){
 		super()
 
 		this.onTransformersChanged = this.onTransformersChanged.bind(this)
 		this.onInputEvent = this.onInputEvent.bind(this)
 		this.onOutputEvent = this.onOutputEvent.bind(this)
+		this.onInputsUpdated = this.onInputsUpdated.bind(this)
+		this.onOutputsUpdated = this.onOutputsUpdated.bind(this)
 		
+		this.#timer = timer
 		this.#options = { ...DEFAULT_OPTIONS, ...options }
 
 		this.#transformerManager = new TransformerManagerWorker()
@@ -78,7 +98,9 @@ export default class IOChain extends EventTarget{
 
 		this.#transformerManager.addEventListener( EVENT_TRANSFORMERS_UPDATED, this.onTransformersChanged, { signal: this.#abortController.signal } )
 		this.#inputManager.addEventListener( INPUT_EVENT, this.onInputEvent, { signal: this.#abortController.signal } )
+		this.#inputManager.addEventListener( EVENT_INPUTS_UPDATED, this.onInputsUpdated, { signal: this.#abortController.signal } )
 		this.#outputManager.addEventListener( OUTPUT_EVENT, this.onOutputEvent, { signal: this.#abortController.signal } )
+		this.#outputManager.addEventListener( EVENT_OUTPUTS_UPDATED, this.onOutputsUpdated, { signal: this.#abortController.signal } )
 	}
 
 	// Transformers ---------------------------------------
@@ -95,7 +117,7 @@ export default class IOChain extends EventTarget{
 	}
 
 	/**
-	 * Transform commands
+	 * Transform all commands and add them to our commandQueue
 	 * @param audioCommands 
 	 * @param timer 
 	 * @returns 
@@ -201,7 +223,7 @@ export default class IOChain extends EventTarget{
 		// Always process the queue, with or without quantisation
 		if (this.transformerManager.isQuantised) 
 		{
-			//console.info("TICK:QUANTISED", {divisionsElapsed, quantisationFidelity:chain.transformerManager.quantiseFidelity})
+			console.info("TICK:QUANTISED", {divisionsElapsed, quantisationFidelity:chain.transformerManager.quantiseFidelity})
 			// When quantised, only trigger events on the grid
 			const gridSize = this.transformerManager.quantiseFidelity
 			if ((this.#pausedQueue === 0) && (divisionsElapsed % gridSize) === 0) 
@@ -221,17 +243,48 @@ export default class IOChain extends EventTarget{
 
 		} else {
 
-			//console.info("TICK:IMMEDIATE", {buffer: audioCommandQueue, divisionsElapsed})
 			// When not quantised, process queue immediately on every tick
 			activeCommands = this.executeQueueAndClearComplete( now )
+			
+			if (activeCommands.length)
+			{	
+				console.info("TICK:IMMEDIATE", { activeCommands, divisionsElapsed})
+			}
 		}
 
 		return activeCommands
 	}
 
 	/**
+	 * Take a command and add it to the scheduler
+	 * and then either transform it or leave it raw
+	 * @param audioCommand 
+	 * @param transform 
+	 * @returns 
+	 */
+	async addCommandToQueue( audioCommand:IAudioCommand, transform:boolean=this.#enabled ){
+		if (transform){
+			this.transformerManager.transform([audioCommand], this.timer)
+				.then((transformedAudioCommands: IAudioCommand[]) => {
+					this.addCommands(transformedAudioCommands)
+				})
+				.catch((error) => {
+					// console.info('Transform failed:', error)
+					this.addCommand(audioCommand)
+				}).finally(p=>{
+					// now handle this input through the transformerManager
+					// console.info( "IOChain:onInputEvent", {audioCommand} )
+				})
+		}else{
+			this.addCommand(audioCommand)
+		}
+		return audioCommand
+	}
+
+	/**
 	 * Schedule a series of commands to trigger in the 
 	 * future using NOW as the registration time
+	 * TODO: Add timestretching and time domain reconfig
 	 * @param commands 
 	 * @param timer 
 	 * @param transform 
@@ -239,30 +292,12 @@ export default class IOChain extends EventTarget{
 	 * @returns IAudioCommand[]
 	 */
 	addCommandToFuture(commands: IAudioCommand[], timer:Timer, transform:boolean=false, startDelay:number=3):IAudioCommand[]{
-		
 		commands.forEach(command => {
 			// shift it into the future
 			command.startAt += timer.now + startDelay
-			// inject into the queue...
-			if (!transform){
-				this.addCommand(command)
-			}
+			this.addCommandToQueue(command, transform)
 		})
 
-		if (transform)
-		{
-			// Transform is now async - queue the promise
-			this.transformerManager.transform(commands, timer)
-				.then((transformedAudioCommands: IAudioCommand[]) => {
-					this.addCommands(transformedAudioCommands)
-				})
-				.catch((error) => {
-					console.error('Transform failed:', error)
-					// Fallback: add untransformed commands
-					this.addCommands(commands)
-				})
-		}
-	
 		return commands
 	}
 	
@@ -286,7 +321,11 @@ export default class IOChain extends EventTarget{
 		this.#inputManager.remove(input)
 	}
 
-	// fetch a specific input by ID
+	/**
+	 * Fetch a specific input by ID
+	 * @param name 
+	 * @returns 
+	 */
 	getInput(name:string):AbstractInput{
 		return this.#inputManager.getInput(name)
 	}
@@ -300,6 +339,16 @@ export default class IOChain extends EventTarget{
 	}
 	removeOutput( output:IAudioOutput ){
 		this.#outputManager.remove(output)
+	}
+
+	/**
+	 * Cancel any playing notes and let them settle
+	 */
+	allNotesOff():void {
+		// Clear the audio command queue of pending note commands
+		this.clearNoteCommands()
+		// Cancel any currently playing notes
+		this.outputManager.allNotesOff()
 	}
 
 	/**
@@ -321,16 +370,51 @@ export default class IOChain extends EventTarget{
 	 * @param inputEvent 
 	 */
 	onInputEvent( inputEvent:InputAudioEvent ){
-		// extract command and add to queue for consumption later
-		const command:IAudioCommand = inputEvent.command
-		this.addCommand(command)
-
-		// redispatch event (do not update UI yet)
+		
 		inputEvent.preventDefault()
-		this.dispatchEvent( inputEvent.clone() )
+		
+		// extract command and add to queue for consumption later
+		const audioCommand:IAudioCommand = inputEvent.command
+		switch ( audioCommand.type ) {
+			
+			case PLAYBACK_TOGGLE:
+				this.timer.toggle()
+				break
 
-		// now handle this input through the transformerManager
-		console.info( "IOChain:onInputEvent", {command, inputEvent} )
+			case PLAYBACK_START:
+				this.timer.start()
+				break
+
+			case PLAYBACK_STOP:
+				this.timer.stop()
+				break
+
+			case TEMPO_TAP:
+				this.timer.tapTempo()
+				break
+
+			case TEMPO_INCREASE:
+				this.timer.BPM++
+				break
+
+			case TEMPO_DECREASE:
+				this.timer.BPM--
+				break
+		}
+		// NB. ensure that the timing is set for it to be scheduled
+		this.addCommandToQueue(audioCommand).then( t=>{
+			// redispatch event (do not update UI yet)
+			this.dispatchEvent( inputEvent.clone() )					
+		})
+	}
+
+	/**
+	 * The Input array has changed
+	 * @param inputEvent 
+	 */
+	onInputsUpdated( inputEvent:CustomEvent ){
+		inputEvent.preventDefault()
+		this.dispatchEvent( new CustomEvent( inputEvent.type ) )
 	}
 
 	/**
@@ -340,17 +424,24 @@ export default class IOChain extends EventTarget{
 	onTransformersChanged(transformerEvent:CustomEvent):void{
 		transformerEvent.preventDefault()
 		this.dispatchEvent( new CustomEvent(transformerEvent.type, {detail:transformerEvent.detail}) )
-		console.info( "IOChain:onInputEvent", {transformerEvent} )	
 	}
 
 	/**
-	 * An Output event has occurred
+	 * An Output event has occurred in OutputManager
 	 * @param outputEvent 
 	 */
 	onOutputEvent( outputEvent:OutputAudioEvent ):void{
 		const command:IAudioCommand = outputEvent.command
 		outputEvent.preventDefault()
 		this.dispatchEvent( outputEvent.clone() )
-		console.info( "IOChain:onOutputEvent", {command, outputEvent} )	
+	}
+
+	/**
+	 * Outputs have been updated in the OutputManager
+	 * @param outputEvent 
+	 */
+	onOutputsUpdated( outputEvent:CustomEvent ):void{
+		outputEvent.preventDefault()
+		this.dispatchEvent( new CustomEvent( outputEvent.type ) )
 	}
 }

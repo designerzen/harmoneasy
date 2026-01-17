@@ -1,39 +1,11 @@
 import './assets/style/index.scss'
 
+// Polyfills : https://github.com/webrtc/adapter
+import adapter from 'webrtc-adapter'
+
 import { DEFAULT_OPTIONS } from './options.ts'
-
-import * as Commands from './commands.ts'
-import * as INTERVALS from './libs/audiobus/tuning/intervals.js'
-
-// TODO: refactor into Input / Output libs
-import {
-    sendBLENoteOn, sendBLENoteOff,
-    sendBLEControlChange, sendBLEProgramChange,
-    sendBLEPolyphonicAftertouch, sendBLEChannelAftertouch,
-    sendBLEPitchBend,
-    startBLECharacteristicStream,
-    sendBLEAllNoteOff
-} from './libs/midi-ble/midi-ble.ts'
-
-import { BLE_SERVICE_UUID_DEVICE_INFO, BLE_SERVICE_UUID_MIDI } from './libs/midi-ble/ble-constants.ts'
-
-import {
-    connectToBLEDevice, disconnectBLEDevice,
-    listCharacteristics, extractCharacteristics, extractMIDICharacteristic, watchCharacteristics,
-    describeDevice
-} from './libs/midi-ble/ble-connection.ts' // disconnectDevice may be used for cleanup
-
 import State from './libs/state.ts'
 
-import AudioBus from './audio.ts'
-import AudioEvent from './libs/audiobus/audio-event.ts'
-import AudioTimer from './libs/audiobus/timing/timer.audio.js'
-import MIDIDevice from './libs/audiobus/midi/midi-device.ts'
-import NoteModel from './libs/audiobus/note-model.ts'
-import RecorderAudioEvent from './libs/audiobus/recorder-audio-event.ts'
-
-import { createAudioCommand } from './libs/audiobus/audio-command-factory.ts'
-import { createReverbImpulseResponse } from './libs/audiobus/effects/reverb.ts'
 import { createAudioToolProjectFromAudioEventRecording } from './libs/audiotool/adapter-audiotool-audio-events-recording.ts'
 import { createMIDIFileFromAudioEventRecording, saveBlobToLocalFileSystem } from './libs/audiobus/midi/adapter-midi-file.ts'
 import { createMIDIMarkdownFromAudioEventRecording, saveMarkdownToLocalFileSystem } from './libs/audiobus/midi/adapter-midi-markdown.ts'
@@ -54,401 +26,53 @@ import SongVisualiser from './components/song-visualiser.ts'
 // Back End
 import OPFSStorage, { hasOPFS } from './libs/audiobus/storage/opfs-storage.ts'
 
+// Audio
+import * as Commands from './commands.ts'
+
+import AudioBus from './audio.ts'
+import AudioEvent from './libs/audiobus/audio-event.ts'
+import AudioTimer from './libs/audiobus/timing/timer.audio'
+import AudioEventRecorder from './libs/audiobus/audio-event-recorder.ts'
+
 // IAudioInputs
 import IOChain from './libs/audiobus/IO-chain.ts'
 import InputKeyboard from './libs/audiobus/inputs/input-keyboard.ts'
 import InputGamePad from './libs/audiobus/inputs/input-gamepad.ts'
 import InputWebMIDIDevice from './libs/audiobus/inputs/input-webmidi-device.ts'
-import InputOnScreenKeyboard, { ONSCREEN_KEYBOARD_INPUT_ID } from './libs/audiobus/inputs/input-onscreen-keyboard.ts'
+import InputOnScreenKeyboard, { ALL_KEYBOARD_NOTES, ONSCREEN_KEYBOARD_INPUT_ID } from './libs/audiobus/inputs/input-onscreen-keyboard.ts'
 import InputBLEMIDIDevice from './libs/audiobus/inputs/input-ble-midi-device.ts'
 
 // IAudioOutputs 
 import SynthOscillator from './libs/audiobus/instruments/synth-oscillator.ts'
 import PolySynth from './libs/audiobus/instruments/poly-synth.ts'
+
 import OutputConsole from './libs/audiobus/outputs/output-console.ts'
 import OutputBLEMIDIDevice from './libs/audiobus/outputs/output-ble-midi-device.ts'
-
-import jzz from 'jzz'
-import { Output, WebMidi } from 'webmidi'
+import OutputWebMIDIDevice from './libs/audiobus/outputs/output-webmidi-device.ts'
+import OutputOnScreenKeyboard from './libs/audiobus/outputs/output-onscreen-keyboard.ts'
+import OutputSpectrumAnalyser from './libs/audiobus/outputs/output-spectrum-analyser.ts'
 
 import type { IAudioCommand } from './libs/audiobus/audio-command-interface.ts'
+import type { IAudioOutput } from './libs/audiobus/outputs/output-interface.ts'
 import type InputAudioEvent from './libs/audiobus/inputs/input-audio-event.ts'
-
-// import { AudioContext, BiquadFilterNode } from "standardized-audio-context"
-const ALL_MIDI_CHANNELS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
-
-// All connected MIDI Devices
-const MIDIDevices: MIDIDevice[] = []
+import type AbstractInput from './libs/audiobus/inputs/abstract-input.ts'
+import InputMicrophoneFormant from './libs/audiobus/inputs/input-microphone-formant.ts'
+import OutputNotation from './libs/audiobus/outputs/output-notation.ts'
 
 const storage = hasOPFS() ? new OPFSStorage() : null
-const recorder: RecorderAudioEvent = new RecorderAudioEvent()
-
-// internals
+const recorder: AudioEventRecorder = new AudioEventRecorder()
+const chains: IOChain[] = []
 let timer: AudioTimer = null
-let chain: IOChain
 let bus: AudioBus
 let state: State
-
-// visuals
 let ui: UI
 let songVisualiser: SongVisualiser | null = null
-
-// BLE devices and characteristics
-// TODO: Move into a MIDIDevice wrapper to allow for multiple
-// MIDI devices simultaneously
-let bluetoothMIDICharacteristic: BluetoothRemoteGATTCharacteristic
-let bluetoothDevice: BluetoothDevice | null
-let bluetoothWatchUnsubscribes: Array<() => Promise<void>> = []
-let bluetoothPacketQueue: Array<number> | undefined = []
-
-let webMIDIEnabled: boolean = false
-let selectedMIDIChannel: number = 1  // User-selected MIDI output channel (1-16)
-
-// this is just a buffer for the onscreen keyboard
-let onscreenKeyboardMIDIDevice: MIDIDevice
-
-
-// For onscreen interactive keyboard
-const keyboardKeys = (new Array(128)).fill("")
-// Full keyboard with all notes including those we do not want the user to play
-const ALL_KEYBOARD_NOTES = keyboardKeys.map((keyboardKeys, index) => new NoteModel(index))
-// Grab a good sounding part (not too bassy, not too trebly)
-// const KEYBOARD_NOTES = ALL_KEYBOARD_NOTES.slice(41, 94)
-
-
-
-// Musical Commands =========================================================
-
-/**
- * Update the front end with this note data
- * 
- * Called from Audio Input Devices and on screen keyboard and 
- * other augmented devices such as the qwerty keyboard
- * @param noteModel The Note
- * @param velocity How powerfully the note was hit
- * @param fromDevice Dpecify an id for which device created it
- */
-const noteOn = (noteModel: NoteModel, velocity: number = 1, fromDevice: string = ONSCREEN_KEYBOARD_INPUT_ID) => {
-    const now = timer.now
-
-    //console.info("Key pressed - send out MIDI", e )
-    // ui.noteOn(noteModel)
-
-    // Add note to song visualiser in realtime
-    if (songVisualiser) {
-        songVisualiser.noteOn(noteModel.noteNumber, velocity)
-    }
-
-    //onscreenKeyboardMIDIDevice.noteOn(noteModel, now)
-
-    if (MIDIDevice.length > 0) {
-        sendMIDIActionToAllDevices(fromDevice, noteModel, Commands.NOTE_ON, 1)
-    }
-
-    // FIXME: Move this into its own device
-    if (bluetoothMIDICharacteristic) {
-        // Send actual note from keyboard to BLE MIDI device
-        sendBLENoteOn(bluetoothMIDICharacteristic, selectedMIDIChannel, noteModel.noteNumber, 127, bluetoothPacketQueue)
-            .then(result => {
-                console.log('Sent MIDI NOTE ON to BLE device!', { note: noteModel.noteNumber, channel: selectedMIDIChannel, result })
-            })
-            .catch(err => {
-                console.error('Failed to send MIDI NOTE ON to BLE device!', {
-                    note: noteModel.noteNumber,
-                    channel: selectedMIDIChannel,
-                    error: err && err.message ? err.message : String(err),
-                    device: bluetoothMIDICharacteristic
-                })
-            })
-    }
-}
-
-/**
- * Visually end a playing Note
- * @param noteModel 
- * @param velocity 
- * @param fromDevice 
- */
-export const noteOff = (noteModel: NoteModel, velocity: number = 1, fromDevice: string = ONSCREEN_KEYBOARD_INPUT_ID) => {
-    const now = timer.now
-    // ui.noteOff(noteModel)
-
-    // Remove note from song visualiser in realtime
-    if (songVisualiser) {
-        songVisualiser.noteOff(noteModel.noteNumber)
-    }
-
-    //onscreenKeyboardMIDIDevice.noteOff(noteModel, now)
-    if (chain) {
-        //console.log("Note OFF", noteModel, velocity, {now} )
-        chain.outputManager.noteOff(noteModel)
-    }
-
-    if (MIDIDevice.length > 0) {
-        sendMIDIActionToAllDevices(fromDevice, noteModel, Commands.NOTE_OFF, 1)
-    }
-
-    if (bluetoothMIDICharacteristic) {
-        // Send actual note from keyboard to BLE MIDI device
-        sendBLENoteOff(bluetoothMIDICharacteristic, selectedMIDIChannel, noteModel.noteNumber, 0, bluetoothPacketQueue)
-            .then(result => {
-                console.log('Sent MIDI NOTE OFF to BLE device!', { note: noteModel.noteNumber, channel: selectedMIDIChannel, result })
-            })
-            .catch(err => {
-                console.error('Failed to send MIDI NOTE OFF to BLE device!', {
-                    note: noteModel.noteNumber,
-                    channel: selectedMIDIChannel,
-                    error: err && err.message ? err.message : String(err),
-                    device: bluetoothMIDICharacteristic
-                })
-            })
-    }
-}
-
-/**
- * Kill Switch - Send note off for all possible MIDI notes (0-127)
- * This cleans up any stuck notes and simulates an "All Notes Off" command
- */
-export const allNotesOff = async () => {
-
-    // Clear the audio command queue of pending note commands
-	chain.clearNoteCommands()
-
-    // Turn off all actively tracked notes in all MIDI devices
-    MIDIDevices.forEach(device => {
-        // Clear active notes from the device's tracking
-        device.activeNotes.forEach((noteEvent: NoteModel) => {
-            const now = timer.now
-            device.noteOff(noteEvent, now)
-        })
-        // Also clear any scheduled commands
-        device.requestedCommands.clear()
-    })
-
-    // Send note off for all 128 MIDI notes to BLE device
-    if (bluetoothMIDICharacteristic) {
-        try {
-            await sendBLEAllNoteOff(bluetoothMIDICharacteristic, selectedMIDIChannel, 123, 0, bluetoothPacketQueue)
-            console.log('Sent CC#123 (All Notes Off) to BLE device')
-        } catch (err) {
-            console.error('Failed to send CC#123 to BLE device:', err)
-        }
-    }
-
-	// TODO: implement
-	// chain.allNotesOff()
-    ui.allNotesOff()
-    console.log("KILL SWITCH: Complete")
-}
-
-// MIDI =========================================================
-
-/**
- * Connect to ALL MIDI Devices currently connected
- */
-const connectToMIDIDevice = (connectedMIDIDevice, index: number) => {
-    const device = new MIDIDevice(`${connectedMIDIDevice.manufacturer} ${connectedMIDIDevice.name}`)
-
-    connectedMIDIDevice.addListener("noteon", event => onMIDIEvent(event, device, connectedMIDIDevice, index), { channels: ALL_MIDI_CHANNELS })
-    connectedMIDIDevice.addListener("noteoff", event => onMIDIEvent(event, device, connectedMIDIDevice, index), { channels: ALL_MIDI_CHANNELS })
-    connectedMIDIDevice.addListener("controlchange", event => onMIDIEvent(event, device, connectedMIDIDevice, index), { channels: ALL_MIDI_CHANNELS })
-    // todo: PITCHBEND AND AFTERTOUCH
-
-    ui.addDevice(connectedMIDIDevice, index)
-    console.info("connectToMIDIDevices", { device, connectedMIDIDevice, index })
-    return device
-}
-
-// Bluetooth MIDI =========================================================
-
-/**
- * Disconnect BLE device and clean up
- */
-const disconnectBluetoothDevice = async () => {
-    console.info('[BLE] Disconnecting from device...', { device: bluetoothDevice?.name })
-
-    // Unsubscribe from all characteristic watches
-    for (const unsub of bluetoothWatchUnsubscribes) {
-        try {
-            await unsub()
-        } catch (err: any) {
-            console.warn('[BLE] Error unsubscribing from characteristic:', err)
-        }
-    }
-
-    // Disconnect the GATT server
-    if (bluetoothDevice) {
-        disconnectBLEDevice(bluetoothDevice)
-    }
-
-    // Clear references
-    bluetoothWatchUnsubscribes = []
-    bluetoothMIDICharacteristic = undefined as any
-    bluetoothDevice = null
-
-    // Update UI
-    ui.showBluetoothStatus('✓ Disconnected from device')
-    ui.whenBluetoothDeviceRequestedRun(connectBluetoothDevice)
-}
-
-/**
- * Connect to BLE device and set up MIDI
- */
-const connectBluetoothDevice = async () => {
-    try {
-
-        ui.showBluetoothStatus('Opening device chooser...')
-
-        const result = await connectToBLEDevice()
-        console.info('BLE Connection Result', result)
-
-        // Check to see if everything is ok
-        if (!result || !result.characteristic) {
-            // Failure to locate BLE Midi capability
-            throw Error('No BLE MIDI characteristic found on device')
-        }
-
-        // find all characteristics...
-        // const characteristics = extractCharacteristics( result.capabilities )
-        // const midiCharacteristic:BluetoothRemoteGATTCharacteristic|undefined = extractMIDICharacteristic(characteristics)
-
-        // use only MIDI capable characteristic
-        bluetoothMIDICharacteristic = result.characteristic
-        bluetoothDevice = result.device
-
-        // pass this into the BLE packet sending
-        startBLECharacteristicStream(bluetoothMIDICharacteristic, 10, bluetoothPacketQueue)
-
-        // ui.addBluetoothDevice( bluetoothDevice, result.capabilities)
-        ui.showBluetoothStatus(`✓ Connecting to ${bluetoothDevice.name || 'Unknown Device'}`)
-
-        console.warn('MIDI Device was located using BLE', {
-            characteristic: bluetoothMIDICharacteristic,
-            uuid: bluetoothMIDICharacteristic.uuid,
-            writable: bluetoothMIDICharacteristic.properties?.write || bluetoothMIDICharacteristic.properties?.writeWithoutResponse,
-            properties: bluetoothMIDICharacteristic.properties
-        })
-
-        // const availableMIDIBluetoothCharacteristics = characteristics
-        const availableMIDIBluetoothCharacteristics = [bluetoothMIDICharacteristic]
-
-        // console.log("Extracted capabilities from capabilities", characteristics )
-
-        // monitor all characteristics for incoming data (inc. MIDI)
-        const unsubs = await watchCharacteristics(availableMIDIBluetoothCharacteristics, (capability, value) => {
-            // capability: CapabilityCharacteristic, value: DataView
-            const data = new Uint8Array(value.buffer)
-            console.log('Characteristic data received', { capability, data, value })
-            // check to see if it is MIDI data!
-            switch (capability.uuid) {
-                case BLE_SERVICE_UUID_MIDI:
-                    // MIDI Data received over BLE!
-                    // parse MIDI data
-                    const midiData = jzz.MIDI(data)
-
-                    console.log('MIDI Data received over BLE', { data, midiData })
-                    break
-
-                default:
-                    console.log('Non-MIDI Data received over BLE', data)
-            }
-        })
-
-        // Store device reference for later disconnect
-        bluetoothWatchUnsubscribes = unsubs
-
-        console.info("Bluetooth Device connected", { result }, describeDevice(bluetoothDevice))
-
-        ui.showBluetoothStatus(`✓ Connected to ${bluetoothDevice.name || 'Unknown Device'}`)
-        // Change button to disconnect mode
-        ui.whenBluetoothDeviceRequested(disconnectBluetoothDevice)
-
-        ui.setBLEManualInputVisible(true)
-
-    } catch (error: any) {
-
-        ui.showBluetoothStatus(`✗ BLE Error: ${error.message || 'Failed to connect'}`)
-        ui.showError(`Bluetooth connection could not be established: ${error.message || 'Failed to connect'}`)
-        console.error("`Bluetooth connection could not be established", error)
-    }
-}
-
-const toggleBluetoothDevice = async () => {
-    if (!bluetoothDevice) {
-        await connectBluetoothDevice()
-    } else {
-        await disconnectBluetoothDevice()
-    }
-}
-
-// WebMIDI =========================================================
-
-/**
- * Turn on MIDI connection
- */
-const enableMIDI = async () => {
-    try {
-        await WebMidi.enable()
-        webMIDIEnabled = true
-        ui.setWebMIDIButtonText('Disable WebMIDI')
-        onMIDIDevicesAvailable(undefined as any)
-    } catch (err: any) {
-        // onUltimateFailure(err)
-        ui.showError(`WebMIDI could not be established: ${err.message || 'Failed to connect'}`)
-    }
-}
-
-/**
- * Turn off MIDI connection
- */
-const disableMIDI = async () => {
-    try {
-        await WebMidi.disable()
-        webMIDIEnabled = false
-        ui.setWebMIDIButtonText('Enable WebMIDI')
-        // clear any connected MIDIDevices
-        MIDIDevices.length = 0
-        ui.inputs.innerHTML = ''
-        ui.outputs.innerHTML = ''
-    } catch (err: any) {
-        ui.showError(`WebMIDI connection would not disconnect: ${err.message || 'Failed to connect'}`)
-    }
-}
-
-/**
- *  WebMIDI will be enabled/disabled with the UI toggle button
- *  also now monitor for MIDI inputs...
- */
-const toggleWebMIDI = async () => {
-    if (!webMIDIEnabled) {
-        await enableMIDI()
-    } else {
-        await disableMIDI()
-    }
-}
-
-/**
- * 
- * @param fromDevice 
- * @param noteModel 
- * @param action 
- * @param velocity 
- */
-const sendMIDIActionToAllDevices = (fromDevice: String, noteModel: NoteModel, action: string = Commands.NOTE_ON, velocity: number = 127) => {
-    MIDIDevices.forEach(device => {
-        if (device.id !== fromDevice) {
-            device[action](noteModel, timer.now, velocity)
-        }
-    })
-}
-
 
 /**
  * Universal import handler - routes to appropriate importer based on file type
  */
 const importFile = async (file: File): Promise<{ commands: IAudioCommand[], noteCount: number }> => {
 	const fileName = file.name.toLowerCase()
-	// Determine file type and route to appropriate importer
 	if (fileName.endsWith('.mid') || fileName.endsWith('.midi') || file.type.includes('midi')) {
 		return importMIDIFile(file)
 	} else if (fileName.endsWith('.musicxml') || fileName.endsWith('.xml')) {
@@ -465,36 +89,110 @@ const importFile = async (file: File): Promise<{ commands: IAudioCommand[], note
  * through a transformerManager into an OutputManager
  * @returns 
  */
-const createInputChain = (outputMixer:GainNode) => {
+const createInputOutputChain = async (outputMixer:GainNode, inputDevices:AbstractInput[]=[], outputDevices:IAudioOutput[]=[], autoConnect:boolean=false ) => {
 	
+	const chain = new IOChain( timer )
+
+	const options = {
+		now: () => timer.now
+	}
+
 	// Create our desired inputs
-	const inputKeyboard = new InputKeyboard()
-	const inputGamePad = new InputGamePad()
-	const inputWebMIDIDevice = new InputWebMIDIDevice()
-	const inputSVGKeyboard = new InputOnScreenKeyboard()
-	const inputBluetooth = new InputBLEMIDIDevice()
+	const inputKeyboard = new InputKeyboard(options)
+	// FIXME: make MIDI and Gamepad devices work independently as Inputs
+	// by ensuring that the connection and disconnection events are monitored
+	const inputGamePad = new InputGamePad(options)
+	const inputSVGKeyboard = new InputOnScreenKeyboard(options)
 
-	const inputs = [inputBluetooth, inputKeyboard, inputGamePad, inputWebMIDIDevice, inputSVGKeyboard]
+	const inputs:AbstractInput[] = [ inputKeyboard, inputGamePad, inputSVGKeyboard, ...inputDevices]
 
-	const chain = new IOChain()
-	chain.addInputs(inputs)
+	// These 3 inputs require special setup - require user click
+	if (navigator.mediaDevices && navigator.mediaDevices?.getUserMedia){
+		const inputMicrophone = new InputMicrophoneFormant(options)
+		if (autoConnect)
+		{
+			try{
+				await inputMicrophone.connect()
+			}catch(error){
+				console.error('Bluetooth MIDI input failed to connect', error)
+			}			
+		}
+		inputs.push(inputMicrophone)
+	}
 	
+	// check to see if web bluetooth is available in this browser
+	if (navigator.bluetooth) {
+		const inputBluetooth = new InputBLEMIDIDevice(options)
+		if (autoConnect)
+		{
+			try{
+				await inputBluetooth.connect()
+			}catch(error){
+				console.error('Bluetooth MIDI input failed to connect', error)
+			}			
+		}
+		inputs.push( inputBluetooth )
+	}
+	
+	// Connect to WebMIDI using options specified
+	// check to see if webMIDI is available in this browser
+	if (navigator.requestMIDIAccess) {
+		const inputWebMIDIDevice = new InputWebMIDIDevice(options)
+		if (autoConnect)
+		{
+			try{
+				await inputWebMIDIDevice.connect()
+			}catch(error){
+				console.error('WebMIDI input failed to connect', error)
+			}			
+		}
+		inputs.push(inputWebMIDIDevice)
+	}
+	
+	// Outputs ------------------------------------------------
+	const outputOnscreenKeyboard = new OutputOnScreenKeyboard(inputSVGKeyboard.keyboard)
+	const outputs:IAudioOutput[] = [ outputOnscreenKeyboard, ...outputDevices ]
+	
+	// const outputSongVisualiser = new SongVisualiser()
+	// outputs.push( outputSongVisualiser )
+
 	// Now add our Outputs - these can be as simple
 	// as a WebAudio AudioDestinationNode or a WebMIDI channel
 	// but can also be hyper complex or none-audible such as vibrator
-    const synthesizer = new PolySynth(bus.audioContext)
+	// or loaded mfrom an external source such as a WAM
+    const musicalOutput = new PolySynth(bus.audioContext)
     // synthesizer = new SynthOscillator( audioContext )
-    synthesizer.output.connect(outputMixer)
     // synthesizer.addTremolo(0.5)
+	musicalOutput.output.connect(outputMixer)
+    outputs.push( musicalOutput )
 
-	// create our Bluetooth connector too?
+	// create our Bluetooth Output if possible
+	if (navigator.bluetooth) {
+		const outputBluetooth = new OutputBLEMIDIDevice()
+		outputs.push( outputBluetooth )
+	}
 
-	// add our outputs
-	chain.addOutputs( [ 
-		new OutputConsole(), 
-		synthesizer
-	] )
-	
+	// add our MIDI Output too
+	if (navigator.requestMIDIAccess) {
+		const outputWebMIDIDevice = new OutputWebMIDIDevice()
+		outputs.push( outputWebMIDIDevice )
+	}
+
+	// In DEV mode (never in PROD - log all events to console)
+	if (import.meta.env.DEV){
+		outputs.push( new OutputConsole() )
+	}
+
+	// Add spectrum analyser for realtime visualization
+	// right at the very end
+	const outputSpectrumAnalyser = new OutputSpectrumAnalyser(outputMixer)
+	outputs.push(outputSpectrumAnalyser)
+
+	const outputNotation = new OutputNotation()
+	outputs.push(outputNotation)
+
+	chain.addInputs(inputs)
+	chain.addOutputs(outputs)
 	return chain
 }
 
@@ -502,12 +200,30 @@ const createInputChain = (outputMixer:GainNode) => {
  * Create the UI and front end
  * TODO: Condense and optimise
  */
-const initialiseFrontEnd = async (mixer: GainNode) => {
+const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number=100 ) => {
 
-	const initialVolume:number = mixer.gain.value * 200
+	// const keyboard:SVGKeyboard = new SVGKeyboard(ALL_KEYBOARD_NOTES, onNoteOn, onNoteOff)
+    const frontEnd = new UI( ALL_KEYBOARD_NOTES )
+    frontEnd.setTempo( timer.BPM )
+	frontEnd.setVolume( initialVolumePercent )
+	// frontEnd.setUIKeyboard( keyboard )
 
-    const frontEnd = new UI(ALL_KEYBOARD_NOTES, onNoteOnRequestedFromDevice, onNoteOffRequestedFromDevice)
-    frontEnd.setTempo(timer.BPM)
+	// Panic button  - kill all playing notes
+    frontEnd.whenKillSwitchRequestedRun(async () => {
+        console.info('[Kill Switch] All notes off requested')
+		chains.forEach( chain => {
+            chain.allNotesOff()
+		})
+    })
+
+	// Reset Recorder - kill all played notes
+    frontEnd.whenResetRequestedRun(async () => {
+		recorder.clear()
+        timer.resetTimer()
+        if (songVisualiser) {
+            songVisualiser.reset()
+        }
+    })
 	
 	// FIXME: Random timbre button
     // ui.whenRandomTimbreRequestedRun(e => synthesizer.setRandomTimbre())
@@ -520,33 +236,6 @@ const initialiseFrontEnd = async (mixer: GainNode) => {
 		mixer.gain.value = (volume / 100) * 0.5
  		state.set('volume', volume)
 	})
-	frontEnd.setVolume( initialVolume )
-
-    // ui.whenBluetoothDeviceRequestedRun(connectBluetoothDevice)
-	frontEnd.whenBluetoothDeviceRequestedRun(async () => {
-		if (!inputBLEMIDI.isConnected) {
-			await inputBLEMIDI.connect()
-			frontEnd.showBluetoothStatus(`✓ Connected to ${inputBLEMIDI.device?.name}`)
-			frontEnd.whenBluetoothDeviceRequested(() => inputBLEMIDI.disconnect())
-		} else {
-			await inputBLEMIDI.disconnect()
-			frontEnd.showBluetoothStatus('✓ Disconnected from device')
-			frontEnd.whenBluetoothDeviceRequestedRun(() => inputBLEMIDI.connect())
-		}
-	})
-
-
-
-    frontEnd.whenWebMIDIToggledRun(toggleWebMIDI)
-    frontEnd.whenMIDIChannelSelectedRun((channel: number) => {
-        selectedMIDIChannel = channel
-        console.log(`[MIDI Channel] Selected channel ${channel}`)
-    })
-
-    frontEnd.whenExportMenuRequestedRun(() => {
-        console.info("Export menu opened")
-    })
- 
     frontEnd.whenMIDIFileExportRequestedRun(async () => {
         const blob = await createMIDIFileFromAudioEventRecording(recorder, timer)
         saveBlobToLocalFileSystem(blob, recorder.name)
@@ -599,17 +288,18 @@ const initialiseFrontEnd = async (mixer: GainNode) => {
             frontEnd.showInfoDialog("Error", "Failed to render VexFlow score. Check console for details.")
         }
     })
+
+	// Import file from device and interpret
 	frontEnd.whenFileImportRequestedRun(async (file: File) => {
         try {
             const fileType = file.name.split('.').pop()?.toUpperCase() || 'file'
             frontEnd.showExportOverlay(`Loading ${fileType} file...`)
             console.info(`Loading ${fileType} file from import:`, file.name)
-            
             const { commands, noteCount } = await importFile(file)
-            chain.addCommandToFuture(commands, timer, true)
-            
+            chains[0].addCommandToFuture(commands, timer, true)
             console.info(`${fileType} file loaded successfully:`, file.name, { commands, noteCount })
-            frontEnd.showInfoDialog("File Loaded", `Successfully loaded ${file.name} with ${noteCount} notes`)
+            // FIXME: This needs to alter depending on the type of file imported
+			frontEnd.showInfoDialog("File Loaded", `Successfully loaded ${file.name} with ${noteCount} notes`)
         } catch (error) {
             console.error("Error loading file from import:", error)
             frontEnd.showError("Failed to load file", error instanceof Error ? error.message : String(error))
@@ -617,13 +307,14 @@ const initialiseFrontEnd = async (mixer: GainNode) => {
             frontEnd.hideExportOverlay()
         }
     })
+
     frontEnd.whenMIDIFileDroppedRun(async (file: File) => {
         try {
             const fileType = file.name.split('.').pop()?.toUpperCase() || 'file'
             frontEnd.showExportOverlay(`Found ${fileType} File`)
             console.info(`Loading ${fileType} file from drop:`, file.name)
 			const { commands, noteCount } = await importFile(file)
-			chain.addCommandToFuture(commands, timer, true)
+			chains[0].addCommandToFuture(commands, timer, true)
            
         } catch (error) {
             console.error("Error loading file from drop:", error)
@@ -632,7 +323,12 @@ const initialiseFrontEnd = async (mixer: GainNode) => {
 			frontEnd.hideExportOverlay()
 		}
     })
-    frontEnd.whenAudioToolExportRequestedRun(async () => {
+
+	// Exports --------------------------------------------------
+    frontEnd.whenExportMenuRequestedRun(() => {
+        console.info("Export menu opened")
+    })
+	frontEnd.whenAudioToolExportRequestedRun(async () => {
         const output = await createAudioToolProjectFromAudioEventRecording(recorder, timer)
         console.info("Exporting Data to AudioTool", { recorder, output })
         frontEnd.setExportOverlayText("Open this project in AudioTool")
@@ -650,27 +346,9 @@ const initialiseFrontEnd = async (mixer: GainNode) => {
         await saveDawProjectToLocalFileSystem(blob, filename)
         console.info("Exporting Data to .dawProject", { recorder, blob })
     })
-    frontEnd.whenKillSwitchRequestedRun(async () => {
-        console.info('[Kill Switch] All notes off requested')
-        await allNotesOff()
-    })
-
-    frontEnd.whenUserRequestsManualBLECodesRun((rawString: string) => {
-        /* parse rawString into numbers and create Uint8Array, then send to BLE */
-        // sendBLECommand(rawString)   
-        console.info("BLE MANUAL SEND", rawString)
-    })
-
-    frontEnd.whenResetRequestedRun(async () => {
-		recorder.clear()
-        timer.resetTimer()
-        if (songVisualiser) {
-            songVisualiser.reset()
-        }
-    })
 
 	// TODO: Global scale?
-    // ui.whenNewScaleIsSelected( (scaleNName:string, select:HTMLElement ) => {
+    // frontEnd.whenNewScaleIsSelected( (scaleNName:string, select:HTMLElement ) => {
     //     console.log("New scale selected:", scaleNName)
     //     // state.set( scaleNName, true )
 
@@ -680,21 +358,25 @@ const initialiseFrontEnd = async (mixer: GainNode) => {
     //     intervalFormula = INTERVALS.MODAL_SCALES[TUNING_MODE_NAMES.indexOf(scaleNName) ]
     // })
 
-    // ui.whenNoteVisualiserDoubleClickedRun(() => {
+    // frontEnd.whenNoteVisualiserDoubleClickedRun(() => {
     //     synthesizer.setRandomTimbre()
     // })
 
-    await frontEnd.addSongVisualser(recorder.exportData())
+    frontEnd.addSongVisualser(recorder.exportData()).then( e=>{
+		console.log("Song visualiser added", e)
+	})
 
 	return frontEnd
 }
 
 /**
- * Connect the parts of our application
+ * Connect the parts of our application and watches for
+ * any events to alter behaviour
+ * 
  * @param onEveryTimingTick 
  * @returns 
  */
-const initialiseApplication = async (onEveryTimingTick) => {
+const initialiseApplication = async ( onEveryTimingTick:Function, autoConnect:boolean=false ) => {
 
     // STATE MANAGEMENT -------------------------------
     // Get state from session and URL & update GUI
@@ -708,8 +390,11 @@ const initialiseApplication = async (onEveryTimingTick) => {
     state.loadFromLocation(DEFAULT_OPTIONS)
     state.updateLocation()
 
+	// Volume initialization (needed before UI setup)
+	const initialVolumePercent:number = parseFloat( state.get('volume') ?? 100 )
+	const initialVolume:number = initialVolumePercent * 0.75 // 0.5 is default
+
 	// AUDIO ----------------------------------------------	
-	const initialVolume:number = parseFloat( state.get('volume') ?? 100 ) / 50 // 0.5 is default
 	bus = new AudioBus()
 	bus.initialise( initialVolume )
 
@@ -718,15 +403,16 @@ const initialiseApplication = async (onEveryTimingTick) => {
     timer = new AudioTimer( bus.audioContext )
    
 	// UI ----------------------------------------------
-	ui = await initialiseFrontEnd( bus.mixer )
+	ui = await initialiseFrontEnd( bus.mixer, initialVolumePercent )
 	 
 	// IO ----------------------------------------------
 
-	// TODO: Create one chain per user chain
 	const abortController = new AbortController()
-	chain = createInputChain( bus.mixer )
-	// add UI feedback where Inputs affect Outputs
-	chain.addOutput( ui )
+	
+	const chain = await createInputOutputChain( bus.mixer, [], [ui], autoConnect )
+	const keyboardInput:InputOnScreenKeyboard = chain.getInput( ONSCREEN_KEYBOARD_INPUT_ID ) as InputOnScreenKeyboard
+	
+	ui.setUIKeyboard( keyboardInput.keyboard )
 
 	// FIXME: This should only occur later
 	// listen to the events dispatched from the manager
@@ -734,38 +420,31 @@ const initialiseApplication = async (onEveryTimingTick) => {
 	chain.addEventListener(Commands.INPUT_EVENT, (event:InputAudioEvent) => {
 		
 		const command = event.command
-		console.info( "Index:Chain updated",  command.type, Commands.INPUT_EVENT, command )
-		
+		//console.info( "Index:Chain updated",  command.type, Commands.INPUT_EVENT, command )
 		switch ( command.type ) {
 			 case Commands.PLAYBACK_TOGGLE:
-                timer.toggleTimer()
-                ui.setPlaying(timer.isRunning)
+               ui.setPlaying(timer.isRunning)
                 break
 
             case Commands.PLAYBACK_START:
-                timer.startTimer()
                 ui.setPlaying(timer.isRunning)
                 break
 
             case Commands.PLAYBACK_STOP:
-                timer.stopTimer()
                 ui.setPlaying(timer.isRunning)
                 break
 
             case Commands.TEMPO_TAP:
-                timer.tapTempo()
-                ui.setTempo(timer.BPM)
+                 ui.setTempo(timer.BPM)
                 state.set('tempo', timer.BPM)
                 break
 
             case Commands.TEMPO_INCREASE:
-                timer.BPM++
                 ui.setTempo(timer.BPM)
                 state.set('tempo', timer.BPM)
                 break
 
             case Commands.TEMPO_DECREASE:
-                timer.BPM--
                 ui.setTempo(timer.BPM)
                 state.set('tempo', timer.BPM)
                 break
@@ -774,21 +453,28 @@ const initialiseApplication = async (onEveryTimingTick) => {
                 break
 
             case Commands.NOTE_ON:
-                onNoteOnRequestedFromDevice(new NoteModel(command.value), command.from )
+				if (!chain.isQuantised)
+				{
+					timer.retrigger()
+				}
                 break
 
             case Commands.NOTE_OFF:
-                onNoteOffRequestedFromDevice(new NoteModel(command.value), command.from )
+				if (!chain.isQuantised)
+				{
+					timer.retrigger()
+				}
                 break
 		}
 
 	}, { signal: abortController.signal })
 
+	chains.push(chain)
 
 	// expose to global
-	// NB. this will only ever work with ONE chain :(
+	// FIXME: this will only ever work with ONE chain :(
 	window.chain = chain
-    createGraph('#graph')
+    createGraph('graph')
 
     // start the clock going
 	const tempo = parseFloat( state.get('tempo') ?? 99 )
@@ -799,107 +485,6 @@ const initialiseApplication = async (onEveryTimingTick) => {
     state.updateFrontEnd()
 
     return state
-}
-
-// EVENTS ------------------------------------------------------------------------
-
-const transformCommand = (noteModel: NoteModel, commandType:string=Commands.NOTE_ON, fromDevice: string = ONSCREEN_KEYBOARD_INPUT_ID) => {
-	const audioCommand: IAudioCommand = createAudioCommand(commandType, noteModel.noteNumber, timer.now, fromDevice)
-    chain.transformerManager.transform([audioCommand], timer)
-        .then((transformedAudioCommands: IAudioCommand[]) => {
-            chain.addCommands(transformedAudioCommands)
-        })
-        .catch((error) => {
-            console.error('Transform failed:', error)
-            chain.addCommand(audioCommand)
-        })
-}
-
-/**
- * EVEMT: Note On requested from input device
- * @param noteModel
- */
-const onNoteOnRequestedFromDevice = (noteModel: NoteModel, fromDevice: string = ONSCREEN_KEYBOARD_INPUT_ID) => {
-	transformCommand(noteModel, Commands.NOTE_ON, fromDevice)
-}
-
-/**
- * EVENT : Note Off requested from input device
- * @param noteModel:NoteModel
- */
-const onNoteOffRequestedFromDevice = (noteModel: NoteModel, fromDevice: string = ONSCREEN_KEYBOARD_INPUT_ID) => {
-   transformCommand(noteModel, Commands.NOTE_OFF, fromDevice)
-}
-
-/**
- * EVENT: 
- * MIDI IS available, let us check for MIDI devices connected
- * @param event 
- */
-const onMIDIDevicesAvailable = (event) => {
-    // Display available MIDI input devices
-    if (WebMidi.inputs.length < 1) {
-        ui.showError("No MIDI devices connected", "Connect a USB or MIDI instrument", false)
-    } else {
-        // save a link to all connected MIDI devices
-        WebMidi.inputs.forEach((device, index) => {
-            // Monitor inputs from the MIDI devices attached
-            const availableMIDIDevice = connectToMIDIDevice(device, index)
-            MIDIDevices.push(availableMIDIDevice)
-        })
-    }
-}
-
-/**
- * EVENT
- * MIDI Input received - delegate to classes
- * @param event 
- */
-const onMIDIEvent = (event, activeMIDIDevice, connectedMIDIDevice, index) => {
-    // Now test each "Requested Event" and facilitate
-    // loop through our queue of requested events...
-    // document.body.innerHTML+= `${event.note.name} <br>`
-    const note = event.note
-    const { number } = note
-    const deviceName = `${connectedMIDIDevice.manufacturer} ${connectedMIDIDevice.name}`
-
-    switch (event.type) {
-        case "noteon":
-            const alreadyPlaying = activeMIDIDevice.noteOn(note)
-            // ui.addCommand( command )
-            if (!alreadyPlaying) {
-                // Route through the transformation/scheduling pipeline
-                const noteModel = new NoteModel(number)
-                onNoteOnRequestedFromDevice(noteModel, deviceName)
-                console.info("MIDI NOTE ON Event!", alreadyPlaying, { note, event, activeMIDIDevice, connectedMIDIDevice, index })
-            } else {
-                console.info("IGNORE MIDI NOTE ON Event!", alreadyPlaying, { note, event, activeMIDIDevice, connectedMIDIDevice, index })
-            }
-
-            break
-
-        case "noteoff":
-            console.info("MIDI NOTE OFF Event!", { event, activeMIDIDevice, connectedMIDIDevice, index })
-            // Route through the transformation/scheduling pipeline
-            const noteModel = new NoteModel(number)
-            onNoteOffRequestedFromDevice(noteModel, deviceName)
-            activeMIDIDevice.noteOff(note)
-            break
-
-        case "controlchange":
-            console.info("MIDI CC Event!", {
-                controller: event.controller.number,
-                value: event.value,
-                rawValue: event.rawValue,
-                event,
-                activeMIDIDevice,
-                connectedMIDIDevice,
-                index
-            })
-            break
-
-        // TODO: Don't ignore stuff like pitch bend
-    }
 }
 
 /**
@@ -920,16 +505,24 @@ const onTick = (values:Record<string, any>) => {
 
 	const now = timer.now
 
-	// Always process the queue, with or without quantisation
-	const activeCommands:IAudioCommand[] = chain.updateTimeForCommandQueue( now, divisionsElapsed, state )
+	// Loop through all Chains and process events
+	chains.forEach( chain => {
+			
+		// Always process the queue, with or without quantisation
+		const activeCommands:IAudioCommand[] = chain.updateTimeForCommandQueue( now, divisionsElapsed, state )
 
-	// Act upon any command that has now been executed
-	if (activeCommands && activeCommands.length > 0)
-	{
-		const events:AudioEvent[] = IOChain.convertAudioCommandsToAudioEvents(activeCommands, now)
-		const allEvents = recorder.addEvents(events)
-		const triggers = chain.triggerAudioCommandsOnDevice(events)
-	}
+		// Act upon any command that has now been executed
+		if (activeCommands && activeCommands.length > 0)
+		{
+			const events:AudioEvent[] = IOChain.convertAudioCommandsToAudioEvents(activeCommands, now)
+			const allEvents = recorder.addEvents(events)
+			// send to Outputs!
+			const triggers = chain.triggerAudioCommandsOnDevice(events)
+			// console.info("onTick", {activeCommands, events, recorded:allEvents, triggers})
+		}else{
+			//console.info("onTick", {activeCommands})
+		}
+	})
 
 	// update the UI clock if possible
     ui.updateClock(values, recorder.quantity)
