@@ -45,6 +45,8 @@ jobs:
 
       - name: Build Electron app
         run: pnpm run build:electron
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: List build artifacts
         run: |
