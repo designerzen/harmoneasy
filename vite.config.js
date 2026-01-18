@@ -1,9 +1,15 @@
 import { defineConfig } from 'vite'
 
+const isElectron = process.env.VITE_ELECTRON === 'true'
+
 export default defineConfig({
-  base: process.env.NODE_ENV === 'production' ? '/harmoneasy/' : '/',
+  base: isElectron ? './' : (process.env.NODE_ENV === 'production' ? '/harmoneasy/' : '/'),
   server: {
     port: 5174 // Match the port Audiotool expects
+  },
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true
   },
   test: {
     globals: true,
