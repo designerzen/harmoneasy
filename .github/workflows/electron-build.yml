@@ -50,11 +50,9 @@ jobs:
 
       - name: List build artifacts
         run: |
-          if [ "${{ runner.os }}" == "Windows" ]; then
-            dir build/
-          else
-            ls -la build/
-          fi
+          echo "Looking for build artifacts..."
+          ls -la dist/ 2>/dev/null || echo "dist/ not found"
+          find . -maxdepth 2 -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.dmg" -o -name "*.zip" -o -name "*.AppImage" -o -name "*.deb" \) 2>/dev/null || echo "No artifacts found"
         shell: bash
 
       - name: Upload Windows artifacts
@@ -62,28 +60,24 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-build
-          path: |
-            build/*.exe
-            build/*.msi
-            build/*.nsis
+          path: dist
+          if-no-files-found: ignore
 
       - name: Upload macOS artifacts
         if: runner.os == 'macOS'
         uses: actions/upload-artifact@v4
         with:
           name: macos-build
-          path: |
-            build/*.dmg
-            build/*.zip
+          path: dist
+          if-no-files-found: ignore
 
       - name: Upload Linux artifacts
         if: runner.os == 'Linux'
         uses: actions/upload-artifact@v4
         with:
           name: linux-build
-          path: |
-            build/*.AppImage
-            build/*.deb
+          path: dist
+          if-no-files-found: ignore
 
   publish:
     needs: build
