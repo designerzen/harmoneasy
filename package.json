@@ -2,6 +2,8 @@
   "name": "harmoneasy",
   "private": true,
   "version": "0.0.8",
+  "description": "Web-based MIDI/audio application with Electron desktop support",
+  "author": "designerzen <radio@awesomething.co.uk>",
   "type": "module",
   "start": "./source/index.ts",
   "scripts": {
