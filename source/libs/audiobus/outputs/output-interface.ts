@@ -13,14 +13,16 @@ export interface IAudioOutput{
 	// optional
 	connect?():Promise<Function>|Function
 	disconnect?():Promise<void>|Function
+	createGui?():Promise<HTMLElement>
+	destroyGui?():Promise<void>
 
 	// has a button element and a method to call on click
 	// getControls():Object
 
-	// hasMidiOutput(): boolean
-	// hasAudioOutput(): boolean
-	// hasAutomationOutput(): boolean
-	// hasMpeOutput(): boolean
-	// hasOscOutput(): boolean
-	// hasSysexOutput(): boolean
+	hasMidiOutput?(): boolean
+	hasAudioOutput?(): boolean
+	hasAutomationOutput?(): boolean
+	hasMpeOutput?(): boolean
+	hasOscOutput?(): boolean
+	hasSysexOutput?(): boolean
 }

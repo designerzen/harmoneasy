@@ -3,7 +3,8 @@ export interface IAudioInput{
 	get uuid(): string
 	get name():string
 	get description():string
-
+	get isConnected():boolean
+	
 	// optional
 	connect?():Promise<Function>|Function
 	disconnect?():Promise<void>|Function
@@ -11,12 +12,12 @@ export interface IAudioInput{
 	destroyGui?():Promise<void>
 
 	// From the WAM spec
-	hasAudioInput():boolean
-	hasMidiInput():boolean
-	hasAutomationInput():boolean
-	hasMpeInput():boolean
-	hasOscInput():boolean
-	hasSysexInput():boolean
+	hasAudioInput?():boolean
+	hasMidiInput?():boolean
+	hasAutomationInput?():boolean
+	hasMpeInput?():boolean
+	hasOscInput?():boolean
+	hasSysexInput?():boolean
 }
 /**
  * 
