@@ -92,8 +92,6 @@ jobs:
     
     permissions:
       contents: write
-      pages: write
-      id-token: write
 
     steps:
       - uses: actions/checkout@v4
@@ -106,26 +104,15 @@ jobs:
       - name: Prepare release directory
         run: |
           mkdir -p releases
-          cp -r artifacts/*/* releases/ 2>/dev/null || true
-          ls -la releases/
-
-      - name: Upload to GitHub Pages
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: releases
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-        with:
-          artifact_name: github-pages
+          find artifacts -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.dmg" -o -name "*.zip" -o -name "*.AppImage" -o -name "*.deb" \) -exec cp {} releases/ \;
+          echo "Release files:"
+          ls -lah releases/
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: |
-            releases/**/*
+          files: releases/*
           draft: false
           prerelease: false
         env:
