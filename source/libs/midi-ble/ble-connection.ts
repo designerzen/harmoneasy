@@ -330,29 +330,46 @@ export async function connectToBLEDevice(options: BLERequestOptions = {}): Promi
 		filters:[{
 			services: [BLE_SERVICE_UUID_MIDI]
 		}],
-		optionalServices: [ BLE_SERVICE_UUID_MIDI, BLE_SERVICE_UUID_DEVICE_INFO ]
+		optionalServices: [ BLE_SERVICE_UUID_MIDI, BLE_SERVICE_UUID_DEVICE_INFO, '0000180a-0000-1000-8000-00805f9b34fb' ]
 	}, options)
 
 	try{
 		const { device, server } = await requestBLEConnection(options)
 		
-		// ensure this is midi capable
 		console.log( BLUETOOTH_LOG_PREFIX, "Connecting to BLE device", {options, device, server})
-		const service:BluetoothRemoteGATTService = await server.getPrimaryService(BLE_SERVICE_UUID_MIDI)
-		console.log( BLUETOOTH_LOG_PREFIX, "Fetching MIDI characteristic")
-		const characteristic:BluetoothRemoteGATTCharacteristic = await service.getCharacteristic(MIDI_CHARACTERISTIC_UUID)
-		console.log( BLUETOOTH_LOG_PREFIX, "Starting notifications on characteristic", {characteristic})
-		await characteristic.startNotifications()
-		console.log( BLUETOOTH_LOG_PREFIX, "Adding value change listener")
-		// Add value change listener
-      	characteristic.addEventListener(BLUETOOTH_STATE_CHARACTERISTIC_CHANGED, event => {
-			console.info( BLUETOOTH_LOG_PREFIX, "BLE device data", {event})
-		} )
-		// const capabilities = await getDeviceCapabilities(server)
 		
-		console.info( BLUETOOTH_LOG_PREFIX, "Connected to BLE device", {options,  device, server, service, characteristic})
+		// Use getDeviceCapabilities to discover services and characteristics
+		console.log( BLUETOOTH_LOG_PREFIX, "Querying device capabilities...")
+		const capabilities = await getDeviceCapabilities(server)
+		console.log( BLUETOOTH_LOG_PREFIX, "Device capabilities:", capabilities)
+		
+		// Extract all characteristics
+		const allCharacteristics = extractCharacteristics(capabilities)
+		console.log( BLUETOOTH_LOG_PREFIX, "Found characteristics:", allCharacteristics.map(c => c.uuid))
+		
+		// Try to find MIDI characteristic
+		let midiChar = extractMIDICharacteristic(allCharacteristics)
+		if (!midiChar && allCharacteristics.length > 0) {
+			console.warn( BLUETOOTH_LOG_PREFIX, "MIDI characteristic not found, using first available characteristic")
+			midiChar = allCharacteristics[0].characteristicRef
+		}
+		
+		if (!midiChar) {
+			throw new Error('No characteristics found on device')
+		}
+		
+		console.log( BLUETOOTH_LOG_PREFIX, "Starting notifications on characteristic", {uuid: midiChar.uuid})
+		await midiChar.startNotifications()
+		console.log( BLUETOOTH_LOG_PREFIX, "Adding value change listener")
+		
+		// Add value change listener
+      	midiChar.addEventListener(BLUETOOTH_STATE_CHARACTERISTIC_CHANGED, event => {
+			console.info( BLUETOOTH_LOG_PREFIX, "BLE device data", {event})
+		})
+		
+		console.info( BLUETOOTH_LOG_PREFIX, "Connected to BLE device", {device, server, characteristic: midiChar.uuid})
 
-		return { device, server, characteristic }		
+		return { device, server, characteristic: midiChar }		
 
 	}catch(error){
 		console.error( BLUETOOTH_LOG_PREFIX, "Error connecting to BLE device", error)
