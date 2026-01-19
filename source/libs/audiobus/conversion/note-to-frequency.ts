@@ -15,3 +15,11 @@ export const noteNumberToFrequency = (noteNumber:number, quantityOfNotes:number=
 	noteToFrequencyMap.set(noteNumber, frequency)
 	return frequency
 }
+
+
+/**
+ * Convert MIDI note number to frequency in Hz
+ */
+export const midiNoteToFrequency = (noteNumber: number): number => {
+	return 440 * (2 ** (noteNumber - 69) / 12)
+}
