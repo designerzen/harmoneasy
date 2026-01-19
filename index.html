@@ -17,8 +17,8 @@
 <body>
 
 	<dialog open closeby="any">
-		<a class="backlink" href="/">
-			<img class="logo float-left" src="/source/assets/logos/harmoneasy.svg" alt="">
+		<a class="backlink float-left" href="/">
+			<img class="logo" src="/source/assets/logos/harmoneasy.svg" alt="">
 		</a>
 		<h1 class="h2">Harmoneasy</h1>
 		<h2 class="h2">Putting the Unity in Community</h2>
@@ -196,28 +196,38 @@
 
 	<!-- Input Manager -->
 	<template id="add-input-overlay-template">
-		<!-- Shows a collection of buttons to allow selection -->
-		<menu>
+		<dialog closedby="any">
+			<header>
+				<h5>Add Input</h5>
+			</header>
+			<!-- Shows a collection of buttons to allow selection -->
+			<menu>
 
-		</menu>
-		<form method="dialog">
-			<button class="btn-close" type="submit" formmethod="dialog">
-				Close
-			</button>
-		</form>
+			</menu>
+			<form method="dialog">
+				<button class="btn-close" type="submit" formmethod="dialog">
+					Close
+				</button>
+			</form>
+		</dialog>
 	</template>
 
 	<!-- Output Manager -->
 	<template id="add-output-overlay-template">
-		<!-- Shows a collection of buttons to allow selection -->	
-		<menu>
-			
-		</menu>
-		<form method="dialog">
-			<button class="btn-close" type="submit" formmethod="dialog">
-				Close
-			</button>
-		</form>
+		<dialog closedby="any">
+			<header>
+				<h5>Add Output</h5>
+			</header>
+			<!-- Shows a collection of buttons to allow selection -->	
+			<menu>
+				
+			</menu>
+			<form method="dialog">
+				<button class="btn-close" type="submit" formmethod="dialog">
+					Close
+				</button>
+			</form>
+		</dialog>
 	</template>
 
 	<!-- Importer -->

@@ -27,7 +27,7 @@ export function OutputNode(props) {
 			if (gui)
 			{
 				gui.remove()
-				input.destroyGui()				
+				output.destroyGui()				
 			}
 		} 
 	}, [output])
