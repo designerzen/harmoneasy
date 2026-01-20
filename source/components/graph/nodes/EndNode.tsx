@@ -20,6 +20,7 @@ export function EndNode() {
 			id: factory.id,
 			label: factory.name,
 			description: factory.description,
+			icon: factory.icon,
 			onClick: async () => {
 				try {
 					const output = await createOutputById(factory.id)

@@ -1,0 +1,53 @@
+{
+  "extends": ["//"],
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": ["**/.env", "**/.env.local"],
+  "tasks": {
+    "build": {
+      "description": "Build production bundle",
+      "outputs": ["dist/**"],
+      "cache": true
+    },
+    "build:electron": {
+      "description": "Build and package Electron application",
+      "outputs": ["dist/**", "build/**"],
+      "cache": true,
+      "dependsOn": ["build"]
+    },
+    "dev": {
+      "description": "Start Vite dev server",
+      "cache": false,
+      "persistent": true
+    },
+    "dev:electron": {
+      "description": "Start Electron dev mode",
+      "cache": false,
+      "persistent": true,
+      "dependsOn": ["dev"]
+    },
+    "test": {
+      "description": "Run tests",
+      "outputs": ["coverage/**"],
+      "cache": true
+    },
+    "preview": {
+      "description": "Preview production build",
+      "cache": false,
+      "persistent": true,
+      "dependsOn": ["build"]
+    },
+    "build-native": {
+      "description": "Build native module",
+      "outputs": ["build/**"],
+      "cache": true
+    },
+    "lint": {
+      "description": "Run linter",
+      "cache": true
+    },
+    "type-check": {
+      "description": "Run TypeScript type checking",
+      "cache": true
+    }
+  }
+}
