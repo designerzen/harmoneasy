@@ -1,7 +1,7 @@
 {
   "name": "harmoneasy",
   "private": true,
-  "version": "0.0.8",
+  "version": "0.11.1",
   "description": "Web-based MIDI/audio application with Electron desktop support",
   "author": "designerzen <radio@awesomething.co.uk>",
   "type": "module",
@@ -28,7 +28,7 @@
     "concurrently": "^8.2.2",
     "electron": "^31.7.7",
     "electron-builder": "^24.6.4",
-    "electron-updater": "^6.1.4",
+    "update-electron-app": "^3.0.0",
     "node-addon-api": "^7.1.0",
     "node-gyp": "^10.0.0",
     "partykit": "0.0.115",
