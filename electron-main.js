@@ -1,6 +1,10 @@
-import { app, BrowserWindow, Menu, ipcMain } from 'electron'
+import { app, BrowserWindow, Menu, ipcMain, dialog } from 'electron'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { createRequire } from 'module'
+
+const require = createRequire(import.meta.url)
+const { autoUpdater } = require('electron-updater')
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -11,6 +15,59 @@ const isDev = process.env.NODE_ENV === 'development' || process.argv.includes('-
 let SocketServer = null
 let mainWindow
 let socketServer
+
+function setupAutoUpdater() {
+	// Only check for updates in production
+	if (isDev) {
+		console.log('Auto-updater disabled in development mode')
+		return
+	}
+
+	try {
+		// Configure electron-updater for GitHub releases
+		autoUpdater.allowDowngrade = false
+		autoUpdater.allowPrerelease = false
+		
+		// Check for updates on startup
+		autoUpdater.checkForUpdatesAndNotify()
+		
+		// Check for updates every hour
+		setInterval(() => {
+			autoUpdater.checkForUpdatesAndNotify()
+		}, 60 * 60 * 1000)
+		
+		// Handle update available
+		autoUpdater.on('update-available', (info) => {
+			console.log('Update available:', info.version)
+			if (mainWindow) {
+				mainWindow.webContents.send('app:update-available', info)
+			}
+		})
+		
+		// Handle update downloaded
+		autoUpdater.on('update-downloaded', (info) => {
+			console.log('Update downloaded:', info.version)
+			dialog.showMessageBox(mainWindow, {
+				type: 'info',
+				title: 'Update Ready',
+				message: 'An update is ready to install',
+				detail: `Version ${info.version} has been downloaded. The app will update when you restart.`,
+				buttons: ['Restart Now', 'Later']
+			}).then(result => {
+				if (result.response === 0) {
+					autoUpdater.quitAndInstall()
+				}
+			})
+		})
+		
+		// Handle errors
+		autoUpdater.on('error', (error) => {
+			console.error('Update error:', error)
+		})
+	} catch (error) {
+		console.error('Failed to setup auto-updater:', error)
+	}
+}
 
 async function initializeSocketServer() {
 	try {
@@ -38,22 +95,26 @@ function createWindow() {
 		icon: path.join(__dirname, 'public/favicon.ico')
 	})
 
-	// Always try dev server first, fall back to production
-	const startUrl = 'http://localhost:5174'
-	mainWindow.loadURL(startUrl)
-
-	// Enable dev tools if dev mode
-	if (isDev || process.env.NODE_ENV !== 'production') {
+	// Load URL based on environment
+	let startUrl
+	if (isDev) {
+		// Development: load from Vite dev server
+		startUrl = 'http://localhost:5174'
+		mainWindow.loadURL(startUrl)
 		mainWindow.webContents.openDevTools()
-	}
 
-	// Retry loading if connection fails (server not ready yet)
-	mainWindow.webContents.on('did-fail-load', () => {
-		console.log('Dev server not ready, retrying in 1s...')
-		setTimeout(() => {
-			mainWindow?.loadURL(startUrl)
-		}, 1000)
-	})
+		// Retry loading if connection fails (server not ready yet)
+		mainWindow.webContents.on('did-fail-load', () => {
+			console.log('Dev server not ready, retrying in 1s...')
+			setTimeout(() => {
+				mainWindow?.loadURL(startUrl)
+			}, 1000)
+		})
+	} else {
+		// Production: load from built dist files
+		startUrl = `file://${path.join(__dirname, 'dist', 'index.html')}`
+		mainWindow.loadURL(startUrl)
+	}
 
 	mainWindow.on('closed', () => {
 		mainWindow = null
@@ -62,6 +123,7 @@ function createWindow() {
 
 app.on('ready', async () => {
 	await initializeSocketServer()
+	setupAutoUpdater()
 	createWindow()
 	// Start socket server if available
 	if (SocketServer) {
@@ -169,4 +231,23 @@ ipcMain.on('app:maximize', () => {
 
 ipcMain.on('app:close', () => {
 	if (mainWindow) mainWindow.close()
+})
+
+// Update-related IPC handlers
+ipcMain.handle('app:check-for-updates', async () => {
+	try {
+		const result = await autoUpdater.checkForUpdates()
+		return result
+	} catch (error) {
+		console.error('Error checking for updates:', error)
+		throw error
+	}
+})
+
+ipcMain.handle('app:install-update', async () => {
+	autoUpdater.quitAndInstall()
+})
+
+ipcMain.on('app:restart', () => {
+	app.quit()
 })
