@@ -16,15 +16,13 @@ import { ID_VIBRATOR, TransformerVibrator } from "./robots/transformer-vibrator.
 import { ID_FILTER, TransformerFilter } from "./robots/transformer-filter.ts"
 import { ID_EMOJI, TransformerEmoji } from "./robots/transformer-emoji.ts"
 import { ID_MIDI_FILE_PLAYER, TransformerMIDIFilePlayer } from "./robots/transformer-midi-file-player.ts"
-import { ID_CC_MAPPER, TransformerCCMapper } from "./robots/transformer-cc-mapper.ts"
 
 export const tranformerFactory = (type: string, config: any={} ) => {
     switch (type) {
         case ID_ARPEGGIATOR: return new TransformerArpeggiator(config)
     case ID_CHANNELER: return new TransformerChanneler(config)
-         case ID_CHORDIFIER: return new TransformerChordifier(config)
-         case ID_CONSTRICTOR: return new TransformerConstrictor(config)
-         case ID_CC_MAPPER: return new TransformerCCMapper(config)
+        case ID_CHORDIFIER: return new TransformerChordifier(config)
+        case ID_CONSTRICTOR: return new TransformerConstrictor(config)
     case ID_EMOJI: return new TransformerEmoji(config)
     case ID_FILTER: return new TransformerFilter(config)
         case ID_HARMONISER: return new TransformerHarmoniser(config)
@@ -47,7 +45,6 @@ export const TRANSFORMER_TYPE = {
     ID_CHANNELER,
     ID_CHORDIFIER,
 	ID_CONSTRICTOR,
-	ID_CC_MAPPER,
 	ID_EMOJI,
 	ID_FILTER,
     ID_HARMONISER,

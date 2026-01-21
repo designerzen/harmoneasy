@@ -6,19 +6,17 @@ import adapter from 'webrtc-adapter'
 import { DEFAULT_OPTIONS } from './options.ts'
 import State from './libs/state.ts'
 
-// Importers
-import { importDawProjectFile } from './libs/audiobus/import/adapter-dawproject-import.ts'
-import { importMusicXMLFile } from './libs/audiobus/import/import-musicxml-import.ts'
-import { importMIDIFile } from './libs/audiobus/import/import-midi-file.ts'
-
-// Exporters
-import { createMIDIMarkdownFromAudioEventRecording, saveMarkdownToLocalFileSystem } from './libs/audiobus/export/adapter-midi-markdown.ts'
-import { createMusicXMLFromAudioEventRecording, saveBlobToLocalFileSystem as saveMusicXMLBlobToLocalFileSystem } from './libs/audiobus/export/adapter-musicxml.ts'
-import { renderVexFlowToContainer, createVexFlowHTMLFromAudioEventRecording, saveBlobToLocalFileSystem as saveVexFlowBlobToLocalFileSystem } from './libs/audiobus/export/adapter-vexflow.ts'
-import { createMIDIFileFromAudioEventRecording } from './libs/audiobus/export/adapter-midi-file.ts'
-import { createDawProjectFromAudioEventRecording, saveDawProjectToLocalFileSystem } from './libs/audiobus/export/adapter-dawproject.ts'
 import { createAudioToolProjectFromAudioEventRecording } from './libs/audiotool/adapter-audiotool-audio-events-recording.ts'
+import { createMIDIFileFromAudioEventRecording, saveBlobToLocalFileSystem } from './libs/audiobus/midi/adapter-midi-file.ts'
+import { createMIDIMarkdownFromAudioEventRecording, saveMarkdownToLocalFileSystem } from './libs/audiobus/midi/adapter-midi-markdown.ts'
+import { createMusicXMLFromAudioEventRecording, saveBlobToLocalFileSystem as saveMusicXMLBlobToLocalFileSystem } from './libs/audiobus/midi/adapter-musicxml.ts'
+import { renderVexFlowToContainer, createVexFlowHTMLFromAudioEventRecording, saveBlobToLocalFileSystem as saveVexFlowBlobToLocalFileSystem } from './libs/audiobus/midi/adapter-vexflow.ts'
 import { createOpenDAWProjectFromAudioEventRecording } from './libs/openDAW/adapter-opendaw-audio-events-recording.ts'
+import { createDawProjectFromAudioEventRecording, saveDawProjectToLocalFileSystem } from './libs/audiobus/midi/adapter-dawproject.ts'
+
+import { importDawProjectFile } from './libs/audiobus/midi/adapter-dawproject-import.ts'
+import { importMusicXMLFile } from './libs/audiobus/midi/import-musicxml-import.ts'
+import { importMIDIFile } from './libs/audiobus/midi/import-midi-file.ts'
 
 // Front End
 import UI from './ui.ts'
@@ -43,22 +41,23 @@ import InputGamePad from './libs/audiobus/inputs/input-gamepad.ts'
 import InputWebMIDIDevice from './libs/audiobus/inputs/input-webmidi-device.ts'
 import InputOnScreenKeyboard, { ALL_KEYBOARD_NOTES, ONSCREEN_KEYBOARD_INPUT_ID } from './libs/audiobus/inputs/input-onscreen-keyboard.ts'
 import InputBLEMIDIDevice from './libs/audiobus/inputs/input-ble-midi-device.ts'
-import InputMicrophoneFormant from './libs/audiobus/inputs/input-microphone-formant.ts'
 
 // IAudioOutputs 
 import SynthOscillator from './libs/audiobus/instruments/synth-oscillator.ts'
 import PolySynth from './libs/audiobus/instruments/poly-synth.ts'
+
 import OutputConsole from './libs/audiobus/outputs/output-console.ts'
 import OutputBLEMIDIDevice from './libs/audiobus/outputs/output-ble-midi-device.ts'
 import OutputWebMIDIDevice from './libs/audiobus/outputs/output-webmidi-device.ts'
 import OutputOnScreenKeyboard from './libs/audiobus/outputs/output-onscreen-keyboard.ts'
 import OutputSpectrumAnalyser from './libs/audiobus/outputs/output-spectrum-analyser.ts'
-import OutputNotation from './libs/audiobus/outputs/output-notation.ts'
 
 import type { IAudioCommand } from './libs/audiobus/audio-command-interface.ts'
 import type { IAudioOutput } from './libs/audiobus/outputs/output-interface.ts'
 import type InputAudioEvent from './libs/audiobus/inputs/input-audio-event.ts'
 import type AbstractInput from './libs/audiobus/inputs/abstract-input.ts'
+import InputMicrophoneFormant from './libs/audiobus/inputs/input-microphone-formant.ts'
+import OutputNotation from './libs/audiobus/outputs/output-notation.ts'
 
 const storage = hasOPFS() ? new OPFSStorage() : null
 const recorder: AudioEventRecorder = new AudioEventRecorder()

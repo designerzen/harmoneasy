@@ -2,9 +2,7 @@ export interface IAudioOutput{
 	get uuid(): string
 	get name():string
 	get description():string
-	
 	get isConnected():boolean
-	get isHidden():boolean
 	
 	noteOn(note: number, velocity: number): void
 	noteOff(note: number): void

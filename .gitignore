@@ -18,6 +18,3 @@ electron-builder/
 
 # Electron cache
 .electron-gyp/
-
-# Turbo cache
-.turbo/

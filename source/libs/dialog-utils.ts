@@ -6,7 +6,6 @@ export interface DialogOption {
 	id: string
 	label: string
 	description?: string
-	icon?: string
 	onClick: () => void | Promise<void>
 }
 
@@ -52,19 +51,7 @@ export function createDialogFromTemplate(
 		button.type = "button"
 		button.className = "btn-option"
 		button.id = option.id
-
-		// Create button content with optional icon
-		if (option.icon) {
-			const iconSpan = document.createElement("span")
-			iconSpan.className = "btn-icon"
-			iconSpan.textContent = option.icon
-			button.appendChild(iconSpan)
-		}
-
-		const labelSpan = document.createElement("span")
-		labelSpan.className = "btn-label"
-		labelSpan.textContent = option.label
-		button.appendChild(labelSpan)
+		button.textContent = option.label
 
 		if (option.description) {
 			button.title = option.description

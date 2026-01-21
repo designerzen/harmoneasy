@@ -12,23 +12,8 @@ export interface OutputFactory {
 	id: string
 	name: string
 	description: string
-	icon: string // Unicode emoji or icon symbol
 	isAvailable: () => boolean
 	create: () => IAudioOutput | Promise<IAudioOutput>
-}
-
-/**
- * Check if Web MIDI API is available
- */
-function isMIDIAvailable(): boolean {
-	return "requestMIDIAccess" in navigator
-}
-
-/**
- * Check if Web Bluetooth API is available
- */
-function isBluetoothAvailable(): boolean {
-	return "bluetooth" in navigator
 }
 
 /**
@@ -40,7 +25,6 @@ export const OUTPUT_FACTORIES: OutputFactory[] = [
 		id: "console",
 		name: "Console",
 		description: "Logs MIDI events to browser console (dev mode only)",
-		icon: "🖥️",
 		isAvailable: () => import.meta.env.DEV,
 		create: () => new OutputConsole(),
 	},
@@ -48,7 +32,6 @@ export const OUTPUT_FACTORIES: OutputFactory[] = [
 		id: "pink-trombone",
 		name: "Pink Trombone",
 		description: "Vocal synthesis engine with speech-like sounds",
-		icon: "🎤",
 		isAvailable: () => true,
 		create: () => new OutputPinkTrombone(),
 	},
@@ -56,33 +39,8 @@ export const OUTPUT_FACTORIES: OutputFactory[] = [
 		id: "notation",
 		name: "Notation",
 		description: "Displays notes on a musical staff",
-		icon: "🎼",
 		isAvailable: () => true,
 		create: () => new OutputNotation(),
-	},
-	{
-		id: "midi",
-		name: "MIDI",
-		description: "Send MIDI to connected devices via USB/MIDI interface",
-		icon: "🎹",
-		isAvailable: () => isMIDIAvailable(),
-		create: async () => {
-			// Dynamic import to avoid loading if MIDI not available
-			const { default: OutputMIDI } = await import("./audiobus/outputs/output-midi.ts")
-			return new OutputMIDI()
-		},
-	},
-	{
-		id: "ble-midi",
-		name: "BLE MIDI",
-		description: "Send MIDI to Bluetooth Low Energy MIDI devices",
-		icon: "📱",
-		isAvailable: () => isBluetoothAvailable(),
-		create: async () => {
-			// Dynamic import to avoid loading if Bluetooth not available
-			const { default: OutputBLEMIDI } = await import("./audiobus/outputs/output-ble-midi.ts")
-			return new OutputBLEMIDI()
-		},
 	},
 ]
 
