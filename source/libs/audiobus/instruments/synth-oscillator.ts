@@ -10,6 +10,7 @@ const SILENCE = 0.00000000009
 export default class SynthOscillator implements IAudioOutput{
 
 	static ID:number = 0
+
     options = {
 
         // default amplitude
@@ -41,15 +42,23 @@ export default class SynthOscillator implements IAudioOutput{
         reuseOscillators:true
     }
     
-    // arpeggioIntervals = []
-    customWave = null
-
     #uuid = "SynthOscillator-"+(SynthOscillator.ID++)
     #id = this.#uuid
     
     startedAt = -1
     oscillatorsActive = false
     activeNote = null
+
+    // arpeggioIntervals = []
+    customWave = null
+
+	dcFilterNode: BiquadFilterNode
+	filterNode: BiquadFilterNode
+	audioContext: BaseAudioContext
+	gainNode: GainNode
+	oscillator: OscillatorNode
+	tremoloOscillator: OscillatorNode
+	tremoloGain: GainNode
 
     get isNoteDown(){
         return this.activeNote !== null
@@ -76,7 +85,6 @@ export default class SynthOscillator implements IAudioOutput{
 	get isConnected(): boolean {
 		return true
 	}
-
 
     get now(){
         return this.audioContext.currentTime
@@ -113,7 +121,7 @@ export default class SynthOscillator implements IAudioOutput{
         this.glide( value, this.options.slideDuration )
     }
 
-	set shape(value){
+	set shape(value: OscillatorType | string | WaveTable){
         // there are 3 different sources of shapes :
         switch (typeof value ){
 
@@ -151,37 +159,37 @@ export default class SynthOscillator implements IAudioOutput{
         this.options.shape = value
 	}
 
-	get shape(){
+	get shape(): OscillatorType | string | WaveTable{
 		return this.options.shape
 	}
 
-    set Q(value){
+    set Q(value: number){
         // this.filter.Q.value = value
         this.filterNode.Q.cancelScheduledValues(this.now)
         this.filterNode.Q.linearRampToValueAtTime( value, this.now + this.options.slideDuration)
     }
 
-    get Q(){
+    get Q(): number{
         return this.filterNode.Q.value
     }
 
-    set detune(value){
+    set detune(value: number){
         this.oscillator.detune.value = value
     }
 
-    get detune(){
+    get detune(): number{
         return this.oscillator.detune.value
     }
 
-    set filterCutOff(value){
+    set filterCutOff(value: number){
         this.filterNode.frequency.cancelScheduledValues(this.now)
         this.filterNode.frequency.linearRampToValueAtTime( value, this.now + this.options.slideDuration)
     }
-    get filterCutOff(){
+    get filterCutOff(): number{
         return this.filterNode.frequency.value
     }
 
-    set filterType(value){
+    set filterType(value: BiquadFilterType ){
         this.filterNode.type = value
     }
 
@@ -205,7 +213,7 @@ export default class SynthOscillator implements IAudioOutput{
         return this.options.title ?? "SynthOscilltor"
     }
 
-    constructor(audioContext, options={}){
+    constructor(audioContext: BaseAudioContext, options={}){
         this.audioContext = audioContext
         this.options = Object.assign({}, this.options, options)
 
@@ -242,7 +250,7 @@ export default class SynthOscillator implements IAudioOutput{
      * 
      * @param {OscillatorNode} oscillator 
      */
-    destroyOscillator(oscillator){
+    destroyOscillator(oscillator: OscillatorNode){
         oscillator.stop()
         oscillator.disconnect()
         oscillator = null
@@ -294,10 +302,10 @@ export default class SynthOscillator implements IAudioOutput{
      * @param {Array<Number>} intervals 
      * @param {Number} repetitions 
      */
-    addArpeggioAtIntervals( tonic, intervals=[], repetitions=24 ){
+    addArpeggioAtIntervals( tonic: number, intervals=[], repetitions=24 ){
         const now = this.now
         let startTime = now
-        let frequency = tonic.noteNumber
+        let frequency = tonic
         const frequencies = intervals.map( note => noteNumberToFrequency(frequency + note) ) 
         
         for (let i=0; i < repetitions; ++i)
@@ -397,7 +405,7 @@ export default class SynthOscillator implements IAudioOutput{
         this.startedAt = startTime
         return this
     }
-    
+	
     /**
      * Note OFF
      * This starts the process of stopping the note
@@ -457,7 +465,7 @@ export default class SynthOscillator implements IAudioOutput{
         return this
     }
 
-    glide( value, duration = 0 ){
+    glide( value:number, duration:number = 0 ){
         if (!Number.isFinite(value)) {
             console.warn("[SynthOscillator] glide: invalid frequency value", value)
             return
@@ -481,9 +489,9 @@ export default class SynthOscillator implements IAudioOutput{
         return await loadWaveTable(waveTableName)
     }
 
-    setWaveTable(waveTable){
+    setWaveTable(waveTable: never){
         const {real, imag} = waveTable
-        const waveData = this.audioContext.createPeriodicWave(real, imag, { disableNormalization: true })
+        const waveData:PeriodicWave = this.audioContext.createPeriodicWave(real, imag, { disableNormalization: true })
         // reshape any playing oscillators
         if ( this.oscillator)
         {
