@@ -257,41 +257,50 @@ export default class InputWebMIDIDevice extends AbstractInput implements IAudioI
 	 * Handle incoming MIDI event from device
 	 */
 	onMIDIEvent(event: any, device: Input, deviceName: string, index: number): void {
-		const note = event.note
-		const { number } = note
-
 		switch (event.type) {
-			case "noteon":
-				this.onNoteOn(number, event.velocity, event.channel)
-				console.info("[WebMIDI Input] Note On", {
-					note: number,
-					velocity: event.velocity,
-					channel: event.channel,
-					device,
-					deviceName
-				})
+			case "noteon": {
+				const note = event.note?.number
+				if (note !== undefined) {
+					this.onNoteOn(note, event.velocity, event.channel)
+					console.info("[WebMIDI Input] Note On", {
+						note,
+						velocity: event.velocity,
+						channel: event.channel,
+						device,
+						deviceName
+					})
+				}
 				break
+			}
 
-			case "noteoff":
-				this.onNoteOff(number, event.channel)
-				console.info("[WebMIDI Input] Note Off", {
-					note: number,
-					channel: event.channel,
-					device,
-					deviceName
-				})
+			case "noteoff": {
+				const note = event.note?.number
+				if (note !== undefined) {
+					this.onNoteOff(note, event.channel)
+					console.info("[WebMIDI Input] Note Off", {
+						note,
+						channel: event.channel,
+						device,
+						deviceName
+					})
+				}
 				break
+			}
 
-			case "controlchange":
-				this.onControlChange(event.controller.number, event.value, event.channel)
-				console.info("[WebMIDI Input] Control Change", {
-					controlNumber: event.controller.number,
-					value: event.value,
-					channel: event.channel,
-					device,
-					deviceName
-				})
+			case "controlchange": {
+				const controlNumber = event.controller?.number
+				if (controlNumber !== undefined) {
+					this.onControlChange(controlNumber, event.value, event.channel)
+					console.info("[WebMIDI Input] Control Change", {
+						controlNumber,
+						value: event.value,
+						channel: event.channel,
+						device,
+						deviceName
+					})
+				}
 				break
+			}
 
 			default:
 				console.warn("[WebMIDI Input] Unhandled MIDI event type", { type: event.type })

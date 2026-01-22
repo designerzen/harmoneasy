@@ -181,7 +181,9 @@ export const getStructure = ( chain:IOChain, showInputs:boolean=true, showOutput
 	const inputs = chain.inputs
 	const outputs = chain.outputs
 	
-	const inputNodes = showInputs ? inputs.map((input:AbstractInput, index:number) => ({
+	const inputNodes = showInputs ? inputs
+		.filter((input: AbstractInput) => !input.isHidden)
+		.map((input:AbstractInput, index:number) => ({
 		id: 'node-input-'+index,
 		type: NOTE_TYPE.input,
 		data: { 
@@ -226,7 +228,9 @@ export const getStructure = ( chain:IOChain, showInputs:boolean=true, showOutput
 	}
 
 	// Add in all our output nodes
-	const outputNodes = showOutputs ? outputs.map((output:AbstractInput, index:number) => ({
+	const outputNodes = showOutputs ? outputs
+		.filter((output: AbstractInput) => !output.isHidden)
+		.map((output:AbstractInput, index:number) => ({
 		id: 'node-output-'+index,
 		type: NOTE_TYPE.output,
 		data: { 

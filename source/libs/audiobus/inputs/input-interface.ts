@@ -4,6 +4,7 @@ export interface IAudioInput{
 	get name():string
 	get description():string
 	get isConnected():boolean
+	get isHidden?():boolean
 	
 	// optional
 	connect?():Promise<Function>|Function

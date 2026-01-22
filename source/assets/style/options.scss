@@ -10,7 +10,6 @@
 	--col-white: oklch(95.698% 0.02111 241.502);
 	--col-black: oklch(11.813% 0.03195 23.316);
 
-
 	// texts
 	--col-fg: light-dark(var(--col-black), var(--col-white));
 	//  backgrounds
@@ -34,10 +33,13 @@
 	--time-short:90ms;
 	--time-medium:145ms;
 	--time-long:450ms;
-}
 
-@media (prefers-color-scheme: dark) {
-	:root {
-
-	}
+	--bg-color: light-dark(
+		var(--col-white,white), 
+		var(--col-black, black) 
+	);
+	--text-color: light-dark(
+		var(--col-black, black) ,
+		var(--col-white,white)
+	);
 }

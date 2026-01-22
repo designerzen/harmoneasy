@@ -391,8 +391,9 @@ const initialiseApplication = async ( onEveryTimingTick:Function, autoConnect:bo
     state.updateLocation()
 
 	// Volume initialization (needed before UI setup)
-	const initialVolumePercent:number = parseFloat( state.get('volume') ?? 100 )
-	const initialVolume:number = initialVolumePercent * 0.75 // 0.5 is default
+	const volumeState = state.get('volume')
+	const initialVolumePercent:number = volumeState ? parseFloat(volumeState as string) : 50
+	const initialVolume:number = Math.max(0, Math.min(1, initialVolumePercent / 100))
 
 	// AUDIO ----------------------------------------------	
 	bus = new AudioBus()

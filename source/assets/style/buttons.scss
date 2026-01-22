@@ -21,10 +21,10 @@ button {
 
     &.primary{
         background-color: light-dark(
-			color-mix(in oklch, var(--col-plum) 40%, #fff), 
-			var(--col-plum)
+			color-mix(in oklch, var(--col-pink) 40%, #fff), 
+			var(--col-pink)
 		);
-        color: light-dark(var(--col-plum), #fff);
+        color: light-dark(var(--col-pink), #fff);
 
         &:hover {
             background-color: light-dark(color-mix(in oklch, var(--col-plum) 60%, #fff), color-mix(in oklch, var(--col-plum) 120%, #fff));
