@@ -1,9 +1,9 @@
 import { Handle, Position } from "@xyflow/react"
 import React, { useCallback, useEffect, useRef } from "react"
 
-import type AbstractInput from "../../../libs/audiobus/inputs/abstract-input"
-import type IOChain from "../../../libs/audiobus/IO-chain"
-import type { IAudioInput } from "../../../libs/audiobus/inputs/input-interface"
+import type AbstractInput from "../../../libs/audiobus/io/inputs/abstract-input"
+import type IOChain from "../../../libs/audiobus/io/IO-chain"
+import type { IAudioInput } from "../../../libs/audiobus/io/inputs/input-interface"
 
 export function InputNode(props: { data: { input: AbstractInput; label: any } }) {
 
@@ -82,7 +82,7 @@ export function InputNode(props: { data: { input: AbstractInput; label: any } })
 	 */
 	return <div className="node-input graph-node can-remove">
 		<h6>{props.data.label ?? input?.description ?? "Input"}</h6>
-		<p className="sr-only">{props.data.label.replace(" Input", "") }</p>
+		<p className="sr-only">{props.data.label.replace("Input", "") }</p>
 		{
 			hasConnectMethod && !input.isConnected && (
 				<label className="connect-input">

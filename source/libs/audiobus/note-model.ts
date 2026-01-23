@@ -1,4 +1,4 @@
-import { convertNoteNumberToColour } from "./conversion/note-to-color"
+import { convertNoteNumberToColour } from "./conversion/note-to-colour"
 import { noteNumberToFrequency } from "./conversion/note-to-frequency"
 import { noteNumberToKeyName } from "./conversion/note-to-key-name"
 import { noteNumberToOctave } from "./conversion/note-to-octave"

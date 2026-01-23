@@ -22,7 +22,10 @@ export default class SVGKeyboard extends AbstractInteractive{
 		return this.svgString
 	}
 
-	get asElement(){
+	get fragment(){
+		return this.htmlElement
+	}
+	get element(){
 		return this.htmlElement
 	}
 
@@ -40,12 +43,14 @@ export default class SVGKeyboard extends AbstractInteractive{
 		this.titleID = `${unique}-title`
 		this.descriptionID = `${unique}-desc`
 		const {svg, whiteKeyElements, blackKeyElements} = this.createKeyboard(notes)
-		this.htmlElement = document.createElement("div")
-		this.htmlElement.className = "piano"
-		this.htmlElement.setAttribute( "data-piano", true )
-		this.htmlElement.innerHTML = svg
-		this.titleElement = this.htmlElement.querySelector("title")
-		this.keyElements = Array.from(this.htmlElement.querySelectorAll(".piano-key"))
+
+		this.htmlElement = document.createDocumentFragment()
+		const pianoElement = this.htmlElement.appendChild( document.createElement("div"))
+		pianoElement.className = "piano"
+		pianoElement.setAttribute( "data-piano", true )
+		pianoElement.innerHTML = svg
+		this.titleElement = pianoElement.querySelector("title")
+		this.keyElements = Array.from(pianoElement.querySelectorAll(".piano-key"))
        
         this.keyMap = new Map()
         this.keyElements.forEach( (value, index) => {

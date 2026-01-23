@@ -21,13 +21,13 @@ import { TransformerNode } from './nodes/TransformerNode.tsx'
 
 import { DEFAULT_GRAPH_OPTIONS, DEFAULT_VIEWPORT_OPTIONS } from './options.ts'
 
-import { EVENT_TRANSFORMERS_UPDATED } from '../../libs/audiobus/transformers/transformer-manager.ts'
-import { EVENT_INPUTS_UPDATED } from '../../libs/audiobus/inputs/input-manager.ts'
-import { EVENT_OUTPUTS_UPDATED } from '../../libs/audiobus/outputs/output-manager.ts'
+import { EVENT_TRANSFORMERS_UPDATED } from '../../libs/audiobus/io/transformer-manager.ts'
+import { EVENT_INPUTS_UPDATED } from '../../libs/audiobus/io/input-manager.ts'
+import { EVENT_OUTPUTS_UPDATED } from '../../libs/audiobus/io/output-manager.ts'
 
 import { getStructure, initialEdges, initialNodes } from './layout.ts'
 
-import type IOChain from '../../libs/audiobus/IO-chain.ts'
+import type IOChain from '../../libs/audiobus/io/IO-chain.ts'
 
 const nodeTypes = {
 	start: StartNode,

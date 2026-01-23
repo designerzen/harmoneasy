@@ -5,8 +5,8 @@ import NoteVisualiser from './components/note-visualiser.ts'
 
 import type NoteModel from "./libs/audiobus/note-model.ts"
 import type { IAudioCommand } from "./libs/audiobus/audio-command-interface.ts"
-import type { IAudioOutput } from "./libs/audiobus/outputs/output-interface.ts"
-import { convertNoteNumberToColour } from "./libs/audiobus/conversion/note-to-color.ts"
+import type { IAudioOutput } from "./libs/audiobus/io/outputs/output-interface.ts"
+import { convertNoteNumberToColour } from "./libs/audiobus/conversion/note-to-colour.ts"
 
 const DOM_ID_MIDI_INPUTS = "midi-input-commands"
 const DOM_ID_MIDI_OUTPUTS = "midi-output-commands"
@@ -109,6 +109,12 @@ export default class UI implements IAudioOutput {
 	get description(): string {
 		return "Front End"
 	}
+	get isConnected(): boolean {
+		return !!this.#keyboard
+	}
+	get isHidden(): boolean {
+		return true
+	}
 	constructor(keyboardNotes: Array<NoteModel>, options = DEFAULT_OPTIONS) {
 
 		this.options = { ...DEFAULT_OPTIONS, ...options }
@@ -163,17 +169,6 @@ export default class UI implements IAudioOutput {
 		// this.wallpaperCanvas.parentNode.appendChild(visualiser)
 
 		this.setupDragAndDrop()
-	}
-
-	setUIKeyboard( keyboard:SVGKeyboard ){
-
-		const keyboardElement = keyboard.asElement
-
-		// link to note on and note off in a different way!
-		this.#keyboard = keyboard
-
-		// inject into DOM on specified element 
-		this.keyboardElement = document.body.appendChild(keyboardElement)
 	}
 
 	/**

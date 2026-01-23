@@ -19,6 +19,17 @@
 	width: 100%;
 }
 
+#graph{
+	.react-flow__controls-button{
+		background-color: var(--col-black);
+		svg {
+			max-width: 32px;
+			max-height: 32px;
+			fill: var(--col-white);
+		}
+	}
+}
+
 .graph-node {
 	color:var(--col-fg);
     border: var(--border);

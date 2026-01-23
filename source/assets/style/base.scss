@@ -104,8 +104,8 @@ dialog {
 
 	&::before{
 		content: '';
-		position: absolute;
-		inset:-2000px;
+		position: fixed;
+		inset:-2048px;
 		background: radial-gradient(circle at center, var(--col-black) 0%, rgba(100, 20, 20, 0.4) 20%, rgba(50, 10, 10, 0.1) 100%);
 		backdrop-filter: blur(20px);
 		z-index: -2;

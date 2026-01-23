@@ -3,10 +3,10 @@ import {
     tranformerFactory,
     TRANSFORMER_TYPE,
     TRANSFORMERS
-} from "../../libs/audiobus/transformers/transformer-factory"
+} from "../../libs/audiobus/io/transformer-factory"
 import { PRESETS } from "./presets"
-import type { TransformerManager } from "../../libs/audiobus/transformers/transformer-manager"
-import type IOChain from "../../libs/audiobus/IO-chain"
+import type { TransformerManager } from "../../libs/audiobus/io/transformer-manager"
+import type IOChain from "../../libs/audiobus/io/IO-chain"
 
 export function ConfigDrawer() {
 

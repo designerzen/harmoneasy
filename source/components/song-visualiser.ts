@@ -17,7 +17,7 @@ import type AudioCommand from "../libs/audiobus/audio-command.js";
 import type OPFSStorage from "../libs/audiobus/storage/opfs-storage.js";
 import type { IAudioCommand } from "../libs/audiobus/audio-command-interface.js";
 import type RecorderAudioEvent from "../libs/audiobus/audio-event-recorder.js";
-import type { IAudioOutput } from "../libs/audiobus/outputs/output-interface.js";
+import type { IAudioOutput } from "../libs/audiobus/io/outputs/output-interface.js";
 
 interface NoteBarData {
     startTime: number;

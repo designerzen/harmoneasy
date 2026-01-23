@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { BaseEdge, getSmoothStepPath, type EdgeProps } from '@xyflow/react'
 import { INPUT_EVENT, NOTE_ON, OUTPUT_EVENT } from '../../commands'
-import { convertNoteNumberToColour } from '../../libs/audiobus/conversion/note-to-color'
+import { convertNoteNumberToColour } from '../../libs/audiobus/conversion/note-to-colour'
 import { NOTE_TYPE } from './layout'
 
 import type OutputAudioEvent from '../../libs/audiobus/outputs/output-audio-event'

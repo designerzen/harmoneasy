@@ -1,4 +1,4 @@
-import { TRANSFORMER_TYPE } from "../../libs/audiobus/transformers/transformer-factory";
+import { TRANSFORMER_TYPE } from "../../libs/audiobus/io/transformer-factory";
 
 export const PRESETS = [
 	{

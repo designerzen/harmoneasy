@@ -1,6 +1,6 @@
 import { Handle, Position } from "@xyflow/react"
 import React, { useCallback } from "react"
-import type InputManager from "../../../libs/audiobus/inputs/input-manager"
+import type InputManager from "../../../libs/audiobus/io/input-manager"
 
 export function StartNode(props) {
 

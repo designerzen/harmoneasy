@@ -2,9 +2,9 @@ import { HORIZONTAL_SPACING, NODE_HEIGHT } from './options'
 import { Position } from '@xyflow/react'
 import { layoutFromMap } from 'entitree-flex'
 
-import type TransformerManager from '../../libs/audiobus/transformers/transformer-manager'
-import type TransformerManagerWorker from '../../libs/audiobus/transformers/transformer-manager-worker'
-import type IOChain from '../../libs/audiobus/IO-chain'
+import type TransformerManager from '../../libs/audiobus/io/transformer-manager'
+import type TransformerManagerWorker from '../../libs/audiobus/io/transformer-manager-worker'
+import type IOChain from '../../libs/audiobus/io/IO-chain'
 
 const { Top, Bottom, Left, Right } = Position
 

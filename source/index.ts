@@ -7,16 +7,16 @@ import { DEFAULT_OPTIONS } from './options.ts'
 import State from './libs/state.ts'
 
 import { createAudioToolProjectFromAudioEventRecording } from './libs/audiotool/adapter-audiotool-audio-events-recording.ts'
-import { createMIDIFileFromAudioEventRecording, saveBlobToLocalFileSystem } from './libs/audiobus/midi/adapter-midi-file.ts'
-import { createMIDIMarkdownFromAudioEventRecording, saveMarkdownToLocalFileSystem } from './libs/audiobus/midi/adapter-midi-markdown.ts'
-import { createMusicXMLFromAudioEventRecording, saveBlobToLocalFileSystem as saveMusicXMLBlobToLocalFileSystem } from './libs/audiobus/midi/adapter-musicxml.ts'
-import { renderVexFlowToContainer, createVexFlowHTMLFromAudioEventRecording, saveBlobToLocalFileSystem as saveVexFlowBlobToLocalFileSystem } from './libs/audiobus/midi/adapter-vexflow.ts'
+import { createMIDIFileFromAudioEventRecording, saveBlobToLocalFileSystem } from './libs/audiobus/exporters/adapter-midi-file.ts'
+import { createMIDIMarkdownFromAudioEventRecording, saveMarkdownToLocalFileSystem } from './libs/audiobus/exporters/adapter-midi-markdown.ts'
+import { createMusicXMLFromAudioEventRecording, saveBlobToLocalFileSystem as saveMusicXMLBlobToLocalFileSystem } from './libs/audiobus/exporters/adapter-musicxml.ts'
+import { renderVexFlowToContainer, createVexFlowHTMLFromAudioEventRecording, saveBlobToLocalFileSystem as saveVexFlowBlobToLocalFileSystem } from './libs/audiobus/exporters/adapter-vexflow.ts'
 import { createOpenDAWProjectFromAudioEventRecording } from './libs/openDAW/adapter-opendaw-audio-events-recording.ts'
-import { createDawProjectFromAudioEventRecording, saveDawProjectToLocalFileSystem } from './libs/audiobus/midi/adapter-dawproject.ts'
+import { createDawProjectFromAudioEventRecording, saveDawProjectToLocalFileSystem } from './libs/audiobus/exporters/adapter-dawproject.ts'
 
-import { importDawProjectFile } from './libs/audiobus/midi/adapter-dawproject-import.ts'
-import { importMusicXMLFile } from './libs/audiobus/midi/import-musicxml-import.ts'
-import { importMIDIFile } from './libs/audiobus/midi/import-midi-file.ts'
+import { importDawProjectFile } from './libs/audiobus/importers/import-dawproject.ts'
+import { importMusicXMLFile } from './libs/audiobus/importers/import-musicxml-import.ts'
+import { importMIDIFile } from './libs/audiobus/importers/import-midi-file.ts'
 
 // Front End
 import UI from './ui.ts'
@@ -35,29 +35,29 @@ import AudioTimer from './libs/audiobus/timing/timer.audio'
 import AudioEventRecorder from './libs/audiobus/audio-event-recorder.ts'
 
 // IAudioInputs
-import IOChain from './libs/audiobus/IO-chain.ts'
-import InputKeyboard from './libs/audiobus/inputs/input-keyboard.ts'
-import InputGamePad from './libs/audiobus/inputs/input-gamepad.ts'
-import InputWebMIDIDevice from './libs/audiobus/inputs/input-webmidi-device.ts'
-import InputOnScreenKeyboard, { ALL_KEYBOARD_NOTES, ONSCREEN_KEYBOARD_INPUT_ID } from './libs/audiobus/inputs/input-onscreen-keyboard.ts'
-import InputBLEMIDIDevice from './libs/audiobus/inputs/input-ble-midi-device.ts'
+import IOChain from './libs/audiobus/io/IO-chain.ts'
+import InputKeyboard from './libs/audiobus/io/inputs/input-keyboard.ts'
+import InputGamePad from './libs/audiobus/io/inputs/input-gamepad.ts'
+import InputWebMIDIDevice from './libs/audiobus/io/inputs/input-webmidi-device.ts'
+import InputOnScreenKeyboard, { ALL_KEYBOARD_NOTES, ONSCREEN_KEYBOARD_INPUT_ID } from './libs/audiobus/io/inputs/input-onscreen-keyboard.ts'
+import InputBLEMIDIDevice from './libs/audiobus/io/inputs/input-ble-midi-device.ts'
 
 // IAudioOutputs 
 import SynthOscillator from './libs/audiobus/instruments/synth-oscillator.ts'
 import PolySynth from './libs/audiobus/instruments/poly-synth.ts'
 
-import OutputConsole from './libs/audiobus/outputs/output-console.ts'
-import OutputBLEMIDIDevice from './libs/audiobus/outputs/output-ble-midi-device.ts'
-import OutputWebMIDIDevice from './libs/audiobus/outputs/output-webmidi-device.ts'
-import OutputOnScreenKeyboard from './libs/audiobus/outputs/output-onscreen-keyboard.ts'
-import OutputSpectrumAnalyser from './libs/audiobus/outputs/output-spectrum-analyser.ts'
+import OutputConsole from './libs/audiobus/io/outputs/output-console.ts'
+import OutputBLEMIDIDevice from './libs/audiobus/io/outputs/output-ble-midi-device.ts'
+import OutputWebMIDIDevice from './libs/audiobus/io/outputs/output-webmidi-device.ts'
+import OutputOnScreenKeyboard from './libs/audiobus/io/outputs/output-onscreen-keyboard.ts'
+import OutputSpectrumAnalyser from './libs/audiobus/io/outputs/output-spectrum-analyser.ts'
 
 import type { IAudioCommand } from './libs/audiobus/audio-command-interface.ts'
-import type { IAudioOutput } from './libs/audiobus/outputs/output-interface.ts'
-import type InputAudioEvent from './libs/audiobus/inputs/input-audio-event.ts'
-import type AbstractInput from './libs/audiobus/inputs/abstract-input.ts'
-import InputMicrophoneFormant from './libs/audiobus/inputs/input-microphone-formant.ts'
-import OutputNotation from './libs/audiobus/outputs/output-notation.ts'
+import type { IAudioOutput } from './libs/audiobus/io/outputs/output-interface.ts'
+import type InputAudioEvent from './libs/audiobus/io/events/input-audio-event.ts'
+import type AbstractInput from './libs/audiobus/io/inputs/abstract-input.ts'
+import InputMicrophoneFormant from './libs/audiobus/io/inputs/input-microphone-formant.ts'
+import OutputNotation from './libs/audiobus/io/outputs/output-notation.ts'
 
 const storage = hasOPFS() ? new OPFSStorage() : null
 const recorder: AudioEventRecorder = new AudioEventRecorder()
@@ -378,7 +378,6 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number=
  */
 const initialiseApplication = async ( onEveryTimingTick:Function, autoConnect:boolean=false ) => {
 
-    // STATE MANAGEMENT -------------------------------
     // Get state from session and URL & update GUI
     const elementMain = document.querySelector('main')
     state = State.getInstance(elementMain)
@@ -395,25 +394,15 @@ const initialiseApplication = async ( onEveryTimingTick:Function, autoConnect:bo
 	const initialVolumePercent:number = volumeState ? parseFloat(volumeState as string) : 50
 	const initialVolume:number = Math.max(0, Math.min(1, initialVolumePercent / 100))
 
-	// AUDIO ----------------------------------------------	
 	bus = new AudioBus()
 	bus.initialise( initialVolume )
-
-	// TIMER ----------------------------------------------
-    // this handles the audio timing
-    timer = new AudioTimer( bus.audioContext )
-   
-	// UI ----------------------------------------------
+	timer = new AudioTimer( bus.audioContext )
 	ui = await initialiseFrontEnd( bus.mixer, initialVolumePercent )
 	 
 	// IO ----------------------------------------------
-
 	const abortController = new AbortController()
-	
 	const chain = await createInputOutputChain( bus.mixer, [], [ui], autoConnect )
-	const keyboardInput:InputOnScreenKeyboard = chain.getInput( ONSCREEN_KEYBOARD_INPUT_ID ) as InputOnScreenKeyboard
-	
-	ui.setUIKeyboard( keyboardInput.keyboard )
+	//const keyboardInput:InputOnScreenKeyboard = chain.getInput( ONSCREEN_KEYBOARD_INPUT_ID ) as InputOnScreenKeyboard
 
 	// FIXME: This should only occur later
 	// listen to the events dispatched from the manager
@@ -424,7 +413,7 @@ const initialiseApplication = async ( onEveryTimingTick:Function, autoConnect:bo
 		//console.info( "Index:Chain updated",  command.type, Commands.INPUT_EVENT, command )
 		switch ( command.type ) {
 			 case Commands.PLAYBACK_TOGGLE:
-               ui.setPlaying(timer.isRunning)
+			 	ui.setPlaying(timer.isRunning)
                 break
 
             case Commands.PLAYBACK_START:
@@ -436,7 +425,7 @@ const initialiseApplication = async ( onEveryTimingTick:Function, autoConnect:bo
                 break
 
             case Commands.TEMPO_TAP:
-                 ui.setTempo(timer.BPM)
+                ui.setTempo(timer.BPM)
                 state.set('tempo', timer.BPM)
                 break
 
@@ -498,9 +487,8 @@ const initialiseApplication = async ( onEveryTimingTick:Function, autoConnect:bo
 const onTick = (values:Record<string, any>) => {
 
     const {
-        divisionsElapsed,
+        divisionsElapsed, barsElapsed, timePassed,
         bar, bars,
-        barsElapsed, timePassed,
         elapsed, expected, drift, level, intervals, lag
     } = values
 
@@ -517,8 +505,7 @@ const onTick = (values:Record<string, any>) => {
 		{
 			const events:AudioEvent[] = IOChain.convertAudioCommandsToAudioEvents(activeCommands, now)
 			const allEvents = recorder.addEvents(events)
-			// send to Outputs!
-			const triggers = chain.triggerAudioCommandsOnDevice(events)
+			const triggers = chain.triggerAudioCommandsOnDevice(events)	// send to Outputs!
 			// console.info("onTick", {activeCommands, events, recorded:allEvents, triggers})
 		}else{
 			//console.info("onTick", {activeCommands})

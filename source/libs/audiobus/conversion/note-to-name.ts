@@ -6,7 +6,12 @@
 import { noteNumberToKeyName } from "./note-to-key-name"
 import { noteNumberToOctave } from "./note-to-octave"
 
-// FIXME: CACHE
+const noteNumberToNameCache = new Map<number, string>()
 export const noteNumberToName = (noteNumber: number): string =>  {
-	return `${noteNumberToKeyName(noteNumber)}${noteNumberToOctave(noteNumber)}`
+	if (noteNumberToNameCache.has(noteNumber)) {
+		return noteNumberToNameCache.get(noteNumber)!
+	}
+	const name = `${noteNumberToKeyName(noteNumber)}${noteNumberToOctave(noteNumber)}`
+	noteNumberToNameCache.set(noteNumber, name)
+	return name
 }

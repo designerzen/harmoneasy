@@ -1,8 +1,8 @@
 import { Handle, Position } from "@xyflow/react"
 import React, { useCallback } from "react"
 import { showDialogFromTemplate } from "../../../libs/dialog-utils.ts"
-import { getAvailableOutputFactories, createOutputById } from "../../../libs/output-factory.ts"
-import type IOChain from "../../../libs/audiobus/IO-chain.ts"
+import { getAvailableOutputFactories, createOutputById } from "../../../libs/audiobus/io/output-factory.ts"
+import type IOChain from "../../../libs/audiobus/io/IO-chain.ts"
 
 export function EndNode() {
 
