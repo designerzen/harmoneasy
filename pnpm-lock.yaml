@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@audiotool/nexus':
-        specifier: ^0.0.9
-        version: 0.0.9
+        specifier: ^0.0.10
+        version: 0.0.10
       '@msgpack/msgpack':
         specifier: ^3.1.3
         version: 3.1.3
@@ -108,8 +108,8 @@ packages:
   7zip-bin@5.2.0:
     resolution: {integrity: sha512-ukTPVhqG4jNzMro2qA9HSCSSVJN3aN7tlb+hfqYCt3ER0yWroeA2VR38MNrOHLQ/cVj+DaIMad0kFCtWWowh/A==}
 
-  '@audiotool/nexus@0.0.9':
-    resolution: {integrity: sha512-HWV13eYGt9EZfWndAb2E1mQcNn8MtkqbnlVv5qpxeEdHC7GTyi3hdrp0bHDQhKVjVMHPUx1nm/WkrlSn90Danw==}
+  '@audiotool/nexus@0.0.10':
+    resolution: {integrity: sha512-OVyUsQBfbNa9kUhi/hQ/Zs6PfiwDNqKzbuUnh5cv5YfqIB0a0ldHJBh2BdZKWPLbO2RrU37FUs0ZbJKJxKQ7UQ==}
 
   '@babel/runtime@7.28.6':
     resolution: {integrity: sha512-05WQkdpL9COIMz4LjTxGpPNCdlpyimKppYNoJ5Di5EUObifl8t4tuLuUBBZEpoLYOmfvIWrsp9fCl0HoPRVTdA==}
@@ -2953,7 +2953,7 @@ snapshots:
 
   7zip-bin@5.2.0: {}
 
-  '@audiotool/nexus@0.0.9':
+  '@audiotool/nexus@0.0.10':
     dependencies:
       '@bufbuild/protobuf': 1.10.0
       '@connectrpc/connect': 1.7.0(@bufbuild/protobuf@1.10.0)
