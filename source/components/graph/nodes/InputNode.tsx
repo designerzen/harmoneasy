@@ -80,9 +80,9 @@ export function InputNode(props: { data: { input: AbstractInput; label: any } })
 	/**
 	 * 
 	 */
-	return <div className="node-input graph-node can-remove">
-		<h6>{props.data.label ?? input?.description ?? "Input"}</h6>
-		<p className="sr-only">{props.data.label.replace("Input", "") }</p>
+	return <div className="node-input graph-node can-remove" title={input.description}>
+		<h6>{input?.name }</h6>
+		<p className="sr-only">{props.data.label }</p>
 		{
 			hasConnectMethod && !input.isConnected && (
 				<label className="connect-input">
