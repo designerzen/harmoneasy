@@ -19,3 +19,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
 	platform: process.platform,
 	isDev: process.env.NODE_ENV === 'development'
 })
+
+// Expose Web Bluetooth API if available
+if (navigator.bluetooth) {
+	contextBridge.exposeInMainWorld('bluetooth', navigator.bluetooth)
+}

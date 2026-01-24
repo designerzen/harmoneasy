@@ -1,7 +1,8 @@
-import { app, BrowserWindow, Menu, ipcMain } from 'electron'
 import path from 'path'
+import { app, BrowserWindow, Menu, ipcMain } from 'electron'
 import { fileURLToPath } from 'url'
 import { createRequire } from 'module'
+import { createMenuTemplate } from './source/electron/electron-menu'
 
 const require = createRequire(import.meta.url)
 const updateElectronApp = require('update-electron-app')
@@ -87,10 +88,30 @@ function createWindow() {
 		mainWindow.loadURL(prodUrl)
 	}
 
+	// Handle Bluetooth device selection
+	mainWindow.webContents.on('select-bluetooth-device', (event, deviceList, callback) => {
+		event.preventDefault()
+		// Auto-select the first available Bluetooth device
+		if (deviceList && deviceList.length > 0) {
+			callback(deviceList[0].deviceId)
+		}
+	})
+
+	// Handle Bluetooth pairing (for devices that require PIN/confirmation)
+	mainWindow.webContents.session.setBluetoothPairingHandler((details, callback) => {
+		// Auto-accept pairing for now (in production, you'd want user confirmation)
+		callback({ confirmed: true })
+	})
+
 	mainWindow.on('closed', () => {
 		mainWindow = null
 	})
 }
+
+// https://github.com/aalhaimi/electron-web-bluetooth/blob/master/main.js
+app
+  .commandLine
+  .appendSwitch('enable-web-bluetooth', true)
 
 app.on('ready', async () => {
 	await initializeSocketServer()
@@ -122,58 +143,7 @@ app.on('activate', () => {
 	}
 })
 
-// Menu
-const template = [
-	{
-		label: 'File',
-		submenu: [
-			{
-				label: 'Exit',
-				accelerator: 'CmdOrCtrl+Q',
-				click: () => {
-					app.quit()
-				}
-			}
-		]
-	},
-	{
-		label: 'Edit',
-		submenu: [
-			{ role: 'undo' },
-			{ role: 'redo' },
-			{ type: 'separator' },
-			{ role: 'cut' },
-			{ role: 'copy' },
-			{ role: 'paste' }
-		]
-	},
-	{
-		label: 'View',
-		submenu: [
-			{ role: 'reload' },
-			{ role: 'forceReload' },
-			{ role: 'toggleDevTools' },
-			{ type: 'separator' },
-			{ role: 'resetZoom' },
-			{ role: 'zoomIn' },
-			{ role: 'zoomOut' },
-			{ type: 'separator' },
-			{ role: 'togglefullscreen' }
-		]
-	},
-	{
-		label: 'Help',
-		submenu: [
-			{
-				label: 'About',
-				click: () => {
-					// TODO: Show about dialog
-				}
-			}
-		]
-	}
-]
-
+const template = createMenuTemplate(app)
 const menu = Menu.buildFromTemplate(template)
 Menu.setApplicationMenu(menu)
 
