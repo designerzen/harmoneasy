@@ -2,17 +2,8 @@
  * Factory for creating audio input instances
  * Handles instantiation of available input types
  */
-import type { IAudioInput } from "./inputs/input-interface.ts"
-// import InputKeyboard from "./inputs/input-keyboard.ts"
-// import InputGamepad from "./inputs/input-gamepad.ts"
-// import InputWebMIDIDevice from "./inputs/input-webmidi-device.ts"
-// import InputBLEMIDIDevice from "./inputs/input-ble-midi-device.ts"
-// import InputMicrophoneFormant from "./inputs/input-microphone-formant.ts"
-// import InputMicrophoneExample from "./inputs/input-microphone-example.ts"
-// import InputLeapMotion from "./inputs/input-leap-motion.ts"
-// import InputOnScreenKeyboard from "./inputs/input-onscreen-keyboard.ts"
-
 import * as INPUT_TYPES from "./inputs/input-types.ts"
+import type { IAudioInput } from "./inputs/input-interface.ts"
 
 export interface InputFactory {
 	id: string
@@ -22,7 +13,6 @@ export interface InputFactory {
 	create: (options?: Record<string, any>) => IAudioInput | Promise<IAudioInput>
 }
 
-const loadedLibraries = new Map<string, INPUT_TYPES.InputId>()
 
 const loadSupportingLibrary = async (type: string) => {
 	// Create and return instance based on type
@@ -53,9 +43,10 @@ const loadSupportingLibrary = async (type: string) => {
  * @returns A new instance of the requested input type
  * @throws Error if the input type is unknown
  */
+const loadedLibraries = new Map<string, INPUT_TYPES.InputId>()
 const loadSupportingLibraries = async (type: string): Promise<any> => {
 
-	if (!loadedLibraries.has(type)) {
+	if (loadedLibraries.has(type)) {
 		return loadedLibraries.get(type)
 	}
 
@@ -66,27 +57,12 @@ const loadSupportingLibraries = async (type: string): Promise<any> => {
 	return lib
 }
 
-	// switch (type) {
-	// 	case INPUT_TYPES.KEYBOARD:
-	// 		return new InputKeyboard()
-	// 	case INPUT_TYPES.GAMEPAD:
-	// 		return new InputGamepad()
-	// 	case INPUT_TYPES.WEBMIDI:
-	// 		return new InputWebMIDIDevice()
-	// 	case INPUT_TYPES.BLE_MIDI:
-	// 		return new InputBLEMIDIDevice()
-	// 	case INPUT_TYPES.MICROPHONE_FORMANT:
-	// 		return new InputMicrophoneFormant()
-	// 	case INPUT_TYPES.LEAP_MOTION:
-	// 		return new InputLeapMotion()
-	// 	case INPUT_TYPES.ONSCREEN_KEYBOARD: {
-	// 		// OnScreenKeyboard requires special handling as it may need parameters
-	// 		return new InputOnScreenKeyboard()
-	// 	}
-	// 	default:
-	// 		throw new Error(`Unknown input type: ${type}`)
-	// }
-
+/**
+ * Create an input instance for a given type
+ * @param type Input type identifier
+ * @param options Optional configuration for the input
+ * @returns A new instance of the requested input type
+ */
 const createInput = async (type: string, options={} ): Promise<IAudioInput> => {
 	const Class = await loadSupportingLibraries(type)
 	return new Class(options)
@@ -160,7 +136,7 @@ export function getAvailableInputFactories(): InputFactory[] {
 /**
  * Create an input instance by factory ID
  */
-export async function createInputById(id: string): Promise<IAudioInput> {
+export async function createInputById(id: string, options?: Record<string, any>): Promise<IAudioInput> {
 	const factory = INPUT_FACTORIES.find((f) => f.id === id)
 	if (!factory) {
 		throw new Error(`Input factory not found: ${id}`)
@@ -168,5 +144,5 @@ export async function createInputById(id: string): Promise<IAudioInput> {
 	if (!factory.isAvailable()) {
 		throw new Error(`Input is not available: ${factory.name}`)
 	}
-	return factory.create()
+	return factory.create(options)
 }

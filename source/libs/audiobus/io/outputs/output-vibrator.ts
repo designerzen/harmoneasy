@@ -39,6 +39,7 @@ export default class OutputVibrator extends EventTarget implements IAudioOutput 
 	}
 
 	#uuid:string
+	#connected:boolean = false
 	private config: Config
 	private connectedGamepads: Gamepad[] = []	
 	
@@ -55,10 +56,10 @@ export default class OutputVibrator extends EventTarget implements IAudioOutput 
 	}
 	
 	get isConnected(): boolean {
-		throw new Error("Method not implemented.")
+		return this.#connected
 	}
 	get isHidden(): boolean {
-		throw new Error("Method not implemented.")
+		return false
 	}
 
 	constructor(config: Partial<Config> = {}) {
@@ -113,6 +114,9 @@ export default class OutputVibrator extends EventTarget implements IAudioOutput 
 				console.debug('[VIBRATOR] Gamepad disconnected:', event.gamepad.id)
 				this.updateConnectedGamepads()
 			})
+
+			this.#connected = true
+
 		} catch (error) {
 			console.debug('[VIBRATOR] Gamepad API not available:', error)
 		}

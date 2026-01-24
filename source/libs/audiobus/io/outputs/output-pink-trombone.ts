@@ -2,7 +2,7 @@ import { midiNoteToFrequency } from "../../conversion/note-to-frequency.ts"
 import type { IAudioOutput } from "./output-interface.ts"
 
 // import the component if it doesn't already exist
-import "../../pink-trombone/pink-trombone.js"
+import "../../../pink-trombone/pink-trombone.js"
 
 interface Config {
 	enabled: number // 1 for on, 0 for off
@@ -95,37 +95,6 @@ export default class OutputPinkTrombone extends EventTarget implements IAudioOut
 			}
 		} catch (error) {
 			console.debug('[PINK-TROMBONE] Initialization failed:', error)
-		}
-	}
-
-	/**
-	 * Handle Pink Trombone loaded event
-	 */
-	private onPinkTromboneLoaded(): void {
-		if (!this.#pinkTromboneElement || !this.#audioContext) {
-			return
-		}
-
-		try {
-			const element = this.#pinkTromboneElement as any
-
-			// Set the audio context
-			Promise.resolve(element.setAudioContext(this.#audioContext)).then(() => {
-				// Connect to audio destination
-				element.connect(this.#audioContext!.destination)
-
-				// Set initial parameters
-				this.updateSynthesisParameters()
-
-				this.#isInitialized = true
-				this.dispatchEvent(new CustomEvent('connected'))
-
-				console.debug('[PINK-TROMBONE] Initialized successfully')
-			}).catch((error: Error) => {
-				console.debug('[PINK-TROMBONE] Failed to setup audio:', error)
-			})
-		} catch (error) {
-			console.debug('[PINK-TROMBONE] Error in onPinkTromboneLoaded:', error)
 		}
 	}
 
@@ -318,7 +287,7 @@ export default class OutputPinkTrombone extends EventTarget implements IAudioOut
 	/**
 	 * Connect to audio context (optional)
 	 */
-	connect(): Promise<void> {
+	async connect(): Promise<void> {
 		return new Promise((resolve) => {
 			if (this.#isInitialized) {
 				resolve()
@@ -331,7 +300,7 @@ export default class OutputPinkTrombone extends EventTarget implements IAudioOut
 	/**
 	 * Disconnect from audio context (optional)
 	 */
-	disconnect(): void {
+	async disconnect(): Promise<void> {
 		this.allNotesOff()
 		this.#activeNotes.clear()
 	}
@@ -449,6 +418,38 @@ export default class OutputPinkTrombone extends EventTarget implements IAudioOut
 			}
 		}
 	}
+	
+	/**
+	 * Handle Pink Trombone loaded event
+	 */
+	private onPinkTromboneLoaded(): void {
+		if (!this.#pinkTromboneElement || !this.#audioContext) {
+			return
+		}
+
+		try {
+			const element = this.#pinkTromboneElement as any
+
+			// Set the audio context
+			Promise.resolve(element.setAudioContext(this.#audioContext)).then(() => {
+				// Connect to audio destination
+				element.connect(this.#audioContext!.destination)
+
+				// Set initial parameters
+				this.updateSynthesisParameters()
+
+				this.#isInitialized = true
+				this.dispatchEvent(new CustomEvent('connected'))
+
+				console.debug('[PINK-TROMBONE] Initialized successfully')
+			}).catch((error: Error) => {
+				console.debug('[PINK-TROMBONE] Failed to setup audio:', error)
+			})
+		} catch (error) {
+			console.debug('[PINK-TROMBONE] Error in onPinkTromboneLoaded:', error)
+		}
+	}
+
 }
 
 // Add type declaration for pink-trombone element

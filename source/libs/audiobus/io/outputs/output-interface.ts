@@ -5,20 +5,16 @@ export interface IAudioOutput{
 	get isConnected():boolean
 	get isHidden():boolean
 	
+	// TODO: implement pitchBend etc
 	noteOn(note: number, velocity: number): void
 	noteOff(note: number): void
 	allNotesOff(): void
 
-	// TODO: implement pitchBend etc
-
 	// optional
-	connect?():Promise<Function>|Function
-	disconnect?():Promise<void>|Function
+	connect?():Promise<void|Function>|Function
+	disconnect?():Promise<void|Function>|Function
 	createGui?():Promise<HTMLElement>
 	destroyGui?():Promise<void>
-
-	// has a button element and a method to call on click
-	// getControls():Object
 
 	hasMidiOutput?(): boolean
 	hasAudioOutput?(): boolean

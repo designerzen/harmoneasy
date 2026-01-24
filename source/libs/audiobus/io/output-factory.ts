@@ -3,7 +3,6 @@
  * Handles instantiation of available output types
  */
 import * as OUTPUT_TYPES from "./outputs/output-types.ts"
-
 import type { IAudioOutput } from "./outputs/output-interface.ts"
 
 export interface OutputFactory {
@@ -56,7 +55,7 @@ const loadSupportingLibrary = async (type: string) => {
  * @returns Constructor class for the requested output type
  * @throws Error if the output type is unknown
  */
-const loadedLibraries = new Map<string, any>()
+const loadedLibraries = new Map<string, OUTPUT_TYPES.OutputId>()
 const loadSupportingLibraries = async (type: string): Promise<any> => {
 	// Check if already loaded
 	if (loadedLibraries.has(type)) {
@@ -155,7 +154,7 @@ export const OUTPUT_FACTORIES: OutputFactory[] = [
 		id: OUTPUT_TYPES.BLE_MIDI,
 		name: "BLE MIDI",
 		description: "BLE MIDI",
-		isAvailable: () => typeof navigator !== "undefined" && !!navigator.bluetooth,
+		isAvailable: () => typeof navigator !== "undefined" && !!navigator?.bluetooth && !!navigator?.bluetooth?.requestDevice,
 		create: (options) => createOutput(OUTPUT_TYPES.BLE_MIDI, options),
 	},
 	{

@@ -1,5 +1,5 @@
 import type { IAudioOutput } from "./output-interface.ts"
-import { NOTE_ON } from "../../commands.ts"
+import { NOTE_ON } from "../../../commands.ts"
 /**
  * Web Audio Modules 2 (WAM2) Audio Output
  * 
