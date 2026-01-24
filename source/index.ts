@@ -51,13 +51,17 @@ import OutputBLEMIDIDevice from './libs/audiobus/io/outputs/output-ble-midi-devi
 import OutputWebMIDIDevice from './libs/audiobus/io/outputs/output-webmidi-device.ts'
 import OutputOnScreenKeyboard from './libs/audiobus/io/outputs/output-onscreen-keyboard.ts'
 import OutputSpectrumAnalyser from './libs/audiobus/io/outputs/output-spectrum-analyser.ts'
+import OutputNotation from './libs/audiobus/io/outputs/output-notation.ts'
+import OutputPinkTrombone from './libs/audiobus/io/outputs/output-pink-trombone.ts'
+import OutputSpeechSynthesis from './libs/audiobus/io/outputs/output-speech-synthesis.ts'
+import OutputVibrator from './libs/audiobus/io/outputs/output-vibrator.ts'
+import { createOutputById } from './libs/audiobus/io/output-factory.ts'
 
 import type { IAudioCommand } from './libs/audiobus/audio-command-interface.ts'
 import type { IAudioOutput } from './libs/audiobus/io/outputs/output-interface.ts'
 import type InputAudioEvent from './libs/audiobus/io/events/input-audio-event.ts'
 import type AbstractInput from './libs/audiobus/io/inputs/abstract-input.ts'
 import InputMicrophoneFormant from './libs/audiobus/io/inputs/input-microphone-formant.ts'
-import OutputNotation from './libs/audiobus/io/outputs/output-notation.ts'
 
 const storage = hasOPFS() ? new OPFSStorage() : null
 const recorder: AudioEventRecorder = new AudioEventRecorder()
@@ -153,43 +157,51 @@ const createInputOutputChain = async (outputMixer:GainNode, inputDevices:Abstrac
 	const outputOnscreenKeyboard = new OutputOnScreenKeyboard(inputSVGKeyboard.keyboard)
 	const outputs:IAudioOutput[] = [ outputOnscreenKeyboard, ...outputDevices ]
 	
-	// const outputSongVisualiser = new SongVisualiser()
-	// outputs.push( outputSongVisualiser )
-
-	// Now add our Outputs - these can be as simple
-	// as a WebAudio AudioDestinationNode or a WebMIDI channel
-	// but can also be hyper complex or none-audible such as vibrator
-	// or loaded mfrom an external source such as a WAM
-    const musicalOutput = new PolySynth(bus.audioContext)
-    // synthesizer = new SynthOscillator( audioContext )
-    // synthesizer.addTremolo(0.5)
+	// PolySynth - polyphonic synthesizer
+	const musicalOutput = new PolySynth(bus.audioContext)
 	musicalOutput.output.connect(outputMixer)
-    outputs.push( musicalOutput )
+	outputs.push(musicalOutput)
 
-	// create our Bluetooth Output if possible
-	if (navigator.bluetooth) {
-		const outputBluetooth = new OutputBLEMIDIDevice()
-		outputs.push( outputBluetooth )
-	}
+	// Notation output - displays notes on a staff
+	const outputNotation = new OutputNotation()
+	outputs.push(outputNotation)
 
-	// add our MIDI Output too
-	if (navigator.requestMIDIAccess) {
-		const outputWebMIDIDevice = new OutputWebMIDIDevice()
-		outputs.push( outputWebMIDIDevice )
-	}
-
-	// In DEV mode (never in PROD - log all events to console)
-	if (import.meta.env.DEV){
-		outputs.push( new OutputConsole() )
-	}
-
-	// Add spectrum analyser for realtime visualization
-	// right at the very end
+	// Spectrum analyser - FFT visualization
 	const outputSpectrumAnalyser = new OutputSpectrumAnalyser(outputMixer)
 	outputs.push(outputSpectrumAnalyser)
 
-	const outputNotation = new OutputNotation()
-	outputs.push(outputNotation)
+	// Pink Trombone - vocal synthesis
+	const outputPinkTrombone = new OutputPinkTrombone()
+	outputs.push(outputPinkTrombone)
+
+	// Speech synthesis - sing note names
+	if (typeof window !== "undefined" && !!window.speechSynthesis) {
+		const outputSpeech = new OutputSpeechSynthesis()
+		outputs.push(outputSpeech)
+	}
+
+	// Vibrator - haptic feedback
+	if (typeof navigator !== "undefined" && (!!navigator?.vibrate || !!navigator?.webkitVibrate || !!navigator?.mozVibrate)) {
+		const outputVibrator = new OutputVibrator()
+		outputs.push(outputVibrator)
+	}
+
+	// WebMIDI output
+	if (navigator.requestMIDIAccess) {
+		const outputWebMIDIDevice = new OutputWebMIDIDevice()
+		outputs.push(outputWebMIDIDevice)
+	}
+
+	// Bluetooth MIDI output
+	if (navigator.bluetooth) {
+		const outputBluetooth = new OutputBLEMIDIDevice()
+		outputs.push(outputBluetooth)
+	}
+
+	// Console output - DEV mode only
+	if (import.meta.env.DEV) {
+		outputs.push(new OutputConsole())
+	}
 
 	chain.addInputs(inputs)
 	chain.addOutputs(outputs)
