@@ -46,6 +46,9 @@ export default class PolySynth implements IAudioOutput{
 		return this.instruments.length > 0
 	}
 
+	get isHidden(): boolean {
+		return false
+	}
 
     constructor(audioContext: AudioContext,  options = {}) {
         this.#audioContext = audioContext
