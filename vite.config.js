@@ -9,11 +9,20 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    emptyOutDir: true
+    emptyOutDir: true,
+    rollupOptions: {
+      external: ['url', 'path']
+    }
   },
   test: {
     globals: true,
     environment: 'node'
+  },
+  resolve: {
+    alias: {
+      'url': false,
+      'path': false
+    }
   }
 })
 

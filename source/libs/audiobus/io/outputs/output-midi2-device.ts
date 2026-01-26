@@ -6,7 +6,7 @@
 import { centsToPitch } from '../../conversion/cents-to-pitch.ts'
 import AudioCommand from '../../audio-command.ts'
 import type { IAudioOutput } from './output-interface.ts'
-import { CONTROL_CHANGE, NOTE_OFF, NOTE_ON, PITCH_BEND, PROGRAM_CHANGE } from '../../commands.ts'
+import { CONTROL_CHANGE, NOTE_OFF, NOTE_ON, PITCH_BEND, PROGRAM_CHANGE } from "../../../../commands.ts"
 import {
     type UMPPacket,
     PER_NOTE_CONTROLLERS,
