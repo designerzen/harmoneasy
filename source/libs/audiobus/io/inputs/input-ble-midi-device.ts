@@ -10,8 +10,8 @@ import { NOTE_OFF, NOTE_ON } from "../../../../commands"
 import {
     connectToBLEDevice, disconnectBLEDevice,
     watchCharacteristics, describeDevice
-} from "../../../midi-ble/ble-connection.ts"
-import { BLE_SERVICE_UUID_DEVICE_INFO, BLE_SERVICE_UUID_MIDI } from "../../../midi-ble/ble-constants.ts"
+} from "../../midi/midi-ble/ble-connection.ts"
+import { BLE_SERVICE_UUID_DEVICE_INFO, BLE_SERVICE_UUID_MIDI } from "../../midi/midi-ble/ble-constants.ts"
 
 import type { IAudioCommand } from "../../audio-command-interface.ts"
 import type { IAudioInput } from "./input-interface.ts"

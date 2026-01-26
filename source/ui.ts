@@ -17,8 +17,12 @@ const DOM_ID_ROOT_SELECTOR = "root-selector"
 const DOM_ID_SELECTOR_MIDI_CHANNEL = "midi-channel-selector"
 const DOM_ID_RANGE_TEMPO = "tempo"
 const DOM_ID_BPM = "bpm"
+const DOM_ID_BUTTON_TEMPO_UP = "btn-tempo-up"
+const DOM_ID_BUTTON_TEMPO_DOWN = "btn-tempo-down"
 const DOM_ID_RANGE_VOLUME = "volume"
 const DOM_ID_VOLUME_OUTPUT = "volume-output"
+const DOM_ID_BUTTON_VOLUME_UP = "btn-volume-up"
+const DOM_ID_BUTTON_VOLUME_DOWN = "btn-volume-down"
 const DOM_ID_BUTTON_CONNECT_BLUETOOTH = "btn-connect-to-ble"
 const DOM_ID_BUTTON_TOGGLE_WEBMIDI = "btn-toggle-webmidi"
 
@@ -67,8 +71,12 @@ export default class UI implements IAudioOutput {
 	elementMIDIChannelSelector: HTMLElement | null
 	elementTempo: HTMLElement | null
 	elementBPM: HTMLElement | null
+	elementButtonTempoUp: HTMLElement | null
+	elementButtonTempoDown: HTMLElement | null
 	elementVolume: HTMLElement | null
 	elementVolumeOutput: HTMLElement | null
+	elementButtonVolumeUp: HTMLElement | null
+	elementButtonVolumeDown: HTMLElement | null
 	elementButtonBluetoothConnect: HTMLElement | null
 	elementButtonWebMIDI: HTMLElement | null
 	elementBLEManualFields: HTMLElement | null
@@ -129,8 +137,12 @@ export default class UI implements IAudioOutput {
 		this.elementMIDIChannelSelector = document.getElementById(DOM_ID_SELECTOR_MIDI_CHANNEL)
 		this.elementTempo = document.getElementById(DOM_ID_RANGE_TEMPO)
 		this.elementBPM = document.getElementById(DOM_ID_BPM)
+		this.elementButtonTempoUp = document.getElementById(DOM_ID_BUTTON_TEMPO_UP)
+		this.elementButtonTempoDown = document.getElementById(DOM_ID_BUTTON_TEMPO_DOWN)
 		this.elementVolume = document.getElementById(DOM_ID_RANGE_VOLUME)
 		this.elementVolumeOutput = document.getElementById(DOM_ID_VOLUME_OUTPUT)
+		this.elementButtonVolumeUp = document.getElementById(DOM_ID_BUTTON_VOLUME_UP)
+		this.elementButtonVolumeDown = document.getElementById(DOM_ID_BUTTON_VOLUME_DOWN)
 
 		this.elementButtonBluetoothConnect = document.getElementById(DOM_ID_BUTTON_CONNECT_BLUETOOTH)
 
@@ -648,6 +660,26 @@ export default class UI implements IAudioOutput {
 	}
 
 	/**
+	 * Register a callback for when the tempo up button is clicked
+	 * @param {Function} callback () => void
+	 */
+	whenTempoUpRequestedRun(callback:Function) {
+		this.elementButtonTempoUp && this.elementButtonTempoUp.addEventListener("click", e => {
+			callback && callback(e)
+		}, { signal: this.abortController.signal })
+	}
+
+	/**
+	 * Register a callback for when the tempo down button is clicked
+	 * @param {Function} callback () => void
+	 */
+	whenTempoDownRequestedRun(callback:Function) {
+		this.elementButtonTempoDown && this.elementButtonTempoDown.addEventListener("click", e => {
+			callback && callback(e)
+		}, { signal: this.abortController.signal })
+	}
+
+	/**
 	 * 
 	 * @param {Function} callback 
 	 */
@@ -656,6 +688,26 @@ export default class UI implements IAudioOutput {
 			const volume = this.elementVolume.value
 			callback && callback(volume)
 			if (this.elementVolumeOutput) this.elementVolumeOutput.textContent = volume
+		}, { signal: this.abortController.signal })
+	}
+
+	/**
+	 * Register a callback for when the volume up button is clicked
+	 * @param {Function} callback () => void
+	 */
+	whenVolumeUpRequestedRun(callback:Function) {
+		this.elementButtonVolumeUp && this.elementButtonVolumeUp.addEventListener("click", e => {
+			callback && callback(e)
+		}, { signal: this.abortController.signal })
+	}
+
+	/**
+	 * Register a callback for when the volume down button is clicked
+	 * @param {Function} callback () => void
+	 */
+	whenVolumeDownRequestedRun(callback:Function) {
+		this.elementButtonVolumeDown && this.elementButtonVolumeDown.addEventListener("click", e => {
+			callback && callback(e)
 		}, { signal: this.abortController.signal })
 	}
 

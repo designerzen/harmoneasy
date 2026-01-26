@@ -30,9 +30,16 @@ export function AnimatedSVGEdge({
 	useEffect(() => {
 		const abortController = new AbortController()
 		const onAudioEvent = (audioEvent:InputAudioEvent|OutputAudioEvent) => {
+			
 			const command:IAudioCommand = audioEvent.command	
 			const colour = convertNoteNumberToColour( command.number )
 			const radius = ( command.velocity ?? 128) / 16
+
+			// TODO: check to see if this event was started from the Input
+			const from = command.from
+			console.log("AnimatedSVGEdge::onAudioEvent", {command, from, data})
+			
+			
 			
 			setColour( colour )
 			setRadius( radius)

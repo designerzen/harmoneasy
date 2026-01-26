@@ -9,15 +9,15 @@
  * Uses a Worker for rendering to keep main thread responsive
  */
 
-import SONG_VISUALISER_WORKER from "./song-visualiser-worker.js?url";
-import { NOTE_ON, NOTE_OFF } from "../commands.js";
-import NoteModel from "../libs/audiobus/note-model.js";
+import SONG_VISUALISER_WORKER from "./song-visualiser-worker.ts?url";
+import { NOTE_ON, NOTE_OFF } from "../commands.ts";
+import NoteModel from "../libs/audiobus/note-model.ts";
 
-import type AudioCommand from "../libs/audiobus/audio-command.js";
-import type OPFSStorage from "../libs/audiobus/storage/opfs-storage.js";
-import type { IAudioCommand } from "../libs/audiobus/audio-command-interface.js";
-import type RecorderAudioEvent from "../libs/audiobus/audio-event-recorder.js";
-import type { IAudioOutput } from "../libs/audiobus/io/outputs/output-interface.js";
+import type AudioCommand from "../libs/audiobus/audio-command.ts";
+import type OPFSStorage from "../libs/audiobus/storage/opfs-storage.ts";
+import type { IAudioCommand } from "../libs/audiobus/audio-command-interface.ts";
+import type RecorderAudioEvent from "../libs/audiobus/audio-event-recorder.ts";
+import type { IAudioOutput } from "../libs/audiobus/io/outputs/output-interface.ts";
 
 interface NoteBarData {
     startTime: number;

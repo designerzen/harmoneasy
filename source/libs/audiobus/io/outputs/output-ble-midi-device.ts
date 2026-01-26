@@ -8,15 +8,15 @@ import {
 	sendBLEControlChange, sendBLEProgramChange,
 	sendBLEPolyphonicAftertouch, sendBLEChannelAftertouch,
 	sendBLEPitchBend, sendBLEAllNoteOff
-} from "../../../midi-ble/midi-ble.ts"
+} from "../../midi/midi-ble/midi-ble.ts"
 import { 
 	BLE_SERVICE_UUID_DEVICE_INFO, 
 	BLE_SERVICE_UUID_MIDI 
-} from "../../../midi-ble/ble-constants.ts"
+} from "../../midi/midi-ble/ble-constants.ts"
 
 import type { IAudioOutput } from "./output-interface.ts"
 import type { IAudioCommand } from "../../audio-command-interface.ts"
-import { connectToBLEDevice, describeDevice } from "../../../midi-ble/ble-connection.ts"
+import { connectToBLEDevice, describeDevice } from "../../midi/midi-ble/ble-connection.ts"
 
 export const BLE_OUTPUT_ID = "BLE MIDI"
 

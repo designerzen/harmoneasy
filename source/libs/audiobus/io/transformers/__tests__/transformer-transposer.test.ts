@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { TransformerTransposer } from '../transformer-transposer'
-import type { IAudioCommand } from '../../audio-command-interface'
-import AudioCommand from '../../audio-command'
-import * as Commands from '../../../../commands'
-import { TUNING_MODE_IONIAN, TUNING_MODE_AEOLIAN } from '../../tuning/scales'
+import { TransformerTransposer } from '../transformer-transposer.ts'
+import type { IAudioCommand } from '../../audio-command-interface.ts'
+import AudioCommand from '../../audio-command.ts'
+import * as Commands from '../../../../commands.ts'
+import { TUNING_MODE_IONIAN, TUNING_MODE_AEOLIAN } from '../../tuning/scales.ts'
 
 const mockTimer = {
     BPM: 120,

@@ -1,3 +1,4 @@
+import { noteNumberToName } from "../../conversion/note-to-name.ts"
 import type { IAudioOutput } from "./output-interface.ts"
 
 interface Config {
@@ -57,7 +58,6 @@ export default class OutputSpeechSynthesis extends EventTarget implements IAudio
 		this.config = { ...DEFAULT_OPTIONS, ...config }
 		this.initialise()
 	}
-
 
 	hasMidiOutput(): boolean {
 		return false

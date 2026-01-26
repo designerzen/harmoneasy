@@ -1,7 +1,6 @@
-//const OSCILLATORS = [ "sine", "triangle"]
-import { noteNumberToFrequency } from "../conversion/note-to-frequency.js"
-import type { IAudioOutput } from "../outputs/output-interface.js"
+import { noteNumberToFrequency } from "../../conversion/note-to-frequency.ts"
 import { loadWaveTable } from "./wave-tables.js"
+import type { IAudioOutput } from "../../io/outputs/output-interface.ts"
 // import { BiquadFilterNode, OscillatorNode, AudioContext } from "standardized-audio-context"
 
 export const OSCILLATORS = [ "sine", "square", "sawtooth", "triangle" ]
@@ -45,16 +44,16 @@ export default class SynthOscillator implements IAudioOutput{
     #uuid = "SynthOscillator-"+(SynthOscillator.ID++)
     #id = this.#uuid
     
-    startedAt = -1
-    oscillatorsActive = false
+    #startedAt = -1
+    oscillatorsActive:boolean = false
     activeNote = null
 
     // arpeggioIntervals = []
     customWave = null
 
+	#audioContext: BaseAudioContext
 	dcFilterNode: BiquadFilterNode
 	filterNode: BiquadFilterNode
-	audioContext: BaseAudioContext
 	gainNode: GainNode
 	oscillator: OscillatorNode
 	tremoloOscillator: OscillatorNode
@@ -86,8 +85,12 @@ export default class SynthOscillator implements IAudioOutput{
 		return true
 	}
 
+	get isHidden(): boolean {
+		return false
+	}
+
     get now(){
-        return this.audioContext.currentTime
+        return this.#audioContext.currentTime
     }
 
     get gain(){
@@ -213,8 +216,12 @@ export default class SynthOscillator implements IAudioOutput{
         return this.options.title ?? "SynthOscilltor"
     }
 
+	get audioContext(): BaseAudioContext{
+		return this.#audioContext
+	}
+
     constructor(audioContext: BaseAudioContext, options={}){
-        this.audioContext = audioContext
+        this.#audioContext = audioContext
         this.options = Object.assign({}, this.options, options)
 
         // Add a highpass filter at 20Hz to remove DC offset
@@ -262,9 +269,9 @@ export default class SynthOscillator implements IAudioOutput{
      * @param {Number} frequency 
      * @param {Number} startTime 
      */
-    createOscillator( frequency=440, startTime = this.audioContext.currentTime  ){
+    createOscillator( frequency=440, startTime = this.#audioContext.currentTime  ){
         
-        this.oscillator = this.audioContext.createOscillator()
+        this.oscillator = this.#audioContext.createOscillator()
         // if (this.customWave)
         // {
         //     // this.oscillator.setPeriodicWave(this.customWave)
@@ -327,10 +334,10 @@ export default class SynthOscillator implements IAudioOutput{
      */
     addTremolo( depth=0.5 ){
         const now = this.now
-        this.tremoloGain = this.audioContext.createGain()
+        this.tremoloGain = this.#audioContext.createGain()
         this.tremoloGain.gain.value = depth
 
-        this.tremoloOscillator = this.audioContext.createOscillator()
+        this.tremoloOscillator = this.#audioContext.createOscillator()
         this.tremoloOscillator.type = 'sine'
         this.tremoloOscillator.connect(this.tremoloGain)
         this.tremoloOscillator.start(now) 
@@ -402,7 +409,7 @@ export default class SynthOscillator implements IAudioOutput{
         }
 
         this.activeNote = noteNumber
-        this.startedAt = startTime
+        this.#startedAt = startTime
         return this
     }
 	
@@ -422,7 +429,7 @@ export default class SynthOscillator implements IAudioOutput{
         const releaseDuration = Math.max(this.options.release, this.options.filterRelease)
         
         const now = this.now
-        const elapsed = now - this.startedAt
+        const elapsed = now - this.#startedAt
 
         // const timeAddition = 
 
@@ -460,7 +467,7 @@ export default class SynthOscillator implements IAudioOutput{
         }
 
         this.timerInterval = setTimeout(()=> this.activeNote = null, this.options.release )
-        this.startedAt = -1
+        this.#startedAt = -1
 
         return this
     }
@@ -491,7 +498,7 @@ export default class SynthOscillator implements IAudioOutput{
 
     setWaveTable(waveTable: never){
         const {real, imag} = waveTable
-        const waveData:PeriodicWave = this.audioContext.createPeriodicWave(real, imag, { disableNormalization: true })
+        const waveData:PeriodicWave = this.#audioContext.createPeriodicWave(real, imag, { disableNormalization: true })
         // reshape any playing oscillators
         if ( this.oscillator)
         {

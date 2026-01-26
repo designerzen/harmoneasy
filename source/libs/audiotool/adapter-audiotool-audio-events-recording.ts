@@ -1,9 +1,9 @@
 // import { createAudiotoolClient, secondsToTicks, Ticks } from "@audiotool/nexus"
 
-import RecorderAudioEvent from "../audiobus/audio-event-recorder.js"
+import RecorderAudioEvent from "../audiobus/audio-event-recorder.ts"
 import { AUDIOTOOL_STORAGE_KEYS } from './audio-tool-settings.ts'
-import { NOTE_ON } from "../../commands.js"
-import type Timer from "../audiobus/timing/timer.js"
+import { NOTE_ON } from "../../commands.ts"
+import type Timer from "../audiobus/timing/timer.ts"
 import type { IAudioCommand } from "../audiobus/audio-command-interface.ts"
 
 // lazily imported AudioToolSDK

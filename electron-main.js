@@ -2,7 +2,7 @@ import path from 'path'
 import { app, BrowserWindow, Menu, ipcMain } from 'electron'
 import { fileURLToPath } from 'url'
 import { createRequire } from 'module'
-import { createMenuTemplate } from './source/electron/electron-menu'
+import { createMenuTemplate } from './source/electron/electron-menu.ts'
 
 const require = createRequire(import.meta.url)
 const updateElectronApp = require('update-electron-app')

@@ -45,8 +45,8 @@ importers:
         specifier: ^25.3.77
         version: 25.3.77
       supersonic-scsynth-bundle:
-        specifier: ^0.32.0
-        version: 0.32.0
+        specifier: ^0.34.0
+        version: 0.34.0
       uWebSockets.js:
         specifier: github:uNetworking/uWebSockets.js
         version: https://codeload.github.com/uNetworking/uWebSockets.js/tar.gz/fee15cda0e4bdb7f1bb0edf8844c1811110af635
@@ -2574,20 +2574,20 @@ packages:
     resolution: {integrity: sha512-MvjXzkz/BOfyVDkG0oFOtBxHX2u3gKbMHIF/dXblZsgD3BWOFLmHovIpZY7BykJdAjcqRCBi1WYBNdEC9yI7vg==}
     engines: {node: '>= 8.0'}
 
-  supersonic-scsynth-bundle@0.32.0:
-    resolution: {integrity: sha512-NQf3I/IWWqItc7c+mGA8RkLN2BdLHHCZkgmn0+mMvEi1ONCb10dbOvGlYTm78hY2s/OIbKc77ZTdXl7RCp+aJw==}
+  supersonic-scsynth-bundle@0.34.0:
+    resolution: {integrity: sha512-PQtEdxCUrsz54OzlpWRUrYjPQkuhMjJ8BMXstJKqJ0L6sPspdJQ4+mcNSOXtqSGEYX2QDj6NQ8DxpgbU+6ZeTw==}
 
   supersonic-scsynth-core@0.24.3:
     resolution: {integrity: sha512-wTslU0CmeF4e8U9n57FBP3E1Ji89rJL0d1pOZNYEjhj52O1/SdqAFRSEeCXRrIzIk+PM7X7d/iiEPNK2D9/PZA==}
 
-  supersonic-scsynth-samples@0.32.0:
-    resolution: {integrity: sha512-lnq05FQ3FWKM2/us8tiHyhUzM59e5L4e9BvrnPiCOhbnlPu29C4qOLdDNKVgRTmBXjFpQgk/D+pY6D1tDPRI/A==}
+  supersonic-scsynth-samples@0.34.0:
+    resolution: {integrity: sha512-DUlDYaIusNsM77KyHvw5QRl2kHvU1C7SPhagWn5DUCKdLUXwtTJZsBH5Uhk1wITG7jrYjxvmOdQSYyr3TkwYHw==}
 
-  supersonic-scsynth-synthdefs@0.32.0:
-    resolution: {integrity: sha512-ArAdYSeXWSYE1itZOocABWrhb1OLrL6VH1TdUVSf9xqo0MCmpOqElN/zKS3GVoaiTxV7r8KhjMk3jwx8B2YTgw==}
+  supersonic-scsynth-synthdefs@0.34.0:
+    resolution: {integrity: sha512-GXim4fbYBKrh0CLC4NGiZ/9bC1Sh7upEcJcj5xSghvp/l14YwtDi/mPkGve4YQt9tvtkXjgeAP86MEoi9JdT3w==}
 
-  supersonic-scsynth@0.32.0:
-    resolution: {integrity: sha512-hKrf4AuM+zTifMdQZ0U+Y+ToJyMDaG8eLXUSmMEMtmv0Uj5VMkybZh/8ZSvGyUa0zokLh8O+MPbA3YN7kR+q2g==}
+  supersonic-scsynth@0.34.0:
+    resolution: {integrity: sha512-mdzEQSBhrfR6lWp5TErkLQN8dDq6ywEgDe3WpbLs3SeBr1CrSHk9HQnd6TlEXkt3MrSBkO46FyL7ZN5MIBc/3w==}
     engines: {node: '>=18.0.0'}
 
   supports-color@7.2.0:
@@ -5571,20 +5571,20 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  supersonic-scsynth-bundle@0.32.0:
+  supersonic-scsynth-bundle@0.34.0:
     dependencies:
-      supersonic-scsynth: 0.32.0
+      supersonic-scsynth: 0.34.0
       supersonic-scsynth-core: 0.24.3
-      supersonic-scsynth-samples: 0.32.0
-      supersonic-scsynth-synthdefs: 0.32.0
+      supersonic-scsynth-samples: 0.34.0
+      supersonic-scsynth-synthdefs: 0.34.0
 
   supersonic-scsynth-core@0.24.3: {}
 
-  supersonic-scsynth-samples@0.32.0: {}
+  supersonic-scsynth-samples@0.34.0: {}
 
-  supersonic-scsynth-synthdefs@0.32.0: {}
+  supersonic-scsynth-synthdefs@0.34.0: {}
 
-  supersonic-scsynth@0.32.0:
+  supersonic-scsynth@0.34.0:
     dependencies:
       '@thi.ng/malloc': 6.1.134
 

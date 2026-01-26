@@ -3,7 +3,7 @@
  * Handles canvas rendering for song timeline visualization
  */
 
-import { NOTE_OFF, NOTE_ON } from "../commands.js"
+import { NOTE_OFF, NOTE_ON } from "../commands.ts"
 
 interface NoteBarData {
   startTime: number

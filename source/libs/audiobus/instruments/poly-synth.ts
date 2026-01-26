@@ -2,9 +2,9 @@
  * Lets you play many synths at once.
  * Can be of any instrument but currently limited to only one 
  */
-import SynthOscillator, { OSCILLATORS } from "./synth-oscillator"
+import SynthOscillator, { OSCILLATORS } from "./oscillators/synth-oscillator.ts"
 
-import type { IAudioOutput } from "../outputs/output-interface"
+import type { IAudioOutput } from "../io/outputs/output-interface.ts"
 
 export default class PolySynth implements IAudioOutput{
 

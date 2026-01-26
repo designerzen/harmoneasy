@@ -2,7 +2,7 @@ import { createAudiotoolClient } from "@audiotool/nexus"
 import type { AudiotoolClient, SyncedDocument } from "@audiotool/nexus"
 import { log } from '../log.ts'
 // @ts-ignore
-import { AUDIOTOOL_STORAGE_KEYS } from './audio-tool-settings.js'
+import { AUDIOTOOL_STORAGE_KEYS } from './audio-tool-settings.ts'
 // @ts-ignore
 import { edoScaleMicroTuningOctave } from "../pitfalls/edo.mjs"
 // @ts-ignore

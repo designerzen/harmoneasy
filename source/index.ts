@@ -43,7 +43,7 @@ import InputOnScreenKeyboard, { ALL_KEYBOARD_NOTES, ONSCREEN_KEYBOARD_INPUT_ID }
 import InputBLEMIDIDevice from './libs/audiobus/io/inputs/input-ble-midi-device.ts'
 
 // IAudioOutputs 
-import SynthOscillator from './libs/audiobus/instruments/synth-oscillator.ts'
+import SynthOscillator from './libs/audiobus/instruments/oscillators/synth-oscillator.ts'
 import PolySynth from './libs/audiobus/instruments/poly-synth.ts'
 
 import OutputConsole from './libs/audiobus/io/outputs/output-console.ts'
@@ -244,10 +244,46 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number=
         timer.BPM = tempo
         state.set('tempo', tempo)
     })
+
+	frontEnd.whenTempoUpRequestedRun(() => {
+		const newTempo = Math.min(303, timer.BPM + 1)
+		timer.BPM = newTempo
+		frontEnd.setTempo(newTempo)
+		state.set('tempo', newTempo)
+	})
+
+	frontEnd.whenTempoDownRequestedRun(() => {
+		const newTempo = Math.max(10, timer.BPM - 1)
+		timer.BPM = newTempo
+		frontEnd.setTempo(newTempo)
+		state.set('tempo', newTempo)
+	})
+
     frontEnd.whenVolumeChangesRun((volume: number) =>{
 		mixer.gain.value = (volume / 100) * 0.5
  		state.set('volume', volume)
 	})
+
+	frontEnd.whenVolumeUpRequestedRun(() => {
+		const volumeElement = frontEnd.elementVolume as HTMLInputElement
+		const currentVolume = parseInt(volumeElement.value, 10)
+		const newVolume = Math.min(100, currentVolume + 5)
+		volumeElement.value = String(newVolume)
+		mixer.gain.value = (newVolume / 100) * 0.5
+		frontEnd.elementVolumeOutput.textContent = String(newVolume)
+		state.set('volume', newVolume)
+	})
+
+	frontEnd.whenVolumeDownRequestedRun(() => {
+		const volumeElement = frontEnd.elementVolume as HTMLInputElement
+		const currentVolume = parseInt(volumeElement.value, 10)
+		const newVolume = Math.max(0, currentVolume - 5)
+		volumeElement.value = String(newVolume)
+		mixer.gain.value = (newVolume / 100) * 0.5
+		frontEnd.elementVolumeOutput.textContent = String(newVolume)
+		state.set('volume', newVolume)
+	})
+
     frontEnd.whenMIDIFileExportRequestedRun(async () => {
         const blob = await createMIDIFileFromAudioEventRecording(recorder, timer)
         saveBlobToLocalFileSystem(blob, recorder.name)

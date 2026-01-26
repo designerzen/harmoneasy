@@ -5,8 +5,8 @@
  */
 
 import SongVisualiser from "./song-visualiser.js"
-import type AudioCommand from "../libs/audiobus/audio-command.js"
-import type OPFSStorage from "../libs/audiobus/storage/opfs-storage.js"
+import type AudioCommand from "../libs/audiobus/audio-command.ts"
+import type OPFSStorage from "../libs/audiobus/storage/opfs-storage.ts"
 
 export class SongVisualiserUI extends HTMLElement {
   private visualiser: SongVisualiser | null = null

@@ -1,8 +1,8 @@
 
 import SVGKeyboard from "../../../../components/keyboard-svg.js"
-import { convertNoteNumberToColour } from "../../conversion/note-to-colour.js"
+import { convertNoteNumberToColour } from "../../conversion/note-to-colour.ts"
 
-import type { IAudioOutput } from "./output-interface.js"
+import type { IAudioOutput } from "./output-interface.ts"
 
 export const ONSCREEN_KEYBOARD_OUTPUT_ID = "Onscreen Keyboard"
 

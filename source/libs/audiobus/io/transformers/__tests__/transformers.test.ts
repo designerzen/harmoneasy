@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { Transformer } from '../abstract-transformer'
-import { IdentityTransformer } from '../transformer-identity'
-import { TransformerQuantise } from '../transformer-quantise'
-import { TransformerTransposer } from '../transformer-transposer'
-import { TransformerArpeggiator } from '../transformer-arpeggiator'
-import { TransformerRandomiser } from '../transformer-randomiser'
-import { TUNING_MODE_IONIAN } from '../../tuning/scales'
+import { Transformer } from '../abstract-transformer.ts'
+import { IdentityTransformer } from '../transformer-identity.ts'
+import { TransformerQuantise } from '../transformer-quantise.ts'
+import { TransformerTransposer } from '../transformer-transposer.ts'
+import { TransformerArpeggiator } from '../transformer-arpeggiator.ts'
+import { TransformerRandomiser } from '../transformer-randomiser.ts'
+import { TUNING_MODE_IONIAN } from '../../tuning/scales.ts'
 
 describe('All Transformers', () => {
     it('should all implement ITransformer', () => {

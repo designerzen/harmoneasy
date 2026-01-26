@@ -4,9 +4,9 @@
 
 import SongVisualiser from "./song-visualiser.js"
 import { SongVisualiserUI } from "./song-visualiser-ui.js"
-import AudioCommand from "../libs/audiobus/audio-command.js"
-import OPFSStorage from "../libs/audiobus/storage/opfs-storage.js"
-import { NOTE_ON, NOTE_OFF } from "../commands.js"
+import AudioCommand from "../libs/audiobus/audio-command.ts"
+import OPFSStorage from "../libs/audiobus/storage/opfs-storage.ts"
+import { NOTE_ON, NOTE_OFF } from "../commands.ts"
 
 /**
  * Example 1: Basic usage with manual commands

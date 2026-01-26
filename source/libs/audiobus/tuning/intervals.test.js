@@ -71,7 +71,7 @@ import {
     CHORD_INTERVALS,
     MODAL_SCALES,
     ALL_BASIC_INTERVALS
-} from './intervals'
+} from './intervals.js'
 
 describe('Basic Intervals', () => {
     describe('Unison and Unison-like', () => {

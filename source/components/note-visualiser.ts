@@ -4,9 +4,9 @@
 
 import NOTE_VISUALISER_CANVAS_WORKER from "./note-visualiser-worker.js?url"
 import { AbstractResizeable } from "./abstract-resizeable-canvas.js"
-import type { IAudioOutput } from "../libs/audiobus/outputs/output-interface.js"
+import type { IAudioOutput } from "../libs/audiobus/io/outputs/output-interface.ts"
 import type { CanvasHTMLAttributes } from "react"
-import type NoteModel from "../libs/audiobus/note-model.js"
+import type NoteModel from "../libs/audiobus/note-model.ts"
 
 export default class NoteVisualiser extends AbstractResizeable implements IAudioOutput {
 

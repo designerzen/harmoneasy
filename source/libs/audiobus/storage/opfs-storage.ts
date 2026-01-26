@@ -8,7 +8,7 @@ import {
 	OPFS_MESSAGE_TYPE_CLEAR,
 	OPFS_MESSAGE_TYPE_DELETE,
 	OPFS_MESSAGE_TYPE_INFO
-} from "./opfs-constants.js"
+} from "./opfs-constants.ts"
 
 import OPFS_WORKER from "./opfs-storage.worker.ts?worker&url"
 

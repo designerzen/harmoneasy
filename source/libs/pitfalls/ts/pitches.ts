@@ -1,7 +1,7 @@
-import type EdoScale from "./edo-scale"
-import type Intervals from "./intervals"
+import type EdoScale from "./edo-scale.ts"
+import type Intervals from "./intervals.ts"
 
-import { get_freq, hz_to_midi, midi_to_hz } from './utils'
+import { get_freq, hz_to_midi, midi_to_hz } from './utils.ts'
 
 export default class Pitches {
 

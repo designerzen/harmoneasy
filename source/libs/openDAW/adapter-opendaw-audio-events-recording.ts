@@ -1,7 +1,7 @@
-import RecorderAudioEvent from "../audiobus/audio-event-recorder.js"
-import type AudioEvent from "../audiobus/audio-event.js"
-import type Timer from "../audiobus/timing/timer.js"
-import { NOTE_ON } from "../../commands.js"
+import RecorderAudioEvent from "../audiobus/audio-event-recorder.ts"
+import type AudioEvent from "../audiobus/audio-event.ts"
+import type Timer from "../audiobus/timing/timer.ts"
+import { NOTE_ON } from "../../commands.ts"
 
 /**
  * Produces an array of notes from the 

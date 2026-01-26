@@ -1,4 +1,4 @@
-import AudioCommand from "../audio-command.js"
+import AudioCommand from "../audio-command.ts"
 
 /**
  * This is a way to create a musical event

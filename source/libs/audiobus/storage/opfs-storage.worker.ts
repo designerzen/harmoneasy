@@ -12,7 +12,7 @@ import {
   OPFS_MESSAGE_TYPE_INFO,
   OPFS_RESPONSE_TYPE_WRITE_COMPLETE,
   OPFS_RESPONSE_TYPE_WRITE_ERROR
-} from './opfs-constants.js'
+} from './opfs-constants.ts'
 
 interface WorkerMessage {
   type: string

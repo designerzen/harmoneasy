@@ -1,4 +1,4 @@
-import { noteNumberToFrequency } from "../note-model.js"
+import { noteNumberToFrequency } from "../../conversion/note-to-frequency.ts"
 
 const SILENCE = 0.00000000009
 

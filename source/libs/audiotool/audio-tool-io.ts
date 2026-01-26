@@ -1,7 +1,7 @@
 import { log } from '../log.ts'
-import { handleAutoConnect, handleClearToken, handleConnectWithPAT, handleCreateNote, handleCreateNoteTrack, handleListNotes, handleListProjects, handleOpenProject, handleOpenSelectedProject, handleQueryDevices } from './audio-tool-connect.js';
+import { handleAutoConnect, handleClearToken, handleConnectWithPAT, handleCreateNote, handleCreateNoteTrack, handleListNotes, handleListProjects, handleOpenProject, handleOpenSelectedProject, handleQueryDevices } from './audio-tool-connect.ts';
 // @ts-ignore
-import { AUDIOTOOL_STORAGE_KEYS } from './audio-tool-settings.js'
+import { AUDIOTOOL_STORAGE_KEYS } from './audio-tool-settings.ts'
 
 // Initialize the app
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `

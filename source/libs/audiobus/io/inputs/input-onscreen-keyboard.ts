@@ -1,11 +1,11 @@
 
-import AbstractInput from "./abstract-input"
-import AudioCommand from "../../audio-command"
-import { CONTROL_CHANGE, NOTE_OFF, NOTE_ON } from "../../../../commands"
+import AbstractInput from "./abstract-input.ts"
+import AudioCommand from "../../audio-command.ts"
+import { CONTROL_CHANGE, NOTE_OFF, NOTE_ON } from "../../../../commands.ts"
 import SVGKeyboard from "../../../../components/keyboard-svg.js"
-import NoteModel from "../../note-model.js"
+import NoteModel from "../../note-model.ts"
 
-import type { IAudioInput } from "./input-interface.js"
+import type { IAudioInput } from "./input-interface.ts"
 
 const keyboardKeys = (new Array(128)).fill("")
 export const ALL_KEYBOARD_NUMBERS = keyboardKeys.map((_, index) => index )
