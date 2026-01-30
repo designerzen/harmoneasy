@@ -16,8 +16,9 @@ body {
 }
 
 .font-mono,
+time,
 input, output{
-	font-family: monospace;
+	font-family: 'Courier New', monospace;
 }
 
 @media (prefers-contrast: more) {

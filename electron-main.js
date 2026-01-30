@@ -10,8 +10,6 @@ const updateElectronApp = require('update-electron-app')
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// Note: Use app.isPackaged in createWindow() instead of isDev
-
 let SocketServer = null
 let mainWindow
 let socketServer
@@ -65,10 +63,11 @@ function createWindow() {
 	// In development (npm run dev:electron): app.isPackaged = false, load from dev server
 	// In production (built app): app.isPackaged = true, load from dist files
 	const isProduction = app.isPackaged
-	console.log('Loading app... isProduction:', isProduction)
-
 	if (!isProduction) {
-		// Development: load from Vite dev server
+			console.log('Loading app... isProduction:', isProduction)
+
+
+			// Development: load from Vite dev server
 		const devServerUrl = 'http://localhost:5174'
 		console.log('Dev mode: loading from', devServerUrl)
 		mainWindow.loadURL(devServerUrl)
@@ -173,5 +172,3 @@ ipcMain.on('app:maximize', () => {
 ipcMain.on('app:close', () => {
 	if (mainWindow) mainWindow.close()
 })
-
-
