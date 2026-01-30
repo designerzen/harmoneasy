@@ -86,7 +86,7 @@ export default class OutputSpectrumAnalyser extends EventTarget implements IAudi
 
 		// Create canvas element
 		this.#canvas = document.createElement("canvas")
-		this.#canvas.width = 303
+		this.#canvas.width = 363
 		this.#canvas.height = 202
 		this.#canvas.style.cssText = `
 			display: block;
