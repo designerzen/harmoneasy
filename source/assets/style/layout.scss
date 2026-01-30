@@ -58,7 +58,7 @@
 
 .header-controls {
 	display: flex;
-	flex-wrap: nowrap;
+	flex-wrap: wrap;
 	gap: var(--gap);
 	align-items: center;
 	width: 100%;
@@ -77,7 +77,7 @@
 
 .controls {
 	display: flex;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
 	flex: 1 1 100%;
 	align-items: center;
 	gap: 12px;
