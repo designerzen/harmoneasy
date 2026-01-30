@@ -13,7 +13,7 @@ import {
 
 import { AnimatedSVGEdge } from './AnimatedSVGEdge.tsx'
 import { Transformers } from './Transformers.tsx'
-import { Presets } from '../Presets.tsx'
+import { Presets } from './Presets.tsx'
 import { StartNode } from './nodes/StartNode.tsx'
 import { EndNode } from './nodes/EndNode.tsx'
 import { InputNode } from './nodes/InputNode.tsx'
