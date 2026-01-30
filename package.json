@@ -1,7 +1,7 @@
 {
   "name": "harmoneasy",
   "private": true,
-  "version": "0.14.0",
+  "version": "0.13.1",
   "description": "Web-based MIDI/audio application with Electron desktop support",
   "author": "designerzen <radio@awesomething.co.uk>",
   "type": "module",
@@ -48,7 +48,7 @@
     "fflate": "^0.8.2",
     "jzz": "^1.9.6",
     "lz-string": "^1.5.0",
-    "partysocket": "1.1.10",
+    "partysocket": "1.1.11",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "standardized-audio-context": "^25.3.77",
