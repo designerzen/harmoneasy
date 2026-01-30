@@ -16,7 +16,7 @@ import {
 
 import type { IAudioOutput } from "./output-interface.ts"
 import type { IAudioCommand } from "../../audio-command-interface.ts"
-import { connectToBLEDevice, describeDevice } from "../../midi/midi-ble/ble-connection.ts"
+import { connectToBLEDevice, disconnectBLEDevice, describeDevice } from "../../midi/midi-ble/ble-connection.ts"
 
 export const BLE_OUTPUT_ID = "BLE MIDI"
 
@@ -112,8 +112,10 @@ export default class OutputBLEMIDIDevice extends EventTarget implements IAudioOu
 	 */
 	async disconnect(): Promise<void> {
 		if (this.#bluetoothDevice) {
-			await this.#bluetoothDevice.gatt.disconnect()
+			disconnectBLEDevice(this.#bluetoothDevice)
 		}
+		this.#bluetoothDevice = undefined
+		this.#bluetoothMIDICharacteristic = undefined
 		return
 	}
 
@@ -411,10 +413,9 @@ export default class OutputBLEMIDIDevice extends EventTarget implements IAudioOu
 	/**
 	 * Disconnect and cleanup
 	 */
-	destroy(): void {
-		this.disconnect()
+	async destroy(): Promise<void> {
+		await this.disconnect()
 		this.allNotesOff()
-		this.#bluetoothMIDICharacteristic = undefined
 		this.#activeNotes.clear()
 	}
 }
