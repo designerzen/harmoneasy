@@ -7,7 +7,6 @@
 	color: light-dark(var(--col-plum), var(--col-white));
 	padding: calc(  var(--pad) / 2	) calc( var(--pad) );
 	display: flex;
-	font-family: monospace;
 	align-items: center;
 	gap: var(--gap);
 	cursor: pointer;
@@ -214,9 +213,7 @@ body > footer{
 	grid-area: menu;
 	height: fit-content;
 	justify-content: flex-end;
-
 	flex-wrap: wrap;
-
 	align-items: stretch;
 	gap: var(--gap);
 	border-bottom: var(--border);
@@ -229,18 +226,18 @@ body > footer{
 	> * {
 		pointer-events: all;
 		position: relative;
-		
 	}
 		
 	@media (max-width: 768px) {
 		flex-wrap: wrap;
-			justify-content: center;
+		justify-content: center;
+		position:relative;
+		top:auto;
 
-			button {
-				flex: 1;
-				min-width: 150px;
-			}
-	}
+		button {
+			flex: 1;
+		}
+}
 }
 
 #graph {

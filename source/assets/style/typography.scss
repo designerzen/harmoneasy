@@ -15,6 +15,11 @@ body {
 	font-variation-settings: "GRAD" var(--GRAD);
 }
 
+.font-mono,
+input, output{
+	font-family: monospace;
+}
+
 @media (prefers-contrast: more) {
 	body {
 		--GRAD: 700

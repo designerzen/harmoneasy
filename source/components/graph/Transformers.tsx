@@ -4,36 +4,24 @@ import {
     TRANSFORMER_TYPE,
     TRANSFORMERS
 } from "../../libs/audiobus/io/transformer-factory"
-import { PRESETS } from "./presets"
+
 import type { TransformerManager } from "../../libs/audiobus/io/transformer-manager"
 import type IOChain from "../../libs/audiobus/io/IO-chain"
 
-export function ConfigDrawer() {
+export function Transformers() {
 
     const [transformersFilterText, setTransformersFilterText] = useState("")
-    const [presetsFilterText, setPresetFilterText] = useState("")
- 
+  
     const filteredTransformers = TRANSFORMERS.filter(transformerId =>
         transformerId.toLowerCase().includes(transformersFilterText.toLowerCase())
     )
-    const filteredPresets = PRESETS.filter(preset => {
-		const filterTerm = presetsFilterText.toLowerCase()
-		return preset.name.toLowerCase().includes(filterTerm) || preset.transformers.includes(filterTerm)
-    })
 
 	const onAdd = (transformerType: string) => () => {
 		const chain = (window as any).chain as IOChain
         chain.appendTransformer( tranformerFactory(transformerType) )
     }
 
-    const onSetPreset = (transformers: string[]) => () => {
-        const chain = (window as any).chain as IOChain
-		chain.setTransformers( transformers.map(tranformerFactory) )
-    }
-
-    return (<aside className="transformers-drawer">
-        
-        <details open className="transformers">
+    return (<details open className="transformers">
             <summary>{transformersFilterText.length > 2 && filteredTransformers.length > 0  ? transformersFilterText : 'Transformers'}</summary>
 			
 			<label className="filter-label">
@@ -57,32 +45,5 @@ export function ConfigDrawer() {
 					</li>
 				)}
 			</ul>
-        </details>
-
-        <details open className="presets">
-            <summary>Presets</summary>
-
-			<label className="filter-label">
-				<input 
-					id="filter-presets" 
-					type="search"
-					placeholder="Filter presets..."
-					value={presetsFilterText}
-					onChange={(e) => setPresetFilterText(e.target.value)}
-				/>
-				{/* <button type="button">Filter</button> */}
-			</label>
-
-			<ul id="presets-list" role="list">
-				{ 
-					filteredPresets.map( (transformer) => ( <li key={transformer.name}><button type="button" onClick={onSetPreset(transformer.transformers)}>{transformer.name}</button></li>) ) 
-				}
-				{filteredPresets.length === 0 && (
-					<li className="no-matches">
-						<p className="error-message">No transformers match "{transformersFilterText}"</p>
-					</li>
-				)}
-			</ul>
-        </details>
-    </aside>)
+        </details>)
 }

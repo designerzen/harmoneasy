@@ -12,7 +12,8 @@ import {
 } from '@xyflow/react'
 
 import { AnimatedSVGEdge } from './AnimatedSVGEdge.tsx'
-import { ConfigDrawer } from './ConfigDrawer.tsx'
+import { Transformers } from './Transformers.tsx'
+import { Presets } from '../Presets.tsx'
 import { StartNode } from './nodes/StartNode.tsx'
 import { EndNode } from './nodes/EndNode.tsx'
 import { InputNode } from './nodes/InputNode.tsx'
@@ -51,12 +52,11 @@ function FlowComponent() {
 		const abortController = new AbortController()
 
 		// an event has bubbled from the Chain
-		const onTransformersChanged = (event:CustomEvent) => {
-			const detail = event ? event.detail : null
+		const onTransformersChanged = (event:CustomEvent|null) => {
+			// const detail = event ? event.detail : null
 			const structure = getStructure( chain, true, true  )
 			setNodes(structure.nodes)
 			setEdges(structure.edges)
-			console.info("Graph::Transformers Updated", detail )
 		}
 		
 		// watch for additions / removals of Transformers
@@ -102,7 +102,10 @@ function FlowComponent() {
 
 	return (
 		<>
-			<ConfigDrawer />
+			<aside className="transformers-drawer">
+				<Transformers />
+				<Presets />
+			</aside>
 			<ReactFlow
 				panOnScroll={false}
 				panOnDrag={true}
@@ -121,7 +124,7 @@ function FlowComponent() {
 				onEdgesChange={onEdgesChange}
 				onConnect={onConnect}
 			>
-				<Controls />
+				{/* <Controls /> */}
 			</ReactFlow>
 		</>
 	)

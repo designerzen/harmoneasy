@@ -97,7 +97,7 @@ export default class OutputWAM2 implements IAudioOutput {
 	async connect(): Promise<void> {
 		try {
 			// Load WAM2 plugin using the standardized API
-			if (!window.WAM) {
+			if (!(globalThis as any).WAM) {
 				throw new Error("WAM2 host not available. Ensure WAM2 polyfill is loaded.")
 			}
 
