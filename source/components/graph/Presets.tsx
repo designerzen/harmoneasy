@@ -1,7 +1,7 @@
 import React, { useState } from "react"
 import { tranformerFactory } from "../../libs/audiobus/io/transformer-factory"
-import { PRESETS } from "./presets"
 import type IOChain from "../../libs/audiobus/io/IO-chain"
+import { PRESETS } from "../../libs/audiobus/io/transformer-presets"
 
 export function Presets() {
    const [presetsFilterText, setPresetFilterText] = useState("")
