@@ -14,7 +14,8 @@ export const ALL_KEYBOARD_NOTES = keyboardKeys.map((keyboardKeys, index) => new 
 export const ONSCREEN_KEYBOARD_INPUT_ID = "OnscreenKeyboard"
 
 const DEFAULT_OPTIONS = {
-	keys:ALL_KEYBOARD_NOTES
+	keys:ALL_KEYBOARD_NOTES,
+	container:"#onscreen-keyboard"
 }
 
 export default class InputOnScreenKeyboard extends AbstractInput implements IAudioInput{
@@ -48,21 +49,20 @@ export default class InputOnScreenKeyboard extends AbstractInput implements IAud
 	}
 
 	async createGui(): Promise<HTMLElement> {
-		const container = document.querySelector("main")
-
-		if( container === null ) 
+		if (this.options.container)
 		{
-			throw new Error("Could not find main container element")
+			// inject into DOM on specified element 
+			const container = document.querySelector(this.options.container)
+			this.keyboardElement = container.appendChild( this.#keyboard.element )
+			return this.keyboardElement
 		}
 
-		// inject into DOM on specified element 
-		this.keyboardElement = container.appendChild( this.#keyboard.element )
-		return this.keyboardElement
+		return this.#keyboard.element
 	}
 
 	async destroyGui(): Promise<void> {
-		if( this.keyboardElement !== null ) {
-			this.keyboardElement.remove()
+		if( this.#keyboard.element !== null ) {
+			this.#keyboard.element.remove()
 		}
 		return Promise.resolve()
 	}
