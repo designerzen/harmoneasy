@@ -1,7 +1,8 @@
 import { NOTE_ON } from "../../../../commands.ts"
+import wam2Registry from "../../wam/registry.ts"
+
 import type { IAudioOutput } from "./output-interface.ts"
-import type { WAM2PluginDescriptor } from "./wam/registry.ts"
-import wam2Registry from "./wam/registry.ts"
+import type { WAM2PluginDescriptor } from "../../wam/registry.ts"
 
 /**
  * Web Audio Modules 2 (WAM2) Audio Output
