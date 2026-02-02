@@ -15,10 +15,12 @@
     "dev": "vite",
     "dev:electron": "concurrently \"npm run dev\" \"wait-on http://localhost:5174 && electron .\"",
     "start": "pnpm run dev",
-    "build": "vite build",
-    "build:electron": "npm run build-native && vite build && electron-builder",
+    "build": "vite build --config vite.config.web.js",
     "build-native": "node-gyp rebuild",
     "build-native:clean": "node-gyp clean && node-gyp configure && node-gyp build",
+    "copy-native": "node scripts/copy-native-modules.js",
+    "build-vite-electron": "vite build --config vite.config.electron.js",
+    "build:electron": "npm run build-native && npm run build-vite-electron && npm run copy-native && electron-builder",
     "preview": "vite preview",
     "electron": "electron .",
     "upgrader": "npx npm-check-updates --interactive -u"
@@ -67,6 +69,7 @@
     },
     "files": [
       "dist/**/*",
+      "build/Release/**/*.node",
       "electron-main.js",
       "node_modules/**/*",
       "package.json"
