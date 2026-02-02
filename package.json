@@ -9,7 +9,7 @@
   "main": "electron-main.js",
   "scripts": {
     "setup": "pnpm install --allow-build=electron",
-    "install": "pnpm approve-builds && npm run build-native",
+    "install-electron": "pnpm approve-builds && npm run build-native",
     "test": "vitest",
     "dev": "vite",
     "dev:electron": "concurrently \"npm run dev\" \"wait-on http://localhost:5174 && electron .\"",
