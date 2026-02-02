@@ -8,6 +8,7 @@ import State from './libs/state.ts'
 
 import { createAudioToolProjectFromAudioEventRecording } from './libs/audiotool/adapter-audiotool-audio-events-recording.ts'
 import { createMIDIFileFromAudioEventRecording, saveBlobToLocalFileSystem } from './libs/audiobus/exporters/adapter-midi-file.ts'
+import { createMEDFileFromAudioEventRecording, saveMEDToLocalFileSystem } from './libs/audiobus/exporters/adapter-med-file.ts'
 import { createMIDIMarkdownFromAudioEventRecording, saveMarkdownToLocalFileSystem } from './libs/audiobus/exporters/adapter-midi-markdown.ts'
 import { createMusicXMLFromAudioEventRecording, saveBlobToLocalFileSystem as saveMusicXMLBlobToLocalFileSystem } from './libs/audiobus/exporters/adapter-musicxml.ts'
 import { renderVexFlowToContainer, createVexFlowHTMLFromAudioEventRecording, saveBlobToLocalFileSystem as saveVexFlowBlobToLocalFileSystem } from './libs/audiobus/exporters/adapter-vexflow.ts'
@@ -288,6 +289,11 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number=
         const blob = await createMIDIFileFromAudioEventRecording(recorder, timer)
         saveBlobToLocalFileSystem(blob, recorder.name)
         console.info("Exporting Data to MIDI File", { recorder, blob })
+    })
+    frontEnd.whenMEDExportRequestedRun(async () => {
+        const buffer = await createMEDFileFromAudioEventRecording(recorder, timer)
+        saveMEDToLocalFileSystem(buffer, recorder.name)
+        console.info("Exporting Data to ProTracker MED File", { recorder, buffer })
     })
     frontEnd.whenMIDIMarkdownExportRequestedRun(async () => {
         const markdown = createMIDIMarkdownFromAudioEventRecording(recorder, timer)

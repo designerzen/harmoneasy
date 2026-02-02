@@ -28,6 +28,7 @@ const DOM_ID_BUTTON_TOGGLE_WEBMIDI = "btn-toggle-webmidi"
 
 const DOM_ID_BUTTON_IMPORT = "btn-import"
 const DOM_ID_BUTTON_EXPORT_MIDI_FILE = "btn-midi-export"
+const DOM_ID_BUTTON_EXPORT_MED = "btn-med-export"
 const DOM_ID_BUTTON_EXPORT_MIDI_MARKDOWN = "btn-midi-markdown-export"
 const DOM_ID_BUTTON_EXPORT_MUSICXML = "btn-musicxml-export"
 const DOM_ID_BUTTON_EXPORT_VEXFLOW = "btn-vexflow-export"
@@ -88,6 +89,7 @@ export default class UI implements IAudioOutput {
 	elementExportDialog: HTMLElement | null
 	elementMidiImportButton: HTMLElement | null
 	elementMidiExportButton: HTMLElement | null
+	elementMEDExportButton: HTMLElement | null
 	elementMidiMarkdownExportButton: HTMLElement | null
 	elementMusicXMLExportButton: HTMLElement | null
 	elementVexFlowExportButton: HTMLElement | null
@@ -157,6 +159,7 @@ export default class UI implements IAudioOutput {
 
 		this.elementMidiImportButton = document.getElementById(DOM_ID_BUTTON_IMPORT)
 		this.elementMidiExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_MIDI_FILE)
+		this.elementMEDExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_MED)
 		this.elementMidiMarkdownExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_MIDI_MARKDOWN)
 		this.elementMusicXMLExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_MUSICXML)
 		this.elementVexFlowExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_VEXFLOW)
@@ -544,6 +547,18 @@ export default class UI implements IAudioOutput {
 	 */
 	whenMIDIFileExportRequestedRun(callback:Function) {
 		this.elementMidiExportButton && this.elementMidiExportButton.addEventListener('click', async (e) => {
+			this.showExportOverlay()
+			callback && await callback(e)
+			this.hideExportOverlay()
+		}, { signal: this.abortController.signal })
+	}
+
+	/**
+	 * 
+	 * @param callback 
+	 */
+	whenMEDExportRequestedRun(callback:Function) {
+		this.elementMEDExportButton && this.elementMEDExportButton.addEventListener('click', async (e) => {
 			this.showExportOverlay()
 			callback && await callback(e)
 			this.hideExportOverlay()
