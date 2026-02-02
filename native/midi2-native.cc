@@ -97,9 +97,54 @@ public:
 
 // CoreMIDI Implementation for macOS
 class MacMIDIManager {
+private:
+  static MIDIClientRef midiClient;
+  static MIDIPortRef outputPort;
+  static bool initialized;
+  
+  static bool ensureInitialized() {
+    if (initialized) return midiClient != 0;
+    
+    OSStatus status = MIDIClientCreate(
+      CFSTR("HarmonEasy MIDI Client"),
+      nullptr,  // notifyProc
+      nullptr,  // notifyRefCon
+      &midiClient
+    );
+    
+    if (status != noErr) {
+      std::cerr << "Failed to create MIDI client: " << status << std::endl;
+      return false;
+    }
+    
+    status = MIDIOutputPortCreate(
+      midiClient,
+      CFSTR("HarmonEasy Output"),
+      &outputPort
+    );
+    
+    if (status != noErr) {
+      std::cerr << "Failed to create output port: " << status << std::endl;
+      return false;
+    }
+    
+    initialized = true;
+    return true;
+  }
+  
 public:
+  static void cleanup() {
+    if (midiClient != 0) {
+      MIDIClientDispose(midiClient);
+      midiClient = 0;
+    }
+    initialized = false;
+  }
+  
   static void enumerateOutputs() {
     midiOutputs.clear();
+    if (!ensureInitialized()) return;
+    
     ItemCount destCount = MIDIGetNumberOfDestinations();
     
     for (ItemCount i = 0; i < destCount; i++) {
@@ -114,13 +159,18 @@ public:
         CFStringGetCString(name, device.name, sizeof(device.name), kCFStringEncodingUTF8);
         CFRelease(name);
       }
-      device.handle = (void*)dest;
+      // Store endpoint reference as a pointer to uint32_t
+      uint32_t* refPtr = new uint32_t;
+      *refPtr = (uint32_t)dest;
+      device.handle = (void*)refPtr;
       midiOutputs.push_back(device);
     }
   }
   
   static void enumerateInputs() {
     midiInputs.clear();
+    if (!ensureInitialized()) return;
+    
     ItemCount sourceCount = MIDIGetNumberOfSources();
     
     for (ItemCount i = 0; i < sourceCount; i++) {
@@ -135,12 +185,19 @@ public:
         CFStringGetCString(name, device.name, sizeof(device.name), kCFStringEncodingUTF8);
         CFRelease(name);
       }
-      device.handle = (void*)source;
+      // Store endpoint reference as a pointer to uint32_t
+      uint32_t* refPtr = new uint32_t;
+      *refPtr = (uint32_t)source;
+      device.handle = (void*)refPtr;
       midiInputs.push_back(device);
     }
   }
   
   static OSStatus sendUMP(MIDIEndpointRef dest, const uint32_t* packet, size_t count) {
+    if (!ensureInitialized()) {
+      return -1;
+    }
+    
     MIDIPacketList packetList;
     packetList.numPackets = count;
     
@@ -153,9 +210,14 @@ public:
       packetList.packet[i].data[3] = packet[i] & 0xFF;
     }
     
-    return MIDISend(nullptr, dest, &packetList);
+    return MIDISend(outputPort, dest, &packetList);
   }
 };
+
+// Static member initialization
+MIDIClientRef MacMIDIManager::midiClient = 0;
+MIDIPortRef MacMIDIManager::outputPort = 0;
+bool MacMIDIManager::initialized = false;
 
 #elif __linux__
 
@@ -372,7 +434,8 @@ napi_value SendUmp(napi_env env, napi_callback_info info) {
   };
   WindowsMIDIManager::sendData((HMIDIOUT)midiOutputs[deviceIndex].handle, data, 4);
 #elif __APPLE__
-  MacMIDIManager::sendUMP((MIDIEndpointRef)midiOutputs[deviceIndex].handle, &packet, 1);
+  MIDIEndpointRef dest = *(MIDIEndpointRef*)midiOutputs[deviceIndex].handle;
+  MacMIDIManager::sendUMP(dest, &packet, 1);
 #elif __linux__
   ALSAMIDIManager::sendUMP((snd_rawmidi_t*)midiOutputs[deviceIndex].handle, &packet, 1);
 #endif
