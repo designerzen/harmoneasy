@@ -11,7 +11,7 @@ export function InputNode(props: { data: { input: AbstractInput; label: any } })
 	const input:IAudioInput = props.data?.input
 	const hasConnectMethod:boolean = input.connect ?? false
 	const hasDisconnectMethod:boolean = input.disconnect ?? false
-	
+	const hasControls = hasConnectMethod || hasDisconnectMethod
 	const GUIContainerRef = useRef<HTMLDivElement>(null)
 
 	useEffect(() => {
@@ -80,7 +80,7 @@ export function InputNode(props: { data: { input: AbstractInput; label: any } })
 	/**
 	 * 
 	 */
-	return <div className="node-input graph-node can-remove" title={input.description}>
+	return <div className={`node-input graph-node can-remove ${hasControls ? 'has-controls' : 'no-controls'} `} title={input.description}>
 		<h6>{input?.name }</h6>
 		<p className="sr-only">{props.data.label }</p>
 		{

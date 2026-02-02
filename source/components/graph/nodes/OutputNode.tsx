@@ -11,6 +11,7 @@ export function OutputNode(props) {
 	const output:IAudioOutput = props.data?.output
 	const hasConnectMethod:boolean = output.connect ?? false
 	const hasDisconnectMethod:boolean = output.disconnect ?? false
+	const hasControls = hasConnectMethod || hasDisconnectMethod
 	const GUIContainerRef = useRef<HTMLDivElement>(null)
 
 	useEffect(() => {
@@ -53,7 +54,7 @@ export function OutputNode(props) {
 		}
 	}, [output])
 
-	return <div className="node-output graph-node can-remove">
+	return <div className={`node-output graph-node can-remove ${hasControls ? 'has-controls' : 'no-controls'} `} title={output.description}>
 		<h6>{output.name}</h6>
 		<p className="sr-only">{props.data.label }</p>
 		{

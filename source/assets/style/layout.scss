@@ -231,18 +231,17 @@ body > footer{
 }
 }
 
-#graph {
+#chain {
 	grid-area: graph;
-	display: flex;
 	position: sticky;
     top: calc( var(--pad) * 2 + 1lh );
-	overflow: hidden;
+	//overflow: hidden;
 	height: var(--height-graph);
 	max-height: var(--height-graph);
+	
 	// sticky travel
 	padding-bottom:20rem;
 }
-
 
 
 #note-visualiser {
@@ -403,13 +402,15 @@ song-explorer-ui{
 // Transformers Drawer that opens and closes
 .transformers-drawer {
 
-	max-width: min(33%, 20ch);
+	max-width: min(100%, 20ch);
 	min-height: 100%;
 	overflow: auto;
 	z-index: 303;
 	border-right: var(--border);
 	overflow-x: hidden;
 	flex:1 1 100%;
+
+	grid-area: sidebar;
 
 	button {
 		width: 100%;

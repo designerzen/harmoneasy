@@ -23,6 +23,7 @@ export function TransformerNode(props) {
         chain.transformerManager.moveOneStepAfter(props.data.element)
     }, [props.data.element])
 
+	const hasControls = props.data.fields.length
     const shouldShowMoveButtons = chain.transformerQuantity > 1
 
     return <div className={`node-transformer graph-node can-remove category-${props.data.element.category.toLowerCase()}`}>

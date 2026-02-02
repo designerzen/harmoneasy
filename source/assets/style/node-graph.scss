@@ -1,25 +1,29 @@
-.react-flow__attribution{
-	display: none;
-}
-
 #graph .beat{
 	pointer-events: none;
 }
 
 // override defaults
-#graph .react-flow__node{
-	--hue-accent:90%;
-	--xy-node-border:transparent;
-	--xy-node-group-background-color-default:transparent;
-	padding:0;
-	background-color: transparent;
-}
-
-#graph .react-flow__edges{
-	width: 100%;
-}
-
 #graph{
+	display: grid;
+	grid-template-areas: "sidebar graph";
+	grid-template-columns: auto 1fr;
+	.react-flow{
+		grid-area: graph;
+	}
+	.react-flow__attribution{
+		display: none;
+	}
+	.react-flow__edges{
+		width: 100%;
+	}
+	.react-flow__node{
+		--hue-accent:90%;
+		--xy-node-border:transparent;
+		--xy-node-group-background-color-default:transparent;
+		padding:0;
+		background-color: transparent;
+	}
+
 	.react-flow__controls-button{
 		background-color: var(--col-black);
 		svg {
@@ -45,7 +49,7 @@
         color-mix( in oklch, oklch(50% 0.16392 var(--hue-accent)) 90%, transparent),
         color-mix( in oklch, oklch(50% 0.1385  var(--hue-accent)) 90%, transparent)
 	);
-	background-blend-mode:hue ;
+	background-blend-mode:hue;
    
 	position: relative;
 	min-width: var(--size, 150px);
@@ -69,14 +73,29 @@
 
 	:has(.btn-remove),
 	&.can-remove{
+
+		// make space for close button
 		> *:first-child {
 			padding-right: calc(44px + var(--pad));
 			margin-bottom:  var(--gap);
+		}
+	}
+
+	&.connected{
+
+	}
+
+	&.disconnected{
+		
+	}
+
+	&.has-controls{
+		// make space for connect button a+ gui
+		> *:first-child {
 			padding-bottom: var(--pad);
 			border-bottom: var(--border);
 		}
 	}
-
 }
 
 .node-transformer{
