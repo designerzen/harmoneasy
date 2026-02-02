@@ -37,10 +37,14 @@ const loadSupportingLibrary = async (type: string) => {
 			return await import("./outputs/output-wam2.ts")
 		case OUTPUT_TYPES.WEBMIDI:
 			return await import("./outputs/output-webmidi-device.ts")
+		case OUTPUT_TYPES.NATIVE_MIDI:
+			return await import("./outputs/output-native-midi-device.ts")
 		case OUTPUT_TYPES.BLE_MIDI:
 			return await import("./outputs/output-ble-midi-device.ts")
 		case OUTPUT_TYPES.MIDI2:
 			return await import("./outputs/output-midi2-device.ts")
+		case OUTPUT_TYPES.MIDI2_NATIVE:
+			return await import("./outputs/output-midi2-native-device.ts")
 		case OUTPUT_TYPES.SUPERSONIC:
 			return await import("./outputs/output-supersonic.ts")
 		default:
@@ -151,6 +155,13 @@ export const OUTPUT_FACTORIES: OutputFactory[] = [
 		create: (options) => createOutput(OUTPUT_TYPES.WEBMIDI, options),
 	},
 	{
+		id: OUTPUT_TYPES.NATIVE_MIDI,
+		name: "Native MIDI Device",
+		description: "Sends MIDI messages to a connected native OS MIDI device (Windows/macOS/Linux)",
+		isAvailable: () => true, // Native MIDI available on all platforms
+		create: (options) => createOutput(OUTPUT_TYPES.NATIVE_MIDI, options),
+	},
+	{
 		id: OUTPUT_TYPES.BLE_MIDI,
 		name: "BLE MIDI",
 		description: "BLE MIDI",
@@ -163,6 +174,13 @@ export const OUTPUT_FACTORIES: OutputFactory[] = [
 		description: "MIDI 2.0 device output",
 		isAvailable: () => typeof navigator !== "undefined" && !!(navigator as any).requestMIDIAccess,
 		create: (options) => createOutput(OUTPUT_TYPES.MIDI2, options),
+	},
+	{
+		id: OUTPUT_TYPES.MIDI2_NATIVE,
+		name: "MIDI 2.0 Native",
+		description: "MIDI 2.0 output with per-note controllers via native OS MIDI (16-bit resolution, Windows/macOS/Linux)",
+		isAvailable: () => true, // Native MIDI available on all platforms
+		create: (options) => createOutput(OUTPUT_TYPES.MIDI2_NATIVE, options),
 	},
 	{
 		id: OUTPUT_TYPES.SUPERSONIC,

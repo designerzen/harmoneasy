@@ -23,6 +23,10 @@ const loadSupportingLibrary = async (type: string) => {
 			return await import("./inputs/input-gamepad.ts")
 		case INPUT_TYPES.WEBMIDI:
 			return await import("./inputs/input-webmidi-device.ts")
+		case INPUT_TYPES.NATIVE_MIDI:
+			return await import("./inputs/input-native-midi-device.ts")
+		case INPUT_TYPES.MIDI2_NATIVE:
+			return await import("./inputs/input-midi2-native-device.ts")
 		case INPUT_TYPES.BLE_MIDI:
 			return await import("./inputs/input-ble-midi-device.ts")
 		case INPUT_TYPES.MICROPHONE_FORMANT:
@@ -31,6 +35,8 @@ const loadSupportingLibrary = async (type: string) => {
 			return await import("./inputs/input-leap-motion.ts")
 		case INPUT_TYPES.ONSCREEN_KEYBOARD: 
 			return await import("./inputs/input-onscreen-keyboard.ts")
+		case INPUT_TYPES.PROMPT_AI:
+			return await import("./inputs/input-prompt-ai.ts")
 		default:
 			throw new Error(`Unknown input type: ${type}`)
 	}
@@ -97,6 +103,20 @@ export const INPUT_FACTORIES: InputFactory[] = [
 		create: (options) => createInput(INPUT_TYPES.WEBMIDI, options)
 	},
 	{
+		id: INPUT_TYPES.NATIVE_MIDI,
+		name: "Native MIDI Device",
+		description: "MIDI input from external devices via native OS APIs (Windows/macOS/Linux)",
+		isAvailable: () => true, // Native MIDI available on all platforms
+		create: (options) => createInput(INPUT_TYPES.NATIVE_MIDI, options)
+	},
+	{
+		id: INPUT_TYPES.MIDI2_NATIVE,
+		name: "MIDI 2.0 Native",
+		description: "MIDI 2.0 input with per-note controllers via native OS MIDI (16-bit resolution, Windows/macOS/Linux)",
+		isAvailable: () => true, // Native MIDI available on all platforms
+		create: (options) => createInput(INPUT_TYPES.MIDI2_NATIVE, options)
+	},
+	{
 		id: INPUT_TYPES.BLE_MIDI,
 		name: "BLE MIDI",
 		description: "Bluetooth MIDI input",
@@ -123,6 +143,13 @@ export const INPUT_FACTORIES: InputFactory[] = [
 		description: "Mouse-based virtual keyboard input",
 		isAvailable: () => true,
 		create: (options) => createInput(INPUT_TYPES.ONSCREEN_KEYBOARD, options),
+	},
+	{
+		id: INPUT_TYPES.PROMPT_AI,
+		name: "PromptAI Generator",
+		description: "AI-powered prompt input for generating note sequences and combinations",
+		isAvailable: () => true,
+		create: (options) => createInput(INPUT_TYPES.PROMPT_AI, options),
 	},
 ]
 

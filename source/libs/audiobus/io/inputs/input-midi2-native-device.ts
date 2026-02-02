@@ -24,11 +24,19 @@ interface PerNoteData {
 
 let nativeMIDI: any = null
 
-// Try to load native MIDI module
-try {
-	nativeMIDI = require('../../../build/Release/midi2-native.node')
-} catch (e) {
-	console.warn('[InputMIDI2Native] Native MIDI module not available:', e)
+// Try to load native MIDI module (dynamically loaded in constructor)
+async function loadNativeMIDI(): Promise<any> {
+	if (nativeMIDI !== null) return nativeMIDI
+	
+	try {
+		// Use import() for ES modules compatibility
+		const mod = await import('../../../build/Release/midi2-native.node' as any)
+		nativeMIDI = mod
+		return nativeMIDI
+	} catch (e) {
+		console.warn('[InputMIDI2Native] Native MIDI module not available:', e)
+		return null
+	}
 }
 
 const DEFAULT_OPTIONS = {
@@ -87,6 +95,11 @@ export default class InputMIDI2Native extends AbstractInput implements IAudioInp
 	 * Initialize and enumerate available MIDI input devices
 	 */
 	async connect(): Promise<void> {
+		// Load native module if not already loaded
+		if (nativeMIDI === null) {
+			await loadNativeMIDI()
+		}
+
 		if (!nativeMIDI) {
 			this.setAsDisconnected()
 			throw new Error('[InputMIDI2Native] Native MIDI module not available')

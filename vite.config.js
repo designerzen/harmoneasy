@@ -20,8 +20,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      'url': false,
-      'path': false
+      // Only alias these in specific contexts where they're not needed
+      // Remove broad aliases to avoid breaking node_modules packages
     }
   }
 })

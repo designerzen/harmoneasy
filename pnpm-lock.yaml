@@ -53,6 +53,9 @@ importers:
       vexflow:
         specifier: ^5.0.0
         version: 5.0.0
+      wam-community:
+        specifier: ^0.4.9
+        version: 0.4.9
       webmidi:
         specifier: ^3.1.14
         version: 3.1.14
@@ -2832,6 +2835,9 @@ packages:
     resolution: {integrity: sha512-13zBnyYvFDW1rBvWiJ6Av3ymAaq8EDQuvxZnPIw3g04UqGi4TyoIJABmfJ6zrvKo9yeFQExNkOk7idQbDJcuKA==}
     engines: {node: '>=20.0.0'}
     hasBin: true
+
+  wam-community@0.4.9:
+    resolution: {integrity: sha512-cZLM79DrRCWlloK7FzIcQiMZPsKJS8hiOJJWdYYpzQSeGPacdUmFshWQhp4Mjr/by9+UgpqBjhVG6N8YQoC2hw==}
 
   wcwidth@1.0.1:
     resolution: {integrity: sha512-XHPEwS0q6TaxcvG85+8EYkbiCux2XtWG2mkc47Ng2A77BQu9+DqIOJldST4HgPkuea7dvKSj5VgX3P1d4rW8Tg==}
@@ -5804,6 +5810,8 @@ snapshots:
       rxjs: 7.8.2
     transitivePeerDependencies:
       - debug
+
+  wam-community@0.4.9: {}
 
   wcwidth@1.0.1:
     dependencies:

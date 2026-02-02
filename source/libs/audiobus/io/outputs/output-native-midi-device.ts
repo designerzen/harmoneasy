@@ -16,11 +16,19 @@ interface NativeDevice {
 
 let nativeMIDI: any = null
 
-// Try to load native MIDI module
-try {
-	nativeMIDI = require('../../../build/Release/midi2-native.node')
-} catch (e) {
-	console.warn('[OutputNativeMIDIDevice] Native MIDI module not available:', e)
+// Try to load native MIDI module (dynamically loaded in constructor)
+async function loadNativeMIDI(): Promise<any> {
+	if (nativeMIDI !== null) return nativeMIDI
+	
+	try {
+		// Use import() for ES modules compatibility
+		const mod = await import('../../../build/Release/midi2-native.node' as any)
+		nativeMIDI = mod
+		return nativeMIDI
+	} catch (e) {
+		console.warn('[OutputNativeMIDIDevice] Native MIDI module not available:', e)
+		return null
+	}
 }
 
 const DEFAULT_OPTIONS = {
@@ -67,6 +75,11 @@ export default class OutputNativeMIDIDevice extends EventTarget implements IAudi
 	 * Initialize and enumerate available MIDI devices
 	 */
 	async connect(): Promise<void> {
+		// Load native module if not already loaded
+		if (nativeMIDI === null) {
+			await loadNativeMIDI()
+		}
+
 		if (!nativeMIDI) {
 			throw new Error('[OutputNativeMIDIDevice] Native MIDI module not available')
 		}
