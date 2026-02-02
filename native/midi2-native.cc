@@ -226,48 +226,74 @@ class ALSAMIDIManager {
 public:
   static void enumerateOutputs() {
     midiOutputs.clear();
-    snd_rawmidi_t* handle;
-    const char* portname;
-    int cardNum = -1, devNum = -1, subdevNum = -1;
+    int cardNum = -1;
     
     while (snd_card_next(&cardNum) == 0 && cardNum >= 0) {
-      devNum = -1;
-      while (snd_device_name_next_midi(cardNum, &devNum) == 0 && devNum >= 0) {
-        if (snd_rawmidi_open(nullptr, &handle, nullptr, SND_RAWMIDI_NONBLOCK) == 0) {
-          MIDIDevice device;
-          device.index = midiOutputs.size();
-          device.isInput = 0;
+      snd_ctl_t* handle;
+      char hwname[32];
+      snprintf(hwname, sizeof(hwname), "hw:%d", cardNum);
+      
+      if (snd_ctl_open(&handle, hwname, 0) >= 0) {
+        int devNum = -1;
+        while (snd_ctl_rawmidi_next_device(handle, &devNum) >= 0 && devNum >= 0) {
           snd_rawmidi_info_t* info;
           snd_rawmidi_info_alloca(&info);
-          snd_rawmidi_info(handle, info);
-          strncpy(device.name, snd_rawmidi_info_get_name(info), sizeof(device.name) - 1);
-          device.handle = handle;
-          midiOutputs.push_back(device);
+          snd_rawmidi_info_set_device(info, devNum);
+          snd_rawmidi_info_set_stream(info, SND_RAWMIDI_STREAM_OUTPUT);
+          
+          if (snd_ctl_rawmidi_info(handle, info) >= 0) {
+            char devname[256];
+            snprintf(devname, sizeof(devname), "hw:%d,%d", cardNum, devNum);
+            
+            snd_rawmidi_t* rawhandle;
+            if (snd_rawmidi_open(nullptr, &rawhandle, devname, SND_RAWMIDI_NONBLOCK) >= 0) {
+              MIDIDevice device;
+              device.index = midiOutputs.size();
+              device.isInput = 0;
+              strncpy(device.name, snd_rawmidi_info_get_name(info), sizeof(device.name) - 1);
+              device.handle = rawhandle;
+              midiOutputs.push_back(device);
+            }
+          }
         }
+        snd_ctl_close(handle);
       }
     }
   }
   
   static void enumerateInputs() {
     midiInputs.clear();
-    snd_rawmidi_t* handle;
-    const char* portname;
-    int cardNum = -1, devNum = -1, subdevNum = -1;
+    int cardNum = -1;
     
     while (snd_card_next(&cardNum) == 0 && cardNum >= 0) {
-      devNum = -1;
-      while (snd_device_name_next_midi(cardNum, &devNum) == 0 && devNum >= 0) {
-        if (snd_rawmidi_open(&handle, nullptr, nullptr, SND_RAWMIDI_NONBLOCK) == 0) {
-          MIDIDevice device;
-          device.index = midiInputs.size();
-          device.isInput = 1;
+      snd_ctl_t* handle;
+      char hwname[32];
+      snprintf(hwname, sizeof(hwname), "hw:%d", cardNum);
+      
+      if (snd_ctl_open(&handle, hwname, 0) >= 0) {
+        int devNum = -1;
+        while (snd_ctl_rawmidi_next_device(handle, &devNum) >= 0 && devNum >= 0) {
           snd_rawmidi_info_t* info;
           snd_rawmidi_info_alloca(&info);
-          snd_rawmidi_info(handle, info);
-          strncpy(device.name, snd_rawmidi_info_get_name(info), sizeof(device.name) - 1);
-          device.handle = handle;
-          midiInputs.push_back(device);
+          snd_rawmidi_info_set_device(info, devNum);
+          snd_rawmidi_info_set_stream(info, SND_RAWMIDI_STREAM_INPUT);
+          
+          if (snd_ctl_rawmidi_info(handle, info) >= 0) {
+            char devname[256];
+            snprintf(devname, sizeof(devname), "hw:%d,%d", cardNum, devNum);
+            
+            snd_rawmidi_t* rawhandle;
+            if (snd_rawmidi_open(&rawhandle, nullptr, devname, SND_RAWMIDI_NONBLOCK) >= 0) {
+              MIDIDevice device;
+              device.index = midiInputs.size();
+              device.isInput = 1;
+              strncpy(device.name, snd_rawmidi_info_get_name(info), sizeof(device.name) - 1);
+              device.handle = rawhandle;
+              midiInputs.push_back(device);
+            }
+          }
         }
+        snd_ctl_close(handle);
       }
     }
   }
