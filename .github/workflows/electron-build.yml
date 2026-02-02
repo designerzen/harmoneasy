@@ -47,10 +47,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build library files
-        run: pnpm approve-builds
-      - name: Build native module (Linux only)
-		run: pnpm run build-native
+      - name: Build native module 
+        run: pnpm run build-native
 
       - name: Build Electron app
         run: pnpm run build:electron
