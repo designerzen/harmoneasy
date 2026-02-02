@@ -14,8 +14,9 @@
           }
         }],
         ["OS == 'linux'", {
-          "libraries": ["-lasound"]
-        }]
+           "libraries": ["-lasound"],
+           "include_dirs": ["/usr/include"]
+         }]
       ]
     }
   ]

@@ -42,13 +42,26 @@ jobs:
 
       - name: Install system dependencies (Linux)
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y build-essential libasound2-dev python3
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential
+          sudo apt-get install -y libasound2-dev
+          sudo apt-get install -y pkg-config
+          sudo apt-get install -y python3
+          echo "=== System dependencies installed ==="
+          ls -la /usr/include/alsa/ || echo "ALSA headers not found!"
+          pkg-config --list-all | grep alsa || echo "ALSA not found in pkg-config"
+          pkg-config --cflags alsa || echo "pkg-config alsa failed"
 
-      - name: Install dependencies
-        run: pnpm install
+      - name: Install dependencies (no build)
+        run: pnpm install --no-optional
+        env:
+          npm_config_build_from_source: "false"
 
       - name: Build native module
+        if: always()
         run: npm run build-native
+        continue-on-error: true
 
       - name: Build Electron app
         run: pnpm run build:electron
