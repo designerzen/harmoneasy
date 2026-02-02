@@ -54,12 +54,23 @@ jobs:
           pkg-config --cflags alsa || echo "pkg-config alsa failed"
 
       - name: Install dependencies (no build)
-        run: pnpm install --no-optional
+        run: pnpm install
         env:
           npm_config_build_from_source: "false"
+          npm_config_ignore_scripts: "true"
 
-      - name: Build native module
-        if: always()
+      - name: Build native module (Linux)
+        if: runner.os == 'Linux'
+        run: npm run build-native
+        env:
+          CFLAGS: "-I/usr/include"
+          CXXFLAGS: "-I/usr/include"
+          LDFLAGS: "-L/usr/lib"
+          LD_LIBRARY_PATH: "/usr/lib"
+        continue-on-error: true
+
+      - name: Build native module (other OS)
+        if: runner.os != 'Linux'
         run: npm run build-native
         continue-on-error: true
 

@@ -20,7 +20,12 @@
   #include <CoreMIDI/CoreMIDI.h>
   #include <CoreFoundation/CoreFoundation.h>
 #elif __linux__
-  #include <alsa/asoundlib.h>
+  #if __has_include(<alsa/asoundlib.h>)
+    #include <alsa/asoundlib.h>
+    #define HAS_ALSA 1
+  #else
+    #define HAS_ALSA 0
+  #endif
 #endif
 
 // ============================================================================
@@ -221,6 +226,7 @@ bool MacMIDIManager::initialized = false;
 
 #elif __linux__
 
+#if HAS_ALSA
 // ALSA Implementation for Linux
 class ALSAMIDIManager {
 public:
@@ -310,6 +316,15 @@ public:
   }
 };
 
+#else
+// Stub for when ALSA is not available
+class ALSAMIDIManager {
+public:
+  static void enumerateOutputs() {}
+  static void enumerateInputs() {}
+};
+#endif
+
 #endif
 
 // ============================================================================
@@ -324,7 +339,7 @@ napi_value GetUmpOutputs(napi_env env, napi_callback_info info) {
   WindowsMIDIManager::enumerateOutputs();
 #elif __APPLE__
   MacMIDIManager::enumerateOutputs();
-#elif __linux__
+#elif __linux__ && HAS_ALSA
   ALSAMIDIManager::enumerateOutputs();
 #endif
   
@@ -354,7 +369,7 @@ napi_value GetUmpInputs(napi_env env, napi_callback_info info) {
   WindowsMIDIManager::enumerateInputs();
 #elif __APPLE__
   MacMIDIManager::enumerateInputs();
-#elif __linux__
+#elif __linux__ && HAS_ALSA
   ALSAMIDIManager::enumerateInputs();
 #endif
   

@@ -14,9 +14,11 @@
           }
         }],
         ["OS == 'linux'", {
-           "libraries": ["-lasound"],
-           "include_dirs": ["/usr/include"]
-         }]
+          "libraries": ["-lasound"],
+          "include_dirs": ["/usr/include", "/usr/include/alsa"],
+          "cflags": ["<!@(pkg-config --cflags alsa 2>/dev/null || echo '-I/usr/include')"],
+          "ldflags": ["<!@(pkg-config --libs alsa 2>/dev/null || echo '-L/usr/lib -lasound')"]
+        }]
       ]
     }
   ]
