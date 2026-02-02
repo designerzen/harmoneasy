@@ -6,6 +6,7 @@ source/libs/audiotoolsdk
 node_modules/
 __midi
 release/
+source/build
 
 # Electron build artifacts
 electron-builder/
