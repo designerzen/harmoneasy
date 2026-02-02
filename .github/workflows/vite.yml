@@ -37,9 +37,18 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --ignore-scripts
+        timeout-minutes: 10
+        env:
+          npm_config_legacy_peer_deps: true
 
       - name: Build
-        run: NODE_ENV=production pnpm run build
+        run: NODE_ENV=production pnpm run build --verbose
+        timeout-minutes: 15
+
+      - name: Check build output
+        run: |
+          echo "Build step completed"
+          ls -lah dist/ || echo "dist folder not found"
 
       - name: List the build folder contents...
         run: ls ./dist
