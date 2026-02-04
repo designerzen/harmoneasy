@@ -158,7 +158,7 @@ export const OUTPUT_FACTORIES: OutputFactory[] = [
 		id: OUTPUT_TYPES.NATIVE_MIDI,
 		name: "Native MIDI Device",
 		description: "Sends MIDI messages to a connected native OS MIDI device (Windows/macOS/Linux)",
-		isAvailable: () => true, // Native MIDI available on all platforms
+		isAvailable: () => typeof process !== "undefined" && process.type === "renderer", // Only available in Electron
 		create: (options) => createOutput(OUTPUT_TYPES.NATIVE_MIDI, options),
 	},
 	{
@@ -179,7 +179,7 @@ export const OUTPUT_FACTORIES: OutputFactory[] = [
 		id: OUTPUT_TYPES.MIDI2_NATIVE,
 		name: "MIDI 2.0 Native",
 		description: "MIDI 2.0 output with per-note controllers via native OS MIDI (16-bit resolution, Windows/macOS/Linux)",
-		isAvailable: () => true, // Native MIDI available on all platforms
+		isAvailable: () => typeof process !== "undefined" && process.type === "renderer", // Only available in Electron
 		create: (options) => createOutput(OUTPUT_TYPES.MIDI2_NATIVE, options),
 	},
 	{

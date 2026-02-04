@@ -21,6 +21,12 @@ let nativeMIDI: any = null
 async function loadNativeMIDI(): Promise<any> {
 	if (nativeMIDI !== null) return nativeMIDI
 	
+	// Native module only available in Electron/Node.js, not in browser
+	if (typeof window !== 'undefined') {
+		console.warn('[OutputMIDI2Native] Native MIDI module not available in browser environment')
+		return null
+	}
+	
 	try {
 		// Use import() for ES modules compatibility
 		const mod = await import('../../../build/Release/midi2-native.node' as any)
