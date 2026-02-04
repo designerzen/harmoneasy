@@ -144,7 +144,7 @@ export const OUTPUT_FACTORIES: OutputFactory[] = [
 		id: OUTPUT_TYPES.VIBRATOR,
 		name: "Vibrator",
 		description: "Triggers device vibration when a note within a range is played",
-		isAvailable: () => typeof navigator !== "undefined" && (!!navigator?.vibrate || !!navigator?.webkitVibrate || !!navigator?.mozVibrate),
+		isAvailable: () => typeof navigator !== "undefined" && (!!navigator?.vibrate || !!(navigator as any)?.webkitVibrate || !!(navigator as any)?.mozVibrate),
 		create: (options) => createOutput(OUTPUT_TYPES.VIBRATOR, options),
 	},
 	{
@@ -158,7 +158,7 @@ export const OUTPUT_FACTORIES: OutputFactory[] = [
 		id: OUTPUT_TYPES.NATIVE_MIDI,
 		name: "Native MIDI Device",
 		description: "Sends MIDI messages to a connected native OS MIDI device (Windows/macOS/Linux)",
-		isAvailable: () => typeof process !== "undefined" && process.type === "renderer", // Only available in Electron
+		isAvailable: () => typeof (globalThis as any).process !== "undefined" && (globalThis as any).process.type === "renderer", // Only available in Electron
 		create: (options) => createOutput(OUTPUT_TYPES.NATIVE_MIDI, options),
 	},
 	{
@@ -179,7 +179,7 @@ export const OUTPUT_FACTORIES: OutputFactory[] = [
 		id: OUTPUT_TYPES.MIDI2_NATIVE,
 		name: "MIDI 2.0 Native",
 		description: "MIDI 2.0 output with per-note controllers via native OS MIDI (16-bit resolution, Windows/macOS/Linux)",
-		isAvailable: () => typeof process !== "undefined" && process.type === "renderer", // Only available in Electron
+		isAvailable: () => typeof (globalThis as any).process !== "undefined" && (globalThis as any).process.type === "renderer", // Only available in Electron
 		create: (options) => createOutput(OUTPUT_TYPES.MIDI2_NATIVE, options),
 	},
 	{

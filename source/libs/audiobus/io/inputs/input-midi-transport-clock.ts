@@ -8,17 +8,9 @@
 import AbstractInput from "./abstract-input.ts"
 import type { IAudioInput } from "./input-interface.ts"
 import type { IAudioCommand } from "../../audio-command-interface.ts"
-import { PLAYBACK_START, PLAYBACK_STOP, MIDI_CLOCK, MIDI_START, MIDI_STOP, MIDI_CONTINUE } from "../../../commands"
+import { PLAYBACK_START, PLAYBACK_STOP, MIDI_CLOCK, MIDI_START, MIDI_STOP, MIDI_CONTINUE } from "../../../commands.ts"
 
 export const MIDI_TRANSPORT_CLOCK_INPUT_ID = "MIDI Transport Clock"
-
-/**
- * MIDI transport clock commands
- */
-export const MIDI_CLOCK = 0xF8  // MIDI Clock (sent 24 times per quarter note)
-export const MIDI_START = 0xFA  // MIDI Start (start playback from beginning)
-export const MIDI_CONTINUE = 0xFB  // MIDI Continue (start playback from current position)
-export const MIDI_STOP = 0xFC  // MIDI Stop (stop playback)
 
 interface IClockStats {
     clockCount: number
@@ -118,7 +110,7 @@ export default class InputMIDITransportClock extends AbstractInput implements IA
     /**
      * Setup native MIDI clock listener (Windows MIDI Services)
      */
-    private #setupNativeClockListener(): void {
+    #setupNativeClockListener(): void {
         if (!this.#nativeMIDI) return
 
         this.#listener = (inDeviceIndex: number, umpPacket: number) => {
@@ -151,7 +143,7 @@ export default class InputMIDITransportClock extends AbstractInput implements IA
     /**
      * Setup Web MIDI clock listener (fallback for browsers)
      */
-    private async #setupWebMIDIClockListener(): Promise<void> {
+    async #setupWebMIDIClockListener(): Promise<void> {
         try {
             const midiAccess = await (navigator as any).requestMIDIAccess?.()
 
@@ -161,7 +153,7 @@ export default class InputMIDITransportClock extends AbstractInput implements IA
             }
 
             for (const input of midiAccess.inputs.values()) {
-                input.onmidimessage = (message) => {
+                input.onmidimessage = (message: MIDIMessageEvent) => {
                     const [status] = message.data
 
                     switch (status) {
@@ -191,7 +183,7 @@ export default class InputMIDITransportClock extends AbstractInput implements IA
      * Handle incoming MIDI clock signal
      * MIDI sends 24 clock signals per quarter note
      */
-    private #handleClock(): void {
+    #handleClock(): void {
         const now = performance.now()
 
         // Update clock stats
@@ -224,7 +216,7 @@ export default class InputMIDITransportClock extends AbstractInput implements IA
     /**
      * Handle MIDI Start command
      */
-    private #handleStart(): void {
+    #handleStart(): void {
         this.#clockStats.clockCount = 0
         this.#clockStats.quarterNoteCount = 0
         this.#clockStats.lastClockTime = performance.now()
@@ -239,7 +231,7 @@ export default class InputMIDITransportClock extends AbstractInput implements IA
     /**
      * Handle MIDI Continue command
      */
-    private #handleContinue(): void {
+    #handleContinue(): void {
         this.#clockStats.lastClockTime = performance.now()
 
         this.#dispatchCommand({
@@ -252,7 +244,7 @@ export default class InputMIDITransportClock extends AbstractInput implements IA
     /**
      * Handle MIDI Stop command
      */
-    private #handleStop(): void {
+    #handleStop(): void {
         this.#dispatchCommand({
             type: PLAYBACK_STOP,
             timestamp: performance.now(),
@@ -263,7 +255,7 @@ export default class InputMIDITransportClock extends AbstractInput implements IA
     /**
      * Dispatch command as event to IOChain
      */
-    private #dispatchCommand(detail: any): void {
+    #dispatchCommand(detail: any): void {
         // Create an audio command for the IOChain to process
         const audioCommand: IAudioCommand = {
             type: detail.type,
@@ -275,13 +267,13 @@ export default class InputMIDITransportClock extends AbstractInput implements IA
         this.dispatch(audioCommand)
 
         // Also emit a custom event for listeners
-        this.emit('transportCommand', detail)
+        this.#emit('transportCommand', detail)
     }
 
     /**
      * Emit event to listeners
      */
-    private emit(eventType: string, detail: any): void {
+    #emit(eventType: string, detail: any): void {
         const event = new CustomEvent(eventType, { detail })
         this.dispatchEvent(event)
     }

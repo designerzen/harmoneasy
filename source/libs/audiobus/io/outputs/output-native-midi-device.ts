@@ -20,38 +20,16 @@ let nativeMIDI: any = null
 async function loadNativeMIDI(): Promise<any> {
 	if (nativeMIDI !== null) return nativeMIDI
 	
+	// Native module only available in Electron/Node.js, not in browser
+	if (typeof window !== 'undefined') {
+		console.warn('[OutputNativeMIDIDevice] Native MIDI module not available in browser environment')
+		return null
+	}
+	
 	try {
-		// Load native module via require (works in Electron/Node.js context)
-		if (typeof require !== 'undefined') {
-			// Try multiple possible locations for the native module
-			const possiblePaths = [
-				'../../../build/Release/midi2-native.node',      // Development (from source dir)
-				'../build/Release/midi2-native.node',             // Built app relative to dist
-				'./build/Release/midi2-native.node',              // Packaged app relative to root
-				require.resolve('midi2-native')                   // If installed as package
-			]
-
-			let loaded = false
-			for (const pathAttempt of possiblePaths) {
-				try {
-					nativeMIDI = require(pathAttempt)
-					console.info('[OutputNativeMIDIDevice] Loaded native module from:', pathAttempt)
-					loaded = true
-					break
-				} catch (e) {
-					console.debug(`[OutputNativeMIDIDevice] Path not available: ${pathAttempt}`)
-					// Continue to next path
-				}
-			}
-
-			if (!loaded) {
-				throw new Error('Could not resolve native MIDI module from any expected location')
-			}
-		} else {
-			// Fallback for other environments (shouldn't happen in Electron)
-			console.warn('[OutputNativeMIDIDevice] require() not available, cannot load native module')
-			return null
-		}
+		// Use import() for ES modules compatibility
+		const mod = await import('../../../build/Release/midi2-native.node' as any)
+		nativeMIDI = mod
 		return nativeMIDI
 	} catch (e) {
 		console.warn('[OutputNativeMIDIDevice] Native MIDI module not available:', e)
