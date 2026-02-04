@@ -8,7 +8,7 @@ import OutputManager, { EVENT_OUTPUTS_UPDATED } from "./output-manager"
 import TransformerManager, { EVENT_TRANSFORMERS_UPDATED } from "./transformer-manager"
 import TransformerManagerWorker from "./transformer-manager-worker"
 
-import { INPUT_EVENT, NOTE_OFF, NOTE_ON, OUTPUT_EVENT, PLAYBACK_START, PLAYBACK_STOP, PLAYBACK_TOGGLE, TEMPO_DECREASE, TEMPO_INCREASE, TEMPO_TAP } from "../../../commands"
+import { INPUT_EVENT, NOTE_OFF, NOTE_ON, OUTPUT_EVENT, PLAYBACK_START, PLAYBACK_STOP, PLAYBACK_TOGGLE, TEMPO_DECREASE, TEMPO_INCREASE, TEMPO_TAP, MIDI_CLOCK, MIDI_CONTINUE, MIDI_START, MIDI_STOP } from "../../../commands"
 import AudioEvent from "../audio-event"
 
 import type { IAudioCommand } from "../audio-command-interface"
@@ -78,6 +78,11 @@ export default class IOChain extends EventTarget{
 		return this.#transformerManager.isQuantised
 	}
 
+	/**
+	 * FIXME: Remove requirement for Timer
+	 * @param timer 
+	 * @param options 
+	 */
 	constructor( timer:Timer, options=DEFAULT_OPTIONS ){
 		super()
 
@@ -382,10 +387,12 @@ export default class IOChain extends EventTarget{
 				break
 
 			case PLAYBACK_START:
+			case MIDI_START:
 				this.timer.start()
 				break
 
 			case PLAYBACK_STOP:
+			case MIDI_STOP:
 				this.timer.stop()
 				break
 
@@ -399,6 +406,21 @@ export default class IOChain extends EventTarget{
 
 			case TEMPO_DECREASE:
 				this.timer.BPM--
+				break
+
+			case MIDI_CLOCK:
+				// MIDI clock signal received - update timing if available in command
+				if ((audioCommand as any).bpm) {
+					// Synchronize to MIDI clock BPM if provided
+					this.timer.BPM = Math.round((audioCommand as any).bpm)
+				}
+				break
+
+			case MIDI_CONTINUE:
+				// Continue playback from current position (MIDI clock command)
+				if (!this.timer.isRunning) {
+					this.timer.start()
+				}
 				break
 		}
 		// NB. ensure that the timing is set for it to be scheduled

@@ -37,6 +37,8 @@ const loadSupportingLibrary = async (type: string) => {
 			return await import("./inputs/input-onscreen-keyboard.ts")
 		case INPUT_TYPES.PROMPT_AI:
 			return await import("./inputs/input-prompt-ai.ts")
+		case INPUT_TYPES.MIDI_TRANSPORT_CLOCK:
+			return await import("./inputs/input-midi-transport-clock.ts")
 		default:
 			throw new Error(`Unknown input type: ${type}`)
 	}
@@ -150,6 +152,13 @@ export const INPUT_FACTORIES: InputFactory[] = [
 		description: "AI-powered prompt input for generating note sequences and combinations",
 		isAvailable: () => true,
 		create: (options) => createInput(INPUT_TYPES.PROMPT_AI, options),
+	},
+	{
+		id: INPUT_TYPES.MIDI_TRANSPORT_CLOCK,
+		name: "MIDI Transport Clock",
+		description: "MIDI transport clock input for timing synchronization (24 clocks per quarter note)",
+		isAvailable: () => true, // Available on all platforms with MIDI support
+		create: (options) => createInput(INPUT_TYPES.MIDI_TRANSPORT_CLOCK, options),
 	},
 ]
 
