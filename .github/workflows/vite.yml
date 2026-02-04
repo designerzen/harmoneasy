@@ -42,8 +42,8 @@ jobs:
           npm_config_legacy_peer_deps: true
 
       - name: Build
-        run: NODE_ENV=production pnpm run build --verbose
-        timeout-minutes: 15
+        run: NODE_ENV=production pnpm run build
+        timeout-minutes: 10
 
       - name: Check build output
         run: |
