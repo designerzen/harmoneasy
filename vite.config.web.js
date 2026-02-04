@@ -14,7 +14,7 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     rollupOptions: {
-      external: ['url', 'path']
+      external: ['url', 'path', /\.node$/]
     }
   },
   test: {
