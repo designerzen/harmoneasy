@@ -4,9 +4,10 @@ import { showDialogFromTemplate } from "../../../libs/dialog-utils.ts"
 import { getAvailableOutputFactories, createOutputById } from "../../../libs/audiobus/io/output-factory.ts"
 import type IOChain from "../../../libs/audiobus/io/IO-chain.ts"
 
-export function EndNode() {
+export function EndNode(props) {
 
 	const chain = (window as any).chain as IOChain
+	const isVertical = props.data?.layoutMode === 'vertical'
 
 	const addOutput = useCallback(async () => {
 		const factories = getAvailableOutputFactories()
@@ -40,7 +41,7 @@ export function EndNode() {
 			<span className="sr-only">Add Output Device</span>
 			<button className="cta btn-add" type="button" onClick={addOutput}>Add</button>
 		</label>
-		<Handle type="source" position={Position.Right} />
-		<Handle type="target" position={Position.Left} />
+		<Handle type="source" position={isVertical ? Position.Bottom : Position.Right} />
+		<Handle type="target" position={isVertical ? Position.Top : Position.Left} />
     </div>
 }

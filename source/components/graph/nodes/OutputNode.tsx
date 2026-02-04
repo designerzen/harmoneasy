@@ -54,6 +54,8 @@ export function OutputNode(props) {
 		}
 	}, [output])
 
+	const isVertical = props.data?.layoutMode === 'vertical'
+
 	return <div className={`node-output graph-node can-remove ${hasControls ? 'has-controls' : 'no-controls'} `} title={output.description}>
 		<h6>{output.name}</h6>
 		<p className="sr-only">{props.data.label }</p>
@@ -81,6 +83,6 @@ export function OutputNode(props) {
 		<div ref={GUIContainerRef} />
 		
 		<button type="button" className="btn-remove" onClick={removeNode}>Remove</button>
-      	<Handle type="target" position={Position.Left} />
+      	<Handle type="target" position={isVertical ? Position.Top : Position.Left} />
 	</div>
 }

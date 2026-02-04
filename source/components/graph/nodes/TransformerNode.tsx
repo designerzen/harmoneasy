@@ -26,6 +26,8 @@ export function TransformerNode(props) {
 	const hasControls = props.data.fields.length
     const shouldShowMoveButtons = chain.transformerQuantity > 1
 
+	const isVertical = props.data.layoutMode === 'vertical'
+
     return <div className={`node-transformer graph-node can-remove category-${props.data.element.category.toLowerCase()}`}>
         <h6>{props.data.label}</h6>
       
@@ -47,7 +49,7 @@ export function TransformerNode(props) {
 			</menu>) : null 
 		}
 
-        <Handle type="source" position={Position.Right} />
-        <Handle type="target" position={Position.Left} />
+        <Handle type="source" position={isVertical ? Position.Bottom : Position.Right} />
+        <Handle type="target" position={isVertical ? Position.Top : Position.Left} />
     </div>
 }

@@ -1,4 +1,4 @@
-import { HORIZONTAL_SPACING, NODE_HEIGHT } from './options'
+import { HORIZONTAL_SPACING, NODE_HEIGHT, LAYOUT_MODE, DEFAULT_LAYOUT_MODE } from './options'
 import { Position } from '@xyflow/react'
 import { layoutFromMap } from 'entitree-flex'
 
@@ -161,15 +161,30 @@ export const getNodeID = ( uuid:string, nodeType:string="node:transformer" ):str
 }
 
 /**
+ * Set handle positions based on layout mode for custom node structures
+ */
+const setNodeHandles = (node: any, isVertical: boolean) => {
+	if (isVertical) {
+		node.sourcePosition = Bottom
+		node.targetPosition = Top
+	} else {
+		node.sourcePosition = Right
+		node.targetPosition = Left
+	}
+	return node
+}
+
+/**
  * GUI structure for the interactive node graph - 
  * create the nodes in our graph from our IOChain
  * 
  * @param chain 
  * @param showInputs 
  * @param showOutputs 
+ * @param layoutMode - 'horizontal' or 'vertical'
  * @returns 
  */
-export const getStructure = ( chain:IOChain, showInputs:boolean=true, showOutputs:boolean=true ) => {
+export const getStructure = ( chain:IOChain, showInputs:boolean=true, showOutputs:boolean=true, layoutMode:string=DEFAULT_LAYOUT_MODE ) => {
 
 	const transformManager:TransformerManager|TransformerManagerWorker = chain.transformerManager
 	const transformers = transformManager.activeTransformers
@@ -181,65 +196,89 @@ export const getStructure = ( chain:IOChain, showInputs:boolean=true, showOutput
 	const inputs = chain.inputs
 	const outputs = chain.outputs
 	
+	const isVerticalLayout = layoutMode === LAYOUT_MODE.vertical
+
+	// Calculate vertical layout dimensions
+	const verticalInputsY = 0
+	const verticalStartY = (inputs.length * (NODE_HEIGHT / 1.5)) + 100
+	const verticalTransformersStartY = verticalStartY + NODE_HEIGHT + 100
+	const verticalEndY = verticalTransformersStartY + (transformers.length * (NODE_HEIGHT + 50))
+	const verticalOutputsY = verticalEndY + NODE_HEIGHT + 100
+
 	const inputNodes = showInputs ? inputs
 		.filter((input: AbstractInput) => !input.isHidden)
-		.map((input:AbstractInput, index:number) => ({
+		.map((input:AbstractInput, index:number) => setNodeHandles({
 		id: 'node-input-'+index,
 		type: NOTE_TYPE.input,
 		data: { 
 			label: 'INPUT' + input.name,
 			input,
-			index
+			index,
+			layoutMode
 		},
-		position: { x: -660 , y: index * (NODE_HEIGHT / 1.5) }
-	})) : []
+		position: isVerticalLayout 
+			? { x: index * HORIZONTAL_SPACING, y: verticalInputsY }
+			: { x: -660 , y: index * (NODE_HEIGHT / 1.5) }
+	}, isVerticalLayout)) : []
 
 	// From Inputs to Start
-	const nodeStart = {
+	const nodeStart = setNodeHandles({
 		id: 'node-start',
 		type: NOTE_TYPE.start,
 		data: { 
-			label: 'START' 
+			label: 'START',
+			layoutMode
 		},
-		position: { x: -180, y: NODE_HEIGHT / 2  }
-	}
+		position: isVerticalLayout 
+			? { x: 0, y: verticalStartY }
+			: { x: -180, y: NODE_HEIGHT / 2  }
+	}, isVerticalLayout)
 
 	// Chain through the Transformers
-	const nodesTransformers = transformers.map((transformer:Transformer, index) => ({
+	const nodesTransformers = transformers.map((transformer:Transformer, index) => setNodeHandles({
 		id: getNodeID(transformer.uuid),
 		type: NOTE_TYPE.transformer,
 		data: { 
 			label: transformer.name, 
 			fields: transformer.fields, 
 			element: transformer, 
-			description: transformer.description 
+			description: transformer.description,
+			layoutMode
 		},
-		position: { x: HORIZONTAL_SPACING * index, y: 0 }
-	}))
+		position: isVerticalLayout 
+			? { x: 0, y: verticalTransformersStartY + (index * (NODE_HEIGHT + 50)) }
+			: { x: HORIZONTAL_SPACING * index, y: 0 }
+	}, isVerticalLayout))
 
 	// End Graph nodes
-	const nodeEnd =  {
+	const nodeEnd = setNodeHandles({
 		id: 'node-end',
 		type: NOTE_TYPE.end,
 		data: { 
-			label: 'END' 
+			label: 'END',
+			layoutMode
 		},
-		position: { x: HORIZONTAL_SPACING * (transformers.length) , y: NODE_HEIGHT / 2 }
-	}
+		position: isVerticalLayout 
+			? { x: 0, y: verticalEndY }
+			: { x: HORIZONTAL_SPACING * (transformers.length) , y: NODE_HEIGHT / 2 }
+	}, isVerticalLayout)
 
 	// Add in all our output nodes
 	const outputNodes = showOutputs ? outputs
 		.filter((output: AbstractInput) => !output.isHidden)
-		.map((output:AbstractInput, index:number) => ({
+		.map((output:AbstractInput, index:number) => setNodeHandles({
 		id: 'node-output-'+index,
 		type: NOTE_TYPE.output,
 		data: { 
 			label: 'OUTPUT' + output.name,
 			output,
-			index
+			index,
+			layoutMode
 		},
-		position: { x: (HORIZONTAL_SPACING * transformers.length ) + 226 , y: index * (NODE_HEIGHT / 1.5) }
-	})) : []
+		position: isVerticalLayout 
+			? { x: index * HORIZONTAL_SPACING, y: verticalOutputsY }
+			: { x: (HORIZONTAL_SPACING * transformers.length ) + 226 , y: index * (NODE_HEIGHT / 1.5) }
+	}, isVerticalLayout)) : []
 	
 	const nodes = [
 		...inputNodes,
@@ -303,7 +342,7 @@ export const getStructure = ( chain:IOChain, showInputs:boolean=true, showOutput
 			target: nextTransformer ? 
 				getNodeID(nextTransformer.uuid) : 
 				nodeEnd.id,
-			// type: EDGE_TYPE.animated, 
+			// type: EDGE_TYPE.animated,
 			data: { 
 				duration: barDuration,
 				type:NOTE_TYPE.transformer

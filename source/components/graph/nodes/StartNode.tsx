@@ -34,13 +34,15 @@ export function StartNode(props) {
 		await showDialogFromTemplate("add-input-overlay-template", dialogOptions)
 	}, [])
 
+	const isVertical = props.data.layoutMode === 'vertical'
+
     return <div className="node-start graph-node">
         <h6>Inputs</h6>
 		<label>
 			<span className="sr-only">Add Input Device</span>
 			<button className="cta btn-add" type="button" onClick={addInput}>Add</button>
 		</label>
-		<Handle type="source" position={Position.Right} />
-		<Handle type="target" position={Position.Left} />
+		<Handle type="source" position={isVertical ? Position.Bottom : Position.Right} />
+		<Handle type="target" position={isVertical ? Position.Top : Position.Left} />
     </div>
 }

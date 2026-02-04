@@ -20,7 +20,7 @@ import { InputNode } from './nodes/InputNode.tsx'
 import { OutputNode } from './nodes/OutputNode.tsx'
 import { TransformerNode } from './nodes/TransformerNode.tsx'
 
-import { DEFAULT_GRAPH_OPTIONS, DEFAULT_VIEWPORT_OPTIONS } from './options.ts'
+import { DEFAULT_GRAPH_OPTIONS, DEFAULT_VIEWPORT_OPTIONS, LAYOUT_MODE, DEFAULT_LAYOUT_MODE } from './options.ts'
 
 import { EVENT_TRANSFORMERS_UPDATED } from '../../libs/audiobus/io/transformer-manager.ts'
 import { EVENT_INPUTS_UPDATED } from '../../libs/audiobus/io/input-manager.ts'
@@ -45,6 +45,7 @@ const edgeTypes = {
 function FlowComponent() {
 	const [ nodes, setNodes] = useState(initialNodes)
 	const [ edges, setEdges] = useState(initialEdges)
+	const [ layoutMode, setLayoutMode ] = useState(DEFAULT_LAYOUT_MODE)
 	const { fitView } = useReactFlow()
 
 	useEffect(() => {
@@ -54,7 +55,7 @@ function FlowComponent() {
 		// an event has bubbled from the Chain
 		const onTransformersChanged = (event:CustomEvent|null) => {
 			// const detail = event ? event.detail : null
-			const structure = getStructure( chain, true, true  )
+			const structure = getStructure( chain, true, true, layoutMode  )
 			setNodes(structure.nodes)
 			setEdges(structure.edges)
 		}
@@ -71,7 +72,7 @@ function FlowComponent() {
 			abortController.abort()
 		}
 		return unsubscribe
-	}, [setNodes, setEdges])
+	}, [setNodes, setEdges, layoutMode])
 
 	// Auto-fit view whenever nodes change
 	useEffect(() => {
@@ -100,11 +101,23 @@ function FlowComponent() {
 		(params) => setEdges((edgesSnapshot) => addEdge(params, edgesSnapshot)), []
 	)
 
+	const toggleLayout = () => {
+		setLayoutMode(layoutMode === LAYOUT_MODE.vertical ? LAYOUT_MODE.horizontal : LAYOUT_MODE.vertical)
+	}
+
 	return (
 		<>
 			<aside className="transformers-drawer">
 				<Transformers />
 				<Presets />
+				<div style={{ padding: '16px', borderTop: '1px solid #ccc' }}>
+					<button 
+						onClick={toggleLayout}
+						style={{ padding: '8px 12px', cursor: 'pointer' }}
+					>
+						Layout: {layoutMode === LAYOUT_MODE.vertical ? 'Vertical' : 'Horizontal'}
+					</button>
+				</div>
 			</aside>
 			<ReactFlow
 				panOnScroll={false}

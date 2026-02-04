@@ -80,6 +80,8 @@ export function InputNode(props: { data: { input: AbstractInput; label: any } })
 	/**
 	 * 
 	 */
+	const isVertical = props.data.layoutMode === 'vertical'
+
 	return <div className={`node-input graph-node can-remove ${hasControls ? 'has-controls' : 'no-controls'} `} title={input.description}>
 		<h6>{input?.name }</h6>
 		<p className="sr-only">{props.data.label }</p>
@@ -108,6 +110,6 @@ export function InputNode(props: { data: { input: AbstractInput; label: any } })
 		<div ref={GUIContainerRef} />
 		 
 		<button type="button" className="btn-remove" onClick={removeNode}>Remove</button>
-		<Handle type="source" position={Position.Right} />
+		<Handle type="source" position={isVertical ? Position.Bottom : Position.Right} />
 	</div>
 }
