@@ -8,7 +8,7 @@
 import AbstractInput from "./abstract-input.ts"
 import type { IAudioInput } from "./input-interface.ts"
 import type { IAudioCommand } from "../../audio-command-interface.ts"
-import { PLAYBACK_START, PLAYBACK_STOP, MIDI_CLOCK, MIDI_START, MIDI_STOP, MIDI_CONTINUE } from "../../../commands.ts"
+import { PLAYBACK_START, PLAYBACK_STOP, MIDI_CLOCK, MIDI_START, MIDI_STOP, MIDI_CONTINUE } from "../../../../commands.ts"
 
 export const MIDI_TRANSPORT_CLOCK_INPUT_ID = "MIDI Transport Clock"
 
