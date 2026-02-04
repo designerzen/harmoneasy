@@ -2,17 +2,18 @@ import path from 'path'
 import { app, BrowserWindow, Menu, ipcMain } from 'electron'
 import { fileURLToPath } from 'url'
 import { createRequire } from 'module'
-import { createMenuTemplate } from './source/electron/electron-menu.js'
-
-const require = createRequire(import.meta.url)
-const updateElectronApp = require('update-electron-app')
+import { loadElectronModule } from './electron-loader.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
+const require = createRequire(import.meta.url)
+const updateElectronApp = require('update-electron-app')
+
 let SocketServer = null
 let mainWindow
 let socketServer
+let createMenuTemplate = null
 
 function setupAutoUpdater() {
 	// Only check for updates in production (packaged app)
@@ -64,10 +65,9 @@ function createWindow() {
 	// In production (built app): app.isPackaged = true, load from dist files
 	const isProduction = app.isPackaged
 	if (!isProduction) {
-			console.log('Loading app... isProduction:', isProduction)
+		console.log('Loading app... isProduction:', isProduction)
 
-
-			// Development: load from Vite dev server
+		// Development: load from Vite dev server
 		const devServerUrl = 'http://localhost:5174'
 		console.log('Dev mode: loading from', devServerUrl)
 		mainWindow.loadURL(devServerUrl)
@@ -109,13 +109,28 @@ function createWindow() {
 
 // https://github.com/aalhaimi/electron-web-bluetooth/blob/master/main.js
 app
-  .commandLine
-  .appendSwitch('enable-web-bluetooth', true)
+	.commandLine
+	.appendSwitch('enable-web-bluetooth', true)
 
 app.on('ready', async () => {
 	await initializeSocketServer()
 	setupAutoUpdater()
+	
+	// Load menu template using the loader
+	try {
+		const menuModule = await loadElectronModule('electron-menu')
+		createMenuTemplate = menuModule.createMenuTemplate
+		
+		// Setup menu
+		const template = createMenuTemplate(app)
+		const menu = Menu.buildFromTemplate(template)
+		Menu.setApplicationMenu(menu)
+	} catch (error) {
+		console.error('Failed to setup application menu:', error.message)
+	}
+	
 	createWindow()
+	
 	// Start socket server if available
 	if (SocketServer) {
 		try {
@@ -141,10 +156,6 @@ app.on('activate', () => {
 		createWindow()
 	}
 })
-
-const template = createMenuTemplate(app)
-const menu = Menu.buildFromTemplate(template)
-Menu.setApplicationMenu(menu)
 
 // IPC handlers for electron-specific functionality
 ipcMain.handle('app:get-version', () => {
