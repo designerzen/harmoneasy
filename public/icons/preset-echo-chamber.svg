@@ -1,0 +1,9 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" fill="none"/>
+  <!-- Concentric circles for echo/reverb -->
+  <circle cx="32" cy="32" r="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <circle cx="32" cy="32" r="14" fill="none" stroke="currentColor" stroke-width="2" opacity="0.6"/>
+  <circle cx="32" cy="32" r="22" fill="none" stroke="currentColor" stroke-width="2" opacity="0.3"/>
+  <!-- Center note -->
+  <circle cx="32" cy="32" r="3" fill="currentColor"/>
+</svg>

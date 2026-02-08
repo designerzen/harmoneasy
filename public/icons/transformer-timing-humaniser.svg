@@ -1,0 +1,19 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" fill="none"/>
+  <!-- Grid (quantized) input -->
+  <circle cx="16" cy="24" r="2.5" fill="currentColor" opacity="0.5"/>
+  <circle cx="28" cy="24" r="2.5" fill="currentColor" opacity="0.5"/>
+  <circle cx="40" cy="24" r="2.5" fill="currentColor" opacity="0.5"/>
+  <line x1="16" y1="20" x2="40" y2="20" stroke="currentColor" stroke-width="0.5" opacity="0.3"/>
+  <!-- Arrow showing humanization -->
+  <path d="M 32 30 L 32 38" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  <path d="M 30 36 L 32 38 L 34 36" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <!-- Humanized (offset) output -->
+  <circle cx="14" cy="44" r="2.5" fill="currentColor"/>
+  <circle cx="30" cy="45" r="2.5" fill="currentColor"/>
+  <circle cx="42" cy="43" r="2.5" fill="currentColor"/>
+  <line x1="14" y1="40" x2="42" y2="40" stroke="currentColor" stroke-width="0.5" opacity="0.3" stroke-dasharray="2,2"/>
+  <!-- Swing indicator -->
+  <path d="M 18 50 Q 24 48 30 50" stroke="currentColor" stroke-width="1" fill="none" opacity="0.6"/>
+  <path d="M 30 50 Q 36 52 42 50" stroke="currentColor" stroke-width="1" fill="none" opacity="0.6"/>
+</svg>

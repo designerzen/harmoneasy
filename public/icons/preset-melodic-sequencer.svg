@@ -1,0 +1,11 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" fill="none"/>
+  <!-- Melodic wave pattern -->
+  <path d="M 12 36 Q 18 28 24 32 T 36 32 T 48 24 T 60 32" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <!-- Note positions -->
+  <circle cx="12" cy="36" r="2" fill="currentColor"/>
+  <circle cx="24" cy="32" r="2" fill="currentColor"/>
+  <circle cx="36" cy="32" r="2" fill="currentColor"/>
+  <circle cx="48" cy="24" r="2" fill="currentColor"/>
+  <circle cx="60" cy="32" r="2" fill="currentColor"/>
+</svg>

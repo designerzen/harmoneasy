@@ -1,0 +1,10 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" fill="none"/>
+  <!-- Jagged, glitchy lines -->
+  <path d="M 12 24 L 16 28 L 20 20 L 24 32 L 28 18 L 32 36" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 32 36 L 36 16 L 40 40 L 44 22 L 48 38 L 52 26" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Glitch blocks -->
+  <rect x="12" y="44" width="8" height="4" fill="currentColor" opacity="0.6"/>
+  <rect x="28" y="50" width="10" height="3" fill="currentColor" opacity="0.6"/>
+  <rect x="44" y="46" width="8" height="5" fill="currentColor" opacity="0.6"/>
+</svg>

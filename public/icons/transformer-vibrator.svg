@@ -1,0 +1,17 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" fill="none"/>
+  <!-- Input note -->
+  <circle cx="12" cy="32" r="3" fill="currentColor"/>
+  <!-- Vibrato wave -->
+  <path d="M 16 32 Q 20 28 24 32 T 32 32 T 40 32 T 48 32" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- Output note with vibrato effect -->
+  <circle cx="52" cy="32" r="3" fill="currentColor"/>
+  <!-- Frequency indicator -->
+  <line x1="16" y1="46" x2="20" y2="46" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <line x1="22" y1="48" x2="26" y2="48" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <line x1="28" y1="46" x2="32" y2="46" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <line x1="34" y1="48" x2="38" y2="48" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <line x1="40" y1="46" x2="44" y2="46" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <!-- Hz label -->
+  <text x="44" y="52" font-size="5" fill="currentColor" font-family="monospace" opacity="0.7">~5Hz</text>
+</svg>

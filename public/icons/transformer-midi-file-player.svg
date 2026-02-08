@@ -1,0 +1,15 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" fill="none"/>
+  <!-- File icon -->
+  <path d="M 12 12 L 12 52 Q 12 56 16 56 L 48 56 Q 52 56 52 52 L 52 20 L 44 12 L 16 12 Q 12 12 12 16 Z" fill="none" stroke="currentColor" stroke-width="2"/>
+  <!-- File fold -->
+  <path d="M 44 12 L 44 20 L 52 20" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <!-- Note lines on file -->
+  <line x1="18" y1="28" x2="46" y2="28" stroke="currentColor" stroke-width="1" opacity="0.6"/>
+  <line x1="18" y1="34" x2="46" y2="34" stroke="currentColor" stroke-width="1" opacity="0.6"/>
+  <line x1="18" y1="40" x2="46" y2="40" stroke="currentColor" stroke-width="1" opacity="0.6"/>
+  <!-- Play button indicator -->
+  <path d="M 24 44 L 24 50 L 32 47 Z" fill="currentColor"/>
+  <!-- Extension label -->
+  <text x="18" y="50" font-size="5" fill="currentColor" font-family="monospace" opacity="0.7">MID</text>
+</svg>

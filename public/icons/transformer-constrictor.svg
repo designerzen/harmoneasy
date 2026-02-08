@@ -1,0 +1,17 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" fill="none"/>
+  <!-- Input range (wide) -->
+  <circle cx="12" cy="20" r="2" fill="currentColor"/>
+  <circle cx="12" cy="32" r="2" fill="currentColor"/>
+  <circle cx="12" cy="44" r="2" fill="currentColor"/>
+  <!-- Constraining funnel -->
+  <path d="M 16 18 L 36 26" stroke="currentColor" stroke-width="1.5" fill="none"/>
+  <path d="M 16 46 L 36 38" stroke="currentColor" stroke-width="1.5" fill="none"/>
+  <!-- Output range (narrow) -->
+  <circle cx="44" cy="28" r="1.5" fill="currentColor"/>
+  <circle cx="44" cy="32" r="1.5" fill="currentColor"/>
+  <circle cx="44" cy="36" r="1.5" fill="currentColor"/>
+  <!-- Constraint indicator -->
+  <rect x="28" y="22" width="8" height="20" fill="none" stroke="currentColor" stroke-width="1.5" rx="1" opacity="0.6"/>
+  <text x="24" y="53" font-size="6" fill="currentColor" font-family="monospace" opacity="0.7">limit</text>
+</svg>

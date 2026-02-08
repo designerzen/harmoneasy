@@ -1,0 +1,21 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" fill="none"/>
+  <!-- Input line -->
+  <line x1="8" y1="32" x2="20" y2="32" stroke="currentColor" stroke-width="2"/>
+  <!-- Scattered note positions -->
+  <circle cx="28" cy="20" r="2.5" fill="currentColor"/>
+  <circle cx="32" cy="38" r="2.5" fill="currentColor"/>
+  <circle cx="36" cy="26" r="2.5" fill="currentColor"/>
+  <circle cx="40" cy="44" r="2.5" fill="currentColor"/>
+  <circle cx="44" cy="24" r="2.5" fill="currentColor"/>
+  <circle cx="48" cy="40" r="2.5" fill="currentColor"/>
+  <circle cx="52" cy="28" r="2.5" fill="currentColor"/>
+  <!-- Scattered lines showing randomness -->
+  <path d="M 20 32 L 28 20" stroke="currentColor" stroke-width="1" opacity="0.4" stroke-dasharray="2,2"/>
+  <path d="M 20 32 L 32 38" stroke="currentColor" stroke-width="1" opacity="0.4" stroke-dasharray="2,2"/>
+  <path d="M 20 32 L 36 26" stroke="currentColor" stroke-width="1" opacity="0.4" stroke-dasharray="2,2"/>
+  <!-- Dice indicator -->
+  <rect x="8" y="12" width="8" height="8" rx="1" fill="none" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+  <circle cx="10" cy="14" r="1" fill="currentColor" opacity="0.5"/>
+  <circle cx="14" cy="18" r="1" fill="currentColor" opacity="0.5"/>
+</svg>

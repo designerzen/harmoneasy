@@ -1,0 +1,22 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" fill="none"/>
+  <!-- Input channels -->
+  <circle cx="12" cy="20" r="2.5" fill="currentColor"/>
+  <circle cx="12" cy="32" r="2.5" fill="currentColor"/>
+  <circle cx="12" cy="44" r="2.5" fill="currentColor"/>
+  <!-- MIDI channel labels -->
+  <text x="6" y="22" font-size="5" fill="currentColor" font-family="monospace" opacity="0.7">1</text>
+  <text x="6" y="34" font-size="5" fill="currentColor" font-family="monospace" opacity="0.7">2</text>
+  <text x="6" y="46" font-size="5" fill="currentColor" font-family="monospace" opacity="0.7">3</text>
+  <!-- Channel routing lines -->
+  <path d="M 14 20 L 28 20" stroke="currentColor" stroke-width="1.5"/>
+  <path d="M 14 32 L 28 32" stroke="currentColor" stroke-width="1.5"/>
+  <path d="M 14 44 L 28 44" stroke="currentColor" stroke-width="1.5"/>
+  <!-- Output channel -->
+  <circle cx="44" cy="32" r="2.5" fill="currentColor"/>
+  <line x1="32" y1="20" x2="40" y2="32" stroke="currentColor" stroke-width="1" opacity="0.6" stroke-dasharray="2,2"/>
+  <line x1="32" y1="32" x2="40" y2="32" stroke="currentColor" stroke-width="1" opacity="0.6" stroke-dasharray="2,2"/>
+  <line x1="32" y1="44" x2="40" y2="32" stroke="currentColor" stroke-width="1" opacity="0.6" stroke-dasharray="2,2"/>
+  <!-- Output label -->
+  <text x="38" y="34" font-size="5" fill="currentColor" font-family="monospace" opacity="0.7">CH</text>
+</svg>

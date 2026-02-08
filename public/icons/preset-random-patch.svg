@@ -1,0 +1,14 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" fill="none"/>
+  <!-- Random scattered dots -->
+  <circle cx="16" cy="24" r="3" fill="currentColor"/>
+  <circle cx="48" cy="18" r="3" fill="currentColor"/>
+  <circle cx="32" cy="40" r="3" fill="currentColor"/>
+  <circle cx="12" cy="52" r="3" fill="currentColor"/>
+  <circle cx="52" cy="48" r="3" fill="currentColor"/>
+  <circle cx="40" cy="28" r="3" fill="currentColor"/>
+  <circle cx="24" cy="56" r="3" fill="currentColor"/>
+  <circle cx="28" cy="12" r="3" fill="currentColor"/>
+  <!-- Connecting lines for randomness -->
+  <path d="M 16 24 L 48 18 M 32 40 L 12 52 M 52 48 L 40 28 M 24 56 L 28 12" stroke="currentColor" stroke-width="1" stroke-dasharray="2,2" fill="none" opacity="0.5"/>
+</svg>
