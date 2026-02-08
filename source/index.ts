@@ -18,6 +18,7 @@ import { createDawProjectFromAudioEventRecording, saveDawProjectToLocalFileSyste
 import { importDawProjectFile } from './libs/audiobus/importers/import-dawproject.ts'
 import { importMusicXMLFile } from './libs/audiobus/importers/import-musicxml-import.ts'
 import { importMIDIFile } from './libs/audiobus/importers/import-midi-file.ts'
+import { importTrackerFile } from './libs/audiobus/importers/import-tracker-file.ts'
 
 // Front End
 import UI from './ui.ts'
@@ -78,15 +79,29 @@ let songVisualiser: SongVisualiser | null = null
  */
 const importFile = async (file: File): Promise<{ commands: IAudioCommand[], noteCount: number }> => {
 	const fileName = file.name.toLowerCase()
+	
+	// MIDI formats
 	if (fileName.endsWith('.mid') || fileName.endsWith('.midi') || file.type.includes('midi')) {
 		return importMIDIFile(file)
-	} else if (fileName.endsWith('.musicxml') || fileName.endsWith('.xml')) {
-		return importMusicXMLFile(file)
-	} else if (fileName.endsWith('.dawproject')) {
-		return importDawProjectFile(file)
-	} else {
-		throw new Error(`Unsupported file type: ${file.type || fileName}. Supported formats: MIDI (.mid, .midi), MusicXML (.musicxml, .xml), .dawProject`)
 	}
+	
+	// MusicXML formats
+	if (fileName.endsWith('.musicxml') || fileName.endsWith('.xml')) {
+		return importMusicXMLFile(file)
+	}
+	
+	// DawProject format
+	if (fileName.endsWith('.dawproject')) {
+		return importDawProjectFile(file)
+	}
+	
+	// Tracker formats (MOD, XM, IT, S3M, etc.)
+	const trackerExtensions = ['.mod', '.xm', '.it', '.s3m', '.669', '.far', '.stm', '.ult', '.mtm', '.dmf', '.ptm', '.okt', '.mptm', '.nst']
+	if (trackerExtensions.some(ext => fileName.endsWith(ext))) {
+		return importTrackerFile(file)
+	}
+	
+	throw new Error(`Unsupported file type: ${file.type || fileName}. Supported formats: MIDI (.mid, .midi), MusicXML (.musicxml, .xml), DawProject (.dawproject), and Tracker formats (.mod, .xm, .it, .s3m, .669, .far, .stm, .ult, .mtm, .dmf, .ptm, .okt, .mptm, .nst)`)
 }
 
 /**
@@ -271,7 +286,7 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number=
 		const newVolume = Math.min(100, currentVolume + 5)
 		volumeElement.value = String(newVolume)
 		mixer.gain.value = (newVolume / 100) * 0.5
-		frontEnd.elementVolumeOutput.textContent = String(newVolume)
+		frontEnd?.elementVolumeOutput?.textContent = String(newVolume)
 		state.set('volume', newVolume)
 	})
 
@@ -281,7 +296,7 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number=
 		const newVolume = Math.max(0, currentVolume - 5)
 		volumeElement.value = String(newVolume)
 		mixer.gain.value = (newVolume / 100) * 0.5
-		frontEnd.elementVolumeOutput.textContent = String(newVolume)
+		frontEnd?.elementVolumeOutput?.textContent = String(newVolume)
 		state.set('volume', newVolume)
 	})
 

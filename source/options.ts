@@ -4,5 +4,5 @@ export const DEFAULT_OPTIONS = {
     tempo: 120,
     grid: true,
     useChords: true,
-    quantise: true
+    quantise: false
 }

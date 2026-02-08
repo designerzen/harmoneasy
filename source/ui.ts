@@ -495,13 +495,14 @@ export default class UI implements IAudioOutput {
 
 
 	/**
-	  * Register callback for when import button is clicked (supports MIDI, MusicXML, .dawProject files)
+	  * Register callback for when import button is clicked (supports MIDI, MusicXML, .dawProject, and tracker files)
 	  */
 	whenFileImportRequestedRun(callback: (file: File) => void): void {
 		if (!this.elementMidiImportButton) return
 		const fileInput = document.createElement('input')
 		fileInput.type = 'file'
-		fileInput.accept = '.mid,.midi,audio/midi,.musicxml,.xml,.dawproject'
+		// Supported formats: MIDI, MusicXML, DawProject, and Tracker formats
+		fileInput.accept = '.mid,.midi,audio/midi,.musicxml,.xml,.dawproject,.mod,.xm,.it,.s3m,.669,.far,.stm,.ult,.mtm,.dmf,.ptm,.okt,.mptm,.nst'
 		fileInput.style.display = 'none'
 		document.body.appendChild(fileInput)
 
