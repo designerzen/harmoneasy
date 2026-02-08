@@ -33,8 +33,8 @@ importers:
         specifier: ^1.5.0
         version: 1.5.0
       partysocket:
-        specifier: 1.1.11
-        version: 1.1.11
+        specifier: 1.1.12
+        version: 1.1.12
       react:
         specifier: ^19.2.4
         version: 19.2.4
@@ -2160,8 +2160,8 @@ packages:
     resolution: {integrity: sha512-WHmJIZsAzRWrm1lrtU7wcl0tpD4rg2vgmn4+hXGPjU4mnXgFxyjVq2ZzO547xRXa1IbETOP6J9INl/ergR99bA==}
     hasBin: true
 
-  partysocket@1.1.11:
-    resolution: {integrity: sha512-P0EtOQiAwvLriqLgdThcSaREfz3bP77LkLSdmXq680BosPKvGSoGTh/d0g3S+UNmaqcw89Ad7JXHHKyRx3xU9Q==}
+  partysocket@1.1.12:
+    resolution: {integrity: sha512-079YDW1QZsFwJ8syLmr9xFMbE+VwbK4SpcKSOPVApX8rpIMennkxx0MeWl4oWutP/Zjgy8TMnQZ3FOXTQvu3DA==}
 
   path-is-absolute@1.0.1:
     resolution: {integrity: sha512-AVbw3UJ2e9bq64vSaS9Am0fje1Pa8pbGqTTsmXfaIiMpnr5DlDhfJOuLj9Sf95ZPVDAUerDfEk88MPmPe7UCQg==}
@@ -5186,7 +5186,7 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  partysocket@1.1.11:
+  partysocket@1.1.12:
     dependencies:
       event-target-polyfill: 0.0.4
 

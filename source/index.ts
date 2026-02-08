@@ -286,7 +286,7 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number=
 		const newVolume = Math.min(100, currentVolume + 5)
 		volumeElement.value = String(newVolume)
 		mixer.gain.value = (newVolume / 100) * 0.5
-		frontEnd?.elementVolumeOutput?.textContent = String(newVolume)
+		if (frontEnd.elementVolumeOutput) frontEnd.elementVolumeOutput.textContent = String(newVolume)
 		state.set('volume', newVolume)
 	})
 
@@ -296,7 +296,7 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number=
 		const newVolume = Math.max(0, currentVolume - 5)
 		volumeElement.value = String(newVolume)
 		mixer.gain.value = (newVolume / 100) * 0.5
-		frontEnd?.elementVolumeOutput?.textContent = String(newVolume)
+		if (frontEnd.elementVolumeOutput) frontEnd.elementVolumeOutput.textContent = String(newVolume)
 		state.set('volume', newVolume)
 	})
 
