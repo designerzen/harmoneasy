@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useId } from "react"
 import { 
     tranformerFactory,
     TRANSFORMER_TYPE,
@@ -9,7 +9,7 @@ import type { TransformerManager } from "../../libs/audiobus/io/transformer-mana
 import type IOChain from "../../libs/audiobus/io/IO-chain"
 
 export function Transformers() {
-
+    const filterId = useId()
     const [transformersFilterText, setTransformersFilterText] = useState("")
   
     const filteredTransformers = TRANSFORMERS.filter(transformerId =>
@@ -24,9 +24,9 @@ export function Transformers() {
     return (<details open className="transformers">
             <summary>{transformersFilterText.length > 2 && filteredTransformers.length > 0  ? transformersFilterText : 'Transformers'}</summary>
 			
-			<label className="filter-label">
+			<label className="filter-label" htmlFor={filterId}>
 				<input 
-					id="filter-transformers" 
+					id={filterId}
 					type="search"
 					placeholder="Filter transformers..."
 					value={transformersFilterText}

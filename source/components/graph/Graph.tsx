@@ -101,24 +101,29 @@ function FlowComponent() {
 		(params) => setEdges((edgesSnapshot) => addEdge(params, edgesSnapshot)), []
 	)
 
-	const toggleLayout = () => {
-		setLayoutMode(layoutMode === LAYOUT_MODE.vertical ? LAYOUT_MODE.horizontal : LAYOUT_MODE.vertical)
-	}
+	// Handle layout select changes
+	useEffect(() => {
+		const layoutSelect = document.getElementById('btn-toggle-layout') as HTMLSelectElement
+		if (!layoutSelect) return
+
+		// Set initial value
+		layoutSelect.value = layoutMode
+
+		const handleChange = (e: Event) => {
+			const value = (e.target as HTMLSelectElement).value
+			setLayoutMode(value === 'vertical' ? LAYOUT_MODE.vertical : LAYOUT_MODE.horizontal)
+		}
+
+		layoutSelect.addEventListener('change', handleChange)
+		return () => layoutSelect.removeEventListener('change', handleChange)
+	}, [layoutMode])
 
 	return (
 		<>
 			<aside className="transformers-drawer">
 				<Transformers />
-				<Presets />
-				<div style={{ padding: '16px', borderTop: '1px solid #ccc' }}>
-					<button 
-						onClick={toggleLayout}
-						style={{ padding: '8px 12px', cursor: 'pointer' }}
-					>
-						Layout: {layoutMode === LAYOUT_MODE.vertical ? 'Vertical' : 'Horizontal'}
-					</button>
-				</div>
 			</aside>
+			<Presets />
 			<ReactFlow
 				panOnScroll={false}
 				panOnDrag={true}

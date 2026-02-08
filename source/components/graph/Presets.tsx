@@ -1,9 +1,10 @@
-import React, { useState } from "react"
+import React, { useState, useId } from "react"
 import { tranformerFactory } from "../../libs/audiobus/io/transformer-factory"
 import type IOChain from "../../libs/audiobus/io/IO-chain"
 import { PRESETS } from "../../libs/audiobus/io/transformer-presets"
 
 export function Presets() {
+   const filterId = useId()
    const [presetsFilterText, setPresetFilterText] = useState("")
  
     const filteredPresets = PRESETS.filter(preset => {
@@ -19,9 +20,9 @@ export function Presets() {
     return (<details open className="presets">
             <summary>Presets</summary>
 
-			<label className="filter-label">
+			<label className="filter-label" htmlFor={filterId}>
 				<input 
-					id="filter-presets" 
+					id={filterId}
 					type="search"
 					placeholder="Filter presets..."
 					value={presetsFilterText}
@@ -30,7 +31,7 @@ export function Presets() {
 				{/* <button type="button">Filter</button> */}
 			</label>
 
-			<ul id="presets-list" role="list">
+			<ul className="presets-list" role="list">
 				{ 
 					filteredPresets.map( (preset) => ( <li key={preset.name}><button type="button" title={preset.description} onClick={onSetPreset(preset.transformers)}>{preset.name}</button></li>) ) 
 				}

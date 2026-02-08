@@ -1,14 +1,13 @@
 {
   "name": "harmoneasy",
   "private": true,
-  "version": "0.13.2",
-  "description": "Web-based MIDI/audio application with Electron desktop support",
+  "version": "0.14.2",
+  "description": "MIDI/audio application with Electron desktop support",
   "author": "designerzen <radio@awesomething.co.uk>",
   "type": "module",
   "start": "./source/index.ts",
   "main": "electron-main.js",
   "scripts": {
-    "postinstall": "echo 'postinstall skipped'",
     "setup": "pnpm install --allow-build=electron",
     "install:electron": "pnpm approve-builds && npm run build-native",
     "test": "vitest",

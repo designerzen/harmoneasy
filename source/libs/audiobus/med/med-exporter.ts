@@ -30,11 +30,12 @@ interface MEDTrackEvent {
  * Implements ProTracker MED format v4.10 for browser export
  */
 class MEDEncoder {
-  private static readonly HEADER = 'MED ';
-  private static readonly VERSION = 0x0410;
-  private static readonly DEFAULT_TEMPO = 125;
-  private static readonly DEFAULT_ROWS = 64;
-  private static readonly NUM_INSTRUMENTS = 32;
+  // Static constants  
+  static readonly HEADER = 'MED ';
+  static readonly VERSION = 0x0410;
+  static readonly DEFAULT_TEMPO = 125;
+  static readonly DEFAULT_ROWS = 64;
+  static readonly NUM_INSTRUMENTS = 32;
 
   private buffer: Uint8Array = new Uint8Array(0);
   private bufferView: DataView | null = null;
@@ -48,7 +49,7 @@ class MEDEncoder {
     options: MEDExportOptions = {}
   ): ArrayBuffer {
     this.buffer = new Uint8Array(65536); // Start with 64KB
-    this.bufferView = new DataView(this.buffer.buffer);
+    this.bufferView = new DataView(this.buffer.buffer, 0, 65536);
     this.position = 0;
 
     // Write header
@@ -79,13 +80,13 @@ class MEDEncoder {
     this.writeChunkHeader('MHDR', 0x2C); // MHDR is 44 bytes fixed
 
     // Version
-    this.writeUint32LE(this.VERSION);
+    this.writeUint32LE(MEDEncoder.VERSION);
 
     // Flags (0 = standard MED)
     this.writeUint32LE(0);
 
     // Number of instruments
-    this.writeUint32LE(this.NUM_INSTRUMENTS);
+    this.writeUint32LE(MEDEncoder.NUM_INSTRUMENTS);
 
     // Number of samples
     this.writeUint32LE(0);
@@ -103,10 +104,10 @@ class MEDEncoder {
     this.writeUint16LE(options.masterVolume || 255);
 
     // Master tempo (default 125 BPM)
-    this.writeUint16LE(options.tempo || this.DEFAULT_TEMPO);
+    this.writeUint16LE(options.tempo || MEDEncoder.DEFAULT_TEMPO);
 
     // Number of rows per pattern
-    this.writeUint8(this.DEFAULT_ROWS);
+    this.writeUint8(MEDEncoder.DEFAULT_ROWS);
 
     // Compression (0 = no compression)
     this.writeUint8(0);
@@ -123,10 +124,10 @@ class MEDEncoder {
   }
 
   private writeINSTChunk(): void {
-    const instSize = this.NUM_INSTRUMENTS * 32;
+    const instSize = MEDEncoder.NUM_INSTRUMENTS * 32;
     this.writeChunkHeader('INST', instSize);
 
-    for (let i = 0; i < this.NUM_INSTRUMENTS; i++) {
+    for (let i = 0; i < MEDEncoder.NUM_INSTRUMENTS; i++) {
       // Sample length
       this.writeUint32LE(0);
 
@@ -190,7 +191,10 @@ class MEDEncoder {
 
     for (const command of commands) {
       if (command.type === 'NOTE_ON') {
-        const { note = 0, velocity = 100 } = command.data;
+        // Use the note number from the command
+        const note = command.number || 0;
+        const velocity = command.velocity || 100;
+        
         currentNote = note;
         currentInstrument = 1;
 
@@ -206,7 +210,10 @@ class MEDEncoder {
         data.push(0);
         data.push(0);
       } else if (command.type === 'CONTROL_CHANGE') {
-        const { controller = 0, value = 0 } = command.data;
+        // Use value field for the control value (MIDI standard)
+        const controller = command.value || 0;
+        const value = command.velocity || 0;
+        
         // Map CC to MED effects
         data.push(currentNote);
         data.push(currentInstrument);
@@ -238,6 +245,9 @@ class MEDEncoder {
   private writeUint8(value: number): void {
     if (this.bufferView) {
       this.bufferView.setUint8(this.position, value & 0xFF);
+    } else {
+      // Fallback: write directly to Uint8Array
+      this.buffer[this.position] = value & 0xFF;
     }
     this.position++;
   }
@@ -245,6 +255,10 @@ class MEDEncoder {
   private writeInt16LE(value: number): void {
     if (this.bufferView) {
       this.bufferView.setInt16(this.position, value, true);
+    } else {
+      // Fallback: write directly to Uint8Array
+      this.buffer[this.position] = value & 0xFF;
+      this.buffer[this.position + 1] = (value >>> 8) & 0xFF;
     }
     this.position += 2;
   }
@@ -252,6 +266,10 @@ class MEDEncoder {
   private writeUint16LE(value: number): void {
     if (this.bufferView) {
       this.bufferView.setUint16(this.position, value & 0xFFFF, true);
+    } else {
+      // Fallback: write directly to Uint8Array
+      this.buffer[this.position] = value & 0xFF;
+      this.buffer[this.position + 1] = (value >>> 8) & 0xFF;
     }
     this.position += 2;
   }
@@ -259,6 +277,12 @@ class MEDEncoder {
   private writeUint32LE(value: number): void {
     if (this.bufferView) {
       this.bufferView.setUint32(this.position, value >>> 0, true);
+    } else {
+      // Fallback: write directly to Uint8Array
+      this.buffer[this.position] = value & 0xFF;
+      this.buffer[this.position + 1] = (value >>> 8) & 0xFF;
+      this.buffer[this.position + 2] = (value >>> 16) & 0xFF;
+      this.buffer[this.position + 3] = (value >>> 24) & 0xFF;
     }
     this.position += 4;
   }
