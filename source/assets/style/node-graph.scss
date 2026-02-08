@@ -4,9 +4,6 @@
 
 // override defaults
 #graph{
-	display: grid;
-	grid-template-areas: "sidebar graph";
-	grid-template-columns: auto 1fr;
 	.react-flow{
 		grid-area: graph;
 	}
@@ -114,6 +111,31 @@
 
 	select{
 		margin-left: var(--gap);
+	}
+
+	.transformer-icon {
+		width: 48px;
+		height: 48px;
+		padding: calc(var(--pad) * 0.5);
+		margin: calc(var(--gap) * -1) 0 var(--gap) 0;
+		margin-left: calc(var(--pad) * -1);
+		margin-right: var(--gap);
+		filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+		color: currentColor;
+
+		&:hover {
+			filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4)) brightness(1.1);
+		}
+	}
+
+	h6 {
+		display: flex;
+		align-items: center;
+		gap: var(--gap);
+		
+		&::before {
+			content: '';
+		}
 	}
 }
 

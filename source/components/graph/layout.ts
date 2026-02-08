@@ -207,19 +207,30 @@ export const getStructure = ( chain:IOChain, showInputs:boolean=true, showOutput
 
 	const inputNodes = showInputs ? inputs
 		.filter((input: AbstractInput) => !input.isHidden)
-		.map((input:AbstractInput, index:number) => setNodeHandles({
-		id: 'node-input-'+index,
-		type: NOTE_TYPE.input,
-		data: { 
-			label: 'INPUT' + input.name,
-			input,
-			index,
-			layoutMode
-		},
-		position: isVerticalLayout 
-			? { x: index * HORIZONTAL_SPACING, y: verticalInputsY }
-			: { x: -660 , y: index * (NODE_HEIGHT / 1.5) }
-	}, isVerticalLayout)) : []
+		.map((input:AbstractInput, index:number) => {
+			let xPos: number
+			if (isVerticalLayout) {
+				// Spread inputs to the left of center, fanning out
+				const inputCount = inputs.filter((i: AbstractInput) => !i.isHidden).length
+				const offset = ((inputCount - 1) / 2 - index) * HORIZONTAL_SPACING * 1.2
+				xPos = -400 + offset
+			} else {
+				xPos = -660
+			}
+			return setNodeHandles({
+				id: 'node-input-'+index,
+				type: NOTE_TYPE.input,
+				data: { 
+					label: 'INPUT' + input.name,
+					input,
+					index,
+					layoutMode
+				},
+				position: isVerticalLayout 
+					? { x: xPos, y: verticalInputsY }
+					: { x: -660 , y: index * (NODE_HEIGHT / 1.5) }
+			}, isVerticalLayout)
+		}) : []
 
 	// From Inputs to Start
 	const nodeStart = setNodeHandles({
@@ -230,7 +241,7 @@ export const getStructure = ( chain:IOChain, showInputs:boolean=true, showOutput
 			layoutMode
 		},
 		position: isVerticalLayout 
-			? { x: 0, y: verticalStartY }
+			? { x: -200, y: verticalStartY }
 			: { x: -180, y: NODE_HEIGHT / 2  }
 	}, isVerticalLayout)
 
@@ -246,7 +257,7 @@ export const getStructure = ( chain:IOChain, showInputs:boolean=true, showOutput
 			layoutMode
 		},
 		position: isVerticalLayout 
-			? { x: 0, y: verticalTransformersStartY + (index * (NODE_HEIGHT + 50)) }
+			? { x: 0, y: verticalTransformersStartY + (index * (NODE_HEIGHT + 120)) }
 			: { x: HORIZONTAL_SPACING * index, y: 0 }
 	}, isVerticalLayout))
 
@@ -259,26 +270,37 @@ export const getStructure = ( chain:IOChain, showInputs:boolean=true, showOutput
 			layoutMode
 		},
 		position: isVerticalLayout 
-			? { x: 0, y: verticalEndY }
+			? { x: 200, y: verticalEndY }
 			: { x: HORIZONTAL_SPACING * (transformers.length) , y: NODE_HEIGHT / 2 }
 	}, isVerticalLayout)
 
 	// Add in all our output nodes
 	const outputNodes = showOutputs ? outputs
 		.filter((output: AbstractInput) => !output.isHidden)
-		.map((output:AbstractInput, index:number) => setNodeHandles({
-		id: 'node-output-'+index,
-		type: NOTE_TYPE.output,
-		data: { 
-			label: 'OUTPUT' + output.name,
-			output,
-			index,
-			layoutMode
-		},
-		position: isVerticalLayout 
-			? { x: index * HORIZONTAL_SPACING, y: verticalOutputsY }
-			: { x: (HORIZONTAL_SPACING * transformers.length ) + 226 , y: index * (NODE_HEIGHT / 1.5) }
-	}, isVerticalLayout)) : []
+		.map((output:AbstractInput, index:number) => {
+			let xPos: number
+			if (isVerticalLayout) {
+				// Spread outputs to the right of center, fanning out
+				const outputCount = outputs.filter((o: AbstractInput) => !o.isHidden).length
+				const offset = (index - (outputCount - 1) / 2) * HORIZONTAL_SPACING * 1.2
+				xPos = 400 + offset
+			} else {
+				xPos = (HORIZONTAL_SPACING * transformers.length ) + 226
+			}
+			return setNodeHandles({
+				id: 'node-output-'+index,
+				type: NOTE_TYPE.output,
+				data: { 
+					label: 'OUTPUT' + output.name,
+					output,
+					index,
+					layoutMode
+				},
+				position: isVerticalLayout 
+					? { x: xPos, y: verticalOutputsY }
+					: { x: (HORIZONTAL_SPACING * transformers.length ) + 226 , y: index * (NODE_HEIGHT / 1.5) }
+			}, isVerticalLayout)
+		}) : []
 	
 	const nodes = [
 		...inputNodes,

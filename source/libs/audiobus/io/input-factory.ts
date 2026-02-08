@@ -21,6 +21,8 @@ const loadSupportingLibrary = async (type: string) => {
 			return await import("./inputs/input-keyboard.ts")
 		case INPUT_TYPES.GAMEPAD:
 			return await import("./inputs/input-gamepad.ts")
+		case INPUT_TYPES.GAMEPAD_MUSIC:
+			return await import("./inputs/input-gamepad-music.ts")
 		case INPUT_TYPES.WEBMIDI:
 			return await import("./inputs/input-webmidi-device.ts")
 		case INPUT_TYPES.NATIVE_MIDI:
@@ -96,6 +98,13 @@ export const INPUT_FACTORIES: InputFactory[] = [
 		description: "Game controller / joystick input",
 		isAvailable: () => typeof navigator !== "undefined" && !!navigator.getGamepads,
 		create: (options) => createInput(INPUT_TYPES.GAMEPAD, options)
+	},
+	{
+		id: INPUT_TYPES.GAMEPAD_MUSIC,
+		name: "Gamepad Music Controller",
+		description: "Advanced gamepad input with multiple music modes: Chord, Melodic, Drum, Arpeggiator",
+		isAvailable: () => typeof navigator !== "undefined" && !!navigator.getGamepads,
+		create: (options) => createInput(INPUT_TYPES.GAMEPAD_MUSIC, options)
 	},
 	{
 		id: INPUT_TYPES.WEBMIDI,

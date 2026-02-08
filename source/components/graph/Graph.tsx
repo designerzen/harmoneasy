@@ -47,6 +47,7 @@ function FlowComponent() {
 	const [ edges, setEdges] = useState(initialEdges)
 	const [ layoutMode, setLayoutMode ] = useState(DEFAULT_LAYOUT_MODE)
 	const { fitView } = useReactFlow()
+	const [transformerCount, setTransformerCount] = useState(0)
 
 	useEffect(() => {
 		const chain = (window as any).chain as IOChain
@@ -58,6 +59,10 @@ function FlowComponent() {
 			const structure = getStructure( chain, true, true, layoutMode  )
 			setNodes(structure.nodes)
 			setEdges(structure.edges)
+			
+			// Track transformer count to trigger fitView only when transformers actually change
+			const newTransformerCount = structure.nodes.filter((n: any) => n.type === 'transformer').length
+			setTransformerCount(newTransformerCount)
 		}
 		
 		// watch for additions / removals of Transformers
@@ -74,20 +79,34 @@ function FlowComponent() {
 		return unsubscribe
 	}, [setNodes, setEdges, layoutMode])
 
-	// Auto-fit view whenever nodes change
+	// Auto-fit view only when transformers change (not on every node change)
 	useEffect(() => {
-		if (nodes.length > 0) {
+		if (nodes.length > 0 && transformerCount >= 0) {
 			// Use setTimeout to ensure nodes are rendered before fitting
 			setTimeout(() => {
-				fitView({
-					padding: 0.2,
-					minZoom: DEFAULT_GRAPH_OPTIONS.minZoom,
-					maxZoom: DEFAULT_GRAPH_OPTIONS.maxZoom,
-					duration: 100
-				})
+				// Find transformer nodes (those with type 'transformer')
+				const transformerNodes = nodes.filter((node: any) => node.type === 'transformer')
+				
+				if (transformerNodes.length > 0 && layoutMode === 'vertical') {
+					// For vertical layout, center view on transformers
+					fitView({
+						nodes: transformerNodes,
+						padding: 0.3,
+						minZoom: DEFAULT_GRAPH_OPTIONS.minZoom,
+						maxZoom: DEFAULT_GRAPH_OPTIONS.maxZoom,
+						duration: 100
+					})
+				} else if (transformerNodes.length > 0) {
+					fitView({
+						padding: 0.2,
+						minZoom: DEFAULT_GRAPH_OPTIONS.minZoom,
+						maxZoom: DEFAULT_GRAPH_OPTIONS.maxZoom,
+						duration: 100
+					})
+				}
 			}, 0)
 		}
-	}, [nodes, fitView])
+	}, [transformerCount, layoutMode, fitView])
 
 	const onNodesChange = useCallback(
 		(changes) => setNodes((nodesSnapshot) => applyNodeChanges(changes, nodesSnapshot)), []

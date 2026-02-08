@@ -1,6 +1,7 @@
 import { Handle, Position } from "@xyflow/react"
 import React, { memo, useCallback } from "react"
 import { ConfigField } from "../Widgets.tsx"
+import { getTransformerIcon } from "../../../libs/audiobus/io/transformer-definitions"
 
 /**
  * TransformerNode component
@@ -10,6 +11,7 @@ import { ConfigField } from "../Widgets.tsx"
 export function TransformerNode(props) {
 
 	const chain = (window as any).chain as IOChain
+	const icon = getTransformerIcon(props.data.element.id)
 			
 	const removeNode = useCallback(() => {
         chain.transformerManager.removeTransformer(props.data.element)
@@ -29,6 +31,7 @@ export function TransformerNode(props) {
 	const isVertical = props.data.layoutMode === 'vertical'
 
     return <div className={`node-transformer graph-node can-remove category-${props.data.element.category.toLowerCase()}`}>
+        <img src={icon} alt={props.data.label} className="transformer-icon" title={props.data.label}/>
         <h6>{props.data.label}</h6>
       
 	  	<details>

@@ -33,7 +33,14 @@ export function Presets() {
 
 			<ul className="presets-list" role="list">
 				{ 
-					filteredPresets.map( (preset) => ( <li key={preset.name}><button type="button" title={preset.description} onClick={onSetPreset(preset.transformers)}>{preset.name}</button></li>) ) 
+					filteredPresets.map( (preset) => ( 
+						<li key={preset.name}>
+							<button type="button" title={preset.description} onClick={onSetPreset(preset.transformers)}>
+								{preset.icon && <img src={preset.icon} alt={preset.name} className="preset-icon" />}
+								<span>{preset.name}</span>
+							</button>
+						</li>
+					) ) 
 				}
 				{filteredPresets.length === 0 && (
 					<li className="no-matches">

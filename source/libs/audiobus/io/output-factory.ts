@@ -47,6 +47,8 @@ const loadSupportingLibrary = async (type: string) => {
 			return await import("./outputs/output-midi2-native-device.ts")
 		case OUTPUT_TYPES.SUPERSONIC:
 			return await import("./outputs/output-supersonic.ts")
+		case OUTPUT_TYPES.METRONOME:
+			return await import("./outputs/output-metronome.ts")
 		default:
 			throw new Error(`Unknown output type: ${type}`)
 	}
@@ -195,6 +197,13 @@ export const OUTPUT_FACTORIES: OutputFactory[] = [
 		description: "Manages the WAM2 Audio Engine",
 		isAvailable: () => typeof AudioWorklet !== "undefined",
 		create: (options) => createOutput(OUTPUT_TYPES.WAM2, options),
+	},
+	{
+		id: OUTPUT_TYPES.METRONOME,
+		name: "Metronome",
+		description: "Produces audible clicks in response to MIDI clock signals",
+		isAvailable: () => typeof AudioContext !== "undefined" || typeof (window as any).webkitAudioContext !== "undefined",
+		create: (options) => createOutput(OUTPUT_TYPES.METRONOME, options),
 	}
 ]
 

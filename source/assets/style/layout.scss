@@ -399,18 +399,88 @@ song-explorer-ui{
 	}
 }
 
+#graph{
+	display: grid;
+	grid-template-areas: 
+		"presets presets"
+		"sidebar graph";
+	grid-template-columns: auto 1fr;
+	grid-template-rows: 
+		auto
+		auto;
+}
+
+.presets-list{
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--gap);
+	list-style: none;
+	padding: 0;
+	margin: 0;
+
+	li {
+		button {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			padding: 8px 12px;
+			background: light-dark(
+				color-mix(in oklch, var(--col-white) 94%, var(--col-black)),
+				color-mix(in oklch, var(--col-black) 85%, #000)
+			);
+			color: light-dark(#333, var(--col-white));
+			border: 1px solid light-dark(
+				color-mix(in oklch, var(--col-black) 13%, var(--col-white)),
+				color-mix(in oklch, var(--col-white) 25%, var(--col-black))
+			);
+			border-radius: 4px;
+			transition: all 0.2s ease;
+
+			img{
+				filter: invert(100);
+			}
+
+			&:hover {
+				background: light-dark(
+					color-mix(in oklch, var(--col-black) 5%, var(--col-white)),
+					color-mix(in oklch, var(--col-black) 80%, #000)
+				);
+				border-color: light-dark(
+					color-mix(in oklch, var(--col-black) 20%, var(--col-white)),
+					color-mix(in oklch, var(--col-white) 30%, var(--col-black))
+				);
+			}
+
+			&:active {
+				transform: scale(0.98);
+			}
+		}
+	}
+
+	.preset-icon {
+		width: 20px;
+		height: 20px;
+		min-width: 20px;
+		object-fit: contain;
+		opacity: 0.8;
+	}
+}
+
 // Transformers Drawer that opens and closes
 .transformers-drawer {
 
-	max-width: min(100%, 20ch);
+	// max-width: min(100%, 20ch);
 	min-height: 100%;
-	overflow: auto;
-	z-index: 303;
+	max-height: 100%;
+	// z-index: 303;
 	border-right: var(--border);
-	overflow-x: hidden;
+	
+	// overflow: auto;
+	// overflow-x: hidden;
 	flex:1 1 100%;
 
 	grid-area: sidebar;
+	position: relative;
 
 	button {
 		width: 100%;
@@ -425,6 +495,10 @@ song-explorer-ui{
 		display: flex;
 		flex-direction: column;
 	}
+}
+
+.presets{
+	grid-area: presets;
 }
 
 
