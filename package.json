@@ -19,8 +19,9 @@
     "build-native": "node-gyp rebuild",
     "build-native:clean": "node-gyp clean && node-gyp configure && node-gyp build",
     "copy-native": "node scripts/copy-native-modules.js",
+    "copy-icon": "node scripts/copy-icon.js",
     "build-vite-electron": "vite build --config vite.config.electron.js",
-    "build:electron": "npm run build-native && npm run build-vite-electron && npm run copy-native && electron-builder",
+    "build:electron": "npm run build-native && npm run build-vite-electron && npm run copy-native && npm run copy-icon && electron-builder",
     "preview": "vite preview",
     "electron": "electron .",
     "upgrader": "npx npm-check-updates --interactive -u"
@@ -68,7 +69,9 @@
     "directories": {
       "buildResources": "public"
     },
-    "icon": "public/designerzen.svg",
+    "extraMetadata": {
+      "main": "electron-main.js"
+    },
     "files": [
       "dist/**/*",
       "build/Release/**/*.node",
