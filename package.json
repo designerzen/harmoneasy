@@ -68,6 +68,7 @@
     "directories": {
       "buildResources": "public"
     },
+    "icon": "public/designerzen.svg",
     "files": [
       "dist/**/*",
       "build/Release/**/*.node",
