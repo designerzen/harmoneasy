@@ -73,6 +73,7 @@
     },
     "files": [
       "dist/**/*",
+      "public/**/*",
       "build/Release/**/*.node",
       "electron-main.js",
       "node_modules/**/*",
