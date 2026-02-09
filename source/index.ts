@@ -38,32 +38,22 @@ import AudioEventRecorder from './libs/audiobus/audio-event-recorder.ts'
 
 // IAudioInputs
 import IOChain from './libs/audiobus/io/IO-chain.ts'
-import InputKeyboard from './libs/audiobus/io/inputs/input-keyboard.ts'
-import InputGamePad from './libs/audiobus/io/inputs/input-gamepad.ts'
-import InputWebMIDIDevice from './libs/audiobus/io/inputs/input-webmidi-device.ts'
+import { createInputById, getAvailableInputFactories } from './libs/audiobus/io/input-factory.ts'
 import InputOnScreenKeyboard, { ALL_KEYBOARD_NOTES, ONSCREEN_KEYBOARD_INPUT_ID } from './libs/audiobus/io/inputs/input-onscreen-keyboard.ts'
-import InputBLEMIDIDevice from './libs/audiobus/io/inputs/input-ble-midi-device.ts'
+import * as INPUT_TYPES from './libs/audiobus/io/inputs/input-types.ts'
 
 // IAudioOutputs 
 import SynthOscillator from './libs/audiobus/instruments/oscillators/synth-oscillator.ts'
 import PolySynth from './libs/audiobus/instruments/poly-synth.ts'
 
-import OutputConsole from './libs/audiobus/io/outputs/output-console.ts'
-import OutputBLEMIDIDevice from './libs/audiobus/io/outputs/output-ble-midi-device.ts'
-import OutputWebMIDIDevice from './libs/audiobus/io/outputs/output-webmidi-device.ts'
 import OutputOnScreenKeyboard from './libs/audiobus/io/outputs/output-onscreen-keyboard.ts'
-import OutputSpectrumAnalyser from './libs/audiobus/io/outputs/output-spectrum-analyser.ts'
-import OutputNotation from './libs/audiobus/io/outputs/output-notation.ts'
-import OutputPinkTrombone from './libs/audiobus/io/outputs/output-pink-trombone.ts'
-import OutputSpeechSynthesis from './libs/audiobus/io/outputs/output-speech-synthesis.ts'
-import OutputVibrator from './libs/audiobus/io/outputs/output-vibrator.ts'
-import { createOutputById } from './libs/audiobus/io/output-factory.ts'
+import { createOutputById, getAvailableOutputFactories } from './libs/audiobus/io/output-factory.ts'
+import * as OUTPUT_TYPES from './libs/audiobus/io/outputs/output-types.ts'
 
 import type { IAudioCommand } from './libs/audiobus/audio-command-interface.ts'
 import type { IAudioOutput } from './libs/audiobus/io/outputs/output-interface.ts'
+import type { IAudioInput } from './libs/audiobus/io/inputs/input-interface.ts'
 import type InputAudioEvent from './libs/audiobus/io/events/input-audio-event.ts'
-import type AbstractInput from './libs/audiobus/io/inputs/abstract-input.ts'
-import InputMicrophoneFormant from './libs/audiobus/io/inputs/input-microphone-formant.ts'
 
 const storage = hasOPFS() ? new OPFSStorage() : null
 const recorder: AudioEventRecorder = new AudioEventRecorder()
@@ -109,7 +99,7 @@ const importFile = async (file: File): Promise<{ commands: IAudioCommand[], note
  * through a transformerManager into an OutputManager
  * @returns 
  */
-const createInputOutputChain = async (outputMixer:GainNode, inputDevices:AbstractInput[]=[], outputDevices:IAudioOutput[]=[], autoConnect:boolean=false ) => {
+const createInputOutputChain = async (outputMixer:GainNode, inputDevices:IAudioInput[]=[], outputDevices:IAudioOutput[]=[], autoConnect:boolean=false ) => {
 	
 	const chain = new IOChain( timer )
 
@@ -118,23 +108,23 @@ const createInputOutputChain = async (outputMixer:GainNode, inputDevices:Abstrac
 	}
 
 	// Create our desired inputs
-	const inputKeyboard = new InputKeyboard(options)
+	const inputKeyboard = await createInputById(INPUT_TYPES.KEYBOARD, options)
 	// FIXME: make MIDI and Gamepad devices work independently as Inputs
 	// by ensuring that the connection and disconnection events are monitored
-	const inputGamePad = new InputGamePad(options)
+	const inputGamePad = await createInputById(INPUT_TYPES.GAMEPAD, options)
 	const inputSVGKeyboard = new InputOnScreenKeyboard(options)
 
-	const inputs:AbstractInput[] = [ inputKeyboard, inputGamePad, inputSVGKeyboard, ...inputDevices]
+	const inputs:IAudioInput[] = [ inputKeyboard, inputGamePad, inputSVGKeyboard, ...inputDevices]
 
 	// These 3 inputs require special setup - require user click
 	if (navigator.mediaDevices && navigator.mediaDevices?.getUserMedia){
-		const inputMicrophone = new InputMicrophoneFormant(options)
+		const inputMicrophone = await createInputById(INPUT_TYPES.MICROPHONE_FORMANT, options)
 		if (autoConnect)
 		{
 			try{
 				await inputMicrophone.connect()
 			}catch(error){
-				console.error('Bluetooth MIDI input failed to connect', error)
+				console.error('Microphone Formant input failed to connect', error)
 			}			
 		}
 		inputs.push(inputMicrophone)
@@ -142,7 +132,7 @@ const createInputOutputChain = async (outputMixer:GainNode, inputDevices:Abstrac
 	
 	// check to see if web bluetooth is available in this browser
 	if (navigator.bluetooth) {
-		const inputBluetooth = new InputBLEMIDIDevice(options)
+		const inputBluetooth = await createInputById(INPUT_TYPES.BLE_MIDI, options)
 		if (autoConnect)
 		{
 			try{
@@ -157,7 +147,7 @@ const createInputOutputChain = async (outputMixer:GainNode, inputDevices:Abstrac
 	// Connect to WebMIDI using options specified
 	// check to see if webMIDI is available in this browser
 	if (navigator.requestMIDIAccess) {
-		const inputWebMIDIDevice = new InputWebMIDIDevice(options)
+		const inputWebMIDIDevice = await createInputById(INPUT_TYPES.WEBMIDI, options)
 		if (autoConnect)
 		{
 			try{
@@ -179,44 +169,45 @@ const createInputOutputChain = async (outputMixer:GainNode, inputDevices:Abstrac
 	outputs.push(musicalOutput)
 
 	// Notation output - displays notes on a staff
-	const outputNotation = new OutputNotation()
+	const outputNotation = await createOutputById(OUTPUT_TYPES.NOTATION)
 	outputs.push(outputNotation)
 
 	// Spectrum analyser - FFT visualization
-	const outputSpectrumAnalyser = new OutputSpectrumAnalyser(outputMixer)
+	const outputSpectrumAnalyser = await createOutputById(OUTPUT_TYPES.SPECTRUM_ANALYSER, { mixer: outputMixer })
 	outputs.push(outputSpectrumAnalyser)
 
 	// Pink Trombone - vocal synthesis
-	const outputPinkTrombone = new OutputPinkTrombone()
+	const outputPinkTrombone = await createOutputById(OUTPUT_TYPES.PINK_TROMBONE)
 	outputs.push(outputPinkTrombone)
 
 	// Speech synthesis - sing note names
 	if (typeof window !== "undefined" && !!window.speechSynthesis) {
-		const outputSpeech = new OutputSpeechSynthesis()
+		const outputSpeech = await createOutputById(OUTPUT_TYPES.SPEECH_SYNTHESIS)
 		outputs.push(outputSpeech)
 	}
 
 	// Vibrator - haptic feedback
 	if (typeof navigator !== "undefined" && (!!navigator?.vibrate || !!navigator?.webkitVibrate || !!navigator?.mozVibrate)) {
-		const outputVibrator = new OutputVibrator()
+		const outputVibrator = await createOutputById(OUTPUT_TYPES.VIBRATOR)
 		outputs.push(outputVibrator)
 	}
 
 	// WebMIDI output
 	if (navigator.requestMIDIAccess) {
-		const outputWebMIDIDevice = new OutputWebMIDIDevice()
+		const outputWebMIDIDevice = await createOutputById(OUTPUT_TYPES.WEBMIDI)
 		outputs.push(outputWebMIDIDevice)
 	}
 
 	// Bluetooth MIDI output
 	if (navigator.bluetooth) {
-		const outputBluetooth = new OutputBLEMIDIDevice()
+		const outputBluetooth = await createOutputById(OUTPUT_TYPES.BLE_MIDI)
 		outputs.push(outputBluetooth)
 	}
 
 	// Console output - DEV mode only
 	if (import.meta.env.DEV) {
-		outputs.push(new OutputConsole())
+		const outputConsole = await createOutputById(OUTPUT_TYPES.CONSOLE)
+		outputs.push(outputConsole)
 	}
 
 	chain.addInputs(inputs)
