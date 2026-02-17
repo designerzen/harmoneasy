@@ -149,6 +149,34 @@ source/
 #### AudioCommand
 The fundamental unit representing a musical event. Extends from `IAudioCommand` interface with support for note on/off, control changes, pitch bend, etc.
 
+#### InputFactory
+Factory pattern for dynamically creating audio input instances with lazy-loading support. Provides a registry of available inputs (Keyboard, GamePad, WebMIDI, BLE MIDI, Microphone, etc.) with availability detection and async instantiation.
+
+```typescript
+import { createInputById, getAvailableInputFactories } from './libs/audiobus/io/input-factory.ts'
+import * as INPUT_TYPES from './libs/audiobus/io/inputs/input-types.ts'
+
+// Create a specific input
+const keyboard = await createInputById(INPUT_TYPES.KEYBOARD)
+
+// Get all available inputs for current environment
+const availableInputs = getAvailableInputFactories()
+```
+
+#### OutputFactory
+Factory pattern for dynamically creating audio output instances with lazy-loading support. Provides a registry of available outputs (Notation, Spectrum Analyser, Pink Trombone, WebMIDI, Speech Synthesis, etc.) with async instantiation.
+
+```typescript
+import { createOutputById, getAvailableOutputFactories } from './libs/audiobus/io/output-factory.ts'
+import * as OUTPUT_TYPES from './libs/audiobus/io/outputs/output-types.ts'
+
+// Create a specific output
+const notation = await createOutputById(OUTPUT_TYPES.NOTATION)
+
+// Get all available outputs for current environment
+const availableOutputs = getAvailableOutputFactories()
+```
+
 #### Transformer
 Abstract class for processing audio commands in the pipeline. Each transformer implements a specific effect (quantize, transpose, etc.).
 
@@ -261,13 +289,14 @@ Apply transformers to the audio pipeline:
 
 ## WAM2 (Web Audio Modules 2) Support
 
-HarmonEasy includes native WAM2 plugin support:
+HarmonEasy includes native WAM2 plugin support via the OutputFactory:
 
 ```typescript
-import { OutputWAM2 } from './libs/audiobus/outputs/output-wam2.ts'
+import { createOutputById } from './libs/audiobus/io/output-factory.ts'
+import * as OUTPUT_TYPES from './libs/audiobus/io/outputs/output-types.ts'
 
-const wam2Output = new OutputWAM2(audioContext, pluginUrl)
-await wam2Output.initialize()
+// Create WAM2 output using factory
+const wam2Output = await createOutputById(OUTPUT_TYPES.WAM2)
 
 // Route MIDI to plugin
 await wam2Output.noteOn(60, 100)

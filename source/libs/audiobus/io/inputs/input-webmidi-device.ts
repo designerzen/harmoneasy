@@ -28,6 +28,9 @@ export default class InputWebMIDIDevice extends AbstractInput implements IAudioI
 
 	#subscriptions:Map = new Map()
 	#guiEventHandlers: Map<string, EventListener> = new Map()
+	
+	#deviceChangeHandler: ((event: any) => void) | null = null
+	#listenToAllDevices: boolean = true
 
 	// TODO: Implement the config retrieval
 	// so expose the methods to control this Input
@@ -70,6 +73,11 @@ export default class InputWebMIDIDevice extends AbstractInput implements IAudioI
 				this.#subscriptions.set( device, subscription )
 			})
 
+			// Listen for device connect/disconnect events
+			this.#deviceChangeHandler = (event: any) => this.onDeviceStateChange(event)
+			WebMidi.addListener("connected", this.#deviceChangeHandler)
+			WebMidi.addListener("disconnected", this.#deviceChangeHandler)
+
 			this.#webMIDIEnabled = true
 			this.setAsConnected()
 
@@ -85,6 +93,13 @@ export default class InputWebMIDIDevice extends AbstractInput implements IAudioI
 	 */
 	async disconnect(): Promise<void> {
 		try {
+			// Remove device change listeners
+			if (this.#deviceChangeHandler) {
+				WebMidi.removeListener("connected", this.#deviceChangeHandler)
+				WebMidi.removeListener("disconnected", this.#deviceChangeHandler)
+				this.#deviceChangeHandler = null
+			}
+
 			// Remove all listeners
 			this.#midiInputs.forEach((device) => this.disconnectFromMIDIDevice(device))
 
@@ -115,72 +130,131 @@ export default class InputWebMIDIDevice extends AbstractInput implements IAudioI
 		
 		const label = document.createElement("label")
 		label.innerText = "WebMIDI Input"
+		label.style.fontWeight = "bold"
 		container.appendChild(label)
 
-		// Check if MIDI devices are available
-		if (WebMidi.inputs.length === 0) {
-			const noDevicesMsg = document.createElement("p")
-			noDevicesMsg.id = "midi-no-devices-message"
-			noDevicesMsg.classList.add("no-midi-input-devices-available")
-			noDevicesMsg.innerText = "No MIDI devices available"
-			container.appendChild(noDevicesMsg)
-			return container
+		// Create a wrapper for dynamic content
+		const contentWrapper = document.createElement("div")
+		contentWrapper.id = "midi-input-content-wrapper"
+		container.appendChild(contentWrapper)
+
+		// Function to populate the content
+		const populateContent = () => {
+			contentWrapper.innerHTML = ""
+
+			// Check if MIDI devices are available
+			if (WebMidi.inputs.length === 0) {
+				const noDevicesMsg = document.createElement("p")
+				noDevicesMsg.id = "midi-no-devices-message"
+				noDevicesMsg.classList.add("no-midi-input-devices-available")
+				noDevicesMsg.innerText = "No MIDI devices available"
+				contentWrapper.appendChild(noDevicesMsg)
+				return
+			}
+
+			// Listen All Devices Toggle
+			const listenAllLabel = document.createElement("label")
+			const listenAllCheckbox = document.createElement("input")
+			listenAllCheckbox.type = "checkbox"
+			listenAllCheckbox.id = "midi-listen-all-devices"
+			listenAllCheckbox.checked = this.#listenToAllDevices
+			listenAllLabel.appendChild(listenAllCheckbox)
+			listenAllLabel.appendChild(document.createTextNode(" Listen to all devices"))
+			contentWrapper.appendChild(listenAllLabel)
+
+			const listenAllChangeHandler = (event: Event) => {
+				const target = event.target as HTMLInputElement
+				this.#listenToAllDevices = target.checked
+				console.info("[WebMIDI Input] Listen all devices changed", { listenToAll: this.#listenToAllDevices })
+				this.options.listenToAllDevices = this.#listenToAllDevices
+				// Refresh GUI to show/hide device selector
+				setTimeout(() => populateContent(), 0)
+			}
+			listenAllCheckbox.addEventListener("change", listenAllChangeHandler)
+			this.#guiEventHandlers.set("listen-all-change", listenAllChangeHandler)
+
+			// MIDI Device Selection (only if not listening to all)
+			if (!this.#listenToAllDevices) {
+				const deviceLabel = document.createElement("label")
+				deviceLabel.innerText = "MIDI Device:"
+				contentWrapper.appendChild(deviceLabel)
+
+				const deviceSelect = document.createElement("select")
+				deviceSelect.id = "midi-device-select"
+				deviceSelect.appendChild(this.createDeviceOptions())
+				contentWrapper.appendChild(deviceSelect)
+
+				const onDeviceChange = (event: Event) => {
+					const target = event.target as HTMLSelectElement
+					const deviceId = target.value
+					console.info("[WebMIDI Input] Device selection changed", { deviceId })
+					this.options.selectedDevice = deviceId
+				}
+
+				deviceSelect.addEventListener("change", onDeviceChange)
+				this.#guiEventHandlers.set("device-change", onDeviceChange)
+			}
+
+			// Channel Selection
+			const channelLabel = document.createElement("label")
+			channelLabel.innerText = "Channel:"
+			contentWrapper.appendChild(channelLabel)
+
+			const channelSelect = document.createElement("select")
+			channelSelect.id = "midi-channel-select"
+			for (let i = 1; i <= 16; i++) {
+				const option = document.createElement("option")
+				option.value = i.toString()
+				option.innerText = `Channel ${i}`
+				channelSelect.appendChild(option)
+			}
+			// Add "All Channels" option at the beginning
+			const allChannelsOption = document.createElement("option")
+			allChannelsOption.value = "0"
+			allChannelsOption.innerText = "All Channels"
+			channelSelect.insertBefore(allChannelsOption, channelSelect.firstChild)
+			channelSelect.value = this.options.selectedChannel ? this.options.selectedChannel.toString() : "0"
+			contentWrapper.appendChild(channelSelect)
+
+			const onChannelChange = (event: Event) => {
+				const target = event.target as HTMLSelectElement
+				const channel = target.value === "0" ? ALL_MIDI_CHANNELS : parseInt(target.value, 10)
+				console.info("[WebMIDI Input] Channel selection changed", { channel })
+				this.options.selectedChannel = channel
+			}
+
+			channelSelect.addEventListener("change", onChannelChange)
+			this.#guiEventHandlers.set("channel-change", onChannelChange)
 		}
 
-		// MIDI Device Selection
-		const deviceLabel = document.createElement("label")
-		deviceLabel.innerText = "MIDI Device:"
-		container.appendChild(deviceLabel)
+		populateContent()
+		
+		// Listen to device changes and update GUI
+		const deviceUpdateHandler = () => {
+			console.info("[WebMIDI Input] Device list changed, updating GUI")
+			populateContent()
+		}
+		if (!this.#deviceChangeHandler) {
+			this.#deviceChangeHandler = deviceUpdateHandler
+			WebMidi.addListener("connected", this.#deviceChangeHandler)
+			WebMidi.addListener("disconnected", this.#deviceChangeHandler)
+		}
 
-		const deviceSelect = document.createElement("select")
-		deviceSelect.id = "midi-device-select"
+		return container
+	}
+
+	/**
+	 * Helper to create device options
+	 */
+	private createDeviceOptions(): DocumentFragment {
+		const fragment = document.createDocumentFragment()
 		WebMidi.inputs.forEach((device) => {
 			const option = document.createElement("option")
 			option.value = device.id
 			option.innerText = `${device.manufacturer} ${device.name}`
-			deviceSelect.appendChild(option)
+			fragment.appendChild(option)
 		})
-		container.appendChild(deviceSelect)
-
-		// Channel Selection
-		const channelLabel = document.createElement("label")
-		channelLabel.innerText = "Channel:"
-		container.appendChild(channelLabel)
-
-		const channelSelect = document.createElement("select")
-		channelSelect.id = "midi-channel-select"
-		for (let i = 1; i <= 16; i++) {
-			const option = document.createElement("option")
-			option.value = i.toString()
-			option.innerText = `Channel ${i}`
-			channelSelect.appendChild(option)
-		}
-		channelSelect.value = "1"
-		container.appendChild(channelSelect)
-
-		// Event Listeners
-		const onDeviceChange = (event: Event) => {
-			const target = event.target as HTMLSelectElement
-			const deviceId = target.value
-			console.info("[WebMIDI Input] Device selection changed", { deviceId })
-			this.options.selectedDevice = deviceId
-		}
-
-		const onChannelChange = (event: Event) => {
-			const target = event.target as HTMLSelectElement
-			const channel = parseInt(target.value, 10)
-			console.info("[WebMIDI Input] Channel selection changed", { channel })
-			this.options.selectedChannel = channel
-		}
-
-		deviceSelect.addEventListener("change", onDeviceChange)
-		channelSelect.addEventListener("change", onChannelChange)
-
-		// Store handlers for cleanup
-		this.#guiEventHandlers.set("device-change", onDeviceChange)
-		this.#guiEventHandlers.set("channel-change", onChannelChange)
-
-		return container
+		return fragment
 	}
 
 	async destroyGui(): Promise<void> {
@@ -342,6 +416,37 @@ export default class InputWebMIDIDevice extends AbstractInput implements IAudioI
 	onControlChange(controlNumber: number, value: number, channel: number): void {
 		// TODO: Implement CC handling if needed
 		console.info("[WebMIDI Input] CC event received", { controlNumber, value, channel })
+	}
+
+	/**
+	 * Handle MIDI device connection/disconnection
+	 */
+	private onDeviceStateChange(event: any): void {
+		console.info("[WebMIDI Input] Device state changed", {
+			port: event.port?.name,
+			type: event.type
+		})
+
+		if (event.type === "connected") {
+			const device = event.port
+			if (device.type === "input") {
+				console.info("[WebMIDI Input] New input device connected", { name: device.name })
+				const index = WebMidi.inputs.length - 1
+				const subscription = this.connectToMIDIDevice(device, index)
+				this.#subscriptions.set(device, subscription)
+			}
+		} else if (event.type === "disconnected") {
+			const device = event.port
+			if (device.type === "input") {
+				console.info("[WebMIDI Input] Input device disconnected", { name: device.name })
+				this.disconnectFromMIDIDevice(device)
+			}
+		}
+
+		// Dispatch custom event so UI components can update
+		this.dispatchEvent(new CustomEvent("deviceListChanged", {
+			detail: { inputs: WebMidi.inputs, device: event.port }
+		}))
 	}
 
 	/**
