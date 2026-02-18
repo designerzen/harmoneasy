@@ -74,6 +74,11 @@
       "cache": false,
       "interactive": true,
       "persistent": true
+    },
+    "upgrader": {
+      "cache": false,
+      "interactive": true,
+      "persistent": true
     }
   }
 }
