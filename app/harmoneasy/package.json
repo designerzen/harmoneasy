@@ -36,7 +36,6 @@
     "node-gyp": "^12.2.0",
     "partykit": "0.0.115",
     "sass-embedded": "^1.97.3",
-    "tsc": "^2.0.4",
     "typescript": "~5.9.3",
     "update-electron-app": "^3.1.2",
     "vite": "^7.3.1",
