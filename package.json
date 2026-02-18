@@ -6,6 +6,7 @@
   "author": "designerzen <radio@awesomething.co.uk>",
   "packageManager": "pnpm@10.29.3",
   "scripts": {
+    "start": "pnpm run dev",
     "turbo": "turbo",
     "dev": "turbo run dev --no-daemon",
     "build": "turbo run build",
