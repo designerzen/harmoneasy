@@ -410,15 +410,51 @@ song-explorer-ui{
 		auto;
 }
 
+.presets{
+	--stroke:2px;
+	--stroke-color:var(--col-fg);
+	display: flex;
+	position: relative;
+	background: var(--col-bg);
+		
+	&::before{
+		content:'';
+		background: var(--stroke-color);
+		position: absolute;
+		top:100%;
+		width: 100%;
+		z-index: 908;
+		height:var(--stroke);
+	}
+
+	summary{
+		background:  var(--col-bg);
+		position: absolute;
+		top:100%;
+		right:var(--gap,1rem);
+		z-index: 909;
+		border:var(--stroke) solid var(--col-fg);
+		border-radius: 0 0 12px 12px;
+		border-top: 0;
+	}
+}
+
 .presets-list{
 	display: flex;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
+	overflow: hidden;
+	overflow-x: auto;
 	gap: var(--gap);
 	list-style: none;
 	padding: 0;
 	margin: 0;
+	justify-content: stretch;
+    justify-items: center;
+    align-items: center;
+    align-content: center;
 
 	li {
+		flex:1;
 		button {
 			display: flex;
 			align-items: center;

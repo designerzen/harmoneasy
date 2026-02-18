@@ -180,6 +180,7 @@
 	flex-direction: row;
 	flex-wrap: nowrap;
 	gap: var(--gap);
+	width: fit-content;
 }
 
 .graph-node-menu {

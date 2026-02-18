@@ -42,6 +42,8 @@ details div {
 
 summary {
 
+	cursor: pointer;
+
 	&::before,
 	&::after {
 		content: '';

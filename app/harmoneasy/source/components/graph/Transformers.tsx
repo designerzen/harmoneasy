@@ -24,7 +24,7 @@ export function Transformers() {
     return (<details open className="transformers">
             <summary>{transformersFilterText.length > 2 && filteredTransformers.length > 0  ? transformersFilterText : 'Transformers'}</summary>
 			
-			<label className="filter-label" htmlFor={filterId}>
+			<label className="filter-label filter-transformer" htmlFor={filterId}>
 				<input 
 					id={filterId}
 					type="search"

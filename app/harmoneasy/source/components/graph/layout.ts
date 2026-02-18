@@ -340,7 +340,8 @@ export const getStructure = ( chain:IOChain, showInputs:boolean=true, showOutput
 		animated: true,
 		data: { 
 			duration: barDuration,
-			type:NOTE_TYPE.input
+			type: NOTE_TYPE.input,
+			name: inputNode.id
 		}
 	}))
 

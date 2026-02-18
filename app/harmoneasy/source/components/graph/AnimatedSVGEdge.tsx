@@ -35,18 +35,17 @@ export function AnimatedSVGEdge({
 			const colour = convertNoteNumberToColour( command.number )
 			const radius = ( command.velocity ?? 128) / 16
 
-			// TODO: check to see if this event was started from the Input
+			// Check if this event was started from the Input by comparing command.from with data.name
+			const isFromInput = command.from === data?.name
 			const from = command.from
-			console.log("AnimatedSVGEdge::onAudioEvent", {command, from, data})
-			
-			
+			console.log("AnimatedSVGEdge::onAudioEvent", {command, from, data }  )
 			
 			setColour( colour )
 			setRadius( radius)
 			setDuration( (radius * .1) + 's' )
 				
 			// Restart the animation if it is a NOTE_ON event
-			if (command.type === NOTE_ON && animateMotionRef.current) {
+			if (isFromInput && command.type === NOTE_ON && animateMotionRef.current) {
 			// if ( animateMotionRef.current) {
 				animateMotionRef.current.beginElement()
 			}

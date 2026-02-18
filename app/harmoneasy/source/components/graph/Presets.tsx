@@ -20,7 +20,7 @@ export function Presets() {
     return (<details open className="presets">
             <summary>Presets</summary>
 
-			<label className="filter-label" htmlFor={filterId}>
+			<label className="filter-label filter-preset" htmlFor={filterId}>
 				<input 
 					id={filterId}
 					type="search"

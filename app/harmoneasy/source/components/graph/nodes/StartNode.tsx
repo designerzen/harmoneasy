@@ -10,13 +10,14 @@ export function StartNode(props) {
 
 	const addInput = useCallback(async () => {
 		const factories = getAvailableInputFactories()
+		const availableFactories = factories.filter((factory) => factory.isAvailable?.() !== false)
 		
-		if (factories.length === 0) {
+		if (availableFactories.length === 0) {
 			console.warn("No available inputs to add")
 			return
 		}
 
-		const dialogOptions = factories.map((factory) => ({
+		const dialogOptions = availableFactories.map((factory) => ({
 			id: factory.id,
 			label: factory.name,
 			description: factory.description,
