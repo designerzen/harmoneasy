@@ -1,6 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "root": ".",
+  "ui": "tui",
   "globalDependencies": [
     "package.json",
     ".nvmrc",

@@ -1,0 +1,24 @@
+{
+  "name": "pink-trombone",
+  "version": "0.15.1",
+  "description": "Pink Trombone speech synthesis integration for HarmonEasy",
+  "type": "module",
+  "main": "index.ts",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "scripts": {
+    "dev": "echo 'No dev server for this package'"
+  },
+  "files": [
+    "*.ts",
+    "*.wasm"
+  ],
+  "dependencies": {
+    "audiobus": "workspace:^"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3"
+  }
+}
+

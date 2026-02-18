@@ -1,0 +1,23 @@
+{
+  "name": "opendaw",
+  "version": "0.15.1",
+  "description": "OpenDAW project file format support and .dawProject integration",
+  "type": "module",
+  "main": "index.ts",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "scripts": {
+    "dev": "echo 'No dev server for this package'"
+  },
+  "files": [
+    "*.ts"
+  ],
+  "dependencies": {
+    "audiobus": "workspace:^"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3"
+  }
+}
+

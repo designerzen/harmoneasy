@@ -1,0 +1,24 @@
+{
+  "name": "audiotool",
+  "version": "0.15.1",
+  "description": "AudioTool SDK integration for HarmonEasy",
+  "type": "module",
+  "main": "index.ts",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "scripts": {
+    "dev": "echo 'No dev server for this package'"
+  },
+  "files": [
+    "*.ts"
+  ],
+  "dependencies": {
+    "@audiotool/nexus": "^0.0.11",
+    "audiobus": "workspace:^"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3"
+  }
+}
+

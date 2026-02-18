@@ -1,0 +1,23 @@
+{
+  "include": ["source", "../../packages/audiobus/ui/keyboard-canvas.ts", "../../packages/audiobus/ui/notation-staff.ts", "../../packages/audiobus/ui/note-visualiser.ts", "../../packages/audiobus/ui/song-visualiser-ui.ts", "../../packages/audiobus/ui/song-visualiser-worker.ts", "../../packages/audiobus/ui/song-visualiser.example.ts", "../../packages/audiobus/ui/song-visualiser.ts"],
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true,
+    "jsx": "react",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": false,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  }
+}

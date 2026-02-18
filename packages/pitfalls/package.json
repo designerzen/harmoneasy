@@ -1,0 +1,19 @@
+{
+  "name": "pitfalls",
+  "version": "0.15.1",
+  "description": "Music theory utilities - scales, intervals, chords, and microtonality (EDO)",
+  "type": "module",
+  "main": "index.ts",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "scripts": {
+    "dev": "echo 'No dev server for this package'"
+  },
+  "files": [
+    "*.ts"
+  ],
+  "devDependencies": {
+    "typescript": "~5.9.3"
+  }
+}
