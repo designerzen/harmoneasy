@@ -2,115 +2,22 @@
   "name": "harmoneasy",
   "private": true,
   "version": "0.15.1",
-  "description": "MIDI/audio application with Electron desktop support",
+  "description": "A web-based music collaboration platform that transforms, quantizes, and harmonizes live MIDI input in real-time",
   "author": "designerzen <radio@awesomething.co.uk>",
-  "type": "module",
-  "start": "./source/index.ts",
-  "main": "electron-main.js",
+  "packageManager": "pnpm@10.29.3",
   "scripts": {
-    "setup": "pnpm install --allow-build=electron",
-    "install:electron": "pnpm approve-builds && npm run build-native",
-    "test": "vitest",
-    "type-check": "tsc --noEmit",
-    "dev": "vite",
-    "dev:electron": "concurrently \"npm run dev\" \"wait-on http://localhost:5174 && electron .\"",
-    "start": "pnpm run dev",
-    "build": "vite build --config vite.config.web.js",
-    "build-native": "node-gyp rebuild",
-    "build-native:clean": "node-gyp clean && node-gyp configure && node-gyp build",
-    "copy-native": "node scripts/copy-native-modules.js",
-    "build-vite-electron": "vite build --config vite.config.electron.js",
-    "build:electron": "npm run build-native && npm run build-vite-electron && npm run copy-native && electron-builder",
-    "preview": "vite preview",
-    "electron": "electron .",
-    "upgrader": "npx npm-check-updates --interactive -u"
+    "turbo": "turbo",
+    "dev": "turbo run dev --no-daemon",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "type-check": "turbo run type-check",
+    "preview": "turbo run preview",
+    "clean": "turbo clean && rm -rf .turbo node_modules",
+    "lint": "turbo run lint"
   },
   "devDependencies": {
-    "@types/react": "^19.2.13",
-    "@types/web-bluetooth": "^0.0.21",
-    "concurrently": "^9.2.1",
-    "electron": "^40.2.1",
-    "electron-builder": "^26.7.0",
-    "node-addon-api": "^8.5.0",
-    "node-gyp": "^12.2.0",
-    "partykit": "0.0.115",
-    "sass-embedded": "^1.97.3",
-    "tsc": "^2.0.4",
-    "typescript": "~5.9.3",
-    "update-electron-app": "^3.1.2",
-    "vite": "^7.3.1",
-    "vitest": "^4.0.18",
-    "wait-on": "^9.0.3"
-  },
-  "dependencies": {
-    "@audiotool/nexus": "^0.0.11",
-    "@msgpack/msgpack": "^3.1.3",
-    "@tonejs/midi": "^2.0.28",
-    "@xyflow/react": "^12.10.0",
-    "entitree-flex": "^0.4.1",
-    "fflate": "^0.8.2",
-    "jzz": "^1.9.6",
-    "lz-string": "^1.5.0",
-    "partysocket": "1.1.13",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "standardized-audio-context": "^25.3.77",
-    "supersonic-scsynth-bundle": "^0.42.0",
-    "uWebSockets.js": "github:uNetworking/uWebSockets.js",
-    "vexflow": "^5.0.0",
-    "wam-community": "^0.4.9",
-    "webmidi": "^3.1.14",
-    "webrtc-adapter": "^9.0.3"
-  },
-  "build": {
-    "appId": "com.harmoneasy.app",
-    "productName": "Harmoneasy",
-    "directories": {
-      "buildResources": "public"
-    },
-    "extraMetadata": {
-      "main": "electron-main.js"
-    },
-    "files": [
-      "dist/**/*",
-      "public/**/*",
-      "build/Release/**/*.node",
-      "electron-main.js",
-      "node_modules/**/*",
-      "package.json"
-    ],
-    "icon": "public/icon.png",
-    "win": {
-      "target": [
-        "nsis",
-        "portable"
-      ],
-      "icon": "public/icon.png"
-    },
-    "mac": {
-      "target": [
-        "dmg",
-        "zip"
-      ],
-      "icon": "public/icon.png",
-      "category": "public.app-category.music"
-    },
-    "linux": {
-      "target": [
-        "AppImage",
-        "deb"
-      ],
-      "icon": "public/icon.png",
-      "category": "Audio"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
-    },
-    "publish": {
-      "provider": "github",
-      "owner": "designerzen",
-      "repo": "harmoneasy"
-    }
+    "@types/node": "^22.10.5",
+    "turbo": "^2.3.3",
+    "typescript": "~5.9.3"
   }
 }

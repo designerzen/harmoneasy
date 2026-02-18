@@ -1,12 +1,12 @@
 .DS_Store
 dist/
 out/
-source/libs/audiotoolsdk
+audiotoolsdk
 *-copy*
 node_modules/
 __midi
 release/
-source/build
+build
 
 # Electron build artifacts
 electron-builder/

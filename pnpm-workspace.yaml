@@ -1,3 +1,7 @@
+packages:
+  - "app/*"
+  - "packages/*"
+
 ignoredBuiltDependencies:
   - esbuild
   - workerd

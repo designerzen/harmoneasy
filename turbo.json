@@ -1,0 +1,79 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "root": ".",
+  "globalDependencies": [
+    "package.json",
+    ".nvmrc",
+    "pnpm-workspace.yaml"
+  ],
+  "globalEnv": [
+    "NODE_ENV"
+  ],
+  "tasks": {
+    "type-check": {
+      "cache": true,
+      "inputs": [
+        "**/*.ts",
+        "tsconfig.json"
+      ]
+    },
+    "dev": {
+      "cache": false,
+      "interactive": true,
+      "persistent": true,
+      "dependsOn": [
+        "^type-check"
+      ],
+      "env": [
+        "PORT",
+        "HOSTNAME"
+      ]
+    },
+    "build": {
+      "outputs": [
+        "dist/**",
+        "build/**"
+      ],
+      "inputs": [
+        "source/**",
+        "packages/**",
+        "public/**",
+        "vite.config.web.js",
+        "tsconfig.json"
+      ],
+      "dependsOn": [
+        "^build",
+        "type-check"
+      ]
+    },
+    "build:electron": {
+      "outputs": [
+        "dist/**",
+        "build/**"
+      ],
+      "dependsOn": [
+        "build-native",
+        "build-vite-electron"
+      ]
+    },
+    "build-native": {
+      "cache": false,
+      "outputs": [
+        "build/Release/**"
+      ]
+    },
+    "test": {
+      "cache": false,
+      "interactive": true,
+      "inputs": [
+        "**/*.ts",
+        "**/*.test.ts"
+      ]
+    },
+    "preview": {
+      "cache": false,
+      "interactive": true,
+      "persistent": true
+    }
+  }
+}
