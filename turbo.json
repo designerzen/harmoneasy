@@ -77,8 +77,7 @@
     },
     "upgrader": {
       "cache": false,
-      "interactive": true,
-      "persistent": true
+      "interactive": true
     }
   }
 }
