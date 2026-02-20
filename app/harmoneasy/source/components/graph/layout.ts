@@ -241,7 +241,7 @@ export const getStructure = ( chain:IOChain, showInputs:boolean=true, showOutput
 			layoutMode
 		},
 		position: isVerticalLayout 
-			? { x: -200, y: verticalStartY }
+			? { x: -350, y: verticalStartY }
 			: { x: -180, y: NODE_HEIGHT / 2  }
 	}, isVerticalLayout)
 
@@ -270,7 +270,7 @@ export const getStructure = ( chain:IOChain, showInputs:boolean=true, showOutput
 			layoutMode
 		},
 		position: isVerticalLayout 
-			? { x: 200, y: verticalEndY }
+			? { x: 350, y: verticalEndY }
 			: { x: HORIZONTAL_SPACING * (transformers.length) , y: NODE_HEIGHT / 2 }
 	}, isVerticalLayout)
 

@@ -6,15 +6,6 @@ import adapter from 'webrtc-adapter'
 import { DEFAULT_OPTIONS } from './options.ts'
 import State from './libs/state.ts'
 
-import { createAudioToolProjectFromAudioEventRecording } from 'audiotool'
-import { createMIDIFileFromAudioEventRecording, saveBlobToLocalFileSystem } from 'audiobus/exporters/adapter-midi-file.ts'
-import { createMEDFileFromAudioEventRecording, saveMEDToLocalFileSystem } from 'audiobus/exporters/adapter-med-file.ts'
-import { createMIDIMarkdownFromAudioEventRecording, saveMarkdownToLocalFileSystem } from 'audiobus/exporters/adapter-midi-markdown.ts'
-import { createMusicXMLFromAudioEventRecording, saveBlobToLocalFileSystem as saveMusicXMLBlobToLocalFileSystem } from 'audiobus/exporters/adapter-musicxml.ts'
-import { renderVexFlowToContainer, createVexFlowHTMLFromAudioEventRecording, saveBlobToLocalFileSystem as saveVexFlowBlobToLocalFileSystem } from 'audiobus/exporters/adapter-vexflow.ts'
-import { createOpenDAWProjectFromAudioEventRecording } from 'opendaw'
-import { createDawProjectFromAudioEventRecording, saveDawProjectToLocalFileSystem } from 'audiobus/exporters/adapter-dawproject.ts'
-
 import { importDawProjectFile } from 'audiobus/importers/import-dawproject.ts'
 import { importMusicXMLFile } from 'audiobus/importers/import-musicxml-import.ts'
 import { importMIDIFile } from 'audiobus/importers/import-midi-file.ts'
@@ -25,6 +16,16 @@ import UI from './ui.ts'
 import { createGraph } from './components/transformers-graph.tsx'
 import SongVisualiser from 'audiobus/ui/song-visualiser.js'
 
+import { createAudioToolProjectFromAudioEventRecording } from 'audiotool'
+import { createMIDIFileFromAudioEventRecording, saveBlobToLocalFileSystem } from 'audiobus/exporters/adapter-midi-file.ts'
+import { createMEDFileFromAudioEventRecording, saveMEDToLocalFileSystem } from 'audiobus/exporters/adapter-med-file.ts'
+import { createMIDIMarkdownFromAudioEventRecording, saveMarkdownToLocalFileSystem } from 'audiobus/exporters/adapter-midi-markdown.ts'
+import { createMusicXMLFromAudioEventRecording, saveBlobToLocalFileSystem as saveMusicXMLBlobToLocalFileSystem } from 'audiobus/exporters/adapter-musicxml.ts'
+import { renderVexFlowToContainer, createVexFlowHTMLFromAudioEventRecording, saveBlobToLocalFileSystem as saveVexFlowBlobToLocalFileSystem } from 'audiobus/exporters/adapter-vexflow.ts'
+import { createOpenDAWProjectFromAudioEventRecording } from 'opendaw'
+import { createDawProjectFromAudioEventRecording, saveDawProjectToLocalFileSystem } from 'audiobus/exporters/adapter-dawproject.ts'
+
+
 // Back End
 import OPFSStorage, { hasOPFS } from 'audiobus/storage/opfs-storage.ts'
 
@@ -32,9 +33,9 @@ import OPFSStorage, { hasOPFS } from 'audiobus/storage/opfs-storage.ts'
 import AudioBus from './audio.ts'
 
 import AudioEvent from 'audiobus/audio-event.ts'
-import AudioTimer from 'audiobus/timing/timer.ts'
 import AudioEventRecorder from 'audiobus/audio-event-recorder.ts'
 import * as Commands from 'audiobus/commands'
+import * as netronome from 'netronome'
 
 // IAudioInputs
 import IOChain from 'audiobus/io/IO-chain.ts'
@@ -46,7 +47,7 @@ import { createOutputById, getAvailableOutputFactories } from 'audiobus/io/outpu
 
 // IAudioIn/Outputs 
 import SynthOscillator from 'audiobus/instruments/oscillators/synth-oscillator.ts'
-import PolySynth from 'audiobus/instruments/poly-synth.ts'
+import PolySynth from 'audiobus/instruments/polyphonic.ts'
 import OutputOnScreenKeyboard from 'audiobus/io/outputs/output-onscreen-keyboard.ts'
 
 import type { IAudioCommand } from 'audiobus/audio-command-interface.ts'
@@ -57,7 +58,7 @@ import type InputAudioEvent from 'audiobus/io/events/input-audio-event.ts'
 const storage = hasOPFS() ? new OPFSStorage() : null
 const recorder: AudioEventRecorder = new AudioEventRecorder()
 const chains: IOChain[] = []
-let timer: AudioTimer = null
+let timer: any = null
 let bus: AudioBus
 let state: State
 let ui: UI
@@ -115,47 +116,33 @@ const createInputOutputChain = async (outputMixer:GainNode, inputDevices:IAudioI
 
 	const inputs:IAudioInput[] = [ inputKeyboard, inputGamePad, inputSVGKeyboard, ...inputDevices]
 
-	// These 3 inputs require special setup - require user click
-	if (navigator.mediaDevices && navigator.mediaDevices?.getUserMedia){
-		const inputMicrophone = await createInputById(INPUT_TYPES.MICROPHONE_FORMANT, options)
-		if (autoConnect)
+	const createInput = async (type, options) => {
+		const input = await createInputById(type, options)
+		if (input && autoConnect)
 		{
 			try{
-				await inputMicrophone.connect()
+				await input.connect()
 			}catch(error){
 				console.error('Microphone Formant input failed to connect', error)
 			}			
 		}
-		inputs.push(inputMicrophone)
+		inputs.push(input)
+	}
+
+	// These 3 inputs require special setup - require user click
+	if (navigator.mediaDevices && navigator.mediaDevices?.getUserMedia){
+		await createInput(INPUT_TYPES.MICROPHONE_FORMANT, options)
 	}
 	
 	// check to see if web bluetooth is available in this browser
 	if (navigator.bluetooth) {
-		const inputBluetooth = await createInputById(INPUT_TYPES.BLE_MIDI, options)
-		if (autoConnect)
-		{
-			try{
-				await inputBluetooth.connect()
-			}catch(error){
-				console.error('Bluetooth MIDI input failed to connect', error)
-			}			
-		}
-		inputs.push( inputBluetooth )
+		await createInput(INPUT_TYPES.BLE_MIDI, options)
 	}
 	
 	// Connect to WebMIDI using options specified
 	// check to see if webMIDI is available in this browser
 	if (navigator.requestMIDIAccess) {
-		const inputWebMIDIDevice = await createInputById(INPUT_TYPES.WEBMIDI, options)
-		if (autoConnect)
-		{
-			try{
-				await inputWebMIDIDevice.connect()
-			}catch(error){
-				console.error('WebMIDI input failed to connect', error)
-			}			
-		}
-		inputs.push(inputWebMIDIDevice)
+		await createInput(INPUT_TYPES.WEBMIDI, options)
 	}
 	
 	// Outputs ------------------------------------------------
@@ -443,6 +430,7 @@ const initialiseApplication = async ( onEveryTimingTick:Function, autoConnect:bo
     state.addEventListener((event:Event) => {
         const bookmark = state.asURI
         console.info(bookmark, "State Changed", { event, bookmark })
+		// update onscreen QR code
     })
     //state.setDefaults(defaultOptions)
     state.loadFromLocation(DEFAULT_OPTIONS)
@@ -455,7 +443,8 @@ const initialiseApplication = async ( onEveryTimingTick:Function, autoConnect:bo
 
 	bus = new AudioBus()
 	bus.initialise( initialVolume )
-	timer = new AudioTimer( bus.audioContext )
+
+	timer = new AudioTimer({ audioContext: bus.audioContext })
 	ui = await initialiseFrontEnd( bus.mixer, initialVolumePercent )
 	 
 	// IO ----------------------------------------------
@@ -527,8 +516,8 @@ const initialiseApplication = async ( onEveryTimingTick:Function, autoConnect:bo
 
     // start the clock going
 	const tempo = parseFloat( state.get('tempo') ?? 99 )
-	timer.BPM = tempo
-    timer.startTimer(onEveryTimingTick)
+	timer.setBPM(tempo)
+    timer.start(onEveryTimingTick)
 
 	// Update UI - this will check all the inputs according to our state	
     state.updateFrontEnd()
