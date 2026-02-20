@@ -6,10 +6,10 @@ import adapter from 'webrtc-adapter'
 import { DEFAULT_OPTIONS } from './options.ts'
 import State from './libs/state.ts'
 
-import { importDawProjectFile } from 'audiobus/importers/import-dawproject.ts'
-import { importMusicXMLFile } from 'audiobus/importers/import-musicxml-import.ts'
-import { importMIDIFile } from 'audiobus/importers/import-midi-file.ts'
-import { importTrackerFile } from 'audiobus/importers/import-tracker-file.ts'
+import { importDawProjectFile } from 'audiobus/importers/import-dawproject'
+import { importMusicXMLFile } from 'audiobus/importers/import-musicxml-import'
+import { importMIDIFile } from 'audiobus/importers/import-midi-file'
+import { importTrackerFile } from 'audiobus/importers/import-tracker-file'
 
 // Front End
 import UI from './ui.ts'
@@ -54,6 +54,7 @@ import type { IAudioCommand } from 'audiobus/audio-command-interface.ts'
 import type { IAudioOutput } from 'audiobus/io/outputs/output-interface.ts'
 import type { IAudioInput } from 'audiobus/io/inputs/input-interface.ts'
 import type InputAudioEvent from 'audiobus/io/events/input-audio-event.ts'
+import AudioTimer from 'audiobus/timing/timer.audio.js'
 
 const storage = hasOPFS() ? new OPFSStorage() : null
 const recorder: AudioEventRecorder = new AudioEventRecorder()
@@ -444,7 +445,9 @@ const initialiseApplication = async ( onEveryTimingTick:Function, autoConnect:bo
 	bus = new AudioBus()
 	bus.initialise( initialVolume )
 
-	timer = new AudioTimer({ audioContext: bus.audioContext })
+
+	const hasAudioWorklets = bus.hasAudioWorklets
+	timer = new AudioTimer({ audioContext: bus.audioContext, type:hasAudioWorklets ? netronome.TIMER_TYPES.AUDIO_WORKLET : netronome.TIMER_TYPES. })
 	ui = await initialiseFrontEnd( bus.mixer, initialVolumePercent )
 	 
 	// IO ----------------------------------------------

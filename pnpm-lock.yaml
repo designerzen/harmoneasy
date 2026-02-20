@@ -41,6 +41,9 @@ importers:
       midi-ble:
         specifier: workspace:^
         version: link:../../packages/midi-ble
+      netronome:
+        specifier: workspace:^
+        version: link:../../packages/netronome
       opendaw:
         specifier: workspace:^
         version: link:../../packages/openDAW
@@ -114,6 +117,9 @@ importers:
       '@msgpack/msgpack':
         specifier: ^3.1.3
         version: 3.1.3
+      '@tonejs/midi':
+        specifier: ^2.0.28
+        version: 2.0.28
       fflate:
         specifier: ^0.8.2
         version: 0.8.2
@@ -138,6 +144,9 @@ importers:
       tone:
         specifier: ^15.1.22
         version: 15.1.22
+      uWebSockets.js:
+        specifier: github:uNetworking/uWebSockets.js
+        version: https://codeload.github.com/uNetworking/uWebSockets.js/tar.gz/fee15cda0e4bdb7f1bb0edf8844c1811110af635
       vexflow:
         specifier: ^5.0.0
         version: 5.0.0
@@ -206,12 +215,6 @@ importers:
       vitest:
         specifier: ^4.0.18
         version: 4.0.18(@types/node@25.3.0)(@vitest/ui@4.0.18)(jiti@2.6.1)(sass-embedded@1.97.3)(sass@1.97.3)(terser@5.46.0)
-
-  packages/netronome---:
-    dependencies:
-      netronome:
-        specifier: github:designerzen/netronome
-        version: https://codeload.github.com/designerzen/netronome/tar.gz/6b0a35060d58ea570411a1d488957eb95ecbf052
 
   packages/openDAW:
     dependencies:
@@ -1012,6 +1015,9 @@ packages:
     resolution: {integrity: sha512-XFAnp6OvOnXD+NJtfiw/ZK2f/pdnoIoq6kCKse/lqWsidKtLg19SgMEhy4/VjUtkRq3ZRUNqDU1fW3NHbrFRPw==}
     engines: {node: '>=18'}
 
+  '@tonejs/midi@2.0.28':
+    resolution: {integrity: sha512-RII6YpInPsOZ5t3Si/20QKpNqB1lZ2OCFJSOzJxz38YdY/3zqDr3uaml4JuCWkdixuPqP1/TBnXzhQ39csyoVg==}
+
   '@types/cacheable-request@6.0.3':
     resolution: {integrity: sha512-IQ3EbTzGxIigb1I3qPZc1rWJnH0BmSKv5QYTalEwweFvyBDLSAe24zP0le/hyi7ecGfZVlIVAg4BZqb8WBwKqw==}
 
@@ -1206,6 +1212,9 @@ packages:
 
   argparse@2.0.1:
     resolution: {integrity: sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==}
+
+  array-flatten@3.0.0:
+    resolution: {integrity: sha512-zPMVc3ZYlGLNk4mpK1NzP2wg0ml9t7fUgDsayR5Y5rSzxQilzR9FGu/EH2jQOcKSAeAfWeylyW8juy3OkWRvNA==}
 
   as-table@1.0.55:
     resolution: {integrity: sha512-xvsWESUJn0JN421Xb9MQw6AsMHRCUknCe0Wjlxvjud80mU4E6hQf1A6NzQKcYNmYw62MfzEtXc+badstZP3JpQ==}
@@ -2070,6 +2079,9 @@ packages:
   merge-stream@2.0.0:
     resolution: {integrity: sha512-abv/qOcuPfk3URPfDzmZU1LKmuw8kT+0nIHvKrKgFrwifol/doWcdA4ZqsWQ8ENrFKkd67Mfpo/LovbIUsbt3w==}
 
+  midi-file@1.2.4:
+    resolution: {integrity: sha512-B5SnBC6i2bwJIXTY9MElIydJwAmnKx+r5eJ1jknTLetzLflEl0GWveuBB6ACrQpecSRkOB6fhTx1PwXk2BVxnA==}
+
   mime-db@1.52.0:
     resolution: {integrity: sha512-sPU4uV7dYlvtWJxwwxHD0PuihVNiE7TyAbQ5SWxDCB9mUYvOgroQOwYQQOKPJ8CIbE+1ETVlOoK1UC2nU3gYvg==}
     engines: {node: '>= 0.6'}
@@ -2188,10 +2200,6 @@ packages:
   negotiator@1.0.0:
     resolution: {integrity: sha512-8Ofs/AUQh8MaEcrlq5xOX0CQ9ypTF5dl78mjlMNfOK08fzpgTHQRQPBxcPlEtIw0yRpws+Zo/3r+5WRby7u3Gg==}
     engines: {node: '>= 0.6'}
-
-  netronome@https://codeload.github.com/designerzen/netronome/tar.gz/6b0a35060d58ea570411a1d488957eb95ecbf052:
-    resolution: {tarball: https://codeload.github.com/designerzen/netronome/tar.gz/6b0a35060d58ea570411a1d488957eb95ecbf052}
-    version: 2.2.0
 
   node-abi@4.26.0:
     resolution: {integrity: sha512-8QwIZqikRvDIkXS2S93LjzhsSPJuIbfaMETWH+Bx8oOT9Sa9UsUtBFQlc3gBNd1+QINjaTloitXr1W3dQLi9Iw==}
@@ -3730,6 +3738,11 @@ snapshots:
       '@thi.ng/checks': 3.8.4
       '@thi.ng/errors': 2.6.3
 
+  '@tonejs/midi@2.0.28':
+    dependencies:
+      array-flatten: 3.0.0
+      midi-file: 1.2.4
+
   '@types/cacheable-request@6.0.3':
     dependencies:
       '@types/http-cache-semantics': 4.2.0
@@ -3993,6 +4006,8 @@ snapshots:
       - supports-color
 
   argparse@2.0.1: {}
+
+  array-flatten@3.0.0: {}
 
   as-table@1.0.55:
     dependencies:
@@ -5017,6 +5032,8 @@ snapshots:
 
   merge-stream@2.0.0: {}
 
+  midi-file@1.2.4: {}
+
   mime-db@1.52.0: {}
 
   mime-types@2.1.35:
@@ -5136,8 +5153,6 @@ snapshots:
   nanoid@3.3.11: {}
 
   negotiator@1.0.0: {}
-
-  netronome@https://codeload.github.com/designerzen/netronome/tar.gz/6b0a35060d58ea570411a1d488957eb95ecbf052: {}
 
   node-abi@4.26.0:
     dependencies:

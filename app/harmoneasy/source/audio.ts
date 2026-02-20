@@ -18,6 +18,10 @@ export default class AudioBus extends EventTarget {
 		return this.#reverb
 	}
 
+	get  hasAudioWorklets(){
+		return !!this.#audioContext.audioWorklet
+	}
+
 	set volume( value:number ) {
 		this.#mixer.gain.value = value * 0.5
 	}
