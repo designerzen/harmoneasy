@@ -1,3 +1,0 @@
-[submodule "packages/netronome"]
-	path = packages/netronome
-	url = https://github.com/designerzen/netronome.git
