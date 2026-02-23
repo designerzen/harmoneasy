@@ -24,7 +24,9 @@
     "preview": "vite preview",
     "electron": "electron .",
     "migrate:monorepo": "node scripts/migrate-monorepo.js",
-    "upgrader": "npx npm-check-updates --interactive -u"
+    "upgrader": "npx npm-check-updates --interactive -u",
+	"lint": "oxlint",
+    "lint:fix": "oxlint --fix"
   },
   "devDependencies": {
     "@types/react": "^19.2.13",
