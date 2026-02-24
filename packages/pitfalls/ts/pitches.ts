@@ -91,7 +91,8 @@ export default class Pitches {
             return [integerPart, cents]
         })
 
-        this.#baseFrequency = parseFloat(this.#baseFrequency).toFixed(4)
+		// ensure we are a string that isn't too precise
+        this.#baseFrequency = parseFloat( this.#baseFrequency.toFixed(4) )
     }
   
     getDegree(index: number): number {

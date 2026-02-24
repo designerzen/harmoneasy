@@ -26,28 +26,22 @@ export default class AudioBus extends EventTarget {
 		this.#mixer.gain.value = value * 0.5
 	}
 
-	constructor() {
+	constructor( initialVolume:number=1 ) {
 		super()
-	}
 
-	initialise( initialVolume:number=1 ) {
 		const context = new AudioContext()
-
 		const mixer: GainNode = context.createGain()
 		
 		const reverb = context.createConvolver()
 		reverb.buffer = createReverbImpulseResponse( context, 1, 7 )
 
-		mixer.connect(reverb)
-		reverb.connect( context.destination)
-
 		// save for later use
 		this.#audioContext = context
 		this.#mixer = mixer
 		this.#reverb = reverb
+		this.volume = initialVolume
 
-		this.volume = initialVolume 
-	
-		return { context, mixer, reverb }
+		mixer.connect(reverb)
+		reverb.connect( context.destination)
 	}
 }

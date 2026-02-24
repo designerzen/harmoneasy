@@ -442,8 +442,7 @@ const initialiseApplication = async ( onEveryTimingTick:Function, autoConnect:bo
 	const initialVolumePercent:number = volumeState ? parseFloat(volumeState as string) : 50
 	const initialVolume:number = Math.max(0, Math.min(1, initialVolumePercent / 100))
 
-	bus = new AudioBus()
-	bus.initialise( initialVolume )
+	bus = new AudioBus( initialVolume )
 
 	timer = new AudioTimer({ audioContext: bus.audioContext, type:bus.hasAudioWorklets ? netronome.TIMER_TYPES.AUDIO_WORKLET : netronome.TIMER_TYPES.AUDIO_CONTEXT })
 	ui = await initialiseFrontEnd( bus.mixer, initialVolumePercent )
