@@ -478,7 +478,7 @@ export default class UI implements IAudioOutput {
 
 
 	// Exporting --------------------------------------------------------------------
-	showExportOverlay(text:string) {
+	showExportOverlay(text:string='') {
 		this.elementOverlayExport.hidden = false
 	}
 
