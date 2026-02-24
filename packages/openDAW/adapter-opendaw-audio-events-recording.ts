@@ -2,6 +2,8 @@ import RecorderAudioEvent from "audiobus/audio-event-recorder.ts"
 import type AudioEvent from "audiobus/audio-event.ts"
 import type { ITimerControl } from "netronome"
 import { NOTE_ON } from "audiobus/commands"
+import type Timer from "../netronome/src/timer"
+import type { IAudioCommand } from "audiobus/index"
 
 /**
  * Produces an array of notes from the 
@@ -34,7 +36,7 @@ export const createOpenDAWProjectFromAudioEventRecording = async (recording:Reco
 
     const BPM:number = timer.BPM
     const duration:number = timer.secondsToTicks( recording.duration )
-    const data:AudioEvent[] = recording.exportData()
+    const data:IAudioCommand[] = recording.exportData()
 
     // openDAW script editor (very early preview - under heavy construction)
     const script:string = `
