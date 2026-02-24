@@ -59,7 +59,7 @@ export default class Intervals {
 
             this.intLabels[i + 1] = intLabel
             this.intErrors[i + 1] = closeness
-            this.intNoms[i + 1] = ratio ? ratiointervals.nom(ratio) : 0
+            this.intNoms[i + 1] = ratiointervals.nom(ratio)
             this.intRatios[i + 1] = ratio ? `${ratiointervals.nom(ratio)}/${ratiointervals.denom(ratio)}` : ''
             
             this.uniqLabels[i + 1] = BLANK

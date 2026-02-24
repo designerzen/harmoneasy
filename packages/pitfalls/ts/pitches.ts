@@ -74,7 +74,7 @@ export default class Pitches {
                 // fixme: string conversion v slow
                 const ratio = (f as number) * intervals.getRatioAtIndex(deg)
                
-                this.freqs[index] = parseFloat( ratio ).toFixed(3)
+                this.freqs[index] = parseFloat( ratio.toFixed(3) )
                 this.midis[index] = parseFloat(hz_to_midi(ratio, tuning).toFixed(4))
                 this.degrees[index] = deg
 

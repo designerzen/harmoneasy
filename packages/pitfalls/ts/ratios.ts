@@ -87,8 +87,8 @@ export class IntervalRatios {
         return ratio == null ? '' : this.#intervals.get(ratio)?.[2] || ''
     }
 
-    nom(ratio: number | null): number | null {
-        return ratio == null ? null : this.#intervals.get(ratio)?.[3] || null
+    nom(ratio: number ): number {
+        return ratio == null ? 0 : this.#intervals.get(ratio)?.[3] || 0
     }
 
     denom(ratio: number | null): number | null {
