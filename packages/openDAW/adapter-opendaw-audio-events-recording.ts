@@ -1,6 +1,6 @@
 import RecorderAudioEvent from "audiobus/audio-event-recorder.ts"
 import type AudioEvent from "audiobus/audio-event.ts"
-import type Timer from "audiobus/timing/timer.ts"
+import type { ITimerControl } from "netronome"
 import { NOTE_ON } from "audiobus/commands"
 
 /**
@@ -8,7 +8,7 @@ import { NOTE_ON } from "audiobus/commands"
  * @param data 
  * @returns 
  */
-const createOpenDAWNotesScript = (data:AudioEvent[], timer:Timer ) => {
+const createOpenDAWNotesScript = (data:AudioEvent[], timer:ITimerControl ) => {
     const output:string[] = []
     data.forEach((command) => {
         switch( command.type )

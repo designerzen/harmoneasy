@@ -2,7 +2,7 @@
 
 import RecorderAudioEvent from "audiobus/audio-event-recorder.ts"
 import { AUDIOTOOL_STORAGE_KEYS } from './audio-tool-settings.ts'
-import type Timer from "audiobus/timing/timer.ts"
+import type { ITimerControl } from "netronome"
 import type { IAudioCommand } from "audiobus/audio-command-interface.ts"
 
 // lazily imported AudioToolSDK

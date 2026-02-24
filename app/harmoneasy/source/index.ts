@@ -54,7 +54,7 @@ import type { IAudioCommand } from 'audiobus/audio-command-interface.ts'
 import type { IAudioOutput } from 'audiobus/io/outputs/output-interface.ts'
 import type { IAudioInput } from 'audiobus/io/inputs/input-interface.ts'
 import type InputAudioEvent from 'audiobus/io/events/input-audio-event.ts'
-import AudioTimer from 'audiobus/timing/timer.audio.js'
+import { AudioTimer } from 'netronome'
 
 const storage = hasOPFS() ? new OPFSStorage() : null
 const recorder: AudioEventRecorder = new AudioEventRecorder()

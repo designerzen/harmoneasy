@@ -1,4 +1,4 @@
-import { formatTimeStampFromSeconds } from "audiobus/timing/timer.ts"
+import { formatTimeStampFromSeconds } from "netronome"
 import SongVisualiser from 'audiobus/ui/song-visualiser.js'
 import { SongVisualiserUI } from 'audiobus/ui/song-visualiser-ui.js'
 import NoteVisualiser from 'audiobus/ui/note-visualiser.js'
