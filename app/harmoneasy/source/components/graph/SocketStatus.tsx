@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { useSocket } from '../hooks/useSocket';
+import { useSocket } from '../../hooks/useSocket';
 
 export function SocketStatus() {
 	const { connected, error, ping, getServerInfo, send, request } = useSocket({

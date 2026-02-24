@@ -12,6 +12,16 @@
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
     "noEmit": true,
+    "paths": {
+      "audiobus/*": ["../../packages/audiobus/*"],
+      "audiotool/*": ["../../packages/audiotool/*"],
+      "opendaw/*": ["../../packages/openDAW/*"],
+      "pink-trombone/*": ["../../packages/pink-trombone/*"],
+      "midi-ble/*": ["../../packages/midi-ble/*"],
+      "pitfalls/*": ["../../packages/pitfalls/*"],
+      "flodjs/*": ["../../packages/flodjs/*"],
+      "netronome": ["../../packages/netronome"]
+    },
 
     "strict": true,
     "noUnusedLocals": true,

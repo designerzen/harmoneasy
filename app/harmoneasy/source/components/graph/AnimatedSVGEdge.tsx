@@ -4,10 +4,10 @@ import { INPUT_EVENT, NOTE_ON, OUTPUT_EVENT } from 'audiobus/commands'
 import { convertNoteNumberToColour } from 'audiobus/conversion/note-to-colour'
 import { NOTE_TYPE } from './layout'
 
-import type OutputAudioEvent from 'audiobus/outputs/output-audio-event'
+import type { OutputAudioEvent } from 'audiobus/io/events'
 import type { IAudioCommand } from 'audiobus/audio-command-interface'
-import type IOChain from 'audiobus/IO-chain'
-import type InputAudioEvent from 'audiobus/inputs/input-audio-event'
+import type { IOChain } from 'audiobus/io'
+import type { InputAudioEvent } from 'audiobus/io/events'
 
 export function AnimatedSVGEdge({
 	id,
