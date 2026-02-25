@@ -1,0 +1,12 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" fill="none"/>
+  <!-- Waveform display -->
+  <rect x="12" y="18" width="40" height="28" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
+  <!-- Audio waveform -->
+  <path d="M 18 32 L 22 28 L 26 36 L 30 24 L 34 32 L 38 28 L 42 34 L 46 26" fill="none" stroke="currentColor" stroke-width="2"/>
+  <!-- SuperCollider SC label -->
+  <text x="32" y="50" font-size="6" text-anchor="middle" fill="currentColor" opacity="0.7">SC</text>
+  <!-- Input connector -->
+  <circle cx="8" cy="32" r="2.5" fill="currentColor"/>
+  <line x1="10" y1="32" x2="12" y2="32" stroke="currentColor" stroke-width="1.5"/>
+</svg>

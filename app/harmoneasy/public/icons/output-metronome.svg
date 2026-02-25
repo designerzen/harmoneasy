@@ -1,0 +1,15 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" fill="none"/>
+  <!-- Metronome pyramid body -->
+  <path d="M 20 44 L 24 20 L 40 20 L 44 44 Z" fill="none" stroke="currentColor" stroke-width="2"/>
+  <!-- Pendulum arm -->
+  <line x1="32" y1="22" x2="28" y2="40" stroke="currentColor" stroke-width="2" opacity="0.8"/>
+  <!-- Pendulum bob -->
+  <circle cx="27" cy="42" r="2" fill="currentColor" opacity="0.7"/>
+  <!-- Tempo indicator -->
+  <circle cx="48" cy="28" r="2" fill="none" stroke="currentColor" stroke-width="1.2"/>
+  <line x1="48" y1="24" x2="48" y2="20" stroke="currentColor" stroke-width="0.8" opacity="0.6"/>
+  <!-- Input connector -->
+  <circle cx="8" cy="32" r="2.5" fill="currentColor"/>
+  <line x1="10" y1="32" x2="12" y2="32" stroke="currentColor" stroke-width="1.5"/>
+</svg>

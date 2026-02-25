@@ -1,0 +1,12 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" fill="none"/>
+  <!-- Bluetooth MIDI device -->
+  <rect x="14" y="22" width="28" height="20" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
+  <!-- Bluetooth symbol -->
+  <path d="M 28 28 L 36 36 M 36 28 L 28 36" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
+  <!-- Wireless indicator -->
+  <path d="M 26 33 Q 28 31 30 31" fill="none" stroke="currentColor" stroke-width="1" opacity="0.6"/>
+  <!-- Output connector -->
+  <circle cx="56" cy="32" r="2.5" fill="currentColor"/>
+  <line x1="52" y1="32" x2="54" y2="32" stroke="currentColor" stroke-width="1.5"/>
+</svg>

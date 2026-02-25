@@ -1,0 +1,16 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" fill="none"/>
+  <!-- MIDI 2.0 device -->
+  <rect x="12" y="18" width="32" height="28" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
+  <!-- Device label -->
+  <text x="28" y="32" font-size="7" text-anchor="middle" fill="currentColor">MIDI 2.0</text>
+  <!-- Connection indicators -->
+  <circle cx="10" cy="24" r="1.5" fill="currentColor"/>
+  <circle cx="10" cy="32" r="1.5" fill="currentColor"/>
+  <circle cx="10" cy="40" r="1.5" fill="currentColor"/>
+  <!-- Status indicator -->
+  <circle cx="44" cy="26" r="1.5" fill="currentColor" opacity="0.7"/>
+  <!-- Output connector -->
+  <circle cx="56" cy="32" r="2.5" fill="currentColor"/>
+  <line x1="52" y1="32" x2="54" y2="32" stroke="currentColor" stroke-width="1.5"/>
+</svg>

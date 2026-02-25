@@ -1,0 +1,14 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" fill="none"/>
+  <!-- Leap Motion sensor base -->
+  <rect x="16" y="26" width="24" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
+  <!-- Sensor window -->
+  <rect x="18" y="28" width="20" height="8" fill="none" stroke="currentColor" stroke-width="1" opacity="0.6"/>
+  <!-- Hand gesture indicator -->
+  <circle cx="24" cy="32" r="2" fill="currentColor" opacity="0.6"/>
+  <circle cx="32" cy="30" r="2" fill="currentColor" opacity="0.6"/>
+  <circle cx="36" cy="33" r="2" fill="currentColor" opacity="0.6"/>
+  <!-- Output connector -->
+  <circle cx="56" cy="32" r="2.5" fill="currentColor"/>
+  <line x1="52" y1="32" x2="54" y2="32" stroke="currentColor" stroke-width="1.5"/>
+</svg>
