@@ -42,8 +42,7 @@
         "tsconfig.json"
       ],
       "dependsOn": [
-        "^build",
-        "type-check"
+        "^build"
       ]
     },
     "build:electron": {
