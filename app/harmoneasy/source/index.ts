@@ -6,15 +6,16 @@ import adapter from 'webrtc-adapter'
 import { DEFAULT_OPTIONS } from './options.ts'
 import State from './libs/state.ts'
 
-import { importDawProjectFile } from 'audiobus/importers/import-dawproject'
-import { importMusicXMLFile } from 'audiobus/importers/import-musicxml-import'
-import { importMIDIFile } from 'audiobus/importers/import-midi-file'
-import { importTrackerFile } from 'audiobus/importers/import-tracker-file'
-
 // Front End
 import UI from './ui.ts'
 import { createGraph } from './components/transformers-graph.tsx'
 import SongVisualiser from 'audiobus/ui/song-visualiser.js'
+
+// Import Data
+import { importDawProjectFile } from 'audiobus/importers/import-dawproject'
+import { importMusicXMLFile } from 'audiobus/importers/import-musicxml-import'
+import { importMIDIFile } from 'audiobus/importers/import-midi-file'
+import { importTrackerFile } from 'audiobus/importers/import-tracker-file'
 
 import { createAudioToolProjectFromAudioEventRecording } from 'audiotool'
 import { createMIDIFileFromAudioEventRecording, saveBlobToLocalFileSystem } from 'audiobus/exporters/adapter-midi-file.ts'
@@ -24,10 +25,6 @@ import { createMusicXMLFromAudioEventRecording, saveBlobToLocalFileSystem as sav
 import { renderVexFlowToContainer, createVexFlowHTMLFromAudioEventRecording, saveBlobToLocalFileSystem as saveVexFlowBlobToLocalFileSystem } from 'audiobus/exporters/adapter-vexflow.ts'
 import { createOpenDAWProjectFromAudioEventRecording } from 'opendaw'
 import { createDawProjectFromAudioEventRecording, saveDawProjectToLocalFileSystem } from 'audiobus/exporters/adapter-dawproject.ts'
-
-
-// Back End
-import OPFSStorage, { hasOPFS } from 'audiobus/storage/opfs-storage.ts'
 
 // Audio
 import AudioBus from './audio.ts'
@@ -39,10 +36,10 @@ import * as netronome from 'netronome'
 
 // IAudioInputs
 import IOChain from 'audiobus/io/IO-chain.ts'
-import { createInputById, getAvailableInputFactories } from 'audiobus/io/input-factory.ts'
 import InputOnScreenKeyboard, { ALL_KEYBOARD_NOTES, ONSCREEN_KEYBOARD_INPUT_ID } from 'audiobus/io/inputs/input-onscreen-keyboard.ts'
 import * as INPUT_TYPES from 'audiobus/io/inputs/input-types.ts'
 import * as OUTPUT_TYPES from 'audiobus/io/outputs/output-types.ts'
+import { createInputById, getAvailableInputFactories } from 'audiobus/io/input-factory.ts'
 import { createOutputById, getAvailableOutputFactories } from 'audiobus/io/output-factory.ts'
 
 // IAudioIn/Outputs 
@@ -50,11 +47,13 @@ import SynthOscillator from 'audiobus/instruments/oscillators/synth-oscillator.t
 import PolySynth from 'audiobus/instruments/polyphonic.ts'
 import OutputOnScreenKeyboard from 'audiobus/io/outputs/output-onscreen-keyboard.ts'
 
+// Back End
+import OPFSStorage, { hasOPFS } from 'audiobus/storage/opfs-storage.ts'
+
 import type { IAudioCommand } from 'audiobus/audio-command-interface.ts'
 import type { IAudioOutput } from 'audiobus/io/outputs/output-interface.ts'
 import type { IAudioInput } from 'audiobus/io/inputs/input-interface.ts'
 import type InputAudioEvent from 'audiobus/io/events/input-audio-event.ts'
-import { Timer } from 'netronome'
 
 const storage = hasOPFS() ? new OPFSStorage() : null
 const recorder: AudioEventRecorder = new AudioEventRecorder()
@@ -100,7 +99,7 @@ const importFile = async (file: File): Promise<{ commands: IAudioCommand[], note
  * through a transformerManager into an OutputManager
  * @returns 
  */
-const createInputOutputChain = async (outputMixer:GainNode, inputDevices:IAudioInput[]=[], outputDevices:IAudioOutput[]=[], autoConnect:boolean=false ) => {
+const createDefaultInputOutputChain = async (outputMixer:GainNode, inputDevices:IAudioInput[]=[], outputDevices:IAudioOutput[]=[], autoConnect:boolean=false ) => {
 	
 	const chain = new IOChain( timer )
 
@@ -449,7 +448,7 @@ const initialiseApplication = async ( onEveryTimingTick:Function, autoConnect:bo
 	 
 	// IO ----------------------------------------------
 	const abortController = new AbortController()
-	const chain = await createInputOutputChain( bus.mixer, [], [ui], autoConnect )
+	const chain = await createDefaultInputOutputChain( bus.mixer, [], [ui], autoConnect )
 	//const keyboardInput:InputOnScreenKeyboard = chain.getInput( ONSCREEN_KEYBOARD_INPUT_ID ) as InputOnScreenKeyboard
 
 	// FIXME: This should only occur later
