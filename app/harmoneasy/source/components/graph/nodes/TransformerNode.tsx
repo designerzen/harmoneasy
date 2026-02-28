@@ -29,8 +29,16 @@ export function TransformerNode(props) {
     const shouldShowMoveButtons = chain.transformerQuantity > 1
 
 	const isVertical = props.data.layoutMode === 'vertical'
+	const isFullscreen = props.data.isFullscreen || false
+	const onFullscreen = props.data.onFullscreen
 
-    return <div className={`node-transformer graph-node can-remove category-${props.data.element.category.toLowerCase()}`}>
+	const handleFullscreen = useCallback(() => {
+		if (onFullscreen) {
+			onFullscreen(props.id)
+		}
+	}, [props.id, onFullscreen])
+
+    return <div className={`node-transformer graph-node can-remove category-${props.data.element.category.toLowerCase()} ${isFullscreen ? 'is-fullscreen' : ''}`}>
         <img src={icon} alt={props.data.label} className="transformer-icon" title={props.data.label}/>
         <h6>{props.data.label}</h6>
       
@@ -39,7 +47,10 @@ export function TransformerNode(props) {
 			<p>{props.data.description}</p>
 		</details>
 
-        <button type="button" className="btn-remove" onClick={removeNode}>Remove</button>
+        <menu className="node-actions">
+            <button type="button" className="btn-fullscreen" onClick={handleFullscreen} title="Fullscreen" aria-label="Fullscreen mode">⛶</button>
+            <button type="button" className="btn-remove" onClick={removeNode}>Remove</button>
+        </menu>
       
         {props.data.fields.map( (f,i) => (
             <ConfigField key={`${f.uuid}-${i}`} config={f} element={props.data.element} />

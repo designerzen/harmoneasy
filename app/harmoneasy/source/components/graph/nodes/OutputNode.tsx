@@ -55,8 +55,16 @@ export function OutputNode(props) {
 	}, [output])
 
 	const isVertical = props.data?.layoutMode === 'vertical'
+	const isFullscreen = props.data?.isFullscreen || false
+	const onFullscreen = props.data?.onFullscreen
 
-	return <div className={`node-output graph-node can-remove ${hasControls ? 'has-controls' : 'no-controls'} `} title={output.description}>
+	const handleFullscreen = useCallback(() => {
+		if (onFullscreen) {
+			onFullscreen(props.id)
+		}
+	}, [props.id, onFullscreen])
+
+	return <div className={`node-output graph-node can-remove ${hasControls ? 'has-controls' : 'no-controls'} ${isFullscreen ? 'is-fullscreen' : ''}`} title={output.description}>
 		<h6>{output.name}</h6>
 		<p className="sr-only">{props.data.label }</p>
 		{
@@ -82,7 +90,10 @@ export function OutputNode(props) {
 		{/* Injected content from the nodes */}
 		<div ref={GUIContainerRef} />
 		
-		<button type="button" className="btn-remove" onClick={removeNode}>Remove</button>
+		<menu className="node-actions">
+			<button type="button" className="btn-fullscreen" onClick={handleFullscreen} title="Fullscreen" aria-label="Fullscreen mode">⛶</button>
+			<button type="button" className="btn-remove" onClick={removeNode}>Remove</button>
+		</menu>
       	<Handle type="target" position={isVertical ? Position.Top : Position.Left} />
 	</div>
 }

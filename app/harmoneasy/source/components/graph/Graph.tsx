@@ -48,6 +48,7 @@ function FlowComponent() {
 	const [ layoutMode, setLayoutMode ] = useState(DEFAULT_LAYOUT_MODE)
 	const { fitView } = useReactFlow()
 	const [transformerCount, setTransformerCount] = useState(0)
+	const [fullscreenNodeId, setFullscreenNodeId] = useState<string | null>(null)
 
 	useEffect(() => {
 		const chain = (window as any).chain as IOChain
@@ -137,20 +138,61 @@ function FlowComponent() {
 		return () => layoutSelect.removeEventListener('change', handleChange)
 	}, [layoutMode])
 
+	const handleFullscreenMode = (nodeId: string) => {
+		setFullscreenNodeId(nodeId)
+	}
+
+	const exitFullscreenMode = () => {
+		setFullscreenNodeId(null)
+	}
+
+	// Pass fullscreen handlers to node data
+	const nodesWithFullscreen = nodes.map(node => ({
+		...node,
+		data: {
+			...node.data,
+			onFullscreen: handleFullscreenMode,
+			isFullscreen: node.id === fullscreenNodeId,
+			layoutMode
+		}
+	}))
+
+	const isFullscreenActive = fullscreenNodeId !== null
+	const selectedNode = nodesWithFullscreen.find(n => n.id === fullscreenNodeId)
+
 	return (
-		<>
-			<aside className="transformers-drawer">
-				<Transformers />
-			</aside>
-			<Presets />
+		<div className={`graph-container ${isFullscreenActive ? 'fullscreen-mode' : ''}`}>
+			{!isFullscreenActive && (
+				<>
+					<aside className="transformers-drawer">
+						<Transformers />
+					</aside>
+					<Presets />
+				</>
+			)}
+			
+			{isFullscreenActive && selectedNode && (
+				<div className="fullscreen-header">
+					<h3>{selectedNode.data.label || selectedNode.data.input?.name || selectedNode.data.output?.name || selectedNode.data.element?.id}</h3>
+					<button 
+						className="btn-close-fullscreen" 
+						onClick={exitFullscreenMode}
+						title="Exit Fullscreen"
+						aria-label="Exit Fullscreen"
+					>
+						✕
+					</button>
+				</div>
+			)}
+
 			<ReactFlow
 				panOnScroll={false}
-				panOnDrag={true}
-				selectionOnDrag={true}
+				panOnDrag={!isFullscreenActive}
+				selectionOnDrag={!isFullscreenActive}
 				nodesFocusable={true}
 				edgesFocusable={true}
 				disableKeyboardA11y={false}
-				nodes={nodes}
+				nodes={nodesWithFullscreen}
 				edges={edges}
 				edgeTypes={edgeTypes}
 				nodeTypes={nodeTypes}
@@ -163,7 +205,7 @@ function FlowComponent() {
 			>
 				{/* <Controls /> */}
 			</ReactFlow>
-		</>
+		</div>
 	)
 }
 

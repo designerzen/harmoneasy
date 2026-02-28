@@ -210,3 +210,117 @@
 .no-matches{
 	color: var(--col-red);
 }
+
+// Fullscreen mode styling
+.graph-container {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+
+	&.fullscreen-mode {
+		// Hide everything except the selected node and controls
+		.transformers-drawer,
+		.react-flow__edges,
+		.graph-node-menu {
+			display: none;
+		}
+
+		// Hide all nodes except the fullscreen one
+		.react-flow__nodes > div:not(.is-fullscreen) {
+			display: none;
+		}
+
+		// Style the selected node in fullscreen
+		.is-fullscreen {
+			position: absolute;
+			top: 60px;
+			left: 50%;
+			transform: translateX(-50%);
+			width: min(90vw, 900px);
+			max-height: calc(100vh - 120px);
+			overflow: auto;
+			z-index: 10;
+			box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+			border-width: 2px;
+		}
+	}
+}
+
+.fullscreen-header {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 60px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0 var(--pad);
+	background: var(--col-bg);
+	border-bottom: var(--border);
+	z-index: 11;
+
+	h3 {
+		margin: 0;
+		flex: 1;
+		text-transform: uppercase;
+		letter-spacing: 1px;
+	}
+
+	.btn-close-fullscreen {
+		background: none;
+		border: none;
+		color: var(--col-fg);
+		font-size: 24px;
+		cursor: pointer;
+		padding: var(--pad);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: transform 0.2s ease;
+
+		&:hover {
+			transform: scale(1.1);
+		}
+
+		&:active {
+			transform: scale(0.95);
+		}
+	}
+}
+
+.node-actions {
+	display: flex;
+	gap: var(--gap);
+	margin-top: auto;
+	padding-top: var(--pad);
+	border-top: var(--border);
+	flex-wrap: wrap;
+
+	.btn-fullscreen {
+		flex: 1;
+		font-size: 16px;
+		padding: calc(var(--pad) * 0.75);
+		background: var(--col-bg);
+		border: var(--border);
+		color: var(--col-fg);
+		border-radius: var(--curve);
+		cursor: pointer;
+		transition: all 0.2s ease;
+
+		&:hover {
+			background: color-mix(in oklch, var(--col-accent) 20%, transparent);
+			transform: translateY(-2px);
+		}
+
+		&:active {
+			transform: translateY(0);
+		}
+	}
+
+	.btn-remove {
+		flex: 1;
+	}
+}
