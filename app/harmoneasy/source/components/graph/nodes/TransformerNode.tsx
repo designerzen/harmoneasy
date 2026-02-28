@@ -2,6 +2,7 @@ import { Handle, Position } from "@xyflow/react"
 import React, { memo, useCallback } from "react"
 import { ConfigField } from "../Widgets.tsx"
 import { getTransformerIcon } from 'audiobus/io/transformer-definitions'
+import type IOChain from 'audiobus/io/IO-chain'
 
 /**
  * TransformerNode component

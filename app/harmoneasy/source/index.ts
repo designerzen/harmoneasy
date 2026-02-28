@@ -68,214 +68,329 @@ let songVisualiser: SongVisualiser | null = null
  * Universal import handler - routes to appropriate importer based on file type
  */
 const importFile = async (file: File): Promise<{ commands: IAudioCommand[], noteCount: number }> => {
-	const fileName = file.name.toLowerCase()
-	
-	// MIDI formats
-	if (fileName.endsWith('.mid') || fileName.endsWith('.midi') || file.type.includes('midi')) {
-		return importMIDIFile(file)
-	}
-	
-	// MusicXML formats
-	if (fileName.endsWith('.musicxml') || fileName.endsWith('.xml')) {
-		return importMusicXMLFile(file)
-	}
-	
-	// DawProject format
-	if (fileName.endsWith('.dawproject')) {
-		return importDawProjectFile(file)
-	}
-	
-	// Tracker formats (MOD, XM, IT, S3M, etc.)
-	const trackerExtensions = ['.mod', '.xm', '.it', '.s3m', '.669', '.far', '.stm', '.ult', '.mtm', '.dmf', '.ptm', '.okt', '.mptm', '.nst']
-	if (trackerExtensions.some(ext => fileName.endsWith(ext))) {
-		return importTrackerFile(file)
-	}
-	
-	throw new Error(`Unsupported file type: ${file.type || fileName}. Supported formats: MIDI (.mid, .midi), MusicXML (.musicxml, .xml), DawProject (.dawproject), and Tracker formats (.mod, .xm, .it, .s3m, .669, .far, .stm, .ult, .mtm, .dmf, .ptm, .okt, .mptm, .nst)`)
+    const fileName = file.name.toLowerCase()
+
+    // MIDI formats
+    if (fileName.endsWith('.mid') || fileName.endsWith('.midi') || file.type.includes('midi')) {
+        return importMIDIFile(file)
+    }
+
+    // MusicXML formats
+    if (fileName.endsWith('.musicxml') || fileName.endsWith('.xml')) {
+        return importMusicXMLFile(file)
+    }
+
+    // DawProject format
+    if (fileName.endsWith('.dawproject')) {
+        return importDawProjectFile(file)
+    }
+
+    // Tracker formats (MOD, XM, IT, S3M, etc.)
+    const trackerExtensions = ['.mod', '.xm', '.it', '.s3m', '.669', '.far', '.stm', '.ult', '.mtm', '.dmf', '.ptm', '.okt', '.mptm', '.nst']
+    if (trackerExtensions.some(ext => fileName.endsWith(ext))) {
+        return importTrackerFile(file)
+    }
+
+    throw new Error(`Unsupported file type: ${file.type || fileName}. Supported formats: MIDI (.mid, .midi), MusicXML (.musicxml, .xml), DawProject (.dawproject), and Tracker formats (.mod, .xm, .it, .s3m, .669, .far, .stm, .ult, .mtm, .dmf, .ptm, .okt, .mptm, .nst)`)
 }
 
 /**
- * Create a IOChain that connects a series of inputs
- * through a transformerManager into an OutputManager
- * @returns 
- */
-const createDefaultInputOutputChain = async (outputMixer:GainNode, inputDevices:IAudioInput[]=[], outputDevices:IAudioOutput[]=[], autoConnect:boolean=false ) => {
-	
-	const chain = new IOChain( timer )
+* Restore an IOChain from a previously exported string
+* Re-establishes all inputs and outputs after restoring core state
+* @param exportedChainString URL-safe string from chain.exportString()
+* @param outputMixer GainNode for audio output
+* @param inputDevices Additional custom input devices to add
+* @param outputDevices Additional custom output devices to add
+* @param autoConnect Attempt to auto-connect hardware inputs
+* @returns IOChain with restored state and newly connected devices
+*/
+const importStringInputOutputChain = async (exportedChainString: string, outputMixer: GainNode, inputDevices: IAudioInput[] = [], outputDevices: IAudioOutput[] = [], autoConnect: boolean = false): Promise<IOChain> => {
+    // Create a new chain and restore its state from the exported string
+    const chain = new IOChain(timer)
 
-	const options = {
-		now: () => timer.now
-	}
+    try {
+        chain.importString(exportedChainString)
+    } catch (error) {
+        console.error('Failed to restore chain from exported string:', error)
+        throw new Error(`Invalid chain export string: ${error instanceof Error ? error.message : String(error)}`)
+    }
 
-	// Create our desired inputs
-	const inputKeyboard = await createInputById(INPUT_TYPES.KEYBOARD, options)
-	// FIXME: make MIDI and Gamepad devices work independently as Inputs
-	// by ensuring that the connection and disconnection events are monitored
-	const inputGamePad = await createInputById(INPUT_TYPES.GAMEPAD, options)
-	const inputSVGKeyboard = new InputOnScreenKeyboard(options)
+    const options = {
+        now: () => timer.now
+    }
 
-	const inputs:IAudioInput[] = [ inputKeyboard, inputGamePad, inputSVGKeyboard, ...inputDevices]
+    // Re-establish inputs (the export doesn't include actual input devices)
+    const inputKeyboard = await createInputById(INPUT_TYPES.KEYBOARD, options)
+    const inputGamePad = await createInputById(INPUT_TYPES.GAMEPAD, options)
+    const inputSVGKeyboard = new InputOnScreenKeyboard(options)
 
-	const createInput = async (type, options) => {
-		const input = await createInputById(type, options)
-		if (input && autoConnect)
-		{
-			try{
-				await input.connect()
-			}catch(error){
-				console.error('Microphone Formant input failed to connect', error)
-			}			
-		}
-		inputs.push(input)
-	}
+    const inputs: IAudioInput[] = [inputKeyboard, inputGamePad, inputSVGKeyboard, ...inputDevices]
 
-	// These 3 inputs require special setup - require user click
-	if (navigator.mediaDevices && navigator.mediaDevices?.getUserMedia){
-		await createInput(INPUT_TYPES.MICROPHONE_FORMANT, options)
-	}
-	
-	// check to see if web bluetooth is available in this browser
-	if (navigator.bluetooth) {
-		await createInput(INPUT_TYPES.BLE_MIDI, options)
-	}
-	
-	// Connect to WebMIDI using options specified
-	// check to see if webMIDI is available in this browser
-	if (navigator.requestMIDIAccess) {
-		await createInput(INPUT_TYPES.WEBMIDI, options)
-	}
-	
-	// Outputs ------------------------------------------------
-	const outputOnscreenKeyboard = new OutputOnScreenKeyboard(inputSVGKeyboard.keyboard)
-	const outputs:IAudioOutput[] = [ outputOnscreenKeyboard, ...outputDevices ]
-	
-	// PolySynth - polyphonic synthesizer
-	const musicalOutput = new PolySynth(bus.audioContext)
-	musicalOutput.output.connect(outputMixer)
-	outputs.push(musicalOutput)
+    const createInput = async (type, options) => {
+        const input = await createInputById(type, options)
+        if (input && autoConnect) {
+            try {
+                await input.connect()
+            } catch (error) {
+                console.error('Input device failed to connect', error)
+            }
+        }
+        inputs.push(input)
+    }
 
-	// Notation output - displays notes on a staff
-	const outputNotation = await createOutputById(OUTPUT_TYPES.NOTATION)
-	outputs.push(outputNotation)
+    // Optional inputs that require user interaction
+    if (navigator.mediaDevices && navigator.mediaDevices?.getUserMedia) {
+        await createInput(INPUT_TYPES.MICROPHONE_FORMANT, options)
+    }
 
-	// Spectrum analyser - FFT visualization
-	const outputSpectrumAnalyser = await createOutputById(OUTPUT_TYPES.SPECTRUM_ANALYSER, { mixer: outputMixer })
-	outputs.push(outputSpectrumAnalyser)
+    if (navigator.bluetooth) {
+        await createInput(INPUT_TYPES.BLE_MIDI, options)
+    }
 
-	// Pink Trombone - vocal synthesis
-	const outputPinkTrombone = await createOutputById(OUTPUT_TYPES.PINK_TROMBONE)
-	outputs.push(outputPinkTrombone)
+    if (navigator.requestMIDIAccess) {
+        await createInput(INPUT_TYPES.WEBMIDI, options)
+    }
 
-	// Speech synthesis - sing note names
-	if (typeof window !== "undefined" && !!window.speechSynthesis) {
-		const outputSpeech = await createOutputById(OUTPUT_TYPES.SPEECH_SYNTHESIS)
-		outputs.push(outputSpeech)
-	}
+    // Re-establish outputs
+    const outputOnscreenKeyboard = new OutputOnScreenKeyboard(inputSVGKeyboard.keyboard)
+    const outputs: IAudioOutput[] = [outputOnscreenKeyboard, ...outputDevices]
 
-	// Vibrator - haptic feedback
-	if (typeof navigator !== "undefined" && (!!navigator?.vibrate || !!navigator?.webkitVibrate || !!navigator?.mozVibrate)) {
-		const outputVibrator = await createOutputById(OUTPUT_TYPES.VIBRATOR)
-		outputs.push(outputVibrator)
-	}
+    // PolySynth - polyphonic synthesizer
+    const musicalOutput = new PolySynth(bus.audioContext)
+    musicalOutput.output.connect(outputMixer)
+    outputs.push(musicalOutput)
 
-	// WebMIDI output
-	if (navigator.requestMIDIAccess) {
-		const outputWebMIDIDevice = await createOutputById(OUTPUT_TYPES.WEBMIDI)
-		outputs.push(outputWebMIDIDevice)
-	}
+    // Notation output - displays notes on a staff
+    const outputNotation = await createOutputById(OUTPUT_TYPES.NOTATION)
+    outputs.push(outputNotation)
 
-	// Bluetooth MIDI output
-	if (navigator.bluetooth) {
-		const outputBluetooth = await createOutputById(OUTPUT_TYPES.BLE_MIDI)
-		outputs.push(outputBluetooth)
-	}
+    // Spectrum analyser - FFT visualization
+    const outputSpectrumAnalyser = await createOutputById(OUTPUT_TYPES.SPECTRUM_ANALYSER, { mixer: outputMixer })
+    outputs.push(outputSpectrumAnalyser)
 
-	// Console output - DEV mode only
-	if (import.meta.env.DEV) {
-		const outputConsole = await createOutputById(OUTPUT_TYPES.CONSOLE)
-		outputs.push(outputConsole)
-	}
+    // Pink Trombone - vocal synthesis
+    const outputPinkTrombone = await createOutputById(OUTPUT_TYPES.PINK_TROMBONE)
+    outputs.push(outputPinkTrombone)
 
-	chain.addInputs(inputs)
-	chain.addOutputs(outputs)
-	return chain
+    // Speech synthesis - sing note names
+    if (typeof window !== "undefined" && !!window.speechSynthesis) {
+        const outputSpeech = await createOutputById(OUTPUT_TYPES.SPEECH_SYNTHESIS)
+        outputs.push(outputSpeech)
+    }
+
+    // Vibrator - haptic feedback
+    if (typeof navigator !== "undefined" && (!!navigator?.vibrate || !!navigator?.webkitVibrate || !!navigator?.mozVibrate)) {
+        const outputVibrator = await createOutputById(OUTPUT_TYPES.VIBRATOR)
+        outputs.push(outputVibrator)
+    }
+
+    // WebMIDI output
+    if (navigator.requestMIDIAccess) {
+        const outputWebMIDIDevice = await createOutputById(OUTPUT_TYPES.WEBMIDI)
+        outputs.push(outputWebMIDIDevice)
+    }
+
+    // Bluetooth MIDI output
+    if (navigator.bluetooth) {
+        const outputBluetooth = await createOutputById(OUTPUT_TYPES.BLE_MIDI)
+        outputs.push(outputBluetooth)
+    }
+
+    // Console output - DEV mode only
+    if (import.meta.env.DEV) {
+        const outputConsole = await createOutputById(OUTPUT_TYPES.CONSOLE)
+        outputs.push(outputConsole)
+    }
+
+    // Add all inputs and outputs to the restored chain
+    chain.addInputs(inputs)
+    chain.addOutputs(outputs)
+
+    console.info('IOChain restored from export string with inputs and outputs re-established')
+    return chain
+}
+
+/**
+* Create a IOChain that connects a series of inputs
+* through a transformerManager into an OutputManager
+* @returns 
+*/
+const createDefaultInputOutputChain = async (outputMixer: GainNode, inputDevices: IAudioInput[] = [], outputDevices: IAudioOutput[] = [], autoConnect: boolean = false) => {
+
+    const chain = new IOChain(timer)
+
+    const options = {
+        now: () => timer.now
+    }
+
+    // Create our desired inputs
+    const inputKeyboard = await createInputById(INPUT_TYPES.KEYBOARD, options)
+    // FIXME: make MIDI and Gamepad devices work independently as Inputs
+    // by ensuring that the connection and disconnection events are monitored
+    const inputGamePad = await createInputById(INPUT_TYPES.GAMEPAD, options)
+    const inputSVGKeyboard = new InputOnScreenKeyboard(options)
+
+    const inputs: IAudioInput[] = [inputKeyboard, inputGamePad, inputSVGKeyboard, ...inputDevices]
+
+    const createInput = async (type, options) => {
+        const input = await createInputById(type, options)
+        if (input && autoConnect) {
+            try {
+                await input.connect()
+            } catch (error) {
+                console.error('Microphone Formant input failed to connect', error)
+            }
+        }
+        inputs.push(input)
+    }
+
+    // These 3 inputs require special setup - require user click
+    if (navigator.mediaDevices && navigator.mediaDevices?.getUserMedia) {
+        await createInput(INPUT_TYPES.MICROPHONE_FORMANT, options)
+    }
+
+    // check to see if web bluetooth is available in this browser
+    if (navigator.bluetooth) {
+        await createInput(INPUT_TYPES.BLE_MIDI, options)
+    }
+
+    // Connect to WebMIDI using options specified
+    // check to see if webMIDI is available in this browser
+    if (navigator.requestMIDIAccess) {
+        await createInput(INPUT_TYPES.WEBMIDI, options)
+    }
+
+    // Outputs ------------------------------------------------
+    const outputOnscreenKeyboard = new OutputOnScreenKeyboard(inputSVGKeyboard.keyboard)
+    const outputs: IAudioOutput[] = [outputOnscreenKeyboard, ...outputDevices]
+
+    // PolySynth - polyphonic synthesizer
+    const musicalOutput = new PolySynth(bus.audioContext)
+    musicalOutput.output.connect(outputMixer)
+    outputs.push(musicalOutput)
+
+    // Notation output - displays notes on a staff
+    const outputNotation = await createOutputById(OUTPUT_TYPES.NOTATION)
+    outputs.push(outputNotation)
+
+    // Spectrum analyser - FFT visualization
+    const outputSpectrumAnalyser = await createOutputById(OUTPUT_TYPES.SPECTRUM_ANALYSER, { mixer: outputMixer })
+    outputs.push(outputSpectrumAnalyser)
+
+    // Pink Trombone - vocal synthesis
+    const outputPinkTrombone = await createOutputById(OUTPUT_TYPES.PINK_TROMBONE)
+    outputs.push(outputPinkTrombone)
+
+    // Speech synthesis - sing note names
+    if (typeof window !== "undefined" && !!window.speechSynthesis) {
+        const outputSpeech = await createOutputById(OUTPUT_TYPES.SPEECH_SYNTHESIS)
+        outputs.push(outputSpeech)
+    }
+
+    // Vibrator - haptic feedback
+    if (typeof navigator !== "undefined" && (!!navigator?.vibrate || !!navigator?.webkitVibrate || !!navigator?.mozVibrate)) {
+        const outputVibrator = await createOutputById(OUTPUT_TYPES.VIBRATOR)
+        outputs.push(outputVibrator)
+    }
+
+    // WebMIDI output
+    if (navigator.requestMIDIAccess) {
+        const outputWebMIDIDevice = await createOutputById(OUTPUT_TYPES.WEBMIDI)
+        outputs.push(outputWebMIDIDevice)
+    }
+
+    // Bluetooth MIDI output
+    if (navigator.bluetooth) {
+        const outputBluetooth = await createOutputById(OUTPUT_TYPES.BLE_MIDI)
+        outputs.push(outputBluetooth)
+    }
+
+    // Console output - DEV mode only
+    if (import.meta.env.DEV) {
+        const outputConsole = await createOutputById(OUTPUT_TYPES.CONSOLE)
+        outputs.push(outputConsole)
+    }
+
+    chain.addInputs(inputs)
+    chain.addOutputs(outputs)
+    return chain
 }
 
 /**
  * Create the UI and front end
  * TODO: Condense and optimise
  */
-const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number=100 ) => {
+const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number = 100) => {
 
-	// const keyboard:SVGKeyboard = new SVGKeyboard(ALL_KEYBOARD_NOTES, onNoteOn, onNoteOff)
-    const frontEnd = new UI( ALL_KEYBOARD_NOTES )
-    frontEnd.setTempo( timer.BPM )
-	frontEnd.setVolume( initialVolumePercent )
-	// frontEnd.setUIKeyboard( keyboard )
+    // const keyboard:SVGKeyboard = new SVGKeyboard(ALL_KEYBOARD_NOTES, onNoteOn, onNoteOff)
+    const frontEnd = new UI(ALL_KEYBOARD_NOTES)
+    frontEnd.setTempo(timer.BPM)
+    frontEnd.setVolume(initialVolumePercent)
+    // frontEnd.setUIKeyboard( keyboard )
 
-	// Panic button  - kill all playing notes
+    // Panic button  - kill all playing notes
     frontEnd.whenKillSwitchRequestedRun(async () => {
         console.info('[Kill Switch] All notes off requested')
-		chains.forEach( chain => {
+        chains.forEach(chain => {
             chain.allNotesOff()
-		})
+        })
     })
 
-	// Reset Recorder - kill all played notes
+    // Reset Recorder - kill all played notes
     frontEnd.whenResetRequestedRun(async () => {
-		recorder.clear()
+        recorder.clear()
         timer.resetTimer()
         if (songVisualiser) {
             songVisualiser.reset()
         }
     })
-	
-	// FIXME: Random timbre button
+
+    // FIXME: Random timbre button
     // ui.whenRandomTimbreRequestedRun(e => synthesizer.setRandomTimbre())
-   
-	frontEnd.whenTempoChangesRun((tempo: number) => {
+
+    frontEnd.whenTempoChangesRun((tempo: number) => {
         timer.BPM = tempo
         state.set('tempo', tempo)
     })
 
-	frontEnd.whenTempoUpRequestedRun(() => {
-		const newTempo = Math.min(303, timer.BPM + 1)
-		timer.BPM = newTempo
-		frontEnd.setTempo(newTempo)
-		state.set('tempo', newTempo)
-	})
+    frontEnd.whenTempoUpRequestedRun(() => {
+        const newTempo = Math.min(303, timer.BPM + 1)
+        timer.BPM = newTempo
+        frontEnd.setTempo(newTempo)
+        state.set('tempo', newTempo)
+    })
 
-	frontEnd.whenTempoDownRequestedRun(() => {
-		const newTempo = Math.max(10, timer.BPM - 1)
-		timer.BPM = newTempo
-		frontEnd.setTempo(newTempo)
-		state.set('tempo', newTempo)
-	})
+    frontEnd.whenTempoDownRequestedRun(() => {
+        const newTempo = Math.max(10, timer.BPM - 1)
+        timer.BPM = newTempo
+        frontEnd.setTempo(newTempo)
+        state.set('tempo', newTempo)
+    })
 
-    frontEnd.whenVolumeChangesRun((volume: number) =>{
-		mixer.gain.value = (volume / 100) * 0.5
- 		state.set('volume', volume)
-	})
+    frontEnd.whenVolumeChangesRun((volume: number) => {
+        mixer.gain.value = (volume / 100) * 0.5
+        state.set('volume', volume)
+    })
 
-	frontEnd.whenVolumeUpRequestedRun(() => {
-		const volumeElement = frontEnd.elementVolume as HTMLInputElement
-		const currentVolume = parseInt(volumeElement.value, 10)
-		const newVolume = Math.min(100, currentVolume + 5)
-		volumeElement.value = String(newVolume)
-		mixer.gain.value = (newVolume / 100) * 0.5
-		if (frontEnd.elementVolumeOutput) frontEnd.elementVolumeOutput.textContent = String(newVolume)
-		state.set('volume', newVolume)
-	})
+    frontEnd.whenVolumeUpRequestedRun(() => {
+        const volumeElement = frontEnd.elementVolume as HTMLInputElement
+        const currentVolume = parseInt(volumeElement.value, 10)
+        const newVolume = Math.min(100, currentVolume + 5)
+        volumeElement.value = String(newVolume)
+        mixer.gain.value = (newVolume / 100) * 0.5
+        if (frontEnd.elementVolumeOutput) frontEnd.elementVolumeOutput.textContent = String(newVolume)
+        state.set('volume', newVolume)
+    })
 
-	frontEnd.whenVolumeDownRequestedRun(() => {
-		const volumeElement = frontEnd.elementVolume as HTMLInputElement
-		const currentVolume = parseInt(volumeElement.value, 10)
-		const newVolume = Math.max(0, currentVolume - 5)
-		volumeElement.value = String(newVolume)
-		mixer.gain.value = (newVolume / 100) * 0.5
-		if (frontEnd.elementVolumeOutput) frontEnd.elementVolumeOutput.textContent = String(newVolume)
-		state.set('volume', newVolume)
-	})
+    frontEnd.whenVolumeDownRequestedRun(() => {
+        const volumeElement = frontEnd.elementVolume as HTMLInputElement
+        const currentVolume = parseInt(volumeElement.value, 10)
+        const newVolume = Math.max(0, currentVolume - 5)
+        volumeElement.value = String(newVolume)
+        mixer.gain.value = (newVolume / 100) * 0.5
+        if (frontEnd.elementVolumeOutput) frontEnd.elementVolumeOutput.textContent = String(newVolume)
+        state.set('volume', newVolume)
+    })
 
     frontEnd.whenMIDIFileExportRequestedRun(async () => {
         const blob = await createMIDIFileFromAudioEventRecording(recorder, timer)
@@ -335,8 +450,8 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number=
         }
     })
 
-	// Import file from device and interpret
-	frontEnd.whenFileImportRequestedRun(async (file: File) => {
+    // Import file from device and interpret
+    frontEnd.whenFileImportRequestedRun(async (file: File) => {
         try {
             const fileType = file.name.split('.').pop()?.toUpperCase() || 'file'
             frontEnd.showExportOverlay(`Loading ${fileType} file...`)
@@ -345,7 +460,7 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number=
             chains[0].addCommandToFuture(commands, timer, true)
             console.info(`${fileType} file loaded successfully:`, file.name, { commands, noteCount })
             // FIXME: This needs to alter depending on the type of file imported
-			frontEnd.showInfoDialog("File Loaded", `Successfully loaded ${file.name} with ${noteCount} notes`)
+            frontEnd.showInfoDialog("File Loaded", `Successfully loaded ${file.name} with ${noteCount} notes`)
         } catch (error) {
             console.error("Error loading file from import:", error)
             frontEnd.showError("Failed to load file", error instanceof Error ? error.message : String(error))
@@ -359,22 +474,22 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number=
             const fileType = file.name.split('.').pop()?.toUpperCase() || 'file'
             frontEnd.showExportOverlay(`Found ${fileType} File`)
             console.info(`Loading ${fileType} file from drop:`, file.name)
-			const { commands, noteCount } = await importFile(file)
-			chains[0].addCommandToFuture(commands, timer, true)
-           
+            const { commands, noteCount } = await importFile(file)
+            chains[0].addCommandToFuture(commands, timer, true)
+
         } catch (error) {
             console.error("Error loading file from drop:", error)
             frontEnd.showError("Failed to load file", error instanceof Error ? error.message : String(error))
-       	} finally{
-			frontEnd.hideExportOverlay()
-		}
+        } finally {
+            frontEnd.hideExportOverlay()
+        }
     })
 
-	// Exports --------------------------------------------------
+    // Exports --------------------------------------------------
     frontEnd.whenExportMenuRequestedRun(() => {
         console.info("Export menu opened")
     })
-	frontEnd.whenAudioToolExportRequestedRun(async () => {
+    frontEnd.whenAudioToolExportRequestedRun(async () => {
         const output = await createAudioToolProjectFromAudioEventRecording(recorder, timer)
         console.info("Exporting Data to AudioTool", { recorder, output })
         frontEnd.setExportOverlayText("Open this project in AudioTool")
@@ -393,7 +508,7 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number=
         console.info("Exporting Data to .dawProject", { recorder, blob })
     })
 
-	// TODO: Global scale?
+    // TODO: Global scale?
     // frontEnd.whenNewScaleIsSelected( (scaleNName:string, select:HTMLElement ) => {
     //     console.log("New scale selected:", scaleNName)
     //     // state.set( scaleNName, true )
@@ -408,11 +523,11 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number=
     //     synthesizer.setRandomTimbre()
     // })
 
-    frontEnd.addSongVisualser(recorder.exportData()).then( e=>{
-		console.log("Song visualiser added", e)
-	})
+    frontEnd.addSongVisualser(recorder.exportData()).then(e => {
+        console.log("Song visualiser added", e)
+    })
 
-	return frontEnd
+    return frontEnd
 }
 
 /**
@@ -422,45 +537,45 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number=
  * @param onEveryTimingTick 
  * @returns 
  */
-const initialiseApplication = async ( onEveryTimingTick:Function, autoConnect:boolean=false ) => {
+const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: boolean = false) => {
 
     // Get state from session and URL & update GUI
     const elementMain = document.querySelector('main')
     state = State.getInstance(elementMain)
-    state.addEventListener((event:Event) => {
+    state.addEventListener((event: Event) => {
         const bookmark = state.asURI
         console.info(bookmark, "State Changed", { event, bookmark })
-		// update onscreen QR code
+        // update onscreen QR code
     })
     //state.setDefaults(defaultOptions)
     state.loadFromLocation(DEFAULT_OPTIONS)
     state.updateLocation()
 
-	// Volume initialization (needed before UI setup)
-	const volumeState = state.get('volume')
-	const initialVolumePercent:number = volumeState ? parseFloat(volumeState as string) : 50
-	const initialVolume:number = Math.max(0, Math.min(1, initialVolumePercent / 100))
+    // Volume initialization (needed before UI setup)
+    const volumeState = state.get('volume')
+    const initialVolumePercent: number = volumeState ? parseFloat(volumeState as string) : 50
+    const initialVolume: number = Math.max(0, Math.min(1, initialVolumePercent / 100))
 
-	bus = new AudioBus( initialVolume )
+    bus = new AudioBus(initialVolume)
 
-	timer = new AudioTimer({ audioContext: bus.audioContext, type:bus.hasAudioWorklets ? netronome.TIMER_TYPES.AUDIO_WORKLET : netronome.TIMER_TYPES.AUDIO_CONTEXT })
-	ui = await initialiseFrontEnd( bus.mixer, initialVolumePercent )
-	 
-	// IO ----------------------------------------------
-	const abortController = new AbortController()
-	const chain = await createDefaultInputOutputChain( bus.mixer, [], [ui], autoConnect )
-	//const keyboardInput:InputOnScreenKeyboard = chain.getInput( ONSCREEN_KEYBOARD_INPUT_ID ) as InputOnScreenKeyboard
+    timer = new AudioTimer({ audioContext: bus.audioContext, type: bus.hasAudioWorklets ? netronome.TIMER_TYPES.AUDIO_WORKLET : netronome.TIMER_TYPES.AUDIO_CONTEXT })
+    ui = await initialiseFrontEnd(bus.mixer, initialVolumePercent)
 
-	// FIXME: This should only occur later
-	// listen to the events dispatched from the manager
-	// chain.addEventListener(Commands.OUTPUT_EVENT, (event:InputAudioEvent) => {
-	chain.addEventListener(Commands.INPUT_EVENT, (event:InputAudioEvent) => {
-		
-		const command = event.command
-		//console.info( "Index:Chain updated",  command.type, Commands.INPUT_EVENT, command )
-		switch ( command.type ) {
-			 case Commands.PLAYBACK_TOGGLE:
-			 	ui.setPlaying(timer.isRunning)
+    // IO ----------------------------------------------
+    const abortController = new AbortController()
+    const chain = await createDefaultInputOutputChain(bus.mixer, [], [ui], autoConnect)
+    //const keyboardInput:InputOnScreenKeyboard = chain.getInput( ONSCREEN_KEYBOARD_INPUT_ID ) as InputOnScreenKeyboard
+
+    // FIXME: This should only occur later
+    // listen to the events dispatched from the manager
+    // chain.addEventListener(Commands.OUTPUT_EVENT, (event:InputAudioEvent) => {
+    chain.addEventListener(Commands.INPUT_EVENT, (event: InputAudioEvent) => {
+
+        const command = event.command
+        //console.info( "Index:Chain updated",  command.type, Commands.INPUT_EVENT, command )
+        switch (command.type) {
+            case Commands.PLAYBACK_TOGGLE:
+                ui.setPlaying(timer.isRunning)
                 break
 
             case Commands.PLAYBACK_START:
@@ -490,35 +605,33 @@ const initialiseApplication = async ( onEveryTimingTick:Function, autoConnect:bo
                 break
 
             case Commands.NOTE_ON:
-				if (!chain.isQuantised)
-				{
-					timer.retrigger()
-				}
+                if (!chain.isQuantised) {
+                    timer.retrigger()
+                }
                 break
 
             case Commands.NOTE_OFF:
-				if (!chain.isQuantised)
-				{
-					timer.retrigger()
-				}
+                if (!chain.isQuantised) {
+                    timer.retrigger()
+                }
                 break
-		}
+        }
 
-	}, { signal: abortController.signal })
+    }, { signal: abortController.signal })
 
-	chains.push(chain)
+    chains.push(chain)
 
-	// expose to global
-	// FIXME: this will only ever work with ONE chain :(
-	window.chain = chain
+    // expose to global
+    // FIXME: this will only ever work with ONE chain :(
+    window.chain = chain
     createGraph('graph')
 
     // start the clock going
-	const tempo = parseFloat( state.get('tempo') ?? 99 )
-	timer.setBPM(tempo)
+    const tempo = parseFloat(state.get('tempo') ?? 99)
+    timer.setBPM(tempo)
     timer.start(onEveryTimingTick)
 
-	// Update UI - this will check all the inputs according to our state	
+    // Update UI - this will check all the inputs according to our state	
     state.updateFrontEnd()
 
     return state
@@ -531,7 +644,7 @@ const initialiseApplication = async ( onEveryTimingTick:Function, autoConnect:bo
  * Handles scheduling commands and converting to events
  * @param values 
  */
-const onTick = (values:Record<string, any>) => {
+const onTick = (values: Record<string, any>) => {
 
     const {
         divisionsElapsed, barsElapsed, timePassed,
@@ -539,27 +652,26 @@ const onTick = (values:Record<string, any>) => {
         elapsed, expected, drift, level, intervals, lag
     } = values
 
-	const now = timer.now
+    const now = timer.now
 
-	// Loop through all Chains and process events
-	chains.forEach( chain => {
-			
-		// Always process the queue, with or without quantisation
-		const activeCommands:IAudioCommand[] = chain.updateTimeForCommandQueue( now, divisionsElapsed, state )
+    // Loop through all Chains and process events
+    chains.forEach(chain => {
 
-		// Act upon any command that has now been executed
-		if (activeCommands && activeCommands.length > 0)
-		{
-			const events:AudioEvent[] = IOChain.convertAudioCommandsToAudioEvents(activeCommands, now)
-			const allEvents = recorder.addEvents(events)
-			const triggers = chain.triggerAudioCommandsOnDevice(events)	// send to Outputs!
-			// console.info("onTick", {activeCommands, events, recorded:allEvents, triggers})
-		}else{
-			//console.info("onTick", {activeCommands})
-		}
-	})
+        // Always process the queue, with or without quantisation
+        const activeCommands: IAudioCommand[] = chain.updateTimeForCommandQueue(now, divisionsElapsed, state)
 
-	// update the UI clock if possible
+        // Act upon any command that has now been executed
+        if (activeCommands && activeCommands.length > 0) {
+            const events: AudioEvent[] = IOChain.convertAudioCommandsToAudioEvents(activeCommands, now)
+            const allEvents = recorder.addEvents(events)
+            const triggers = chain.triggerAudioCommandsOnDevice(events)	// send to Outputs!
+            // console.info("onTick", {activeCommands, events, recorded:allEvents, triggers})
+        } else {
+            //console.info("onTick", {activeCommands})
+        }
+    })
+
+    // update the UI clock if possible
     ui.updateClock(values, recorder.quantity)
 }
 
@@ -568,7 +680,7 @@ const onTick = (values:Record<string, any>) => {
  * This is the main initialisation routine
  * @param event 
  */
-const onAudioContextAvailable = async (event:Event) => await initialiseApplication(onTick)
+const onAudioContextAvailable = async (event: Event) => await initialiseApplication(onTick)
 
 // Background data load from any stored sessions
 // If we have OPFS backend, initialize and load any previously recorded data
