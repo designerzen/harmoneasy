@@ -26,13 +26,14 @@ import { renderVexFlowToContainer, createVexFlowHTMLFromAudioEventRecording, sav
 import { createOpenDAWProjectFromAudioEventRecording } from 'opendaw'
 import { createDawProjectFromAudioEventRecording, saveDawProjectToLocalFileSystem } from 'audiobus/exporters/adapter-dawproject.ts'
 
+// Timing
+import { AudioTimer } from 'netronome'
+
 // Audio
 import AudioBus from './audio.ts'
-
 import AudioEvent from 'audiobus/audio-event.ts'
 import AudioEventRecorder from 'audiobus/audio-event-recorder.ts'
 import * as Commands from 'audiobus/commands'
-import * as netronome from 'netronome'
 
 // IAudioInputs
 import IOChain from 'audiobus/io/IO-chain.ts'
@@ -105,106 +106,20 @@ const importFile = async (file: File): Promise<{ commands: IAudioCommand[], note
 * @returns IOChain with restored state and newly connected devices
 */
 const importStringInputOutputChain = async (exportedChainString: string, outputMixer: GainNode, inputDevices: IAudioInput[] = [], outputDevices: IAudioOutput[] = [], autoConnect: boolean = false): Promise<IOChain> => {
-    // Create a new chain and restore its state from the exported string
-    const chain = new IOChain(timer)
+  
+    const options = {
+        now: () => timer.now
+    }
+	
+	// Create a new chain and restore its state from the exported string
+	const chain = new IOChain(timer, options)
 
     try {
-        chain.importString(exportedChainString)
+        chain.importString(exportedChainString, options)
     } catch (error) {
         console.error('Failed to restore chain from exported string:', error)
         throw new Error(`Invalid chain export string: ${error instanceof Error ? error.message : String(error)}`)
     }
-
-    const options = {
-        now: () => timer.now
-    }
-
-    // Re-establish inputs (the export doesn't include actual input devices)
-    const inputKeyboard = await createInputById(INPUT_TYPES.KEYBOARD, options)
-    const inputGamePad = await createInputById(INPUT_TYPES.GAMEPAD, options)
-    const inputSVGKeyboard = new InputOnScreenKeyboard(options)
-
-    const inputs: IAudioInput[] = [inputKeyboard, inputGamePad, inputSVGKeyboard, ...inputDevices]
-
-    const createInput = async (type, options) => {
-        const input = await createInputById(type, options)
-        if (input && autoConnect) {
-            try {
-                await input.connect()
-            } catch (error) {
-                console.error('Input device failed to connect', error)
-            }
-        }
-        inputs.push(input)
-    }
-
-    // Optional inputs that require user interaction
-    if (navigator.mediaDevices && navigator.mediaDevices?.getUserMedia) {
-        await createInput(INPUT_TYPES.MICROPHONE_FORMANT, options)
-    }
-
-    if (navigator.bluetooth) {
-        await createInput(INPUT_TYPES.BLE_MIDI, options)
-    }
-
-    if (navigator.requestMIDIAccess) {
-        await createInput(INPUT_TYPES.WEBMIDI, options)
-    }
-
-    // Re-establish outputs
-    const outputOnscreenKeyboard = new OutputOnScreenKeyboard(inputSVGKeyboard.keyboard)
-    const outputs: IAudioOutput[] = [outputOnscreenKeyboard, ...outputDevices]
-
-    // PolySynth - polyphonic synthesizer
-    const musicalOutput = new PolySynth(bus.audioContext)
-    musicalOutput.output.connect(outputMixer)
-    outputs.push(musicalOutput)
-
-    // Notation output - displays notes on a staff
-    const outputNotation = await createOutputById(OUTPUT_TYPES.NOTATION)
-    outputs.push(outputNotation)
-
-    // Spectrum analyser - FFT visualization
-    const outputSpectrumAnalyser = await createOutputById(OUTPUT_TYPES.SPECTRUM_ANALYSER, { mixer: outputMixer })
-    outputs.push(outputSpectrumAnalyser)
-
-    // Pink Trombone - vocal synthesis
-    const outputPinkTrombone = await createOutputById(OUTPUT_TYPES.PINK_TROMBONE)
-    outputs.push(outputPinkTrombone)
-
-    // Speech synthesis - sing note names
-    if (typeof window !== "undefined" && !!window.speechSynthesis) {
-        const outputSpeech = await createOutputById(OUTPUT_TYPES.SPEECH_SYNTHESIS)
-        outputs.push(outputSpeech)
-    }
-
-    // Vibrator - haptic feedback
-    if (typeof navigator !== "undefined" && (!!navigator?.vibrate || !!navigator?.webkitVibrate || !!navigator?.mozVibrate)) {
-        const outputVibrator = await createOutputById(OUTPUT_TYPES.VIBRATOR)
-        outputs.push(outputVibrator)
-    }
-
-    // WebMIDI output
-    if (navigator.requestMIDIAccess) {
-        const outputWebMIDIDevice = await createOutputById(OUTPUT_TYPES.WEBMIDI)
-        outputs.push(outputWebMIDIDevice)
-    }
-
-    // Bluetooth MIDI output
-    if (navigator.bluetooth) {
-        const outputBluetooth = await createOutputById(OUTPUT_TYPES.BLE_MIDI)
-        outputs.push(outputBluetooth)
-    }
-
-    // Console output - DEV mode only
-    if (import.meta.env.DEV) {
-        const outputConsole = await createOutputById(OUTPUT_TYPES.CONSOLE)
-        outputs.push(outputConsole)
-    }
-
-    // Add all inputs and outputs to the restored chain
-    chain.addInputs(inputs)
-    chain.addOutputs(outputs)
 
     console.info('IOChain restored from export string with inputs and outputs re-established')
     return chain
@@ -220,7 +135,8 @@ const createDefaultInputOutputChain = async (outputMixer: GainNode, inputDevices
     const chain = new IOChain(timer)
 
     const options = {
-        now: () => timer.now
+        now: () => timer.now,
+        audioContext: bus.audioContext
     }
 
     // Create our desired inputs
@@ -232,8 +148,8 @@ const createDefaultInputOutputChain = async (outputMixer: GainNode, inputDevices
 
     const inputs: IAudioInput[] = [inputKeyboard, inputGamePad, inputSVGKeyboard, ...inputDevices]
 
-    const createInput = async (type, options) => {
-        const input = await createInputById(type, options)
+    const createInput = async (type, inputOptions) => {
+        const input = await createInputById(type, inputOptions)
         if (input && autoConnect) {
             try {
                 await input.connect()
@@ -278,7 +194,7 @@ const createDefaultInputOutputChain = async (outputMixer: GainNode, inputDevices
     outputs.push(outputSpectrumAnalyser)
 
     // Pink Trombone - vocal synthesis
-    const outputPinkTrombone = await createOutputById(OUTPUT_TYPES.PINK_TROMBONE)
+    const outputPinkTrombone = await createOutputById(OUTPUT_TYPES.PINK_TROMBONE, { audioContext: bus.audioContext })
     outputs.push(outputPinkTrombone)
 
     // Speech synthesis - sing note names
@@ -563,7 +479,26 @@ const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: b
 
     // IO ----------------------------------------------
     const abortController = new AbortController()
-    const chain = await createDefaultInputOutputChain(bus.mixer, [], [ui], autoConnect)
+
+    // Check if there's a saved IO configuration in state
+    const savedIOState = state.get('io') as string | null
+    let chain: IOChain
+
+    if (savedIOState) {
+        // Restore from saved IO state
+        try {
+            chain = await importStringInputOutputChain(savedIOState, bus.mixer, [], [ui], autoConnect)
+            console.info('IOChain restored from saved state')
+        } catch (error) {
+            console.error('Failed to restore IO chain from saved state:', error)
+            // Fall back to default if restoration fails
+            chain = await createDefaultInputOutputChain(bus.mixer, [], [ui], autoConnect)
+        }
+    } else {
+        // Create default chain
+        chain = await createDefaultInputOutputChain(bus.mixer, [], [ui], autoConnect)
+    }
+
     //const keyboardInput:InputOnScreenKeyboard = chain.getInput( ONSCREEN_KEYBOARD_INPUT_ID ) as InputOnScreenKeyboard
 
     // FIXME: This should only occur later
@@ -624,6 +559,17 @@ const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: b
     // expose to global
     // FIXME: this will only ever work with ONE chain :(
     window.chain = chain
+
+    // Save IO configuration to state for persistence
+    try {
+        const ioExport = chain.exportString()
+        state.set('io', ioExport)
+        state.updateLocation()
+        console.info('IO chain configuration saved to state')
+    } catch (error) {
+        console.error('Failed to save IO chain configuration:', error)
+    }
+
     createGraph('graph')
 
     // start the clock going
