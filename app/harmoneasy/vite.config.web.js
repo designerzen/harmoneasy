@@ -30,8 +30,7 @@ export default defineConfig({
       'pink-trombone': path.resolve(__dirname, '../../packages/pink-trombone'),
       'midi-ble': path.resolve(__dirname, '../../packages/midi-ble'),
       'pitfalls': path.resolve(__dirname, '../../packages/pitfalls'),
-      'flodjs': path.resolve(__dirname, '../../packages/flodjs'),
-      'netronome': path.resolve(__dirname, '../../packages/netronome')
+      'flodjs': path.resolve(__dirname, '../../packages/flodjs')
     }
   }
 
