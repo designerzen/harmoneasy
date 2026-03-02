@@ -31,7 +31,7 @@ export default defineConfig({
       'midi-ble': path.resolve(__dirname, '../../packages/midi-ble'),
       'pitfalls': path.resolve(__dirname, '../../packages/pitfalls'),
       'flodjs': path.resolve(__dirname, '../../packages/flodjs'),
-      'netronome': path.resolve(__dirname, '../../packages/netronome/index.ts')
+      'netronome': path.resolve(__dirname, '../../packages/netronome')
     }
   }
 

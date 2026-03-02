@@ -5,6 +5,8 @@ export default class AudioBus extends EventTarget {
 	#audioContext:AudioContext
 	#mixer:GainNode
 	#reverb:ConvolverNode
+	
+	loaded:Promise<void>
 
 	get audioContext():AudioContext {
 		return this.#audioContext
@@ -18,7 +20,7 @@ export default class AudioBus extends EventTarget {
 		return this.#reverb
 	}
 
-	get  hasAudioWorklets(){
+	get hasAudioWorklets(){
 		return !!this.#audioContext.audioWorklet
 	}
 
@@ -29,7 +31,9 @@ export default class AudioBus extends EventTarget {
 	constructor( initialVolume:number=1 ) {
 		super()
 
-		const context = new AudioContext()
+		// Create AudioContext - only called after user interaction
+		const context = new (window.AudioContext || (window as any).webkitAudioContext)()
+		
 		const mixer: GainNode = context.createGain()
 		
 		const reverb = context.createConvolver()
@@ -43,5 +47,20 @@ export default class AudioBus extends EventTarget {
 
 		mixer.connect(reverb)
 		reverb.connect( context.destination)
+
+		// Resume if suspended (required by browser autoplay policy)
+		// This must complete before AudioWorklet can be used
+		this.loaded = this.resumeContext()
+	}
+
+	private async resumeContext(): Promise<void> {
+		if (this.#audioContext.state === 'suspended') {
+			try {
+				await this.#audioContext.resume()
+				console.info('AudioContext resumed')
+			} catch (err) {
+				console.warn('Failed to resume AudioContext:', err)
+			}
+		}
 	}
 }

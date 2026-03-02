@@ -161,7 +161,7 @@ function FlowComponent() {
 	const selectedNode = nodesWithFullscreen.find(n => n.id === fullscreenNodeId)
 
 	return (
-		<div className={`graph-container ${isFullscreenActive ? 'fullscreen-mode' : ''}`}>
+		<>
 			{!isFullscreenActive && (
 				<>
 					<aside className="transformers-drawer">
@@ -205,7 +205,7 @@ function FlowComponent() {
 			>
 				{/* <Controls /> */}
 			</ReactFlow>
-		</div>
+		</>
 	)
 }
 

@@ -27,7 +27,7 @@ import { createOpenDAWProjectFromAudioEventRecording } from 'opendaw'
 import { createDawProjectFromAudioEventRecording, saveDawProjectToLocalFileSystem } from 'audiobus/exporters/adapter-dawproject.ts'
 
 // Timing
-import { AudioTimer } from 'netronome'
+import { AudioTimer, TIMER_TYPES } from 'netronome'
 
 // Audio
 import AudioBus from './audio.ts'
@@ -473,8 +473,12 @@ const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: b
     const initialVolume: number = Math.max(0, Math.min(1, initialVolumePercent / 100))
 
     bus = new AudioBus(initialVolume)
-
-    timer = new AudioTimer({ audioContext: bus.audioContext, type: bus.hasAudioWorklets ? netronome.TIMER_TYPES.AUDIO_WORKLET : netronome.TIMER_TYPES.AUDIO_CONTEXT })
+    
+    // Wait for AudioContext to be ready before creating timer
+    // This ensures audioWorklet is available if supported
+    await bus.waitForInitialization()
+    
+    timer = new AudioTimer({ audioContext: bus.audioContext, type: bus.hasAudioWorklets ? TIMER_TYPES.AUDIO_WORKLET : TIMER_TYPES.AUDIO_CONTEXT })
     ui = await initialiseFrontEnd(bus.mixer, initialVolumePercent)
 
     // IO ----------------------------------------------
