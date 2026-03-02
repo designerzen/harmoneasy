@@ -43,6 +43,9 @@
       ],
       "dependsOn": [
         "^build"
+      ],
+      "env": [
+        "NODE_ENV"
       ]
     },
     "build:electron": {
