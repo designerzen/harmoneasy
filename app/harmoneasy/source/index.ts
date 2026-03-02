@@ -476,9 +476,13 @@ const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: b
     
     // Wait for AudioContext to be ready before creating timer
     // This ensures audioWorklet is available if supported
-    await bus.waitForInitialization()
+    await bus.loaded
     
-    timer = new AudioTimer({ audioContext: bus.audioContext, type: bus.hasAudioWorklets ? TIMER_TYPES.AUDIO_WORKLET : TIMER_TYPES.AUDIO_CONTEXT })
+    timer = new AudioTimer(bus.audioContext, bus.hasAudioWorklets)
+    
+    // Wait for timer to initialize its worklet/worker
+    await timer.loaded
+    
     ui = await initialiseFrontEnd(bus.mixer, initialVolumePercent)
 
     // IO ----------------------------------------------
@@ -576,9 +580,8 @@ const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: b
 
     createGraph('graph')
 
-    // start the clock going
-    const tempo = parseFloat(state.get('tempo') ?? 99)
-    timer.setBPM(tempo)
+    // start the clock going 
+    timer.bpm = parseFloat(state.get('tempo') ?? 99)
     timer.start(onEveryTimingTick)
 
     // Update UI - this will check all the inputs according to our state	
