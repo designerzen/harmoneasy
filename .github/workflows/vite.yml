@@ -48,16 +48,16 @@ jobs:
       - name: Check build output
         run: |
           echo "Build step completed"
-          ls -lah dist/ || echo "dist folder not found"
+          ls -lah app/harmoneasy/dist/ || echo "dist folder not found"
 
       - name: List the build folder contents...
-        run: ls ./dist
+        run: ls -lah app/harmoneasy/dist/
 
       - name: Upload artifact
         id: deployment
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./dist
+          path: ./app/harmoneasy/dist
 
   deploy:
     # Add a dependency to the build job
