@@ -67,7 +67,7 @@ export default defineConfig({
     alias: {
       'audiobus': new URL('../../../packages/audiobus', import.meta.url).pathname,
       'audiotool': new URL('../../../packages/audiotool', import.meta.url).pathname,
-      'netronome': new URL('../../../packages/netronome', import.meta.url).pathname,
+      'netronome': new URL('../../../packages/netronome/index.ts', import.meta.url).pathname,
       'opendaw': new URL('../../../packages/openDAW', import.meta.url).pathname,
       'pink-trombone': new URL('../../../packages/pink-trombone', import.meta.url).pathname,
       'midi-ble': new URL('../../../packages/midi-ble', import.meta.url).pathname,
