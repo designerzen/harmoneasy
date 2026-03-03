@@ -78,6 +78,12 @@ HarmonEasy is a modern web application for collaborative music-making with frien
 - **Modern Browser:** Chrome 90+, Firefox 88+, Safari 14.1+ (for Web Audio support)
 - **WebMIDI Support:** Required for MIDI device input
 
+## Demo
+
+**Live Demo:** https://designerzen.github.io/harmoneasy/
+
+Try HarmonEasy directly in your browser without installing anything locally.
+
 ## Installation
 
 ```bash
