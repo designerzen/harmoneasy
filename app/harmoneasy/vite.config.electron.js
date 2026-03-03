@@ -60,6 +60,7 @@ export default defineConfig({
     environment: 'node'
   },
   resolve: {
+    conditions: ['import'],
     alias: {
       'audiobus': new URL('../../../packages/audiobus', import.meta.url).pathname,
       'audiotool': new URL('../../../packages/audiotool', import.meta.url).pathname,

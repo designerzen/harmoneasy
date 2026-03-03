@@ -23,6 +23,7 @@ export default defineConfig({
     environment: 'node'
   },
   resolve: {
+    conditions: ['browser', 'import'],
     alias: {
       'audiobus': path.resolve(__dirname, '../../packages/audiobus'),
       'audiotool': path.resolve(__dirname, '../../packages/audiotool'),
