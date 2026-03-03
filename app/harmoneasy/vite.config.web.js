@@ -11,11 +11,14 @@ export default defineConfig({
   server: {
     port: 5174
   },
+  optimizeDeps: {
+    exclude: ['netronome']
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true,
     rollupOptions: {
-      external: ['url', 'path', /\.node$/]
+      external: ['url', 'path', /\.node$/, 'netronome']
     }
   },
   test: {
@@ -27,7 +30,6 @@ export default defineConfig({
     alias: {
       'audiobus': path.resolve(__dirname, '../../packages/audiobus'),
       'audiotool': path.resolve(__dirname, '../../packages/audiotool'),
-      'netronome': path.resolve(__dirname, '../../packages/netronome'),
       'opendaw': path.resolve(__dirname, '../../packages/openDAW'),
       'pink-trombone': path.resolve(__dirname, '../../packages/pink-trombone'),
       'midi-ble': path.resolve(__dirname, '../../packages/midi-ble'),

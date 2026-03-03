@@ -35,6 +35,9 @@ export default defineConfig({
   server: {
     port: 5174 // Match the port Audiotool expects
   },
+  optimizeDeps: {
+    exclude: ['netronome']
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true,
@@ -44,7 +47,8 @@ export default defineConfig({
         'path',
         /\.node$/,  // Externalize all .node files
         'fs',       // Node.js built-ins
-        'module'    // Node.js module system
+        'module',   // Node.js module system
+        'netronome' // Pre-built workspace package
       ],
       output: {
         // Preserve external module references
@@ -64,7 +68,6 @@ export default defineConfig({
     alias: {
       'audiobus': new URL('../../../packages/audiobus', import.meta.url).pathname,
       'audiotool': new URL('../../../packages/audiotool', import.meta.url).pathname,
-      'netronome': new URL('../../../packages/netronome', import.meta.url).pathname,
       'opendaw': new URL('../../../packages/openDAW', import.meta.url).pathname,
       'pink-trombone': new URL('../../../packages/pink-trombone', import.meta.url).pathname,
       'midi-ble': new URL('../../../packages/midi-ble', import.meta.url).pathname,
@@ -74,6 +77,6 @@ export default defineConfig({
   },
   plugins: [nodeAddonPlugin],
   ssr: {
-    external: [/\.node$/, 'fs', 'path', 'module', 'url']
+    external: [/\.node$/, 'fs', 'path', 'module', 'url', 'netronome']
   }
 })
