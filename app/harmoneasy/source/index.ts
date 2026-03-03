@@ -37,33 +37,23 @@ import * as Commands from 'audiobus/commands'
 
 // IAudioInputs
 import IOChain from 'audiobus/io/IO-chain.ts'
-import InputOnScreenKeyboard, { ALL_KEYBOARD_NOTES, ONSCREEN_KEYBOARD_INPUT_ID } from 'audiobus/io/inputs/input-onscreen-keyboard.ts'
-import * as INPUT_TYPES from 'audiobus/io/inputs/input-types.ts'
-import * as OUTPUT_TYPES from 'audiobus/io/outputs/output-types.ts'
-import { createInputById, getAvailableInputFactories } from 'audiobus/io/input-factory.ts'
-import { createOutputById, getAvailableOutputFactories } from 'audiobus/io/output-factory.ts'
-
-// IAudioIn/Outputs 
-import SynthOscillator from 'audiobus/instruments/oscillators/synth-oscillator.ts'
-import PolySynth from 'audiobus/instruments/polyphonic.ts'
-import OutputOnScreenKeyboard from 'audiobus/io/outputs/output-onscreen-keyboard.ts'
 
 // Back End
 import OPFSStorage, { hasOPFS } from 'audiobus/storage/opfs-storage.ts'
 
+// Types
 import type { IAudioCommand } from 'audiobus/audio-command-interface.ts'
-import type { IAudioOutput } from 'audiobus/io/outputs/output-interface.ts'
-import type { IAudioInput } from 'audiobus/io/inputs/input-interface.ts'
 import type InputAudioEvent from 'audiobus/io/events/input-audio-event.ts'
+import IOChainManager from 'audiobus/io/IO-chain-manager.ts'
 
 const storage = hasOPFS() ? new OPFSStorage() : null
 const recorder: AudioEventRecorder = new AudioEventRecorder()
-const chains: IOChain[] = []
 let timer: any = null
 let bus: AudioBus
 let state: State
 let ui: UI
 let songVisualiser: SongVisualiser | null = null
+let ioManager: IOChainManager
 
 /**
  * Universal import handler - routes to appropriate importer based on file type
@@ -96,143 +86,6 @@ const importFile = async (file: File): Promise<{ commands: IAudioCommand[], note
 }
 
 /**
-* Restore an IOChain from a previously exported string
-* Re-establishes all inputs and outputs after restoring core state
-* @param exportedChainString URL-safe string from chain.exportString()
-* @param outputMixer GainNode for audio output
-* @param inputDevices Additional custom input devices to add
-* @param outputDevices Additional custom output devices to add
-* @param autoConnect Attempt to auto-connect hardware inputs
-* @returns IOChain with restored state and newly connected devices
-*/
-const importStringInputOutputChain = async (exportedChainString: string, outputMixer: GainNode, inputDevices: IAudioInput[] = [], outputDevices: IAudioOutput[] = [], autoConnect: boolean = false): Promise<IOChain> => {
-  
-    const options = {
-        now: () => timer.now
-    }
-	
-	// Create a new chain and restore its state from the exported string
-	const chain = new IOChain(timer, options)
-
-    try {
-        chain.importString(exportedChainString, options)
-    } catch (error) {
-        console.error('Failed to restore chain from exported string:', error)
-        throw new Error(`Invalid chain export string: ${error instanceof Error ? error.message : String(error)}`)
-    }
-
-    console.info('IOChain restored from export string with inputs and outputs re-established')
-    return chain
-}
-
-/**
-* Create a IOChain that connects a series of inputs
-* through a transformerManager into an OutputManager
-* @returns 
-*/
-const createDefaultInputOutputChain = async (outputMixer: GainNode, inputDevices: IAudioInput[] = [], outputDevices: IAudioOutput[] = [], autoConnect: boolean = false) => {
-
-    const chain = new IOChain(timer)
-
-    const options = {
-        now: () => timer.now,
-        audioContext: bus.audioContext
-    }
-
-    // Create our desired inputs
-    const inputKeyboard = await createInputById(INPUT_TYPES.KEYBOARD, options)
-    // FIXME: make MIDI and Gamepad devices work independently as Inputs
-    // by ensuring that the connection and disconnection events are monitored
-    const inputGamePad = await createInputById(INPUT_TYPES.GAMEPAD, options)
-    const inputSVGKeyboard = new InputOnScreenKeyboard(options)
-
-    const inputs: IAudioInput[] = [inputKeyboard, inputGamePad, inputSVGKeyboard, ...inputDevices]
-
-    const createInput = async (type, inputOptions) => {
-        const input = await createInputById(type, inputOptions)
-        if (input && autoConnect) {
-            try {
-                await input.connect()
-            } catch (error) {
-                console.error('Microphone Formant input failed to connect', error)
-            }
-        }
-        inputs.push(input)
-    }
-
-    // These 3 inputs require special setup - require user click
-    if (navigator.mediaDevices && navigator.mediaDevices?.getUserMedia) {
-        await createInput(INPUT_TYPES.MICROPHONE_FORMANT, options)
-    }
-
-    // check to see if web bluetooth is available in this browser
-    if (navigator.bluetooth) {
-        await createInput(INPUT_TYPES.BLE_MIDI, options)
-    }
-
-    // Connect to WebMIDI using options specified
-    // check to see if webMIDI is available in this browser
-    if (navigator.requestMIDIAccess) {
-        await createInput(INPUT_TYPES.WEBMIDI, options)
-    }
-
-    // Outputs ------------------------------------------------
-    const outputOnscreenKeyboard = new OutputOnScreenKeyboard(inputSVGKeyboard.keyboard)
-    const outputs: IAudioOutput[] = [outputOnscreenKeyboard, ...outputDevices]
-
-    // PolySynth - polyphonic synthesizer
-    const musicalOutput = new PolySynth(bus.audioContext)
-    musicalOutput.output.connect(outputMixer)
-    outputs.push(musicalOutput)
-
-    // Notation output - displays notes on a staff
-    const outputNotation = await createOutputById(OUTPUT_TYPES.NOTATION)
-    outputs.push(outputNotation)
-
-    // Spectrum analyser - FFT visualization
-    const outputSpectrumAnalyser = await createOutputById(OUTPUT_TYPES.SPECTRUM_ANALYSER, { mixer: outputMixer })
-    outputs.push(outputSpectrumAnalyser)
-
-    // Pink Trombone - vocal synthesis
-    const outputPinkTrombone = await createOutputById(OUTPUT_TYPES.PINK_TROMBONE, { audioContext: bus.audioContext })
-    outputs.push(outputPinkTrombone)
-
-    // Speech synthesis - sing note names
-    if (typeof window !== "undefined" && !!window.speechSynthesis) {
-        const outputSpeech = await createOutputById(OUTPUT_TYPES.SPEECH_SYNTHESIS)
-        outputs.push(outputSpeech)
-    }
-
-    // Vibrator - haptic feedback
-    if (typeof navigator !== "undefined" && (!!navigator?.vibrate || !!navigator?.webkitVibrate || !!navigator?.mozVibrate)) {
-        const outputVibrator = await createOutputById(OUTPUT_TYPES.VIBRATOR)
-        outputs.push(outputVibrator)
-    }
-
-    // WebMIDI output
-    if (navigator.requestMIDIAccess) {
-        const outputWebMIDIDevice = await createOutputById(OUTPUT_TYPES.WEBMIDI)
-        outputs.push(outputWebMIDIDevice)
-    }
-
-    // Bluetooth MIDI output
-    if (navigator.bluetooth) {
-        const outputBluetooth = await createOutputById(OUTPUT_TYPES.BLE_MIDI)
-        outputs.push(outputBluetooth)
-    }
-
-    // Console output - DEV mode only
-    if (import.meta.env.DEV) {
-        const outputConsole = await createOutputById(OUTPUT_TYPES.CONSOLE)
-        outputs.push(outputConsole)
-    }
-
-    chain.addInputs(inputs)
-    chain.addOutputs(outputs)
-    return chain
-}
-
-/**
  * Create the UI and front end
  * TODO: Condense and optimise
  */
@@ -247,7 +100,7 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number 
     // Panic button  - kill all playing notes
     frontEnd.whenKillSwitchRequestedRun(async () => {
         console.info('[Kill Switch] All notes off requested')
-        chains.forEach(chain => {
+        ioManager.chains.forEach(chain => {
             chain.allNotesOff()
         })
     })
@@ -373,7 +226,10 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number 
             frontEnd.showExportOverlay(`Loading ${fileType} file...`)
             console.info(`Loading ${fileType} file from import:`, file.name)
             const { commands, noteCount } = await importFile(file)
-            chains[0].addCommandToFuture(commands, timer, true)
+            const activeChain = ioManager.activeChain
+            if (activeChain) {
+                activeChain.addCommandToFuture(commands, timer, true)
+            }
             console.info(`${fileType} file loaded successfully:`, file.name, { commands, noteCount })
             // FIXME: This needs to alter depending on the type of file imported
             frontEnd.showInfoDialog("File Loaded", `Successfully loaded ${file.name} with ${noteCount} notes`)
@@ -391,7 +247,10 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number 
             frontEnd.showExportOverlay(`Found ${fileType} File`)
             console.info(`Loading ${fileType} file from drop:`, file.name)
             const { commands, noteCount } = await importFile(file)
-            chains[0].addCommandToFuture(commands, timer, true)
+            const activeChain = ioManager.activeChain
+            if (activeChain) {
+                activeChain.addCommandToFuture(commands, timer, true)
+            }
 
         } catch (error) {
             console.error("Error loading file from drop:", error)
@@ -463,7 +322,6 @@ const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: b
         console.info(bookmark, "State Changed", { event, bookmark })
         // update onscreen QR code
     })
-    //state.setDefaults(defaultOptions)
     state.loadFromLocation(DEFAULT_OPTIONS)
     state.updateLocation()
 
@@ -473,49 +331,48 @@ const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: b
     const initialVolume: number = Math.max(0, Math.min(1, initialVolumePercent / 100))
 
     bus = new AudioBus(initialVolume)
-    
-    // Wait for AudioContext to be ready before creating timer
-    // This ensures audioWorklet is available if supported
     await bus.loaded
     
     timer = new AudioTimer(bus.audioContext, bus.hasAudioWorklets)
-    
-    // Wait for timer to initialize its worklet/worker
     await timer.loaded
     
     ui = await initialiseFrontEnd(bus.mixer, initialVolumePercent)
 
-    // IO ----------------------------------------------
-    const abortController = new AbortController()
+    // IO Chain Manager Setup -----
+    ioManager = new IOChainManager({
+        timer,
+        outputMixer: bus.mixer,
+        audioContext: bus.audioContext,
+        autoConnect
+    })
 
-    // Check if there's a saved IO configuration in state
+    // Check if there are saved IO configurations in state
     const savedIOState = state.get('io') as string | null
     let chain: IOChain
 
     if (savedIOState) {
-        // Restore from saved IO state
+        // Restore from saved IO states
+		// NB. Each IOChain is listed and multiple are delimited 
+		// by a pipe | symbol so that many chains can be saved
         try {
-            chain = await importStringInputOutputChain(savedIOState, bus.mixer, [], [ui], autoConnect)
+            await ioManager.createChainFromExportString(savedIOState)
+            chain = ioManager.activeChain!
             console.info('IOChain restored from saved state')
         } catch (error) {
             console.error('Failed to restore IO chain from saved state:', error)
             // Fall back to default if restoration fails
-            chain = await createDefaultInputOutputChain(bus.mixer, [], [ui], autoConnect)
+            const chainId = await ioManager.createDefaultChain([], [ui])
+            chain = ioManager.getChain(chainId)!
         }
     } else {
         // Create default chain
-        chain = await createDefaultInputOutputChain(bus.mixer, [], [ui], autoConnect)
+        const chainId = await ioManager.createDefaultChain([], [ui])
+        chain = ioManager.getChain(chainId)!
     }
 
-    //const keyboardInput:InputOnScreenKeyboard = chain.getInput( ONSCREEN_KEYBOARD_INPUT_ID ) as InputOnScreenKeyboard
-
-    // FIXME: This should only occur later
-    // listen to the events dispatched from the manager
-    // chain.addEventListener(Commands.OUTPUT_EVENT, (event:InputAudioEvent) => {
+    // Listen for input events on active chain
     chain.addEventListener(Commands.INPUT_EVENT, (event: InputAudioEvent) => {
-
         const command = event.command
-        //console.info( "Index:Chain updated",  command.type, Commands.INPUT_EVENT, command )
         switch (command.type) {
             case Commands.PLAYBACK_TOGGLE:
                 ui.setPlaying(timer.isRunning)
@@ -559,24 +416,26 @@ const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: b
                 }
                 break
         }
+    })
 
-    }, { signal: abortController.signal })
-
-    chains.push(chain)
-
-    // expose to global
-    // FIXME: this will only ever work with ONE chain :(
-    window.chain = chain
-
-    // Save IO configuration to state for persistence
-    try {
-        const ioExport = chain.exportString()
-        state.set('io', ioExport)
-        state.updateLocation()
-        console.info('IO chain configuration saved to state')
-    } catch (error) {
-        console.error('Failed to save IO chain configuration:', error)
+    // Persist IO configuration when chains are updated
+	// FIXME: multiple chains are stored and seperated by a pipe | symbol
+    const persistIOState = async () => {
+        try {
+            const ioExport = chain.exportString()
+            state.set('io', ioExport)
+            state.updateLocation()
+            console.info('IO chain configuration saved to state')
+        } catch (error) {
+            console.error('Failed to save IO chain configuration:', error)
+        }
     }
+
+    ioManager.addEventListener('chainsUpdated', persistIOState)
+
+    // Expose to global for debugging
+    window.ioManager = ioManager
+    window.chain = chain
 
     createGraph('graph')
 
@@ -607,22 +466,22 @@ const onTick = (values: Record<string, any>) => {
 
     const now = timer.now
 
-    // Loop through all Chains and process events
-    chains.forEach(chain => {
+	const events = ioManager.updateTime(now, divisionsElapsed, state)
+	const allEvents = recorder.addEvents(events)
 
-        // Always process the queue, with or without quantisation
-        const activeCommands: IAudioCommand[] = chain.updateTimeForCommandQueue(now, divisionsElapsed, state)
+    // Loop through all Chains managed by the IOManager and process events
+    // ioManager.chains.forEach(chain => {
 
-        // Act upon any command that has now been executed
-        if (activeCommands && activeCommands.length > 0) {
-            const events: AudioEvent[] = IOChain.convertAudioCommandsToAudioEvents(activeCommands, now)
-            const allEvents = recorder.addEvents(events)
-            const triggers = chain.triggerAudioCommandsOnDevice(events)	// send to Outputs!
-            // console.info("onTick", {activeCommands, events, recorded:allEvents, triggers})
-        } else {
-            //console.info("onTick", {activeCommands})
-        }
-    })
+    //     // Always process the queue, with or without quantisation
+    //     const activeCommands: IAudioCommand[] = chain.updateTimeForCommandQueue(now, divisionsElapsed, state)
+
+    //     // Act upon any command that has now been executed
+    //     if (activeCommands && activeCommands.length > 0) {
+    //         const events: AudioEvent[] = IOChain.convertAudioCommandsToAudioEvents(activeCommands, now)
+    //         const allEvents = recorder.addEvents(events)
+    //         const triggers = chain.triggerAudioCommandsOnDevice(events)	// send to Outputs!
+    //     }
+    // })
 
     // update the UI clock if possible
     ui.updateClock(values, recorder.quantity)
