@@ -61,16 +61,7 @@ export default defineConfig({
     environment: 'node'
   },
   resolve: {
-    conditions: ['import'],
-    alias: {
-      'audiobus': new URL('../../../packages/audiobus', import.meta.url).pathname,
-      'audiotool': new URL('../../../packages/audiotool', import.meta.url).pathname,
-      'opendaw': new URL('../../../packages/openDAW', import.meta.url).pathname,
-      'pink-trombone': new URL('../../../packages/pink-trombone', import.meta.url).pathname,
-      'midi-ble': new URL('../../../packages/midi-ble', import.meta.url).pathname,
-      'pitfalls': new URL('../../../packages/pitfalls', import.meta.url).pathname,
-      'flodjs': new URL('../../../packages/flodjs', import.meta.url).pathname
-    }
+    conditions: ['import']
   },
   plugins: [nodeAddonPlugin],
   ssr: {

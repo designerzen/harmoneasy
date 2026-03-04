@@ -23,16 +23,7 @@ export default defineConfig({
     environment: 'node'
   },
   resolve: {
-    conditions: ['browser', 'import'],
-    alias: {
-      'audiobus': path.resolve(__dirname, '../../packages/audiobus'),
-      'audiotool': path.resolve(__dirname, '../../packages/audiotool'),
-      'opendaw': path.resolve(__dirname, '../../packages/openDAW'),
-      'pink-trombone': path.resolve(__dirname, '../../packages/pink-trombone'),
-      'midi-ble': path.resolve(__dirname, '../../packages/midi-ble'),
-      'pitfalls': path.resolve(__dirname, '../../packages/pitfalls'),
-      'flodjs': path.resolve(__dirname, '../../packages/flodjs')
-    }
+    conditions: ['browser', 'import']
   }
 
 })
