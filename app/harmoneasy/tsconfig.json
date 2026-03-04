@@ -16,6 +16,8 @@
       "audiobus": ["../../packages/audiobus"],
       "audiobus/*": ["../../packages/audiobus/*"],
       "audiotool/*": ["../../packages/audiotool/*"],
+      "netronome": ["../../packages/netronome"],
+      "netronome/*": ["../../packages/netronome/*"],
       "opendaw/*": ["../../packages/openDAW/*"],
       "pink-trombone/*": ["../../packages/pink-trombone/*"],
       "midi-ble/*": ["../../packages/midi-ble/*"],
