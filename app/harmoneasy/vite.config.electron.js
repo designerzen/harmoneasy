@@ -44,7 +44,8 @@ export default defineConfig({
         'path',
         /\.node$/,  // Externalize all .node files
         'fs',       // Node.js built-ins
-        'module'    // Node.js module system
+        'module',   // Node.js module system
+        'netronome' // Workspace package
       ],
       output: {
         // Preserve external module references
@@ -60,7 +61,10 @@ export default defineConfig({
     environment: 'node'
   },
   resolve: {
-    conditions: ['import']
+    conditions: ['import'],
+    alias: {
+      'netronome': new URL('../../../packages/netronome/dist/index.es.js', import.meta.url).pathname
+    }
   },
   plugins: [nodeAddonPlugin],
   ssr: {

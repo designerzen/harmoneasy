@@ -15,7 +15,7 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     rollupOptions: {
-      external: ['url', 'path', /\.node$/]
+      external: ['url', 'path', /\.node$/, 'netronome']
     }
   },
   test: {
@@ -23,7 +23,10 @@ export default defineConfig({
     environment: 'node'
   },
   resolve: {
-    conditions: ['browser', 'import']
+    conditions: ['browser', 'import'],
+    alias: {
+      'netronome': path.resolve(__dirname, '../../packages/netronome/dist/index.es.js')
+    }
   }
 
 })
