@@ -42,10 +42,9 @@ export default defineConfig({
       external: [
         'url',
         'path',
-        /\.node$/,      // Externalize all .node files
-        'fs',           // Node.js built-ins
-        'module',       // Node.js module system
-        /^netronome$/   // Workspace package
+        /\.node$/,  // Externalize all .node files
+        'fs',       // Node.js built-ins
+        'module'    // Node.js module system
       ],
       output: {
         // Preserve external module references
