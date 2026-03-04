@@ -15,7 +15,7 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     rollupOptions: {
-      external: ['url', 'path', /\.node$/, 'netronome']
+      external: ['url', 'path', /\.node$/]
     }
   },
   test: {
@@ -27,7 +27,6 @@ export default defineConfig({
     alias: {
       'audiobus': path.resolve(__dirname, '../../packages/audiobus'),
       'audiotool': path.resolve(__dirname, '../../packages/audiotool'),
-      'netronome': path.resolve(__dirname, '../../packages/netronome'),
       'opendaw': path.resolve(__dirname, '../../packages/openDAW'),
       'pink-trombone': path.resolve(__dirname, '../../packages/pink-trombone'),
       'midi-ble': path.resolve(__dirname, '../../packages/midi-ble'),

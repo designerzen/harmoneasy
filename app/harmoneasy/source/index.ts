@@ -26,15 +26,8 @@ import { renderVexFlowToContainer, createVexFlowHTMLFromAudioEventRecording, sav
 import { createOpenDAWProjectFromAudioEventRecording } from 'opendaw'
 import { createDawProjectFromAudioEventRecording, saveDawProjectToLocalFileSystem } from 'audiobus/exporters/adapter-dawproject.ts'
 
-// Timing - loaded dynamically to avoid bundle issues
-let AudioTimer: any = null
-const loadAudioTimer = async () => {
-	if (!AudioTimer) {
-		const module = await import('netronome')
-		AudioTimer = module.AudioTimer
-	}
-	return AudioTimer
-}
+// Timing
+import { AudioTimer } from 'netronome'
 
 // Audio
 import AudioBus from './audio.ts'
@@ -340,8 +333,7 @@ const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: b
     bus = new AudioBus(initialVolume)
     await bus.loaded
     
-    const TimerClass = await loadAudioTimer()
-    timer = new TimerClass(bus.audioContext, bus.hasAudioWorklets)
+    timer = new AudioTimer(bus.audioContext, bus.hasAudioWorklets)
     await timer.loaded
     
     ui = await initialiseFrontEnd(bus.mixer, initialVolumePercent)

@@ -44,8 +44,7 @@ export default defineConfig({
         'path',
         /\.node$/,  // Externalize all .node files
         'fs',       // Node.js built-ins
-        'module',   // Node.js module system
-        'netronome' // Dynamic import
+        'module'    // Node.js module system
       ],
       output: {
         // Preserve external module references
