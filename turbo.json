@@ -42,7 +42,8 @@
         "tsconfig.json"
       ],
       "dependsOn": [
-        "^build"
+        "^build",
+        "netronome#build"
       ],
       "env": [
         "NODE_ENV"

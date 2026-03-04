@@ -60,7 +60,10 @@ export default defineConfig({
     environment: 'node'
   },
   resolve: {
-    conditions: ['import']
+    conditions: ['import'],
+    alias: {
+      'netronome': new URL('../../../packages/netronome/dist/index.es.js', import.meta.url).pathname
+    }
   },
   plugins: [nodeAddonPlugin],
   ssr: {
