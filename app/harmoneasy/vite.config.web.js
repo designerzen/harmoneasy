@@ -1,5 +1,4 @@
 import { defineConfig } from 'vite'
-import path from 'path'
 
 /**
  * Vite config for web-only builds
@@ -23,10 +22,7 @@ export default defineConfig({
     environment: 'node'
   },
   resolve: {
-    conditions: ['browser', 'import'],
-    alias: {
-      'netronome': path.resolve(__dirname, '../../packages/netronome/dist/index.es.js')
-    }
+    conditions: ['browser', 'import']
   }
 
 })
