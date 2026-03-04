@@ -25,7 +25,7 @@ export default defineConfig({
   resolve: {
     conditions: ['browser', 'import'],
     alias: {
-      'netronome': path.resolve(__dirname, '../../packages/netronome/dist/index.es.js')
+      'netronome': path.resolve(__dirname, '../../packages/netronome/index.ts')
     }
   }
 

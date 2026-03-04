@@ -62,7 +62,7 @@ export default defineConfig({
   resolve: {
     conditions: ['import'],
     alias: {
-      'netronome': new URL('../../../packages/netronome/dist/index.es.js', import.meta.url).pathname
+      'netronome': new URL('../../../packages/netronome/index.ts', import.meta.url).pathname
     }
   },
   plugins: [nodeAddonPlugin],
