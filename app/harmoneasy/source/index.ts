@@ -27,7 +27,7 @@ import { createOpenDAWProjectFromAudioEventRecording } from 'opendaw'
 import { createDawProjectFromAudioEventRecording, saveDawProjectToLocalFileSystem } from 'audiobus/exporters/adapter-dawproject.ts'
 
 // Timing
-import { AudioTimer, TIMER_TYPES } from 'netronome'
+import { AudioTimer } from 'netronome'
 
 // Audio
 import AudioBus from './audio.ts'
