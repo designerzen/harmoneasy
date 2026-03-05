@@ -1,0 +1,70 @@
+{
+  "version": "1.0",
+  "assets": [
+    {
+      "id": "click_00",
+      "name": "Click 00",
+      "path": "assets/click_00.wav"
+    },
+    {
+      "id": "click_01",
+      "name": "Click 01",
+      "path": "assets/click_01.wav"
+    },
+    {
+      "id": "click_02",
+      "name": "Click 02",
+      "path": "assets/click_02.wav"
+    },
+    {
+      "id": "click_03",
+      "name": "Click 03",
+      "path": "assets/click_03.wav"
+    },
+    {
+      "id": "click_04",
+      "name": "Click 04",
+      "path": "assets/click_04.wav"
+    },
+    {
+      "id": "click_05",
+      "name": "Click 05",
+      "path": "assets/click_05.wav"
+    },
+    {
+      "id": "click_06",
+      "name": "Click 06",
+      "path": "assets/click_06.wav"
+    },
+    {
+      "id": "click_07",
+      "name": "Click 07",
+      "path": "assets/click_07.wav"
+    },
+    {
+      "id": "click_08",
+      "name": "Click 08",
+      "path": "assets/click_08.wav"
+    },
+    {
+      "id": "click_09",
+      "name": "Click 09",
+      "path": "assets/click_09.wav"
+    },
+    {
+      "id": "click_10",
+      "name": "Click 10",
+      "path": "assets/click_10.wav"
+    },
+    {
+      "id": "click_11",
+      "name": "Click 11",
+      "path": "assets/click_11.wav"
+    },
+    {
+      "id": "korg_in",
+      "name": "Korg In",
+      "path": "assets/korg_in.wav"
+    }
+  ]
+}
