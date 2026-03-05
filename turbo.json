@@ -39,11 +39,11 @@
         "packages/**",
         "public/**",
         "vite.config.web.js",
-        "tsconfig.json"
+        "tsconfig.json",
+        "package.json"
       ],
       "dependsOn": [
-        "^build",
-        "netronome#build"
+        "^build"
       ],
       "env": [
         "NODE_ENV"
