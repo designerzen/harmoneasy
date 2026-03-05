@@ -118,8 +118,8 @@ importers:
         specifier: ^3.1.3
         version: 3.1.3
       '@opendaw/studio-sdk':
-        specifier: ^0.0.112
-        version: 0.0.112(@ffmpeg/ffmpeg@0.12.15)(@ffmpeg/util@0.12.2)(@types/node-fetch@2.6.13)(encoding@0.1.13)
+        specifier: ^0.0.121
+        version: 0.0.121(@ffmpeg/ffmpeg@0.12.15)(@ffmpeg/util@0.12.2)(@types/node-fetch@2.6.13)(encoding@0.1.13)
       '@tonejs/midi':
         specifier: ^2.0.28
         version: 2.0.28
@@ -142,8 +142,8 @@ importers:
         specifier: ^25.3.77
         version: 25.3.77
       supersonic-scsynth-bundle:
-        specifier: ^0.47.0
-        version: 0.47.0
+        specifier: ^0.59.0
+        version: 0.59.0
       tone:
         specifier: ^15.1.22
         version: 15.1.22
@@ -761,56 +761,56 @@ packages:
     resolution: {integrity: sha512-7OsC1gNORBEawOa5+j2pXN9vsicaIOH5cPXxoR6fJOmH6/EXpJB2CajXOu1fPRFun2m1lktEFX11+P89hqO/og==}
     engines: {node: ^20.17.0 || >=22.9.0}
 
-  '@opendaw/lib-box@0.0.74':
-    resolution: {integrity: sha512-UEfVFdYRnkblOEqolNq7DCuItMwOkL/zv/Dj/mQPLuIvMWkvBSxlK2cZ53tAVjCsAglkP0FWOWS4yGN4IOWwVg==}
+  '@opendaw/lib-box@0.0.77':
+    resolution: {integrity: sha512-W7HN9tdzrzaqSkQOcpUsi1NzWVNwrzfjQZbcpSsxKp2+U+sPmZTWbyZHMXJRcA0UgV/AcaChDpcK0YNbXSg+VA==}
 
-  '@opendaw/lib-dawproject@0.0.58':
-    resolution: {integrity: sha512-H0y9CmeZPcBsAOYCZcf/4YfE+ujhIIrKorora955H6BfgWRbxOIP7ZkMHU02u+ZMzOedC1ODQbktu+hDo2SYNA==}
+  '@opendaw/lib-dawproject@0.0.62':
+    resolution: {integrity: sha512-I/STvSOKF4KM15bzv1c78uTLNteM9wrLsEfuu9JlXHzoWQ0l0vYsNN2eGnyXtv+WRM74Cbi432YLkZqwfZr7JQ==}
 
-  '@opendaw/lib-dom@0.0.74':
-    resolution: {integrity: sha512-LWgybNUb+dDxgSSos3K0EmXzboeB4bmaOhQRMe2JIT6pq3Ks78TIQDz4BdZQ9544uRgsOfh/8FEcDIsjSVFDCw==}
+  '@opendaw/lib-dom@0.0.76':
+    resolution: {integrity: sha512-N91+7IKj3qbZ+w6ce1Cd1fnbDQriA9LP5IbclcgvtwOeTvpjFlsfs9Z6Du709nyPi4ve54aWy/IgTobbE/mppg==}
 
-  '@opendaw/lib-dsp@0.0.72':
-    resolution: {integrity: sha512-I+VfLpnU38YvIXSjzigLL+VfqlXcRBbg2DGxe+xQvTHS9WYEBKTO6ZqIgZf6qHyc4ABoEVia8wCR92oEHAmVhg==}
+  '@opendaw/lib-dsp@0.0.76':
+    resolution: {integrity: sha512-+S6xSU25UfynAnagRVgFOb0DbME7o8yJYjKsHgOWfU3BAvymLQ8BFh9r/zjAoyAILxUp3GWBI05xppPMm3UYlw==}
 
-  '@opendaw/lib-fusion@0.0.79':
-    resolution: {integrity: sha512-7e5R44GimsB47Y5vr2H2nMbHBDnFvQXfd5DOFVUFtLolz6CM6Roj3ZgS3a6MKUMU2A4MjVB759eAvQGREzPP9g==}
+  '@opendaw/lib-fusion@0.0.83':
+    resolution: {integrity: sha512-rSmicojFbVoZUvHNrYs2h5cVbwrqkVorCXxIHBCdv2G9k+V7ACcBIC2laYGzmEw7eB+8adQgmwfU0/0oYxceQw==}
 
-  '@opendaw/lib-jsx@0.0.74':
-    resolution: {integrity: sha512-WCOXkeYKJ9KOGp3sMBgEiaClU817W7Y8uk8HpWmio5duBUfSpxKqyWmYfWBiA2vXeQ0NIBqpcvCO1bInfYZovw==}
+  '@opendaw/lib-jsx@0.0.76':
+    resolution: {integrity: sha512-+i0aXcm55wC6sivGU+nmWs0jiE7MuDJvBnKaO+x55fS7vWYEjteoFbaZ4mIjfvi3LLIAgW1uVWGExJ96OrNGvw==}
 
-  '@opendaw/lib-midi@0.0.54':
-    resolution: {integrity: sha512-btJKQ3/FzkmYXBSOcJCtC4uA+qVqzeEeF5SiBy1O4ynSlCuFEZGu/cPE+Z3veSPTvqM1BydlV5Z+MYPI1cPJgw==}
+  '@opendaw/lib-midi@0.0.58':
+    resolution: {integrity: sha512-aGbsg2aEV8ju1DMrx5OBdoHdSA+DKXrZXxnG+deCVQ4FxdE8ww1gytNfYD7Z6zZMbEnVD77EA4aGtzESQtLIrg==}
 
-  '@opendaw/lib-runtime@0.0.70':
-    resolution: {integrity: sha512-Fp0/14DBzzfCCj4+Gphe/k0RlfCyvaHIrVot19l53ZsSKlfSPXQO8t6C8xd2IKi4T/RKmu2eUokTCMh6M5I98A==}
+  '@opendaw/lib-runtime@0.0.72':
+    resolution: {integrity: sha512-d6SBrCg7OM5nWUElDPbnLNE9X2rUpMdajtpGelYPJp2NdQQpRuee1ridtSAO6xCyRhJK78n67LYHjODPnquTdg==}
 
-  '@opendaw/lib-std@0.0.69':
-    resolution: {integrity: sha512-XQOxyuBnCKbbNDHDh8SfEShNHsuL9n+y9I34/qjIrYA9viZdUWysHkCbHdYEIxxQHdDY1rTSxcXtajcIASesXQ==}
+  '@opendaw/lib-std@0.0.71':
+    resolution: {integrity: sha512-1zumAQwEAKOzOcVm5grLHBaLY7sv0HJ0ZaLuVUp/jp75iypgOEixmWBXK4EsRi0iSwRDFBk2Pa9gv0myarGOYA==}
 
-  '@opendaw/lib-xml@0.0.55':
-    resolution: {integrity: sha512-sj+CvvC/VE3yGaKrG2rrArzsXq6SlV8i7sGis4AhkIwgcY3Lkc3XF0OCVt+iVRi7WYkhYJJiL+75OyYykNt8pg==}
+  '@opendaw/lib-xml@0.0.57':
+    resolution: {integrity: sha512-eS4YAYko53SgrDfpJZ3LKxXXAJaAo9k9wxOGm95/tF29dT9LoKDP4tJFEUxOnhtJn898o99heP+DTBjv7UAKNQ==}
 
   '@opendaw/nam-wasm@1.0.3':
     resolution: {integrity: sha512-7u2FxBvVoHjeAvolb76Ttk96Il28qpZQ/D4Jnab37BnuWqlQGPJvFntEoQW9mVNP0DVprL3+CeXhPUa7ZaNmrg==}
 
-  '@opendaw/studio-adapters@0.0.89':
-    resolution: {integrity: sha512-F3mAiZSJbwzenuZQqlaLrOiGLHcivL4kD3yt92i1fQ02l4IxDzmeYqYqcynaKTXp6TGilUZpCz/fsS453t1UFg==}
+  '@opendaw/studio-adapters@0.0.95':
+    resolution: {integrity: sha512-kCl1Y4JvMl9VOL8SpDFPkfpEaZdm2hr2sbw7N1Rr9ZqxBjPsMOR71cbA8cRN4DP2+qoXk71hukCH2mYWcXQHmw==}
 
-  '@opendaw/studio-boxes@0.0.76':
-    resolution: {integrity: sha512-y6HOxgsWQ6g1EBRIlDCFkfy0N6pH5c/fM71k3ALTvJxUxXCj0g9Li4CymaIgNazgb01IvsbOYbhMxBGJZ6CgXA==}
+  '@opendaw/studio-boxes@0.0.81':
+    resolution: {integrity: sha512-O/Zu4ENN/LX7tHoD56TRESlmnwAzwdAUeHYfFJf60JVXgy8K2rzS4DESQnPLa/jPtDrpQDLpHWexK+ahn7fMUg==}
 
-  '@opendaw/studio-core@0.0.111':
-    resolution: {integrity: sha512-Fn7j3+mcAw5wWv6m0hilB+9IglLM0D9FCfmNcQ0lHvHPg9OeTMw8ODmaOETNix2LAKfrL9PAXuL7unWNwn80GA==}
+  '@opendaw/studio-core@0.0.119':
+    resolution: {integrity: sha512-6DOUq2DDn7vBBSfjI0aSZUjyMmk4+32glDnbLMp6W6Qwut4FRePCoCysoHcqWBLjTdAqKj5BUu+O0qSHTrLyYw==}
     peerDependencies:
       '@ffmpeg/ffmpeg': ^0.12.15
       '@ffmpeg/util': ^0.12.2
 
-  '@opendaw/studio-enums@0.0.64':
-    resolution: {integrity: sha512-GC/KSNdL7HwW1lUmCHHM+ogSG4ImXkD8qD3xnQc4WgCV2OkKV3j8bZNsTAtsqDgx1XR4tZIv81e4JCv7jTtp8A==}
+  '@opendaw/studio-enums@0.0.67':
+    resolution: {integrity: sha512-1hoYwUvfEXYsXGhHv/ZUNCXFgDHgAsgq3A2RUjeb2woFdPpc6UdjsruBw7ByI9HuDpfE4bK7+8UTN/9L4tbnwA==}
 
-  '@opendaw/studio-sdk@0.0.112':
-    resolution: {integrity: sha512-brlpBix02nbQ4BxzbXlG+v+A8tGL78ddShl4drN47jRRMCscdPoNS2HOKh26a5o5TcPDPZ+t3kJyVbJwS68+JQ==}
+  '@opendaw/studio-sdk@0.0.121':
+    resolution: {integrity: sha512-eArgg+/juZ3KMg1gSEqp11PAJY3/qIgVYPMk7gkTbGug6fl/7Yr/GCKH0WVqEtHIy1EQPnY7nb+7JccvShOecw==}
 
   '@parcel/watcher-android-arm64@2.5.6':
     resolution: {integrity: sha512-YQxSS34tPF/6ZG7r/Ih9xy+kP/WwediEUsqmtf0cuCV5TPPKw/PQHRhueUo6JdeFJaqV3pyjm0GdYjZotbRt/A==}
@@ -2951,20 +2951,20 @@ packages:
     resolution: {integrity: sha512-MvjXzkz/BOfyVDkG0oFOtBxHX2u3gKbMHIF/dXblZsgD3BWOFLmHovIpZY7BykJdAjcqRCBi1WYBNdEC9yI7vg==}
     engines: {node: '>= 8.0'}
 
-  supersonic-scsynth-bundle@0.47.0:
-    resolution: {integrity: sha512-3irNdeOfiHYlbEsBQgxXHTO2TWMMK8oZTKy5ISsrv7vF88OZXWANWMuAGJF0qvDyIkEbgLVX1cJ4FlcN2I66rg==}
+  supersonic-scsynth-bundle@0.59.0:
+    resolution: {integrity: sha512-xkoPjsvAsN0alCesmav8pqQA55CEF6Cz0Jip8bk5W5Cwbh33lTetWu0ovEbLkpIRn6YN8BTtjsvOwY1amOzInw==}
 
-  supersonic-scsynth-core@0.24.3:
-    resolution: {integrity: sha512-wTslU0CmeF4e8U9n57FBP3E1Ji89rJL0d1pOZNYEjhj52O1/SdqAFRSEeCXRrIzIk+PM7X7d/iiEPNK2D9/PZA==}
+  supersonic-scsynth-core@0.59.0:
+    resolution: {integrity: sha512-FUfDoAwaeTYhVVjE0dLXtN12IbOmpq+p/04z2I/8amzkJ80YfLFEOFX1FmR8iT5CM0nVBLN7uX7dwI2xslGsiA==}
 
-  supersonic-scsynth-samples@0.47.0:
-    resolution: {integrity: sha512-+cf89DYrRCcmJjCHkC11AIVWwRQKrA5LddYYqlffpH9O/2khwK6L/G13+5RTUjTaOfDMMNKQF9sXNIemg1J2TQ==}
+  supersonic-scsynth-samples@0.59.0:
+    resolution: {integrity: sha512-jpzC4w8mJfThra1CaU0yLPRsRVDV0J4s5zdAL9P7tErz2M1FknqMi0kouZJTitY1YbaZDauKg9uwSizbHdZe+w==}
 
-  supersonic-scsynth-synthdefs@0.47.0:
-    resolution: {integrity: sha512-3RLZbmTQkVKz2KjVkRaKE30KVebjyn2pQLMz8d0pxIuxxDUQzbaJ2X6k8I7j0C3Yvr7Y3X3XJKjnLP+bdPcMsg==}
+  supersonic-scsynth-synthdefs@0.59.0:
+    resolution: {integrity: sha512-jdiBhXgXbZIERX9iPa93kNTn9x9PJ/ZpTuh8GIk8UwI/GqOEvyAJ/OJBmFfLN23cOF7OZMwpsKp+vLRBOEHW2g==}
 
-  supersonic-scsynth@0.47.0:
-    resolution: {integrity: sha512-Lrzy3a08CTm9n+yL3S0ZCRTRQNgTIa788/D5tGzsuuwxr9tuvAT8pojw9rOdWCdbGcrowy98rSMMPDwQe831LQ==}
+  supersonic-scsynth@0.59.0:
+    resolution: {integrity: sha512-z86MNaFC+VixLXL9aqtLHxFC4uPcP5FVPX5zyIERNo9ZKjUTMJmkZsILiwVkCoXx8XE9bw/gWuMai0+KPXDI4g==}
     engines: {node: '>=18.0.0'}
 
   supports-color@7.2.0:
@@ -3845,89 +3845,89 @@ snapshots:
     dependencies:
       semver: 7.7.4
 
-  '@opendaw/lib-box@0.0.74':
+  '@opendaw/lib-box@0.0.77':
     dependencies:
-      '@opendaw/lib-runtime': 0.0.70
-      '@opendaw/lib-std': 0.0.69
+      '@opendaw/lib-runtime': 0.0.72
+      '@opendaw/lib-std': 0.0.71
 
-  '@opendaw/lib-dawproject@0.0.58':
+  '@opendaw/lib-dawproject@0.0.62':
     dependencies:
-      '@opendaw/lib-dsp': 0.0.72
-      '@opendaw/lib-runtime': 0.0.70
-      '@opendaw/lib-xml': 0.0.55
+      '@opendaw/lib-dsp': 0.0.76
+      '@opendaw/lib-runtime': 0.0.72
+      '@opendaw/lib-xml': 0.0.57
       jszip: 3.10.1
 
-  '@opendaw/lib-dom@0.0.74':
+  '@opendaw/lib-dom@0.0.76':
     dependencies:
-      '@opendaw/lib-runtime': 0.0.70
-      '@opendaw/lib-std': 0.0.69
+      '@opendaw/lib-runtime': 0.0.72
+      '@opendaw/lib-std': 0.0.71
       '@types/wicg-file-system-access': 2023.10.7
 
-  '@opendaw/lib-dsp@0.0.72':
+  '@opendaw/lib-dsp@0.0.76':
     dependencies:
-      '@opendaw/lib-std': 0.0.69
+      '@opendaw/lib-std': 0.0.71
 
-  '@opendaw/lib-fusion@0.0.79':
+  '@opendaw/lib-fusion@0.0.83':
     dependencies:
-      '@opendaw/lib-box': 0.0.74
-      '@opendaw/lib-dom': 0.0.74
-      '@opendaw/lib-runtime': 0.0.70
-      '@opendaw/lib-std': 0.0.69
+      '@opendaw/lib-box': 0.0.77
+      '@opendaw/lib-dom': 0.0.76
+      '@opendaw/lib-runtime': 0.0.72
+      '@opendaw/lib-std': 0.0.71
 
-  '@opendaw/lib-jsx@0.0.74':
+  '@opendaw/lib-jsx@0.0.76':
     dependencies:
-      '@opendaw/lib-dom': 0.0.74
-      '@opendaw/lib-std': 0.0.69
+      '@opendaw/lib-dom': 0.0.76
+      '@opendaw/lib-std': 0.0.71
 
-  '@opendaw/lib-midi@0.0.54':
+  '@opendaw/lib-midi@0.0.58':
     dependencies:
-      '@opendaw/lib-dsp': 0.0.72
-      '@opendaw/lib-std': 0.0.69
+      '@opendaw/lib-dsp': 0.0.76
+      '@opendaw/lib-std': 0.0.71
 
-  '@opendaw/lib-runtime@0.0.70':
+  '@opendaw/lib-runtime@0.0.72':
     dependencies:
-      '@opendaw/lib-std': 0.0.69
+      '@opendaw/lib-std': 0.0.71
 
-  '@opendaw/lib-std@0.0.69': {}
+  '@opendaw/lib-std@0.0.71': {}
 
-  '@opendaw/lib-xml@0.0.55':
+  '@opendaw/lib-xml@0.0.57':
     dependencies:
-      '@opendaw/lib-std': 0.0.69
+      '@opendaw/lib-std': 0.0.71
 
   '@opendaw/nam-wasm@1.0.3': {}
 
-  '@opendaw/studio-adapters@0.0.89':
+  '@opendaw/studio-adapters@0.0.95':
     dependencies:
-      '@opendaw/lib-box': 0.0.74
-      '@opendaw/lib-dsp': 0.0.72
-      '@opendaw/lib-fusion': 0.0.79
-      '@opendaw/lib-runtime': 0.0.70
-      '@opendaw/lib-std': 0.0.69
-      '@opendaw/studio-boxes': 0.0.76
-      '@opendaw/studio-enums': 0.0.64
+      '@opendaw/lib-box': 0.0.77
+      '@opendaw/lib-dsp': 0.0.76
+      '@opendaw/lib-fusion': 0.0.83
+      '@opendaw/lib-runtime': 0.0.72
+      '@opendaw/lib-std': 0.0.71
+      '@opendaw/studio-boxes': 0.0.81
+      '@opendaw/studio-enums': 0.0.67
       soundfont2: 0.5.0
 
-  '@opendaw/studio-boxes@0.0.76':
+  '@opendaw/studio-boxes@0.0.81':
     dependencies:
-      '@opendaw/lib-box': 0.0.74
-      '@opendaw/lib-std': 0.0.69
-      '@opendaw/studio-enums': 0.0.64
+      '@opendaw/lib-box': 0.0.77
+      '@opendaw/lib-std': 0.0.71
+      '@opendaw/studio-enums': 0.0.67
 
-  '@opendaw/studio-core@0.0.111(@ffmpeg/ffmpeg@0.12.15)(@ffmpeg/util@0.12.2)(@types/node-fetch@2.6.13)(encoding@0.1.13)':
+  '@opendaw/studio-core@0.0.119(@ffmpeg/ffmpeg@0.12.15)(@ffmpeg/util@0.12.2)(@types/node-fetch@2.6.13)(encoding@0.1.13)':
     dependencies:
       '@ffmpeg/ffmpeg': 0.12.15
       '@ffmpeg/util': 0.12.2
-      '@opendaw/lib-box': 0.0.74
-      '@opendaw/lib-dawproject': 0.0.58
-      '@opendaw/lib-dom': 0.0.74
-      '@opendaw/lib-dsp': 0.0.72
-      '@opendaw/lib-fusion': 0.0.79
-      '@opendaw/lib-runtime': 0.0.70
-      '@opendaw/lib-std': 0.0.69
+      '@opendaw/lib-box': 0.0.77
+      '@opendaw/lib-dawproject': 0.0.62
+      '@opendaw/lib-dom': 0.0.76
+      '@opendaw/lib-dsp': 0.0.76
+      '@opendaw/lib-fusion': 0.0.83
+      '@opendaw/lib-runtime': 0.0.72
+      '@opendaw/lib-std': 0.0.71
       '@opendaw/nam-wasm': 1.0.3
-      '@opendaw/studio-adapters': 0.0.89
-      '@opendaw/studio-boxes': 0.0.76
-      '@opendaw/studio-enums': 0.0.64
+      '@opendaw/studio-adapters': 0.0.95
+      '@opendaw/studio-boxes': 0.0.81
+      '@opendaw/studio-enums': 0.0.67
       dropbox: 10.34.0(@types/node-fetch@2.6.13)(encoding@0.1.13)
       y-websocket: 1.5.4(yjs@13.6.29)
       yjs: 13.6.29
@@ -3938,26 +3938,26 @@ snapshots:
       - encoding
       - utf-8-validate
 
-  '@opendaw/studio-enums@0.0.64':
+  '@opendaw/studio-enums@0.0.67':
     dependencies:
-      '@opendaw/lib-std': 0.0.69
+      '@opendaw/lib-std': 0.0.71
 
-  '@opendaw/studio-sdk@0.0.112(@ffmpeg/ffmpeg@0.12.15)(@ffmpeg/util@0.12.2)(@types/node-fetch@2.6.13)(encoding@0.1.13)':
+  '@opendaw/studio-sdk@0.0.121(@ffmpeg/ffmpeg@0.12.15)(@ffmpeg/util@0.12.2)(@types/node-fetch@2.6.13)(encoding@0.1.13)':
     dependencies:
-      '@opendaw/lib-box': 0.0.74
-      '@opendaw/lib-dawproject': 0.0.58
-      '@opendaw/lib-dom': 0.0.74
-      '@opendaw/lib-dsp': 0.0.72
-      '@opendaw/lib-fusion': 0.0.79
-      '@opendaw/lib-jsx': 0.0.74
-      '@opendaw/lib-midi': 0.0.54
-      '@opendaw/lib-runtime': 0.0.70
-      '@opendaw/lib-std': 0.0.69
-      '@opendaw/lib-xml': 0.0.55
-      '@opendaw/studio-adapters': 0.0.89
-      '@opendaw/studio-boxes': 0.0.76
-      '@opendaw/studio-core': 0.0.111(@ffmpeg/ffmpeg@0.12.15)(@ffmpeg/util@0.12.2)(@types/node-fetch@2.6.13)(encoding@0.1.13)
-      '@opendaw/studio-enums': 0.0.64
+      '@opendaw/lib-box': 0.0.77
+      '@opendaw/lib-dawproject': 0.0.62
+      '@opendaw/lib-dom': 0.0.76
+      '@opendaw/lib-dsp': 0.0.76
+      '@opendaw/lib-fusion': 0.0.83
+      '@opendaw/lib-jsx': 0.0.76
+      '@opendaw/lib-midi': 0.0.58
+      '@opendaw/lib-runtime': 0.0.72
+      '@opendaw/lib-std': 0.0.71
+      '@opendaw/lib-xml': 0.0.57
+      '@opendaw/studio-adapters': 0.0.95
+      '@opendaw/studio-boxes': 0.0.81
+      '@opendaw/studio-core': 0.0.119(@ffmpeg/ffmpeg@0.12.15)(@ffmpeg/util@0.12.2)(@types/node-fetch@2.6.13)(encoding@0.1.13)
+      '@opendaw/studio-enums': 0.0.67
     transitivePeerDependencies:
       - '@ffmpeg/ffmpeg'
       - '@ffmpeg/util'
@@ -4198,7 +4198,7 @@ snapshots:
 
   '@types/node-fetch@2.6.13':
     dependencies:
-      '@types/node': 22.19.11
+      '@types/node': 25.3.3
       form-data: 4.0.5
 
   '@types/node@22.19.11':
@@ -6276,20 +6276,20 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  supersonic-scsynth-bundle@0.47.0:
+  supersonic-scsynth-bundle@0.59.0:
     dependencies:
-      supersonic-scsynth: 0.47.0
-      supersonic-scsynth-core: 0.24.3
-      supersonic-scsynth-samples: 0.47.0
-      supersonic-scsynth-synthdefs: 0.47.0
+      supersonic-scsynth: 0.59.0
+      supersonic-scsynth-core: 0.59.0
+      supersonic-scsynth-samples: 0.59.0
+      supersonic-scsynth-synthdefs: 0.59.0
 
-  supersonic-scsynth-core@0.24.3: {}
+  supersonic-scsynth-core@0.59.0: {}
 
-  supersonic-scsynth-samples@0.47.0: {}
+  supersonic-scsynth-samples@0.59.0: {}
 
-  supersonic-scsynth-synthdefs@0.47.0: {}
+  supersonic-scsynth-synthdefs@0.59.0: {}
 
-  supersonic-scsynth@0.47.0:
+  supersonic-scsynth@0.59.0:
     dependencies:
       '@thi.ng/malloc': 6.1.136
 

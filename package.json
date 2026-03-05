@@ -7,13 +7,15 @@
   "packageManager": "pnpm@10.29.3",
   "scripts": {
 	"postinstall": "git submodule update --remote --init",
+	"upgrade:git": "git submodule update --remote",
+	"upgrade:npm": "turbo run upgrader",
     "start": "pnpm run dev",
     "turbo": "turbo",
     "dev": "turbo run dev --no-daemon",
-    "build": "turbo run build --continue",
+    "build": "turbo run build --filter='./packages/*' --filter='./app/*' --continue",
     "test": "turbo run test",
     "type-check": "turbo run type-check",
-    "upgrader": "turbo run upgrader",
+    "upgrader": "pnpm run upgrade:git && pnpm run upgrade:npm",
     "preview": "turbo run preview",
     "clean": "turbo clean && rm -rf .turbo node_modules",
     "lint": "turbo run lint"
