@@ -10,7 +10,7 @@
     "start": "pnpm run dev",
     "turbo": "turbo",
     "dev": "turbo run dev --no-daemon",
-    "build": "turbo run build --no-bail",
+    "build": "turbo run build --continue",
     "test": "turbo run test",
     "type-check": "turbo run type-check",
     "upgrader": "turbo run upgrader",
