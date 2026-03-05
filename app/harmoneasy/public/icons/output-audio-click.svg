@@ -1,0 +1,15 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" fill="none"/>
+  <!-- Speaker body -->
+  <rect x="20" y="16" width="12" height="32" fill="none" stroke="currentColor" stroke-width="2" rx="1"/>
+  <!-- Speaker cone -->
+  <polygon points="32,18 40,12 40,52 32,46" fill="none" stroke="currentColor" stroke-width="2"/>
+  <!-- Sound wave 1 -->
+  <path d="M 44 28 Q 46 24 48 28" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.8"/>
+  <!-- Sound wave 2 -->
+  <path d="M 48 26 Q 51 20 54 26" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.6"/>
+  <!-- Beat indicator dots -->
+  <circle cx="12" cy="32" r="1.5" fill="currentColor" opacity="0.7"/>
+  <circle cx="14" cy="32" r="1.5" fill="currentColor" opacity="0.7"/>
+  <circle cx="16" cy="32" r="1.5" fill="currentColor" opacity="0.7"/>
+</svg>
