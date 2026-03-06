@@ -195,7 +195,7 @@ importers:
         specifier: ^1.58.2
         version: 1.58.2
       '@types/node':
-        specifier: ^25.3.5
+        specifier: ^25.3.3
         version: 25.3.5
       '@vitejs/plugin-basic-ssl':
         specifier: ^2.1.4
@@ -4145,7 +4145,7 @@ snapshots:
     dependencies:
       '@types/http-cache-semantics': 4.2.0
       '@types/keyv': 3.1.4
-      '@types/node': 22.19.11
+      '@types/node': 25.3.5
       '@types/responselike': 1.0.3
 
   '@types/chai@5.2.3':
@@ -4184,7 +4184,7 @@ snapshots:
 
   '@types/fs-extra@9.0.13':
     dependencies:
-      '@types/node': 22.19.11
+      '@types/node': 25.3.5
 
   '@types/http-cache-semantics@4.2.0': {}
 
@@ -4192,13 +4192,13 @@ snapshots:
 
   '@types/keyv@3.1.4':
     dependencies:
-      '@types/node': 22.19.11
+      '@types/node': 25.3.5
 
   '@types/ms@2.1.0': {}
 
   '@types/node-fetch@2.6.13':
     dependencies:
-      '@types/node': 22.19.11
+      '@types/node': 25.3.5
       form-data: 4.0.5
 
   '@types/node@22.19.11':
@@ -4215,7 +4215,7 @@ snapshots:
 
   '@types/plist@3.0.5':
     dependencies:
-      '@types/node': 22.19.11
+      '@types/node': 25.3.5
       xmlbuilder: 15.1.1
     optional: true
 
@@ -4225,7 +4225,7 @@ snapshots:
 
   '@types/responselike@1.0.3':
     dependencies:
-      '@types/node': 22.19.11
+      '@types/node': 25.3.5
 
   '@types/verror@1.10.11':
     optional: true
@@ -4236,7 +4236,7 @@ snapshots:
 
   '@types/yauzl@2.10.3':
     dependencies:
-      '@types/node': 22.19.11
+      '@types/node': 25.3.5
     optional: true
 
   '@vitejs/plugin-basic-ssl@2.1.4(vite@7.3.1(@types/node@25.3.5)(jiti@2.6.1)(sass-embedded@1.97.3)(sass@1.97.3)(terser@5.46.0))':
