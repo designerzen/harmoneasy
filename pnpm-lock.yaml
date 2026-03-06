@@ -195,7 +195,7 @@ importers:
         specifier: ^1.58.2
         version: 1.58.2
       '@types/node':
-        specifier: ^25.3.3
+        specifier: ^25.3.5
         version: 25.3.5
       '@vitejs/plugin-basic-ssl':
         specifier: ^2.1.4
