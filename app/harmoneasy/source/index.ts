@@ -37,6 +37,7 @@ import * as Commands from 'audiobus/commands'
 
 // IAudioInputs
 import IOChain from 'audiobus/io/IO-chain.ts'
+import { ALL_KEYBOARD_NOTES } from 'audiobus/io/inputs/input-onscreen-keyboard.ts'
 
 // Back End
 import OPFSStorage, { hasOPFS } from 'audiobus/storage/opfs-storage.ts'

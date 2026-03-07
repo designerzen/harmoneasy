@@ -14,7 +14,7 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     rollupOptions: {
-      external: ['url', 'path', /\.node$/, 'netronome', 'audiobus', 'audiotool', 'flodjs', 'midi-ble', 'opendaw', 'pink-trombone', 'pitfalls']
+      external: ['url', 'path', /\.node$/, 'audiobus', 'audiotool', 'flodjs', 'midi-ble', 'opendaw', 'pink-trombone', 'pitfalls']
     }
   },
   test: {
