@@ -29,6 +29,15 @@
         "HOSTNAME"
       ]
     },
+    "dev#harmoneasy": {
+      "cache": false,
+      "interactive": true,
+      "persistent": true,
+      "env": [
+        "PORT",
+        "HOSTNAME"
+      ]
+    },
     "build": {
       "outputs": [
         "dist/**",

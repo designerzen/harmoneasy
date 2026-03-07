@@ -9,7 +9,7 @@
 	"postinstall": "git submodule update --remote --init",
 	"upgrade:git": "git submodule update --remote",
 	"upgrade:npm": "turbo run upgrader",
-    "start": "pnpm run dev",
+    "start": "pnpm run dev --filter=harmoneasy",
     "turbo": "turbo",
     "dev": "turbo run dev --no-daemon",
     "build": "turbo run build --filter='./packages/*' --filter='./app/*' --continue",
