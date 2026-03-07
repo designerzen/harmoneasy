@@ -2,411 +2,500 @@
 
 > A web-based music collaboration platform that transforms, quantizes, and harmonizes live MIDI input in real-time
 
-## Overview
-
-HarmonEasy is a modern web application for collaborative music-making with friends. It combines MIDI input from multiple sources (keyboards, controllers, Bluetooth devices), applies real-time audio transformations, and outputs synchronized audio with harmonic and temporal adjustments.
-
 **Tagline:** *Putting the Unity in Community*
 
-## Features
+## What is HarmonEasy?
 
-- **Multiple Input Sources**
-  - WebMIDI device support
-  - Bluetooth MIDI (BLE) connectivity
-  - On-screen keyboard
-  - Gamepad support
-  - Microphone input with formant analysis
-
-- **Real-Time Audio Processing**
-  - Web Audio API synthesis
-  - WAM2 (Web Audio Modules 2) plugin support
-  - Polyphonic synthesis with multiple instrument types
-  - Pitch tracking and formant analysis
-
-- **Transformers Pipeline**
-  - Quantization to scales/modes
-  - Transposition and harmonization
-  - Chord generation (Chordifier)
-  - Arpeggiator
-  - Note delay/repeater/shortener
-  - Microtonality support
-  - Humanization (swing, timing variations)
-  - Randomization
-  - Emoji-based mood chords (Moodifier)
-  - and more...
-
-- **Music Theory Integration**
-  - Scale and mode support (Ionian, Dorian, Phrygian, Lydian, Mixolydian, Aeolian, Locrian)
-  - Chord recognition and generation
-  - Microtuning systems (EDO scales)
-  - Interval-based transformations
-
-- **Export Capabilities**
-  - MIDI file export (.mid)
-  - MusicXML export
-  - Markdown notation export
-  - Sheet music visualization (VexFlow)
-  - AudioTool integration
-  - OpenDAW project export
-  - .dawProject format support
-
-- **Persistent Storage**
-  - OPFS (Origin Private File System) support
-  - Session recording and playback
-  - Real-time command recording
-
-- **Visualization**
-  - Song timeline visualization
-  - Note activity monitor
-  - On-screen keyboard display
-  - Real-time waveform display
-
-## Tech Stack
-
-- **Frontend:** TypeScript, Vite, Web Components
-- **Audio:** Web Audio API, MIDI.js, WAM2
-- **State Management:** Custom state system with history API
-- **Styling:** SCSS
-- **Bundler:** Vite
-- **Testing:** Vitest
-- **Runtime:** Electron (optional), Browser
-
-## Prerequisites
-
-- **Node.js:** 18.x or higher
-- **pnpm:** 8.x or higher (package manager)
-- **Modern Browser:** Chrome 90+, Firefox 88+, Safari 14.1+ (for Web Audio support)
-- **WebMIDI Support:** Required for MIDI device input
-
-## Demo
+HarmonEasy is a modern web application designed for collaborative music-making. It captures MIDI input from multiple sources (keyboards, controllers, Bluetooth devices, even microphones), applies real-time audio transformations, and outputs synchronized, harmonized audio. Whether you're jamming with friends or building complex harmonic arrangements, HarmonEasy enables intuitive musical collaboration without the complexity of traditional DAWs.
 
 **Live Demo:** https://designerzen.github.io/harmoneasy/
 
-Try HarmonEasy directly in your browser without installing anything locally.
-
-## Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/designerzen/harmoneasy.git
-cd harmoneasy
-
-# Install dependencies
-pnpm install
-
-# Start development server
-pnpm run dev
-```
-
-The development server will start on `http://localhost:5174` by default.
-
-## Development
-
-### Available Commands
-
-```bash
-# Start development server
-pnpm run dev
-
-# Build for production
-pnpm run build
-
-# Preview production build locally
-pnpm run preview
-
-# Run tests
-pnpm test
-
-# Watch for file changes in test mode
-pnpm test -- --watch
-```
-
-### Project Structure
-
-```
-source/
-├── assets/              # Images, logos, styles
-├── components/          # UI components (keyboard, visualizers)
-├── libs/
-│   ├── audiobus/       # Core audio engine
-│   │   ├── instruments/     # Synth instruments, oscillators
-│   │   ├── io/              # Input/output devices and transformers
-│   │   ├── midi/            # MIDI protocol and BLE support
-│   │   ├── timing/          # Audio timing and synchronization
-│   │   ├── tuning/          # Music theory (scales, intervals, chords)
-│   │   ├── conversion/      # Note/frequency conversions
-│   │   └── storage/         # OPFS file system storage
-│   ├── midi-ble/        # Bluetooth MIDI implementation
-│   ├── pitfalls/        # Music theory utilities (EDO scales, intervals)
-│   ├── audiotool/       # AudioTool SDK integration
-│   ├── openDAW/         # OpenDAW integration
-│   └── state.ts         # Global state management
-├── hooks/               # React/custom hooks
-├── electron/            # Electron main process (if building desktop)
-├── index.ts            # Application entry point
-├── ui.ts               # UI controller class
-├── audio.ts            # Audio engine initialization
-├── commands.ts         # MIDI command constants
-└── options.ts          # Configuration options
-```
-
-### Key Architecture Components
-
-#### AudioCommand
-The fundamental unit representing a musical event. Extends from `IAudioCommand` interface with support for note on/off, control changes, pitch bend, etc.
-
-#### InputFactory
-Factory pattern for dynamically creating audio input instances with lazy-loading support. Provides a registry of available inputs (Keyboard, GamePad, WebMIDI, BLE MIDI, Microphone, etc.) with availability detection and async instantiation.
-
-```typescript
-import { createInputById, getAvailableInputFactories } from './libs/audiobus/io/input-factory.ts'
-import * as INPUT_TYPES from './libs/audiobus/io/inputs/input-types.ts'
-
-// Create a specific input
-const keyboard = await createInputById(INPUT_TYPES.KEYBOARD)
-
-// Get all available inputs for current environment
-const availableInputs = getAvailableInputFactories()
-```
-
-#### OutputFactory
-Factory pattern for dynamically creating audio output instances with lazy-loading support. Provides a registry of available outputs (Notation, Spectrum Analyser, Pink Trombone, WebMIDI, Speech Synthesis, etc.) with async instantiation.
-
-```typescript
-import { createOutputById, getAvailableOutputFactories } from './libs/audiobus/io/output-factory.ts'
-import * as OUTPUT_TYPES from './libs/audiobus/io/outputs/output-types.ts'
-
-// Create a specific output
-const notation = await createOutputById(OUTPUT_TYPES.NOTATION)
-
-// Get all available outputs for current environment
-const availableOutputs = getAvailableOutputFactories()
-```
-
-#### Transformer
-Abstract class for processing audio commands in the pipeline. Each transformer implements a specific effect (quantize, transpose, etc.).
-
-#### TransformerManagerWorker
-Manages the transformer pipeline with Web Worker support for non-blocking processing. Provides automatic fallback to main thread if workers unavailable.
-
-#### MIDIDevice
-Abstraction for MIDI input/output devices. Handles device enumeration, MIDI event parsing, and message routing.
-
-#### OutputWAM2
-Implements IAudioOutput interface for Web Audio Modules 2 plugin support. Handles plugin lifecycle, MIDI routing, and audio processing.
-
-#### WAM2Host
-Plugin registry and discovery system. Manages WAM2 plugin instances, metadata, and initialization.
-
-### Code Style Guidelines
-
-- **Imports:** Always include `.ts` or `.js` extensions
-- **Types:** Strict TypeScript - use explicit types, avoid `any`
-- **Naming:** `camelCase` for variables/functions, `PascalCase` for classes/types
-- **Comments:** JSDoc for public APIs
-- **Error Handling:** Validate at boundaries, trust internal code
-- **Module System:** ES modules only
-
-## Building
-
-### Production Build
-
-```bash
-pnpm run build
-```
-
-Output will be in the `build/` directory, ready for deployment.
-
-### Desktop Build (Electron)
-
-```bash
-pnpm run build:electron
-```
-
-Creates platform-specific executable in `native/` directory.
-
 ## Architecture Overview
 
+HarmonEasy follows a **pipeline architecture** where musical events flow through a chain of transformers before being output to various destinations:
+
+```mermaid
+graph LR
+    Inputs["Input Layer<br/>(MIDI/BLE/Keyboard/Mic)"]
+    Chain["IO Chain<br/>(Orchestrates pipeline)"]
+    Transformers["Transformer Pipeline<br/>(Quantize → Transpose → Harmonize)"]
+    Outputs["Output Layer<br/>(Audio/MIDI/Notation)"]
+    Storage["Storage<br/>(OPFS Recording)"]
+    
+    Inputs -->|AudioCommand| Chain
+    Chain -->|Route| Transformers
+    Transformers -->|Transform| Chain
+    Chain -->|Route| Outputs
+    Chain -->|Record| Storage
+    
+    style Inputs fill:#1a1a2e,stroke:#0f3460,color:#fff
+    style Chain fill:#16213e,stroke:#0f3460,color:#fff
+    style Transformers fill:#1a1a2e,stroke:#0f3460,color:#fff
+    style Outputs fill:#16213e,stroke:#0f3460,color:#fff
+    style Storage fill:#1a1a2e,stroke:#0f3460,color:#fff
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    USER INTERFACE                        │
-│  (Keyboard, Visualizers, Controls, File Management)     │
-└────────────────────┬────────────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────────────┐
-│                   IO CHAIN                              │
-│  (InputManager → TransformerManager → OutputManager)   │
-└────────────────────┬────────────────────────────────────┘
-                     │
-     ┌───────────────┼───────────────┐
-     │               │               │
-┌────▼──┐    ┌──────▼──────┐  ┌────▼──────┐
-│ Inputs │    │ Transformers│  │  Outputs  │
-├────────┤    ├─────────────┤  ├───────────┤
-│ MIDI   │    │ Quantize    │  │ Web Audio │
-│ BLE    │    │ Transpose   │  │ MIDI Out  │
-│ Kbd    │    │ Harmonize   │  │ WAM2      │
-│ Mic    │    │ Chord       │  │ Notation  │
-│        │    │ Arpeggio    │  │ Speech    │
-│        │    │ ...         │  │ Vibrator  │
-└────────┘    └─────────────┘  └───────────┘
-     │               │               │
-     └───────────────┼───────────────┘
-                     │
-        ┌────────────▼────────────┐
-        │   Audio Clock / Timer   │
-        │   (Synchronization)     │
-        └─────────────────────────┘
-                     │
-        ┌────────────▼────────────┐
-        │   Event Recorder        │
-        │   (OPFS Storage)        │
-        └─────────────────────────┘
+
+## Core Components
+
+### Input Layer
+Captures musical events from various sources and converts them to a unified **AudioCommand** format:
+
+| Input Type | Source | Use Case |
+|-----------|--------|----------|
+| **WebMIDI** | Hardware MIDI keyboards/controllers | Professional studio gear |
+| **Bluetooth MIDI** | BLE-enabled devices | Wireless keyboards, controllers |
+| **On-Screen Keyboard** | Computer keyboard or mouse | Quick prototyping |
+| **Gamepad** | Game controllers | Novel input method |
+| **Microphone** | Audio input with pitch tracking | Voice-driven synthesis |
+
+Each input factory uses lazy-loading for efficient resource management:
+
+```typescript
+import { createInputById } from './packages/audiobus/io/input-factory.ts'
+import * as INPUT_TYPES from './packages/audiobus/io/inputs/input-types.ts'
+
+const keyboard = await createInputById(INPUT_TYPES.KEYBOARD)
+await keyboard.start()
+```
+
+### Transformer Pipeline
+Processes **AudioCommand** objects through a configurable chain of effects. Each transformer is a pure function that modifies commands before passing them downstream:
+
+```mermaid
+sequenceDiagram
+    participant Input as Input
+    participant Manager as Transformer<br/>Manager
+    participant Q as Quantizer
+    participant T as Transposer
+    participant H as Harmonizer
+    participant Output as Output
+    
+    Input->>Manager: AudioCommand[]
+    Manager->>Q: transform()
+    Q->>T: AudioCommand[]
+    T->>H: AudioCommand[]
+    H->>Manager: AudioCommand[]
+    Manager->>Output: Send to outputs
+```
+
+**Available Transformers:**
+- **Quantizer** - Snap notes to scale degrees
+- **Transposer** - Shift pitch by semitones
+- **Harmonizer** - Add harmonic voices
+- **Chordifier** - Generate chords from single notes
+- **Arpeggiator** - Break chords into patterns
+- **Note Delay/Repeater** - Add echoes and repetitions
+- **Humanizer** - Add swing and timing variations
+- **Moodifier** - Emoji-based chord generation
+- **Microtonal Transformer** - Support for EDO scales
+
+Transformers run in Web Workers by default for non-blocking processing:
+
+```typescript
+import { TransformerManagerWorker } from './packages/audiobus/io/transformer-manager.ts'
+
+const manager = new TransformerManagerWorker()
+const transformed = await manager.transform(commands)
+```
+
+### Output Layer
+Routes processed commands to various destinations:
+
+| Output Type | Destination | Format |
+|------------|-------------|--------|
+| **Web Audio** | Browser synthesis engine | Polyphonic audio |
+| **WAM2** | Web Audio Modules 2 plugins | VST-like plugins |
+| **MIDI Output** | External hardware/DAW | MIDI messages |
+| **Notation** | Sheet music display | VexFlow rendering |
+| **Speech** | Text-to-speech synthesis | Voice output |
+| **MusicXML** | Music notation format | File export |
+| **Vibrator** | Device haptics | Haptic feedback |
+
+```typescript
+import { createOutputById } from './packages/audiobus/io/output-factory.ts'
+import * as OUTPUT_TYPES from './packages/audiobus/io/outputs/output-types.ts'
+
+const notationOutput = await createOutputById(OUTPUT_TYPES.NOTATION)
+await notationOutput.noteOn(60, 100)  // Middle C
+```
+
+### Synchronization Layer
+The **Audio Clock** keeps everything in sync using the Web Audio API's high-precision timer:
+
+```typescript
+// All commands are timestamped to audio clock
+// Ensures perfect timing even with asynchronous processing
+command.timestamp = audioContext.currentTime + delayInSeconds
+```
+
+## Music Theory Foundation
+
+HarmonEasy integrates deep music theory knowledge through the **pitfalls** package:
+
+```mermaid
+graph TD
+    Scale["Scale/Mode<br/>(Ionian, Dorian, etc)"]
+    Interval["Interval Math<br/>(Semitones, cents)"]
+    Chord["Chord Generation<br/>(Triads, seventh, custom)"]
+    Tuning["Tuning Systems<br/>(Equal Temperament, EDO)"]
+    
+    Scale --> Quantizer["Quantizer uses<br/>scale degrees"]
+    Interval --> Harmonizer["Harmonizer uses<br/>intervals"]
+    Chord --> Chordifier["Chordifier uses<br/>chord definitions"]
+    Tuning --> Microtonal["Microtonal support<br/>(31-EDO, 53-EDO, etc)"]
+    
+    style Scale fill:#1a1a2e,stroke:#0f3460,color:#fff
+    style Interval fill:#1a1a2e,stroke:#0f3460,color:#fff
+    style Chord fill:#1a1a2e,stroke:#0f3460,color:#fff
+    style Tuning fill:#1a1a2e,stroke:#0f3460,color:#fff
+    style Quantizer fill:#16213e,stroke:#0f3460,color:#fff
+    style Harmonizer fill:#16213e,stroke:#0f3460,color:#fff
+    style Chordifier fill:#16213e,stroke:#0f3460,color:#fff
+    style Microtonal fill:#16213e,stroke:#0f3460,color:#fff
+```
+
+Supported scales/modes:
+- Major (Ionian)
+- Dorian, Phrygian, Lydian, Mixolydian, Aeolian, Locrian
+- Harmonic & Melodic Minor
+- Blues, Pentatonic, and custom scales
+- Microtonal EDO systems (12-EDO, 31-EDO, 53-EDO, etc.)
+
+## Project Structure
+
+```
+harmoneasy/
+├── packages/                 # Core libraries (npm workspace)
+│   ├── audiobus/            # Main audio engine
+│   │   ├── instruments/     # Synth & oscillator definitions
+│   │   ├── io/              # Input/Output/Transformer management
+│   │   ├── midi/            # MIDI protocol implementation
+│   │   ├── timing/          # Audio clock & synchronization
+│   │   ├── tuning/          # Music theory (scales, chords)
+│   │   ├── conversion/      # Note ↔ Frequency conversions
+│   │   └── storage/         # OPFS file system interface
+│   ├── netronome/           # Audio worklet processor (timing)
+│   ├── midi-ble/            # Bluetooth MIDI implementation
+│   ├── pitfalls/            # Music theory utilities
+│   ├── audiotool/           # AudioTool SDK integration
+│   ├── openDAW/             # OpenDAW format support
+│   ├── pink-trombone/       # Speech synthesis plugin
+│   └── flodjs/              # External library integration
+│
+├── app/
+│   └── harmoneasy/          # Main web application
+│       ├── src/
+│       │   ├── components/  # React/Web Components
+│       │   ├── hooks/       # Custom React hooks
+│       │   ├── styles/      # SCSS stylesheets
+│       │   ├── ui.ts        # UI controller class
+│       │   ├── audio.ts     # Audio engine initialization
+│       │   ├── commands.ts  # MIDI command constants
+│       │   └── options.ts   # Configuration options
+│       └── vite.config.ts
+│
+└── tests/                   # Integration & E2E tests
+```
+
+## Key Concepts
+
+### AudioCommand
+The fundamental data structure representing a single musical event:
+
+```typescript
+interface IAudioCommand {
+  timestamp: number           // Exact time to execute (audio clock)
+  command: number             // MIDI status (144=NoteOn, 128=NoteOff, etc)
+  channel: number             // MIDI channel (1-16)
+  note: number                // MIDI note number (0-127)
+  velocity: number            // Velocity (0-127)
+  duration?: number           // Optional duration in seconds
+  customData?: Record<any, any> // Extended metadata
+}
+```
+
+### IO Chain
+The `IOChain` orchestrates the entire pipeline:
+
+```typescript
+const ioChain = new IOChain()
+
+// Connect input → transformers → outputs
+ioChain.addInput(midiInput)
+ioChain.addTransformer(quantizer)
+ioChain.addTransformer(harmonizer)
+ioChain.addOutput(webAudioOutput)
+ioChain.addOutput(notationOutput)
+
+// Start processing
+await ioChain.start()
+```
+
+### Factory Pattern
+Inputs and Outputs use the factory pattern for efficient resource management:
+
+```typescript
+// Inputs are created lazily on-demand
+const factory = getAvailableInputFactories()
+const keyboards = factory.filter(f => f.type === INPUT_TYPES.KEYBOARD)
+const input = await keyboards[0].create()
+
+// Same for outputs
+const outputFactories = getAvailableOutputFactories()
+const wam2 = await outputFactories.find(f => f.type === OUTPUT_TYPES.WAM2).create()
+```
+
+## Technology Stack
+
+| Layer | Technology |
+|-------|-----------|
+| **Language** | TypeScript 5.9+, ES modules |
+| **Frontend** | Vite 5+, Web Components, React |
+| **Audio** | Web Audio API, MIDI.js, WAM2 |
+| **Styling** | SCSS with CSS variables |
+| **Storage** | OPFS (Origin Private File System) |
+| **Testing** | Vitest, Web Audio Test Utils |
+| **Build** | Turbo monorepo, pnpm workspaces |
+| **Desktop** | Electron (optional) |
+
+## Getting Started
+
+### Prerequisites
+- Node.js 18.x or higher
+- pnpm 8.x or higher
+- Modern browser (Chrome 90+, Firefox 88+, Safari 14.1+)
+
+### Installation
+
+```bash
+git clone https://github.com/designerzen/harmoneasy.git
+cd harmoneasy
+pnpm install
+pnpm run dev
+```
+
+Development server runs on `http://localhost:5174`
+
+### Essential Commands
+
+```bash
+pnpm run dev          # Start dev server
+pnpm run build        # Production build
+pnpm run preview      # Preview production build
+pnpm test             # Run all tests
+pnpm test -- --watch  # Watch mode
+pnpm run lint         # TypeScript & linting
 ```
 
 ## Usage
 
-### Basic Setup
+### Basic Workflow
 
-1. **Grant Permissions:** Allow WebMIDI and/or Bluetooth access when prompted
-2. **Connect Devices:** Select MIDI input/output devices from sidebar
-3. **Select Scale:** Choose a scale and root note for quantization
-4. **Play:** Start playing on your MIDI device - notes will be quantized and harmonized in real-time
-5. **Export:** Use Export menu to save as MIDI, MusicXML, or other formats
+1. **Load Input** - Select MIDI device, keyboard, or microphone
+2. **Configure Scale** - Choose root note and scale/mode
+3. **Add Transformers** - Drag quantizer, harmonizer, etc. into pipeline
+4. **Play** - Notes automatically quantize and harmonize
+5. **Export** - Save as MIDI, MusicXML, or audio
 
-### Volume Control
-
-Use the volume slider in the header, or use the volume up/down buttons for quick adjustments (±5% per click).
-
-### Transformers
-
-Apply transformers to the audio pipeline:
-- Drag transformers from sidebar to add them
-- Reorder by dragging
-- Configure parameters in transformer properties
-- Enable/disable individual transformers
-
-### Recording & Playback
-
-- All commands are automatically recorded
-- Session data is persisted in browser storage
-- Export recordings in multiple formats
-- Import MIDI files to add to your session
-
-## WAM2 (Web Audio Modules 2) Support
-
-HarmonEasy includes native WAM2 plugin support via the OutputFactory:
+### Example: Creating a Harmonized Arpeggio
 
 ```typescript
-import { createOutputById } from './libs/audiobus/io/output-factory.ts'
-import * as OUTPUT_TYPES from './libs/audiobus/io/outputs/output-types.ts'
+import { createInputById, createOutputById } from './packages/audiobus/io'
+import { IOChain } from './packages/audiobus/io'
+import { QuantizerTransformer } from './packages/audiobus/io'
+import { ArpeggiatorTransformer } from './packages/audiobus/io'
+import * as INPUT_TYPES from './packages/audiobus/io/inputs/input-types'
+import * as OUTPUT_TYPES from './packages/audiobus/io/outputs/output-types'
 
-// Create WAM2 output using factory
+// Create and connect components
+const chain = new IOChain()
+const midiInput = await createInputById(INPUT_TYPES.WEBMIDI)
+const webAudio = await createOutputById(OUTPUT_TYPES.WEB_AUDIO)
+
+// Configure transformers
+const quantizer = new QuantizerTransformer({ scale: 'major', root: 60 })
+const arpeggiator = new ArpeggiatorTransformer({ pattern: 'up-down' })
+
+// Build pipeline: MIDI → Quantize → Arpeggiate → Web Audio
+chain.addInput(midiInput)
+chain.addTransformer(quantizer)
+chain.addTransformer(arpeggiator)
+chain.addOutput(webAudio)
+
+await chain.start()
+```
+
+## Features Spotlight
+
+### Real-Time Collaboration
+HarmonEasy processes commands synchronously across all outputs, enabling multiple musicians to perform together without timing issues.
+
+### Advanced Export
+- **MIDI** - Compatible with all DAWs
+- **MusicXML** - For notation software
+- **Audio** - Via Web Audio export
+- **OpenDAW** - Native project format
+- **Markdown** - Textual music notation
+
+### Persistent Sessions
+All MIDI events are recorded to browser OPFS, allowing you to:
+- Resume sessions across page reloads
+- Export complete recordings
+- Build session history
+- Replay performances
+
+### WAM2 Plugin Support
+HarmonEasy can host Web Audio Modules 2 plugins, treating them as outputs:
+
+```typescript
 const wam2Output = await createOutputById(OUTPUT_TYPES.WAM2)
-
 // Route MIDI to plugin
-await wam2Output.noteOn(60, 100)
+await wam2Output.noteOn(60, 127)
 await wam2Output.noteOff(60)
 ```
 
-See [WAM2_AUDIO_OUTPUT.md](WAM2_AUDIO_OUTPUT.md) for complete WAM2 documentation.
-
 ## Browser Support
 
-| Browser | Version | Support |
-|---------|---------|---------|
-| Chrome | 90+ | ✅ Full |
-| Firefox | 88+ | ✅ Full |
-| Safari | 14.1+ | ✅ Full |
-| Edge | 90+ | ✅ Full |
+| Browser | Min Version | Notes |
+|---------|------------|-------|
+| **Chrome** | 90+ | Full support including WAM2 |
+| **Firefox** | 88+ | Full support |
+| **Safari** | 14.1+ | Full support |
+| **Edge** | 90+ | Full support |
 
-**Requirements:**
-- Web Audio API
-- Web MIDI API (optional, for MIDI devices)
-- Web Bluetooth API (optional, for Bluetooth MIDI)
-- OPFS (optional, for persistent storage)
+**Required APIs:**
+- Web Audio API (all browsers)
+- Web MIDI API (optional, hardware MIDI)
+- Web Bluetooth API (optional, BLE MIDI)
+- OPFS (optional, persistent storage)
 
-## Known Limitations
+**Not Available:**
+- WebMIDI in private/incognito mode
+- BLE MIDI requires HTTPS in production
 
-- WebMIDI is not available in private/incognito browsing
-- Bluetooth MIDI requires HTTPS in production
-- Some transformers may not work with certain audio contexts
-- WAM2 plugin availability varies by browser
+## Development Workflow
 
-## API Documentation
+### Adding a New Transformer
 
-### Audio Command Format
+1. Create class extending `Transformer` base
+2. Implement `transform(commands, timer)` method
+3. Register in transformer factory
+4. Add UI controls for parameters
 
 ```typescript
-interface IAudioCommand {
-  timestamp: number           // When to execute
-  command: number             // MIDI status (144 = note on, etc)
-  channel: number             // MIDI channel (1-16)
-  note: number                // Note number (0-127)
-  velocity: number            // Velocity (0-127)
-  duration?: number           // Note duration in seconds
-  customData?: Record<any, any> // Additional metadata
+import { Transformer } from './packages/audiobus/io/transformer.ts'
+import { IAudioCommand } from './packages/audiobus/types.ts'
+
+export class MyTransformer extends Transformer {
+  transform(commands: IAudioCommand[]): Promise<IAudioCommand[]> {
+    return Promise.resolve(
+      commands.map(cmd => ({
+        ...cmd,
+        velocity: Math.floor(cmd.velocity * 0.8)  // Example: reduce velocity
+      }))
+    )
+  }
 }
 ```
 
-### Transformer Interface
+### Adding a New Input
+
+1. Create class implementing `IAudioInput` interface
+2. Implement `start()` and `stop()` methods
+3. Emit `command` events with AudioCommand objects
+4. Register in input factory
 
 ```typescript
-interface ITransformer {
-  transform(commands: IAudioCommand[], timer: Timer): Promise<IAudioCommand[]>
-  name: string
-  description: string
-  defaultConfig: Record<string, any>
+import { IAudioInput } from './packages/audiobus/io/types.ts'
+import { EventEmitter } from 'events'
+
+export class MyInput extends EventEmitter implements IAudioInput {
+  async start() {
+    // Initialize hardware/API
+  }
+  
+  async stop() {
+    // Cleanup
+  }
 }
 ```
 
-## Contributing
+### Code Style
 
-Contributions are welcome! Please:
+- **Imports:** Always use `.ts` or `.js` extensions (ES modules)
+- **Types:** Strict TypeScript, explicit types, avoid `any`
+- **Naming:** `camelCase` for vars/functions, `PascalCase` for classes/interfaces
+- **Comments:** JSDoc for public APIs
+- **Error Handling:** Validate at boundaries, trust internal code
+- **Testing:** Unit tests required for new features
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+## Building
 
-### Development Guidelines
+### Web Build
+```bash
+pnpm run build
+# Output: dist/
+```
 
-- Write tests for new features
-- Follow the code style guidelines in AGENTS.md
-- Update documentation for API changes
-- Ensure all tests pass before submitting PR
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgments
-
-- [Web Audio API](https://www.w3.org/TR/webaudio/)
-- [Web MIDI API](https://www.w3.org/TR/webmidi/)
-- [Web Audio Modules 2](https://www.webaudiomodules.org/)
-- [VexFlow](https://www.vexflow.com/) for sheet music rendering
-- [Pink Trombone](https://dood.al/pinktrombone/) for speech synthesis
-
-## Support
-
-For issues, questions, or suggestions:
-
-- 📝 Open an [issue](https://github.com/designerzen/harmoneasy/issues)
-- 💬 Start a [discussion](https://github.com/designerzen/harmoneasy/discussions)
-- 📧 Contact the maintainers
+### Electron Desktop Build
+```bash
+pnpm run build:electron
+# Output: native/ (platform-specific executables)
+```
 
 ## Roadmap
 
-- [ ] Collaborative real-time editing (PartyKit integration)
-- [ ] User accounts and cloud sync
-- [ ] More WAM2 plugins
-- [ ] VST/AU plugin wrappers
-- [ ] Mobile app (React Native)
-- [ ] Advanced MIDI learn/mapping
-- [ ] Preset system for transformer chains
-- [ ] Performance improvements (WASM transformers)
+- **Collaboration** - Real-time multi-user editing (PartyKit)
+- **Cloud** - User accounts, presets, cloud sync
+- **Plugins** - More WAM2 plugins, VST/AU wrappers
+- **Mobile** - React Native app
+- **Performance** - WASM transformers, SIMD optimizations
+- **MIDI** - Advanced MIDI learn, controller mapping UI
+
+## Known Limitations
+
+- WebMIDI unavailable in private browsing
+- BLE MIDI requires HTTPS in production
+- WAM2 plugin support varies by browser
+- Some transformers may be computationally expensive
+
+## Contributing
+
+We welcome contributions! Please:
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Write tests for new code
+4. Commit: `git commit -m 'Add amazing feature'`
+5. Push: `git push origin feature/amazing-feature`
+6. Open a Pull Request
+
+**Development guidelines:**
+- Follow code style rules (see AGENTS.md)
+- Write tests using Vitest
+- Update documentation
+- Ensure tests pass: `pnpm test`
+
+## License
+
+MIT License - see LICENSE file for details.
+
+## Credits
+
+Built with these amazing technologies:
+
+- [Web Audio API](https://www.w3.org/TR/webaudio/) - Audio processing
+- [Web MIDI API](https://www.w3.org/TR/webmidi/) - MIDI device support
+- [Web Bluetooth API](https://www.w3.org/TR/web-bluetooth/) - Bluetooth MIDI
+- [Web Audio Modules 2](https://www.webaudiomodules.org/) - Plugin system
+- [VexFlow](https://www.vexflow.com/) - Sheet music rendering
+- [Pink Trombone](https://dood.al/pinktrombone/) - Speech synthesis
+
+## Support & Community
+
+- 📝 [Issues](https://github.com/designerzen/harmoneasy/issues) - Bug reports & feature requests
+- 💬 [Discussions](https://github.com/designerzen/harmoneasy/discussions) - Questions & ideas
+- 📧 [Contact Maintainers](mailto:radio@awesomething.co.uk)
 
 ---
 
