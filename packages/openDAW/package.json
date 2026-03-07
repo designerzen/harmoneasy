@@ -8,12 +8,15 @@
     ".": "./index.ts"
   },
   "scripts": {
-    "dev": "echo 'No dev server for this package'"
+    "dev": "echo 'No dev server for this package'",
+    "lint": "oxlint .",
+    "lint:fix": "oxlint --fix ."
   },
   "files": [
     "*.ts"
   ],
   "dependencies": {
+    "@harmoneasy/shared-config": "workspace:^",
     "audiobus": "workspace:^"
   },
   "devDependencies": {

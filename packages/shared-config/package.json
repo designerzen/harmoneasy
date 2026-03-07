@@ -1,0 +1,20 @@
+{
+  "name": "@harmoneasy/shared-config",
+  "version": "0.15.1",
+  "description": "Shared configuration for linting and tooling",
+  "type": "module",
+  "main": "oxlint.config.ts",
+  "exports": {
+    ".": "./oxlint.config.ts",
+    "./oxlint": "./oxlint.config.ts"
+  },
+  "files": [
+    "oxlint.config.ts"
+  ],
+  "scripts": {
+    "dev": "echo 'Configuration package - no dev server'"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3"
+  }
+}

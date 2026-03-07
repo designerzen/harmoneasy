@@ -20,13 +20,12 @@
     "build-native:clean": "pnpm exec node-gyp clean && pnpm exec node-gyp configure && pnpm exec node-gyp build",
     "copy-native": "node ../../scripts/copy-native-modules.js",
     "build-vite-electron": "vite build --config vite.config.electron.js",
-    "build:electron": "npm run build-native && npm run build-vite-electron && npm run copy-native && electron-builder",
+    "build:electron": "pnpm run build-native && pnpm run build-vite-electron && pnpm run copy-native && electron-builder",
     "preview": "vite preview",
     "electron": "electron .",
-    "migrate:monorepo": "node scripts/migrate-monorepo.js",
     "upgrader": "npx npm-check-updates --interactive -u",
-	"lint": "oxlint",
-    "lint:fix": "oxlint --fix"
+    "lint": "oxlint .",
+    "lint:fix": "oxlint --fix ."
   },
   "devDependencies": {
     "@types/react": "^19.2.13",
@@ -45,6 +44,7 @@
     "wait-on": "^9.0.3"
   },
   "dependencies": {
+    "@harmoneasy/shared-config": "workspace:^",
     "audiobus": "workspace:^",
     "audiotool": "workspace:^",
     "flodjs": "workspace:^",
