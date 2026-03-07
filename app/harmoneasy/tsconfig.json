@@ -15,13 +15,19 @@
     "paths": {
       "audiobus": ["../../packages/audiobus"],
       "audiobus/*": ["../../packages/audiobus/*"],
+      "audiotool": ["../../packages/audiotool"],
       "audiotool/*": ["../../packages/audiotool/*"],
       "netronome": ["../../packages/netronome"],
       "netronome/*": ["../../packages/netronome/*"],
+      "opendaw": ["../../packages/openDAW"],
       "opendaw/*": ["../../packages/openDAW/*"],
+      "pink-trombone": ["../../packages/pink-trombone"],
       "pink-trombone/*": ["../../packages/pink-trombone/*"],
+      "midi-ble": ["../../packages/midi-ble"],
       "midi-ble/*": ["../../packages/midi-ble/*"],
+      "pitfalls": ["../../packages/pitfalls"],
       "pitfalls/*": ["../../packages/pitfalls/*"],
+      "flodjs": ["../../packages/flodjs"],
       "flodjs/*": ["../../packages/flodjs/*"]
     },
 
