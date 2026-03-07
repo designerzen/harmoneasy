@@ -18,7 +18,7 @@
     "build": "vite build --config vite.config.web.js",
     "build-native": "pnpm exec node-gyp rebuild",
     "build-native:clean": "pnpm exec node-gyp clean && pnpm exec node-gyp configure && pnpm exec node-gyp build",
-    "copy-native": "node scripts/copy-native-modules.js",
+    "copy-native": "node ../../scripts/copy-native-modules.js",
     "build-vite-electron": "vite build --config vite.config.electron.js",
     "build:electron": "npm run build-native && npm run build-vite-electron && npm run copy-native && electron-builder",
     "preview": "vite preview",
