@@ -13,6 +13,7 @@
     "turbo": "turbo",
     "dev": "turbo run dev --no-daemon",
     "build": "turbo run build --filter='./packages/*' --filter='./app/*' --continue",
+    "build:electron": "pnpm --filter ./app/harmoneasy run build:electron",
     "test": "turbo run test",
     "type-check": "turbo run type-check",
     "upgrader": "pnpm run upgrade:git && pnpm run upgrade:npm",
