@@ -63,7 +63,7 @@ jobs:
 
       - name: Build native module (Linux)
         if: runner.os == 'Linux'
-        run: npm run build-native
+        run: pnpm run build-native --filter app/harmoneasy
         env:
           CFLAGS: "-I/usr/include"
           CXXFLAGS: "-I/usr/include"
@@ -73,7 +73,7 @@ jobs:
 
       - name: Build native module (other OS)
         if: runner.os != 'Linux'
-        run: npm run build-native
+        run: pnpm run build-native --filter app/harmoneasy
         continue-on-error: true
 
       - name: Build Electron app
