@@ -20,6 +20,9 @@ importers:
 
   app/harmoneasy:
     dependencies:
+      '@harmoneasy/shared-config':
+        specifier: workspace:^
+        version: link:../../packages/shared-config
       '@xyflow/react':
         specifier: ^12.10.0
         version: 12.10.0(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -114,6 +117,9 @@ importers:
 
   packages/audiobus:
     dependencies:
+      '@harmoneasy/shared-config':
+        specifier: workspace:^
+        version: link:../shared-config
       '@msgpack/msgpack':
         specifier: ^3.1.3
         version: 3.1.3
@@ -169,6 +175,9 @@ importers:
       '@audiotool/nexus':
         specifier: ^0.0.11
         version: 0.0.11
+      '@harmoneasy/shared-config':
+        specifier: workspace:^
+        version: link:../shared-config
       audiobus:
         specifier: workspace:^
         version: link:../audiobus
@@ -178,18 +187,30 @@ importers:
         version: 5.9.3
 
   packages/flodjs:
+    dependencies:
+      '@harmoneasy/shared-config':
+        specifier: workspace:^
+        version: link:../shared-config
     devDependencies:
       typescript:
         specifier: ~5.9.3
         version: 5.9.3
 
   packages/midi-ble:
+    dependencies:
+      '@harmoneasy/shared-config':
+        specifier: workspace:^
+        version: link:../shared-config
     devDependencies:
       typescript:
         specifier: ~5.9.3
         version: 5.9.3
 
   packages/netronome:
+    dependencies:
+      '@harmoneasy/shared-config':
+        specifier: workspace:^
+        version: link:../shared-config
     devDependencies:
       '@playwright/test':
         specifier: ^1.58.2
@@ -221,6 +242,9 @@ importers:
 
   packages/openDAW:
     dependencies:
+      '@harmoneasy/shared-config':
+        specifier: workspace:^
+        version: link:../shared-config
       audiobus:
         specifier: workspace:^
         version: link:../audiobus
@@ -231,6 +255,9 @@ importers:
 
   packages/pink-trombone:
     dependencies:
+      '@harmoneasy/shared-config':
+        specifier: workspace:^
+        version: link:../shared-config
       audiobus:
         specifier: workspace:^
         version: link:../audiobus
@@ -240,6 +267,16 @@ importers:
         version: 5.9.3
 
   packages/pitfalls:
+    dependencies:
+      '@harmoneasy/shared-config':
+        specifier: workspace:^
+        version: link:../shared-config
+    devDependencies:
+      typescript:
+        specifier: ~5.9.3
+        version: 5.9.3
+
+  packages/shared-config:
     devDependencies:
       typescript:
         specifier: ~5.9.3
