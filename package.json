@@ -6,13 +6,13 @@
   "author": "designerzen <radio@awesomething.co.uk>",
   "packageManager": "pnpm@10.29.3",
   "scripts": {
-	"postinstall": "git submodule update --remote --init",
-	"upgrade:git": "git submodule update --remote",
-	"upgrade:npm": "turbo run upgrader",
+    "postinstall": "git submodule update --remote --init",
+    "upgrade:git": "git submodule update --remote",
+    "upgrade:npm": "turbo run upgrader",
     "start": "pnpm run dev --filter=harmoneasy",
     "turbo": "turbo",
     "dev": "turbo run dev --no-daemon",
-    "build": "turbo run build --filter='./packages/*' --filter='./app/*' --continue",
+    "build": "turbo run build --continue",
     "build:electron": "pnpm --filter ./app/harmoneasy run build:electron",
     "test": "turbo run test",
     "type-check": "turbo run type-check",
@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.5",
-    "turbo": "^2.3.3",
+    "turbo": "^2.8.14",
     "typescript": "~5.9.3"
   }
 }

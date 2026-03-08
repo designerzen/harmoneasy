@@ -12,27 +12,85 @@ HarmonEasy is a modern web application designed for collaborative music-making. 
 
 ## Architecture Overview
 
-HarmonEasy follows a **pipeline architecture** where musical events flow through a chain of transformers before being output to various destinations:
+HarmonEasy follows a **vertical pipeline architecture** where musical events flow through multiple stages of validation, transformation, and output:
 
 ```mermaid
-graph LR
-    Inputs["Input Layer<br/>(MIDI/BLE/Keyboard/Mic)"]
-    Chain["IO Chain<br/>(Orchestrates pipeline)"]
-    Transformers["Transformer Pipeline<br/>(Quantize → Transpose → Harmonize)"]
-    Outputs["Output Layer<br/>(Audio/MIDI/Notation)"]
-    Storage["Storage<br/>(OPFS Recording)"]
+graph TD
+    MIDI["🎹 MIDI Input<br/>(WebMIDI, BLE, Keyboard, etc)"]
+    MIC["🎤 Microphone<br/>(Pitch Detection)"]
+    GAMEPAD["🎮 Gamepad<br/>(Note Mapping)"]
     
-    Inputs -->|AudioCommand| Chain
-    Chain -->|Route| Transformers
-    Transformers -->|Transform| Chain
-    Chain -->|Route| Outputs
-    Chain -->|Record| Storage
+    MIDI --> FACTORY["InputFactory<br/>(Creates Input Instance)"]
+    MIC --> FACTORY
+    GAMEPAD --> FACTORY
     
-    style Inputs fill:#1a1a2e,stroke:#0f3460,color:#fff
-    style Chain fill:#16213e,stroke:#0f3460,color:#fff
-    style Transformers fill:#1a1a2e,stroke:#0f3460,color:#fff
-    style Outputs fill:#16213e,stroke:#0f3460,color:#fff
-    style Storage fill:#1a1a2e,stroke:#0f3460,color:#fff
+    FACTORY --> CMD["AudioCommand[]<br/>(timestamp, note, velocity, channel)"]
+    
+    CMD --> IOCHAIN["IOChain<br/>(Orchestrator)"]
+    
+    IOCHAIN --> VALIDATE["✓ Validate<br/>(Type check, bounds)"]
+    VALIDATE --> TIMESTAMP["⏱️ Timestamp<br/>(Sync to audio clock)"]
+    TIMESTAMP --> ENRICH["📝 Enrich<br/>(Add metadata)"]
+    
+    ENRICH --> TRANSFORM["Transform Pipeline<br/>(Web Worker)"]
+    
+    TRANSFORM --> Q["1️⃣ Quantizer<br/>(Snap to scale)"]
+    Q --> T["2️⃣ Transposer<br/>(Shift pitch)"]
+    T --> H["3️⃣ Harmonizer<br/>(Add voices)"]
+    H --> CHORD["4️⃣ Chordifier<br/>(Generate chords)"]
+    CHORD --> ARP["5️⃣ Arpeggiator<br/>(Break patterns)"]
+    ARP --> REPEAT["6️⃣ Repeater<br/>(Add delays)"]
+    REPEAT --> HUMAN["7️⃣ Humanizer<br/>(Add swing)"]
+    HUMAN --> MICRO["8️⃣ Microtonal<br/>(EDO support)"]
+    
+    MICRO --> TRANSFORMED["AudioCommand[]<br/>(Transformed)"]
+    
+    TRANSFORMED --> ROUTE["IOChain<br/>(Route to outputs)"]
+    
+    ROUTE --> AUDIO["🔊 Web Audio<br/>(Polyphonic synth)"]
+    ROUTE --> MIDI_OUT["🎹 MIDI Output<br/>(Hardware/DAW)"]
+    ROUTE --> NOTATION["🎼 Notation<br/>(Sheet music)"]
+    ROUTE --> WAM2["🔌 WAM2 Plugin<br/>(VST-like)"]
+    ROUTE --> SPEECH["🗣️ Speech<br/>(Text-to-speech)"]
+    ROUTE --> VIB["📳 Vibrator<br/>(Haptic)"]
+    
+    AUDIO --> RECORD["📁 Record<br/>(OPFS Storage)"]
+    MIDI_OUT --> RECORD
+    NOTATION --> RECORD
+    WAM2 --> RECORD
+    SPEECH --> RECORD
+    VIB --> RECORD
+    
+    RECORD --> END["✅ Output<br/>(Synchronized)"]
+    
+    style MIDI fill:#1a1a2e,stroke:#0f3460,color:#fff
+    style MIC fill:#1a1a2e,stroke:#0f3460,color:#fff
+    style GAMEPAD fill:#1a1a2e,stroke:#0f3460,color:#fff
+    style FACTORY fill:#16213e,stroke:#0f3460,color:#fff
+    style CMD fill:#0f3460,stroke:#0f3460,color:#fff
+    style IOCHAIN fill:#16213e,stroke:#0f3460,color:#fff
+    style VALIDATE fill:#1a1a2e,stroke:#0f3460,color:#fff
+    style TIMESTAMP fill:#1a1a2e,stroke:#0f3460,color:#fff
+    style ENRICH fill:#1a1a2e,stroke:#0f3460,color:#fff
+    style TRANSFORM fill:#16213e,stroke:#0f3460,color:#fff
+    style Q fill:#1a1a2e,stroke:#0f3460,color:#fff
+    style T fill:#1a1a2e,stroke:#0f3460,color:#fff
+    style H fill:#1a1a2e,stroke:#0f3460,color:#fff
+    style CHORD fill:#1a1a2e,stroke:#0f3460,color:#fff
+    style ARP fill:#1a1a2e,stroke:#0f3460,color:#fff
+    style REPEAT fill:#1a1a2e,stroke:#0f3460,color:#fff
+    style HUMAN fill:#1a1a2e,stroke:#0f3460,color:#fff
+    style MICRO fill:#1a1a2e,stroke:#0f3460,color:#fff
+    style TRANSFORMED fill:#0f3460,stroke:#0f3460,color:#fff
+    style ROUTE fill:#16213e,stroke:#0f3460,color:#fff
+    style AUDIO fill:#1a1a2e,stroke:#0f3460,color:#fff
+    style MIDI_OUT fill:#1a1a2e,stroke:#0f3460,color:#fff
+    style NOTATION fill:#1a1a2e,stroke:#0f3460,color:#fff
+    style WAM2 fill:#1a1a2e,stroke:#0f3460,color:#fff
+    style SPEECH fill:#1a1a2e,stroke:#0f3460,color:#fff
+    style VIB fill:#1a1a2e,stroke:#0f3460,color:#fff
+    style RECORD fill:#16213e,stroke:#0f3460,color:#fff
+    style END fill:#0f3460,stroke:#0f3460,color:#fff
 ```
 
 ## Core Components
