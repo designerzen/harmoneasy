@@ -207,10 +207,6 @@ importers:
         version: 5.9.3
 
   packages/netronome:
-    dependencies:
-      '@harmoneasy/shared-config':
-        specifier: workspace:^
-        version: link:../shared-config
     devDependencies:
       '@playwright/test':
         specifier: ^1.58.2
