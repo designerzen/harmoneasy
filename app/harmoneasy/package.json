@@ -4,6 +4,7 @@
   "version": "0.15.1",
   "description": "MIDI/audio application with Electron desktop support",
   "author": "designerzen <radio@awesomething.co.uk>",
+  "homepage": "https://github.com/designerzen/harmoneasy",
   "type": "module",
   "start": "./source/index.ts",
   "main": "electron-main.js",
@@ -25,7 +26,9 @@
     "electron": "electron .",
     "upgrader": "npx npm-check-updates --interactive -u",
     "lint": "oxlint .",
-    "lint:fix": "oxlint --fix ."
+    "lint:fix": "oxlint --fix .",
+	"fmt": "oxfmt",
+    "fmt:check": "oxfmt --check"
   },
   "devDependencies": {
     "@types/react": "^19.2.13",
@@ -35,6 +38,7 @@
     "electron-builder": "^26.7.0",
     "node-addon-api": "^8.5.0",
     "node-gyp": "^12.2.0",
+    "oxfmt": "^0.36.0",
     "partykit": "0.0.115",
     "sass-embedded": "^1.97.3",
     "typescript": "~5.9.3",
@@ -45,22 +49,22 @@
   },
   "dependencies": {
     "@harmoneasy/shared-config": "workspace:^",
+    "@xyflow/react": "^12.10.0",
     "audiobus": "workspace:^",
     "audiotool": "workspace:^",
+    "entitree-flex": "^0.4.1",
     "flodjs": "workspace:^",
+    "jzz": "^1.9.6",
     "midi-ble": "workspace:^",
     "netronome": "workspace:^",
     "opendaw": "workspace:^",
+    "partysocket": "1.1.13",
     "pink-trombone": "workspace:^",
     "pitfalls": "workspace:^",
-    "@xyflow/react": "^12.10.0",
-    "entitree-flex": "^0.4.1",
-    "jzz": "^1.9.6",
-    "partysocket": "1.1.13",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "uWebSockets.js": "github:uNetworking/uWebSockets.js",
-	"webrtc-adapter": "^9.0.3"
+    "webrtc-adapter": "^9.0.3"
   },
   "build": {
     "appId": "com.harmoneasy.app",
@@ -114,5 +118,3 @@
     }
   }
 }
-
-

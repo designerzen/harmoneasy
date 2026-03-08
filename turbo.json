@@ -90,6 +90,19 @@
     "upgrader": {
       "cache": false,
       "interactive": true
+    },
+    "lint": {
+      "cache": true,
+      "inputs": [
+        "**/*.ts",
+        "**/*.js",
+        "**/*.tsx",
+        "**/*.jsx",
+        "oxlint.config.ts"
+      ]
+    },
+    "lint:fix": {
+      "cache": false
     }
   }
 }
