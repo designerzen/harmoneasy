@@ -3,6 +3,7 @@ import SongVisualiser from 'audiobus/ui/song-visualiser.js'
 import { SongVisualiserUI } from 'audiobus/ui/song-visualiser-ui.js'
 import NoteVisualiser from 'audiobus/ui/note-visualiser.js'
 import SVGKeyboard from 'audiobus/ui/keyboard-svg.ts'
+import { getPackagesListHTML } from './services/packages-service'
 
 import type NoteModel from "audiobus/note-model.ts"
 import type { IAudioCommand } from "audiobus/audio-command-interface.ts"
@@ -51,6 +52,8 @@ const DOM_ID_NOTE_VISUALISER_CANVAS = "note-visualiser"
 
 const DOM_ID_DIALOG_ERROR = "error-dialog"
 const DOM_ID_DIALOG_INFO = "info-dialog"
+const DOM_ID_DIALOG_PACKAGES = "packages-dialog"
+const DOM_ID_BUTTON_PACKAGES_INFO = "btn-packages-info"
 
 const DEFAULT_OPTIONS = {
 	verticalNoteBars: false
@@ -101,6 +104,8 @@ export default class UI implements IAudioOutput {
 	elementOverlayExport: HTMLElement | null
 	elementInfoDialog: HTMLElement | null
 	elementErrorDialog: HTMLElement | null
+	elementPackagesDialog: HTMLElement | null
+	elementButtonPackagesInfo: HTMLElement | null
 	noteVisualiserCanvas: HTMLElement | null
 	noteVisualiser: NoteVisualiser
 
@@ -173,6 +178,8 @@ export default class UI implements IAudioOutput {
 		this.elementOverlayExport = document.getElementById(DOM_ID_EXPORT_OVERLAY)
 		this.elementInfoDialog = document.getElementById(DOM_ID_DIALOG_INFO)
 		this.elementErrorDialog = document.getElementById(DOM_ID_DIALOG_ERROR)
+		this.elementPackagesDialog = document.getElementById(DOM_ID_DIALOG_PACKAGES)
+		this.elementButtonPackagesInfo = document.getElementById(DOM_ID_BUTTON_PACKAGES_INFO)
 
 		this.activateSidebar()
 
@@ -812,6 +819,50 @@ export default class UI implements IAudioOutput {
 			this.noteOff(noteNumber)
 		}
 	}
+
+	/**
+	 * Display the packages information dialog
+	 * Lazily loads package information when called
+	 */
+	async showPackagesDialog() {
+		if (!this.elementPackagesDialog) {
+			return
+		}
+
+		const packagesMessage = document.querySelector("#packages-message")
+		
+		// Show loading state while fetching packages
+		if (packagesMessage) {
+			packagesMessage.innerHTML = '<p style="text-align: center; color: var(--col-grey);">Loading packages...</p>'
+		}
+
+		try {
+			const packagesList = await getPackagesListHTML()
+			
+			if (packagesMessage) {
+				packagesMessage.innerHTML = packagesList
+			}
+		} catch (error) {
+			console.error('Failed to load packages list:', error)
+			if (packagesMessage) {
+				packagesMessage.innerHTML = '<p style="color: var(--col-red);">Failed to load packages information</p>'
+			}
+		}
+
+		this.elementPackagesDialog.hidden = false
+		this.elementPackagesDialog.showModal()
+	}
+
+	/**
+	 * Register a callback for when the packages info button is clicked
+	 */
+	whenPackagesInfoRequestedRun(callback: Function) {
+		this.elementButtonPackagesInfo && this.elementButtonPackagesInfo.addEventListener('click', () => {
+			callback && callback()
+		}, { signal: this.abortController.signal })
+	}
+
+
 
 	/**
 	 * Clean up

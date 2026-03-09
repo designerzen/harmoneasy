@@ -205,8 +205,21 @@
 		<p>Please wait while we create your project</p>
 	</dialog>
 
+	<dialog id="packages-dialog" closedby="any" hidden aria-labelledby="packages-dialog-title" aria-describedby="packages-message">
+		<header>
+			<h5 id="packages-dialog-title">Built-in Packages</h5>
+		</header>
+		<div id="packages-message" class="packages-list selectable"></div>
+		<form method="dialog">
+			<button class="btn-close" type="submit" formmethod="dialog">
+				Close
+			</button>
+		</form>
+	</dialog>
+
 	<footer>
-		<small>© 2026 </small>
+		<small>© 2026</small>
+		<button id="btn-packages-info" type="button" class="packages-info-btn" title="View package information">Packages</button>
 	</footer>
 
 	<!-- Input Manager -->

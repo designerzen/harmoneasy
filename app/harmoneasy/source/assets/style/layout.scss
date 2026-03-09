@@ -196,6 +196,37 @@ body > footer{
 	order:999;
 	z-index: 909;
 	padding: calc(var(--pad)/2) calc(var(--pad));
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: var(--gap);
+}
+
+.packages-info-btn {
+	font-size: 12px;
+	padding: 6px 12px;
+	background: light-dark(
+		color-mix(in oklch, var(--col-white) 94%, var(--col-black)),
+		color-mix(in oklch, var(--col-black) 85%, #000)
+	);
+	color: light-dark(#333, var(--col-white));
+	border: 1px solid light-dark(
+		color-mix(in oklch, var(--col-black) 13%, var(--col-white)),
+		color-mix(in oklch, var(--col-white) 25%, var(--col-black))
+	);
+	border-radius: 4px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+
+	&:hover {
+		background-color: var(--col-blue);
+		color: var(--col-white);
+		border-color: var(--col-blue);
+	}
+
+	&:active {
+		transform: scale(0.98);
+	}
 }
 
 #action-bar {
@@ -498,10 +529,10 @@ song-explorer-ui{
 			}
 
 			&:active {
-				transform: scale(0.98);
+			    transform: scale(0.98);
 			}
-		}
-	}
+			}
+			}
 
 	.preset-icon {
 		width: 20px;
@@ -545,6 +576,89 @@ song-explorer-ui{
 
 .presets{
 	grid-area: presets;
+}
+
+// Packages Information Dialog
+#packages-dialog {
+	min-width: 400px;
+	max-width: 90vw;
+	max-height: 90vh;
+}
+
+.packages-list {
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+	margin: 1.5rem 0;
+	padding: 1rem;
+	max-height: 60vh;
+	overflow-y: auto;
+	background: light-dark(
+		color-mix(in oklch, var(--col-white) 98%, var(--col-black)),
+		color-mix(in oklch, var(--col-black) 95%, #000)
+	);
+	border-radius: 4px;
+}
+
+.package-item {
+	padding: 1rem;
+	border: 1px solid light-dark(
+		color-mix(in oklch, var(--col-black) 13%, var(--col-white)),
+		color-mix(in oklch, var(--col-white) 25%, var(--col-black))
+	);
+	border-radius: 6px;
+	background: light-dark(
+		var(--col-white),
+		color-mix(in oklch, var(--col-black) 90%, #000)
+	);
+	transition: all 0.2s ease;
+
+	h6 {
+		margin: 0 0 0.5rem 0;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 0.5rem;
+
+		.version {
+			font-size: 0.85em;
+			font-weight: normal;
+			color: light-dark(
+				color-mix(in oklch, var(--col-black) 60%, var(--col-white)),
+				color-mix(in oklch, var(--col-white) 60%, var(--col-black))
+			);
+		}
+	}
+
+	p {
+		margin: 0 0 0.75rem 0;
+		font-size: 0.9em;
+		color: light-dark(
+			color-mix(in oklch, var(--col-black) 70%, var(--col-white)),
+			color-mix(in oklch, var(--col-white) 70%, var(--col-black))
+		);
+		line-height: 1.5;
+	}
+
+	a {
+		color: var(--col-blue);
+		text-decoration: none;
+		font-size: 0.9em;
+		transition: all 0.2s ease;
+
+		&:hover {
+			text-decoration: underline;
+			color: light-dark(var(--col-blue), var(--col-cyan));
+		}
+	}
+
+	&:hover {
+		border-color: var(--col-blue);
+		box-shadow: 0 2px 8px light-dark(
+			color-mix(in oklch, var(--col-black) 10%, transparent),
+			color-mix(in oklch, var(--col-black) 30%, transparent)
+		);
+	}
 }
 
 

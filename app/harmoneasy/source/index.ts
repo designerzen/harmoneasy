@@ -220,6 +220,11 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number 
         }
     })
 
+    // Show packages information
+    frontEnd.whenPackagesInfoRequestedRun(async () => {
+        await frontEnd.showPackagesDialog()
+    })
+
     // Import file from device and interpret
     frontEnd.whenFileImportRequestedRun(async (file: File) => {
         try {
