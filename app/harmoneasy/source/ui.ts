@@ -826,6 +826,7 @@ export default class UI implements IAudioOutput {
 	 */
 	async showPackagesDialog() {
 		if (!this.elementPackagesDialog) {
+			console.error('Packages dialog element not found')
 			return
 		}
 
@@ -842,15 +843,17 @@ export default class UI implements IAudioOutput {
 			if (packagesMessage) {
 				packagesMessage.innerHTML = packagesList
 			}
+
+			// Show the dialog after loading content
+			this.elementPackagesDialog.showModal()
 		} catch (error) {
 			console.error('Failed to load packages list:', error)
 			if (packagesMessage) {
 				packagesMessage.innerHTML = '<p style="color: var(--col-red);">Failed to load packages information</p>'
 			}
+			// Show the dialog even on error
+			this.elementPackagesDialog.showModal()
 		}
-
-		this.elementPackagesDialog.hidden = false
-		this.elementPackagesDialog.showModal()
 	}
 
 	/**
