@@ -5,6 +5,7 @@ import { layoutFromMap } from 'entitree-flex'
 import type TransformerManager from 'audiobus/io/transformer-manager'
 import type TransformerManagerWorker from 'audiobus/io/transformer-manager-worker'
 import type IOChain from 'audiobus/io/IO-chain'
+import type { AbstractInput, IAudioInput, IAudioOutput } from 'audiobus'
 
 const { Top, Bottom, Left, Right } = Position
 
@@ -69,8 +70,8 @@ export const layoutElements = (tree, rootId:String|Number, direction = 'TB') => 
 		},
 	)
 
-	const nodes = []
-	const edges = []
+	const allNodes = []
+	const allEdges = []
 
 	entitreeEdges.forEach((edge) => {
 
@@ -100,7 +101,7 @@ export const layoutElements = (tree, rootId:String|Number, direction = 'TB') => 
 			newEdge.targetHandle = isTreeHorizontal ? Left : Top
 		}
 
-		edges.push(newEdge)
+		allEdges.push(newEdge)
 	})
 
 	entitreeNodes.forEach((node) => {
@@ -133,10 +134,13 @@ export const layoutElements = (tree, rootId:String|Number, direction = 'TB') => 
 			y: node.y,
 		}
 
-		nodes.push(newNode)
+		allNodes.push(newNode)
 	})
 
-	return { nodes, edges }
+	return { 
+		nodes: allNodes, 
+		edges: allEdges 
+	}
 }
 
 
@@ -199,19 +203,19 @@ export const getStructure = ( chain:IOChain, showInputs:boolean=true, showOutput
 	const isVerticalLayout = layoutMode === LAYOUT_MODE.vertical
 
 	// Calculate vertical layout dimensions
-	const verticalInputsY = 0
-	const verticalStartY = (inputs.length * (NODE_HEIGHT / 1.5)) + 100
-	const verticalTransformersStartY = verticalStartY + NODE_HEIGHT + 100
+	const verticalInputsY = 450
+	const verticalStartY = (inputs.length * (NODE_HEIGHT / 1.5)) - 100
+	const verticalTransformersStartY = verticalStartY + NODE_HEIGHT + 40
 	const verticalEndY = verticalTransformersStartY + (transformers.length * (NODE_HEIGHT + 50))
 	const verticalOutputsY = verticalEndY + NODE_HEIGHT + 100
 
 	const inputNodes = showInputs ? inputs
-		.filter((input: AbstractInput) => !input.isHidden)
-		.map((input:AbstractInput, index:number) => {
+		.filter((input: IAudioInput) => !input.isHidden)
+		.map((input:IAudioInput, index:number) => {
 			let xPos: number
 			if (isVerticalLayout) {
 				// Spread inputs to the left of center, fanning out
-				const inputCount = inputs.filter((i: AbstractInput) => !i.isHidden).length
+				const inputCount = inputs.filter((i: IAudioInput) => !i.isHidden).length
 				const offset = ((inputCount - 1) / 2 - index) * HORIZONTAL_SPACING * 1.2
 				xPos = -400 + offset
 			} else {
@@ -257,7 +261,7 @@ export const getStructure = ( chain:IOChain, showInputs:boolean=true, showOutput
 			layoutMode
 		},
 		position: isVerticalLayout 
-			? { x: 0, y: verticalTransformersStartY + (index * (NODE_HEIGHT + 120)) }
+			? { x: -350, y: verticalTransformersStartY + (index * (NODE_HEIGHT + 120)) }
 			: { x: HORIZONTAL_SPACING * index, y: 0 }
 	}, isVerticalLayout))
 
@@ -270,18 +274,18 @@ export const getStructure = ( chain:IOChain, showInputs:boolean=true, showOutput
 			layoutMode
 		},
 		position: isVerticalLayout 
-			? { x: 350, y: verticalEndY }
+			? { x: -350, y: verticalEndY }
 			: { x: HORIZONTAL_SPACING * (transformers.length) , y: NODE_HEIGHT / 2 }
 	}, isVerticalLayout)
 
 	// Add in all our output nodes
 	const outputNodes = showOutputs ? outputs
-		.filter((output: AbstractInput) => !output.isHidden)
-		.map((output:AbstractInput, index:number) => {
+		.filter((output: IAudioOutput) => !output.isHidden)
+		.map((output:IAudioOutput, index:number) => {
 			let xPos: number
 			if (isVerticalLayout) {
 				// Spread outputs to the right of center, fanning out
-				const outputCount = outputs.filter((o: AbstractInput) => !o.isHidden).length
+				const outputCount = outputs.filter((o: IAudioOutput) => !o.isHidden).length
 				const offset = (index - (outputCount - 1) / 2) * HORIZONTAL_SPACING * 1.2
 				xPos = 400 + offset
 			} else {
@@ -298,7 +302,7 @@ export const getStructure = ( chain:IOChain, showInputs:boolean=true, showOutput
 				},
 				position: isVerticalLayout 
 					? { x: xPos, y: verticalOutputsY }
-					: { x: (HORIZONTAL_SPACING * transformers.length ) + 226 , y: index * (NODE_HEIGHT / 1.5) }
+					: { x: (HORIZONTAL_SPACING * transformers.length) + 226, y: index * (NODE_HEIGHT / 1.5) }
 			}, isVerticalLayout)
 		}) : []
 	
@@ -417,6 +421,3 @@ export const getStructure = ( chain:IOChain, showInputs:boolean=true, showOutput
 	
 	return output
 }
-
-
-
