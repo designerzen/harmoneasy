@@ -148,6 +148,108 @@
 				}
 			}
 		}
+
+		.speech-controls {
+			display: flex;
+			flex-direction: column;
+			gap: var(--pad-sm);
+
+			.speech-btn {
+				padding: var(--pad-sm) var(--pad);
+				border: 1px solid var(--col-primary);
+				border-radius: var(--rad-sm);
+				background: var(--col-primary);
+				color: var(--col-text-on-primary);
+				cursor: pointer;
+				font-weight: 500;
+				transition: all var(--time-fast);
+				font-size: 0.95rem;
+
+				&:hover:not(:disabled) {
+					background: color-mix(in oklch, var(--col-primary) 110%, black);
+					box-shadow: 0 2px 8px rgba(100, 108, 255, 0.3);
+				}
+
+				&:active:not(:disabled) {
+					transform: translateY(1px);
+				}
+
+				&:disabled {
+					opacity: 0.6;
+					cursor: not-allowed;
+				}
+			}
+
+			.listening-indicator {
+				display: flex;
+				align-items: center;
+				gap: var(--pad-sm);
+				padding: var(--pad-sm);
+				background: color-mix(in oklch, var(--col-success, #2ecc71) 20%, transparent);
+				border: 1px solid var(--col-success, #2ecc71);
+				border-radius: var(--rad-sm);
+				color: var(--col-success, #2ecc71);
+				font-weight: 500;
+				font-size: 0.9rem;
+
+				&.hidden {
+					display: none;
+				}
+
+				.pulse {
+					display: inline-block;
+					width: 8px;
+					height: 8px;
+					border-radius: 50%;
+					background: var(--col-success, #2ecc71);
+					animation: pulse 1s infinite;
+				}
+
+				@keyframes pulse {
+					0%, 100% {
+						opacity: 1;
+						transform: scale(1);
+					}
+					50% {
+						opacity: 0.6;
+						transform: scale(1.2);
+					}
+				}
+			}
+
+			.transcript-preview {
+				padding: var(--pad-sm);
+				border: 1px solid var(--col-border);
+				border-radius: var(--rad-sm);
+				background: color-mix(in oklch, var(--col-bg) 98%, var(--col-primary) 2%);
+				font-size: 0.9rem;
+				min-height: 2rem;
+
+				.transcript {
+					strong {
+						display: block;
+						margin-bottom: 0.25rem;
+						color: var(--col-primary);
+						font-size: 0.85rem;
+					}
+
+					p {
+						margin: 0;
+						color: inherit;
+						word-break: break-word;
+					}
+
+					&.interim {
+						opacity: 0.7;
+						font-style: italic;
+					}
+
+					&.final {
+						font-style: normal;
+					}
+				}
+			}
+		}
 	}
 }
 

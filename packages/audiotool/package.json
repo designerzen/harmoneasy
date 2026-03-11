@@ -1,6 +1,6 @@
 {
   "name": "audiotool",
-  "version": "0.15.1",
+  "version": "0.0.11",
   "description": "AudioTool SDK integration for HarmonEasy",
   "type": "module",
   "main": "index.ts",

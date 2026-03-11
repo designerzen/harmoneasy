@@ -1,6 +1,6 @@
 {
   "name": "opendaw",
-  "version": "0.15.1",
+  "version": "0.8.0",
   "description": "OpenDAW project file format support and .dawProject integration",
   "type": "module",
   "main": "index.ts",

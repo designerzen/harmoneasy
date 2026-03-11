@@ -71,14 +71,16 @@
 		width: 100%;
 	}
 
+	.btn-fullscreen {
+		position: absolute;
+		top: var(--pad);
+		left: var(--pad);
+		z-index: 5;
+	}
+
 	:has(.btn-remove),
 	&.can-remove{
-
-		// make space for close button
-		> *:first-child {
-			padding-right: calc(44px + var(--pad));
-			margin-bottom:  var(--gap);
-		}
+		
 	}
 
 	&.connected{
@@ -297,9 +299,6 @@
 .node-actions {
 	display: flex;
 	gap: var(--gap);
-	margin-top: auto;
-	padding-top: var(--pad);
-	border-top: var(--border);
 	flex-wrap: wrap;
 
 	.btn-fullscreen {
