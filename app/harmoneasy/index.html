@@ -73,6 +73,7 @@
 					<option value="horizontal">Horizontal</option>
 				</select>
 			</label>
+			<button id="btn-settings" class="btn-settings" type="button" title="Settings">⚙</button>
 			<button id="btn-kill-switch" class="btn-kill-switch primary" type="button">Panic</button>
 		</menu>
 
@@ -210,6 +211,31 @@
 			<h5 id="packages-dialog-title">Built-in Packages</h5>
 		</header>
 		<div id="packages-message" class="packages-list selectable"></div>
+		<form method="dialog">
+			<button class="btn-close" type="submit" formmethod="dialog">
+				Close
+			</button>
+		</form>
+	</dialog>
+
+	<dialog id="settings-dialog" closedby="any" aria-labelledby="settings-dialog-title">
+		<header>
+			<h5 id="settings-dialog-title">Settings</h5>
+		</header>
+		<form id="settings-form">
+			<fieldset>
+				<legend>Timer Settings</legend>
+				<label for="timer-type-select">Timer Type:
+					<select id="timer-type-select" name="timerType">
+						<option value="audio-context">Audio Context Worker</option>
+						<option value="audio-worklet">Audio Worklet</option>
+						<option value="rolling">Rolling Worker</option>
+						<option value="set-interval">SetInterval Worker</option>
+						<option value="set-timeout">SetTimeout Worker</option>
+					</select>
+				</label>
+			</fieldset>
+		</form>
 		<form method="dialog">
 			<button class="btn-close" type="submit" formmethod="dialog">
 				Close

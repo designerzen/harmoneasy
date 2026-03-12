@@ -28,6 +28,8 @@ import { createDawProjectFromAudioEventRecording, saveDawProjectToLocalFileSyste
 
 // Timing
 import { AudioTimer } from 'netronome'
+// Ensure all timer workers are bundled and available
+import { AudioContextWorkerWrapper, RollingTimeWorkerWrapper, SetIntervalWorkerWrapper, SetTimeoutWorkerWrapper } from 'netronome'
 
 // Audio
 import AudioBus from './audio.ts'
@@ -137,6 +139,30 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number 
         state.set('tempo', newTempo)
     })
 
+    // Settings - Timer Type Selection
+    frontEnd.whenSettingsRequestedRun(() => {
+        // Initialize the select with the current timer type
+        const currentTimerType = state.get('timerType') || 'audio-worklet'
+        frontEnd.setTimerType(currentTimerType as string)
+    })
+
+    frontEnd.whenTimerTypeChangesRun(async (timerType: string) => {
+        console.info('Timer type change requested:', timerType)
+        try {
+            const success = await timer.switchTimerType(timerType, bus.audioContext)
+            if (success) {
+                state.set('timerType', timerType)
+                console.info('Timer type switched successfully to:', timerType)
+            } else {
+                console.warn('Failed to switch timer type to:', timerType)
+                frontEnd.showError('Timer Switch Failed', `Could not switch to ${timerType}`)
+            }
+        } catch (error) {
+            console.error('Error switching timer type:', error)
+            frontEnd.showError('Timer Switch Error', error instanceof Error ? error.message : 'Unknown error')
+        }
+    })
+
     frontEnd.whenVolumeChangesRun((volume: number) => {
         mixer.gain.value = (volume / 100) * 0.5
         state.set('volume', volume)
@@ -184,40 +210,13 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number 
         frontEnd.showInfoDialog("MusicXML File created and saved", "musicxml.org")
     })
     frontEnd.whenVexFlowExportRequestedRun(async () => {
-        // Create a modal container for the score
-        const modalContainer = document.createElement('div')
-        modalContainer.style.cssText = 'width: 100%; height: 100%; overflow-y: auto; padding: 20px;'
-
-        try {
-            renderVexFlowToContainer(modalContainer, recorder, timer)
-
-            // Create download button
-            const downloadBtn = document.createElement('button')
-            downloadBtn.textContent = 'Download as HTML'
-            downloadBtn.style.cssText = 'margin-top: 20px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;'
-            downloadBtn.onclick = async () => {
-                const blob = await createVexFlowHTMLFromAudioEventRecording(recorder, timer)
-                saveVexFlowBlobToLocalFileSystem(blob, recorder.name)
-            }
-
-            modalContainer.appendChild(downloadBtn)
-
-            // Show in info dialog - pass the DOM node directly to preserve event listeners
-            const infoMessage = document.querySelector("#info-message")
-            if (infoMessage) {
-                infoMessage.innerHTML = ''
-                infoMessage.appendChild(modalContainer)
-                document.querySelector("#info-dialog h5").textContent = "Musical Score"
-                document.getElementById("info-dialog").hidden = false
-                document.getElementById("info-dialog").showModal()
-            } else {
-                frontEnd.showInfoDialog("Musical Score", modalContainer.innerHTML)
-            }
-            console.info("Exporting Data to VexFlow", { recorder })
-        } catch (error) {
-            console.error("Error rendering VexFlow score", error)
-            frontEnd.showInfoDialog("Error", "Failed to render VexFlow score. Check console for details.")
-        }
+        await frontEnd.renderVexFlowModal(
+            renderVexFlowToContainer,
+            recorder,
+            timer,
+            createVexFlowHTMLFromAudioEventRecording,
+            saveVexFlowBlobToLocalFileSystem
+        )
     })
 
     // Show packages information
@@ -439,11 +438,8 @@ const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: b
 
     ioManager.addEventListener('chainsUpdated', persistIOState)
 
-    // Expose to global for debugging
-    window.ioManager = ioManager
-    window.chain = chain
-
-    createGraph('graph')
+ 
+    createGraph('graph', ioManager)
 
     // start the clock going 
     timer.bpm = parseFloat(state.get('tempo') ?? 99)
@@ -471,7 +467,6 @@ const onTick = (values: Record<string, any>) => {
     } = values
 
     const now = timer.now
-
 	const events = ioManager.updateTime(now, divisionsElapsed, state)
 	const allEvents = recorder.addEvents(events)
 
@@ -489,7 +484,6 @@ const onTick = (values: Record<string, any>) => {
     //     }
     // })
 
-    // update the UI clock if possible
     ui.updateClock(values, recorder.quantity)
 }
 
@@ -522,4 +516,3 @@ if (storage) {
 
 // Wait for user to initiate an action so that we can use AudioContext
 document.addEventListener("mousedown", onAudioContextAvailable, { once: true })
-

@@ -55,6 +55,10 @@ const DOM_ID_DIALOG_INFO = "info-dialog"
 const DOM_ID_DIALOG_PACKAGES = "packages-dialog"
 const DOM_ID_BUTTON_PACKAGES_INFO = "btn-packages-info"
 
+const DOM_ID_BUTTON_SETTINGS = "btn-settings"
+const DOM_ID_DIALOG_SETTINGS = "settings-dialog"
+const DOM_ID_TIMER_TYPE_SELECT = "timer-type-select"
+
 const DEFAULT_OPTIONS = {
 	verticalNoteBars: false
 }
@@ -106,6 +110,9 @@ export default class UI implements IAudioOutput {
 	elementErrorDialog: HTMLElement | null
 	elementPackagesDialog: HTMLElement | null
 	elementButtonPackagesInfo: HTMLElement | null
+	elementButtonSettings: HTMLElement | null
+	elementSettingsDialog: HTMLElement | null
+	elementTimerTypeSelect: HTMLElement | null
 	noteVisualiserCanvas: HTMLElement | null
 	noteVisualiser: NoteVisualiser
 
@@ -180,6 +187,10 @@ export default class UI implements IAudioOutput {
 		this.elementErrorDialog = document.getElementById(DOM_ID_DIALOG_ERROR)
 		this.elementPackagesDialog = document.getElementById(DOM_ID_DIALOG_PACKAGES)
 		this.elementButtonPackagesInfo = document.getElementById(DOM_ID_BUTTON_PACKAGES_INFO)
+		
+		this.elementButtonSettings = document.getElementById(DOM_ID_BUTTON_SETTINGS)
+		this.elementSettingsDialog = document.getElementById(DOM_ID_DIALOG_SETTINGS)
+		this.elementTimerTypeSelect = document.getElementById(DOM_ID_TIMER_TYPE_SELECT)
 
 		this.activateSidebar()
 
@@ -865,7 +876,85 @@ export default class UI implements IAudioOutput {
 		}, { signal: this.abortController.signal })
 	}
 
+	/**
+	 * Register a callback for when the settings button is clicked
+	 */
+	whenSettingsRequestedRun(callback: Function) {
+		this.elementButtonSettings && this.elementButtonSettings.addEventListener('click', () => {
+			this.elementSettingsDialog?.showModal()
+			callback && callback()
+		}, { signal: this.abortController.signal })
+	}
 
+	/**
+	 * Register a callback for when the timer type select changes
+	 */
+	whenTimerTypeChangesRun(callback: Function) {
+		this.elementTimerTypeSelect && this.elementTimerTypeSelect.addEventListener('change', (e) => {
+			const timerType = (e.target as HTMLSelectElement).value
+			callback && callback(timerType)
+		}, { signal: this.abortController.signal })
+	}
+
+	/**
+	 * Set the current timer type in the select element
+	 */
+	setTimerType(timerType: string) {
+		if (this.elementTimerTypeSelect && this.elementTimerTypeSelect instanceof HTMLSelectElement) {
+			this.elementTimerTypeSelect.value = timerType
+		}
+	}
+
+	/**
+	 * Render VexFlow score in a modal dialog
+	 * @param renderer Function to render VexFlow to container
+	 * @param recorder Audio event recorder instance
+	 * @param timer Timer instance
+	 * @param htmlCreator Function to create downloadable HTML
+	 * @param htmlSaver Function to save HTML blob to file system
+	 */
+	async renderVexFlowModal(
+		renderer: (container: HTMLElement, recorder: any, timer: any) => void,
+		recorder: any,
+		timer: any,
+		htmlCreator: (recorder: any, timer: any) => Promise<Blob>,
+		htmlSaver: (blob: Blob, filename: string) => void
+	) {
+		// Create a modal container for the score
+		const modalContainer = document.createElement('div')
+		modalContainer.style.cssText = 'width: 100%; height: 100%; overflow-y: auto; padding: 20px;'
+
+		try {
+			renderer(modalContainer, recorder, timer)
+
+			// Create download button
+			const downloadBtn = document.createElement('button')
+			downloadBtn.textContent = 'Download as HTML'
+			downloadBtn.style.cssText = 'margin-top: 20px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;'
+			downloadBtn.onclick = async () => {
+				const blob = await htmlCreator(recorder, timer)
+				htmlSaver(blob, recorder.name)
+			}
+
+			modalContainer.appendChild(downloadBtn)
+
+			// Show in info dialog - pass the DOM node directly to preserve event listeners
+			const infoMessage = document.querySelector("#info-message")
+			if (infoMessage) {
+				infoMessage.innerHTML = ''
+				infoMessage.appendChild(modalContainer)
+				document.querySelector("#info-dialog h5").textContent = "Musical Score"
+				document.getElementById("info-dialog").hidden = false
+				document.getElementById("info-dialog").showModal()
+			} else {
+				this.showInfoDialog("Musical Score", modalContainer.innerHTML)
+			}
+			console.info("Exporting Data to VexFlow", { recorder })
+		} catch (error) {
+			console.error("Error rendering VexFlow score", error)
+			this.showInfoDialog("Error", "Failed to render VexFlow score. Check console for details.")
+		}
+	}
 
 	/**
 	 * Clean up
