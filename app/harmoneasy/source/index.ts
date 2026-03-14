@@ -27,9 +27,7 @@ import { createOpenDAWProjectFromAudioEventRecording } from 'opendaw'
 import { createDawProjectFromAudioEventRecording, saveDawProjectToLocalFileSystem } from 'audiobus/exporters/adapter-dawproject.ts'
 
 // Timing
-import { AudioTimer } from 'netronome'
-// Ensure all timer workers are bundled and available
-import { AudioContextWorkerWrapper, RollingTimeWorkerWrapper, SetIntervalWorkerWrapper, SetTimeoutWorkerWrapper } from 'netronome'
+import { AudioTimer, TIMER_TYPES } from 'netronome'
 
 // Audio
 import AudioBus from './audio.ts'
@@ -141,8 +139,7 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number 
 
     // Settings - Timer Type Selection
     frontEnd.whenSettingsRequestedRun(() => {
-        // Initialize the select with the current timer type
-        const currentTimerType = state.get('timerType') || 'audio-worklet'
+        const currentTimerType = state.get('timerType') || TIMER_TYPES.AUDIO_CONTEXT
         frontEnd.setTimerType(currentTimerType as string)
     })
 
