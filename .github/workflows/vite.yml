@@ -20,6 +20,9 @@ jobs:
       matrix:
         node-version: [24.4.x]
 
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -67,6 +70,9 @@ jobs:
 
     # Specify runner + deployment step
     runs-on: ubuntu-latest
+
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     # Deploy to the github-pages environment
     environment:
