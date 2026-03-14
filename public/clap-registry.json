@@ -1,0 +1,24 @@
+{
+  "patches": [
+    {
+      "id": "example-clap-synth",
+      "name": "Example CLAP Synth",
+      "url": "/clap-plugins/example-synth.wclap.tar.gz",
+      "category": "Synthesis",
+      "description": "A simple example CLAP synthesizer plugin",
+      "author": "CLAP Community",
+      "version": "1.0.0",
+      "factory": "example-synth"
+    },
+    {
+      "id": "example-clap-effect",
+      "name": "Example CLAP Effect",
+      "url": "/clap-plugins/example-effect.wclap.tar.gz",
+      "category": "Effects",
+      "description": "A simple example CLAP audio effect plugin",
+      "author": "CLAP Community",
+      "version": "1.0.0",
+      "factory": "example-effect"
+    }
+  ]
+}
