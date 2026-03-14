@@ -203,7 +203,7 @@ function FlowComponent() {
 				onEdgesChange={onEdgesChange}
 				onConnect={onConnect}
 			>
-				{/* <Controls /> */}
+				<Controls />
 			</ReactFlow>
 		</>
 	)
