@@ -12,6 +12,8 @@
     "start": "pnpm run dev --filter=harmoneasy",
     "turbo": "turbo",
     "dev": "turbo run dev --no-daemon",
+	
+    "build:netronome": "pnpm run build --filter=netronome",
     "build": "turbo run build --continue",
     "build:electron": "pnpm --filter ./app/harmoneasy run build:electron",
     "test": "turbo run test",
