@@ -32,6 +32,7 @@ const getIconForFactory = (factory: any, type: 'output' | 'instrument'): string 
 
 export function EndNode(props: EndNodeProps) {
 	const chain = (window as any).chain as IOChain
+	const ioManager = (window as any).ioManager
 	const isVertical = props.data?.layoutMode === 'vertical'
 
 	const addOutputOrInstrument = useCallback(async () => {
@@ -124,7 +125,14 @@ export function EndNode(props: EndNodeProps) {
 
 				item.addEventListener("click", async () => {
 					try {
-						const output = await createOutputById(factory.id)
+						let options: Record<string, any> | undefined
+						if (ioManager?.outputMixer) {
+							options = {
+								mixer: ioManager.outputMixer,
+								audioContext: ioManager.audioContext || (ioManager.outputMixer as any).context,
+							}
+						}
+						const output = await createOutputById(factory.id, options)
 						chain.addOutput(output)
 						dialog.close()
 					} catch (error) {

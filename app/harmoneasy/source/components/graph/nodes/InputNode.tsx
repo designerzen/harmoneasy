@@ -16,12 +16,14 @@ export function InputNode(props: { data: { input: AbstractInput; label: any } })
 
 	useEffect(() => {
 
-		let gui
+		let gui: HTMLElement | undefined
 		const t = async()=>{
 
 			if (GUIContainerRef.current && input && input.createGui && input.destroyGui) {
 				gui = await input.createGui()
-				GUIContainerRef.current.appendChild(gui)
+				if (gui && GUIContainerRef.current) {
+					GUIContainerRef.current.appendChild(gui)
+				}
 
 				console.error("InputNode useEffect", {ref:GUIContainerRef.current, createGUI:input?.createGui, destroyGUI:input?.destroyGui} )
 		
@@ -35,10 +37,12 @@ export function InputNode(props: { data: { input: AbstractInput; label: any } })
 		t()
 		
 		return () =>{
-			if (gui)
+			if (gui && typeof gui.remove === 'function')
 			{
 				gui.remove()
-				input.destroyGui()				
+				if (input && typeof input.destroyGui === 'function') {
+					input.destroyGui()
+				}
 			}
 		} 
 	}, [input])
@@ -70,12 +74,12 @@ export function InputNode(props: { data: { input: AbstractInput; label: any } })
 	 * 
 	 */	
 	const removeNode = useCallback(() => {
-		if (input.isConnected)
+		if (hasDisconnectMethod && input.isConnected)
 		{
 			disconnectFromInput()
 		}
 		chain.removeInput(input)
-	}, [input])
+	}, [input, hasDisconnectMethod])
 
 	/**
 	 * 
