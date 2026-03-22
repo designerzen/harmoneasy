@@ -60,6 +60,7 @@ jobs:
         env:
           npm_config_build_from_source: "false"
           npm_config_ignore_scripts: "true"
+          NODE_OPTIONS: --max-old-space-size=4096
 
       - name: Build native module (Linux)
         if: runner.os == 'Linux'
@@ -80,12 +81,13 @@ jobs:
         run: cd app/harmoneasy && pnpm run build:electron
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_OPTIONS: --max-old-space-size=4096
 
       - name: List build artifacts
         run: |
           echo "Looking for build artifacts..."
-          ls -la app/harmoneasy/dist/ 2>/dev/null || echo "app/harmoneasy/dist/ not found"
-          find app/harmoneasy/dist -maxdepth 1 -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.dmg" -o -name "*.zip" -o -name "*.AppImage" -o -name "*.deb" \) 2>/dev/null || echo "No artifacts found"
+          ls -la app/harmoneasy/dist-electron/ 2>/dev/null || echo "app/harmoneasy/dist-electron/ not found"
+          find app/harmoneasy/dist-electron -maxdepth 1 -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.dmg" -o -name "*.zip" -o -name "*.AppImage" -o -name "*.deb" \) 2>/dev/null || echo "No artifacts found"
         shell: bash
 
       - name: Upload Windows artifacts
@@ -94,8 +96,8 @@ jobs:
         with:
           name: windows-build
           path: |
-            app/harmoneasy/dist/*.exe
-            app/harmoneasy/dist/*.msi
+            app/harmoneasy/dist-electron/*.exe
+            app/harmoneasy/dist-electron/*.msi
           if-no-files-found: ignore
 
       - name: Upload macOS artifacts
@@ -104,8 +106,8 @@ jobs:
         with:
           name: macos-build
           path: |
-            app/harmoneasy/dist/*.dmg
-            app/harmoneasy/dist/*.zip
+            app/harmoneasy/dist-electron/*.dmg
+            app/harmoneasy/dist-electron/*.zip
           if-no-files-found: ignore
 
       - name: Upload Linux artifacts
@@ -114,8 +116,8 @@ jobs:
         with:
           name: linux-build
           path: |
-            app/harmoneasy/dist/*.AppImage
-            app/harmoneasy/dist/*.deb
+            app/harmoneasy/dist-electron/*.AppImage
+            app/harmoneasy/dist-electron/*.deb
           if-no-files-found: ignore
 
   publish:
