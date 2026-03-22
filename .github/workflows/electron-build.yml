@@ -58,8 +58,8 @@ jobs:
       - name: Install dependencies (no build)
         run: |
           pnpm config set fetch-timeout 120000
-          pnpm install --ignore-scripts --filter ./app/harmoneasy --filter '@harmoneasy/*'
-        timeout-minutes: 20
+          pnpm install --ignore-scripts
+        timeout-minutes: 30
         env:
           npm_config_build_from_source: "false"
           npm_config_ignore_scripts: "true"
@@ -80,7 +80,7 @@ jobs:
         continue-on-error: true
 
       - name: Build Electron app
-        run: cd app/harmoneasy && pnpm run build:electron
+        run: pnpm run build:electron --filter ./app/harmoneasy
         timeout-minutes: 45
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
