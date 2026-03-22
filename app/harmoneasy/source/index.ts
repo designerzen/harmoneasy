@@ -463,8 +463,11 @@ const onTick = (values: Record<string, any>) => {
         elapsed, expected, drift, level, intervals, lag
     } = values
 
+	const options = {
+		grid:false
+	}
     const now = timer.now
-	const events = ioManager.updateTime(now, divisionsElapsed, state)
+	const events = ioManager.updateTime(now, divisionsElapsed, options)
 	const allEvents = recorder.addEvents(events)
 
     // Loop through all Chains managed by the IOManager and process events
