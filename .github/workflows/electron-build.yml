@@ -57,12 +57,13 @@ jobs:
 
       - name: Install dependencies (no build)
         run: |
-          pnpm config set fetch-timeout 120000
-          pnpm install --ignore-scripts
-        timeout-minutes: 30
+          pnpm config set fetch-timeout 60000
+          pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
+        timeout-minutes: 40
         env:
           npm_config_build_from_source: "false"
           npm_config_ignore_scripts: "true"
+          PNPM_HOME: /tmp/pnpm-home
 
       - name: Build native module (Linux)
         if: runner.os == 'Linux'

@@ -42,11 +42,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pnpm config set fetch-timeout 120000
-          pnpm install --ignore-scripts
-        timeout-minutes: 30
+          pnpm config set fetch-timeout 60000
+          pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
+        timeout-minutes: 40
         env:
           npm_config_legacy_peer_deps: true
+          PNPM_HOME: /tmp/pnpm-home
 
       - name: Build (with Turborepo)
         run: pnpm run build --filter ./app/harmoneasy
