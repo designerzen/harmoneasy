@@ -41,18 +41,18 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --ignore-scripts --filter ./app/harmoneasy --filter '@harmoneasy/*' --shamefully-hoist
-        timeout-minutes: 15
+        run: |
+          pnpm config set fetch-timeout 120000
+          pnpm install --ignore-scripts --filter ./app/harmoneasy --filter '@harmoneasy/*'
+        timeout-minutes: 20
         env:
           npm_config_legacy_peer_deps: true
-          NODE_OPTIONS: --max-old-space-size=8192
 
       - name: Build
         run: pnpm run build
-        timeout-minutes: 10
+        timeout-minutes: 20
         env:
           NODE_ENV: production
-          NODE_OPTIONS: --max-old-space-size=6144
 
       - name: Check build output
         run: |
