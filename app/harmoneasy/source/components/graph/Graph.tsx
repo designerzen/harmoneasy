@@ -14,6 +14,7 @@ import {
 import { AnimatedSVGEdge } from './AnimatedSVGEdge.tsx'
 import { Transformers } from './Transformers.tsx'
 import { Presets } from './Presets.tsx'
+import { IOChainManagerUI } from './IOChainManagerUI.tsx'
 import { StartNode } from './nodes/StartNode.tsx'
 import { EndNode } from './nodes/EndNode.tsx'
 import { InputNode } from './nodes/InputNode.tsx'
@@ -49,9 +50,29 @@ function FlowComponent() {
 	const { fitView } = useReactFlow()
 	const [transformerCount, setTransformerCount] = useState(0)
 	const [fullscreenNodeId, setFullscreenNodeId] = useState<string | null>(null)
+	const [chainId, setChainId] = useState<string>('')
+
+	useEffect(() => {
+		const ioManager = (window as any).ioManager
+		if (!ioManager) return
+
+		const onChainChanged = () => {
+			setChainId(ioManager.activeChainId || '')
+		}
+
+		ioManager.addEventListener('chainActiveChanged', onChainChanged)
+		ioManager.addEventListener('chainsUpdated', onChainChanged)
+
+		return () => {
+			ioManager.removeEventListener('chainActiveChanged', onChainChanged)
+			ioManager.removeEventListener('chainsUpdated', onChainChanged)
+		}
+	}, [])
 
 	useEffect(() => {
 		const chain = (window as any).chain as IOChain
+		const currentChainId = (window as any).ioManager?.activeChainId || ''
+		setChainId(currentChainId)
 		const abortController = new AbortController()
 
 		// an event has bubbled from the Chain
@@ -78,7 +99,7 @@ function FlowComponent() {
 			abortController.abort()
 		}
 		return unsubscribe
-	}, [setNodes, setEdges, layoutMode])
+	}, [setNodes, setEdges, layoutMode, chainId])
 
 	// Auto-fit view only when transformers change (not on every node change)
 	useEffect(() => {
@@ -165,9 +186,11 @@ function FlowComponent() {
 			{!isFullscreenActive && (
 				<>
 					<aside className="transformers-drawer">
+						<IOChainManagerUI />
 						<Transformers />
 					</aside>
 					<Presets />
+					
 				</>
 			)}
 			

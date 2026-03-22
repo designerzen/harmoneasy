@@ -1,6 +1,5 @@
 import { Handle, Position } from "@xyflow/react";
 import React, { useCallback } from "react";
-import { getAvailableInputFactories, createInputById } from "audiobus/io/input-factory.ts";
 import type IOChain from "audiobus/io/IO-chain.ts";
 
 interface StartNodeProps {
@@ -28,6 +27,7 @@ export function StartNode(props: StartNodeProps) {
 	const isVertical = props.data?.layoutMode === "vertical";
 
 	const addInput = useCallback(async () => {
+		const { getAvailableInputFactories, createInputById } = await import("audiobus/io/input-factory.ts");
 		const factories = getAvailableInputFactories();
 		const availableFactories = factories.filter((factory) => factory.isAvailable?.() !== false);
 

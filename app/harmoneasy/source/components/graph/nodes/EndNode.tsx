@@ -1,7 +1,5 @@
 import { Handle, Position } from "@xyflow/react"
 import React, { useCallback } from 'react'
-import { getAvailableOutputFactories, createOutputById } from 'audiobus/io/output-factory.ts'
-import { getAvailableInstrumentFactories, createInstrumentById } from 'audiobus/instruments'
 import type IOChain from 'audiobus/io/IO-chain.ts'
 
 interface EndNodeProps {
@@ -36,6 +34,9 @@ export function EndNode(props: EndNodeProps) {
 	const isVertical = props.data?.layoutMode === 'vertical'
 
 	const addOutputOrInstrument = useCallback(async () => {
+		const { getAvailableOutputFactories, createOutputById } = await import('audiobus/io/output-factory.ts')
+		const { getAvailableInstrumentFactories, createInstrumentById } = await import('audiobus/instruments')
+		
 		const outputFactories = getAvailableOutputFactories()
 		const availableOutputs = outputFactories.filter((factory) => factory.isAvailable?.() !== false)
 
@@ -192,7 +193,15 @@ export function EndNode(props: EndNodeProps) {
 
 				item.addEventListener("click", async () => {
 					try {
-						const instrument = await createInstrumentById(factory.id)
+						let audioContext: AudioContext | undefined
+						let options: Record<string, any> | undefined
+						if (ioManager?.outputMixer) {
+							audioContext = ioManager.audioContext || (ioManager.outputMixer as any).context
+							options = {
+								mixer: ioManager.outputMixer,
+							}
+						}
+						const instrument = await createInstrumentById(audioContext!, factory.id, options)
 						chain.addOutput(instrument)
 						dialog.close()
 					} catch (error) {
