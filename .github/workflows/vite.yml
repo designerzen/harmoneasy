@@ -41,14 +41,18 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: node --max-old-space-size=6144 $(which pnpm) install --ignore-scripts --no-frozen-lockfile
+        run: pnpm install --ignore-scripts --no-frozen-lockfile
         timeout-minutes: 10
         env:
           npm_config_legacy_peer_deps: true
+          NODE_OPTIONS: --max-old-space-size=6144
 
       - name: Build
-        run: NODE_ENV=production node --max-old-space-size=6144 $(which pnpm) run build
+        run: pnpm run build
         timeout-minutes: 10
+        env:
+          NODE_ENV: production
+          NODE_OPTIONS: --max-old-space-size=6144
 
       - name: Check build output
         run: |
