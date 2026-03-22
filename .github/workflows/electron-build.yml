@@ -56,11 +56,12 @@ jobs:
           pkg-config --cflags alsa || echo "pkg-config alsa failed"
 
       - name: Install dependencies (no build)
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --ignore-scripts --filter ./app/harmoneasy --filter '@harmoneasy/*' --shamefully-hoist
+        timeout-minutes: 15
         env:
           npm_config_build_from_source: "false"
           npm_config_ignore_scripts: "true"
-          NODE_OPTIONS: --max-old-space-size=6144
+          NODE_OPTIONS: --max-old-space-size=8192
 
       - name: Build native module (Linux)
         if: runner.os == 'Linux'
@@ -79,9 +80,10 @@ jobs:
 
       - name: Build Electron app
         run: cd app/harmoneasy && pnpm run build:electron
+        timeout-minutes: 30
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_OPTIONS: --max-old-space-size=6144
+          NODE_OPTIONS: --max-old-space-size=8192
 
       - name: List build artifacts
         run: |
