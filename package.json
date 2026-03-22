@@ -1,6 +1,7 @@
 {
   "name": "harmoneasy",
   "private": true,
+  "type": "module",
   "version": "0.15.1",
   "description": "A web-based music collaboration platform that transforms, quantizes, and harmonizes live MIDI input in real-time",
   "author": "designerzen <radio@awesomething.co.uk>",
@@ -11,7 +12,7 @@
     "upgrade:npm": "turbo run upgrader",
     "start": "pnpm run dev --filter=harmoneasy",
     "turbo": "turbo",
-    "dev": "turbo run dev --no-daemon",
+    "dev": "turbo run dev",
 	
     "build:netronome": "pnpm run build --filter=netronome",
     "build": "turbo run build --continue",
