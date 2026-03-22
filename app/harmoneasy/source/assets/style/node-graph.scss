@@ -22,6 +22,17 @@
 		--xy-node-group-background-color-default:transparent;
 		padding:0;
 		background-color: transparent;
+
+		&:has(.is-fullscreen){
+			position: absolute;
+			left: 0;
+			right: 0;
+			top:0;
+			bottom:0;
+			transform: none !important;
+			padding:0;
+			margin:0;
+		}
 	}
 
 	.react-flow__controls-button{
@@ -97,6 +108,15 @@
 			padding-bottom: var(--pad);
 			border-bottom: var(--border);
 		}
+	}
+
+	// this is problematic we need a further up the chain intervention too
+	// using :has( .is-fullscreen ) inside
+	&.is-fullscreen{
+		width: 100%;
+		height: 100%;
+		padding:0;
+		margin:0;
 	}
 }
 
