@@ -36,13 +36,12 @@ export default defineConfig({
     port: 5174 // Match the port Audiotool expects
   },
   build: {
-    outDir: 'dist',
+    outDir: 'dist-electron',
     emptyOutDir: true,
     rollupOptions: {
       external: [
         'url',
         'path',
-        /\.node$/,  // Externalize all .node files
         'fs',       // Node.js built-ins
         'module',   // Node.js module system
       ],
@@ -64,6 +63,6 @@ export default defineConfig({
   },
   plugins: [nodeAddonPlugin],
   ssr: {
-    external: [/\.node$/, 'fs', 'path', 'module', 'url']
+    external: ['fs', 'path', 'module', 'url']
   }
 })

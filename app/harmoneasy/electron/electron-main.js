@@ -43,6 +43,8 @@ async function initializeSocketServer() {
 	}
 }
 
+
+// Create a new window to use
 function createWindow() {
 	mainWindow = new BrowserWindow({
 		width: 1400,
@@ -107,15 +109,72 @@ function createWindow() {
 	})
 }
 
+
+// If there is already a window on screen,
+// we should focus the existing one rather than
+// creating a new one each time
+function focusOrCreateMainWindow() {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow()
+    return
+  }
+
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    // On Linux/Wayland, focus() often doesn't take effect (compositor ignores it). Apps like Telegram
+    // work because they receive an XDG activation token via StatusNotifierItem.ProvideXdgActivationToken;
+    // Electron's tray doesn't handle that yet. Workaround: destroy and recreate the HUD so the new
+    // window gets focus (creation path works). Only for HUD, not editor.
+    if (process.platform === 'linux' && !mainWindow.isFocused() ) {
+      const win = mainWindow
+      mainWindow = null
+      win.once('closed', () => createWindow())
+      win.destroy()
+      return
+    }
+
+	// Show existing!
+    mainWindow.show()
+    if (mainWindow.isMinimized())
+	{ 
+		mainWindow.restore()
+	}
+    mainWindow.moveTop()
+    mainWindow.focus()
+  }
+}
+
+
+
 // https://github.com/aalhaimi/electron-web-bluetooth/blob/master/main.js
 app
 	.commandLine
 	.appendSwitch('enable-web-bluetooth', true)
 
 app.on('ready', async () => {
+
 	await initializeSocketServer()
-	setupAutoUpdater()
 	
+	setupAutoUpdater()
+		
+	// Add user permissions
+	session.defaultSession.setPermissionCheckHandler((_webContents, permission) => {
+		const allowed = ['media', 'audioCapture', 'microphone']
+		return allowed.includes(permission)
+	})
+
+	session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
+		const allowed = ['media', 'audioCapture', 'microphone']
+		callback(allowed.includes(permission))
+	})
+
+	if (process.platform === 'darwin') {
+		const micStatus = systemPreferences.getMediaAccessStatus('microphone')
+		if (micStatus !== 'granted') {
+			await systemPreferences.askForMediaAccess('microphone')
+		}
+	}
+
+
 	// Load menu template using the loader
 	try {
 		const menuModule = await loadElectronModule('electron-menu')
@@ -129,7 +188,7 @@ app.on('ready', async () => {
 		console.error('Failed to setup application menu:', error.message)
 	}
 	
-	createWindow()
+	focusOrCreateMainWindow()
 	
 	// Start socket server if available
 	if (SocketServer) {
@@ -153,7 +212,7 @@ app.on('window-all-closed', () => {
 
 app.on('activate', () => {
 	if (mainWindow === null) {
-		createWindow()
+		focusOrCreateMainWindow()
 	}
 })
 

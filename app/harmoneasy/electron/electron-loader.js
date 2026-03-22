@@ -7,7 +7,7 @@
 export async function loadElectronModule(moduleName) {
 	const paths = [
 		`./${moduleName}.js`,                    // Packaged app (root)
-		`./source/electron/${moduleName}.js`,   // Development (source)
+		`./electron/${moduleName}.js`,           // Development
 	]
 	
 	let lastError = null

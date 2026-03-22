@@ -7,7 +7,7 @@
   "homepage": "https://github.com/designerzen/harmoneasy",
   "type": "module",
   "start": "./source/index.ts",
-  "main": "electron-main.js",
+  "main": "electron/electron-main.js",
   "scripts": {
     "setup": "pnpm install --allow-build=electron",
     "install:electron": "pnpm approve-builds && npm run build-native",
@@ -32,25 +32,25 @@
     "fmt:check": "oxfmt --check"
   },
   "devDependencies": {
-    "@types/react": "^19.2.13",
+    "@types/react": "^19.2.14",
     "@types/web-bluetooth": "^0.0.21",
     "concurrently": "^9.2.1",
-    "electron": "^40.2.1",
-    "electron-builder": "^26.7.0",
-    "node-addon-api": "^8.5.0",
+    "electron": "^41.0.3",
+    "electron-builder": "^26.8.1",
+    "node-addon-api": "^8.6.0",
     "node-gyp": "^12.2.0",
-    "oxfmt": "^0.36.0",
+    "oxfmt": "^0.41.0",
     "partykit": "0.0.115",
-    "sass-embedded": "^1.97.3",
+    "sass-embedded": "^1.98.0",
     "typescript": "~5.9.3",
     "update-electron-app": "^3.1.2",
-    "vite": "^7.3.1",
-    "vitest": "^4.0.18",
-    "wait-on": "^9.0.3"
+    "vite": "^8.0.1",
+    "vitest": "^4.1.0",
+    "wait-on": "^9.0.4"
   },
   "dependencies": {
     "@harmoneasy/shared-config": "workspace:^",
-    "@xyflow/react": "^12.10.0",
+    "@xyflow/react": "^12.10.1",
     "audiobus": "workspace:^",
     "audiotool": "workspace:^",
     "entitree-flex": "^0.4.1",
@@ -59,28 +59,29 @@
     "midi-ble": "workspace:^",
     "netronome": "workspace:^",
     "opendaw": "workspace:^",
-    "partysocket": "1.1.13",
+    "partysocket": "1.1.16",
     "pink-trombone": "workspace:^",
     "pitfalls": "workspace:^",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "uWebSockets.js": "github:uNetworking/uWebSockets.js",
-    "webrtc-adapter": "^9.0.3"
+    "webrtc-adapter": "^9.0.4"
   },
   "build": {
     "appId": "com.harmoneasy.app",
     "productName": "Harmoneasy",
     "directories": {
-      "buildResources": "public"
+      "buildResources": "public",
+      "output": "dist-electron"
     },
     "extraMetadata": {
-      "main": "electron-main.js"
+      "main": "electron/electron-main.js"
     },
     "files": [
-      "dist/**/*",
+      "dist-electron/**/*",
       "public/**/*",
       "build/Release/**/*.node",
-      "electron-main.js",
+      "electron/**/*",
       "node_modules/**/*",
       "package.json"
     ],
