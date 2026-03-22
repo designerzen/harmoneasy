@@ -55,12 +55,14 @@ jobs:
           pkg-config --list-all | grep alsa || echo "ALSA not found in pkg-config"
           pkg-config --cflags alsa || echo "pkg-config alsa failed"
 
+      - name: Configure pnpm for reduced memory usage
+        run: pnpm config set fetch-timeout 120000
+      
       - name: Install dependencies (no build)
-        run: pnpm install
+        run: node --max-old-space-size=6144 $(which pnpm) install --no-frozen-lockfile
         env:
           npm_config_build_from_source: "false"
           npm_config_ignore_scripts: "true"
-          NODE_OPTIONS: --max-old-space-size=4096
 
       - name: Build native module (Linux)
         if: runner.os == 'Linux'
@@ -78,10 +80,9 @@ jobs:
         continue-on-error: true
 
       - name: Build Electron app
-        run: cd app/harmoneasy && pnpm run build:electron
+        run: cd app/harmoneasy && node --max-old-space-size=6144 $(which pnpm) run build:electron
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_OPTIONS: --max-old-space-size=4096
 
       - name: List build artifacts
         run: |

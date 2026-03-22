@@ -41,28 +41,28 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --ignore-scripts
+        run: node --max-old-space-size=6144 $(which pnpm) install --ignore-scripts --no-frozen-lockfile
         timeout-minutes: 10
         env:
           npm_config_legacy_peer_deps: true
 
       - name: Build
-        run: NODE_ENV=production pnpm run build
+        run: NODE_ENV=production node --max-old-space-size=6144 $(which pnpm) run build
         timeout-minutes: 10
 
       - name: Check build output
         run: |
           echo "Build step completed"
-          ls -lah app/harmoneasy/dist/ || echo "dist folder not found"
+          ls -lah app/harmoneasy/dist-electron/ || echo "dist-electron folder not found"
 
       - name: List the build folder contents...
-        run: ls -lah app/harmoneasy/dist/
+        run: ls -lah app/harmoneasy/dist-electron/
 
       - name: Upload artifact
         id: deployment
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./app/harmoneasy/dist
+          path: ./app/harmoneasy/dist-electron
 
   deploy:
     # Add a dependency to the build job
