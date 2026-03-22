@@ -12,7 +12,7 @@ class MIDI2Handlers {
 
 		// Try to load native MIDI2 module
 		try {
-			this.midi2Native = require('../build/Release/midi2-native.node')
+			this.midi2Native = require('../../build/Release/midi2-native.node')
 			console.log('[MIDI2Handlers] Loaded native MIDI2 module')
 		} catch (error) {
 			console.warn('[MIDI2Handlers] Native MIDI2 module not available:', error.message)
