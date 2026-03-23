@@ -65,23 +65,16 @@ jobs:
           npm_config_ignore_scripts: "true"
           PNPM_HOME: /tmp/pnpm-home
 
-      - name: Build native module (Linux)
-        if: runner.os == 'Linux'
+      - name: Build native module
         run: cd app/harmoneasy && pnpm run build-native
         env:
           CFLAGS: "-I/usr/include"
           CXXFLAGS: "-I/usr/include"
           LDFLAGS: "-L/usr/lib"
           LD_LIBRARY_PATH: "/usr/lib"
-        continue-on-error: true
-
-      - name: Build native module (other OS)
-        if: runner.os != 'Linux'
-        run: cd app/harmoneasy && pnpm run build-native
-        continue-on-error: true
 
       - name: Build Electron app
-        run: pnpm run build:electron --filter ./app/harmoneasy
+        run: pnpm run build:electron
         timeout-minutes: 45
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

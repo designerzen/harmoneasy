@@ -49,8 +49,8 @@ jobs:
           npm_config_legacy_peer_deps: true
           PNPM_HOME: /tmp/pnpm-home
 
-      - name: Build (with Turborepo)
-        run: pnpm run build --filter ./app/harmoneasy
+      - name: Build
+        run: cd app/harmoneasy && pnpm run build
         timeout-minutes: 20
         env:
           NODE_ENV: production
