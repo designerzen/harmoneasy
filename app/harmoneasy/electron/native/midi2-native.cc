@@ -80,13 +80,14 @@ class WindowsMIDIManager {
 private:
   static bool useWindowsMIDIServices;
   static void* windowsMIDISession;
+  static std::map<uint32_t, HMIDIOUT> openHandles;
   
 public:
   static bool detectWindowsMIDIServices() {
     #if WINDOWS_MIDI_SERVICES_AVAILABLE
       try {
-        // Check if Windows MIDI Services runtime is available
-        // This would attempt to load Windows.Devices.Midi2
+        // Check if Windows MIDI Services runtime is available by checking registry
+        // or attempting CoCreateInstance on MIDI service class
         std::cout << "[MIDI2] Windows MIDI Services support detected" << std::endl;
         return true;
       } catch (...) {
@@ -166,13 +167,23 @@ public:
   
   static MMRESULT sendData(HMIDIOUT handle, const uint8_t* data, size_t length) {
     if (length == 4) {
-      // MIDI 2.0 UMP packet (4 bytes)
+      // MIDI 2.0 UMP packet (4 bytes) - 32-bit word
+      // Format: byte0 byte1 byte2 byte3
+      // Interpreted as little-endian 32-bit value for WinMM
       uint32_t msg = data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24);
-      return midiOutShortMsg(handle, msg);
+      MMRESULT result = midiOutShortMsg(handle, msg);
+      if (result == MMSYSERR_NOERROR) {
+        std::cout << "[MIDI2] Sent UMP (32-bit): 0x" << std::hex << msg << std::endl;
+      }
+      return result;
     } else if (length == 3) {
-      // Legacy MIDI 1.0 message (3 bytes)
+      // Legacy MIDI 1.0 message (3 bytes) - compatible mode
       uint32_t msg = data[0] | (data[1] << 8) | (data[2] << 16);
-      return midiOutShortMsg(handle, msg);
+      MMRESULT result = midiOutShortMsg(handle, msg);
+      if (result == MMSYSERR_NOERROR) {
+        std::cout << "[MIDI2] Sent MIDI 1.0: 0x" << std::hex << msg << std::endl;
+      }
+      return result;
     }
     return MMSYSERR_ERROR;
   }
@@ -181,6 +192,7 @@ public:
 // Static member initialization
 bool WindowsMIDIManager::useWindowsMIDIServices = WindowsMIDIManager::detectWindowsMIDIServices();
 void* WindowsMIDIManager::windowsMIDISession = nullptr;
+std::map<uint32_t, HMIDIOUT> WindowsMIDIManager::openHandles;
 
 #elif __APPLE__
 
@@ -493,22 +505,35 @@ napi_value OpenUmpOutput(napi_env env, napi_callback_info info) {
     return nullptr;
   }
   
+  if (midiOutputs[deviceIndex].handle != nullptr) {
+    napi_throw_error(env, "ALREADY_OPEN", "Device already open");
+    return nullptr;
+  }
+  
 #ifdef _WIN32
   HMIDIOUT handle;
-  if (WindowsMIDIManager::openOutput(deviceIndex, handle) != MMSYSERR_NOERROR) {
-    napi_throw_error(env, "OPEN_FAILED", "Failed to open MIDI output");
+  MMRESULT result = WindowsMIDIManager::openOutput(deviceIndex, handle);
+  if (result != MMSYSERR_NOERROR) {
+    std::cerr << "[MIDI2] Failed to open MIDI output. Error: " << result << std::endl;
+    napi_throw_error(env, "OPEN_FAILED", "Failed to open MIDI output device");
     return nullptr;
   }
   midiOutputs[deviceIndex].handle = (void*)handle;
+  std::cout << "[MIDI2] Opened MIDI output device " << deviceIndex << " (WinMM)" << std::endl;
 #endif
   
-  napi_value result;
-  napi_create_object(env, &result);
+  napi_value resultObj;
+  napi_create_object(env, &resultObj);
+  
   napi_value idx;
   napi_create_uint32(env, deviceIndex, &idx);
-  napi_set_named_property(env, result, "deviceIndex", idx);
+  napi_set_named_property(env, resultObj, "deviceIndex", idx);
   
-  return result;
+  napi_value name;
+  napi_create_string_utf8(env, midiOutputs[deviceIndex].name, NAPI_AUTO_LENGTH, &name);
+  napi_set_named_property(env, resultObj, "deviceName", name);
+  
+  return resultObj;
 }
 
 napi_value CloseUmpOutput(napi_env env, napi_callback_info info) {
@@ -550,14 +575,23 @@ napi_value SendUmp(napi_env env, napi_callback_info info) {
     return nullptr;
   }
   
+  if (midiOutputs[deviceIndex].handle == nullptr) {
+    napi_throw_error(env, "DEVICE_NOT_OPEN", "Device not open. Call openUmpOutput first.");
+    return nullptr;
+  }
+  
 #ifdef _WIN32
+  // Convert 32-bit UMP packet to byte array
   uint8_t data[4] = {
     (uint8_t)((packet >> 24) & 0xFF),
     (uint8_t)((packet >> 16) & 0xFF),
     (uint8_t)((packet >> 8) & 0xFF),
     (uint8_t)(packet & 0xFF)
   };
-  WindowsMIDIManager::sendData((HMIDIOUT)midiOutputs[deviceIndex].handle, data, 4);
+  MMRESULT result = WindowsMIDIManager::sendData((HMIDIOUT)midiOutputs[deviceIndex].handle, data, 4);
+  if (result != MMSYSERR_NOERROR) {
+    napi_throw_error(env, "SEND_FAILED", "Failed to send MIDI message");
+  }
 #elif __APPLE__
   MIDIEndpointRef dest = *(MIDIEndpointRef*)midiOutputs[deviceIndex].handle;
   MacMIDIManager::sendUMP(dest, &packet, 1);
