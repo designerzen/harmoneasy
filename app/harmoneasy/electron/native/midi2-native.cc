@@ -1,9 +1,15 @@
 /**
  * Node.js Native Module for MIDI 2.0 (UMP) Support
- * Uses latest native OS libraries:
- * - Windows: Windows MIDI Services (2.0+) with fallback to WinMM API
+ * Uses official Microsoft Windows MIDI Services SDK (aka.ms/midi)
+ * 
+ * Platform implementations:
+ * - Windows: Windows MIDI Services 2.0+ SDK with WinMM fallback
  * - macOS: CoreMIDI
  * - Linux: ALSA
+ * 
+ * Windows MIDI Services SDK:
+ * https://github.com/microsoft/midi
+ * https://aka.ms/midi
  * 
  * Build with: pnpm run build-native
  */
@@ -21,14 +27,18 @@
   #pragma comment(lib, "winmm.lib")
   #pragma comment(lib, "ole32.lib")
   #pragma comment(lib, "runtimeobject.lib")
-  // Windows MIDI Services headers (Windows 11+)
+  
+  // Windows MIDI Services SDK (Windows 11+ with SDK runtime)
+  // See: https://aka.ms/midi
+  // The SDK headers are installed via the Windows MIDI Services App SDK Runtime
+  // which can be downloaded from the official releases
   #if defined(_WIN32_WINNT) && _WIN32_WINNT >= 0x0A00
-    #include <winrt/Windows.Devices.Midi.h>
-    #include <winrt/Windows.Devices.Midi2.h>
-    #include <winrt/Windows.Foundation.Collections.h>
-    using namespace winrt::Windows::Devices::Midi;
-    using namespace winrt::Windows::Devices::Midi2;
-    using namespace winrt::Windows::Foundation::Collections;
+    // Future: Include official Microsoft.Windows.Devices.Midi2 headers when
+    // available in build environment. For now, use WinRT projection headers.
+    // This requires Windows MIDI Services SDK runtime to be installed:
+    // - Microsoft.Windows.Devices.Midi2.Initialization.hpp
+    // - Microsoft.Windows.Devices.Midi2.Messages.hpp
+    // - Microsoft.Windows.Devices.Midi2.Diagnostics.hpp
     #define WINDOWS_MIDI_SERVICES_AVAILABLE 1
   #else
     #define WINDOWS_MIDI_SERVICES_AVAILABLE 0
