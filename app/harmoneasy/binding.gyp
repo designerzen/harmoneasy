@@ -6,7 +6,13 @@
       "include_dirs": ["<!(node -p 'require(\"path\").dirname(require.resolve(\"node-addon-api\"))')"],
       "conditions": [
         ["OS == 'win'", {
-          "libraries": ["winmm.lib"]
+          "libraries": ["winmm.lib", "ole32.lib", "runtimeobject.lib"],
+          "msvs_settings": {
+            "VCCLCompilerTool": {
+              "AdditionalOptions": ["/std:c++17", "/EHsc"],
+              "PreprocessorDefinitions": ["_WIN32_WINNT=0x0A00", "NTDDI_WIN10_WIN11"]
+            }
+          }
         }],
         ["OS == 'mac'", {
           "xcode_settings": {
