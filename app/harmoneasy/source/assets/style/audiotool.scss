@@ -1,0 +1,13 @@
+.audiotool-dialog {
+    width: min(36rem, calc(100vw - 2rem));
+    max-height: calc(100dvh - 2rem);
+    overflow-y: auto;
+    padding: var(--pad);
+
+    fieldset { display: grid; gap: .75rem; margin-block: 1rem; min-width: 0; }
+    label { display: grid; gap: .3rem; }
+    select, input { width: 100%; min-width: 0; box-sizing: border-box; }
+    p { margin-block: .75rem; }
+   
+    button:disabled { opacity: .55; cursor: wait; }
+}

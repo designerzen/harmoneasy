@@ -1,0 +1,42 @@
+dialog {
+	box-sizing: border-box;
+	width: fit-content;
+	height:auto;
+	max-width:calc( 100% - var(--pad,1rem) * 2 );
+	max-height:calc( 100% - var(--pad,1rem) * 2 );
+	margin: auto;
+	padding: calc(2 * var(--pad)) calc(3 * var(--pad));
+	overflow:auto;
+	z-index: 9009;
+
+	align-self: center;
+	justify-self: center;
+	position: fixed;
+	top:0;
+	bottom:0;
+
+	&::before{
+		content: '';
+		position: fixed;
+		inset:-2048px;
+		background: radial-gradient(circle at center, var(--col-black) 0%, rgba(100, 20, 20, 0.4) 20%, rgba(50, 10, 10, 0.1) 100%);
+		backdrop-filter: blur(20px);
+		z-index: -2;
+	}
+
+	// actual background
+	&::after{
+		content:'';
+		background: inherit;
+		border:inherit;
+		position: absolute;
+		inset:0;
+		z-index: -1;
+	}
+}
+
+::backdrop {
+	background-color: light-dark(rgba(43, 30, 30, 0.5), rgba(0, 0, 0, 0.7));
+	// background-color: var(--col-purple);
+	display: block;
+}
