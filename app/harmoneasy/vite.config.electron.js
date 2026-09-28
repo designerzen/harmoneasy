@@ -32,6 +32,7 @@ const nodeAddonPlugin = {
 
 export default defineConfig({
   base: './',
+  optimizeDeps: { include: ['audiotool > @audiotool/nexus', 'audiotool > @audiotool/nexus/utils'] },
   server: {
     port: 5174 // Match the port Audiotool expects
   },

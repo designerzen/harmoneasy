@@ -22,11 +22,12 @@
 		</a>
 		<h1 class="h2">Harmoneasy</h1>
 		<h2 class="h2">Putting the Unity in Community</h2>
-		<p aria-summary>Harmoneasy is a web-based music jamming platform that allows you
-			to play with friends and mix it together and tranform it to be in key and in time. 
-			The transformers remix in real-time and can warp, quantise, synch timings, 
-			you can transpose into a shared key or add melodic harmonies.
-		</p>
+		<p aria-summary>Harmoneasy is a web-based real-time music jamming platform that allows you
+			to play harmonically and in-time with friends.</p>
+		
+		<p>The transformers remix in real-time and can warp, quantise, synch timings, 
+		you can transpose into a shared key or add melodic harmonies.</p>
+
 		<p><strong>Note:</strong> this software requires WebMIDI or Bluetooth which your bowser will request your permission for - please press 'accept' to allow it.</p>
 		<form method="dialog">
 			<!-- <button class="btn-close" type="submit">Begin</button> -->
@@ -50,32 +51,76 @@
 				<button type="button" id="btn-volume-up" class="btn-volume-control" title="Increase volume">+</button>
 			</label>
 
-			<label id="tempo-control" class="controls">
+			<label id="tempo-control" class="controls" for="tempo">
 				Tempo:
 				<input id="tempo" type="range" min=10 max=303>
 				<output id="bpm"></output> BPM
 				<button type="button" id="btn-tempo-down" class="btn-tempo-control" title="Decrease tempo">−</button>
 				<button type="button" id="btn-tempo-up" class="btn-tempo-control" title="Increase tempo">+</button>
+				<button type="button" id="btn-metronome" aria-pressed="false" title="Enable metronome" disabled>Metronome</button>
 			</label>
+			<button type="button" id="netronome-link" title="Sync with another browser" aria-haspopup="dialog" disabled>
+				<img id="netronome-qr-preview" alt="Netronome connection QR code" hidden>
+				<span>Sync</span>
+			</button>
 
 		</menu>
 
 	</header>
+	<dialog id="netronome-dialog" aria-labelledby="netronome-title">
+		<header>
+			<h2 id="netronome-title">Sync</h2>
+			<button type="button" id="netronome-close" aria-label="Close Sync dialog">Close</button>
+		</header>
+		<div class="netronome-dialog-content" tabindex="0" role="region" aria-label="Sync connection details">
+		<p id="netronome-instructions"></p>
+		<img id="netronome-qr" alt="Scan to connect this Netronome session" hidden>
+		<p id="netronome-status" role="status">Initializing audio…</p>
+		<label for="netronome-local-link">Connection link</label>
+		<textarea id="netronome-local-link" readonly rows="2" spellcheck="false"></textarea>
+		<button type="button" id="netronome-copy">Copy link</button>
+		<label for="netronome-remote-link">Link from the other browser</label>
+		<textarea id="netronome-remote-link" rows="2" spellcheck="false" placeholder="Paste the reply link here"></textarea>
+		<button type="button" id="netronome-apply">Connect</button>
+		<button type="button" id="netronome-regenerate">New connection</button>
+		</div>
+	</dialog>
+
+		<menu id="action-bar" aria-label="Application actions">
+			<button id="btn-import" class="btn-import primary" type="button">Import</button>
+			<button id="btn-export" class="btn-export primary" type="button">Export</button>
+			<button id="btn-settings" class="btn-settings" type="button">Settings</button>
+			<button id="btn-kill-switch" class="btn-kill-switch btn-panic primary" type="button">Panic</button>
+		</menu>
+
+            <div id="midi-transport-control" class="controls" role="group" aria-labelledby="transport-label">
+                <label class="sr-only" id="transport-label" for="transport-status">MIDI transport</label>
+                <button type="button" title="Start playback" id="btn-transport-start" class="btn-transport" disabled>
+                    <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" /></svg>
+                    <span class="sr-only">Start</span>
+                </button>
+                <button type="button" title="Stop playback" id="btn-transport-stop" class="btn-transport" hidden disabled>
+                    <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M5 4h5v16H5zm9 0h5v16h-5z" /></svg>
+                    <span class="sr-only">Stop</span>
+                </button>
+                <button type="button" id="btn-transport-reset" class="btn-transport" disabled title="Stop and rewind the shared transport">
+                    <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M4 4h3v16H4zm16 0v16L8 12z" /></svg>
+                    <span class="sr-only">Reset</span>
+                </button>
+                <output class="sr-only" id="transport-status" role="status">Loading</output>
+                <div id="transport">
+                    <button type="button" id="btn-transport-details" title="Show MIDI events">
+                        <span class="sr-only">Time / duration; show MIDI events:</span>
+                        <time id="clock">...</time>
+                    </button>
+
+                </div>
+                <nav id="chain-navigation" aria-label="IOChains"></nav>
+            </div>
 
 	<main>
 
-		<menu id="action-bar">
-			<button id="btn-import" class="btn-import primary" type="button">Import</button>
-			<button id="btn-export" class="btn-export primary" type="button">Export</button>
-			<label for="btn-toggle-layout">
-				<select id="btn-toggle-layout" class="btn-toggle-layout" title="Select layout mode">
-					<option value="vertical">Vertical</option>
-					<option value="horizontal">Horizontal</option>
-				</select>
-			</label>
-			<button id="btn-settings" class="btn-settings" type="button" title="Settings">⚙</button>
-			<button id="btn-kill-switch" class="btn-kill-switch primary" type="button">Panic</button>
-		</menu>
+
 
 		<div id="chain">
 			<div id="graph"></div>
@@ -86,12 +131,11 @@
 		<!-- <song-explorer></song-explorer> -->
 		<!-- <canvas id="song-explorer" width="1920" height="1080"></canvas> -->
 	
-		<div id="transport">
-			<strong aria-hide>Timer</strong>
-			<time id="clock" aria-hide>...</time>
-			<button type="button" id="btn-reset" class="icon btn-reset">Reset</button>
-		</div>
 
+
+		<section id="recordings" aria-label="Recordings">
+			<button type="button" id="btn-reset" class="icon btn-reset">Clear recording</button>
+		</section>
 	</main>
 	
 	<!-- Sidebars for MIDI Events -->
@@ -176,7 +220,7 @@
 		<menu id="export-options" class="export-menu">
 			<button type="button" id="btn-audiotool-export" class="export-option">
 				<img src="source/assets/logos/audiotool.svg" alt="AudioTool" class="logo-inline">
-				Open in AudioTool
+				Send a take to AudioTool
 			</button>
 			<button type="button" id="btn-opendaw-export" class="export-option">
 				<img src="source/assets/logos/opendaw.svg" alt="OpenDAW" class="logo-inline">
@@ -223,6 +267,10 @@
 			<h5 id="settings-dialog-title">Settings</h5>
 		</header>
 		<form id="settings-form">
+			<fieldset>
+				<legend>Graph layout</legend>
+				<div id="graph-layout-settings"></div>
+			</fieldset>
 			<fieldset>
 				<legend>Timer Settings</legend>
 				<label for="timer-type-select">Timer Type:

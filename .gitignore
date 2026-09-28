@@ -1,5 +1,6 @@
 .DS_Store
-dist/
+dist*
+dist---/
 out/
 audiotoolsdk
 *-copy*
