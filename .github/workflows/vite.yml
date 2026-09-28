@@ -46,7 +46,6 @@ jobs:
         timeout-minutes: 40
         env:
           npm_config_legacy_peer_deps: true
-          PNPM_HOME: /tmp/pnpm-home
 
       - name: Build
         run: cd app/harmoneasy && pnpm run build
