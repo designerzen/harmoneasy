@@ -9,12 +9,13 @@ import { fileURLToPath } from 'url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const projectRoot = path.join(__dirname, '..')
+const appRoot = path.join(projectRoot, 'app', 'harmoneasy')
 
 // Define source and destination paths for native modules
 const nativeModuleConfigs = [
   {
-    source: path.join(projectRoot, 'build', 'Release', 'midi2-native.node'),
-    dest: path.join(projectRoot, 'dist', 'build', 'Release', 'midi2-native.node')
+    source: path.join(appRoot, 'build', 'Release', 'midi2-native.node'),
+    dest: path.join(appRoot, 'dist', 'build', 'Release', 'midi2-native.node')
   }
 ]
 
