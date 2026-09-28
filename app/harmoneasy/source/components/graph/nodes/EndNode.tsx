@@ -1,44 +1,23 @@
+import { fillDeviceCard } from '../device-card'
+import { SharedDevices } from '../SharedDevices'
+import { useChain } from '../ChainContext'
 import { Handle, Position } from "@xyflow/react"
 import React, { useCallback } from 'react'
-import type IOChain from 'audiobus/io/IO-chain.ts'
 
 interface EndNodeProps {
 	data?: any
 	id?: string
 }
 
-const getIconForFactory = (factory: any, type: 'output' | 'instrument'): string => {
-	// Map factory IDs to emojis or icon representations
-	const iconMap: Record<string, string> = {
-		// Outputs
-		'notation': '🎼',
-		'spectrum-analyser': '📊',
-		'onscreen-keyboard': '⌨️',
-		'pink-trombone': '🗣️',
-		'speech-synthesis': '🔊',
-		'vibrator': '📳',
-		'webmidi': '🎹',
-		'ble-midi': '📱',
-		'console': '💻',
-		// Instruments
-		'polyphonic-synth': '🎹',
-		'synth': '🎹',
-	}
-
-	return iconMap[factory.id] || (type === 'instrument' ? '🎸' : '🔌')
-}
-
 export function EndNode(props: EndNodeProps) {
-	const chain = (window as any).chain as IOChain
-	const ioManager = (window as any).ioManager
+	const { chain, manager: ioManager } = useChain()
 	const isVertical = props.data?.layoutMode === 'vertical'
 
 	const addOutputOrInstrument = useCallback(async () => {
-		const { getAvailableOutputFactories, createOutputById } = await import('audiobus/io/output-factory.ts')
+		const { createOutputById } = await import('audiobus/io/output-factory.ts')
 		const { getAvailableInstrumentFactories, createInstrumentById } = await import('audiobus/instruments')
 		
-		const outputFactories = getAvailableOutputFactories()
-		const availableOutputs = outputFactories.filter((factory) => factory.isAvailable?.() !== false)
+		const availableOutputs = await chain.outputManager.getAvailableFactories()
 
 		const instrumentFactories = getAvailableInstrumentFactories()
 		const availableInstruments = instrumentFactories
@@ -48,12 +27,6 @@ export function EndNode(props: EndNodeProps) {
 			return
 		}
 
-		// Combine all items
-		const allItems: FactoryWithType[] = [
-			...availableOutputs.map((factory) => ({ factory, type: 'output' as const })),
-			...availableInstruments.map((factory) => ({ factory, type: 'instrument' as const })),
-		]
-
 		// Create the merged dialog
 		const dialog = document.createElement("dialog")
 		dialog.setAttribute("closeby", "any")
@@ -62,7 +35,7 @@ export function EndNode(props: EndNodeProps) {
 		// Header with title and single filter
 		const header = document.createElement("header")
 		const title = document.createElement("h5")
-		title.textContent = "Add Output or Instrument"
+		title.textContent = "Add New Output"
 		header.appendChild(title)
 
 		const filterLabel = document.createElement("label")
@@ -99,7 +72,6 @@ export function EndNode(props: EndNodeProps) {
 			outputGrid.className = "items-grid outputs-grid"
 
 			const outputItems = availableOutputs.map((factory) => {
-				const icon = getIconForFactory(factory, 'output')
 
 				const item = document.createElement("button")
 				item.type = "button"
@@ -108,17 +80,7 @@ export function EndNode(props: EndNodeProps) {
 				item.dataset.type = "output"
 				item.dataset.name = factory.name
 				item.dataset.description = factory.description || ""
-
-				const iconSpan = document.createElement("span")
-				iconSpan.className = "item-icon"
-				iconSpan.textContent = icon
-
-				const nameSpan = document.createElement("span")
-				nameSpan.className = "item-name"
-				nameSpan.textContent = factory.name
-
-				item.appendChild(iconSpan)
-				item.appendChild(nameSpan)
+                fillDeviceCard(item, factory, 'output')
 
 				if (factory.description) {
 					item.title = factory.description
@@ -134,7 +96,7 @@ export function EndNode(props: EndNodeProps) {
 							}
 						}
 						const output = await createOutputById(factory.id, options)
-						chain.addOutput(output)
+						ioManager.addDevice(chain, output, 'output')
 						dialog.close()
 					} catch (error) {
 						console.error(`Failed to create output "${factory.name}":`, error)
@@ -166,7 +128,6 @@ export function EndNode(props: EndNodeProps) {
 			instrumentGrid.className = "items-grid instruments-grid"
 
 			const instrumentItems = availableInstruments.map((factory) => {
-				const icon = getIconForFactory(factory, 'instrument')
 
 				const item = document.createElement("button")
 				item.type = "button"
@@ -175,17 +136,7 @@ export function EndNode(props: EndNodeProps) {
 				item.dataset.type = "instrument"
 				item.dataset.name = factory.name
 				item.dataset.description = factory.description || ""
-
-				const iconSpan = document.createElement("span")
-				iconSpan.className = "item-icon"
-				iconSpan.textContent = icon
-
-				const nameSpan = document.createElement("span")
-				nameSpan.className = "item-name"
-				nameSpan.textContent = factory.name
-
-				item.appendChild(iconSpan)
-				item.appendChild(nameSpan)
+                fillDeviceCard(item, factory, 'instrument')
 
 				if (factory.description) {
 					item.title = factory.description
@@ -202,7 +153,7 @@ export function EndNode(props: EndNodeProps) {
 							}
 						}
 						const instrument = await createInstrumentById(audioContext!, factory.id, options)
-						chain.addOutput(instrument)
+						ioManager.addDevice(chain, instrument, 'output')
 						dialog.close()
 					} catch (error) {
 						console.error(`Failed to create instrument "${factory.name}":`, error)
@@ -232,7 +183,7 @@ export function EndNode(props: EndNodeProps) {
 				const name = item.dataset.name?.toLowerCase() || ""
 				const description = item.dataset.description?.toLowerCase() || ""
 
-				const matches = name.includes(searchTerm) || description.includes(searchTerm)
+				const matches = (item.dataset.search ?? `${name} ${description}`).includes(searchTerm)
 				item.style.display = matches ? "" : "none"
 			})
 		})
@@ -243,7 +194,9 @@ export function EndNode(props: EndNodeProps) {
 		const closeButton = document.createElement("button")
 		closeButton.type = "submit"
 		closeButton.className = "btn-close"
-		closeButton.textContent = "Close"
+		closeButton.textContent = "×"
+		closeButton.setAttribute("aria-label", "Cancel adding output")
+		closeButton.title = "Cancel"
 		form.appendChild(closeButton)
 		dialog.appendChild(form)
 
@@ -257,19 +210,15 @@ export function EndNode(props: EndNodeProps) {
 
 		// Focus filter input for immediate use
 		setTimeout(() => filterInput.focus(), 0)
-	}, [])
+	}, [chain, ioManager])
 
 	return (
 		<div className="node-end graph-node">
 			<h6>Outputs</h6>
-			<div className="button-group">
-				<label>
-					<span className="sr-only">Add Output or Instrument</span>
-					<button className="cta btn-add" type="button" onClick={addOutputOrInstrument}>
-						+ Add
-					</button>
-				</label>
-			</div>
+            <SharedDevices direction="output" />
+            <button className="cta btn-add nodrag nopan" type="button" onClick={addOutputOrInstrument}>
+                Add New Output
+            </button>
 			<Handle type="source" position={isVertical ? Position.Bottom : Position.Right} />
 			<Handle type="target" position={isVertical ? Position.Top : Position.Left} />
 		</div>

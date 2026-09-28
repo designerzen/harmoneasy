@@ -1,35 +1,21 @@
+import { fillDeviceCard } from '../device-card'
+import { SharedDevices } from '../SharedDevices'
+import { useChain } from '../ChainContext'
 import { Handle, Position } from "@xyflow/react";
 import React, { useCallback } from "react";
-import type IOChain from "audiobus/io/IO-chain.ts";
 
 interface StartNodeProps {
 	data?: any;
 	id?: string;
 }
 
-const getIconForFactory = (factory: any): string => {
-	// Map factory IDs to emojis or icon representations
-	const iconMap: Record<string, string> = {
-		midi: "🎹",
-		webmidi: "🎹",
-		"ble-midi": "📱",
-		keyboard: "⌨️",
-		microphone: "🎤",
-		gamepad: "🕹️",
-		"midi-in": "🎹",
-	};
-
-	return iconMap[factory.id] || "🎵";
-};
-
 export function StartNode(props: StartNodeProps) {
-	const chain = (window as any).chain as IOChain;
+	const { chain, manager: ioManager } = useChain()
 	const isVertical = props.data?.layoutMode === "vertical";
 
 	const addInput = useCallback(async () => {
-		const { getAvailableInputFactories, createInputById } = await import("audiobus/io/input-factory.ts");
-		const factories = getAvailableInputFactories();
-		const availableFactories = factories.filter((factory) => factory.isAvailable?.() !== false);
+		const { createInputById } = await import("audiobus/io/input-factory.ts");
+		const availableFactories = await chain.inputManager.getAvailableFactories();
 
 		if (availableFactories.length === 0) {
 			console.warn("No available inputs to add");
@@ -38,13 +24,14 @@ export function StartNode(props: StartNodeProps) {
 
 		// Create the dialog
 		const dialog = document.createElement("dialog");
-		dialog.setAttribute("closeby", "any");
+		dialog.setAttribute("closedby", "any");
+		dialog.setAttribute("aria-label", "Add New Input");
 		dialog.className = "add-input-dialog";
 
 		// Header with title and single filter
 		const header = document.createElement("header");
 		const title = document.createElement("h5");
-		title.textContent = "Add Input";
+		title.textContent = "Add New Input";
 		header.appendChild(title);
 
 		const filterLabel = document.createElement("label");
@@ -55,6 +42,7 @@ export function StartNode(props: StartNodeProps) {
 		const filterInput = document.createElement("input");
 		filterInput.type = "text";
 		filterInput.placeholder = "Search inputs...";
+		filterInput.setAttribute("aria-label", "Search inputs");
 		filterInput.className = "filter-input-global";
 		filterInput.autofocus = true;
 		filterLabel.appendChild(filterIcon);
@@ -80,7 +68,6 @@ export function StartNode(props: StartNodeProps) {
 		inputGrid.className = "items-grid inputs-grid";
 
 		const inputItems = availableFactories.map((factory) => {
-			const icon = getIconForFactory(factory);
 
 			const item = document.createElement("button");
 			item.type = "button";
@@ -89,17 +76,7 @@ export function StartNode(props: StartNodeProps) {
 			item.dataset.type = "input";
 			item.dataset.name = factory.name;
 			item.dataset.description = factory.description || "";
-
-			const iconSpan = document.createElement("span");
-			iconSpan.className = "item-icon";
-			iconSpan.textContent = icon;
-
-			const nameSpan = document.createElement("span");
-			nameSpan.className = "item-name";
-			nameSpan.textContent = factory.name;
-
-			item.appendChild(iconSpan);
-			item.appendChild(nameSpan);
+                fillDeviceCard(item, factory, 'input')
 
 			if (factory.description) {
 				item.title = factory.description;
@@ -107,8 +84,8 @@ export function StartNode(props: StartNodeProps) {
 
 			item.addEventListener("click", async () => {
 				try {
-					const input = await createInputById(factory.id);
-					chain.addInput(input as any);
+					const input = await createInputById(factory.id, ioManager.deviceOptions);
+					ioManager.addDevice(chain, input, 'input');
 					dialog.close();
 				} catch (error) {
 					console.error(`Failed to create input "${factory.name}":`, error);
@@ -137,7 +114,7 @@ export function StartNode(props: StartNodeProps) {
 				const name = item.dataset.name?.toLowerCase() || "";
 				const description = item.dataset.description?.toLowerCase() || "";
 
-				const matches = name.includes(searchTerm) || description.includes(searchTerm);
+				const matches = (item.dataset.search ?? `${name} ${description}`).includes(searchTerm);
 				item.style.display = matches ? "" : "none";
 			});
 		});
@@ -148,7 +125,9 @@ export function StartNode(props: StartNodeProps) {
 		const closeButton = document.createElement("button");
 		closeButton.type = "submit";
 		closeButton.className = "btn-close";
-		closeButton.textContent = "Close";
+		closeButton.textContent = "×";
+		closeButton.setAttribute("aria-label", "Cancel adding input");
+		closeButton.title = "Cancel";
 		form.appendChild(closeButton);
 		dialog.appendChild(form);
 
@@ -162,17 +141,15 @@ export function StartNode(props: StartNodeProps) {
 
 		// Focus filter input for immediate use
 		setTimeout(() => filterInput.focus(), 0);
-	}, []);
+	}, [chain, ioManager]);
 
 	return (
 		<div className="node-start graph-node">
 			<h6>Inputs</h6>
-			<label>
-				<span className="sr-only">Add Input Device</span>
-				<button className="cta btn-add" type="button" onClick={addInput}>
-					Add
-				</button>
-			</label>
+            <SharedDevices direction="input" />
+            <button className="cta btn-add nodrag nopan" type="button" onClick={addInput}>
+                Add New Input
+            </button>
 			<Handle type="source" position={isVertical ? Position.Bottom : Position.Right} />
 			<Handle type="target" position={isVertical ? Position.Top : Position.Left} />
 		</div>

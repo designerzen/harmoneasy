@@ -1,6 +1,6 @@
 
 export const DEFAULT_GRAPH_OPTIONS = {
-	minZoom: 0.3,
+	minZoom: 0.05,
 	maxZoom: 1.5
 }
 

@@ -1,58 +1,39 @@
+import { DeviceGui } from '../DeviceGui'
+import { useChain } from '../ChainContext'
 import { Handle, Position } from "@xyflow/react"
-import React, { useCallback, useEffect, useRef } from "react"
+import React, { useCallback } from "react"
 
-import type AbstractInput from 'audiobus/io/inputs/abstract-input'
 import type { IAudioOutput } from 'audiobus/io/outputs/output-interface'
-import type IOChain from 'audiobus/io/IO-chain'
 
-export function OutputNode(props) {
+export function OutputNode(props: any) {
 	// This is awfully inefficient
-	const chain = (window as any).chain as IOChain
+	const { chain, manager: ioManager } = useChain()
 	const output:IAudioOutput = props.data?.output
-	const hasConnectMethod:boolean = output.connect ?? false
-	const hasDisconnectMethod:boolean = output.disconnect ?? false
+	const hasConnectMethod = typeof output.connect === 'function'
+	const hasDisconnectMethod = typeof output.disconnect === 'function'
 	const hasControls = hasConnectMethod || hasDisconnectMethod
-	const GUIContainerRef = useRef<HTMLDivElement>(null)
-
-	useEffect(() => {
-
-		let gui
-		const t = async()=>{
-			if (GUIContainerRef.current && output?.createGui && output?.destroyGui) {
-				gui = await output.createGui()
-				GUIContainerRef.current.appendChild(gui)
-			}
-		}
-		t()
-		return () =>{
-			if (gui)
-			{
-				gui.remove()
-				output.destroyGui()				
-			}
-		} 
-	}, [output])
-	
 
 	const removeNode = useCallback(() => {
-		chain.removeOutput(output)
-	}, [output])
+        chain.removeOutput(output)
+	}, [output, chain])
 
 	const connectToOutput = useCallback(async () => {
 		try{
-			return await output.connect()
+			await output.connect?.()
+            chain.dispatchEvent(new Event('configurationChanged'))
 		}catch(error){
 			console.error(error)
 		}
-	}, [output])
+	}, [output, chain])
 
 	const disconnectFromOutput = useCallback(async () => {
 		try{
-			return await output.disconnect()
+			await output.disconnect?.()
+            chain.dispatchEvent(new Event('configurationChanged'))
 		}catch(error){
 			console.error(error)
 		}
-	}, [output])
+	}, [output, chain])
 
 	const isVertical = props.data?.layoutMode === 'vertical'
 	const isFullscreen = props.data?.isFullscreen || false
@@ -65,7 +46,19 @@ export function OutputNode(props) {
 	}, [props.id, onFullscreen])
 
 	return <div className={`node-output graph-node can-remove ${hasControls ? 'has-controls' : 'no-controls'} ${isFullscreen ? 'is-fullscreen' : ''}`} title={output.description}>
-		<h6>{output.name}</h6>
+		<div className="device-node-header node-actions">
+			<button type="button" className="btn-remove nodrag nopan" title="Remove output" aria-label="Remove output" onClick={removeNode}>Remove</button>
+            <h6>{output.name}</h6>
+            <button type="button" className="btn-fullscreen nodrag nopan" onClick={handleFullscreen}
+                autoFocus={isFullscreen} aria-expanded={isFullscreen}
+                title={isFullscreen ? 'Minimise output' : 'Expand output'}
+                aria-label={isFullscreen ? 'Minimise output' : 'Expand output'}>
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d={isFullscreen ? 'M3 9h6V3m6 0v6h6M3 15h6v6m6 0v-6h6' : 'M9 3H3v6m12-6h6v6M3 15v6h6m6 0h6v-6'} />
+                </svg>
+            </button>
+		</div>
+        {(ioManager.devices.find(entry => entry.device === output)?.chains.size ?? 0) > 1 && <small>Shared device</small>}
 		<p className="sr-only">{props.data.label }</p>
 		{
 			hasConnectMethod && !output.isConnected && (
@@ -88,13 +81,10 @@ export function OutputNode(props) {
 
 		
 		{/* Injected content from the nodes */}
-		<div ref={GUIContainerRef} />
+		<DeviceGui device={output} expanded={isFullscreen} />
 		
-		<menu className="node-actions">
-			<button type="button" className="btn-fullscreen" onClick={handleFullscreen} title="Fullscreen" aria-label="Fullscreen mode">⛶</button>
-			<button type="button" className="btn-remove" onClick={removeNode}>Remove</button>
-		</menu>
-      	<Handle type="target" position={isVertical ? Position.Top : Position.Left} />
+
+      	{!isFullscreen && <Handle type="target" position={isVertical ? Position.Top : Position.Left} />}
 	</div>
 }
 

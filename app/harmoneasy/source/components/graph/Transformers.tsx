@@ -1,14 +1,13 @@
+import { useChain } from './ChainContext'
 import React, { useState, useId } from "react"
 import { 
     tranformerFactory,
-    TRANSFORMER_TYPE,
     TRANSFORMERS
 } from 'audiobus/io/transformer-factory'
 
-import type { TransformerManager } from 'audiobus/io/transformer-manager'
-import type IOChain from 'audiobus/io/IO-chain'
 
 export function Transformers() {
+    const { chain } = useChain()
     const filterId = useId()
     const [transformersFilterText, setTransformersFilterText] = useState("")
   
@@ -17,12 +16,13 @@ export function Transformers() {
     )
 
 	const onAdd = (transformerType: string) => () => {
-		const chain = (window as any).chain as IOChain
+
         chain.appendTransformer( tranformerFactory(transformerType) )
     }
 
-    return (<details open className="transformers">
-            <summary>{transformersFilterText.length > 2 && filteredTransformers.length > 0  ? transformersFilterText : 'Transformers'}</summary>
+    return (<details className="transformers transformers-drawer">
+            <summary title="Open or close Add Transformer menu"><span>Add Transformer</span></summary>
+            <div className="transformer-picker">
 			
 			<label className="filter-label filter-transformer" htmlFor={filterId}>
 				<input 
@@ -41,10 +41,11 @@ export function Transformers() {
 				}
 				{filteredTransformers.length === 0 && (
 					<li className="no-matches">
-						<p className="error-message">No transformers match "{presetsFilterText}"</p>
+						<p className="error-message">No transformers match "{transformersFilterText}"</p>
 					</li>
 				)}
 			</ul>
+            </div>
         </details>)
 }
 

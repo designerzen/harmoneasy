@@ -1,92 +1,43 @@
+import { DeviceGui } from '../DeviceGui'
+import { useChain } from '../ChainContext'
 import { Handle, Position } from "@xyflow/react"
-import React, { useCallback, useEffect, useRef } from "react"
+import React, { useCallback } from "react"
 
 import type AbstractInput from 'audiobus/io/inputs/abstract-input'
-import type IOChain from 'audiobus/io/IO-chain'
 import type { IAudioInput } from 'audiobus/io/inputs/input-interface'
 
-export function InputNode(props: { data: { input: AbstractInput; label: any } }) {
-
-	const chain = (window as any).chain as IOChain
-	const input:IAudioInput = props.data?.input
-	const hasConnectMethod:boolean = input.connect ?? false
-	const hasDisconnectMethod:boolean = input.disconnect ?? false
+export function InputNode(props: any) {
+	const { chain, manager: ioManager } = useChain()
+	const input: AbstractInput & IAudioInput = props.data?.input
+	const hasConnectMethod = typeof input.connect === 'function'
+	const hasDisconnectMethod = typeof input.disconnect === 'function'
 	const hasControls = hasConnectMethod || hasDisconnectMethod
-	const GUIContainerRef = useRef<HTMLDivElement>(null)
 
-	useEffect(() => {
+	const removeNode = useCallback(() => {
+        chain.removeInput(input)
+	}, [input, chain])
 
-		let gui: HTMLElement | undefined
-		const t = async()=>{
-
-			if (GUIContainerRef.current && input && input.createGui && input.destroyGui) {
-				gui = await input.createGui()
-				if (gui && GUIContainerRef.current) {
-					GUIContainerRef.current.appendChild(gui)
-				}
-
-				console.error("InputNode useEffect", {ref:GUIContainerRef.current, createGUI:input?.createGui, destroyGUI:input?.destroyGui} )
-		
-				//alert("injecting DOM")
-			}else{
-				console.error("InputNode IGNORED", {ref:GUIContainerRef.current, createGUI:input?.createGui, destroyGUI:input?.destroyGui} )
-		
-			}
-		}
-
-		t()
-		
-		return () =>{
-			if (gui && typeof gui.remove === 'function')
-			{
-				gui.remove()
-				if (input && typeof input.destroyGui === 'function') {
-					input.destroyGui()
-				}
-			}
-		} 
-	}, [input])
-
-
-	/**
-	 * 
-	 */
 	const connectToInput = useCallback(async () => {
 		try{
-			return await input.connect()
+			await input.connect?.()
+            chain.dispatchEvent(new Event('configurationChanged'))
 		}catch(error){
 			console.error(error)
 		}
-	}, [input.isConnected])
-	
-	/**
-	 * 
-	 */
+	}, [input, chain])
+
 	const disconnectFromInput = useCallback(async () => {
 		try{
-			return await input.disconnect()
+			await input.disconnect?.()
+            chain.dispatchEvent(new Event('configurationChanged'))
 		}catch(error){
 			console.error(error)
 		}
-	}, [input.isConnected])
-		
-	/**
-	 * 
-	 */	
-	const removeNode = useCallback(() => {
-		if (hasDisconnectMethod && input.isConnected)
-		{
-			disconnectFromInput()
-		}
-		chain.removeInput(input)
-	}, [input, hasDisconnectMethod])
+	}, [input, chain])
 
-	/**
-	 * 
-	 */
-	const isVertical = props.data.layoutMode === 'vertical'
-	const isFullscreen = props.data.isFullscreen || false
-	const onFullscreen = props.data.onFullscreen
+	const isVertical = props.data?.layoutMode === 'vertical'
+	const isFullscreen = props.data?.isFullscreen || false
+	const onFullscreen = props.data?.onFullscreen
 
 	const handleFullscreen = useCallback(() => {
 		if (onFullscreen) {
@@ -95,7 +46,19 @@ export function InputNode(props: { data: { input: AbstractInput; label: any } })
 	}, [props.id, onFullscreen])
 
 	return <div className={`node-input graph-node can-remove ${hasControls ? 'has-controls' : 'no-controls'} ${isFullscreen ? 'is-fullscreen' : ''}`} title={input.description}>
-		<h6>{input?.name }</h6>
+		<div className="device-node-header node-actions">
+			<button type="button" className="btn-remove nodrag nopan" title="Remove input" aria-label="Remove input" onClick={removeNode}>Remove</button>
+            <h6>{input.name}</h6>
+            <button type="button" className="btn-fullscreen nodrag nopan" onClick={handleFullscreen}
+                autoFocus={isFullscreen} aria-expanded={isFullscreen}
+                title={isFullscreen ? 'Minimise input' : 'Expand input'}
+                aria-label={isFullscreen ? 'Minimise input' : 'Expand input'}>
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d={isFullscreen ? 'M3 9h6V3m6 0v6h6M3 15h6v6m6 0v-6h6' : 'M9 3H3v6m12-6h6v6M3 15v6h6m6 0h6v-6'} />
+                </svg>
+            </button>
+		</div>
+        {(ioManager.devices.find(entry => entry.device === input)?.chains.size ?? 0) > 1 && <small>Shared device</small>}
 		<p className="sr-only">{props.data.label }</p>
 		{
 			hasConnectMethod && !input.isConnected && (
@@ -111,21 +74,17 @@ export function InputNode(props: { data: { input: AbstractInput; label: any } })
 			hasDisconnectMethod && input.isConnected && (
 				<label className="disconnect-input">
 					<span className="sr-only">Disconnect from Device</span>
-					<button className="cta btn-disconnect" type="button" onClick={disconnectFromInput}>
-						Disonnect
-					</button>
+					<button className="cta btn-disconnect" type="button" onClick={disconnectFromInput}>Disconnect</button>
 				</label>
 			)
 		}
 
-		{/* Injected content from the nodes */}
-		<div ref={GUIContainerRef} />
 		
-		<menu className="node-actions">
-			<button type="button" className="btn-fullscreen" onClick={handleFullscreen} title="Fullscreen" aria-label="Fullscreen mode">⛶</button>
-			<button type="button" className="btn-remove" onClick={removeNode}>Remove</button>
-		</menu>
-		<Handle type="source" position={isVertical ? Position.Bottom : Position.Right} />
+		{/* Injected content from the nodes */}
+		<DeviceGui device={input} expanded={isFullscreen} />
+		
+
+      	{!isFullscreen && <Handle type="source" position={isVertical ? Position.Bottom : Position.Right} />}
 	</div>
 }
 

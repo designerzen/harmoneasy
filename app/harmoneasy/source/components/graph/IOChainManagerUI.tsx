@@ -1,119 +1,51 @@
-import React, { useState, useEffect } from "react"
-import type IOChainManager from "audiobus/io/IO-chain-manager"
+import { applyPreset, useSavedPresets } from './saved-presets'
+import React, { useId, useRef, useState } from 'react'
+import type IOChainManager from 'audiobus/io/IO-chain-manager'
+import { PRESETS } from 'audiobus/io/transformer-presets'
+import { tranformerFactory } from 'audiobus/io/transformer-factory'
 
-const EVENT_CHAINS_UPDATED = "chainsUpdated"
-const EVENT_CHAIN_ACTIVE_CHANGED = "chainActiveChanged"
-
-interface ChainStatus {
-    id: string
-    isActive: boolean
-    inputCount: number
-    outputCount: number
-    transformerCount: number
-    commandQueueLength: number
-}
-
-export function IOChainManagerUI() {
-    const [ioManager, setIoManager] = useState<IOChainManager | null>(null)
-    const [chainStatuses, setChainStatuses] = useState<ChainStatus[]>([])
-
-    useEffect(() => {
-        const manager = (window as any).ioManager as IOChainManager
-        if (!manager) return
-
-        setIoManager(manager)
-        updateChainStatuses(manager)
-
-        const onChainsUpdated = () => {
-            updateChainStatuses(manager)
-        }
-
-        manager.addEventListener(EVENT_CHAINS_UPDATED, onChainsUpdated)
-        manager.addEventListener(EVENT_CHAIN_ACTIVE_CHANGED, onChainsUpdated)
-
-        return () => {
-            manager.removeEventListener(EVENT_CHAINS_UPDATED, onChainsUpdated)
-            manager.removeEventListener(EVENT_CHAIN_ACTIVE_CHANGED, onChainsUpdated)
-        }
-    }, [])
-
-    const updateChainStatuses = (manager: IOChainManager) => {
-        const statuses = manager.getStatus()
-        setChainStatuses(statuses)
+export function IOChainManagerUI({ manager }: { manager: IOChainManager }) {
+    const selectId = useId()
+    const { presets: saved, error: storageError } = useSavedPresets()
+    const [selection, setSelection] = useState('')
+    const [busy, setBusy] = useState(false)
+    const adding = useRef(false)
+    const [error, setError] = useState('')
+    const addChain = async () => {
+        if (adding.current) return
+        adding.current = true
+        setBusy(true)
+        setError('')
+        try {
+            const preset = PRESETS.find(preset => preset.name === selection)
+            const id = await manager.createDefaultChain()
+            const chain = manager.getChain(id)!
+            const custom = saved.find(preset => `saved:${preset.id}` === selection)
+            if (custom) { applyPreset(chain, custom); chain.setName(custom.name) }
+            if (preset) {
+                chain.setTransformers(preset.transformers.map(type => tranformerFactory(type)))
+                chain.setName(preset.name)
+            }
+            manager.setActiveChain(id)
+        } catch (error) { setError(String(error)) }
+        finally { adding.current = false; setBusy(false) }
     }
-
-    const handleAddChain = async () => {
-        if (!ioManager) return
-        await ioManager.createDefaultChain()
-    }
-
-    const handleRemoveChain = async (chainId: string) => {
-        if (!ioManager) return
-
-        if (ioManager.chainCount <= 1) {
-            alert("Cannot remove the last chain. At least one chain is required.")
-            return
-        }
-
-        if (confirm(`Are you sure you want to remove this IOChain?`)) {
-            ioManager.removeChain(chainId)
-        }
-    }
-
-    const handleSwitchChain = (chainId: string) => {
-        if (!ioManager) return
-
-        ioManager.setActiveChain(chainId)
-        const chain = ioManager.getChain(chainId)
-        if (chain) {
-            ;(window as any).chain = chain
-        }
-    }
-
-    return (
-        <details className="iochain-manager">
-            <summary>IOChains</summary>
-
-            <div className="iochain-actions">
-                <button
-                    type="button"
-                    className="btn-add-chain"
-                    onClick={handleAddChain}
-                    title="Add a new IOChain"
-                >
-                    + Add IOChain
-                </button>
-            </div>
-
-            <ul className="chain-list" role="list">
-                {chainStatuses.map((status, index) => (
-                    <li key={status.id} className={`chain-item ${status.isActive ? 'active' : ''}`}>
-                        <button
-                            type="button"
-                            className="btn-switch-chain"
-                            onClick={() => handleSwitchChain(status.id)}
-                            title={status.isActive ? 'Currently active' : 'Switch to this chain'}
-                        >
-                            {status.isActive ? `Chain ${index + 1} (Active)` : `Chain ${index + 1}`}
-                        </button>
-                        {chainStatuses.length > 1 && (
-                            <button
-                                type="button"
-                                className="btn-remove-chain"
-                                onClick={() => handleRemoveChain(status.id)}
-                                title="Remove this IOChain"
-                                disabled={status.isActive}
-                            >
-                                ✕
-                            </button>
-                        )}
-                    </li>
-                ))}
-            </ul>
-
-            {chainStatuses.length === 0 && (
-                <p className="no-chains">No IOChains available</p>
-            )}
-        </details>
-    )
+    return <menu id="add-iochain" className="iochain-manager" aria-label="Add a new IOChain">
+        <label htmlFor={selectId}>New chain</label>
+        <div className="chain-create-control">
+        <select id={selectId} disabled={busy} value={selection} onChange={event => setSelection(event.target.value)}>
+            <option value="">Default IOChain</option>
+            <optgroup label="Presets">
+                {PRESETS.map(preset => <option key={preset.name} value={preset.name} title={preset.description}>
+                    {preset.name}
+                </option>)}
+            </optgroup>
+            {saved.length > 0 && <optgroup label="Saved presets">
+                {saved.map(preset => <option key={preset.id} value={`saved:${preset.id}`}>{preset.name}</option>)}
+            </optgroup>}
+        </select>
+        <button type="button" disabled={busy} onClick={addChain}>{busy ? 'Adding…' : 'Add Chain'}</button>
+        </div>
+        {(error || storageError) && <p role="alert">{error || storageError}</p>}
+    </menu>
 }
