@@ -156,6 +156,7 @@ app.on('ready', async () => {
 	
 	setupAutoUpdater()
 		
+	
 	// Add user permissions
 	session.defaultSession.setPermissionCheckHandler((_webContents, permission) => {
 		const allowed = ['media', 'audioCapture', 'microphone']
@@ -167,6 +168,7 @@ app.on('ready', async () => {
 		callback(allowed.includes(permission))
 	})
 
+	// extra neccessary
 	if (process.platform === 'darwin') {
 		const micStatus = systemPreferences.getMediaAccessStatus('microphone')
 		if (micStatus !== 'granted') {
