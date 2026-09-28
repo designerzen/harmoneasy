@@ -16,12 +16,11 @@
     "*.ts"
   ],
   "dependencies": {
+    "@audiotool/nexus": "^0.0.19",
     "@harmoneasy/shared-config": "workspace:^",
-    "@audiotool/nexus": "^0.0.11",
     "audiobus": "workspace:^"
   },
   "devDependencies": {
     "typescript": "~5.9.3"
   }
 }
-

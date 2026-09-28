@@ -1,4 +1,5 @@
+export const AUDIOTOOL_CLIENT_ID = 'a67a5800-99b7-4f42-852e-5c963eef2bbe'
 export const AUDIOTOOL_STORAGE_KEYS = {
-	CLIENT_ID: '99cce8d3-c163-41c5-8d5e-d1bc5a87adf5',
-	REDIRECT: import.meta.env.DEV ? 'http://127.0.0.1:5173/' : 'https://designerzen.github.io/harmoneasy'
+    PROJECT: 'harmoneasy.audiotool.project',
+    RECEIPTS: 'harmoneasy.audiotool.receipts.v1'
 }

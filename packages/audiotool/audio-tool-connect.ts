@@ -1,441 +1,154 @@
-import { createAudiotoolClient } from "@audiotool/nexus"
-// @ts-ignore
-import { AUDIOTOOL_STORAGE_KEYS } from './audio-tool-settings.ts'
-// @ts-ignore
-import { edoScaleMicroTuningOctave } from "../pitfalls/edo.mjs"
-// @ts-ignore
-import { microTuningOctave } from "../pitfalls/audioToolInt.mjs"
+import type { AudiotoolClient, SyncedDocument } from '@audiotool/nexus'
+import { AUDIOTOOL_CLIENT_ID, AUDIOTOOL_STORAGE_KEYS } from './audio-tool-settings'
+import { appendAudioToolTake, validateAudioToolTake, validateAudioToolDestination, type AudioToolTake, type TakeDestination } from './adapter-audiotool-audio-events-recording'
 
-import type { AudiotoolClient, SyncedDocument } from "@audiotool/nexus"
+type SDK = typeof import('@audiotool/nexus')
+interface Receipt { key: string; regions: string[] }
+export interface AudioToolProject { name: string; displayName: string }
+export interface AudioToolProjectDetails { url: string; bpm: number; tracks: { id: string; label: string }[] }
 
-// Global variables
-let client: AudiotoolClient | null = null
-let nexus: SyncedDocument | null = null
-let baseNoteMidi = 60;
-let rootOctave = 3;
-let microtonalTuning = null;
-let pitches = edoScaleMicroTuningOctave(baseNoteMidi, rootOctave, "LLsLLL", 3, 1);
-console.log(pitches.octaveTuning);
+export class AudioToolConnection {
+    private sdk?: SDK
+    private client?: AudiotoolClient
+    private login?: Promise<string>
+    private sending = false
+    private receipts: Receipt[] = []
+    userName = ''
 
-/**
- * Initialize client and set up authentication
- * @param patToken 
- */
-export const initializeClient = async (patToken: string): Promise<void> => {
-  try {
-    console.log('Creating Audiotool client...');
-    const result = await createAudiotoolClient({
-      pat: patToken,
-    });
-    client = result;
-    console.console.log(result);
-    console.log('Client created successfully!');
-    (document.querySelector('.project-section') as HTMLDivElement).style.display = 'block';
-  } catch (error) {
-    console.log('Error creating client: ' + (error as Error).message);
-  }
-}
-
-/**
- * Connect to nexus project and analyze
- * @param projectUrl 
- * @returns 
- */
-export const connectToNexusProject = async (projectUrl: string): Promise<void> => {
-  try {
-    if (!client) {
-      console.log('Please connect first');
-      return;
-    }
-    console.log('Connecting to project ...');
-
-    // Create synced document
-    nexus = await client.createSyncedDocument({
-      mode: "online",
-      project: projectUrl,
-    });
-
-    console.log('Connected to project...');
-
-    // console.log initial entity counts
-    const allEntities = nexus.queryEntities.get();
-    console.log(`Total entities in project: ${allEntities.length}`);
-
-    // console.log entity type breakdown
-    const entityTypes: Record<string, number> = {};
-    allEntities.forEach(entity => {
-      const type = entity.type;
-      entityTypes[type] = (entityTypes[type] || 0) + 1;
-    });
-
-    console.log('Entity breakdown:');
-    Object.entries(entityTypes).forEach(([type, count]) => {
-      console.log(`  ${type}: ${count}`);
-    });
-
-    // Get note tracks and check for notes
-    let noteTracks = nexus.queryEntities.ofTypes("noteTrack").get();
-    console.log(`Found ${noteTracks.length} note tracks`);
-
-    if (noteTracks.length > 0) {
-      // Get all notes in the project
-      const allNotes = nexus.queryEntities.ofTypes("note").get();
-      console.log(`Found ${allNotes.length} total notes in project`);
-
-      // console.log details of each note
-      allNotes.forEach((note, index) => {
-        console.log(`Note ${index + 1}: Pitch=${note.fields.pitch.value}, Position=${note.fields.positionTicks.value}t, Duration=${note.fields.durationTicks.value}t, Velocity=${note.fields.velocity.value}`);
-      });
+    constructor(private storage?: Pick<Storage, 'getItem' | 'setItem'>) {
+        try {
+            const parsed: unknown = JSON.parse(storage?.getItem(AUDIOTOOL_STORAGE_KEYS.RECEIPTS) ?? '[]')
+            if (Array.isArray(parsed)) this.receipts = parsed.filter(item => typeof item?.key === 'string' && Array.isArray(item.regions) && item.regions.every((id: unknown) => typeof id === 'string')).slice(-50)
+        } catch { /* Storage may be unavailable or contain an old format. */ }
     }
 
-    // Set up event listeners
-    nexus.events.onCreate("tonematrix", (tm) => {
-      console.log(`New tonematrix created! Pattern index: ${tm.fields.patternIndex.value}`);
-    });
-
-    nexus.events.onCreate("stompboxDelay", (delay) => {
-      console.log(`New delay effect created! Feedback: ${delay.fields.feedbackFactor.value}`);
-    });
-
-    nexus.events.onCreate("noteTrack", (track) => {
-      console.log(`New note track created! Order: ${track.fields.orderAmongTracks.value}`);
-    });
-
-    // Start syncing
-    await nexus.start();
-    microtonalTuning = await microTuningOctave(nexus, pitches);
-    console.console.log(microtonalTuning);
-    noteTracks = nexus.queryEntities.ofTypes("noteTrack").get();
-    console.log(`Found ${noteTracks.length} note tracks`);
-
-    if (noteTracks.length > 0) {
-      // Get all notes in the project
-      const allNotes = nexus.queryEntities.ofTypes("note").get();
-      console.log(`Found ${allNotes.length} total notes in project`);
-
-      // console.log details of each note
-      allNotes.forEach((note, index) => {
-        console.log(`Note ${index + 1}: Pitch=${note.fields.pitch.value}, Position=${note.fields.positionTicks.value}t, Duration=${note.fields.durationTicks.value}t, Velocity=${note.fields.velocity.value}`);
-      });
+    get isConnected() { return !!this.client }
+    get selectedProject() {
+        try { return this.storage?.getItem(AUDIOTOOL_STORAGE_KEYS.PROJECT) ?? '' } catch { return '' }
     }
-    console.log('Project connected and syncing started!');
-    (document.querySelector('.controls-section') as HTMLDivElement).style.display = 'block';
-
-  } catch (error) {
-    console.log('Error connecting to project: ' + (error as Error).message);
-    throw error;
-  }
-}
-
-// Business console.logic functions
-export const handleConnectWithPAT = async (patToken: string): Promise<void> => {
-  if (!patToken) {
-    console.log('Please enter a PAT token')
-    return;
-  }
-
-  try {
-    console.log('Initializing client with PAT token...');
-    await initializeClient(patToken);
-
-    // Save token to localStorage
-    localStorage.setItem(AUDIOTOOL_STORAGE_KEYS.PAT_TOKEN, patToken);
-    console.log('PAT token saved to localStorage');
-
-    console.log('Client initialized successfully!');
-  } catch (error) {
-    console.log('Error initializing client: ' + (error as Error).message);
-  }
-}
-
-/**
- * 
- * @returns 
- */
-export const handleListProjects = async (): Promise<void> => {
-  if (!client) {
-    console.log('Please connect first');
-    return;
-  }
-
-  try {
-    const projects = await client.api.projectService.listProjects({});
-
-    // Check if the result is an error or a successful response
-    if (projects instanceof Error) {
-      console.log('Error listing projects: ' + projects.message);
-      return;
-    } else {
-      // Cast to ListProjectsResponse and proceed
-      const projectsResponse = projects;
-      const projectsArray = (projectsResponse as any).projects || projectsResponse;
-      console.log(`Found ${Array.isArray(projectsArray) ? projectsArray.length : 0} projects:`);
-      console.console.log(projectsArray);
-      if (Array.isArray(projectsArray)) {
-        projectsArray.forEach((project: any) => {
-          console.log(`  - ${project.fields?.name?.value || project.name}`);
-        });
-      } else {
-        console.log('Projects response is not in expected format');
-        console.console.log('Projects response:', projectsResponse);
-      }
+    rememberProject(name: string) {
+        try { this.storage?.setItem(AUDIOTOOL_STORAGE_KEYS.PROJECT, name) } catch { /* Connection still works without persistence. */ }
     }
-  } catch (error) {
-    console.log('Error listing projects and tunings: ' + (error as Error).message);
-  }
-}
-
-/**
- * 
- * @param selectedProject 
- * @returns 
- */
-export const handleOpenSelectedProject = async (selectedProject: string): Promise<void> => {
-  if (!selectedProject) {
-    console.log('Please select a project');
-    return;
-  }
-
-  const projectUrl = `https://beta.audiotool.com/studio?project=${selectedProject.split('/')[1]}`;
-  (document.getElementById('project-url') as HTMLInputElement).value = projectUrl;
-
-  // Trigger the existing open project console.logic
-  document.getElementById('open-project-btn')!.click();
-}
-
-/**
- * 
- * @param projectUrl 
- * @returns 
- */
-export const handleOpenProject = async (projectUrl: string): Promise<void> => {
-  if (!projectUrl) {
-    console.log('Please enter a project URL');
-    return;
-  }
-
-  if (!client) {
-    console.log('Please connect first');
-    return;
-  }
-
-  try {
-    console.log('Connecting to project...');
-
-    // Save project URL to localStorage immediately when attempting to connect
-    localStorage.setItem(AUDIOTOOL_STORAGE_KEYS.PROJECT_URL, projectUrl);
-    console.log('Project URL saved to localStorage');
-
-    await connectToNexusProject(projectUrl);
-  } catch (error) {
-    console.log('Error connecting to project: ' + (error as Error).message);
-  }
-}
-
-/**
- * 
- * @returns 
- */
-export const handleQueryDevices = async (): Promise<void> => {
-  if (!nexus) {
-    console.log('Please connect to a project first');
-    return;
-  }
-
-  try {
-    // Find all delay effects
-    const delays = nexus.queryEntities.ofTypes("stompboxDelay").get();
-    console.log(`Found ${delays.length} delay effects`);
-
-    // Find all tonematrixes
-    const tonematrixes = nexus.queryEntities.ofTypes("tonematrix").get();
-    console.log(`Found ${tonematrixes.length} tonematrixes`);
-
-    // Find all note tracks
-    const noteTracks = nexus.queryEntities.ofTypes("noteTrack").get();
-    console.log(`Found ${noteTracks.length} note tracks`);
-
-    console.log('Query completed!');
-  } catch (error) {
-    console.log('Error querying devices: ' + (error as Error).message);
-  }
-}
-
-/**
- * 
- * @returns 
- */
-export const handleCreateNoteTrack = async (): Promise<void> => {
-  if (!nexus) {
-    console.log('Please connect to a project first');
-    return;
-  }
-
-  try {
-    // First, try to find an existing device to connect to
-    const devices = nexus.queryEntities.ofTypes("tonematrix").get();
-
-    if (devices.length === 0) {
-      console.log('No devices found. Create a tonematrix first!');
-      return;
+    async prepare() {
+        this.sdk ??= await import('@audiotool/nexus')
+        if (typeof this.sdk.audiotoolPopup !== 'function' || typeof this.sdk.createAudiotoolClient !== 'function') {
+            this.sdk = undefined
+            throw new Error('An outdated AudioTool module is cached. Restart the dev server and reload Harmoneasy to load the upgraded SDK.')
+        }
     }
 
-    const device = devices[0];
-
-    const result = await nexus.modify((t) => {
-      // Create a note track
-      const noteTrack = t.create("noteTrack", {
-        orderAmongTracks: 0,
-        player: device.location,
-      });
-
-      // Add a note region
-      const noteRegion = t.create("noteRegion", {
-        track: noteTrack.location,
-        region: {
-          positionTicks: 15360, // One 1/4 note in a 4/4 bar
-          durationTicks: 15360 * 4,
-        },
-      });
-
-      return { noteTrack, noteRegion };
-    });
-
-    console.log(`Created note track with ID: ${result.noteTrack.id}`);
-    console.log(`Created note region with ID: ${result.noteRegion.id}`);
-  } catch (error) {
-    console.log('Error creating note track: ' + (error as Error).message);
-  }
-}
-
-/**
- * 
- */
-export const handleClearToken = (): void => {
-  localStorage.removeItem(AUDIOTOOL_STORAGE_KEYS.PAT_TOKEN);
-  (document.getElementById('pat-input') as HTMLInputElement).value = '';
-  console.log('Stored PAT token cleared');
-}
-
-/**
- * 
- * @returns 
- */
-export const handleAutoConnect = async (): Promise<void> => {
-  const savedToken = localStorage.getItem(AUDIOTOOL_STORAGE_KEYS.PAT_TOKEN);
-  const savedProjectUrl = localStorage.getItem(AUDIOTOOL_STORAGE_KEYS.PROJECT_URL);
-
-  if (!savedToken) {
-    console.log('No stored PAT token found. Please enter a token and connect first.');
-    return;
-  }
-
-  if (!savedProjectUrl) {
-    console.log('No stored project URL found. Please enter a project URL and connect first.');
-    return;
-  }
-
-  console.log('Starting auto-connect with stored values...');
-
-  try {
-    // Initialize client if needed
-    if (!client) {
-      try {
-        console.log('Creating Audiotool client with stored PAT...');
-        await initializeClient(savedToken);
-
-        console.log('Client initialized successfully!');
-      } catch (error) {
-        console.log('Error initializing client: ' + (error as Error).message);
-      }
+    // prepare() is called before displaying Connect. No await before the popup opens.
+    async connect(): Promise<string> {
+        if (this.client) return Promise.resolve(this.userName)
+        if (this.login) return this.login
+        if (!this.sdk) return Promise.reject(new Error('AudioTool is still loading. Please try again.'))
+        if (typeof this.sdk.audiotoolPopup !== 'function') throw new Error('An outdated AudioTool module is cached. Restart the dev server and reload Harmoneasy.')
+        if (window.location.origin === 'null') return Promise.reject(new Error('AudioTool popup sign-in needs an HTTP or HTTPS origin. Open Harmoneasy in your browser to connect.'))
+        this.login = this.sdk.audiotoolPopup({ clientId: AUDIOTOOL_CLIENT_ID, scope: 'project:write' }).then(result => {
+            if (result.status !== 'authenticated') throw result.error
+            this.client = result
+            this.userName = result.userName
+            return result.userName
+        }).finally(() => { this.login = undefined })
+        return this.login
     }
 
-    console.log('Client ready for project connection!');
-
-    // Connect to project
-    console.log('Connecting to stored project...');
-
-    await connectToNexusProject(savedProjectUrl);
-
-    console.log('Auto-connect completed successfully!');
-
-  } catch (error) {
-    console.log('Error during auto-connect: ' + (error as Error).message);
-  }
-}
-
-/**
- * 
- * @returns 
- */
-export const handleListNotes = (): Promise<void> => {
-  if (!nexus) {
-    console.log('Please connect to a project first');
-    return;
-  }
-
-  try {
-    // Find all note tracks
-    const noteTracks = nexus.queryEntities.ofTypes("noteTrack").get();
-    console.log(`Found ${noteTracks.length} note tracks`);
-
-    // Find all note regions
-    const noteRegions = nexus.queryEntities.ofTypes("noteRegion").get();
-    console.log(`Found ${noteRegions.length} note regions`);
-
-    // Find all note collections
-    const noteCollections = nexus.queryEntities.ofTypes("noteCollection").get();
-    console.log(`Found ${noteCollections.length} note collections`);
-
-    // Find all individual notes
-    const notes = nexus.queryEntities.ofTypes("note").get();
-    console.log(`Found ${notes.length} individual notes`);
-
-    // console.log details of each note
-    notes.forEach((note, index) => {
-      console.log(`Note ${index + 1}: Pitch=${note.fields.pitch.value} (MIDI), Position=${note.fields.positionTicks.value} ticks, Duration=${note.fields.durationTicks.value} ticks, Velocity=${note.fields.velocity.value}`);
-    });
-
-  } catch (error) {
-    console.log('Error listing notes: ' + (error as Error).message);
-  }
-}
-
-/**
- * 
- * @returns 
- */
-export const handleCreateNote = async (): Promise<void> => {
-  if (!nexus) {
-    console.log('Please connect to a project first');
-    return;
-  }
-
-  try {
-    // Find an existing note collection to add the note to
-    const noteCollections = nexus.queryEntities.ofTypes("noteCollection").get();
-
-    if (noteCollections.length === 0) {
-      console.log('No note collections found. Create a note track first!');
-      return;
+    disconnect() {
+        if (this.sending || this.login) throw new Error('Wait for the current AudioTool operation to finish.')
+        this.client = undefined
+        this.userName = ''
     }
-
-    const noteCollection = noteCollections[0];
-
-    const note = await nexus.modify((t) => {
-      return t.create("note", {
-        noteCollection: noteCollection.location,
-        pitch: 60 + Math.floor(Math.random() * 24), // C4 to B5
-        positionTicks: Math.floor(Math.random() * 15360 * 4), // Random position in 4 bars
-        durationTicks: 960, // Quarter note
-        velocity: 0.7,
-        slide: false
-      });
-    });
-
-    console.log(`Created note with ID: ${note.id}, Pitch: ${note.fields.pitch.value}, Position: ${note.fields.positionTicks.value} ticks`);
-
-  } catch (error) {
-    console.log('Error creating note: ' + (error as Error).message);
-  }
+    async connectWithToken(token: string): Promise<void> {
+        if (!this.sdk) throw new Error('AudioTool is still loading. Please try again.')
+        if (!token.trim()) throw new Error('Enter an AudioTool personal access token.')
+        const client = await this.sdk.createAudiotoolClient({ auth: token.trim() })
+        const response = await client.projects.listProjects({ pageSize: 1 }, { timeoutMs: 20000 })
+        if (response instanceof Error) throw response
+        // The SDK retains this token in memory only; never persist it ourselves.
+        this.client = client
+        this.userName = 'personal token'
+    }
+    private requireClient() {
+        if (!this.client) throw new Error('Connect to AudioTool first.')
+        return this.client
+    }
+    async listProjects(): Promise<AudioToolProject[]> {
+        const client = this.requireClient()
+        const projects: AudioToolProject[] = []
+        let pageToken = ''
+        do {
+            const response = await client.projects.listProjects({ pageSize: 100, pageToken }, { timeoutMs: 20000 })
+            if (response instanceof Error) throw response
+            projects.push(...response.projects.map(project => ({ name: project.name, displayName: project.displayName || project.name })))
+            pageToken = response.nextPageToken
+        } while (pageToken)
+        return projects
+    }
+    async createProject(name: string): Promise<AudioToolProject> {
+        const result = await this.requireClient().projects.createProject({ project: { displayName: name.trim() || 'Harmoneasy' } }, { timeoutMs: 20000 })
+        if (result instanceof Error) throw result
+        if (!result.project) throw new Error('AudioTool did not return the new project.')
+        const project = { name: result.project.name, displayName: result.project.displayName }
+        this.rememberProject(project.name)
+        return project
+    }
+    async inspectProject(project: string): Promise<AudioToolProjectDetails> {
+        return this.withDocument(project, async doc => ({
+            url: doc.dawUrl,
+            bpm: doc.queryEntities.ofTypes('config').get()[0]?.fields.tempoBpm.value ?? 125,
+            tracks: doc.queryEntities.ofTypes('noteTrack').get()
+                .sort((a, b) => a.fields.orderAmongTracks.value - b.fields.orderAmongTracks.value)
+                .map((track, index) => {
+                    const player = doc.queryEntities.getEntity(track.fields.player.value.entityId)
+                    const displayName = player && 'displayName' in player.fields ? player.fields.displayName.value : ''
+                    return { id: track.id, label: `${index + 1}. ${displayName || 'Instrument'}` }
+                })
+        }))
+    }
+    private async withDocument<T>(project: string, action: (doc: SyncedDocument) => Promise<T>): Promise<T> {
+        const doc = await this.requireClient().open(project)
+        try {
+            await doc.start()
+            if (!doc.connected.getValue()) throw new Error('AudioTool is offline. Reconnect before sending a take.')
+            return await action(doc)
+        } finally {
+            // stop() flushes writes before success is reported and releases the sync loop.
+            await doc.stop()
+        }
+    }
+    async sendTake(project: string, take: AudioToolTake, destination: TakeDestination) {
+        validateAudioToolTake(take)
+        if (this.sending) throw new Error('A take is already being sent.')
+        this.sending = true
+        try {
+            const bytes = new TextEncoder().encode(JSON.stringify([take, destination.trackId ?? '', destination.placement]))
+            const digest = await crypto.subtle.digest('SHA-256', bytes)
+            const fingerprint = Array.from(new Uint8Array(digest), n => n.toString(16).padStart(2, '0')).join('')
+            const result = await this.withDocument(project, async doc => {
+                const key = `${doc.dawUrl}:${fingerprint}`
+                const receipt = this.receipts.find(item => item.key === key)
+                const alreadySent = await doc.modify(t => {
+                    // Return preflight errors so Nexus can finish the empty transaction
+                    // and release its lock before stop() flushes the document.
+                    if (!doc.connected.getValue()) return new Error('AudioTool disconnected before the take could be sent. Please retry.')
+                    if (receipt) {
+                        const existing = t.entities.ofTypes('noteRegion').get().filter(region => receipt.regions.includes(region.id))
+                        if (existing.length === receipt.regions.length && existing.length > 0) return true
+                        if (existing.length) return new Error('Part of this take already exists in AudioTool. Check the project before sending it again.')
+                    }
+                    try { validateAudioToolDestination(t, take, destination) }
+                    catch (error) { return error instanceof Error ? error : new Error(String(error)) }
+                    const regions = appendAudioToolTake(t, take, destination)
+                    // Retain IDs even if flushing fails, so retries can check the remote project.
+                    this.receipts = [...this.receipts.filter(item => item.key !== key), { key, regions }].slice(-50)
+                    try { this.storage?.setItem(AUDIOTOOL_STORAGE_KEYS.RECEIPTS, JSON.stringify(this.receipts)) } catch { /* In-memory retry protection remains available. */ }
+                    return false
+                })
+                if (alreadySent instanceof Error) throw alreadySent
+                return { url: doc.dawUrl, alreadySent, noteCount: take.notes.length }
+            })
+            this.rememberProject(project)
+            return result
+        } finally { this.sending = false }
+    }
 }
