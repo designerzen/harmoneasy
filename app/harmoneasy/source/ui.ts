@@ -282,7 +282,7 @@ export default class UI implements IAudioOutput {
 	 */
 	async addSongVisualser(commands: IAudioCommand[]) {
 		const visualiser = new SongVisualiserUI()
-		this.noteVisualiserCanvas.parentNode.appendChild(visualiser)
+		document.getElementById('recordings').appendChild(visualiser)
 		// Wait for connectedCallback to complete
 		await new Promise(resolve => {
 			const checkReady = setInterval(() => {
@@ -298,7 +298,7 @@ export default class UI implements IAudioOutput {
 
 	activateSidebar() {
 		// Sidebar toggle functionality
-		const timerBar = document.getElementById('transport')
+		const timerBar = document.getElementById('btn-transport-details')
 		const sidebar = document.getElementById('sidebar')
 		const sidebarClose = document.getElementById('sidebar-close')
 
@@ -346,8 +346,32 @@ export default class UI implements IAudioOutput {
 	}
 
 	setPlaying(isPlaying:boolean) {
-		this.elementTempo.classList.toggle("playing", isPlaying)
-	}
+        this.elementTempo.classList.toggle("playing", isPlaying)
+        const start = document.querySelector<HTMLButtonElement>('#btn-transport-start')
+        const stop = document.querySelector<HTMLButtonElement>('#btn-transport-stop')
+        const reset = document.querySelector<HTMLButtonElement>('#btn-transport-reset')
+        const activeButton = document.activeElement
+        if (start) { start.disabled = isPlaying; start.hidden = isPlaying }
+        if (stop) { stop.disabled = !isPlaying; stop.hidden = !isPlaying }
+        if (isPlaying && activeButton === start) stop?.focus()
+        if (!isPlaying && activeButton === stop) start?.focus()
+        document.getElementById('midi-transport-control')?.classList.toggle('playing', isPlaying)
+        if (reset) reset.disabled = false
+        const status = document.getElementById('transport-status')
+        if (status) status.textContent = isPlaying ? 'Playing' : 'Stopped'
+    }
+
+    whenTransportRequestedRun(callback: (action: 'start' | 'stop' | 'reset') => void) {
+        for (const action of ['start', 'stop', 'reset'] as const) {
+            document.getElementById(`btn-transport-${action}`)?.addEventListener('click',
+                () => callback(action), { signal: this.abortController.signal })
+        }
+    }
+
+    resetClock() {
+        cancelAnimationFrame(this.clockAnimationFrame)
+        if (this.elementClock) this.elementClock.textContent = formatTimeStampFromSeconds(0)
+    }
 
 
 	setVolume(value: number): void {
@@ -555,9 +579,8 @@ export default class UI implements IAudioOutput {
 	// Export Buttons 
 	whenAudioToolExportRequestedRun(callback:Function) {
 		this.elementAudioToolExportButton && this.elementAudioToolExportButton.addEventListener('click', async (e) => {
-			this.showExportOverlay()
+			(this.elementExportDialog as HTMLDialogElement | null)?.close()
 			callback && await callback(e)
-			this.hideExportOverlay()
 		}, { signal: this.abortController.signal })
 	}
 
@@ -793,9 +816,9 @@ export default class UI implements IAudioOutput {
 		cancelAnimationFrame(this.clockAnimationFrame)
 
 		this.clockAnimationFrame = requestAnimationFrame(() => {
-			this.elementClock.textContent = `${String(bar).padStart(2, '0')}:${bars}:${String(barsElapsed).padStart(3, '0')} [${String(divisionsElapsed).padStart(2, '0')}] ${formatTimeStampFromSeconds(elapsed)} seconds [${audioCommandQuantity ?? 0} evemts]`
-			// this.elementClock.innerHTML = `${String(bar).padStart(2, '0')}:${bars}:${String(barsElapsed).padStart(3, '0')} [${String(divisionsElapsed).padStart(2, '0')}] ${formatTimeStampFromSeconds(elapsed)} seconds`
-			// this.elementClock.innerHTML = `${bar}:${bars}:${barsElapsed} [${divisionsElapsed}] ${intervals}, ${elapsed.toFixed(2)} seconds`
+            this.elementClock.textContent = formatTimeStampFromSeconds(elapsed)
+            this.elementClock.title = `Bar ${bar}, beat ${bars}, ${barsElapsed} bars elapsed; ${divisionsElapsed} divisions; ${audioCommandQuantity ?? 0} events`
+
 		})
 	}
 
@@ -826,9 +849,21 @@ export default class UI implements IAudioOutput {
 	 * Brute force!
 	 */
 	allNotesOff() {
-		for (let noteNumber = 0; noteNumber < 128; noteNumber++) {
-			this.noteOff(noteNumber)
-		}
+		this.noteVisualiser.allNotesOff()
+	}
+
+	setMetronomeEnabled(enabled: boolean) {
+		const button = document.getElementById('btn-metronome') as HTMLButtonElement | null
+		if (!button) return
+		button.disabled = false
+		button.setAttribute('aria-pressed', String(enabled))
+		button.title = enabled ? 'Disable metronome' : 'Enable metronome'
+	}
+
+	whenMetronomeRequestedRun(callback: () => void) {
+		document.getElementById('btn-metronome')?.addEventListener('click', callback, {
+			signal: this.abortController.signal
+		})
 	}
 
 	/**
