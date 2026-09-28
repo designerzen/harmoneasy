@@ -9,6 +9,10 @@
   "globalEnv": [
     "NODE_ENV"
   ],
+  "globalPassThroughEnv": [
+    "PATHEXT",
+    "pnpm_config_verify_deps_before_run"
+  ],
   "tasks": {
     "type-check": {
       "cache": true,
