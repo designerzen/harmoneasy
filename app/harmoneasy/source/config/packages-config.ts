@@ -14,7 +14,7 @@ export interface PackageInfo {
 export const PACKAGES: PackageInfo[] = [
   {
     "name": "netronome",
-    "version": "2.5.0",
+    "version": "2.9.0",
     "description": "Rock solid JavaScript timing library with sub-millisecond accuracy",
     "repo": "https://github.com/designerzen/netronome.git"
   },

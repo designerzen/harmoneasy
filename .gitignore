@@ -10,6 +10,7 @@ release/
 build
 certs
 .turbo
+*~lock*
 
 # Electron build artifacts
 electron-builder/

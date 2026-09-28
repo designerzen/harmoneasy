@@ -8,6 +8,7 @@ import State from './libs/state.ts'
 
 // Front End
 import UI from './ui.ts'
+import { createNetronomeLink } from './services/netronome-link'
 import { createGraph } from './components/transformers-graph.tsx'
 import SongVisualiser from 'audiobus/ui/song-visualiser.js'
 
@@ -17,13 +18,16 @@ import { importMusicXMLFile } from 'audiobus/importers/import-musicxml-import'
 import { importMIDIFile } from 'audiobus/importers/import-midi-file'
 import { importTrackerFile } from 'audiobus/importers/import-tracker-file'
 
-import { createAudioToolProjectFromAudioEventRecording } from 'audiotool'
+// Integration
+import { captureAudioToolTake, createAudioToolPanel } from 'audiotool'
+import { createOpenDAWProjectFromAudioEventRecording } from 'opendaw'
+
+// Export Data as a file to another service
 import { createMIDIFileFromAudioEventRecording, saveBlobToLocalFileSystem } from 'audiobus/exporters/adapter-midi-file.ts'
 import { createMEDFileFromAudioEventRecording, saveMEDToLocalFileSystem } from 'audiobus/exporters/adapter-med-file.ts'
 import { createMIDIMarkdownFromAudioEventRecording, saveMarkdownToLocalFileSystem } from 'audiobus/exporters/adapter-midi-markdown.ts'
 import { createMusicXMLFromAudioEventRecording, saveBlobToLocalFileSystem as saveMusicXMLBlobToLocalFileSystem } from 'audiobus/exporters/adapter-musicxml.ts'
 import { renderVexFlowToContainer, createVexFlowHTMLFromAudioEventRecording, saveBlobToLocalFileSystem as saveVexFlowBlobToLocalFileSystem } from 'audiobus/exporters/adapter-vexflow.ts'
-import { createOpenDAWProjectFromAudioEventRecording } from 'opendaw'
 import { createDawProjectFromAudioEventRecording, saveDawProjectToLocalFileSystem } from 'audiobus/exporters/adapter-dawproject.ts'
 
 // Timing
@@ -33,10 +37,11 @@ import { AudioTimer, TIMER_TYPES } from 'netronome'
 import AudioBus from './audio.ts'
 import AudioEvent from 'audiobus/audio-event.ts'
 import AudioEventRecorder from 'audiobus/audio-event-recorder.ts'
+import IOChainManager from 'audiobus/io/IO-chain-manager.ts'
+import OutputMetronome from 'audiobus/io/outputs/output-metronome.ts'
 import * as Commands from 'audiobus/commands'
 
 // IAudioInputs
-import IOChain from 'audiobus/io/IO-chain.ts'
 import { ALL_KEYBOARD_NOTES } from 'audiobus/io/inputs/input-onscreen-keyboard.ts'
 
 // Back End
@@ -45,7 +50,7 @@ import OPFSStorage, { hasOPFS } from 'audiobus/storage/opfs-storage.ts'
 // Types
 import type { IAudioCommand } from 'audiobus/audio-command-interface.ts'
 import type InputAudioEvent from 'audiobus/io/events/input-audio-event.ts'
-import IOChainManager from 'audiobus/io/IO-chain-manager.ts'
+
 
 const storage = hasOPFS() ? new OPFSStorage() : null
 const recorder: AudioEventRecorder = new AudioEventRecorder()
@@ -55,6 +60,9 @@ let state: State
 let ui: UI
 let songVisualiser: SongVisualiser | null = null
 let ioManager: IOChainManager
+let metronome: OutputMetronome | null = null
+let metronomeEnabled = false
+let netronomeLink: ReturnType<typeof createNetronomeLink> | undefined
 
 /**
  * Universal import handler - routes to appropriate importer based on file type
@@ -96,6 +104,21 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number 
     const frontEnd = new UI(ALL_KEYBOARD_NOTES)
     frontEnd.setTempo(timer.BPM)
     frontEnd.setVolume(initialVolumePercent)
+    frontEnd.setMetronomeEnabled(metronomeEnabled)
+    frontEnd.whenMetronomeRequestedRun(async () => {
+        metronomeEnabled = !metronomeEnabled
+        frontEnd.setMetronomeEnabled(metronomeEnabled)
+        if (!metronomeEnabled) return
+        try {
+            await bus.audioContext.resume()
+            metronome ??= new OutputMetronome(bus.audioContext)
+            if (metronomeEnabled && !netronomeLink?.isFollower) await ioManager.transport('start')
+        } catch (error) {
+            metronomeEnabled = false
+            frontEnd.setMetronomeEnabled(false)
+            frontEnd.showError('Metronome unavailable', error instanceof Error ? error.message : String(error))
+        }
+    })
     // frontEnd.setUIKeyboard( keyboard )
 
     // Panic button  - kill all playing notes
@@ -120,12 +143,14 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number 
 
     frontEnd.whenTempoChangesRun((tempo: number) => {
         timer.BPM = tempo
+        netronomeLink?.tempoChanged()
         state.set('tempo', tempo)
     })
 
     frontEnd.whenTempoUpRequestedRun(() => {
         const newTempo = Math.min(303, timer.BPM + 1)
         timer.BPM = newTempo
+        netronomeLink?.tempoChanged()
         frontEnd.setTempo(newTempo)
         state.set('tempo', newTempo)
     })
@@ -133,6 +158,7 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number 
     frontEnd.whenTempoDownRequestedRun(() => {
         const newTempo = Math.max(10, timer.BPM - 1)
         timer.BPM = newTempo
+        netronomeLink?.tempoChanged()
         frontEnd.setTempo(newTempo)
         state.set('tempo', newTempo)
     })
@@ -266,12 +292,17 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number 
     frontEnd.whenExportMenuRequestedRun(() => {
         console.info("Export menu opened")
     })
-    frontEnd.whenAudioToolExportRequestedRun(async () => {
-        const output = await createAudioToolProjectFromAudioEventRecording(recorder, timer)
-        console.info("Exporting Data to AudioTool", { recorder, output })
-        frontEnd.setExportOverlayText("Open this project in AudioTool")
-        frontEnd.showInfoDialog("Open the file in AudioTool", "audiotool.com")
+    let sentThrough = 0
+    let lastSentEvent: IAudioCommand | undefined
+    const audioTool = createAudioToolPanel(() => {
+        // Reset the cursor when the recorder is cleared or replaced.
+        if (sentThrough && recorder.events[sentThrough - 1] !== lastSentEvent) sentThrough = 0
+        const end = recorder.events.length
+        const lastEvent = recorder.events[end - 1]
+        const take = captureAudioToolTake(recorder.events.slice(sentThrough, end), timer.BPM, timer.now, recorder.name)
+        return { take, markSent: () => { sentThrough = end; lastSentEvent = lastEvent } }
     })
+    frontEnd.whenAudioToolExportRequestedRun(() => audioTool.open())
     frontEnd.whenOpenDAWExportRequestedRun(async () => {
         const script = await createOpenDAWProjectFromAudioEventRecording(recorder, timer)
         console.info("Exporting Data to OpenDAW", { recorder, script })
@@ -345,49 +376,43 @@ const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: b
         timer,
         outputMixer: bus.mixer,
         audioContext: bus.audioContext,
-        autoConnect
+        autoConnect,
+        externalDevices: { ui }
+    })
+
+    const transportError = (error: unknown) => {
+        console.error('Shared MIDI transport failed', error)
+        ui.setPlaying(ioManager.transportRunning)
+        ui.showError('Transport failed', error instanceof Error ? error.message : String(error))
+    }
+    ioManager.addEventListener('transportChanged', () => {
+        ui.setPlaying(ioManager.transportRunning)
+        netronomeLink?.transportChanged()
+    })
+    ioManager.transportHandler = type => { void ioManager.handleTransportCommand(type).catch(transportError) }
+    ui.whenTransportRequestedRun(action => {
+        void ioManager.transport(action).then(() => {
+            if (action === 'reset') ui.resetClock()
+        }).catch(transportError)
     })
 
     // Check if there are saved IO configurations in state
     const savedIOState = state.get('io') as string | null
-    let chain: IOChain
-
     if (savedIOState) {
-        // Restore from saved IO states
-		// NB. Each IOChain is listed and multiple are delimited 
-		// by a pipe | symbol so that many chains can be saved
         try {
-            await ioManager.createChainFromExportString(savedIOState)
-            chain = ioManager.activeChain!
-            console.info('IOChain restored from saved state')
+            await ioManager.restoreWorkspace(savedIOState)
         } catch (error) {
-            console.error('Failed to restore IO chain from saved state:', error)
-            // Fall back to default if restoration fails
-            const chainId = await ioManager.createDefaultChain([], [ui])
-            chain = ioManager.getChain(chainId)!
+            console.error('Failed to restore IO workspace:', error)
+            await ioManager.createDefaultChain([], [ui])
         }
     } else {
-        // Create default chain
-        const chainId = await ioManager.createDefaultChain([], [ui])
-        chain = ioManager.getChain(chainId)!
+        await ioManager.createDefaultChain([], [ui])
     }
 
-    // Listen for input events on active chain
-    chain.addEventListener(Commands.INPUT_EVENT, (event: InputAudioEvent) => {
-        const command = event.command
+    // Listen to every chain, including chains created after startup.
+    ioManager.addEventListener(Commands.INPUT_EVENT, (event: CustomEvent) => {
+        const { chain, command } = event.detail
         switch (command.type) {
-            case Commands.PLAYBACK_TOGGLE:
-                ui.setPlaying(timer.isRunning)
-                break
-
-            case Commands.PLAYBACK_START:
-                ui.setPlaying(timer.isRunning)
-                break
-
-            case Commands.PLAYBACK_STOP:
-                ui.setPlaying(timer.isRunning)
-                break
-
             case Commands.TEMPO_TAP:
                 ui.setTempo(timer.BPM)
                 state.set('tempo', timer.BPM)
@@ -421,10 +446,9 @@ const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: b
     })
 
     // Persist IO configuration when chains are updated
-	// FIXME: multiple chains are stored and seperated by a pipe | symbol
     const persistIOState = async () => {
         try {
-            const ioExport = chain.exportString()
+            const ioExport = ioManager.exportWorkspace()
             state.set('io', ioExport)
             state.updateLocation()
             console.info('IO chain configuration saved to state')
@@ -434,13 +458,18 @@ const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: b
     }
 
     ioManager.addEventListener('chainsUpdated', persistIOState)
+    ioManager.addEventListener('chainActiveChanged', persistIOState)
 
  
     createGraph('graph', ioManager)
 
     // start the clock going 
     timer.bpm = parseFloat(state.get('tempo') ?? 99)
-    timer.start(onEveryTimingTick)
+    timer.setCallback(onEveryTimingTick)
+    await ioManager.transport('start')
+    ui.setPlaying(ioManager.transportRunning)
+
+    netronomeLink = createNetronomeLink(timer, () => ioManager.transportRunning)
 
     // Update UI - this will check all the inputs according to our state	
     state.updateFrontEnd()
@@ -467,6 +496,11 @@ const onTick = (values: Record<string, any>) => {
 		grid:false
 	}
     const now = timer.now
+	if (netronomeLink?.isFollower) ui.setTempo(Math.round(timer.BPM * 100) / 100)
+	// The timer wraps divisions once per quarter note; its bar counter counts beats.
+	if (metronomeEnabled && divisionsElapsed === 0) {
+		metronome?.playBeat(barsElapsed * bars + bar, timer.syncOptions.beatsPerBar ?? 4, values.scheduledContextTimeSeconds)
+	}
 	const events = ioManager.updateTime(now, divisionsElapsed, options)
 	const allEvents = recorder.addEvents(events)
 
