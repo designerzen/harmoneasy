@@ -5,12 +5,14 @@
 @use "./buttons.scss";
 @use "./keyboard.scss";
 @use './node-graph.scss';
+@use './dialog.scss';
 @use './layout.scss';
 @use './typography.scss';
 @use './keyframes.scss';
 @use './notes.scss';
 @use './utils.scss';
 @use './prompt-ai.scss';
+@use './audiotool.scss';
 
 #app {
 	display: none;

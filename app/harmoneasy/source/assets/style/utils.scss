@@ -17,6 +17,9 @@
 	float: left;
 }
 
+[data-error] { 
+ 	color: light-dark(#a32020, #ffaaaa); 
+}
 
 [hidden] {
 	display: none !important;

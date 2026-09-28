@@ -44,6 +44,12 @@ button:active{
 	transform: scale(0.96);
 }
 
+#btn-metronome[aria-pressed="true"] {
+    background-color: var(--col-plum);
+    color: #fff;
+    border-color: currentColor;
+}
+
 button:focus{
 	outline: none;
 }
@@ -99,13 +105,6 @@ dialog .btn-close{
 	right: var(--pad);
 	top: var(--pad);
 
-	&::before{
-		content:'x';
-		font-size: 1rem;
-		font-weight: 900;
-		margin: auto;
-	}
-
 	&:hover {
 		background: light-dark(color-mix(in oklch, var(--col-red) 50%, #fff), var(--col-red));
 	}
@@ -116,28 +115,50 @@ dialog .btn-close{
 	text-decoration: underline;
 	text-decoration-style: dotted;
 	text-underline-offset: 4px;
-	&::before{
-		content:"×";
-		margin-right: 3px;
-		font-size: inherit;
-	}
 	&:hover {
 		color: var(--col-red, red);
 		text-decoration-color: var(--col-red, red);
 	}
 }
 
+.btn-remove, 
+.btn-remove-chain, 
+.btn-reset {
+    &::before {
+        content: '';
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        flex: none;
+        vertical-align: middle;
+        background-color: currentColor;
+        mask: url('../icons/trash.svg') center / contain no-repeat;
+    	margin-right: .375rem; 
+    }
+}
+
+.btn-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-kill-switch{
+	--col-bg:var(--col-red, red);
+	text-transform: uppercase;
+}
+
 .btn-bluetooth{
 	&::before{
 		content:"📡";
-		margin-right: 6px;
+		margin-right: .375rem; 
 	}
 }
 
 .btn-midi{
 	&::before{
 		content:"🎛";
-		margin-right: 6px;
+		margin-right: .375rem; 
 	}
 }
 
@@ -145,6 +166,7 @@ dialog .btn-close{
 	--col-bg:var(--col-green);
 	&::before{
 		content:"+";
+		margin-right:0.2rem;
 	}
 }
 
@@ -152,10 +174,88 @@ dialog .btn-close{
 	--col-bg:var(--col-pink);
 	&::before{
 		content:"-";
+		margin-right:0.2rem;
 	}
 }
+
+.btn-import{
+	&::before{
+		content:"↑";
+		margin-right:0.2rem;
+	}
+}
+
+.btn-export{
+	&::before{
+		content:"↓";
+		margin-right:0.2rem;
+	}
+}
+
+.btn-settings{
+	--col-bg:var(--col-pink);
+	&::before{
+		content:"⚙";
+		margin-right:0.2rem;
+	}
+}
+.btn-add{
+	&::before{
+		content:"+";
+		margin-right:0.2rem;
+	}
+}
+
+.btn-zoom{
+	
+}
+
+.btn-zoom-in,
+.btn-zoom-out {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .375em;
+
+    &::before {
+        content: '';
+        display: inline-block;
+        width: var(--zoom-icon-size, 1.25em);
+        height: var(--zoom-icon-size, 1.25em);
+        flex: none;
+        background-color: currentColor;
+        mask: var(--zoom-icon) center / contain no-repeat;
+    }
+}
+.btn-zoom-in { --zoom-icon: url('../icons/zoom-in.svg'); }
+.btn-zoom-out { --zoom-icon: url('../icons/zoom-out.svg'); }
+.graph-view-controls {
+    .btn-zoom-in, .btn-zoom-out { --zoom-icon-size: 22px; }
+}
+
+.btn-follow{
+	
+}
+
+
+
 
 
 .transformer-drawer{
 	--col-bg:rgba(0,0,0,0.5);
+}
+.btn-transport {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .4em;
+
+    &[hidden] { display: none; }
+
+    svg {
+        width: 1em;
+        height: 1em;
+        flex: none;
+        fill: currentColor;
+    }
 }

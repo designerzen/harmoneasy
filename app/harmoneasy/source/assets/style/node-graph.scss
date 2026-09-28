@@ -35,6 +35,15 @@
 		}
 	}
 
+    // These custom device nodes share names with React Flow's built-in types,
+    // whose 150px wrapper would otherwise hide their true dimensions from layout.
+    .react-flow__node-input,
+    .react-flow__node-output {
+        width: max-content;
+        height: auto;
+        max-width: none;
+    }
+
 	.react-flow__controls-button{
 		background-color: var(--col-black);
 		svg {
@@ -43,6 +52,62 @@
 			fill: var(--col-white);
 		}
 	}
+}
+
+.react-flow.node-expanded {
+    > .react-flow__renderer, > .react-flow__panel { visibility: hidden; }
+}
+
+.node-viewport-editor {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    overflow: auto;
+    background: var(--col-bg);
+
+    > .graph-node.is-fullscreen {
+        box-sizing: border-box;
+        width: 100%;
+        min-width: 0;
+        min-height: 100%;
+        height: auto;
+        padding: var(--pad);
+        border-radius: 0;
+    }
+
+    .btn-fullscreen { width: auto; }
+}
+
+// Visualizers use the whole viewport, with the exit controls over the canvas.
+.node-viewport-editor > .graph-node.is-fullscreen:has(.audiobus-butterchurn) {
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    gap: 0;
+    overflow: hidden;
+
+    > .device-node-header {
+        position: absolute;
+        inset: 0 0 auto;
+        padding: 0;
+        border: 0;
+        z-index: 1;
+        > h6 { display: none; }
+    }
+
+    > .nodrag.nowheel {
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+    }
+
+    .audiobus-butterchurn {
+        height: 100%;
+        aspect-ratio: auto;
+        margin: 0;
+        border-radius: 0;
+    }
 }
 
 .graph-node {
@@ -120,8 +185,62 @@
 	}
 }
 
-.node-transformer{
+.config-enabled-label {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
 
+    svg {
+        width: 20px;
+        height: 20px;
+        flex: none;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.75;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+}
+
+.node-input,
+.node-output,
+.node-transformer{
+	.btn-remove {
+		left: var(--pad);
+		right: auto;
+	}
+
+	.btn-fullscreen {
+		left: auto;
+		right: var(--pad);
+	}
+
+}
+
+
+.graph-node > .device-node-header {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--gap);
+
+    > h6 {
+        min-width: 0;
+        max-width: none;
+        margin: 0;
+        text-align: center;
+        overflow-wrap: anywhere;
+    }
+
+    > .btn-remove,
+    > .btn-fullscreen {
+        position: static;
+        width: auto;
+        margin: 0;
+    }
+}
+
+.node-transformer{
     min-height:var(--size, 150px);
 
     > *{
@@ -166,10 +285,33 @@
 
 .node-start,
 .node-end {
-    --size:69px;
-    border-radius: 999px;
-    align-items: center;
+    --size: 280px;
+    width: 320px;
+    box-sizing: border-box;
+    border-radius: 16px;
+    align-items: stretch;
     justify-content: center;
+    text-transform: none;
+    letter-spacing: normal;
+
+    h6 { margin: 0; text-align: center; }
+    > .btn-add { width: 100%; }
+
+    .shared-device-selector {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: .5rem;
+        font-size: .875rem;
+        font-weight: normal;
+
+        select {
+            width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+            font: inherit;
+        }
+    }
 }
 
 .node-start {
@@ -219,15 +361,21 @@
         font-size: 66%;
     }
 
-    .btn-previous {
-        &::before{
-            content:'◀ ';    
-        }
-    }
+    .btn-previous, .btn-next {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .375rem;
 
-    .btn-next{
-        &::after{
-            content:' ▶';    
+        svg {
+            width: 1em;
+            height: 1em;
+            flex: none;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
     }
 }
@@ -470,6 +618,96 @@
 
 	.btn-remove {
 		flex: 1;
+	}
+}
+
+// Keep device pickers inside the viewport, with only the results scrolling.
+dialog.add-input-dialog,
+dialog.add-output-dialog {
+	--pad: 16px;
+	--gap: 8px;
+	box-sizing: border-box;
+	width: min(800px, calc(100vw - 24px));
+	min-width: 0;
+	max-width: calc(100vw - 24px);
+	max-height: calc(100dvh - 24px);
+	padding: 0;
+	overflow: hidden;
+	font-size: 14px;
+
+	&[open] {
+		display: grid;
+		grid-template-rows: auto minmax(0, 1fr);
+	}
+
+	&::before,
+	&::after {
+		content: none;
+	}
+
+	> * {
+		min-width: 0;
+		max-width: none;
+	}
+
+	> header {
+		position: static;
+
+		h5 {
+			padding-right: 52px;
+			min-height: 44px;
+			display: flex;
+			align-items: center;
+		}
+	}
+
+	.dialog-content {
+		min-height: 0;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+	}
+
+	.dialog-section {
+		flex-shrink: 0;
+	}
+
+	.filter-input-global {
+		min-width: 0;
+		width: 100%;
+	}
+
+	.items-grid {
+		grid-template-columns: repeat(auto-fill, minmax(min(140px, 100%), 1fr));
+	}
+
+	> form {
+		position: absolute;
+		top: 12px;
+		right: 12px;
+		z-index: 11;
+		margin: 0;
+		padding: 0;
+		border: 0;
+	}
+
+	> form .btn-close {
+		position: static;
+		display: grid;
+		place-items: center;
+		width: 44px;
+		height: 44px;
+		padding: 0;
+		font-size: 28px;
+		line-height: 1;
+		font-weight: normal;
+		letter-spacing: 0;
+		border: 1px solid transparent;
+		border-radius: 6px;
+		background: transparent;
+
+		&::before {
+			content: none;
+		}
 	}
 }
 
@@ -855,4 +1093,523 @@
 			}
 		}
 	}
+}
+#graph:has(.chains-workspace) {
+    display: block;
+    overflow: auto;
+}
+.chains-workspace { display: grid; gap: 1rem; padding: .5rem; }
+.chain-panel { border: 1px solid var(--col-fg); min-width: 0; container-type: inline-size; container-name: chain-panel; }
+.chain-panel.active { border-width: 2px; }
+.chain-toolbar, .iochain-manager { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; padding: .5rem; }
+.chain-toolbar strong { margin-right: auto; }
+.chain-graph {
+    display: grid;
+    grid-template-areas: "sidebar graph";
+    grid-template-columns: minmax(8rem, 14rem) minmax(0, 1fr);
+    grid-template-rows: minmax(22rem, 55vh);
+    min-width: 0;
+    position: relative;
+    .presets { grid-area: presets; }
+    .chain-layout { grid-area: layout; display: flex; align-items: center; gap: .5rem; padding: .5rem; }
+    .transformers-drawer { min-height: 0; min-width: 0; overflow: auto; }
+    .fullscreen-header { grid-column: 1 / -1; }
+    .react-flow { min-height: 0; min-width: 0; }
+}
+@media (max-width: 600px) {
+    .chain-graph { grid-template-columns: minmax(6rem, 8rem) minmax(0, 1fr); }
+}
+
+.chain-toolbar .chain-name {
+    margin-right: auto;
+    min-width: 6rem;
+    max-width: 100%;
+    font: inherit;
+    font-weight: bold;
+    color: inherit;
+    text-align: left;
+}
+.chain-toolbar input.chain-name {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    box-shadow: none;
+    cursor: text;
+
+    &::placeholder { color: inherit; opacity: 1; }
+
+    &:hover { border-color: color-mix(in srgb, currentColor 25%, transparent); }
+    &:focus {
+        background: color-mix(in srgb, currentColor 8%, transparent);
+        border-color: currentColor;
+        outline: 2px solid currentColor;
+        outline-offset: 1px;
+    }
+}
+.chain-toolbar .chain-name:focus-visible { outline: 2px solid currentColor; }
+
+.presets {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+.presets select, .iochain-manager select {
+    max-width: 100%;
+    min-width: 0;
+}
+
+.iochain-manager .chain-create-control {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    width: min(100%, 38rem);
+    min-width: 0;
+    font-size: .875rem;
+
+    select, button {
+        box-sizing: border-box;
+        min-height: 44px;
+        margin: 0;
+        padding: .5rem .75rem;
+        border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+        font: inherit;
+    }
+    select {
+        width: 100%;
+        border-radius: 6px 0 0 6px;
+    }
+    button {
+        border-left: 0;
+        border-radius: 0 6px 6px 0;
+        background: color-mix(in srgb, currentColor 10%, transparent);
+        font-weight: 700;
+        white-space: nowrap;
+        &:hover { background: color-mix(in srgb, currentColor 18%, transparent); }
+        &:active { transform: none; }
+    }
+    :focus-visible { outline: 2px solid var(--col-orange); outline-offset: -2px; }
+}
+
+.chain-toolbar {
+    gap: .5rem;
+    padding: .375rem .5rem;
+    font-size: .875rem;
+
+    .chain-name { padding: .25rem .5rem; }
+    .presets { margin-right: auto; }
+    select { padding: .375rem .5rem; border-width: 1px; border-radius: 6px; font: inherit; }
+}
+.chain-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem;
+
+    button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .375rem;
+        padding: .375rem .5rem;
+        min-height: 44px;
+        font: inherit;
+    }
+    svg {
+        width: 1rem;
+        height: 1rem;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+}
+.chain-graph .chain-layout {
+    padding: .25rem .5rem;
+    font-size: .875rem;
+    select { padding: .25rem .5rem; border-width: 1px; border-radius: 6px; font: inherit; }
+}
+.chain-panel.inactive { border-style: dashed; }
+
+.save-preset { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
+.chain-toolbar .presets button { padding: .375rem .5rem; font: inherit; }
+.save-preset input { max-width: 16rem; font: inherit; }
+
+/* Compact chain toolbar, independent of the preset drawer styling. */
+.chain-toolbar {
+    display: grid;
+    grid-template-columns: minmax(5rem, 1fr) minmax(10rem, 20rem) max-content;
+    grid-template-areas: "name presets actions";
+    gap: .75rem;
+    padding: .375rem .625rem;
+    border-bottom: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+
+    .chain-name { grid-area: name; margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .presets {
+        grid-area: presets;
+        &::before { content: none; display: none; }
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 44px;
+        align-items: center;
+        gap: .375rem;
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: none;
+        box-shadow: none;
+    }
+    .presets select {
+        width: 100%;
+        min-height: 44px;
+        margin: 0;
+        background-color: transparent;
+        border-color: color-mix(in srgb, currentColor 25%, transparent);
+    }
+    button { border-radius: 6px; }
+    svg {
+        width: 20px;
+        height: 20px;
+        flex: none;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.75;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+    .chain-icon-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        background: transparent;
+    }
+    .chain-actions { grid-area: actions; flex-wrap: nowrap; align-items: center; gap: .25rem; }
+    .chain-power { background: transparent; white-space: nowrap; }
+    .chain-power[aria-pressed="true"] svg { color: var(--col-green, #64bb94); }
+    .chain-delete:hover { color: var(--col-red, #e97777); }
+    .save-preset, .presets > [role="status"] { grid-column: 1 / -1; }
+    .save-preset { padding-block: .5rem; }
+    .save-preset label { display: grid; gap: .25rem; min-width: 0; flex: 1; }
+    .save-preset input { width: 100%; box-sizing: border-box; }
+}
+@container chain-panel (max-width: 40rem) {
+    .chain-toolbar {
+        grid-template-columns: minmax(0, 1fr) max-content;
+        grid-template-areas: "name actions" "presets presets";
+        gap: .375rem;
+    }
+}
+
+.chain-graph {
+    grid-template-columns: 44px minmax(0, 1fr);
+
+    &:has(> .transformers-drawer[open]) {
+        grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);
+    }
+
+    > .transformers-drawer {
+        display: block;
+        position: relative;
+        min-height: 0;
+        height: 100%;
+        overflow: hidden;
+        box-sizing: border-box;
+        border-right: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+
+        > summary {
+            position: absolute;
+            inset: 0 auto auto 0;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: .625rem;
+            width: 44px;
+            min-height: 150px;
+            box-sizing: border-box;
+            padding: .75rem .5rem;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            font-size: .875rem;
+            list-style: none;
+            border-radius: 0 0 6px 0;
+            background: color-mix(in srgb, currentColor 8%, transparent);
+
+            &::-webkit-details-marker { display: none; }
+            &::before { content: none; }
+            &::after {
+                content: '+';
+                position: static;
+                width: auto;
+                height: auto;
+                margin: 0;
+                background: none;
+                transform: none;
+                writing-mode: horizontal-tb;
+            }
+            &:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
+        }
+        &[open] > summary::after { content: '−'; }
+        > .transformer-picker {
+            position: absolute;
+            inset: 0 0 0 44px;
+            display: flex;
+            flex-direction: column;
+            gap: .5rem;
+            padding: .5rem;
+            overflow: auto;
+            overscroll-behavior-y: contain;
+            box-sizing: border-box;
+
+            input { width: 100%; min-width: 0; box-sizing: border-box; }
+            ul { margin: 0; padding: 0; list-style: none; }
+        }
+        &:not([open]) > .transformer-picker { display: none; }
+    }
+}
+
+.chain-toolbar .chain-layout-buttons {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 2px;
+    padding-right: .375rem;
+    margin-right: .125rem;
+    border-right: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+
+    button[aria-pressed="true"] {
+        background: color-mix(in srgb, currentColor 14%, transparent);
+        border-color: color-mix(in srgb, currentColor 35%, transparent);
+    }
+}
+
+#chain:has(.chain-solo) { z-index: 1000; }
+#graph:has(.chain-solo) { overflow: visible; }
+.chain-panel.chain-solo {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    width: 100vw;
+    height: 100dvh;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    background: light-dark(#fafafa, #1a1a1a);
+    border: 0;
+    overflow: auto;
+
+    > .chain-graph {
+        min-height: 0;
+        grid-template-rows: minmax(0, 1fr);
+    }
+}
+.chain-toolbar .chain-solo-toggle {
+    background: transparent;
+    &[aria-pressed="true"] {
+        background: color-mix(in srgb, currentColor 14%, transparent);
+        border-color: color-mix(in srgb, currentColor 35%, transparent);
+    }
+}
+
+.chain-toolbar .chain-identity {
+    grid-area: name;
+    display: flex;
+    align-items: center;
+    gap: .25rem;
+    min-width: 0;
+
+    .chain-power { flex: 0 0 44px; }
+    .chain-name { flex: 1; min-width: 0; padding-inline: .25rem; }
+}
+
+.add-input-dialog, .add-output-dialog {
+    .items-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); align-items: stretch; }
+    .items-grid .device-choice-card {
+        align-items: stretch;
+        justify-content: flex-start;
+        text-align: left;
+        text-transform: none;
+        letter-spacing: normal;
+        gap: .625rem;
+        padding: 1rem;
+        font-size: .9rem;
+        font-weight: normal;
+        line-height: 1.45;
+        border-radius: 12px;
+        min-width: 0;
+        .item-icon { justify-content: flex-start; height: auto; font-size: 1.75rem; }
+        .item-name { font-size: 1rem; font-weight: 700; }
+        .item-description { display: block; }
+        .device-choice-detail { display: grid; gap: .125rem; }
+        .device-choice-label { font-size: .8rem; font-weight: 700; }
+        &:hover { transform: none; }
+    }
+}
+
+#graph .graph-view-controls {
+    .graph-zoom-in { order: 1; }
+    .graph-zoom-out { order: 2; }
+    .graph-fit-all { order: 3; }
+    .react-flow__controls-interactive { order: 4; }
+    .graph-control-icon {
+        width: 22px;
+        height: 22px;
+        max-width: none;
+        max-height: none;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+}
+
+/* Equal-size corner tabs shared by every removable graph node. */
+.graph-node.can-remove {
+    --node-corner-size: 56px;
+
+    > .node-actions {
+        position: static;
+        margin: 0;
+        padding: 0;
+    }
+    > menu.node-actions { height: 0; min-height: 0; }
+    > .device-node-header {
+        display: block;
+        padding-inline: 24px;
+    }
+    > .node-actions > .btn-remove,
+    > .node-actions > .btn-fullscreen {
+        position: absolute;
+        top: 0;
+        z-index: 6;
+        width: var(--node-corner-size);
+        height: var(--node-corner-size);
+        min-width: 0;
+        min-height: 0;
+        max-width: none;
+        flex: none;
+        padding: 0;
+        margin: 0;
+        border: 0;
+        font-size: 0;
+        color: #fff;
+        transition: filter .15s ease;
+        &:hover { filter: brightness(1.2); transform: none; }
+        &:active { filter: brightness(.9); transform: none; }
+        &:focus-visible { outline: none; box-shadow: inset 0 0 0 3px #fff; }
+    }
+    > .node-actions > .btn-remove {
+        left: 0;
+        right: auto;
+        background: #c52c56;
+        border-radius: var(--curve) 0 0 0;
+        clip-path: polygon(0 0, 100% 0, 0 100%);
+        &::before {
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            width: 18px;
+            height: 18px;
+            margin: 0;
+        }
+    }
+    > .node-actions > .btn-fullscreen {
+        right: 0;
+        left: auto;
+        background: #236dc1;
+        border-radius: 0 var(--curve) 0 0;
+        clip-path: polygon(0 0, 100% 0, 100% 100%);
+        svg {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            width: 18px;
+            height: 18px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+    }
+}
+
+/* Expanded nodes become focused instrument editors, not enlarged graph cards. */
+.node-viewport-editor > .graph-node.is-fullscreen {
+    --editor-accent: oklch(72% .14 var(--hue-accent, 280));
+    --node-corner-size: 64px;
+    color: light-dark(#252333, #f1eefb);
+    background:
+        radial-gradient(ellipse at 80% 0%, color-mix(in oklch, var(--editor-accent) 22%, transparent), transparent 65%),
+        light-dark(#f5f3fa, #161522);
+    border: 1px solid color-mix(in oklch, var(--editor-accent) 45%, transparent);
+    border-top: 3px solid var(--editor-accent);
+    padding: clamp(1.25rem, 4vw, 3rem);
+    gap: 1.5rem;
+    text-transform: none;
+    letter-spacing: normal;
+    box-shadow: inset 0 1px 0 color-mix(in srgb, white 10%, transparent);
+
+    > .node-actions > .btn-remove,
+    > .node-actions > .btn-fullscreen { border-radius: 0; }
+
+    > .expanded-node-heading {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 1.25rem;
+        padding: 1rem 2rem 1.75rem;
+        border-bottom: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+        .expanded-node-emblem {
+            display: grid;
+            place-items: center;
+            flex: 0 0 80px;
+            height: 80px;
+            border: 1px solid color-mix(in oklch, var(--editor-accent) 45%, transparent);
+            border-radius: 22px;
+            background: color-mix(in oklch, var(--editor-accent) 18%, transparent);
+            box-shadow: 0 8px 30px color-mix(in oklch, var(--editor-accent) 12%, transparent);
+            img { width: 52px; height: 52px; object-fit: contain; }
+        }
+        .expanded-node-category { font-size: .7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: light-dark(#555068, #b9b0d1); }
+        h2 { margin: .375rem 0; font-size: clamp(1.5rem, 3vw, 2.5rem); line-height: 1.15; }
+        p { margin: 0; max-width: 65ch; font-size: .95rem; font-weight: normal; line-height: 1.6; }
+    }
+    > .expanded-node-settings {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+        align-items: stretch;
+        gap: 1rem;
+        width: 100%;
+        > label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: .75rem;
+            padding: 1rem;
+            border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+            border-radius: 12px;
+            background: color-mix(in oklch, var(--editor-accent) 7%, transparent);
+            font-size: .875rem;
+            select { margin: 0; min-height: 44px; max-width: 100%; font: inherit; border-width: 1px; border-radius: 8px; }
+        }
+    }
+    > .device-node-header { padding: 1rem 2rem 1.5rem; border-bottom: 1px solid color-mix(in srgb, currentColor 14%, transparent); }
+    > .device-node-header > h6 { font-size: clamp(1.5rem, 3vw, 2.5rem); line-height: 1.2; }
+    > .graph-node-menu { margin-top: auto; padding-top: 1rem; border-top: 1px solid color-mix(in srgb, currentColor 14%, transparent); }
+    > .graph-node-menu button { font-size: .875rem; }
+}
+@media (max-width: 600px) {
+    .node-viewport-editor > .graph-node.is-fullscreen > .expanded-node-heading {
+        align-items: flex-start;
+        flex-direction: column;
+        padding-inline: 1rem;
+        .expanded-node-emblem { flex-basis: auto; width: 64px; height: 64px; }
+    }
 }
