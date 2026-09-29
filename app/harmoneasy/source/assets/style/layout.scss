@@ -314,39 +314,17 @@ body > footer{
 #action-bar {
 	order: -1;
 	margin: 0;
-	padding: 4px 8px;
 	display: flex;
 	justify-content: flex-start;
 	flex-wrap: wrap;
 	align-items: center;
-	gap: 2px;
 	border-bottom: 1px solid var(--col-grey);
 	background: var(--col-bg);
 	position:sticky;
 	top:0;
+	z-index:909;
 	
-	button {
-		min-width: 32px;
-		min-height: 28px;
-		padding: 4px 10px;
-		border: 1px solid transparent;
-		border-radius: 4px;
-		font-size: 12px;
-		line-height: 18px;
-		font-weight: 500;
-		background: transparent;
-		color: var(--col-fg);
-
-		&:hover {
-			background: color-mix(in oklch, var(--col-fg) 12%, transparent);
-		}
-		&:focus-visible {
-			outline: 2px solid var(--col-orange);
-			outline-offset: 1px;
-		}
-	}
-
-	#btn-kill-switch {
+	.btn-kill-switch {
 		margin-left: auto;
 		color: light-dark(var(--col-plum), var(--col-pink));
 	}

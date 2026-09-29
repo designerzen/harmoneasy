@@ -237,6 +237,27 @@ dialog .btn-close{
 	
 }
 
+.file-menu > button,
+.btn-file-menu-item {
+	min-width: 32px;
+	min-height: 28px;
+	padding: 4px 10px;
+	border: 1px solid transparent;
+	border-radius: 4px;
+	font-size: 12px;
+	line-height: 18px;
+	font-weight: 500;
+	background: transparent;
+	color: var(--col-fg);
+
+	&:hover {
+		background: color-mix(in oklch, var(--col-fg) 12%, transparent);
+	}
+	&:focus-visible {
+		outline: 2px solid var(--col-orange);
+		outline-offset: 1px;
+	}
+}
 
 
 
@@ -248,9 +269,7 @@ dialog .btn-close{
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: .4em;
-
-    &[hidden] { display: none; }
+    gap: var(--gap);
 
     svg {
         width: 1em;
