@@ -1,0 +1,41 @@
+diff --git a/out/node-module-collector/pnpmNodeModulesCollector.js b/out/node-module-collector/pnpmNodeModulesCollector.js
+index 602599280ab621d078748187bb6b4ae9431c1739..1db94c17c6b24d6fae46f9bbbf5ae9e2c735833c 100644
+--- a/out/node-module-collector/pnpmNodeModulesCollector.js
++++ b/out/node-module-collector/pnpmNodeModulesCollector.js
+@@ -13,7 +13,8 @@ class PnpmNodeModulesCollector extends nodeModulesCollector_1.NodeModulesCollect
+         };
+     }
+     getArgs() {
+-        return ["list", "--prod", "--json", "--depth", "Infinity", "--silent", "--loglevel=error"];
++        // pnpm 12 can list the whole workspace; the parser expects the current app first.
++        return ["list", "--filter", ".", "--prod", "--json", "--depth", "Infinity", "--silent", "--loglevel=error"];
+     }
+     async extractProductionDependencyGraph(tree, dependencyId) {
+         if (this.productionGraph[dependencyId]) {
+@@ -70,7 +71,25 @@ class PnpmNodeModulesCollector extends nodeModulesCollector_1.NodeModulesCollect
+     parseDependenciesTree(jsonBlob) {
+         // pnpm returns an array of dependency trees
+         const dependencyTree = this.extractJsonFromPollutedOutput(jsonBlob);
+-        return dependencyTree[0];
++        // pnpm 12 emits deduped references without children. Restore those children
++        // before collection so a later reference cannot erase a package's dependencies.
++        const packages = new Map();
++        const index = tree => {
++            if (!tree.deduped) packages.set(tree.path, tree);
++            for (const child of Object.values({ ...tree.dependencies, ...tree.optionalDependencies })) index(child);
++        };
++        dependencyTree.forEach(index);
++        const expand = (tree, parents = new Set()) => {
++            if (parents.has(tree.path)) return { ...tree, dependencies: undefined, optionalDependencies: undefined };
++            const source = tree.deduped ? packages.get(tree.path) || tree : tree;
++            const next = new Set(parents).add(tree.path);
++            const result = { ...tree };
++            for (const field of ["dependencies", "optionalDependencies"]) {
++                if (source[field]) result[field] = Object.fromEntries(Object.entries(source[field]).map(([name, child]) => [name, expand(child, next)]));
++            }
++            return result;
++        };
++        return expand(dependencyTree[0]);
+     }
+ }
+ exports.PnpmNodeModulesCollector = PnpmNodeModulesCollector;
