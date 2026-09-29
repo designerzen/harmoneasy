@@ -383,7 +383,9 @@ body > footer{
 	position: fixed;
 	inset: auto 0 0;
 	z-index: 250;
-	height: min(148px, 33dvh);
+	height: calc(min(148px, 33dvh) + 32px + env(safe-area-inset-bottom, 0px));
+	padding-bottom: env(safe-area-inset-bottom, 0px);
+	box-sizing: border-box;
 	pointer-events: none;
 
 	> .piano {
@@ -394,9 +396,17 @@ body > footer{
 }
 
 body:has(#onscreen-keyboard > .piano) {
-	padding-bottom: min(148px, 33dvh);
+	padding-bottom: calc(min(148px, 33dvh) + 32px + env(safe-area-inset-bottom, 0px));
 }
 
+@media (pointer: coarse) {
+	#onscreen-keyboard {
+		height: calc(min(148px, 33dvh) + 44px + env(safe-area-inset-bottom, 0px));
+	}
+	body:has(#onscreen-keyboard > .piano) {
+		padding-bottom: calc(min(148px, 33dvh) + 44px + env(safe-area-inset-bottom, 0px));
+	}
+}
 
 song-explorer,
 song-visualiser-ui,
@@ -834,7 +844,57 @@ song-explorer-ui{
     position: relative;
     z-index: 202;
 
-    > #btn-reset { margin: .5rem; }
+    .note-timeline-panel {
+        position: relative;
+        min-width: 0;
+        overflow: hidden;
+        border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+        border-radius: 6px;
+        background: #151923;
+    }
+
+    #note-timeline {
+        display: block;
+        width: 100%;
+        height: 360px;
+        touch-action: none;
+        cursor: grab;
+        &:active { cursor: grabbing; }
+        &:focus-visible { outline: 2px solid var(--col-orange); outline-offset: -2px; }
+    }
+
+    .note-timeline-controls {
+        position: absolute;
+        bottom: 28px;
+        left: 12px;
+        right: 12px;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        pointer-events: none;
+
+        button {
+            pointer-events: auto;
+            min-height: 36px;
+            margin: 0;
+            background-color: var(--col-black);
+            color: var(--col-white);
+            box-shadow: 0 1px 5px #0006;
+        }
+        .btn-zoom-in, .btn-zoom-out { width: 36px; min-width: 36px; height: 36px; padding: 0; }
+        #btn-reset { margin-left: auto; }
+    }
+
+    .note-timeline-hint {
+        position: absolute;
+        bottom: 0;
+        margin: 0;
+        padding: 4px 12px;
+        color: #c7d1e4;
+        background: #151923e6;
+        font-size: 11px;
+        pointer-events: none;
+    }
 }
 
 #chain-navigation {

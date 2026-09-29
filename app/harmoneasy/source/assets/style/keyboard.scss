@@ -1,5 +1,3 @@
-@use "./ease";
-
 .piano-key{
 	transition: 
         opacity var(--time-quick, 90ms) linear,
@@ -8,26 +6,28 @@
     border-radius: 10%;
 
 	fill:var(--fill, white);
-    will-change: fill;
 
 	.piano-key-name{
 		visibility: hidden;
 	}
 
-	&:hover{
-		fill: var(--col-green);
-        // opacity: 0.98;
-		.piano-key-name{
-			visibility: visible;
-		}		
-	}	
+	@media (hover: hover) and (pointer: fine) {
+		&:hover{
+			fill: var(--col-green);
+			.piano-key-name{
+				visibility: visible;
+			}
+		}
+	}
 
-    &.active{
+    &.active, &.pressed{
 		fill: var(--col-accent, var(--col-orange, orange));
 		// opacity: 0;
 	}
-    &.active:hover{
-		fill: color-mix(in oklch, var(--col-accent) 50%, var(--fill));
+    @media (hover: hover) and (pointer: fine) {
+		&.active:hover, &.pressed:hover{
+			fill: color-mix(in oklch, var(--col-accent) 50%, var(--fill));
+		}
 	}
 
 	&:focus{
@@ -66,70 +66,51 @@
 }
 
 
-// peeking
 .piano{
-	// we always want the smallest size for the footer
-    --footer-height:clamp(33px, 10vmin, 10vh);
-    --footer-height:clamp(60px, 10vh, 200px);
-
-	--overhang:calc(-50% + 50vw);
- 	--c:calc(100% - var(--footer-height) );
-	// margin-top:calc( -1 * var(--c) );
-
-	min-height:calc( 100px +  var(--footer-height));
-	//width: min(100%, 100vw);
-	
-    max-width: min( 100%, 100vw );
-    max-width: min( 100%, 100dvw );
-
-	overflow: hidden;
+	--piano-key-width: 23px;
+	min-height: 180px;
+	max-width: 100%;
 	display: flex;
 	flex-direction: column;
-
-   	position: sticky;
-    bottom:0; // calc( -1 * var(--footer-height,0 ));
-	
-	transition: bottom var(--time-medium, 90ms) ease.$easeOutBack; 
+	position: relative;
+	overflow: hidden;
 	pointer-events: none;
-	z-index: 909;
+	user-select: none;
+	-webkit-user-select: none;
+	-webkit-touch-callout: none;
 
-    // background-color: black;
-	// transform: translateX(-50%);
+	.piano-viewport{
+		flex: 1;
+		min-height: 0;
+		overflow: hidden;
+	}
 
 	.piano-keys{
-		// we want the piano to be in the middle of the screen
-		// so we move it 50% of it's own width to the left then 50% of the screen to the right
+		display: block;
+		width: 100%;
+		min-width: calc(var(--piano-white-keys, 75) * var(--piano-key-width));
+		height: 100%;
+		pointer-events: auto;
+		touch-action: none;
+	}
 
-		pointer-events: all;
-		
-		// peeking
-		// transform: translateY( calc( var(--c) ) ) translateX( var(--overhang) );
-		// full soze
-		transform: translateY( 0 ) translateX( var(--overhang) );
-	
-		
-		transition: transform var(--time-medium, 90ms) ease.$easeOutBack; 
-         position: absolute;
-         bottom: 0;
-
-		margin:auto;
-		margin-bottom: 0;
-		
-		// padding-right: 100%;
-		// left:50%;
-
-		// make sure that it cannot be taller than 1/4 of the viewport height
-		max-height:min(148px, 33vh);
-
-		// ensure that it never shrinks to unusable size
-		min-width:max( 100%, calc( 128 * 11px) );
+	.piano-range{
+		flex: 0 0 32px;
+		box-sizing: border-box;
+		width: 100%;
+		min-width: 0;
+		margin: 0;
+		padding: 0 16px;
+		pointer-events: auto;
+		touch-action: pan-y;
+		accent-color: var(--col-orange, orange);
 	}
 }
 
-// Full size
-.piano.show-full-keyboard{
-	.piano-keys{
-		transform: translateY( 0 ) translateX( var(--overhang) );
+@media (pointer: coarse){
+	.piano{
+		--piano-key-width: 44px;
+		.piano-range{ flex-basis: 44px; }
 	}
 }
 
