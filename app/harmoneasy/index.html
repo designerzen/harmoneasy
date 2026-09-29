@@ -133,7 +133,16 @@
 
 
 		<section id="recordings" aria-label="Recordings">
-			<button type="button" id="btn-reset" class="icon btn-reset">Clear recording</button>
+			<div class="note-timeline-panel">
+				<canvas id="note-timeline" width="1080" height="320" tabindex="0" aria-label="Note timeline. Arrow keys scroll, plus and minus zoom, Home follows live notes."></canvas>
+				<div class="note-timeline-controls" role="group" aria-label="Timeline controls">
+					<button type="button" data-timeline-action="zoom-in" class="icon btn-zoom-in" title="Zoom in" aria-label="Zoom in"></button>
+					<button type="button" data-timeline-action="zoom-out" class="icon btn-zoom-out" title="Zoom out" aria-label="Zoom out"></button>
+					<button type="button" data-timeline-action="follow" title="Follow live notes">Follow live</button>
+					<button type="button" id="btn-reset" class="icon btn-reset" title="Clear recordings and timeline">Clear recordings</button>
+				</div>
+				<p class="note-timeline-hint" id="note-timeline-hint">Drag to pan · Scroll for pitches · Shift+scroll for time · Ctrl+scroll to zoom</p>
+			</div>
 		</section>
 	</main>
 	

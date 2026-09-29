@@ -132,6 +132,7 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number 
     // Reset Recorder - kill all played notes
     frontEnd.whenResetRequestedRun(async () => {
         recorder.clear()
+        frontEnd.noteTimeline.clear()
         timer.resetTimer()
         if (songVisualiser) {
             songVisualiser.reset()

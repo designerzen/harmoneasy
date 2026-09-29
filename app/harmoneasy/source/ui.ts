@@ -2,6 +2,7 @@ import { formatTimeStampFromSeconds } from "netronome"
 import SongVisualiser from 'audiobus/ui/song-visualiser.js'
 import { SongVisualiserUI } from 'audiobus/ui/song-visualiser-ui.js'
 import NoteVisualiser from 'audiobus/ui/note-visualiser.js'
+import NoteTimelineVisualiser from 'audiobus/ui/note-timeline-visualiser'
 import SVGKeyboard from 'audiobus/ui/keyboard-svg.ts'
 import { getPackagesListHTML } from './services/packages-service'
 
@@ -115,6 +116,7 @@ export default class UI implements IAudioOutput {
 	elementTimerTypeSelect: HTMLElement | null
 	noteVisualiserCanvas: HTMLElement | null
 	noteVisualiser: NoteVisualiser
+	noteTimeline: NoteTimelineVisualiser
 
 	#keyboard: SVGKeyboard
 	keyboardElement: any
@@ -196,6 +198,7 @@ export default class UI implements IAudioOutput {
 
 		this.noteVisualiserCanvas = document.getElementById(DOM_ID_NOTE_VISUALISER_CANVAS)
 		this.noteVisualiser = new NoteVisualiser(keyboardNotes, this.noteVisualiserCanvas, this.options.verticalNoteBars, 0) // ALL_KEYBOARD_NOTES
+		this.noteTimeline = new NoteTimelineVisualiser(document.getElementById('note-timeline') as HTMLCanvasElement)
 		// wallpaperCanvas.addEventListener( "dblclick", e => scale === SCALES[ (SCALES.indexOf(scale) + 1) % SCALES.length] )
 
 		// Create Note Explorer & visualiser
@@ -831,6 +834,7 @@ export default class UI implements IAudioOutput {
 	noteOn(noteNumber:number, velocity:number) {
 		const colour = convertNoteNumberToColour(noteNumber)
 		this.noteVisualiser.noteOn(noteNumber, velocity, colour)
+		this.noteTimeline.noteOn(noteNumber, velocity, colour)
 		this.addCommand("NoteOn #" + noteNumber)
 		// console.info("UI::NoteOn", {noteNumber, velocity, colour})
 	}
@@ -841,6 +845,7 @@ export default class UI implements IAudioOutput {
 	 */
 	noteOff(noteNumber:number) {
 		this.noteVisualiser.noteOff(noteNumber)
+		this.noteTimeline.noteOff(noteNumber)
 		this.removeCommand("NoteOff #" + noteNumber)
 		// console.info("UI::NoteOff", noteNumber )
 	}
@@ -850,6 +855,7 @@ export default class UI implements IAudioOutput {
 	 */
 	allNotesOff() {
 		this.noteVisualiser.allNotesOff()
+		this.noteTimeline.allNotesOff()
 	}
 
 	setMetronomeEnabled(enabled: boolean) {
@@ -996,6 +1002,7 @@ export default class UI implements IAudioOutput {
 	 */
 	destroy() {
 		this.noteVisualiser.destroy()
+		this.noteTimeline.destroy()
 		this.#keyboard?.destroy()
 		this.abortController.abort()
 	}
