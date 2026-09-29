@@ -33,7 +33,7 @@ describe('note timeline', () => {
         vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { frame = callback })
         vi.stubGlobal('onmessage', null)
         vi.stubGlobal('performance', { timeOrigin: 1000, now: () => 3000 })
-        await import('../../../packages/audiobus/ui/note-visualiser-worker')
+        await import('../../../packages/audiobus/ui/note-timeline-worker')
         const send = (data: object) => globalThis.onmessage!({ data } as MessageEvent)
         send({ canvas: { width: 1080, height: 320, getContext: () => context } })
         send({ type: 'noteOn', note: 72, colour: 'red', velocity: 1, time: 1000 })

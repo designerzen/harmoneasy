@@ -262,7 +262,6 @@ main {
 	display: grid;
 	grid-template-areas:
 		"graph"
-		"timeline-controls"
 		"explorer";
 
 	// var(--height-graph)
@@ -369,16 +368,17 @@ body > footer{
 #chain {
 	grid-area: graph;
 	z-index: 1;
+	isolation: isolate;
 	position: sticky;
     top: calc( var(--pad) * 2 + 1lh );
 	//overflow: hidden;
 	height: var(--height-graph);
 	max-height: var(--height-graph);
 	
-	// sticky travel
-	padding-bottom:20rem;
 
 	#graph {
+		position: relative;
+		z-index: 1;
 		width: 100%;
 		height: 100%;
 	}
@@ -391,37 +391,32 @@ body > footer{
 
 
 #note-visualiser {
-	background: light-dark(
-		color-mix(in oklch, var(--col-white) 90%, var(--col-black)),
-		color-mix(in oklch, var(--col-black) 85%, #000)
-	);
-	// padding: calc(2 * var(--pad));
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	grid-area: graph;
-	position: sticky;
-	top: var(--transport-height, 52px);
-	align-self: start;
+	position: absolute;
+	inset: 0;
 	z-index: 0;
 	width: 100%;
-	max-width: 100vw;
-	height: calc(100dvh - var(--transport-height, 52px));
-	min-width: 0;
-	touch-action: none;
-	cursor: grab;
-	&:active { cursor: grabbing; }
-	&:focus-visible { outline: 2px solid var(--col-plum); outline-offset: -2px; }
+	height: 100%;
+	display: block;
+	background: transparent;
+	pointer-events: none;
 }
 
-.note-timeline-controls {
-	grid-area: timeline-controls;
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: .5rem;
-	padding: .5rem;
-	span { font-size: .8rem; opacity: .75; }
+#onscreen-keyboard {
+	position: fixed;
+	inset: auto 0 0;
+	z-index: 250;
+	height: min(148px, 33dvh);
+	pointer-events: none;
+
+	> .piano {
+		position: relative;
+		height: 100%;
+		min-height: 0;
+	}
+}
+
+body:has(#onscreen-keyboard > .piano) {
+	padding-bottom: min(148px, 33dvh);
 }
 
 
