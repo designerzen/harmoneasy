@@ -11,6 +11,7 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
+      - ".gitattributes"
       - ".github/workflows/electron-build.yml"
   workflow_dispatch:
 
