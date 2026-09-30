@@ -32,7 +32,8 @@ describe('optional native MIDI imports in the web dev server', () => {
         const response = await fetch(`${baseUrl}/@fs/${path}`)
         expect(response.status).toBe(200)
         const code = await response.text()
-        expect(code).toContain('/@id/__x00__web-native-addon-unavailable')
+        if (file.includes('midi2-native')) expect(code).toContain('native-midi-bridge')
+        else expect(code).toContain('/@id/__x00__web-native-addon-unavailable')
         expect(code).not.toContain('build/Release/midi2-native.node')
     })
 

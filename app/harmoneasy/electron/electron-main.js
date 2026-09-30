@@ -1,5 +1,6 @@
 import path from 'path'
-import { app, BrowserWindow, Menu, ipcMain } from 'electron'
+import { registerMidi2IPC } from './midi2-ipc.js'
+import { app, BrowserWindow, Menu, ipcMain, session, systemPreferences } from 'electron'
 import { fileURLToPath } from 'url'
 import { createRequire } from 'module'
 import { loadElectronModule } from './electron-loader.js'
@@ -8,6 +9,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const require = createRequire(import.meta.url)
+registerMidi2IPC(ipcMain, () => require('../build/Release/midi2-native.node'))
 const updateElectronApp = require('update-electron-app')
 
 let SocketServer = null
@@ -52,7 +54,7 @@ function createWindow() {
 		minWidth: 800,
 		minHeight: 600,
 		webPreferences: {
-			preload: path.join(__dirname, 'electron-preload.js'),
+			preload: path.join(__dirname, 'electron-preload.cjs'),
 			nodeIntegration: false,
 			contextIsolation: true,
 			sandbox: true,
@@ -84,9 +86,7 @@ function createWindow() {
 		})
 	} else {
 		// Production: load from built dist files
-		const prodUrl = `file://${path.join(__dirname, 'dist', 'index.html')}`
-		console.log('Production mode: loading from', prodUrl)
-		mainWindow.loadURL(prodUrl)
+		mainWindow.loadFile(path.join(__dirname, '..', 'dist-electron', 'index.html'))
 	}
 
 	// Handle Bluetooth device selection
