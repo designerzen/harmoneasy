@@ -4,11 +4,13 @@ on:
   push:
     branches: ["main"]
     paths:
-      - "source/**"
-      - "public/**"
+      - "app/harmoneasy/**"
+      - "packages/**"
+      - "scripts/**"
+      - "patches/**"
       - "package.json"
-      - "electron-*.js"
-      - "vite.config.js"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
       - ".github/workflows/electron-build.yml"
   workflow_dispatch:
 
