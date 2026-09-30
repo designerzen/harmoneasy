@@ -25,7 +25,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+        # @electron/rebuild 4.0.3 uses node-gyp 11, which cannot detect VS 2026.
+        os: [windows-2022, ubuntu-latest, macos-latest]
         node-version: [24]
     
     steps:
