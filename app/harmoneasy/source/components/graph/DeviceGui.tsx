@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react'
+import { deviceId } from 'audiobus/io/device-definition'
 
 // A device's createGui commonly returns one cached DOM element. Keep it mounted
 // in one graph at a time; moving/deleting a chain must not destroy another view.
@@ -45,5 +46,5 @@ export function DeviceGui({ device, expanded = false }: { device: any; expanded?
             queueMicrotask(release)
         }
     }, [device, expanded])
-    return <div ref={ref} className="nodrag nowheel" />
+    return <div ref={ref} className="nodrag nowheel" data-midi-scope={`device:${deviceId(device)}`} data-midi-label={device.name} />
 }

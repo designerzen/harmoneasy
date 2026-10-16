@@ -11,7 +11,7 @@ export const ConfigField = memo(function ConfigField({ config, element }: { conf
         chain.dispatchEvent(new Event('configurationChanged'))
 	}, [config.name, element, chain])
 
-	return <label>
+	return <label data-midi-ignore="">
         {config.name === 'enabled' ? <span className="config-enabled-label">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <path d="M12 2v10M6 5a9 9 0 1 0 12 0" />

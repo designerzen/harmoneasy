@@ -11,7 +11,7 @@ import { getTransformerIcon } from 'audiobus/io/transformer-definitions'
  */
 export function TransformerNode(props: any) {
 
-	const { chain } = useChain()
+	const { chain, chainId } = useChain()
 	const icon = getTransformerIcon(props.data.element.id)
 			
 	const removeNode = useCallback(() => {
@@ -38,7 +38,7 @@ export function TransformerNode(props: any) {
 		}
 	}, [props.id, onFullscreen])
 
-    return <div className={`node-transformer graph-node can-remove category-${props.data.element.category.toLowerCase()} ${isFullscreen ? 'is-fullscreen' : ''}`}>
+    return <div data-midi-scope={`${chainId}:transformer:${props.data.element.midiControlId}`} className={`node-transformer graph-node can-remove category-${props.data.element.category.toLowerCase()} ${isFullscreen ? 'is-fullscreen' : ''}`}>
         {isFullscreen ? <header className="expanded-node-heading">
             <div className="expanded-node-emblem"><img src={icon} alt="" /></div>
             <div>

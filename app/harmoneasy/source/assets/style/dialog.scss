@@ -40,3 +40,31 @@ dialog {
 	// background-color: var(--col-purple);
 	display: block;
 }
+
+#midi-control-settings {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--gap);
+	max-width: 42rem;
+
+	p, ul {
+		flex-basis: 100%;
+		margin-block: .25rem;
+	}
+
+	label {
+		display: flex;
+		align-items: center;
+		gap: .5rem;
+		min-width: 0;
+	}
+
+	select {
+		max-width: 100%;
+	}
+
+	li {
+		margin-block: .5rem;
+		overflow-wrap: anywhere;
+	}
+}

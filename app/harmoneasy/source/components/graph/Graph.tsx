@@ -281,7 +281,7 @@ export default function App({ manager }: { manager: IOChainManager }) {
             }}>Add</button>
         </>, chainNavigation)}
         {layoutSettings && createPortal(<>
-            {manager.entries.map(([chainId, chain], index) => <label key={chainId}>
+            {manager.entries.map(([chainId, chain], index) => <label key={chainId} data-midi-scope={`${chainId}:layout`}>
                 {chain.options.name ?? `Chain ${index + 1}`}
                 <select value={chain.options.graphLayout ?? DEFAULT_LAYOUT_MODE}
                     onChange={event => chain.setGraphOptions({
@@ -296,7 +296,7 @@ export default function App({ manager }: { manager: IOChainManager }) {
        
         {manager.restoreWarnings.map(warning => <p role="status" key={warning}>{warning}</p>)}
         {manager.entries.map(([chainId, chain], index) => <section key={chainId}
-            id={`iochain-${chainId}`} tabIndex={-1}
+            id={`iochain-${chainId}`} data-midi-scope={chainId} tabIndex={-1}
             className={`chain-panel ${chain.isActive ? 'active' : 'inactive'} ${solo === chainId ? 'chain-solo' : ''}`}
             hidden={!!solo && solo !== chainId}
             aria-label={chain.options.name ?? `Chain ${index + 1}`}>

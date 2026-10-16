@@ -9,6 +9,7 @@ import State from './libs/state.ts'
 // Front End
 import UI from './ui.ts'
 import { createNetronomeLink } from './services/netronome-link'
+import { createMidiControlPanel } from './services/midi-control-panel'
 import { createGraph } from './components/transformers-graph.tsx'
 import SongVisualiser from 'audiobus/ui/song-visualiser.js'
 
@@ -463,6 +464,8 @@ const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: b
 
  
     createGraph('graph', ioManager)
+    createMidiControlPanel(ioManager, state.get('midiControls') as string | undefined,
+        serialized => state.set('midiControls', serialized))
 
     // start the clock going 
     timer.bpm = parseFloat(state.get('tempo') ?? 99)

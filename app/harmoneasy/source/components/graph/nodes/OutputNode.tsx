@@ -1,4 +1,5 @@
 import { DeviceGui } from '../DeviceGui'
+import { deviceId } from 'audiobus/io/device-definition'
 import { useChain } from '../ChainContext'
 import { Handle, Position } from "@xyflow/react"
 import React, { useCallback } from "react"
@@ -7,7 +8,7 @@ import type { IAudioOutput } from 'audiobus/io/outputs/output-interface'
 
 export function OutputNode(props: any) {
 	// This is awfully inefficient
-	const { chain, manager: ioManager } = useChain()
+	const { chain, chainId, manager: ioManager } = useChain()
 	const output:IAudioOutput = props.data?.output
 	const hasConnectMethod = typeof output.connect === 'function'
 	const hasDisconnectMethod = typeof output.disconnect === 'function'
@@ -45,7 +46,7 @@ export function OutputNode(props: any) {
 		}
 	}, [props.id, onFullscreen])
 
-	return <div className={`node-output graph-node can-remove ${hasControls ? 'has-controls' : 'no-controls'} ${isFullscreen ? 'is-fullscreen' : ''}`} title={output.description}>
+	return <div data-midi-scope={`${chainId}:output:${deviceId(output)}`} className={`node-output graph-node can-remove ${hasControls ? 'has-controls' : 'no-controls'} ${isFullscreen ? 'is-fullscreen' : ''}`} title={output.description}>
 		<div className="device-node-header node-actions">
 			<button type="button" className="btn-remove nodrag nopan" title="Remove output" aria-label="Remove output" onClick={removeNode}>Remove</button>
             <h6>{output.name}</h6>
