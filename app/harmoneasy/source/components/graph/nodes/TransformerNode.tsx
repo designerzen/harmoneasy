@@ -12,7 +12,7 @@ import { getTransformerIcon } from 'audiobus/io/transformer-definitions'
 export function TransformerNode(props: any) {
 
 	const { chain, chainId } = useChain()
-	const icon = getTransformerIcon(props.data.element.id)
+	const icon = `${import.meta.env.BASE_URL}${getTransformerIcon(props.data.element.id).replace(/^\//, '')}`
 			
 	const removeNode = useCallback(() => {
         chain.transformerManager.removeTransformer(props.data.element)
@@ -47,7 +47,7 @@ export function TransformerNode(props: any) {
                 <p>{props.data.description}</p>
             </div>
         </header> : <>
-        <img src={icon} alt={props.data.label} className="transformer-icon" title={props.data.label}/>
+        <img src={icon} alt="" className="transformer-icon" />
         <h6>{props.data.label}</h6>
       
 	  	<details>

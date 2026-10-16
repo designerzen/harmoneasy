@@ -255,7 +255,7 @@ describe('IO workspace', () => {
     it('renders complete pass-through routes with stable, graph-specific endpoint IDs', () => {
         const { manager, chain, id } = setup()
         const first = getStructure(chain, true, true, 'horizontal', id)
-        expect(first.edges).toHaveLength(3)
+        expect(first.edges).toHaveLength(4)
         const another = getStructure(chain, true, true, 'horizontal', 'other')
         expect(first.nodes.some(node => another.nodes.some(other => node.id === other.id))).toBe(false)
         const originalId = first.nodes.find(node => node.type === 'input')!.id

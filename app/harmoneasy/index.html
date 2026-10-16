@@ -59,10 +59,27 @@
 				<button type="button" id="btn-tempo-up" class="btn-tempo-control" title="Increase tempo">+</button>
 				<button type="button" id="btn-metronome" aria-pressed="false" title="Enable metronome" disabled>Metronome</button>
 			</label>
+			<label id="swing-control" class="controls" for="swing">
+				Swing:
+				<input id="swing" type="range" min="0" max="1" step="0.01" value="0" aria-describedby="swing-output">
+				<output id="swing-output" for="swing">0%</output>
+			</label>
 			<button type="button" id="netronome-link" title="Sync with another browser" aria-haspopup="dialog" disabled>
 				<img id="netronome-qr-preview" alt="Netronome connection QR code" hidden>
 				<span>Sync</span>
 			</button>
+
+			<div id="clock-controls" class="controls">
+				<label for="clock-source">Clock source:</label>
+				<select id="clock-source" disabled>
+					<option value="internal">Internal</option>
+					<option value="shared">Shared (QR / room)</option>
+					<option value="manual">Manual key press</option>
+				</select>
+				<label id="clock-midi-label" hidden>MIDI device <select id="clock-midi-device"></select></label>
+				<button type="button" id="btn-clock-tick" title="Advance one clock tick (24 ticks per beat); keyboard shortcut: Space" hidden>Tick (Space)</button>
+				<output id="clock-source-status" role="status"></output>
+			</div>
 
 		</menu>
 

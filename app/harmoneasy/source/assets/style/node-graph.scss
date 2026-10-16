@@ -262,9 +262,7 @@
 		width: 48px;
 		height: 48px;
 		padding: calc(var(--pad) * 0.5);
-		margin: calc(var(--gap) * -1) 0 var(--gap) 0;
-		margin-left: calc(var(--pad) * -1);
-		margin-right: var(--gap);
+		margin: 0 auto;
 		filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 		color: currentColor;
 
@@ -273,18 +271,19 @@
 		}
 	}
 
-	h6 {
-		display: flex;
-		align-items: center;
-		gap: var(--gap);
-		
-		&::before {
-			content: '';
-		}
+	> h6 {
+		display: block;
+		min-width: 0;
+		max-width: none;
+		margin: 0;
+		text-align: center;
+		white-space: normal;
+		overflow-wrap: anywhere;
 	}
 }
 
 .node-start,
+.node-add-transformer,
 .node-end {
     --size: 280px;
     width: 320px;
@@ -321,6 +320,18 @@
 
 .node-end {
 	--hue-accent:25;	// red
+}
+
+.node-add-transformer { --hue-accent: 280; }
+
+.add-transformer-dialog .transformer-picker {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pad);
+
+    .items-grid { margin: 0; padding: 0; list-style: none; }
+    .grid-item { width: 100%; height: 100%; overflow-wrap: anywhere; }
+    .no-matches { grid-column: 1 / -1; }
 }
 
 .node-input{
@@ -624,6 +635,7 @@
 
 // Keep device pickers inside the viewport, with only the results scrolling.
 dialog.add-input-dialog,
+dialog.add-transformer-dialog,
 dialog.add-output-dialog {
 	--pad: 16px;
 	--gap: 8px;
@@ -713,7 +725,8 @@ dialog.add-output-dialog {
 }
 
 // Add Output/Instrument Dialog Styles
-.add-output-dialog {
+.add-output-dialog,
+.add-transformer-dialog {
 	max-width: 800px;
 	min-width: 600px;
 	max-height: 80vh;
@@ -1290,6 +1303,12 @@ dialog.add-output-dialog {
         background: transparent;
     }
     .chain-actions { grid-area: actions; flex-wrap: nowrap; align-items: center; gap: .25rem; }
+    .chain-actions select {
+        min-height: 44px;
+        margin: 0;
+        background-color: transparent;
+        border-color: color-mix(in srgb, currentColor 25%, transparent);
+    }
     .chain-power { background: transparent; white-space: nowrap; }
     .chain-power[aria-pressed="true"] svg { color: var(--col-green, #64bb94); }
     .chain-delete:hover { color: var(--col-red, #e97777); }
@@ -1309,55 +1328,52 @@ dialog.add-output-dialog {
 .chain-graph {
     grid-template-columns: 44px minmax(0, 1fr);
 
-    &:has(> .transformers-drawer[open]) {
-        grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);
+    &:has(> .chain-sidebar[data-open="true"]) {
+        grid-template-columns: minmax(12rem, min(18rem, 65cqw)) minmax(0, 1fr);
     }
 
-    > .transformers-drawer {
-        display: block;
+    > .chain-sidebar {
+        grid-area: sidebar;
+        display: grid;
+        grid-template-columns: 44px minmax(0, 1fr);
         position: relative;
         min-height: 0;
+        min-width: 0;
         height: 100%;
         overflow: hidden;
         box-sizing: border-box;
         border-right: 1px solid color-mix(in srgb, currentColor 20%, transparent);
 
-        > summary {
-            position: absolute;
-            inset: 0 auto auto 0;
+        .chain-sidebar-tabs {
             display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            gap: .625rem;
-            width: 44px;
-            min-height: 150px;
-            box-sizing: border-box;
-            padding: .75rem .5rem;
-            writing-mode: vertical-rl;
-            text-orientation: mixed;
-            font-size: .875rem;
-            list-style: none;
-            border-radius: 0 0 6px 0;
-            background: color-mix(in srgb, currentColor 8%, transparent);
+            flex-direction: column;
+            overflow-y: auto;
+            border-right: 1px solid color-mix(in srgb, currentColor 15%, transparent);
 
-            &::-webkit-details-marker { display: none; }
-            &::before { content: none; }
-            &::after {
-                content: '+';
-                position: static;
-                width: auto;
-                height: auto;
+            > button {
+                flex: 0 0 auto;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 44px;
+                min-height: 110px;
+                box-sizing: border-box;
                 margin: 0;
-                background: none;
-                transform: none;
-                writing-mode: horizontal-tb;
+                padding: .75rem .5rem;
+                writing-mode: vertical-rl;
+                text-orientation: mixed;
+                font-size: .875rem;
+                text-transform: none;
+                letter-spacing: normal;
+                border: 0;
+                border-radius: 0;
+                background: color-mix(in srgb, currentColor 5%, transparent);
+                &::before { content: none; }
+                &[aria-selected="true"] { background: color-mix(in srgb, currentColor 18%, transparent); }
+                &:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
             }
-            &:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
         }
-        &[open] > summary::after { content: '−'; }
-        > .transformer-picker {
-            position: absolute;
-            inset: 0 0 0 44px;
+        .chain-sidebar-panel:not([hidden]) {
             display: flex;
             flex-direction: column;
             gap: .5rem;
@@ -1365,11 +1381,24 @@ dialog.add-output-dialog {
             overflow: auto;
             overscroll-behavior-y: contain;
             box-sizing: border-box;
+            min-width: 0;
+            min-height: 0;
 
+            > header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: .25rem;
+                h6 { margin: 0; font-size: .875rem; }
+                button { width: 44px; min-height: 44px; padding: 0; background: transparent; }
+            }
+            .transformer-picker, .device-picker { display: flex; flex-direction: column; gap: .5rem; }
             input { width: 100%; min-width: 0; box-sizing: border-box; }
             ul { margin: 0; padding: 0; list-style: none; }
+            li > button { width: 100%; white-space: normal; overflow-wrap: anywhere; }
+            .shared-device-selector { display: grid; gap: .25rem; font-size: .875rem; }
+            select { width: 100%; min-width: 0; }
         }
-        &:not([open]) > .transformer-picker { display: none; }
     }
 }
 

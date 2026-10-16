@@ -4,7 +4,7 @@ import type IOChain from 'audiobus/io/IO-chain'
 import { DEFAULT_LAYOUT_MODE } from './options'
 
 export const EDGE_TYPE = { animated: 'animatedSvg' }
-export const NOTE_TYPE = { input: 'input', start: 'start', transformer: 'transformer', output: 'output', end: 'end' }
+export const NOTE_TYPE = { input: 'input', start: 'start', transformer: 'transformer', addTransformer: 'addTransformer', output: 'output', end: 'end' }
 export type GraphNode = Node<Record<string, any>>
 export const initialNodes: GraphNode[] = []
 export const initialEdges: Edge[] = []
@@ -21,7 +21,7 @@ export const getStructure = (chain: IOChain, showInputs = true, showOutputs = tr
             position: chain.options.positions?.[positionKey] ?? { x: 0, y: 0 },
             sourcePosition: vertical ? Position.Bottom : Position.Right,
             targetPosition: vertical ? Position.Top : Position.Left,
-            deletable: type !== 'start' && type !== 'end'
+            deletable: type !== 'start' && type !== 'end' && type !== 'addTransformer'
         }
         nodes.push(node)
         return node
@@ -46,11 +46,13 @@ export const getStructure = (chain: IOChain, showInputs = true, showOutputs = tr
         connect(previous, node)
         previous = node
     })
-    const end = addNode('node-end', 'end', chain.transformerQuantity + 2, 0, { label: 'Outputs' })
-    connect(previous, end)
+    const addTransformer = addNode('node-add-transformer', 'addTransformer', chain.transformerQuantity + 2, 0, { label: 'Transformers' })
+    connect(previous, addTransformer)
+    const end = addNode('node-end', 'end', chain.transformerQuantity + 3, 0, { label: 'Outputs' })
+    connect(addTransformer, end)
     const outputs = showOutputs ? chain.outputs.filter(output => !output.isHidden) : []
     outputs.forEach((output, index) => {
-        const node = addNode('node-output-' + deviceId(output), 'output', chain.transformerQuantity + 3,
+        const node = addNode('node-output-' + deviceId(output), 'output', chain.transformerQuantity + 4,
             index - (outputs.length - 1) / 2, { label: output.name, output })
         connect(end, node)
     })

@@ -17,7 +17,7 @@ import {
 } from '@xyflow/react'
 
 import { AnimatedSVGEdge } from './AnimatedSVGEdge.tsx'
-import { Transformers } from './Transformers.tsx'
+import { ChainSidebar } from './ChainSidebar.tsx'
 import { Presets } from './Presets.tsx'
 import { IOChainManagerUI } from './IOChainManagerUI.tsx'
 import { StartNode } from './nodes/StartNode.tsx'
@@ -25,6 +25,7 @@ import { EndNode } from './nodes/EndNode.tsx'
 import { InputNode } from './nodes/InputNode.tsx'
 import { OutputNode } from './nodes/OutputNode.tsx'
 import { TransformerNode } from './nodes/TransformerNode.tsx'
+import { AddTransformerNode } from './nodes/AddTransformerNode.tsx'
 
 import { DEFAULT_GRAPH_OPTIONS, DEFAULT_VIEWPORT_OPTIONS, DEFAULT_LAYOUT_MODE } from './options.ts'
 
@@ -40,7 +41,8 @@ const nodeTypes = {
 	end: EndNode,
 	input:InputNode,
 	output:OutputNode,
-	transformer: TransformerNode
+	transformer: TransformerNode,
+    addTransformer: AddTransformerNode
 }
 
 const edgeTypes = {
@@ -182,7 +184,7 @@ function FlowComponent() {
 
 	return (
 		<>
-			<Transformers />
+			<ChainSidebar />
 
 			<ReactFlow
 				className={ExpandedNode ? 'node-expanded' : undefined}
@@ -310,38 +312,32 @@ export default function App({ manager }: { manager: IOChainManager }) {
                 </div>
                 <ChainContext.Provider value={{ chain, chainId, manager }}><Presets /></ChainContext.Provider>
                 <div className="chain-actions">
-                    <div className="chain-layout-buttons" role="group" aria-label="Graph layout">
-                        <button className="chain-icon-button" type="button" title="Horizontal layout"
-                            aria-pressed={(chain.options.graphLayout ?? DEFAULT_LAYOUT_MODE) === 'horizontal'}
-                            onClick={() => chain.setGraphOptions({ graphLayout: 'horizontal', positions: {} })}>
-                            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2" y="7" width="6" height="10" rx="1" /><rect x="16" y="7" width="6" height="10" rx="1" /><path d="M8 12h8m-3-3 3 3-3 3" /></svg>
-                            <span className="sr-only">Horizontal layout</span>
-                        </button>
-                        <button className="chain-icon-button" type="button" title="Vertical layout"
-                            aria-pressed={(chain.options.graphLayout ?? DEFAULT_LAYOUT_MODE) === 'vertical'}
-                            onClick={() => chain.setGraphOptions({ graphLayout: 'vertical', positions: {} })}>
-                            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="7" y="2" width="10" height="6" rx="1" /><rect x="7" y="16" width="10" height="6" rx="1" /><path d="M12 8v8m-3-3 3 3 3-3" /></svg>
-                            <span className="sr-only">Vertical layout</span>
-                        </button>
-                    </div>
-
-
-                    <button className="chain-icon-button" title="Clone chain" type="button" onClick={() => manager.cloneChain(chainId)}>
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2" /><path d="M16 8V4H4v12h4" /></svg>
-                        <span className="sr-only">Clone chain</span>
-                    </button>
-                    <button className="chain-icon-button chain-delete" title="Delete chain" type="button" onClick={() => manager.removeChain(chainId)}>
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7" /></svg>
-                        <span className="sr-only">Delete chain</span>
-                    </button>
-                    <button className="chain-solo-toggle" type="button" aria-pressed={solo === chainId}
-                        title={solo === chainId ? 'Exit Solo' : 'Show this chain full page'}
-                        onClick={() => setSoloId(current => current === chainId ? null : chainId)}>
-                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                            <path d={solo === chainId ? 'M3 9h6V3m6 0v6h6M3 15h6v6m6 0v-6h6' : 'M9 3H3v6m12-6h6v6M3 15v6h6m6 0h6v-6'} />
-                        </svg>
-                        Solo
-                    </button>
+                    <select aria-label="Actions" value="" onChange={event => {
+                        switch (event.target.value) {
+                            case 'horizontal':
+                            case 'vertical':
+                                chain.setGraphOptions({ graphLayout: event.target.value, positions: {} })
+                                break
+                            case 'clone':
+                                void manager.cloneChain(chainId)
+                                break
+                            case 'delete':
+                                manager.removeChain(chainId)
+                                break
+                            case 'solo':
+                                setSoloId(current => current === chainId ? null : chainId)
+                                break
+                        }
+                    }}>
+                        <option value="" disabled>Actions</option>
+                        <option value="clone">Clone chain</option>
+                        <option value="solo">{solo === chainId ? 'Exit Solo' : 'Solo'}</option>
+                        <optgroup label="Graph layout">
+                            <option value="horizontal" disabled={(chain.options.graphLayout ?? DEFAULT_LAYOUT_MODE) === 'horizontal'}>Horizontal layout</option>
+                            <option value="vertical" disabled={(chain.options.graphLayout ?? DEFAULT_LAYOUT_MODE) === 'vertical'}>Vertical layout</option>
+                        </optgroup>
+                        <option value="delete">Delete chain</option>
+                    </select>
                 </div>
             </header>
             <div className="chain-graph">

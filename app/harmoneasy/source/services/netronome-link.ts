@@ -1,6 +1,7 @@
 import { createWebRTCSyncController } from 'netronome'
 import QRCode from 'qrcode'
 import LZString from 'lz-string'
+import type { ClockSource } from './clock-source'
 
 export function readSyncBundle(value: string) {
     const text = value.trim()
@@ -24,7 +25,9 @@ export function createSyncUrl(bundle: unknown, location: string) {
     return url.href
 }
 
-export function createNetronomeLink(timer: any, isPlaying: () => boolean) {
+export function createNetronomeLink(timer: any, isPlaying: () => boolean, options: {
+    source?: ClockSource; autoStart?: boolean; onSharedRequested?: () => Promise<void>
+} = {}) {
     const button = document.getElementById('netronome-link') as HTMLButtonElement
     const preview = document.getElementById('netronome-qr-preview') as HTMLImageElement
     const dialog = document.getElementById('netronome-dialog') as HTMLDialogElement
@@ -39,26 +42,42 @@ export function createNetronomeLink(timer: any, isPlaying: () => boolean) {
     let linked = false
     let busy = false
     let follower = false
+    let source: ClockSource = options.source ?? 'internal'
+    let queue: Promise<void> = Promise.resolve()
+    let pending = 0
+
+    const hideQR = () => { qr.hidden = preview.hidden = true }
+    const updateSourceUI = () => {
+        if (source !== 'internal') hideQR()
+        button.hidden = source === 'midi' || source === 'manual'
+        regenerate.disabled = busy || source !== 'internal'
+    }
 
     const showError = (error: unknown) => {
         status.textContent = error instanceof Error ? error.message : String(error)
     }
-    const render = async (bundle: unknown) => {
+    const render = async (bundle: unknown, current = controller) => {
         const url = createSyncUrl(bundle, window.location.href)
         local.value = url
+        if (source !== 'internal') { hideQR(); return }
         const image = await QRCode.toDataURL(url, { width: 512, margin: 4, errorCorrectionLevel: 'L' })
+        if (source !== 'internal' || controller !== current) return
         qr.src = preview.src = image
         qr.hidden = preview.hidden = false
     }
-    const run = async (operation: () => Promise<void>) => {
-        if (busy) return
+    const run = (operation: () => Promise<void>): Promise<void> => {
+        pending++
         busy = true
         apply.disabled = regenerate.disabled = true
-        try { await operation() } catch (error) { showError(error) }
-        finally { busy = false; apply.disabled = regenerate.disabled = false }
+        const next = queue.then(async () => {
+            try { await operation() } catch (error) { showError(error) }
+            finally { busy = --pending > 0; apply.disabled = busy; updateSourceUI() }
+        })
+        queue = next
+        return next
     }
     const setFollowerControls = (disabled: boolean) => {
-        for (const id of ['tempo', 'btn-tempo-up', 'btn-tempo-down', 'btn-transport-start', 'btn-transport-stop', 'btn-transport-reset']) {
+        for (const id of ['tempo', 'swing', 'btn-tempo-up', 'btn-tempo-down', 'btn-transport-start', 'btn-transport-stop', 'btn-transport-reset']) {
             const control = document.getElementById(id) as HTMLButtonElement | HTMLInputElement | null
             if (control) control.disabled = disabled
         }
@@ -66,7 +85,7 @@ export function createNetronomeLink(timer: any, isPlaying: () => boolean) {
     const create = async (role: 'leader' | 'follower') => {
         if (controller) {
             await controller.destroy()
-            if (isPlaying()) await timer.start()
+            if (source === 'internal' && isPlaying()) await timer.start()
         }
         linked = false
         follower = role === 'follower'
@@ -80,12 +99,13 @@ export function createNetronomeLink(timer: any, isPlaying: () => boolean) {
                 : 'Waiting for the other browser'
             if (state.connected && !linked) {
                 linked = true
-                if (!follower && isPlaying()) void current.startSynchronized().catch(showError)
+                if (source === 'internal' && !follower && isPlaying()) void current.startSynchronized().catch(showError)
             }
         }
         return current
     }
     const host = async () => {
+        if (source !== 'internal') return
         qr.hidden = preview.hidden = true
         local.value = ''
         instructions.textContent = 'Scan this QR on another device. On that device, copy the reply link and paste it below to finish connecting. Keep both browsers open.'
@@ -97,6 +117,8 @@ export function createNetronomeLink(timer: any, isPlaying: () => boolean) {
     const accept = async (value: string) => {
         const bundle = readSyncBundle(value)
         if (bundle.description.type === 'offer') {
+            source = 'shared'
+            updateSourceUI()
             status.textContent = 'Preparing reply…'
             const current = await create('follower')
             await current.applyOfferBundle(bundle)
@@ -109,10 +131,18 @@ export function createNetronomeLink(timer: any, isPlaying: () => boolean) {
             status.textContent = 'Connecting…'
         }
     }
+    const connect = async (value: string) => {
+        apply.disabled = true
+        try {
+            const bundle = readSyncBundle(value)
+            if (bundle.description.type === 'offer') await options.onSharedRequested?.()
+            await run(() => accept(value))
+        } catch (error) { apply.disabled = busy; showError(error) }
+    }
     button.disabled = false
     button.addEventListener('click', () => dialog.showModal())
     document.getElementById('netronome-close')!.addEventListener('click', () => dialog.close())
-    apply.addEventListener('click', () => void run(() => accept(remote.value)))
+    apply.addEventListener('click', () => void connect(remote.value))
     regenerate.addEventListener('click', () => void run(host))
     document.getElementById('netronome-copy')!.addEventListener('click', async () => {
         try {
@@ -123,14 +153,39 @@ export function createNetronomeLink(timer: any, isPlaying: () => boolean) {
             status.textContent = 'Select and copy the connection link above.'
         }
     })
+    // Capture the scanned invitation before persisting clock settings changes the URL.
     const incoming = new URLSearchParams(window.location.hash.slice(1)).get('sync-bundle')
-    if (incoming) dialog.showModal()
-    void run(() => incoming ? accept(incoming) : host())
+    const initialize = async () => {
+        if (incoming) { dialog.showModal(); await connect(incoming) }
+        else if (!controller && source === 'internal') await run(host)
+    }
+    updateSourceUI()
+    if (options.autoStart !== false) void initialize()
     window.addEventListener('pagehide', () => { void controller?.destroy() }, { once: true })
     return {
-        tempoChanged() { if (linked && !follower) controller?.broadcastTempoUpdate() },
+        initialize,
+        async setSource(nextSource: ClockSource) {
+            source = nextSource
+            hideQR()
+            updateSourceUI()
+            await run(async () => {
+                const old = controller
+                controller = undefined
+                linked = follower = false
+                await old?.destroy()
+                local.value = ''
+                setFollowerControls(source !== 'internal')
+                if (source === 'internal') await host()
+                else {
+                    status.textContent = 'Paste a connection link from the room leader.'
+                    instructions.textContent = 'Shared clock follows another browser. Copy the reply link back to its room leader to connect.'
+                    if (source === 'midi' || source === 'manual') dialog.close()
+                }
+            })
+        },
+        tempoChanged() { if (source === 'internal' && linked && !follower) controller?.broadcastTempoUpdate() },
         transportChanged() {
-            if (!linked || follower || !controller) return
+            if (source !== 'internal' || !linked || follower || !controller) return
             void (isPlaying() ? controller.startSynchronized() : controller.stopSynchronized()).catch(showError)
         },
         get isFollower() { return follower }

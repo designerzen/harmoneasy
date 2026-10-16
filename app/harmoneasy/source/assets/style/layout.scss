@@ -51,17 +51,18 @@
 
 	grid-area:menu;
 	grid-template-areas: 
-		"tempo connect"
-		"volume connect";
-	grid-template-columns: minmax(0, 1fr) auto;
+		"tempo swing connect"
+		"volume volume connect"
+		"clock clock clock";
+	grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
 		
 	gap: var(--gap);
 	align-items: center;
 	width: 100%;
 
 	@media (min-width:1200px){
-		grid-template-areas: "tempo volume connect";
-		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+		grid-template-areas: "tempo swing volume connect" "clock clock clock clock";
+		grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 2fr) auto;
 	}
 
 	.controls{
@@ -73,6 +74,16 @@
 			input[type="range"] { min-width: 0; width: 4rem; flex: 1; }
 		}
 	}
+}
+
+#clock-controls {
+	grid-area: clock;
+	display: flex;
+	flex-wrap: wrap;
+	gap: .5rem;
+	align-items: center;
+
+	#clock-source-status { font-size: .85rem; }
 }
 
 #volume-control{
@@ -138,6 +149,12 @@
 }
 #tempo-control{
 	grid-area:tempo;
+}
+
+#swing-control {
+	grid-area: swing;
+	input { min-width: 0; width: 4rem; flex: 1; }
+	output { white-space: nowrap; }
 }
 
 

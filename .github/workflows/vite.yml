@@ -47,6 +47,9 @@ jobs:
         env:
           npm_config_legacy_peer_deps: true
 
+      - name: Check audiobus shared constants
+        run: pnpm --filter audiobus run check:constants
+
       - name: Build
         run: cd app/harmoneasy && pnpm run build
         timeout-minutes: 20

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { layoutMeasuredNodes, NODE_GAP, type GraphNode } from '../source/components/graph/layout'
+import { getStructure, layoutMeasuredNodes, NODE_GAP, type GraphNode } from '../source/components/graph/layout'
+import type IOChain from 'audiobus/io/IO-chain'
 
 const node = (id: string, column: number, row: number, width: number, height: number): GraphNode => ({
     id, position: { x: 0, y: 0 }, measured: { width, height },
@@ -7,6 +8,24 @@ const node = (id: string, column: number, row: number, width: number, height: nu
 })
 
 describe('Measured graph layout', () => {
+    it.each(['vertical', 'horizontal'])('keeps the transformer picker before outputs in %s mode, including an empty chain', mode => {
+        for (const count of [0, 2]) {
+            const chain = {
+                options: {}, inputs: [], outputs: [], transformerQuantity: count,
+                transformers: Array.from({ length: count }, (_, index) => ({ uuid: `t${index}`, name: `Transformer ${index}` }))
+            } as unknown as IOChain
+            const { nodes, edges } = getStructure(chain, true, true, mode, 'test')
+            const picker = nodes.find(node => node.type === 'addTransformer')!
+            const end = nodes.find(node => node.type === 'end')!
+            const previous = nodes.find(node => node.id === (count ? 'test:transformer-t1' : 'test:node-start'))!
+            expect(picker.deletable).toBe(false)
+            expect(edges.some(edge => edge.source === previous.id && edge.target === picker.id && !edge.deletable)).toBe(true)
+            expect(edges.some(edge => edge.source === picker.id && edge.target === end.id && !edge.deletable)).toBe(true)
+            const axis = mode === 'vertical' ? 'y' : 'x'
+            expect(previous.position[axis]).toBeLessThan(picker.position[axis])
+            expect(picker.position[axis]).toBeLessThan(end.position[axis])
+        }
+    })
     it.each(['vertical', 'horizontal'])('uses actual dimensions in %s mode', mode => {
         const nodes = layoutMeasuredNodes([
             node('input-a', 0, 0, 410, 260), node('input-b', 0, 1, 520, 700),

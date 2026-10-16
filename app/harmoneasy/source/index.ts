@@ -10,6 +10,8 @@ import State from './libs/state.ts'
 import UI from './ui.ts'
 import { createNetronomeLink } from './services/netronome-link'
 import { createMidiControlPanel } from './services/midi-control-panel'
+import { createClockSourceControls } from './services/clock-source-controls'
+import { isClockSource, clockMidiPorts, type ClockSourceController } from './services/clock-source'
 import { createGraph } from './components/transformers-graph.tsx'
 import SongVisualiser from 'audiobus/ui/song-visualiser.js'
 
@@ -64,6 +66,7 @@ let ioManager: IOChainManager
 let metronome: OutputMetronome | null = null
 let metronomeEnabled = false
 let netronomeLink: ReturnType<typeof createNetronomeLink> | undefined
+let clockSource: ClockSourceController | undefined
 
 /**
  * Universal import handler - routes to appropriate importer based on file type
@@ -104,6 +107,7 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number 
     // const keyboard:SVGKeyboard = new SVGKeyboard(ALL_KEYBOARD_NOTES, onNoteOn, onNoteOff)
     const frontEnd = new UI(ALL_KEYBOARD_NOTES)
     frontEnd.setTempo(timer.BPM)
+    frontEnd.setSwing(timer.swing)
     frontEnd.setVolume(initialVolumePercent)
     frontEnd.setMetronomeEnabled(metronomeEnabled)
     frontEnd.whenMetronomeRequestedRun(async () => {
@@ -113,7 +117,7 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number 
         try {
             await bus.audioContext.resume()
             metronome ??= new OutputMetronome(bus.audioContext)
-            if (metronomeEnabled && !netronomeLink?.isFollower) await ioManager.transport('start')
+            if (metronomeEnabled && clockSource?.source === 'internal') await ioManager.transport('start')
         } catch (error) {
             metronomeEnabled = false
             frontEnd.setMetronomeEnabled(false)
@@ -147,6 +151,12 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number 
         timer.BPM = tempo
         netronomeLink?.tempoChanged()
         state.set('tempo', tempo)
+    })
+
+    frontEnd.whenSwingChangesRun((swing: number) => {
+        timer.swing = swing
+        netronomeLink?.tempoChanged()
+        state.set('swing', swing)
     })
 
     frontEnd.whenTempoUpRequestedRun(() => {
@@ -434,13 +444,13 @@ const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: b
                 break
 
             case Commands.NOTE_ON:
-                if (!chain.isQuantised) {
+                if (!chain.isQuantised && clockSource?.source === 'internal') {
                     timer.retrigger()
                 }
                 break
 
             case Commands.NOTE_OFF:
-                if (!chain.isQuantised) {
+                if (!chain.isQuantised && clockSource?.source === 'internal') {
                     timer.retrigger()
                 }
                 break
@@ -469,11 +479,26 @@ const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: b
 
     // start the clock going 
     timer.bpm = parseFloat(state.get('tempo') ?? 99)
+    const savedSwing = Number(state.get('swing') ?? 0)
+    timer.swing = Number.isFinite(savedSwing) ? savedSwing : 0
+    ui.setSwing(timer.swing)
     timer.setCallback(onEveryTimingTick)
-    await ioManager.transport('start')
+    const savedClockSource = state.get('clockSource')
+    const savedClockDevice = state.get('clockMidiDevice')
+    const incomingRoom = new URLSearchParams(window.location.hash.slice(1)).has('sync-bundle')
+    const initialClockSource = incomingRoom ? 'shared' : isClockSource(savedClockSource) ? savedClockSource : 'internal'
+    netronomeLink = createNetronomeLink(timer, () => ioManager.transportRunning, {
+        source: initialClockSource, autoStart: false,
+        onSharedRequested: () => clockSource!.setSource('shared', false)
+    })
+    clockSource = createClockSourceControls(timer, ioManager, netronomeLink, (source, device) => {
+        if (state.get('clockSource') !== source) state.set('clockSource', source)
+        if (state.get('clockMidiDevice') !== device) state.set('clockMidiDevice', device)
+    }, () => ui.setPlaying(ioManager.transportRunning))
+    if (savedClockDevice != null && savedClockDevice !== '') clockSource.midiDevice = String(savedClockDevice)
+    await clockSource.setSource(initialClockSource === 'midi' && !clockMidiPorts(ioManager).length ? 'internal' : initialClockSource)
+    await netronomeLink.initialize()
     ui.setPlaying(ioManager.transportRunning)
-
-    netronomeLink = createNetronomeLink(timer, () => ioManager.transportRunning)
 
     // Update UI - this will check all the inputs according to our state	
     state.updateFrontEnd()
@@ -500,7 +525,9 @@ const onTick = (values: Record<string, any>) => {
 		grid:false
 	}
     const now = timer.now
-	if (netronomeLink?.isFollower) ui.setTempo(Math.round(timer.BPM * 100) / 100)
+	if (clockSource?.source !== 'internal' || netronomeLink?.isFollower) ui.setTempo(Math.round(timer.BPM * 100) / 100)
+	if (clockSource?.source === 'shared' || netronomeLink?.isFollower) ui.setSwing(timer.swing)
+	if (clockSource?.source === 'shared') ui.setPlaying(ioManager.transportRunning)
 	// The timer wraps divisions once per quarter note; its bar counter counts beats.
 	if (metronomeEnabled && divisionsElapsed === 0) {
 		metronome?.playBeat(barsElapsed * bars + bar, timer.syncOptions.beatsPerBar ?? 4, values.scheduledContextTimeSeconds)

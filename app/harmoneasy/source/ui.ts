@@ -20,6 +20,8 @@ const DOM_ID_ROOT_SELECTOR = "root-selector"
 const DOM_ID_SELECTOR_MIDI_CHANNEL = "midi-channel-selector"
 const DOM_ID_RANGE_TEMPO = "tempo"
 const DOM_ID_BPM = "bpm"
+const DOM_ID_RANGE_SWING = "swing"
+const DOM_ID_SWING_OUTPUT = "swing-output"
 const DOM_ID_BUTTON_TEMPO_UP = "btn-tempo-up"
 const DOM_ID_BUTTON_TEMPO_DOWN = "btn-tempo-down"
 const DOM_ID_RANGE_VOLUME = "volume"
@@ -81,6 +83,8 @@ export default class UI implements IAudioOutput {
 	elementMIDIChannelSelector: HTMLElement | null
 	elementTempo: HTMLElement | null
 	elementBPM: HTMLElement | null
+	elementSwing: HTMLInputElement | null
+	elementSwingOutput: HTMLOutputElement | null
 	elementButtonTempoUp: HTMLElement | null
 	elementButtonTempoDown: HTMLElement | null
 	elementVolume: HTMLElement | null
@@ -154,6 +158,8 @@ export default class UI implements IAudioOutput {
 		this.elementMIDIChannelSelector = document.getElementById(DOM_ID_SELECTOR_MIDI_CHANNEL)
 		this.elementTempo = document.getElementById(DOM_ID_RANGE_TEMPO)
 		this.elementBPM = document.getElementById(DOM_ID_BPM)
+		this.elementSwing = document.getElementById(DOM_ID_RANGE_SWING) as HTMLInputElement | null
+		this.elementSwingOutput = document.getElementById(DOM_ID_SWING_OUTPUT) as HTMLOutputElement | null
 		this.elementButtonTempoUp = document.getElementById(DOM_ID_BUTTON_TEMPO_UP)
 		this.elementButtonTempoDown = document.getElementById(DOM_ID_BUTTON_TEMPO_DOWN)
 		this.elementVolume = document.getElementById(DOM_ID_RANGE_VOLUME)
@@ -346,6 +352,11 @@ export default class UI implements IAudioOutput {
 	setTempo(tempo:number) {
 		this.elementTempo.value = tempo
 		this.elementBPM.textContent = tempo
+	}
+
+	setSwing(swing: number) {
+		if (this.elementSwing) this.elementSwing.value = String(swing)
+		if (this.elementSwingOutput) this.elementSwingOutput.value = `${Math.round(swing * 100)}%`
 	}
 
 	setPlaying(isPlaying:boolean) {
@@ -705,6 +716,14 @@ export default class UI implements IAudioOutput {
 			if (confirmed) {
 				callback && callback(e)
 			}
+		}, { signal: this.abortController.signal })
+	}
+
+	whenSwingChangesRun(callback: (swing: number) => void) {
+		this.elementSwing?.addEventListener("input", () => {
+			const swing = this.elementSwing!.valueAsNumber
+			this.setSwing(swing)
+			callback(swing)
 		}, { signal: this.abortController.signal })
 	}
 

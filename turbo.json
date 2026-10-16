@@ -102,6 +102,8 @@
         "**/*.js",
         "**/*.tsx",
         "**/*.jsx",
+        "**/*.mjs",
+        "package.json",
         "oxlint.config.ts"
       ]
     },

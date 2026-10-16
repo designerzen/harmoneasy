@@ -67,6 +67,9 @@ jobs:
           npm_config_build_from_source: "false"
           npm_config_ignore_scripts: "true"
 
+      - name: Check audiobus shared constants
+        run: pnpm --filter audiobus run check:constants
+
       - name: Build native module
         run: cd app/harmoneasy && pnpm run build-native
         env:
