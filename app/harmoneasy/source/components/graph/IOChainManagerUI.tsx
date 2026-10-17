@@ -1,13 +1,13 @@
-import { applyPreset, useSavedPresets } from './saved-presets'
+import { applyPreset, usePresetLibrary } from './saved-presets'
 import React, { useId, useRef, useState } from 'react'
 import type IOChainManager from 'audiobus/io/IO-chain-manager'
-import { PRESETS } from 'audiobus/io/transformer-presets'
-import { tranformerFactory } from 'audiobus/io/transformer-factory'
+import { PresetDetails, PresetOptions } from './PresetDetails'
 
 export function IOChainManagerUI({ manager }: { manager: IOChainManager }) {
     const selectId = useId()
-    const { presets: saved, error: storageError } = useSavedPresets()
+    const { library, error: storageError } = usePresetLibrary()
     const [selection, setSelection] = useState('')
+    const selectedPreset = library.presets.find(preset => preset.id === selection)
     const [busy, setBusy] = useState(false)
     const adding = useRef(false)
     const [error, setError] = useState('')
@@ -17,13 +17,12 @@ export function IOChainManagerUI({ manager }: { manager: IOChainManager }) {
         setBusy(true)
         setError('')
         try {
-            const preset = PRESETS.find(preset => preset.name === selection)
+            const preset = library.presets.find(preset => preset.id === selection)
+            if (selection && !preset) throw new Error('This preset has been deleted. Choose another preset.')
             const id = await manager.createDefaultChain()
             const chain = manager.getChain(id)!
-            const custom = saved.find(preset => `saved:${preset.id}` === selection)
-            if (custom) { applyPreset(chain, custom); chain.setName(custom.name) }
             if (preset) {
-                chain.setTransformers(preset.transformers.map(type => tranformerFactory(type)))
+                applyPreset(chain, preset)
                 chain.setName(preset.name)
             }
             manager.setActiveChain(id)
@@ -35,17 +34,11 @@ export function IOChainManagerUI({ manager }: { manager: IOChainManager }) {
         <div className="chain-create-control">
         <select id={selectId} disabled={busy} value={selection} onChange={event => setSelection(event.target.value)}>
             <option value="">Default IOChain</option>
-            <optgroup label="Presets">
-                {PRESETS.map(preset => <option key={preset.name} value={preset.name} title={preset.description}>
-                    {preset.name}
-                </option>)}
-            </optgroup>
-            {saved.length > 0 && <optgroup label="Saved presets">
-                {saved.map(preset => <option key={preset.id} value={`saved:${preset.id}`}>{preset.name}</option>)}
-            </optgroup>}
+            <PresetOptions presets={library.presets} />
         </select>
         <button type="button" disabled={busy} onClick={addChain}>{busy ? 'Adding…' : 'Add Chain'}</button>
         </div>
+        {selectedPreset && <PresetDetails preset={selectedPreset} />}
         {(error || storageError) && <p role="alert">{error || storageError}</p>}
     </menu>
 }
