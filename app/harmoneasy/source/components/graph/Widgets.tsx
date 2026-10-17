@@ -1,14 +1,15 @@
 import { useChain } from './ChainContext'
 import React, { memo, useCallback } from "react"
+import { EVENT_CONFIGURATION_CHANGED } from 'audiobus/event-constants'
  
 /**
  * ConfigField component - memoized to prevent unnecessary re-renders
  */
 export const ConfigField = memo(function ConfigField({ config, element }: { config: any; element: any }) {
 	const { chain } = useChain()
-	const handleChange = useCallback((v: React.ChangeEvent<HTMLSelectElement>) => {
+	const handleChange = useCallback((v: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
 		element.setConfig(config.name, v.target.value)
-        chain.dispatchEvent(new Event('configurationChanged'))
+        chain.dispatchEvent(new Event(EVENT_CONFIGURATION_CHANGED))
 	}, [config.name, element, chain])
 
 	return <label data-midi-ignore="">
@@ -17,8 +18,9 @@ export const ConfigField = memo(function ConfigField({ config, element }: { conf
                 <path d="M12 2v10M6 5a9 9 0 1 0 12 0" />
             </svg>
             {config.name}
-        </span> : config.name}
-		{ config.type === 'select' ? <SelectField values={config.values} defaultValue={config.default} onChange={handleChange} /> : 'unknown' }
+        </span> : config.label ?? config.name}
+		{ config.type === 'select' ? <SelectField values={config.values} defaultValue={config.default} onChange={handleChange} />
+            : config.type === 'text' ? <input className="nodrag nopan" type="text" defaultValue={config.default ?? ''} onBlur={handleChange} /> : 'unknown' }
 	</label>
 	
 }, (prevProps, nextProps) => {

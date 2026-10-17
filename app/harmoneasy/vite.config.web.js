@@ -24,6 +24,7 @@ const webNativeAddonPlugin = {
 
 export default defineConfig({
   plugins: [webNativeAddonPlugin],
+  worker: { format: 'es' },
   // Resolve through the workspace package and bundle Nexus's CommonJS dependencies
   // (including toposort); serving the SDK unbundled breaks browser imports.
   optimizeDeps: { include: ['audiotool > @audiotool/nexus', 'audiotool > @audiotool/nexus/utils'] },

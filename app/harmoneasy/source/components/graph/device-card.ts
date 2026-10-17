@@ -29,6 +29,7 @@ export const INPUT_GUIDANCE: Record<InputId, Guidance> = {
 }
 
 export const OUTPUT_GUIDANCE: Record<OutputId, Guidance> = {
+    describe: guide('Aa', 'Describe active notes and chords in musical language.', 'Identifying extended chords, added tones, and inversions while playing.', 'Notes from a connected input or transformer.'),
     console: guide('⌘', 'Log outgoing note events.', 'Debugging a chain and checking its output.', 'Development mode and the browser developer console.'),
     'pink-trombone': guide('🗣', 'Create vocal-like synthesized sound.', 'Exploring speech-like tones and unusual instruments.', audio),
     notation: guide('♫', 'Show notes on a musical staff.', 'Reading and checking the notes a chain produces.', 'Incoming note events. Does not produce sound by itself.'),

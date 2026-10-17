@@ -1,8 +1,17 @@
 import { useChain } from '../ChainContext'
 import { Handle, Position } from "@xyflow/react"
-import React, { useCallback } from "react"
+import React, { useCallback, useEffect, useState } from "react"
 import { ConfigField } from "../Widgets.tsx"
 import { getTransformerIcon } from 'audiobus/io/transformer-definitions'
+
+function TransformerStatus({ element }: { element: { status: string } }) {
+    const [status, setStatus] = useState(element.status)
+    useEffect(() => {
+        const interval = setInterval(() => setStatus(element.status), 500)
+        return () => clearInterval(interval)
+    }, [element])
+    return <p role="status" className="transformer-status">{status}</p>
+}
 
 /**
  * TransformerNode component
@@ -68,6 +77,7 @@ export function TransformerNode(props: any) {
                 </svg>
             </button>
         </menu>
+        {typeof props.data.element.status === 'string' && <TransformerStatus element={props.data.element} />}
       
         {isFullscreen ? <div className="expanded-node-settings">
             {props.data.fields.map((f: any, i: number) => <ConfigField
