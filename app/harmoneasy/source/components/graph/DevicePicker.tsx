@@ -1,6 +1,8 @@
 import React, { useEffect, useId, useRef, useState } from 'react'
 import { useChain } from './ChainContext'
 import { SharedDevices } from './SharedDevices'
+import { elementIcon } from './element-icons'
+import { createInstrumentById, getAvailableInstrumentFactories } from 'audiobus/instruments/instrument-factory-ui.ts'
 
 type Choice = { id: string; name: string; description: string; kind: 'input' | 'output' | 'instrument' }
 
@@ -17,17 +19,24 @@ export function DevicePicker({ direction }: { direction: 'input' | 'output' }) {
     useEffect(() => {
         let cancelled = false
         setLoading(true)
+        setChoices([])
         setError('')
         const load = async (): Promise<Choice[]> => {
             if (direction === 'input') {
                 return (await chain.inputManager.getAvailableFactories()).map(factory => ({ ...factory, kind: 'input' }))
             }
-            const [outputs, instruments] = await Promise.all([
-                chain.outputManager.getAvailableFactories(), import('audiobus/instruments')
+            const [outputs, instruments] = await Promise.allSettled([
+                Promise.resolve().then(() => chain.outputManager.getAvailableFactories()),
+                Promise.resolve().then(() => getAvailableInstrumentFactories())
             ])
+            const failures = [
+                outputs.status === 'rejected' ? 'Outputs could not be loaded.' : '',
+                instruments.status === 'rejected' ? 'Instruments could not be loaded.' : ''
+            ].filter(Boolean)
+            if (!cancelled) setError(failures.join(' '))
             return [
-                ...outputs.map(factory => ({ ...factory, kind: 'output' as const })),
-                ...instruments.getAvailableInstrumentFactories().map(factory => ({ ...factory, kind: 'instrument' as const }))
+                ...(outputs.status === 'fulfilled' ? outputs.value.map(factory => ({ ...factory, kind: 'output' as const })) : []),
+                ...(instruments.status === 'fulfilled' ? instruments.value.map(factory => ({ ...factory, kind: 'instrument' as const })) : [])
             ]
         }
         void load().then(items => { if (!cancelled) setChoices(items) })
@@ -49,7 +58,6 @@ export function DevicePicker({ direction }: { direction: 'input' | 'output' }) {
                 const audioContext = manager.audioContext || (manager.outputMixer as any)?.context
                 const options = manager.outputMixer ? { mixer: manager.outputMixer, audioContext } : undefined
                 if (choice.kind === 'instrument') {
-                    const { createInstrumentById } = await import('audiobus/instruments')
                     manager.addDevice(chain, await createInstrumentById(audioContext, choice.id, options), 'output')
                 } else {
                     const { createOutputById } = await import('audiobus/io/output-factory')
@@ -62,6 +70,9 @@ export function DevicePicker({ direction }: { direction: 'input' | 'output' }) {
     const filtered = choices.filter(choice => `${choice.name} ${choice.description}`.toLowerCase().includes(filter.toLowerCase()))
     return <div className="device-picker" aria-busy={loading || busy}>
         <label className="filter-label" htmlFor={filterId}>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <circle cx="10" cy="10" r="6" /><path d="m15 15 5 5" />
+            </svg>
             <input id={filterId} type="search" aria-label={`Search ${direction}s`}
                 placeholder={`Filter ${direction}s...`} value={filter} onChange={event => setFilter(event.target.value)} />
         </label>
@@ -73,11 +84,14 @@ export function DevicePicker({ direction }: { direction: 'input' | 'output' }) {
                 return items.length > 0 && <section key={kind} aria-label={`${kind}s`}>
                     {kind === 'instrument' && <h6>Instruments</h6>}
                     <ul role="list">{items.map(choice => <li key={choice.id}>
-                        <button type="button" title={choice.description} disabled={busy} onClick={() => void add(choice)}>{choice.name}</button>
+                        <button className="element-choice" type="button" title={choice.description} disabled={busy} onClick={() => void add(choice)}>
+                            <img className="element-icon" src={elementIcon(choice.kind, choice.id)} alt="" />
+                            <span>{choice.name}</span>
+                        </button>
                     </li>)}</ul>
                 </section>
             })}
-            {filtered.length === 0 && <p role="status">{filter ? `No ${direction}s match "${filter}"` : `No ${direction}s available`}</p>}
+            {filtered.length === 0 && !error && <p role="status">{filter ? `No ${direction}s match "${filter}"` : `No ${direction}s available`}</p>}
         </>}
     </div>
 }

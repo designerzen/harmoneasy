@@ -1,5 +1,6 @@
 import type { InputId } from 'audiobus/io/inputs/input-types'
 import type { OutputId } from 'audiobus/io/outputs/output-types'
+import { elementIcon } from './element-icons'
 
 type Guidance = { icon: string; usedFor: string; usefulFor: string; requirements: string }
 const guide = (icon: string, usedFor: string, usefulFor: string, requirements: string): Guidance => ({ icon, usedFor, usefulFor, requirements })
@@ -50,9 +51,12 @@ export const OUTPUT_GUIDANCE: Record<OutputId, Guidance> = {
 }
 
 export function fillDeviceCard(button: HTMLButtonElement, factory: { id: string; name: string; description: string; category?: string }, direction: 'input' | 'output' | 'instrument') {
-    const guidance = direction === 'input' ? INPUT_GUIDANCE[factory.id as InputId]
-        : direction === 'output' ? OUTPUT_GUIDANCE[factory.id as OutputId]
+    const guidance = (direction === 'input' ? INPUT_GUIDANCE[factory.id as InputId]
+        : direction === 'output' ? OUTPUT_GUIDANCE[factory.id as OutputId] : undefined)
+        ?? (direction !== 'instrument'
+            ? guide('', factory.description, `Using ${factory.name} in a chain.`, 'A compatible device and any required browser permissions.')
         : guide('♫', 'Turn incoming notes into instrument audio.', `Playing ${factory.name} in a chain${factory.category ? ` (${factory.category})` : ''}.`, audio + ' Any instrument samples or engine assets must be available.')
+        )
     const append = (className: string, text: string) => {
         const span = document.createElement('span')
         span.className = className
@@ -62,7 +66,11 @@ export function fillDeviceCard(button: HTMLButtonElement, factory: { id: string;
     }
     button.replaceChildren()
     button.classList.add('device-choice-card')
-    append('item-icon', guidance.icon).setAttribute('aria-hidden', 'true')
+    const icon = document.createElement('img')
+    icon.className = 'item-icon element-icon'
+    icon.src = elementIcon(direction, factory.id)
+    icon.alt = ''
+    button.appendChild(icon)
     append('item-name', factory.name)
     append('item-description', factory.description)
     for (const [label, value] of [['Used for', guidance.usedFor], ['Useful for', guidance.usefulFor], ['Requirements', guidance.requirements]]) {

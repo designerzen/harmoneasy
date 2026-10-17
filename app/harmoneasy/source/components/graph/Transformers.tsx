@@ -1,4 +1,5 @@
 import { useChain } from './ChainContext'
+import { elementIcon } from './element-icons'
 import React, { useState, useId } from "react"
 import { 
     tranformerFactory,
@@ -24,6 +25,9 @@ export function TransformerPicker({ dialog = false, onAdded }: { dialog?: boolea
     return (<div className="transformer-picker">
 			
 			<label className={dialog ? 'dialog-filter' : 'filter-label filter-transformer'} htmlFor={filterId}>
+                {!dialog && <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <circle cx="10" cy="10" r="6" /><path d="m15 15 5 5" />
+                </svg>}
 				<input 
 					id={filterId}
 					type="search"
@@ -39,7 +43,12 @@ export function TransformerPicker({ dialog = false, onAdded }: { dialog?: boolea
 
 			<ul className={dialog ? 'items-grid' : undefined} role="list">
 				{ 
-					filteredTransformers.map( (preset) => ( <li key={preset}><button className={dialog ? 'grid-item' : undefined} type="button" onClick={onAdd(preset)}>{preset}</button></li>) )
+					filteredTransformers.map(preset => <li key={preset}>
+                        <button className={dialog ? 'grid-item transformer-choice' : 'element-choice'} type="button" onClick={onAdd(preset)}>
+                            <img className="element-icon" src={elementIcon('transformer', preset)} alt="" />
+                            <span>{preset}</span>
+                        </button>
+                    </li>)
 				}
 				{filteredTransformers.length === 0 && (
 					<li className="no-matches">

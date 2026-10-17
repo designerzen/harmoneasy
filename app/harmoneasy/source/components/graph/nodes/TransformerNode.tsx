@@ -2,7 +2,7 @@ import { useChain } from '../ChainContext'
 import { Handle, Position } from "@xyflow/react"
 import React, { useCallback, useEffect, useState } from "react"
 import { ConfigField } from "../Widgets.tsx"
-import { getTransformerIcon } from 'audiobus/io/transformer-definitions'
+import { elementIcon } from '../element-icons'
 
 function TransformerStatus({ element }: { element: { status: string } }) {
     const [status, setStatus] = useState(element.status)
@@ -21,7 +21,7 @@ function TransformerStatus({ element }: { element: { status: string } }) {
 export function TransformerNode(props: any) {
 
 	const { chain, chainId } = useChain()
-	const icon = `${import.meta.env.BASE_URL}${getTransformerIcon(props.data.element.id).replace(/^\//, '')}`
+	const icon = elementIcon('transformer', props.data.element.type ?? props.data.element.id)
 			
 	const removeNode = useCallback(() => {
         chain.transformerManager.removeTransformer(props.data.element)

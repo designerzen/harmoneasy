@@ -3,10 +3,11 @@ import React, { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { ChainSidebar } from '../source/components/graph/ChainSidebar'
+import { TransformerPicker } from '../source/components/graph/Transformers'
 
 const mocks = vi.hoisted(() => ({
     input: vi.fn(), output: vi.fn(), instrument: vi.fn(), addDevice: vi.fn(), appendTransformer: vi.fn(),
-    inputs: vi.fn(), outputs: vi.fn()
+    inputs: vi.fn(), outputs: vi.fn(), instruments: vi.fn()
 }))
 vi.mock('../source/components/graph/ChainContext', () => {
     const context = {
@@ -18,11 +19,12 @@ vi.mock('../source/components/graph/ChainContext', () => {
 })
 vi.mock('audiobus/io/input-factory', () => ({ createInputById: mocks.input }))
 vi.mock('audiobus/io/output-factory', () => ({ createOutputById: mocks.output }))
-vi.mock('audiobus/instruments', () => ({
-    getAvailableInstrumentFactories: () => [{ id: 'piano', name: 'Piano', description: 'Acoustic instrument' }],
+vi.mock('audiobus/instruments/instrument-factory-ui.ts', () => ({
+    getAvailableInstrumentFactories: mocks.instruments,
     createInstrumentById: mocks.instrument
 }))
-vi.mock('audiobus/io/transformer-factory', () => ({
+vi.mock('audiobus/io/transformer-factory', async importOriginal => ({
+    ...await importOriginal<typeof import('audiobus/io/transformer-factory')>(),
     TRANSFORMERS: ['Transposer', 'Harmoniser'], tranformerFactory: (type: string) => ({ type })
 }))
 
@@ -42,6 +44,7 @@ beforeEach(async () => {
         { id: 'gamepad', name: 'Gamepad', description: 'Controller' }
     ])
     mocks.outputs.mockResolvedValue([{ id: 'webmidi', name: 'MIDI output', description: 'External device' }])
+    mocks.instruments.mockReset().mockReturnValue([{ id: 'piano', name: 'Piano', description: 'Acoustic instrument' }])
     mocks.input.mockResolvedValue({ name: 'Created input' })
     mocks.output.mockResolvedValue({ name: 'Created output' })
     mocks.instrument.mockResolvedValue({ name: 'Created instrument' })
@@ -90,4 +93,50 @@ it('adds transformers, outputs and instruments through their respective factorie
     await add('Piano')
     expect(mocks.instrument).toHaveBeenCalledWith('audio', 'piano', expect.objectContaining({ mixer: { context: 'audio' } }))
     expect(mocks.addDevice).toHaveBeenLastCalledWith(expect.anything(), { name: 'Created instrument' }, 'output')
+})
+
+it('keeps outputs usable when the instrument catalog fails', async () => {
+    mocks.instruments.mockImplementation(() => { throw new Error('Instrument catalog unavailable') })
+    await choose('Outputs')
+    expect(panel().querySelector('[role="alert"]')?.textContent).toBe('Instruments could not be loaded.')
+    expect(panel().textContent).not.toContain('No outputs available')
+    await add('MIDI output')
+    expect(mocks.output).toHaveBeenCalledWith('webmidi', expect.anything())
+})
+
+it('keeps instruments usable when the output catalog fails', async () => {
+    mocks.outputs.mockRejectedValueOnce(new TypeError('error loading dynamically imported module'))
+    await choose('Outputs')
+    expect(panel().querySelector('[role="alert"]')?.textContent).toBe('Outputs could not be loaded.')
+    await add('Piano')
+    expect(mocks.instrument).toHaveBeenCalledWith('audio', 'piano', expect.anything())
+})
+
+it('reports catalog failures without claiming no outputs are available', async () => {
+    mocks.outputs.mockRejectedValueOnce(new Error('Output catalog unavailable'))
+    mocks.instruments.mockImplementation(() => { throw new Error('Instrument catalog unavailable') })
+    await choose('Outputs')
+    expect(panel().querySelector('[role="alert"]')?.textContent).toBe('Outputs could not be loaded. Instruments could not be loaded.')
+    expect(panel().textContent).not.toContain('No outputs available')
+})
+
+it('shows an icon for every sidebar choice, including instruments', async () => {
+    for (const name of ['Inputs', 'Transformers', 'Outputs']) {
+        await choose(name)
+        const buttons = panel().querySelectorAll('li > button')
+        expect(buttons.length).toBeGreaterThan(0)
+        for (const button of buttons) {
+            const icon = button.querySelector('img')!
+            expect(icon).not.toBeNull()
+            expect(icon.getAttribute('src')).toMatch(/\/icons\/.+\.svg$/)
+            expect(icon.getAttribute('alt')).toBe('')
+        }
+    }
+})
+
+it('shows the same transformer icons in the selection overlay and sidebar', async () => {
+    await choose('Transformers')
+    const sources = [...panel().querySelectorAll('li > button img')].map(icon => icon.getAttribute('src'))
+    await act(async () => { root.render(<TransformerPicker dialog />) })
+    expect([...document.querySelectorAll('.grid-item img')].map(icon => icon.getAttribute('src'))).toEqual(sources)
 })

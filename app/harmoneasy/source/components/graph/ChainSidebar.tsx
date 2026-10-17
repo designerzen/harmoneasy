@@ -26,11 +26,17 @@ export function ChainSidebar() {
         {tabs.map((label, index) => <div key={label} role="tabpanel" id={`${id}-panel-${index}`}
             aria-labelledby={`${id}-tab-${index}`} hidden={active !== index} className="chain-sidebar-panel">
             {active === index && <>
-                <header><h6>Add {label}</h6><button type="button" aria-label="Close sidebar" onClick={() => {
+                <button className="chain-sidebar-close" type="button" aria-label="Close sidebar" title={`Close ${label}`} onClick={() => {
                     setActive(null)
                     buttons.current[index]?.focus()
-                }}>×</button></header>
-                {index === 1 ? <TransformerPicker /> : <DevicePicker direction={index === 0 ? 'input' : 'output'} />}
+                }}>
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="m14 6-6 6 6 6M8 12h12" />
+                    </svg>
+                </button>
+                <div className="chain-sidebar-content">
+                    {index === 1 ? <TransformerPicker /> : <DevicePicker direction={index === 0 ? 'input' : 'output'} />}
+                </div>
             </>}
         </div>)}
     </aside>

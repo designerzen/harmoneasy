@@ -1,4 +1,5 @@
 import { DeviceGui } from '../DeviceGui'
+import { deviceIcon } from '../element-icons'
 import { deviceId } from 'audiobus/io/device-definition'
 import { useChain } from '../ChainContext'
 import { Handle, Position } from "@xyflow/react"
@@ -49,7 +50,7 @@ export function OutputNode(props: any) {
 	return <div data-midi-scope={`${chainId}:output:${deviceId(output)}`} className={`node-output graph-node can-remove ${hasControls ? 'has-controls' : 'no-controls'} ${isFullscreen ? 'is-fullscreen' : ''}`} title={output.description}>
 		<div className="device-node-header node-actions">
 			<button type="button" className="btn-remove nodrag nopan" title="Remove output" aria-label="Remove output" onClick={removeNode}>Remove</button>
-            <h6>{output.name}</h6>
+            <h6><img className="element-icon" src={deviceIcon(output, 'output')} alt="" />{output.name}</h6>
             <button type="button" className="btn-fullscreen nodrag nopan" onClick={handleFullscreen}
                 autoFocus={isFullscreen} aria-expanded={isFullscreen}
                 title={isFullscreen ? 'Minimise output' : 'Expand output'}
