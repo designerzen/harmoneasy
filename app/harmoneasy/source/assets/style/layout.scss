@@ -15,91 +15,143 @@
 }
 
 .header-main {
-	--col-light:color-mix(in oklch, var(--col-white) 15%, var(--col-white));
-	--col-dark:color-mix(in oklch, var(--col-black) 15%, var(--col-black));
-	
-	color: light-dark( var(--col-black), var(--col-white) );
-	color: color-contrast( light-dark( var(--col-black), var(--col-white) ) );
-	
-	background-color: light-dark( var(--col-light), var(--col-dark) );
-	padding: calc( var(--pad) * 1) calc( var(--pad) );
+	color: var(--col-fg);
+	background: var(--col-bg);
+	padding: .625rem 1rem;
 	display: grid;
-
-	grid-template-areas: 
-		"logo"
-		"menu"
-		;
-	
-	justify-content: space-between;
+	grid-template-columns: minmax(0, 1fr);
 	align-items: center;
-	border-bottom:var(--border);
+	border-bottom: var(--border);
 	position: relative;
 	z-index: 303;
-	gap: var(--gap);
+	gap: .625rem 1.5rem;
 
-	@media (min-width:1024px){
-		grid-template-areas: "logo menu";
+	.backlink {
+		width: fit-content;
+		align-items: center;
+		.h2 { font-size: 1.125rem; }
 	}
 
-	.backlink{
-		grid-area:logo;
+	@media (min-width: 1200px) {
+		grid-template-columns: auto minmax(0, 1fr);
 	}
 }
 
 .header-controls {
 	display: grid;
+	grid-template-areas: "tempo swing volume" "secondary secondary secondary";
+	grid-template-columns: minmax(20rem, 1.4fr) minmax(10rem, .8fr) minmax(18rem, 1.2fr);
+	gap: .5rem;
+	min-width: 0;
+	font-size: .8125rem;
+	line-height: 1.4;
 
-	grid-area:menu;
-	grid-template-areas: 
-		"tempo swing connect"
-		"volume volume connect"
-		"clock clock clock";
-	grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
-		
-	gap: var(--gap);
-	align-items: center;
-	width: 100%;
-
-	@media (min-width:1200px){
-		grid-template-areas: "tempo swing volume connect" "clock clock clock clock";
-		grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 2fr) auto;
-	}
-
-	.controls{
-		width:100%;
+	.controls {
 		min-width: 0;
-		@media (max-width: 700px) {
-			flex-wrap: wrap;
-			gap: .375rem;
-			input[type="range"] { min-width: 0; width: 4rem; flex: 1; }
+		gap: .5rem;
+		padding: .25rem .5rem;
+		border-radius: 6px;
+		label { flex: none; font-size: inherit; white-space: nowrap; }
+		input[type="range"] {
+			flex: 1 1 0;
+			width: 0;
+			min-width: 2rem;
+			min-height: 36px;
+			margin: 0;
+			padding: 0;
 		}
 	}
+
+	output, .control-value {
+		flex: none;
+		white-space: nowrap;
+		font-variant-numeric: tabular-nums;
+	}
+	.control-value { display: flex; align-items: baseline; gap: .25rem; }
+	#bpm { min-width: 3ch; text-align: right; }
+	#volume-output { min-width: 3ch; text-align: right; }
+	#swing-output { min-width: 4ch; text-align: right; }
+	.control-stepper { display: flex; flex: none; gap: 2px; }
+
+	button {
+		flex: none;
+		min-width: 36px;
+		min-height: 36px;
+		padding: .375rem .625rem;
+		border-width: 1px;
+		border-radius: 5px;
+		white-space: nowrap;
+	}
+	button:disabled, input:disabled, select:disabled { opacity: .5; cursor: default; }
+	button:focus-visible, input:focus-visible, select:focus-visible {
+		outline: 2px solid var(--col-orange);
+		outline-offset: 2px;
+	}
+
+	@media (max-width: 899px) {
+		grid-template-areas: "tempo tempo" "swing volume" "secondary secondary";
+		grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
+	}
+	@media (max-width: 539px) {
+		grid-template-areas: "tempo" "swing" "volume" "secondary";
+		grid-template-columns: minmax(0, 1fr);
+		.controls > label { min-width: 3.5rem; }
+	}
+	@media (pointer: coarse) {
+		button, .controls input[type="range"], select { min-height: 44px; }
+		.control-stepper button { min-width: 44px; }
+	}
+}
+
+#tempo-control { grid-area: tempo; }
+#swing-control { grid-area: swing; }
+#volume-control { grid-area: volume; }
+
+.header-secondary {
+	grid-area: secondary;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: .5rem;
+	min-width: 0;
 }
 
 #clock-controls {
-	grid-area: clock;
-	display: flex;
+	flex: 1 1 18rem;
 	flex-wrap: wrap;
-	gap: .5rem;
-	align-items: center;
+	background: transparent;
+	padding: 0;
 
-	#clock-source-status { font-size: .85rem; }
+	select {
+		min-width: 0;
+		max-width: 100%;
+		min-height: 36px;
+		padding: .375rem .5rem;
+		border-width: 1px;
+		border-radius: 5px;
+		background: var(--col-bg);
+	}
+	#clock-midi-label { flex-wrap: wrap; min-width: 0; }
+	#clock-source-status { flex: 1 1 12rem; font-size: .75rem; overflow-wrap: anywhere; }
+	#clock-source-status:empty { display: none; }
+	[hidden] { display: none; }
 }
 
-#volume-control{
-	grid-area:volume;
+#btn-metronome {
+	border-color: var(--col-plum);
+	&::before { content: ''; display: inline-block; width: .5rem; height: .5rem; border: 1px solid currentColor; border-radius: 50%; margin-right: .5rem; }
+	&[aria-pressed="true"]::before { background: currentColor; }
 }
 
 #netronome-link {
-	grid-area: connect;
-	display: grid;
-	justify-items: center;
-	gap: .25rem;
-	padding: .375rem;
-	font-size: .7rem;
+	display: inline-flex;
+	align-items: center;
+	gap: .5rem;
+	border-color: color-mix(in srgb, currentColor 25%, transparent);
+	&[hidden] { display: none; }
 }
 
-#netronome-qr-preview { width: 80px; height: 80px; }
+#netronome-qr-preview { width: 24px; height: 24px; }
 
 #netronome-dialog {
 	width: min(36rem, calc(100vw - 2rem));
@@ -147,17 +199,6 @@
 	height: auto;
 	margin: auto;
 }
-#tempo-control{
-	grid-area:tempo;
-}
-
-#swing-control {
-	grid-area: swing;
-	input { min-width: 0; width: 4rem; flex: 1; }
-	output { white-space: nowrap; }
-}
-
-
 .backlink {
 	// width: 100%;
 	display: flex;
@@ -197,7 +238,6 @@
 	}
 }
 
-#tempo-control {}
 
 #bpm {
 	font-weight: 600;

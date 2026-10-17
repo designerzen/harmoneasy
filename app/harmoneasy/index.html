@@ -41,47 +41,49 @@
 			<p class="h2">Harmoneasy</p>
 		</a>
 		
-		<menu class="header-controls">
-
-			<label id="volume-control" class="controls">
-				Volume:
-				<input id="volume" type="range" min=0 max=100 value=100>
-				<output id="volume-output">100</output> %
-				<button type="button" id="btn-volume-down" class="btn-volume-control" title="Decrease volume">−</button>
-				<button type="button" id="btn-volume-up" class="btn-volume-control" title="Increase volume">+</button>
-			</label>
-
-			<label id="tempo-control" class="controls" for="tempo">
-				Tempo:
-				<input id="tempo" type="range" min=10 max=303>
-				<output id="bpm"></output> BPM
-				<button type="button" id="btn-tempo-down" class="btn-tempo-control" title="Decrease tempo">−</button>
-				<button type="button" id="btn-tempo-up" class="btn-tempo-control" title="Increase tempo">+</button>
-				<button type="button" id="btn-metronome" aria-pressed="false" title="Enable metronome" disabled>Metronome</button>
-			</label>
-			<label id="swing-control" class="controls" for="swing">
-				Swing:
+		<div class="header-controls" role="group" aria-label="Session controls">
+			<div id="tempo-control" class="controls">
+				<label for="tempo">Tempo</label>
+				<input id="tempo" type="range" min="10" max="303" aria-describedby="bpm">
+				<span class="control-value"><output id="bpm" for="tempo"></output> <span>BPM</span></span>
+				<div class="control-stepper">
+					<button type="button" id="btn-tempo-down" class="btn-tempo-control" aria-label="Decrease tempo" title="Decrease tempo">−</button>
+					<button type="button" id="btn-tempo-up" class="btn-tempo-control" aria-label="Increase tempo" title="Increase tempo">+</button>
+				</div>
+			</div>
+			<div id="swing-control" class="controls">
+				<label for="swing">Swing</label>
 				<input id="swing" type="range" min="0" max="1" step="0.01" value="0" aria-describedby="swing-output">
 				<output id="swing-output" for="swing">0%</output>
-			</label>
-			<button type="button" id="netronome-link" title="Sync with another browser" aria-haspopup="dialog" disabled>
-				<img id="netronome-qr-preview" alt="Netronome connection QR code" hidden>
-				<span>Sync</span>
-			</button>
-
-			<div id="clock-controls" class="controls">
-				<label for="clock-source">Clock source:</label>
-				<select id="clock-source" disabled>
-					<option value="internal">Internal</option>
-					<option value="shared">Shared (QR / room)</option>
-					<option value="manual">Manual key press</option>
-				</select>
-				<label id="clock-midi-label" hidden>MIDI device <select id="clock-midi-device"></select></label>
-				<button type="button" id="btn-clock-tick" title="Advance one clock tick (24 ticks per beat); keyboard shortcut: Space" hidden>Tick (Space)</button>
-				<output id="clock-source-status" role="status"></output>
 			</div>
-
-		</menu>
+			<div id="volume-control" class="controls">
+				<label for="volume">Volume</label>
+				<input id="volume" type="range" min="0" max="100" value="100" aria-describedby="volume-output">
+				<span class="control-value"><output id="volume-output" for="volume">100</output><span>%</span></span>
+				<div class="control-stepper">
+					<button type="button" id="btn-volume-down" class="btn-volume-control" aria-label="Decrease volume" title="Decrease volume">−</button>
+					<button type="button" id="btn-volume-up" class="btn-volume-control" aria-label="Increase volume" title="Increase volume">+</button>
+				</div>
+			</div>
+			<div class="header-secondary">
+				<div id="clock-controls" class="controls">
+					<label for="clock-source">Clock</label>
+					<select id="clock-source" disabled>
+						<option value="internal">Internal</option>
+						<option value="shared">Shared (QR / room)</option>
+						<option value="manual">Manual key press</option>
+					</select>
+					<label id="clock-midi-label" hidden>MIDI device <select id="clock-midi-device"></select></label>
+					<button type="button" id="btn-clock-tick" title="Advance one clock tick (24 ticks per beat); keyboard shortcut: Space" hidden>Tick (Space)</button>
+					<output id="clock-source-status" role="status"></output>
+				</div>
+				<button type="button" id="btn-metronome" aria-pressed="false" title="Enable metronome" disabled>Metronome</button>
+				<button type="button" id="netronome-link" title="Sync with another browser" aria-haspopup="dialog" disabled>
+					<img id="netronome-qr-preview" alt="Netronome connection QR code" hidden>
+					<span>Sync</span>
+				</button>
+			</div>
+		</div>
 
 	</header>
 	<dialog id="netronome-dialog" aria-labelledby="netronome-title">
