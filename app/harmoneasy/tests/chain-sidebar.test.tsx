@@ -126,17 +126,17 @@ it('shows an icon for every sidebar choice, including instruments', async () => 
         const buttons = panel().querySelectorAll('li > button')
         expect(buttons.length).toBeGreaterThan(0)
         for (const button of buttons) {
-            const icon = button.querySelector('img')!
+            const icon = button.querySelector<HTMLElement>('.element-icon')!
             expect(icon).not.toBeNull()
-            expect(icon.getAttribute('src')).toMatch(/\/icons\/.+\.svg$/)
-            expect(icon.getAttribute('alt')).toBe('')
+            expect(icon.style.maskImage).toMatch(/url\(.+\/icons\/.+\.svg/)
+            expect(icon.getAttribute('aria-hidden')).toBe('true')
         }
     }
 })
 
 it('shows the same transformer icons in the selection overlay and sidebar', async () => {
     await choose('Transformers')
-    const sources = [...panel().querySelectorAll('li > button img')].map(icon => icon.getAttribute('src'))
+    const sources = [...panel().querySelectorAll<HTMLElement>('li > button .element-icon')].map(icon => icon.style.maskImage)
     await act(async () => { root.render(<TransformerPicker dialog />) })
-    expect([...document.querySelectorAll('.grid-item img')].map(icon => icon.getAttribute('src'))).toEqual(sources)
+    expect([...document.querySelectorAll<HTMLElement>('.grid-item .element-icon')].map(icon => icon.style.maskImage)).toEqual(sources)
 })

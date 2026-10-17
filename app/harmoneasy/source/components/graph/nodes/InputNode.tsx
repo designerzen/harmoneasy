@@ -1,5 +1,6 @@
 import { DeviceGui } from '../DeviceGui'
 import { deviceIcon } from '../element-icons'
+import { ElementIcon } from '../ElementIcon'
 import { deviceId } from 'audiobus/io/device-definition'
 import { useChain } from '../ChainContext'
 import { Handle, Position } from "@xyflow/react"
@@ -50,7 +51,7 @@ export function InputNode(props: any) {
 	return <div data-midi-scope={`${chainId}:input:${deviceId(input)}`} className={`node-input graph-node can-remove ${hasControls ? 'has-controls' : 'no-controls'} ${isFullscreen ? 'is-fullscreen' : ''}`} title={input.description}>
 		<div className="device-node-header node-actions">
 			<button type="button" className="btn-remove nodrag nopan" title="Remove input" aria-label="Remove input" onClick={removeNode}>Remove</button>
-            <h6><img className="element-icon" src={deviceIcon(input, 'input')} alt="" />{input.name}</h6>
+            <h6><ElementIcon src={deviceIcon(input, 'input')} />{input.name}</h6>
             <button type="button" className="btn-fullscreen nodrag nopan" onClick={handleFullscreen}
                 autoFocus={isFullscreen} aria-expanded={isFullscreen}
                 title={isFullscreen ? 'Minimise input' : 'Expand input'}

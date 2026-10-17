@@ -1,5 +1,6 @@
 import { useChain } from './ChainContext'
 import { elementIcon } from './element-icons'
+import { ElementIcon } from './ElementIcon'
 import React, { useState, useId } from "react"
 import { 
     tranformerFactory,
@@ -45,7 +46,7 @@ export function TransformerPicker({ dialog = false, onAdded }: { dialog?: boolea
 				{ 
 					filteredTransformers.map(preset => <li key={preset}>
                         <button className={dialog ? 'grid-item transformer-choice' : 'element-choice'} type="button" onClick={onAdd(preset)}>
-                            <img className="element-icon" src={elementIcon('transformer', preset)} alt="" />
+                            <ElementIcon src={elementIcon('transformer', preset)} />
                             <span>{preset}</span>
                         </button>
                     </li>)

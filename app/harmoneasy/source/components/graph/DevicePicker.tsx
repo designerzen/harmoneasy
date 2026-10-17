@@ -2,6 +2,7 @@ import React, { useEffect, useId, useRef, useState } from 'react'
 import { useChain } from './ChainContext'
 import { SharedDevices } from './SharedDevices'
 import { elementIcon } from './element-icons'
+import { ElementIcon } from './ElementIcon'
 import { createInstrumentById, getAvailableInstrumentFactories } from 'audiobus/instruments/instrument-factory-ui.ts'
 
 type Choice = { id: string; name: string; description: string; kind: 'input' | 'output' | 'instrument' }
@@ -85,7 +86,7 @@ export function DevicePicker({ direction }: { direction: 'input' | 'output' }) {
                     {kind === 'instrument' && <h6>Instruments</h6>}
                     <ul role="list">{items.map(choice => <li key={choice.id}>
                         <button className="element-choice" type="button" title={choice.description} disabled={busy} onClick={() => void add(choice)}>
-                            <img className="element-icon" src={elementIcon(choice.kind, choice.id)} alt="" />
+                            <ElementIcon src={elementIcon(choice.kind, choice.id)} />
                             <span>{choice.name}</span>
                         </button>
                     </li>)}</ul>

@@ -1,5 +1,6 @@
 import React from 'react'
 import { elementIcon } from './element-icons'
+import { ElementIcon } from './ElementIcon'
 import { PRESETS, type TransformerPreset } from 'audiobus/io/transformer-presets'
 
 export function PresetOptions({ presets = PRESETS }: { presets?: TransformerPreset[] }) {
@@ -18,7 +19,7 @@ export function PresetDetails({ preset }: { preset: TransformerPreset }) {
         <p>{preset.useCase}</p>
         <h4>Transformers, in order</h4>
         <ol>{preset.steps.map((step, index) => <li key={`${step.type}:${index}`}>
-            <img className="element-icon" src={elementIcon('transformer', step.type)} alt="" />{step.summary}
+            <ElementIcon src={elementIcon('transformer', step.type)} />{step.summary}
         </li>)}</ol>
         <p className="preset-hint">Uses this chain’s input and instrument. Adjust the transformer settings after applying.</p>
     </article>

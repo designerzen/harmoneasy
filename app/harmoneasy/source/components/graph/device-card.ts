@@ -66,10 +66,10 @@ export function fillDeviceCard(button: HTMLButtonElement, factory: { id: string;
     }
     button.replaceChildren()
     button.classList.add('device-choice-card')
-    const icon = document.createElement('img')
+    const icon = document.createElement('span')
     icon.className = 'item-icon element-icon'
-    icon.src = elementIcon(direction, factory.id)
-    icon.alt = ''
+    icon.style.maskImage = `url("${elementIcon(direction, factory.id)}")`
+    icon.setAttribute('aria-hidden', 'true')
     button.appendChild(icon)
     append('item-name', factory.name)
     append('item-description', factory.description)

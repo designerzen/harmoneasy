@@ -3,6 +3,7 @@ import { Handle, Position } from "@xyflow/react"
 import React, { useCallback, useEffect, useState } from "react"
 import { ConfigField } from "../Widgets.tsx"
 import { elementIcon } from '../element-icons'
+import { ElementIcon } from '../ElementIcon'
 
 function TransformerStatus({ element }: { element: { status: string } }) {
     const [status, setStatus] = useState(element.status)
@@ -49,14 +50,14 @@ export function TransformerNode(props: any) {
 
     return <div data-midi-scope={`${chainId}:transformer:${props.data.element.midiControlId}`} className={`node-transformer graph-node can-remove category-${props.data.element.category.toLowerCase()} ${isFullscreen ? 'is-fullscreen' : ''}`}>
         {isFullscreen ? <header className="expanded-node-heading">
-            <div className="expanded-node-emblem"><img src={icon} alt="" /></div>
+            <div className="expanded-node-emblem"><ElementIcon src={icon} /></div>
             <div>
                 <span className="expanded-node-category">{props.data.element.category} / Transformer</span>
                 <h2>{props.data.label}</h2>
                 <p>{props.data.description}</p>
             </div>
         </header> : <>
-        <img src={icon} alt="" className="transformer-icon" />
+        <ElementIcon src={icon} className="transformer-icon" />
         <h6>{props.data.label}</h6>
       
 	  	<details>

@@ -34,7 +34,7 @@ it('uses the same icon for each device card and registered device, including spe
             const button = document.createElement('button')
             fillDeviceCard(button, { id, name: id, description: 'Description' }, kind)
             const device = defineDevice({}, { factory: kind, type: id })
-            expect(button.querySelector('img')!.getAttribute('src')).toBe(deviceIcon(device, kind))
+            expect(button.querySelector<HTMLElement>('.element-icon')!.style.maskImage).toBe(`url("${deviceIcon(device, kind)}")`)
         }
     }
     for (const factory of ['instrument', 'polyphonic'] as const) {
@@ -46,5 +46,5 @@ it('uses the same icon for each device card and registered device, including spe
     expect(assetExists(deviceIcon({}, 'output'))).toBe(true)
     const button = document.createElement('button')
     fillDeviceCard(button, { id: 'custom', name: 'Custom', description: 'Custom device' }, 'output')
-    expect(button.querySelector('img')!.getAttribute('src')).toBe(elementIcon('output', 'custom'))
+    expect(button.querySelector<HTMLElement>('.element-icon')!.style.maskImage).toBe(`url("${elementIcon('output', 'custom')}")`)
 })

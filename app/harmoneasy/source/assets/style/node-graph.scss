@@ -1506,7 +1506,10 @@ dialog.add-output-dialog {
     width: 1.5rem;
     height: 1.5rem;
     flex: 0 0 1.5rem;
-    object-fit: contain;
+    background-color: currentColor;
+    mask-size: contain;
+    mask-position: center;
+    mask-repeat: no-repeat;
     vertical-align: middle;
 }
 
@@ -1739,7 +1742,7 @@ dialog.add-output-dialog {
             border-radius: 22px;
             background: color-mix(in oklch, var(--editor-accent) 18%, transparent);
             box-shadow: 0 8px 30px color-mix(in oklch, var(--editor-accent) 12%, transparent);
-            img { width: 52px; height: 52px; object-fit: contain; }
+            .element-icon { width: 52px; height: 52px; }
         }
         .expanded-node-category { font-size: .7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: light-dark(#555068, #b9b0d1); }
         h2 { margin: .375rem 0; font-size: clamp(1.5rem, 3vw, 2.5rem); line-height: 1.15; }
