@@ -1,6 +1,7 @@
 import type { InputId } from 'audiobus/io/inputs/input-types'
 import type { OutputId } from 'audiobus/io/outputs/output-types'
-import { elementIcon } from './element-icons'
+import { elementDescription, elementIcon } from './element-icons'
+import { classificationLabel, type ClassifiedChoice } from './device-filters'
 
 type Guidance = { icon: string; usedFor: string; usefulFor: string; requirements: string }
 const guide = (icon: string, usedFor: string, usefulFor: string, requirements: string): Guidance => ({ icon, usedFor, usefulFor, requirements })
@@ -50,7 +51,7 @@ export const OUTPUT_GUIDANCE: Record<OutputId, Guidance> = {
     butterchurn: guide('✺', 'Visualize the audio mix with animated patterns.', 'Live visuals that react to sound.', 'WebGL support and an active audio mix.'),
 }
 
-export function fillDeviceCard(button: HTMLButtonElement, factory: { id: string; name: string; description: string; category?: string }, direction: 'input' | 'output' | 'instrument') {
+export function fillDeviceCard(button: HTMLButtonElement, factory: Pick<ClassifiedChoice, 'id' | 'name' | 'description'> & Partial<ClassifiedChoice>, direction: 'input' | 'output' | 'instrument') {
     const guidance = (direction === 'input' ? INPUT_GUIDANCE[factory.id as InputId]
         : direction === 'output' ? OUTPUT_GUIDANCE[factory.id as OutputId] : undefined)
         ?? (direction !== 'instrument'
@@ -66,12 +67,15 @@ export function fillDeviceCard(button: HTMLButtonElement, factory: { id: string;
     }
     button.replaceChildren()
     button.classList.add('device-choice-card')
+    button.title = elementDescription(direction, factory.id, factory.name, factory.description)
     const icon = document.createElement('span')
     icon.className = 'item-icon element-icon'
     icon.style.maskImage = `url("${elementIcon(direction, factory.id)}")`
     icon.setAttribute('aria-hidden', 'true')
+    icon.title = button.title
     button.appendChild(icon)
     append('item-name', factory.name)
+    if (factory.type && factory.subtype) append('item-classification', `${classificationLabel(factory.type)} / ${classificationLabel(factory.subtype)}${factory.category ? ` / ${classificationLabel(factory.category)}` : ''}`)
     append('item-description', factory.description)
     for (const [label, value] of [['Used for', guidance.usedFor], ['Useful for', guidance.usefulFor], ['Requirements', guidance.requirements]]) {
         const row = document.createElement('span')

@@ -1,5 +1,5 @@
 import { DeviceGui } from '../DeviceGui'
-import { deviceIcon } from '../element-icons'
+import { deviceIcon, elementDescription } from '../element-icons'
 import { ElementIcon } from '../ElementIcon'
 import { deviceId } from 'audiobus/io/device-definition'
 import { useChain } from '../ChainContext'
@@ -48,10 +48,10 @@ export function OutputNode(props: any) {
 		}
 	}, [props.id, onFullscreen])
 
-	return <div data-midi-scope={`${chainId}:output:${deviceId(output)}`} className={`node-output graph-node can-remove ${hasControls ? 'has-controls' : 'no-controls'} ${isFullscreen ? 'is-fullscreen' : ''}`} title={output.description}>
+	return <div data-midi-scope={`${chainId}:output:${deviceId(output)}`} className={`node-output graph-node can-remove ${hasControls ? 'has-controls' : 'no-controls'} ${isFullscreen ? 'is-fullscreen' : ''}`} title={elementDescription('output', '', output.name, output.description)}>
 		<div className="device-node-header node-actions">
 			<button type="button" className="btn-remove nodrag nopan" title="Remove output" aria-label="Remove output" onClick={removeNode}>Remove</button>
-            <h6><ElementIcon src={deviceIcon(output, 'output')} />{output.name}</h6>
+            <h6><ElementIcon src={deviceIcon(output, 'output')} title={elementDescription('output', '', output.name, output.description)} />{output.name}</h6>
             <button type="button" className="btn-fullscreen nodrag nopan" onClick={handleFullscreen}
                 autoFocus={isFullscreen} aria-expanded={isFullscreen}
                 title={isFullscreen ? 'Minimise output' : 'Expand output'}

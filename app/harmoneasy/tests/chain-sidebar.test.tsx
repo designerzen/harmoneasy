@@ -4,16 +4,19 @@ import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { ChainSidebar } from '../source/components/graph/ChainSidebar'
 import { TransformerPicker } from '../source/components/graph/Transformers'
+import { DeviceDialog } from '../source/components/graph/DeviceDialog'
+import { SharedDevices } from '../source/components/graph/SharedDevices'
+import { defineDevice } from 'audiobus/io/device-definition'
 
 const mocks = vi.hoisted(() => ({
     input: vi.fn(), output: vi.fn(), instrument: vi.fn(), addDevice: vi.fn(), appendTransformer: vi.fn(),
-    inputs: vi.fn(), outputs: vi.fn(), instruments: vi.fn()
+    inputs: vi.fn(), outputs: vi.fn(), instruments: vi.fn(), devices: [] as any[], attachDevice: vi.fn()
 }))
 vi.mock('../source/components/graph/ChainContext', () => {
     const context = {
     chainId: 'lead',
     chain: { inputManager: { getAvailableFactories: mocks.inputs }, outputManager: { getAvailableFactories: mocks.outputs }, appendTransformer: mocks.appendTransformer },
-    manager: { devices: [], deviceOptions: { clock: 'test' }, outputMixer: { context: 'audio' }, addDevice: mocks.addDevice }
+    manager: { devices: mocks.devices, deviceOptions: { clock: 'test' }, outputMixer: { context: 'audio' }, addDevice: mocks.addDevice, attachDevice: mocks.attachDevice }
     }
     return { useChain: () => context }
 })
@@ -38,13 +41,14 @@ const add = async (name: string) => {
 }
 beforeEach(async () => {
     vi.clearAllMocks()
+    mocks.devices.length = 0
     vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
     mocks.inputs.mockResolvedValue([
-        { id: 'keyboard', name: 'Keyboard', description: 'Computer keys' },
-        { id: 'gamepad', name: 'Gamepad', description: 'Controller' }
+        { id: 'keyboard', name: 'Keyboard', description: 'Computer keys', type: 'controller', subtype: 'keyboard' },
+        { id: 'gamepad', name: 'Gamepad', description: 'Controller', type: 'controller', subtype: 'gamepad' }
     ])
-    mocks.outputs.mockResolvedValue([{ id: 'webmidi', name: 'MIDI output', description: 'External device' }])
-    mocks.instruments.mockReset().mockReturnValue([{ id: 'piano', name: 'Piano', description: 'Acoustic instrument' }])
+    mocks.outputs.mockResolvedValue([{ id: 'webmidi', name: 'MIDI output', description: 'External device', type: 'midi', subtype: 'device' }])
+    mocks.instruments.mockReset().mockReturnValue([{ id: 'piano', name: 'Piano', description: 'Acoustic instrument', type: 'engine', subtype: 'instrument', category: 'sampling' }])
     mocks.input.mockResolvedValue({ name: 'Created input' })
     mocks.output.mockResolvedValue({ name: 'Created output' })
     mocks.instrument.mockResolvedValue({ name: 'Created instrument' })
@@ -57,6 +61,98 @@ afterEach(async () => {
     await act(async () => root.unmount())
     document.body.replaceChildren()
     vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+})
+
+const selectFilter = async (host: ParentNode, value: string) => {
+    const select = host.querySelector('select')!
+    await act(async () => {
+        select.value = value
+        select.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+}
+
+const outputCatalogue = () => {
+    mocks.outputs.mockResolvedValue([
+        { id: 'butterchurn', name: 'Butterchurn', description: 'Reactive visuals', type: 'visual', subtype: 'visualiser' },
+        { id: 'supersonic', name: 'Supersonic', description: 'Synthesis engine', type: 'engine', subtype: 'instrument' },
+    ])
+    mocks.instruments.mockReturnValue([
+        { id: 'piano', name: 'Piano', description: 'Sampled piano', type: 'engine', subtype: 'instrument', category: 'sampling' },
+        { id: 'scsynth-instrument', name: 'SuperCollider Synth', description: 'A synth', type: 'engine', subtype: 'instrument', category: 'supercollider' },
+    ])
+}
+
+it('groups output engines with instruments and combines type, subtype, category and text filters', async () => {
+    outputCatalogue()
+    await choose('Outputs')
+    const host = panel()
+    expect([...host.querySelectorAll('.choice-group h6')].map(heading => heading.textContent)).toEqual(['Engine / Instruments', 'Visual / Visualisers'])
+    expect(host.querySelector('[aria-label="Engine / Instruments"]')!.querySelectorAll('li')).toHaveLength(3)
+    expect([...host.querySelectorAll('optgroup')].map(group => group.label)).toEqual(['Types', 'Subtypes', 'Categories'])
+    await selectFilter(host, 'subtype:instrument')
+    expect(host.querySelectorAll('.choice-group li')).toHaveLength(3)
+    expect(host.textContent).not.toContain('Butterchurn')
+    await selectFilter(host, 'category:supercollider')
+    expect([...host.querySelectorAll('.choice-group button')].map(button => button.textContent)).toEqual(['SuperCollider Synth', 'Supersonic'])
+    const search = host.querySelector('input')!
+    await act(async () => {
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(search, 'supersonic')
+        search.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    expect(host.querySelectorAll('.choice-group li')).toHaveLength(1)
+    await add('Supersonic')
+    expect(mocks.output).toHaveBeenCalledWith('supersonic', expect.anything())
+    await selectFilter(host, 'type:visual')
+    expect(host.querySelectorAll('.choice-group')).toHaveLength(0)
+    expect(host.querySelector('[role="status"]')?.textContent).toContain('No outputs match')
+})
+
+it.each(['input', 'output'] as const)('uses the grouped picker and dropdown in the %s dialog', async direction => {
+    outputCatalogue()
+    const show = vi.spyOn(HTMLDialogElement.prototype, 'showModal').mockImplementation(function () { this.setAttribute('open', '') })
+    const close = vi.spyOn(HTMLDialogElement.prototype, 'close').mockImplementation(function () { this.removeAttribute('open') })
+    await act(async () => root.render(<DeviceDialog direction={direction} onClose={vi.fn()} />))
+    const dialog = document.querySelector('dialog')!
+    expect(show).toHaveBeenCalledOnce()
+    expect(dialog.getAttribute('aria-label')).toBe(`Add New ${direction === 'input' ? 'Input' : 'Output'}`)
+    await selectFilter(dialog, direction === 'input' ? 'subtype:keyboard' : 'category:supercollider')
+    expect(dialog.querySelectorAll('.choice-group')).toHaveLength(1)
+    const cards = dialog.querySelectorAll<HTMLButtonElement>('.device-choice-card')
+    expect(cards).toHaveLength(direction === 'input' ? 1 : 2)
+    expect(cards[0].querySelector('.device-choice-detail')).not.toBeNull()
+    expect(cards[0].querySelector('.item-classification')?.textContent).toContain(direction === 'input' ? 'Keyboard' : 'Instruments')
+    await act(async () => cards[0].click())
+    expect(direction === 'input' ? mocks.input : mocks.instrument).toHaveBeenCalled()
+    expect(close).toHaveBeenCalledOnce()
+})
+
+it('filters transformer groups in both the sidebar and dialog', async () => {
+    await choose('Transformers')
+    await selectFilter(panel(), 'subtype:harmony')
+    expect(panel().querySelectorAll('.choice-group')).toHaveLength(1)
+    expect(panel().querySelector('.choice-group button')?.textContent).toBe('Harmoniser')
+    await act(async () => root.render(<TransformerPicker dialog />))
+    await selectFilter(document, 'subtype:pitch')
+    expect(document.querySelectorAll('.choice-group')).toHaveLength(1)
+    const button = document.querySelector<HTMLButtonElement>('.grid-item')!
+    expect(button.textContent).toBe('Transposer')
+    await act(async () => button.click())
+    expect(mocks.appendTransformer).toHaveBeenCalledWith({ type: 'Transposer' })
+})
+
+it('applies the same classification filter to shared devices and excludes devices already in the chain', async () => {
+    mocks.devices.push(
+        { id: 'synth', direction: 'output', chains: new Set(), device: defineDevice({ name: 'Shared synth', description: 'Synth' }, { factory: 'output', type: 'supersonic' }) },
+        { id: 'visual', direction: 'output', chains: new Set(), device: defineDevice({ name: 'Shared visual', description: 'Visual' }, { factory: 'output', type: 'butterchurn' }) },
+        { id: 'attached', direction: 'output', chains: new Set(['lead']), device: defineDevice({ name: 'Attached synth', description: 'Synth' }, { factory: 'output', type: 'supersonic' }) },
+    )
+    await act(async () => root.render(<SharedDevices direction="output" selection="category:supercollider" />))
+    const buttons = document.querySelectorAll<HTMLButtonElement>('.shared-device-selector button')
+    expect(buttons).toHaveLength(1)
+    expect(buttons[0].textContent).toBe('Shared synth')
+    await act(async () => buttons[0].click())
+    expect(mocks.attachDevice).toHaveBeenCalledWith('lead', 'synth')
 })
 
 it('switches panels with keyboard navigation and returns focus when closed', async () => {

@@ -4,6 +4,8 @@ import { createRoot } from 'react-dom/client'
 import { afterEach, expect, it, vi } from 'vitest'
 import { PresetBrowser } from '../source/components/graph/PresetBrowser'
 import { PresetOptions } from '../source/components/graph/PresetDetails'
+import { IOChainManagerUI } from '../source/components/graph/IOChainManagerUI'
+import type IOChainManager from 'audiobus/io/IO-chain-manager'
 import { DEFAULT_PRESET_LIBRARY } from '../../../packages/audiobus/io/transformer-presets'
 import { writeLibrary } from '../source/components/graph/saved-presets'
 
@@ -56,6 +58,40 @@ it('uses the same sections for new-chain options', () => {
     act(() => root.render(React.createElement('select', {}, React.createElement(PresetOptions))))
     expect(host.querySelectorAll('optgroup')).toHaveLength(5)
     expect(host.querySelectorAll('option')).toHaveLength(22)
+})
+
+it('describes every new-chain option before selection and adds only when confirmed', async () => {
+    vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+    vi.stubGlobal('localStorage', { getItem: () => null })
+    const host = document.createElement('div')
+    document.body.append(host)
+    root = createRoot(host)
+    const chain = { options: {}, isActive: true, clearNoteCommands: vi.fn(), importConfiguration: vi.fn(), setGraphOptions: vi.fn(), setName: vi.fn() }
+    const manager = { createDefaultChain: vi.fn().mockResolvedValue('new-chain'), getChain: vi.fn(() => chain), setActiveChain: vi.fn() }
+    act(() => root.render(React.createElement(IOChainManagerUI, { manager: manager as unknown as IOChainManager })))
+    const picker = host.querySelector('select')!
+    expect(picker.value).toBe('')
+    expect(picker.labels?.[0].textContent).toBe('New chain')
+    expect(picker.querySelector('button > selectedcontent')).not.toBeNull()
+    expect(picker.querySelectorAll('optgroup')).toHaveLength(5)
+    for (const preset of DEFAULT_PRESET_LIBRARY.presets) {
+        const option = [...picker.options].find(option => option.value === preset.id)!
+        expect(option.selected).toBe(false)
+        expect(option.querySelector('.chain-preset-description')?.textContent).toBe(preset.description)
+        expect(option.querySelector('.chain-preset-use-case')?.textContent).toBe(preset.useCase)
+    }
+    const preset = DEFAULT_PRESET_LIBRARY.presets.find(item => item.name === 'Ratchet Fill')!
+    act(() => {
+        picker.value = preset.id
+        picker.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    expect(picker.value).toBe(preset.id)
+    expect(manager.createDefaultChain).not.toHaveBeenCalled()
+    expect(host.querySelector('.preset-details')).toBeNull()
+    await act(async () => host.querySelector<HTMLButtonElement>('.chain-create-control > button')!.click())
+    expect(manager.createDefaultChain).toHaveBeenCalledOnce()
+    expect(chain.setName).toHaveBeenCalledWith(preset.name)
+    expect(manager.setActiveChain).toHaveBeenCalledWith('new-chain')
 })
 
 it('persists new presets and deletions, supports undo, and downloads the selected preset', () => {

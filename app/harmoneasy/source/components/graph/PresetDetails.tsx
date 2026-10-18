@@ -1,12 +1,14 @@
 import React from 'react'
-import { elementIcon } from './element-icons'
+import { elementDescription, elementIcon } from './element-icons'
 import { ElementIcon } from './ElementIcon'
 import { PRESETS, type TransformerPreset } from 'audiobus/io/transformer-presets'
 
 export function PresetOptions({ presets = PRESETS }: { presets?: TransformerPreset[] }) {
     return <>{[...new Set(presets.map(preset => preset.category))].map(category => <optgroup key={category} label={category}>
         {presets.filter(preset => preset.category === category).map(preset =>
-            <option key={preset.id} value={preset.id}>{preset.name}</option>)}
+            <option key={preset.id} value={preset.id}>
+                <span className="chain-preset-copy"><strong>{preset.name}</strong><span className="chain-preset-description">{preset.description}</span><span className="chain-preset-use-case">{preset.useCase}</span></span>
+            </option>)}
     </optgroup>)}</>
 }
 
@@ -18,8 +20,8 @@ export function PresetDetails({ preset }: { preset: TransformerPreset }) {
         <h4>Why use it</h4>
         <p>{preset.useCase}</p>
         <h4>Transformers, in order</h4>
-        <ol>{preset.steps.map((step, index) => <li key={`${step.type}:${index}`}>
-            <ElementIcon src={elementIcon('transformer', step.type)} />{step.summary}
+        <ol>{preset.steps.map((step, index) => <li key={`${step.type}:${index}`} title={elementDescription('transformer', step.type, step.type)}>
+            <ElementIcon src={elementIcon('transformer', step.type)} title={elementDescription('transformer', step.type, step.type)} />{step.summary}
         </li>)}</ol>
         <p className="preset-hint">Uses this chain’s input and instrument. Adjust the transformer settings after applying.</p>
     </article>

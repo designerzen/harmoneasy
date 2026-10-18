@@ -2,7 +2,7 @@ import { useChain } from '../ChainContext'
 import { Handle, Position } from "@xyflow/react"
 import React, { useCallback, useEffect, useState } from "react"
 import { ConfigField } from "../Widgets.tsx"
-import { elementIcon } from '../element-icons'
+import { elementDescription, elementIcon } from '../element-icons'
 import { ElementIcon } from '../ElementIcon'
 
 function TransformerStatus({ element }: { element: { status: string } }) {
@@ -23,6 +23,7 @@ export function TransformerNode(props: any) {
 
 	const { chain, chainId } = useChain()
 	const icon = elementIcon('transformer', props.data.element.type ?? props.data.element.id)
+    const description = elementDescription('transformer', props.data.element.type ?? props.data.element.id, props.data.label, props.data.description)
 			
 	const removeNode = useCallback(() => {
         chain.transformerManager.removeTransformer(props.data.element)
@@ -48,16 +49,16 @@ export function TransformerNode(props: any) {
 		}
 	}, [props.id, onFullscreen])
 
-    return <div data-midi-scope={`${chainId}:transformer:${props.data.element.midiControlId}`} className={`node-transformer graph-node can-remove category-${props.data.element.category.toLowerCase()} ${isFullscreen ? 'is-fullscreen' : ''}`}>
+    return <div title={description} data-midi-scope={`${chainId}:transformer:${props.data.element.midiControlId}`} className={`node-transformer graph-node can-remove category-${props.data.element.category.toLowerCase()} ${isFullscreen ? 'is-fullscreen' : ''}`}>
         {isFullscreen ? <header className="expanded-node-heading">
-            <div className="expanded-node-emblem"><ElementIcon src={icon} /></div>
+            <div className="expanded-node-emblem"><ElementIcon src={icon} title={description} /></div>
             <div>
                 <span className="expanded-node-category">{props.data.element.category} / Transformer</span>
                 <h2>{props.data.label}</h2>
                 <p>{props.data.description}</p>
             </div>
         </header> : <>
-        <ElementIcon src={icon} className="transformer-icon" />
+        <ElementIcon src={icon} title={description} className="transformer-icon" />
         <h6>{props.data.label}</h6>
       
 	  	<details>

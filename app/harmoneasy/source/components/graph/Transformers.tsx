@@ -1,5 +1,8 @@
+import { TRANSFORMER_DEFINITIONS } from 'audiobus/io/transformer-definitions'
+import { ClassificationFilter } from './ClassificationFilter'
+import { choiceMatches, groupChoices } from './device-filters'
 import { useChain } from './ChainContext'
-import { elementIcon } from './element-icons'
+import { elementDescription, elementIcon } from './element-icons'
 import { ElementIcon } from './ElementIcon'
 import React, { useState, useId } from "react"
 import { 
@@ -13,9 +16,9 @@ export function TransformerPicker({ dialog = false, onAdded }: { dialog?: boolea
     const filterId = useId()
     const [transformersFilterText, setTransformersFilterText] = useState("")
   
-    const filteredTransformers = TRANSFORMERS.filter(transformerId =>
-        transformerId.toLowerCase().includes(transformersFilterText.toLowerCase())
-    )
+    const [classification, setClassification] = useState('')
+    const choices = TRANSFORMERS.map(id => TRANSFORMER_DEFINITIONS[id])
+    const filteredTransformers = choices.filter(choice => choiceMatches(choice, transformersFilterText, classification))
 
 	const onAdd = (transformerType: string) => () => {
 
@@ -42,20 +45,19 @@ export function TransformerPicker({ dialog = false, onAdded }: { dialog?: boolea
 				{/* <button type="button">Filter</button> */}
 			</label>
 
-			<ul className={dialog ? 'items-grid' : undefined} role="list">
-				{ 
-					filteredTransformers.map(preset => <li key={preset}>
-                        <button className={dialog ? 'grid-item transformer-choice' : 'element-choice'} type="button" onClick={onAdd(preset)}>
-                            <ElementIcon src={elementIcon('transformer', preset)} />
-                            <span>{preset}</span>
+            <ClassificationFilter choices={choices} value={classification} onChange={setClassification} label="Filter transformers by type" />
+            {groupChoices(filteredTransformers).map(group => <section className="choice-group" key={`${group.type}:${group.subtype}`} aria-label={group.label}>
+                <h6 className="section-title">{group.label}</h6>
+                <ul className={dialog ? 'items-grid' : undefined} role="list">
+                    {group.items.map(choice => <li key={choice.id}>
+                        <button className={dialog ? 'grid-item transformer-choice' : 'element-choice'} type="button" onClick={onAdd(choice.id)}
+                            title={elementDescription('transformer', choice.id, choice.name, choice.description)}>
+                            <ElementIcon src={elementIcon('transformer', choice.id)} title={elementDescription('transformer', choice.id, choice.name, choice.description)} />
+                            <span>{choice.name}</span>
                         </button>
-                    </li>)
-				}
-				{filteredTransformers.length === 0 && (
-					<li className="no-matches">
-						<p className="error-message">No transformers match "{transformersFilterText}"</p>
-					</li>
-				)}
-			</ul>
-            </div>)
+                    </li>)}
+                </ul>
+            </section>)}
+            {filteredTransformers.length === 0 && <p role="status">No transformers match the selected filters</p>}
+        </div>)
 }

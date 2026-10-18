@@ -1,17 +1,32 @@
 import React from 'react'
 import { useChain } from './ChainContext'
-import { deviceIcon } from './element-icons'
+import { deviceIcon, elementDescription } from './element-icons'
 import { ElementIcon } from './ElementIcon'
+import { deviceDefinition } from 'audiobus/io/device-definition'
+import { INPUT_DEFINITIONS } from 'audiobus/io/input-definitions'
+import { OUTPUT_DEFINITIONS } from 'audiobus/io/output-definitions'
+import { INSTRUMENTS } from 'audiobus/instruments/instrument-types'
+import { choiceMatches } from './device-filters'
 
-export function SharedDevices({ direction }: { direction: 'input' | 'output' }) {
+export function SharedDevices({ direction, search = '', selection = '' }: { direction: 'input' | 'output'; search?: string; selection?: string }) {
     const { chainId, manager } = useChain()
-    const available = manager.devices.filter(device => device.direction === direction && !device.chains.has(chainId))
+    const available = manager.devices.filter(entry => {
+        if (entry.direction !== direction || entry.chains.has(chainId)) return false
+        try {
+            const definition = deviceDefinition(entry.device)
+            const metadata = definition.factory === 'instrument' ? INSTRUMENTS.get(definition.type!)
+                : (direction === 'input' ? INPUT_DEFINITIONS : OUTPUT_DEFINITIONS)[definition.type!]
+            if (metadata) return choiceMatches({ ...metadata, name: entry.device.name, description: entry.device.description }, search, selection)
+        } catch { /* External devices may not have registered metadata. */ }
+        return !selection && `${entry.device.name} ${entry.device.description}`.toLowerCase().includes(search.trim().toLowerCase())
+    })
     if (!available.length) return null
     return <section className="shared-device-selector nodrag nopan nowheel" aria-label={`Use existing ${direction}`}>
         <h6>Use existing {direction}</h6>
         <ul>{available.map(entry => <li key={entry.id}>
-            <button className="element-choice" type="button" onClick={() => manager.attachDevice(chainId, entry.id)}>
-                <ElementIcon src={deviceIcon(entry.device, direction)} />
+            <button className="element-choice" type="button" onClick={() => manager.attachDevice(chainId, entry.id)}
+                title={elementDescription(direction, entry.id, entry.device.name, entry.device.description)}>
+                <ElementIcon src={deviceIcon(entry.device, direction)} title={elementDescription(direction, entry.id, entry.device.name, entry.device.description)} />
                 <span>{entry.device.name}</span>
             </button>
         </li>)}</ul>

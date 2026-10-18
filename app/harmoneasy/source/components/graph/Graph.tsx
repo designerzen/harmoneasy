@@ -304,9 +304,9 @@ export default function App({ manager }: { manager: IOChainManager }) {
             aria-label={chain.options.name ?? `Chain ${index + 1}`}>
             <header className="chain-toolbar">
                 <div className="chain-identity">
-                    <button className="chain-power chain-icon-button" title={chain.isActive ? 'Deactivate chain' : 'Activate chain'} type="button" aria-pressed={chain.isActive} onClick={() => chain.setActive(!chain.isActive)}>
+                    <button className="chain-power chain-icon-button" title={chain.isActive ? 'Turn chain off' : 'Turn chain on — settings are still editable while off'} aria-label={chain.isActive ? 'Turn chain off' : 'Turn chain on'} type="button" aria-pressed={chain.isActive} onClick={() => chain.setActive(!chain.isActive)}>
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v10M6 5a9 9 0 1 0 12 0" /></svg>
-                        <span className="sr-only">{chain.isActive ? 'Deactivate' : 'Activate'}</span>
+                        <span>{chain.isActive ? 'On' : 'Off'}</span>
                     </button>
                     <ChainName chain={chain} />
                 </div>

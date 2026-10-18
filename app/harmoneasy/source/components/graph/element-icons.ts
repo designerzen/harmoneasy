@@ -1,9 +1,14 @@
 import { deviceDefinition } from 'audiobus/io/device-definition'
-import { getTransformerIcon } from 'audiobus/io/transformer-definitions'
+import { getTransformerDefinition, getTransformerIcon } from 'audiobus/io/transformer-definitions'
 import type { InputId } from 'audiobus/io/inputs/input-types'
 import type { OutputId } from 'audiobus/io/outputs/output-types'
 
 export type ElementKind = 'input' | 'output' | 'instrument' | 'transformer'
+
+export function elementDescription(kind: ElementKind, id: string, name: string, description?: string): string {
+    return description?.trim() || (kind === 'transformer' ? getTransformerDefinition(id)?.description : undefined)
+        || (kind === 'instrument' ? `Turn incoming notes into ${name} instrument audio.` : `Use ${name} as a ${kind} in this chain.`)
+}
 
 const INPUT_ICONS: Record<InputId, string> = {
     keyboard: 'keyboard', gamepad: 'gamepad', 'gamepad-music': 'gamepad',

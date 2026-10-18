@@ -1,17 +1,22 @@
 import React, { useEffect, useId, useRef, useState } from 'react'
 import { useChain } from './ChainContext'
 import { SharedDevices } from './SharedDevices'
-import { elementIcon } from './element-icons'
+import { elementDescription, elementIcon } from './element-icons'
 import { ElementIcon } from './ElementIcon'
 import { createInstrumentById, getAvailableInstrumentFactories } from 'audiobus/instruments/instrument-factory-ui.ts'
 
-type Choice = { id: string; name: string; description: string; kind: 'input' | 'output' | 'instrument' }
+import { ClassificationFilter } from './ClassificationFilter'
+import { choiceMatches, groupChoices, type ClassifiedChoice } from './device-filters'
+import { fillDeviceCard } from './device-card'
 
-export function DevicePicker({ direction }: { direction: 'input' | 'output' }) {
+type Choice = ClassifiedChoice & { kind: 'input' | 'output' | 'instrument' }
+
+export function DevicePicker({ direction, dialog = false, onAdded }: { direction: 'input' | 'output'; dialog?: boolean; onAdded?: () => void }) {
     const { chain, manager } = useChain()
     const filterId = useId()
     const [choices, setChoices] = useState<Choice[]>([])
     const [filter, setFilter] = useState('')
+    const [classification, setClassification] = useState('')
     const [loading, setLoading] = useState(true)
     const [busy, setBusy] = useState(false)
     const adding = useRef(false)
@@ -21,6 +26,7 @@ export function DevicePicker({ direction }: { direction: 'input' | 'output' }) {
         let cancelled = false
         setLoading(true)
         setChoices([])
+        setClassification('')
         setError('')
         const load = async (): Promise<Choice[]> => {
             if (direction === 'input') {
@@ -65,34 +71,35 @@ export function DevicePicker({ direction }: { direction: 'input' | 'output' }) {
                     manager.addDevice(chain, await createOutputById(choice.id, options), 'output')
                 }
             }
+            onAdded?.()
         } catch (error) { setError(String(error)) }
         finally { adding.current = false; setBusy(false) }
     }
-    const filtered = choices.filter(choice => `${choice.name} ${choice.description}`.toLowerCase().includes(filter.toLowerCase()))
+    const filtered = choices.filter(choice => choiceMatches(choice, filter, classification))
     return <div className="device-picker" aria-busy={loading || busy}>
-        <label className="filter-label" htmlFor={filterId}>
+        <label className={dialog ? 'dialog-filter' : 'filter-label'} htmlFor={filterId}>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <circle cx="10" cy="10" r="6" /><path d="m15 15 5 5" />
             </svg>
             <input id={filterId} type="search" aria-label={`Search ${direction}s`}
-                placeholder={`Filter ${direction}s...`} value={filter} onChange={event => setFilter(event.target.value)} />
+                autoFocus={dialog} className={dialog ? 'filter-input-global' : undefined} placeholder={`Filter ${direction}s...`} value={filter} onChange={event => setFilter(event.target.value)} />
         </label>
-        <SharedDevices direction={direction} />
+        <ClassificationFilter choices={choices} value={classification} onChange={setClassification} label={`Filter ${direction}s by type`} />
+        <SharedDevices direction={direction} search={filter} selection={classification} />
         {error && <p role="alert">{error}</p>}
         {loading ? <p role="status">Loading {direction}s…</p> : <>
-            {(['input', 'output', 'instrument'] as const).map(kind => {
-                const items = filtered.filter(choice => choice.kind === kind)
-                return items.length > 0 && <section key={kind} aria-label={`${kind}s`}>
-                    {kind === 'instrument' && <h6>Instruments</h6>}
-                    <ul role="list">{items.map(choice => <li key={choice.id}>
-                        <button className="element-choice" type="button" title={choice.description} disabled={busy} onClick={() => void add(choice)}>
-                            <ElementIcon src={elementIcon(choice.kind, choice.id)} />
-                            <span>{choice.name}</span>
-                        </button>
-                    </li>)}</ul>
-                </section>
-            })}
-            {filtered.length === 0 && !error && <p role="status">{filter ? `No ${direction}s match "${filter}"` : `No ${direction}s available`}</p>}
+            {groupChoices(filtered).map(group => <section className="choice-group" key={`${group.type}:${group.subtype}`} aria-label={group.label}>
+                <h6 className="section-title">{group.label}</h6>
+                <ul className={dialog ? 'items-grid' : undefined} role="list">{group.items.map(choice => <li key={`${choice.kind}:${choice.id}`}>
+                    <button className={dialog ? 'grid-item' : 'element-choice'} type="button"
+                        ref={dialog ? button => { if (button) fillDeviceCard(button, choice, choice.kind) } : undefined}
+                        title={elementDescription(choice.kind, choice.id, choice.name, choice.description)} disabled={busy} onClick={() => void add(choice)}>
+                        {!dialog && <><ElementIcon src={elementIcon(choice.kind, choice.id)} title={elementDescription(choice.kind, choice.id, choice.name, choice.description)} />
+                            <span>{choice.name}</span></>}
+                    </button>
+                </li>)}</ul>
+            </section>)}
+            {filtered.length === 0 && !error && <p role="status">{filter || classification ? `No ${direction}s match the selected filters` : `No ${direction}s available`}</p>}
         </>}
     </div>
 }
