@@ -186,6 +186,121 @@
 	}
 }
 
+.node-transformer:has(.transformer-settings) {
+    width: min(23rem, calc(100vw - 3rem));
+    box-sizing: border-box;
+    text-transform: none;
+    letter-spacing: normal;
+
+    > .transformer-settings {
+        display: grid;
+        gap: .75rem;
+        width: 100%;
+        align-items: stretch;
+    }
+
+    .transformer-guide {
+        padding: .875rem;
+        border-radius: 10px;
+        background: color-mix(in srgb, var(--col-bg) 85%, transparent);
+        color: var(--col-fg);
+        font-size: .875rem;
+        strong { font-size: .9rem; }
+        p { margin: .375rem 0 0; max-width: none; font-weight: 400; line-height: 1.6; }
+    }
+
+    .transformer-setting-group {
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+        border-radius: 10px;
+        overflow: hidden;
+        background: color-mix(in srgb, var(--col-bg) 90%, transparent);
+        color: var(--col-fg);
+        > legend { padding: 0 .5rem; margin-left: .5rem; font-size: .9rem; }
+        > summary {
+            padding: 1rem;
+            min-height: 44px;
+            box-sizing: border-box;
+            cursor: pointer;
+            font-size: .9rem;
+            list-style: revert;
+            text-transform: none;
+            letter-spacing: normal;
+            &:hover { background: color-mix(in srgb, currentColor 6%, transparent); }
+        }
+        .setting-count { float: right; font-size: .75rem; font-weight: 400; }
+    }
+
+    .transformer-setting-fields {
+        display: grid;
+        gap: 1rem;
+        padding: 1rem;
+        min-width: 0;
+    }
+
+    .config-field {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: .5rem;
+        min-width: 0;
+        font-size: .875rem;
+        font-weight: 600;
+        select, input {
+            box-sizing: border-box;
+            width: 100%;
+            min-width: 0;
+            max-width: 100%;
+            min-height: 44px;
+            margin: 0;
+            padding: .625rem .75rem;
+            border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+            border-radius: 7px;
+            color: var(--col-fg);
+            background: var(--col-bg);
+            font: inherit;
+            font-weight: 400;
+            text-transform: none;
+            letter-spacing: normal;
+        }
+        input::placeholder { color: currentColor; opacity: .65; }
+    }
+    .config-field-help {
+        max-width: none;
+        font-size: .78rem;
+        font-weight: 400;
+        line-height: 1.5;
+    }
+    :is(select, input, summary):focus-visible {
+        outline: 3px solid var(--col-fg);
+        outline-offset: 3px;
+    }
+}
+
+.node-transformer > .transformer-status {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: .625rem;
+    padding: .875rem;
+    border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+    border-radius: 10px;
+    color: var(--col-fg);
+    background: var(--col-bg);
+    font-size: .8rem;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: normal;
+    p { margin: 0; max-width: none; line-height: 1.5; overflow-wrap: anywhere; }
+    .transformer-status-dot { flex: 0 0 8px; height: 8px; border-radius: 50%; background: currentColor; margin-top: .35em; }
+    &[data-state='ready'] .transformer-status-dot { background: light-dark(#18743c, #76e2a1); }
+    &[data-state='loading'] .transformer-status-dot { background: light-dark(#925600, #ffca70); }
+    &[data-state='error'] { border-color: light-dark(#b52d47, #ff94a7); }
+    &[data-state='disabled'] .transformer-status-dot { background: transparent; outline: 1px solid currentColor; }
+}
+
 .config-enabled-label {
     display: inline-flex;
     align-items: center;
@@ -1132,6 +1247,12 @@ dialog.add-output-dialog {
 }
 @media (max-width: 600px) {
     .chain-graph { grid-template-columns: minmax(6rem, 8rem) minmax(0, 1fr); }
+}
+
+.node-viewport-editor > .node-transformer.is-fullscreen > .transformer-settings {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+    align-items: start;
+    > .transformer-guide { grid-column: 1 / -1; }
 }
 
 .chain-toolbar .chain-name {

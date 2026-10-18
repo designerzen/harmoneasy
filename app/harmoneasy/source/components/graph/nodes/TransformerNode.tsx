@@ -1,17 +1,24 @@
 import { useChain } from '../ChainContext'
 import { Handle, Position } from "@xyflow/react"
 import React, { useCallback, useEffect, useState } from "react"
-import { ConfigField } from "../Widgets.tsx"
+import { TransformerSettings } from "../Widgets.tsx"
 import { elementDescription, elementIcon } from '../element-icons'
 import { ElementIcon } from '../ElementIcon'
 
-function TransformerStatus({ element }: { element: { status: string } }) {
-    const [status, setStatus] = useState(element.status)
+function TransformerStatus({ element }: { element: { status: string; statusState?: string } }) {
+    const readStatus = () => ({ text: element.status, state: element.statusState ?? 'idle' })
+    const [status, setStatus] = useState(readStatus)
     useEffect(() => {
-        const interval = setInterval(() => setStatus(element.status), 500)
+        const interval = setInterval(() => setStatus(previous => {
+            const next = readStatus()
+            return next.text === previous.text && next.state === previous.state ? previous : next
+        }), 500)
         return () => clearInterval(interval)
     }, [element])
-    return <p role="status" className="transformer-status">{status}</p>
+    return <div role="status" className="transformer-status" data-state={status.state}>
+        <span className="transformer-status-dot" aria-hidden="true" />
+        <p>{status.state === 'disabled' ? 'Accompaniment is off. Your notes still pass through.' : status.text}</p>
+    </div>
 }
 
 /**
@@ -81,15 +88,7 @@ export function TransformerNode(props: any) {
         </menu>
         {typeof props.data.element.status === 'string' && <TransformerStatus element={props.data.element} />}
       
-        {isFullscreen ? <div className="expanded-node-settings">
-            {props.data.fields.map((f: any, i: number) => <ConfigField
-                key={`${f.uuid}-${i}-${props.data.element.config[f.name] ?? f.default}`}
-                config={{ ...f, default: props.data.element.config[f.name] ?? f.default }} element={props.data.element} />)}
-        </div> : <>
-        {props.data.fields.map( (f: any, i: number) => (
-            <ConfigField key={`${f.uuid}-${i}-${props.data.element.config[f.name] ?? f.default}`} config={{ ...f, default: props.data.element.config[f.name] ?? f.default }} element={props.data.element} />
-        ))}
-        </>}
+        <TransformerSettings fields={props.data.fields} element={props.data.element} expanded={isFullscreen} />
 
 		{ shouldShowMoveButtons ? 
 			(<menu className="graph-node-menu">
