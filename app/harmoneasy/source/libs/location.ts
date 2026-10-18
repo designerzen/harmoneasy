@@ -1,3 +1,17 @@
+import LZString from 'lz-string'
+
+const STATE_FRAGMENT_KEY = 'harmoneasy-state'
+
+export const createStateURL = (options, location = window.location.href) => {
+	const url = new URL(location)
+	const fragment = new URLSearchParams(url.hash.slice(1))
+	fragment.set(STATE_FRAGMENT_KEY, LZString.compressToEncodedURIComponent(JSON.stringify(options)))
+	// Fragments survive sharing and reloads without being sent to the server.
+	url.search = ''
+	url.hash = fragment.toString()
+	return url
+}
+
 /**
  * Convert a URL query value into a JS data type by inferring the type
  * @param {Any} JavaScript data type (eg. String, Number, Boolean, Array, Object)
@@ -88,6 +102,18 @@ export const getLocationSettings = (defaultOptions) => {{
 		locationOptions[key] = guessType(value)	
 		// console.log(`${key}:${value}`)
 	}
+	const payload = new URLSearchParams(window.location.hash.slice(1)).get(STATE_FRAGMENT_KEY)
+	if (payload) {
+		try {
+			const decoded = LZString.decompressFromEncodedURIComponent(payload)
+			const saved = decoded && JSON.parse(decoded)
+			if (saved && typeof saved === 'object' && !Array.isArray(saved)) {
+				Object.assign(locationOptions, saved)
+			}
+		} catch {
+			// Invalid bookmarks must not prevent startup with defaults.
+		}
+	}
 	//console.log(`query:${locationOptions}`)
 	return locationOptions
 }}
@@ -107,7 +133,7 @@ export const createQueryString = options => {
  * @returns {String} URL with current state
  */
  export const getShareLink = (options) => {
-	return window.location + createQueryString(options)
+	return createStateURL(options).href
 }
 
 /**
@@ -171,13 +197,7 @@ export const refresh = options => {
  * @param {String} title Optional history title
  */
 export const addToHistory = (options, title="") => {
-	const url = new URL(window.location)
-	for (let i in options){
-		const option = options[i]
-		url.searchParams.set(i, option)
-		//console.log("History", {out, options, title, url} )
-	}
-	//
-	const out = window.history.pushState(options, title, url)
-	//console.log("History", {out, options, title, url} )
+	const saved = { ...getLocationSettings({}), ...options }
+	const url = createStateURL(saved)
+	window.history.pushState(saved, title, url)
 }

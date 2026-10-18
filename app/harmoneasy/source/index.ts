@@ -462,7 +462,6 @@ const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: b
         try {
             const ioExport = ioManager.exportWorkspace()
             state.set('io', ioExport)
-            state.updateLocation()
             console.info('IO chain configuration saved to state')
         } catch (error) {
             console.error('Failed to save IO chain configuration:', error)

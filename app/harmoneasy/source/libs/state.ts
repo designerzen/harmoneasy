@@ -2,7 +2,7 @@
  * This is a simple way to pass state from between pages without storing locally
  * bypassing the need for cookies or local storage or GDPR cookie messages.
  */
-import { addToHistory, getLocationSettings } from './location.ts'
+import { addToHistory, createStateURL, getLocationSettings } from './location.ts'
 
 let state = null
 let main
@@ -371,7 +371,7 @@ export default class State {
 		if (this.saveHistory)
 		{
 			const title = ""
-			this.searchParams.set(key, value)
+			this.url = createStateURL(this.asObject)
 			// window.history.replaceState( this.asObject, title, this.url )
 			window.history.pushState( this.asObject, title, this.url )
 		}
@@ -429,8 +429,8 @@ export default class State {
 			return this.state
 		}
 		
-		// reset URL to blank hostname
-		this.url = new URL( location.origin + location.pathname )
+		// Build a bookmark without sending saved state in the request URL.
+		this.url = createStateURL(newState)
 		
 		// this.searchParams = new URLSearchParams()
 		
@@ -443,15 +443,6 @@ export default class State {
 
 		this.state = new Map(Object.entries(newState))
 		
-		// update the location and history
-		if (this.saveHistory)
-		{
-			//this.searchParams = new URLSearchParams()
-			this.state.forEach( (value,key) => {
-				this.searchParams.set( key, value )
-			})
-		}
-
 		// update the front end
 		if (this.controlUI)
 		{
@@ -479,25 +470,12 @@ export default class State {
 	}
 
 	/**
-	 * Updates the URL with an encoded version of the existing state
-	 * @param {Boolean} encode 
+	 * Updates the URL with a compressed fragment of the existing state.
+	 * @param {Boolean} encode Retained for compatibility; state is always compressed.
 	 */
 	updateLocation( encode=false ){
-		const url = new URL(window.location)
-		const options = {}
-		
-		if (encode)
-		{
-			window.history.pushState( this.asObject, null, url.pathname + "?b=" + encodeLocation(url.search) )
-		}else{
-
-			this.state.forEach( (value,key) => {
-				options[key] = value
-				url.searchParams.set(key, value)
-			})
-			window.history.pushState(options, null, url)
-		}
-		// console.log("History", { options, url} , url.toString() )
+		this.url = createStateURL(this.asObject)
+		window.history.replaceState(this.asObject, '', this.url)
 	}
 
 	/**

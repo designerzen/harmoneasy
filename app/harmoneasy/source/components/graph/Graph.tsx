@@ -56,8 +56,8 @@ function FlowComponent() {
 	const [ layoutMode, setLayoutMode ] = useState(chain.options.graphLayout ?? DEFAULT_LAYOUT_MODE)
 	const { fitView, getViewport, setViewport } = useReactFlow()
 	const savedViewport = useRef<ReturnType<typeof getViewport> | null>(null)
+	const fittedLayout = useRef<string | null>(null)
 	const nodesInitialized = useNodesInitialized()
-	const [transformerCount, setTransformerCount] = useState(0)
 	const [fullscreenNodeId, setFullscreenNodeId] = useState<string | null>(null)
 
 	useEffect(() => {
@@ -72,10 +72,6 @@ function FlowComponent() {
                 return layoutMeasuredNodes(structure.nodes.map(node => ({ ...node, measured: measured.get(node.id) })), layoutMode)
             })
 			setEdges(structure.edges)
-
-			// Track transformer count to trigger fitView only when transformers actually change
-			const newTransformerCount = structure.nodes.filter((n: any) => n.type === 'transformer').length
-			setTransformerCount(newTransformerCount)
 		}
 
         chain.addEventListener('configurationChanged', () => {
@@ -105,11 +101,14 @@ function FlowComponent() {
             savedViewport.current = null
             return
         }
+        // Preserve the user's pan and zoom during structure and size updates.
+        if (fittedLayout.current === layoutMode) return
         const frame = requestAnimationFrame(() => {
+            fittedLayout.current = layoutMode
             void fitView({ padding: 0.15, duration: 150, ...DEFAULT_GRAPH_OPTIONS })
         })
         return () => cancelAnimationFrame(frame)
-    }, [nodesInitialized, transformerCount, nodes.length, layoutMode, fitView, setViewport, measuredSizes, fullscreenNodeId])
+    }, [nodesInitialized, layoutMode, fitView, setViewport, measuredSizes, fullscreenNodeId])
 
     const onNodesChange = useCallback((changes: NodeChange<GraphNode>[]) => {
         setNodes(snapshot => {
