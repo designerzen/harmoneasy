@@ -28,6 +28,7 @@ export function TransformerPicker({ dialog = false, onAdded }: { dialog?: boolea
 
     return (<div className="transformer-picker">
 			
+            <div className="transformer-filter-row">
 			<label className={dialog ? 'dialog-filter' : 'filter-label filter-transformer'} htmlFor={filterId}>
                 {!dialog && <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                     <circle cx="10" cy="10" r="6" /><path d="m15 15 5 5" />
@@ -42,10 +43,10 @@ export function TransformerPicker({ dialog = false, onAdded }: { dialog?: boolea
 					value={transformersFilterText}
 					onChange={(e) => setTransformersFilterText(e.target.value)}
 				/>
-				{/* <button type="button">Filter</button> */}
 			</label>
 
-            <ClassificationFilter choices={choices} value={classification} onChange={setClassification} label="Filter transformers by type" />
+            <ClassificationFilter compact choices={choices} value={classification} onChange={setClassification} label="Filter transformers by type" />
+            </div>
             {groupChoices(filteredTransformers).map(group => <section className="choice-group" key={`${group.type}:${group.subtype}`} aria-label={group.label}>
                 <h6 className="section-title">{group.label}</h6>
                 <ul className={dialog ? 'items-grid' : undefined} role="list">

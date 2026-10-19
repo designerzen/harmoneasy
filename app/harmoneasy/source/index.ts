@@ -598,7 +598,7 @@ document.querySelector<HTMLFormElement>('#start-form')!.addEventListener('submit
     const errorMessage = startDialog.querySelector<HTMLElement>('#start-error')!
     errorMessage.hidden = true
     try {
-        const setup = button.value === 'empty' ? createEmptySetup() : startContexts.getSetup()
+        const setup = button.value === 'empty' ? createEmptySetup() : button.value === 'session' ? undefined : startContexts.getSetup()
         await initialiseApplication(onTick, false, setup)
         startDialog.close()
     } catch (error) {

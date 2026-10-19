@@ -20,6 +20,12 @@ it('keeps the preset chooser collapsed and contains its controls inside the star
     expect(empty.value).toBe('empty')
     expect(empty.form?.id).toBe('start-form')
     expect(details.contains(empty)).toBe(false)
+    const continueSession = dialog.querySelector<HTMLButtonElement>('.btn-continue-session')!
+    expect(continueSession.textContent).toBe('Continue Session')
+    expect(continueSession.value).toBe('session')
+    expect(continueSession.form).toBe(empty.form)
+    expect(continueSession.parentElement).toBe(empty.parentElement)
+    expect(details.contains(continueSession)).toBe(false)
     for (const id of ['start-context-list', 'start-context-suggestions', 'start-context-filter', 'start-context-category']) {
         expect(details.contains(document.getElementById(id))).toBe(true)
     }

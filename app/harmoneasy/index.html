@@ -40,10 +40,13 @@
 			<fieldset id="start-context-list"><legend class="sr-only">Starting context</legend></fieldset>
 			</div>
 		</details>
-			<button autofocus class="btn-start-empty" type="submit" name="startup" value="empty">Start Empty</button>
+			<div class="start-secondary-actions">
+				<button class="btn-continue-session" type="submit" name="startup" value="session">Continue Session</button>
+				<button autofocus class="btn-start-empty" type="submit" name="startup" value="empty">Start Empty</button>
+			</div>
 			<footer class="start-preset-actions">
 				<p id="start-context-selection" role="status">Current session: restore your saved chains or start with the default setup.</p>
-				<button class="btn-start-preset primary" type="submit" name="startup" value="preset">Start Current Session</button>
+				<button class="btn-start-preset primary" type="submit" name="startup" value="preset" disabled>Start Preset</button>
 			</footer>
 		</form>
 		<p id="start-error" role="alert" hidden></p>

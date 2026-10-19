@@ -235,7 +235,7 @@ export function createStartContexts(root: HTMLElement) {
         selected = START_CONTEXTS.find(context => context.id === list.querySelector<HTMLInputElement>('input:checked')?.value)
         selection.textContent = selected ? `${selected.name} — ready to start.` : 'Current session: restore your saved chains or start with the default setup.'
         const startPreset = root.querySelector<HTMLButtonElement>('.btn-start-preset')!
-        startPreset.textContent = selected ? 'Start Preset' : 'Start Current Session'
+        startPreset.disabled = !selected
     })
     const filter = () => {
         const words = search.value.trim().toLowerCase().split(/\s+/)
