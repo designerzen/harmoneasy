@@ -1,7 +1,7 @@
 import { applyPreset, usePresetLibrary } from './saved-presets'
-import React, { useId, useRef, useState } from 'react'
+import React, { useId, useLayoutEffect, useRef, useState } from 'react'
 import type IOChainManager from 'audiobus/io/IO-chain-manager'
-import { PresetOptions } from './PresetDetails'
+import { createChainPresetPicker, updateChainPresetOptions } from './chain-preset-picker'
 
 export function IOChainManagerUI({ manager }: { manager: IOChainManager }) {
     const selectId = useId()
@@ -10,6 +10,25 @@ export function IOChainManagerUI({ manager }: { manager: IOChainManager }) {
     const [busy, setBusy] = useState(false)
     const adding = useRef(false)
     const [error, setError] = useState('')
+    const pickerHost = useRef<HTMLSpanElement>(null)
+    const picker = useRef<HTMLSelectElement | null>(null)
+    useLayoutEffect(() => {
+        const select = createChainPresetPicker(selectId)
+        const change = () => setSelection(select.value)
+        select.addEventListener('change', change)
+        pickerHost.current!.append(select)
+        picker.current = select
+        return () => {
+            select.removeEventListener('change', change)
+            select.remove()
+            picker.current = null
+        }
+    }, [selectId])
+    useLayoutEffect(() => {
+        updateChainPresetOptions(picker.current!, library.presets)
+        setSelection(picker.current!.value)
+    }, [library.presets])
+    useLayoutEffect(() => { picker.current!.disabled = busy }, [busy])
     const addChain = async () => {
         if (adding.current) return
         adding.current = true
@@ -31,14 +50,7 @@ export function IOChainManagerUI({ manager }: { manager: IOChainManager }) {
     return <menu id="add-iochain" className="iochain-manager" aria-label="Add a new IOChain">
         <label htmlFor={selectId}>New chain</label>
         <div className="chain-create-control">
-        <select className="chain-preset-picker" id={selectId} disabled={busy} value={selection}
-            onChange={event => setSelection(event.target.value)}>
-            <button type="button">{React.createElement('selectedcontent')}</button>
-            <option value="">
-                <span className="chain-preset-copy"><strong>Default IOChain</strong><span className="chain-preset-description">Start with the default chain settings.</span></span>
-            </option>
-            <PresetOptions presets={library.presets} />
-        </select>
+        <span className="chain-preset-host" ref={pickerHost} />
         <button type="button" disabled={busy} onClick={addChain}>{busy ? 'Adding…' : 'Add Chain'}</button>
         </div>
         {(error || storageError) && <p role="alert">{error || storageError}</p>}

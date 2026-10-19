@@ -27,24 +27,24 @@
 		<p>You play or import notes. Harmoneasy changes their pitch, harmony or rhythm, then plays the result.
 			A chain connects those steps. These starting points build one for you.</p>
 		<p>Try it with your computer or onscreen keyboard. You can connect MIDI instruments after starting.</p>
-		<details id="start-contexts" open>
-			<summary>Find a starting point</summary>
+		<form id="start-form" method="dialog">
+		<details id="start-contexts">
+			<summary>Presets</summary>
 			<p id="start-suggestions-title">Not sure where to begin? Pick something you want to try.</p>
 			<div id="start-context-suggestions" role="group" aria-labelledby="start-suggestions-title"></div>
-			<p>Pick a starting point, then press Start. Choosing a context replaces the session chains; keep Current session to restore your setup.</p>
+			<p>Pick a starting point, then start with that preset. Choose Current session to restore your saved chains.</p>
 			<label for="start-context-filter">Filter contexts</label>
 			<input id="start-context-filter" type="search" placeholder="Try one finger, bass, classroom, MIDI, triplets…">
 			<label for="start-context-category">Activity</label>
 			<select id="start-context-category"><option value="">All activities</option></select>
 			<p id="start-context-count" role="status"></p>
 			<fieldset id="start-context-list"><legend>Starting context</legend></fieldset>
+			<p id="start-context-selection" role="status">Current session: restore your saved chains or start with the default setup.</p>
+			<button class="btn-start-preset primary" type="submit" name="startup" value="preset">Start Current Session</button>
 		</details>
-		<p id="start-context-selection" role="status">Current session: restore your saved chains or start with the default setup.</p>
-		<p id="start-error" role="alert" hidden></p>
-		<form id="start-form" method="dialog">
-			<!-- <button class="btn-close" type="submit">Begin</button> -->
-			<button autofocus class="btn-start primary cta" type="submit">Start</button>
+			<button autofocus class="btn-start-empty primary cta" type="submit" name="startup" value="empty">Start Empty</button>
 		</form>
+		<p id="start-error" role="alert" hidden></p>
 	</dialog>
 
 	<header class="header-main">

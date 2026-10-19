@@ -1,16 +1,7 @@
 import React from 'react'
 import { elementDescription, elementIcon } from './element-icons'
 import { ElementIcon } from './ElementIcon'
-import { PRESETS, type TransformerPreset } from 'audiobus/io/transformer-presets'
-
-export function PresetOptions({ presets = PRESETS }: { presets?: TransformerPreset[] }) {
-    return <>{[...new Set(presets.map(preset => preset.category))].map(category => <optgroup key={category} label={category}>
-        {presets.filter(preset => preset.category === category).map(preset =>
-            <option key={preset.id} value={preset.id}>
-                <span className="chain-preset-copy"><strong>{preset.name}</strong><span className="chain-preset-description">{preset.description}</span><span className="chain-preset-use-case">{preset.useCase}</span></span>
-            </option>)}
-    </optgroup>)}</>
-}
+import type { TransformerPreset } from 'audiobus/io/transformer-presets'
 
 export function PresetDetails({ preset }: { preset: TransformerPreset }) {
     return <article className="preset-details">

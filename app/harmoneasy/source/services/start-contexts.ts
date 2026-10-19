@@ -180,6 +180,10 @@ export function createContextSetup(context: StartContext): PresetSetup {
     }
 }
 
+export function createEmptySetup() {
+    return createContextSetup(START_CONTEXTS.find(context => context.id === 'blank')!)
+}
+
 export function createStartContexts(root: HTMLElement) {
     const list = root.querySelector<HTMLFieldSetElement>('#start-context-list')!
     const search = root.querySelector<HTMLInputElement>('#start-context-filter')!
@@ -217,6 +221,8 @@ export function createStartContexts(root: HTMLElement) {
     list.addEventListener('change', () => {
         selected = START_CONTEXTS.find(context => context.id === list.querySelector<HTMLInputElement>('input:checked')?.value)
         selection.textContent = selected ? `${selected.name}. ${selected.next}` : 'Current session: restore your saved chains or start with the default setup.'
+        const startPreset = root.querySelector<HTMLButtonElement>('.btn-start-preset')!
+        startPreset.textContent = selected ? 'Start Preset' : 'Start Current Session'
     })
     const filter = () => {
         const words = search.value.trim().toLowerCase().split(/\s+/)

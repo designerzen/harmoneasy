@@ -3,9 +3,32 @@ import { afterEach, expect, it } from 'vitest'
 import startPage from '../index.html?raw'
 import { DEFAULT_PRESET_LIBRARY } from '../../../packages/audiobus/io/transformer-presets'
 import { parsePresetLibrary } from '../../../packages/audiobus/io/preset-library'
-import { createContextSetup, createStartContexts, START_CONTEXTS, START_SUGGESTIONS } from '../source/services/start-contexts'
+import { createContextSetup, createEmptySetup, createStartContexts, START_CONTEXTS, START_SUGGESTIONS } from '../source/services/start-contexts'
 
 afterEach(() => document.body.replaceChildren())
+
+it('keeps the preset chooser collapsed and contains its controls inside the start dialog', () => {
+    document.body.innerHTML = startPage
+        .replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '')
+    const dialog = document.querySelector<HTMLDialogElement>('#start-dialog')!
+    const details = dialog.querySelector<HTMLDetailsElement>('#start-contexts')!
+    expect(details.open).toBe(false)
+    expect(details.querySelector('summary')!.textContent).toBe('Presets')
+    const empty = dialog.querySelector<HTMLButtonElement>('.btn-start-empty')!
+    expect(empty.textContent).toBe('Start Empty')
+    expect(empty.value).toBe('empty')
+    expect(empty.form?.id).toBe('start-form')
+    expect(details.contains(empty)).toBe(false)
+    for (const id of ['start-context-list', 'start-context-suggestions', 'start-context-filter', 'start-context-category', 'start-context-selection']) {
+        expect(details.contains(document.getElementById(id))).toBe(true)
+    }
+    expect(details.querySelector<HTMLButtonElement>('.btn-start-preset')!.value).toBe('preset')
+    createStartContexts(dialog)
+    dialog.querySelector<HTMLInputElement>('input[value="live"]')!.click()
+    expect(details.querySelector('.btn-start-preset')!.textContent).toBe('Start Preset')
+    expect(createEmptySetup().chains[0].steps).toEqual([])
+    expect(createEmptySetup().chains[0].options.name).toBe('Start a fresh chain')
+})
 
 it('provides restorable contexts with valid routing and independent transformer settings', () => {
     expect(START_CONTEXTS.length).toBeGreaterThanOrEqual(40)

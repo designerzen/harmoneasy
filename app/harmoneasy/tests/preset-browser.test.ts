@@ -3,7 +3,8 @@ import React, { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, expect, it, vi } from 'vitest'
 import { PresetBrowser } from '../source/components/graph/PresetBrowser'
-import { PresetOptions } from '../source/components/graph/PresetDetails'
+import { createChainPresetPicker, updateChainPresetOptions } from '../source/components/graph/chain-preset-picker'
+import { elementIcon } from '../source/components/graph/element-icons'
 import { IOChainManagerUI } from '../source/components/graph/IOChainManagerUI'
 import type IOChainManager from 'audiobus/io/IO-chain-manager'
 import { DEFAULT_PRESET_LIBRARY } from '../../../packages/audiobus/io/transformer-presets'
@@ -52,12 +53,17 @@ it('lets users inspect grouped presets before applying and keeps saved presets a
 })
 
 it('uses the same sections for new-chain options', () => {
-    vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
-    const host = document.createElement('div')
-    root = createRoot(host)
-    act(() => root.render(React.createElement('select', {}, React.createElement(PresetOptions))))
-    expect(host.querySelectorAll('optgroup')).toHaveLength(5)
-    expect(host.querySelectorAll('option')).toHaveLength(22)
+    const picker = createChainPresetPicker('test-picker')
+    updateChainPresetOptions(picker, DEFAULT_PRESET_LIBRARY.presets)
+    expect(picker.querySelectorAll('optgroup')).toHaveLength(5)
+    expect(picker.querySelectorAll('option')).toHaveLength(23)
+    const preset = DEFAULT_PRESET_LIBRARY.presets[0]
+    picker.value = preset.id
+    updateChainPresetOptions(picker, DEFAULT_PRESET_LIBRARY.presets)
+    expect(picker.value).toBe(preset.id)
+    updateChainPresetOptions(picker, [])
+    expect(picker.value).toBe('')
+    expect(picker.querySelectorAll('button > selectedcontent')).toHaveLength(1)
 })
 
 it('describes every new-chain option before selection and adds only when confirmed', async () => {
@@ -79,6 +85,12 @@ it('describes every new-chain option before selection and adds only when confirm
         expect(option.selected).toBe(false)
         expect(option.querySelector('.chain-preset-description')?.textContent).toBe(preset.description)
         expect(option.querySelector('.chain-preset-use-case')?.textContent).toBe(preset.useCase)
+        const icons = option.querySelectorAll<HTMLElement>('.chain-preset-step .element-icon')
+        expect(icons).toHaveLength(preset.steps.length)
+        preset.steps.forEach((step, index) => {
+            expect(icons[index].style.maskImage).toContain(elementIcon('transformer', step.type))
+            expect(icons[index].parentElement?.textContent).toBe(step.summary || step.type)
+        })
     }
     const preset = DEFAULT_PRESET_LIBRARY.presets.find(item => item.name === 'Ratchet Fill')!
     act(() => {

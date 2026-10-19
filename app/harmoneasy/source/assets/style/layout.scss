@@ -32,8 +32,12 @@
 		.h2 { font-size: 1.125rem; }
 	}
 
-	@media (min-width: 1200px) {
-		grid-template-columns: auto minmax(0, 1fr);
+	@media (min-width: 900px) {
+		grid-template-areas: "brand secondary secondary" "tempo swing volume";
+		grid-template-columns: minmax(20rem, 1.4fr) minmax(10rem, .8fr) minmax(18rem, 1.2fr);
+		gap: .5rem;
+		.backlink { grid-area: brand; }
+		.header-controls { display: contents; }
 	}
 }
 

@@ -8,7 +8,7 @@ import State from './libs/state.ts'
 
 // Front End
 import UI from './ui.ts'
-import { createStartContexts } from './services/start-contexts'
+import { createEmptySetup, createStartContexts } from './services/start-contexts'
 import { applySetup } from './components/graph/saved-presets'
 import type { PresetSetup } from 'audiobus/io/preset-library'
 import { createNetronomeLink } from './services/netronome-link'
@@ -585,19 +585,22 @@ if (storage) {
 // Keep context browsing available until the explicit audio activation gesture.
 const startDialog = document.querySelector<HTMLDialogElement>('#start-dialog')!
 const startContexts = createStartContexts(startDialog)
+startDialog.removeAttribute('open')
+startDialog.showModal()
+startDialog.addEventListener('cancel', event => event.preventDefault())
 document.querySelector<HTMLFormElement>('#start-form')!.addEventListener('submit', async event => {
     event.preventDefault()
-    const button = startDialog.querySelector<HTMLButtonElement>('.btn-start')!
-    if (button.disabled) return
-    button.disabled = true
+    const button = event.submitter as HTMLButtonElement | null
+    if (!button || button.disabled) return
+    const buttons = startDialog.querySelectorAll<HTMLButtonElement>('button[type="submit"]')
+    buttons.forEach(button => { button.disabled = true })
     button.textContent = 'Starting…'
     const errorMessage = startDialog.querySelector<HTMLElement>('#start-error')!
     errorMessage.hidden = true
     try {
-        const setup = startContexts.getSetup()
+        const setup = button.value === 'empty' ? createEmptySetup() : startContexts.getSetup()
         await initialiseApplication(onTick, false, setup)
         startDialog.close()
-        if (setup) ui.showInfoDialog(setup.name, startDialog.querySelector('#start-context-selection')!.textContent!)
     } catch (error) {
         console.error('Failed to start application:', error)
         errorMessage.textContent = error instanceof Error ? error.message : 'Could not start the application. Please reload and try again.'
