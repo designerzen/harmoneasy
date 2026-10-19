@@ -66,6 +66,33 @@ it('uses the same sections for new-chain options', () => {
     expect(picker.querySelectorAll('button > selectedcontent')).toHaveLength(1)
 })
 
+it('illustrates every preset, filters by intent and keeps Apply outside the scrolling content', () => {
+    vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+    vi.stubGlobal('localStorage', { getItem: () => null })
+    const host = document.createElement('div')
+    document.body.append(host)
+    root = createRoot(host)
+    const onApply = vi.fn()
+    act(() => root.render(React.createElement(PresetBrowser, { onApply })))
+    expect(host.querySelectorAll('nav button svg')).toHaveLength(DEFAULT_PRESET_LIBRARY.presets.length)
+    const scores = [...host.querySelectorAll('nav svg')].map(svg => [...svg.querySelectorAll('rect:not(:first-child)')].map(rect => `${rect.getAttribute('x')}:${rect.getAttribute('y')}:${rect.getAttribute('fill')}`).join('|'))
+    expect(new Set(scores).size).toBe(DEFAULT_PRESET_LIBRARY.presets.length)
+    const scroll = host.querySelector('.preset-browser-scroll')!
+    const apply = host.querySelector<HTMLButtonElement>('.preset-apply-button')!
+    expect(scroll.contains(apply)).toBe(false)
+    expect(host.querySelector<HTMLDetailsElement>('.preset-library-tools')!.open).toBe(false)
+    const search = host.querySelector<HTMLInputElement>('.preset-search input')!
+    act(() => { search.value = 'triplet'; search.dispatchEvent(new Event('input', { bubbles: true })) })
+    expect(host.querySelectorAll('nav button')).toHaveLength(1)
+    act(() => host.querySelector<HTMLButtonElement>('nav button')!.click())
+    expect(host.querySelector('.preset-preview svg[role="img"]')?.getAttribute('aria-label')).toContain('Triplet Cascade')
+    expect(apply.textContent).toBe('Apply Triplet Cascade')
+    expect(onApply).not.toHaveBeenCalled()
+    act(() => { search.value = 'no such sound'; search.dispatchEvent(new Event('input', { bubbles: true })) })
+    expect(host.querySelector('.preset-no-results')?.textContent).toContain('No matching presets')
+    expect(apply.textContent).toBe('Apply Triplet Cascade')
+})
+
 it('describes every new-chain option before selection and adds only when confirmed', async () => {
     vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
     vi.stubGlobal('localStorage', { getItem: () => null })
