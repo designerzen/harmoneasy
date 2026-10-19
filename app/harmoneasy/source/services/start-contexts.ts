@@ -199,12 +199,19 @@ export function createStartContexts(root: HTMLElement) {
         category.add(option)
     }
     const current = document.createElement('label')
+    current.className = 'start-context-card start-context-current'
     const radio = document.createElement('input')
     radio.type = 'radio'; radio.name = 'start-context'; radio.value = ''; radio.checked = true
-    current.append(radio, 'Current session')
+    const currentTitle = document.createElement('strong')
+    currentTitle.textContent = 'Continue your session'
+    const currentDescription = document.createElement('span')
+    currentDescription.textContent = 'Restore your saved chains and pick up where you left off.'
+    current.append(radio, currentTitle, currentDescription)
     list.append(current)
     const entries = START_CONTEXTS.map(context => {
         const entry = document.createElement('label')
+        entry.className = 'start-context-card'
+        entry.dataset.category = context.category
         const input = document.createElement('input')
         input.type = 'radio'; input.name = 'start-context'; input.value = context.id
         const title = document.createElement('strong')
@@ -212,15 +219,21 @@ export function createStartContexts(root: HTMLElement) {
         const description = document.createElement('span')
         description.textContent = context.description
         const preview = document.createElement('small')
+        const next = document.createElement('small')
+        next.className = 'start-context-next'
+        next.textContent = `Try it: ${context.next}`
+        const badge = document.createElement('span')
+        badge.className = 'start-context-badge'
+        badge.textContent = context.category
         preview.className = 'start-context-chain'
         preview.textContent = `Your chain: Keyboard or imported notes → ${context.presets.map(id => DEFAULT_PRESET_LIBRARY.presets.find(preset => preset.id === id)!.name).join(' → ') || 'Notes unchanged'} → Synth`
-        entry.append(input, title, description, preview)
+        entry.append(input, badge, title, description, preview, next)
         list.append(entry)
         return { context, entry }
     })
     list.addEventListener('change', () => {
         selected = START_CONTEXTS.find(context => context.id === list.querySelector<HTMLInputElement>('input:checked')?.value)
-        selection.textContent = selected ? `${selected.name}. ${selected.next}` : 'Current session: restore your saved chains or start with the default setup.'
+        selection.textContent = selected ? `${selected.name} — ready to start.` : 'Current session: restore your saved chains or start with the default setup.'
         const startPreset = root.querySelector<HTMLButtonElement>('.btn-start-preset')!
         startPreset.textContent = selected ? 'Start Preset' : 'Start Current Session'
     })
@@ -238,10 +251,12 @@ export function createStartContexts(root: HTMLElement) {
     const updateSuggestions = () => suggestionButtons.forEach((button, index) => {
         button.setAttribute('aria-pressed', String(index > 0 ? suggestion === START_SUGGESTIONS[index - 1] : !suggestion))
     })
-    for (const item of [undefined, ...START_SUGGESTIONS]) {
+    const suggestionLabels = ['All ideas', 'First steps', 'Play together', 'Write a song', 'Work with a file', 'Perform live', 'Experiment']
+    for (const [index, item] of [undefined, ...START_SUGGESTIONS].entries()) {
         const button = document.createElement('button')
         button.type = 'button'
-        button.textContent = item?.name ?? `Explore all ${START_CONTEXTS.length} starting points`
+        button.textContent = suggestionLabels[index]
+        button.title = item?.name ?? `Explore all ${START_CONTEXTS.length} starting points`
         button.setAttribute('aria-controls', list.id)
         button.addEventListener('click', () => {
             suggestion = item

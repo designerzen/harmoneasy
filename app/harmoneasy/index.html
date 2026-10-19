@@ -17,32 +17,34 @@
 <body>
 
 	<dialog id="start-dialog" open aria-labelledby="start-title">
-		<a class="backlink float-left" href="/">
+		<header class="start-heading">
+		<a class="backlink" href="/">
 			<img class="logo" src="/source/assets/logos/harmoneasy.svg" alt="">
+			<span>Harmoneasy</span>
 		</a>
-		<h1 id="start-title" class="h2">Harmoneasy</h1>
-		<h2 class="h2">What would you like to make music do?</h2>
-		<p>Turn one note into a chord, stay in key while you improvise, turn a melody into a bass line,
-			remix a music file, or get a group playing to the same clock.</p>
-		<p>You play or import notes. Harmoneasy changes their pitch, harmony or rhythm, then plays the result.
-			A chain connects those steps. These starting points build one for you.</p>
-		<p>Try it with your computer or onscreen keyboard. You can connect MIDI instruments after starting.</p>
+		<h1 id="start-title">Your next musical idea starts here.</h1>
+		<p>One note into chords. A melody into a bass line. A classroom playing in time.
+			Choose a ready-made setup or start fresh with your keyboard.</p>
+		</header>
 		<form id="start-form" method="dialog">
 		<details id="start-contexts">
-			<summary>Presets</summary>
-			<p id="start-suggestions-title">Not sure where to begin? Pick something you want to try.</p>
+			<summary title="Show or hide preset setups"><span class="start-presets-label">Presets</span><span class="start-presets-hint">Browse ready-made setups</span><span class="start-presets-chevron" aria-hidden="true"></span></summary>
+			<div class="start-presets-content">
+			<p id="start-suggestions-title">What brings you here?</p>
 			<div id="start-context-suggestions" role="group" aria-labelledby="start-suggestions-title"></div>
-			<p>Pick a starting point, then start with that preset. Choose Current session to restore your saved chains.</p>
-			<label for="start-context-filter">Filter contexts</label>
-			<input id="start-context-filter" type="search" placeholder="Try one finger, bass, classroom, MIDI, triplets…">
-			<label for="start-context-category">Activity</label>
-			<select id="start-context-category"><option value="">All activities</option></select>
+			<div class="start-filters">
+			<label for="start-context-filter">Find an idea<input id="start-context-filter" type="search" placeholder="Try bass, classroom, MIDI…"></label>
+			<label for="start-context-category">Activity<select id="start-context-category"><option value="">All activities</option></select></label>
+			</div>
 			<p id="start-context-count" role="status"></p>
-			<fieldset id="start-context-list"><legend>Starting context</legend></fieldset>
-			<p id="start-context-selection" role="status">Current session: restore your saved chains or start with the default setup.</p>
-			<button class="btn-start-preset primary" type="submit" name="startup" value="preset">Start Current Session</button>
+			<fieldset id="start-context-list"><legend class="sr-only">Starting context</legend></fieldset>
+			</div>
 		</details>
-			<button autofocus class="btn-start-empty primary cta" type="submit" name="startup" value="empty">Start Empty</button>
+			<button autofocus class="btn-start-empty" type="submit" name="startup" value="empty">Start Empty</button>
+			<footer class="start-preset-actions">
+				<p id="start-context-selection" role="status">Current session: restore your saved chains or start with the default setup.</p>
+				<button class="btn-start-preset primary" type="submit" name="startup" value="preset">Start Current Session</button>
+			</footer>
 		</form>
 		<p id="start-error" role="alert" hidden></p>
 	</dialog>

@@ -13,19 +13,23 @@ it('keeps the preset chooser collapsed and contains its controls inside the star
     const dialog = document.querySelector<HTMLDialogElement>('#start-dialog')!
     const details = dialog.querySelector<HTMLDetailsElement>('#start-contexts')!
     expect(details.open).toBe(false)
-    expect(details.querySelector('summary')!.textContent).toBe('Presets')
+    expect(details.querySelector('.start-presets-label')!.textContent).toBe('Presets')
+    expect(details.querySelector('summary')!.textContent).toContain('Browse ready-made setups')
     const empty = dialog.querySelector<HTMLButtonElement>('.btn-start-empty')!
     expect(empty.textContent).toBe('Start Empty')
     expect(empty.value).toBe('empty')
     expect(empty.form?.id).toBe('start-form')
     expect(details.contains(empty)).toBe(false)
-    for (const id of ['start-context-list', 'start-context-suggestions', 'start-context-filter', 'start-context-category', 'start-context-selection']) {
+    for (const id of ['start-context-list', 'start-context-suggestions', 'start-context-filter', 'start-context-category']) {
         expect(details.contains(document.getElementById(id))).toBe(true)
     }
-    expect(details.querySelector<HTMLButtonElement>('.btn-start-preset')!.value).toBe('preset')
+    const actions = dialog.querySelector('.start-preset-actions')!
+    expect(details.contains(actions)).toBe(false)
+    expect(actions.querySelector<HTMLButtonElement>('.btn-start-preset')!.value).toBe('preset')
+    expect(actions.contains(document.getElementById('start-context-selection'))).toBe(true)
     createStartContexts(dialog)
     dialog.querySelector<HTMLInputElement>('input[value="live"]')!.click()
-    expect(details.querySelector('.btn-start-preset')!.textContent).toBe('Start Preset')
+    expect(actions.querySelector('.btn-start-preset')!.textContent).toBe('Start Preset')
     expect(createEmptySetup().chains[0].steps).toEqual([])
     expect(createEmptySetup().chains[0].options.name).toBe('Start a fresh chain')
 })
@@ -57,7 +61,8 @@ it('filters contexts, retains selection when hidden and defaults to restoring th
     expect(root.querySelectorAll('#start-context-list label:not([hidden])').length).toBeGreaterThanOrEqual(2)
     root.querySelector<HTMLInputElement>('input[value="classroom"]')!.click()
     expect(picker.getSetup()?.name).toBe('Synchronise a classroom')
-    expect(root.querySelector('#start-context-selection')!.textContent).toContain('use Sync')
+    expect(root.querySelector('#start-context-selection')!.textContent).toContain('Synchronise a classroom')
+    expect(root.querySelector<HTMLInputElement>('input[value="classroom"]')!.closest('label')!.querySelector('.start-context-next')!.textContent).toContain('use Sync')
     const category = root.querySelector<HTMLSelectElement>('#start-context-category')!
     category.value = 'Files'
     category.dispatchEvent(new Event('change'))
