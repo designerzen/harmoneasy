@@ -93,7 +93,7 @@ export function DevicePicker({ direction, dialog = false, onAdded }: { direction
                 <ul className={dialog ? 'items-grid' : undefined} role="list">{group.items.map(choice => <li key={`${choice.kind}:${choice.id}`}>
                     <button className={dialog ? 'grid-item' : 'element-choice'} type="button"
                         ref={dialog ? button => { if (button) fillDeviceCard(button, choice, choice.kind) } : undefined}
-                        title={elementDescription(choice.kind, choice.id, choice.name, choice.description)} disabled={busy} onClick={() => void add(choice)}>
+                        title={choice.title ? `${choice.title}: ${choice.description}` : elementDescription(choice.kind, choice.id, choice.name, choice.description)} disabled={busy} onClick={() => void add(choice)}>
                         {!dialog && <><ElementIcon src={elementIcon(choice.kind, choice.id)} title={elementDescription(choice.kind, choice.id, choice.name, choice.description)} />
                             <span>{choice.name}</span></>}
                     </button>

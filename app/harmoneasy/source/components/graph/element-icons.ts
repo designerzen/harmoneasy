@@ -19,15 +19,17 @@ const INPUT_ICONS: Record<InputId, string> = {
 }
 
 const OUTPUT_ICONS: Record<OutputId, string> = {
+    moog: 'synth',
     describe: 'describe', console: 'console', 'pink-trombone': 'speech', notation: 'notation',
     'spectrum-analyser': 'spectrum', 'speech-synthesis': 'speech', vibrator: 'vibration',
     webmidi: 'midi', 'native-midi': 'midi', 'ble-midi': 'bluetooth', midi2: 'midi', 'midi2-native': 'midi',
-    supersonic: 'synth', wam2: 'plugin', yoshimi: 'synth', metronome: 'clock',
+    supersonic: 'synth', wam2: 'plugin', wam: 'plugin', yoshimi: 'synth', metronome: 'clock',
     'audio-click': 'clock', butterchurn: 'visualizer'
 }
 
 export function elementIcon(kind: ElementKind, id: string): string {
-    const path = kind === 'transformer' ? getTransformerIcon(id)
+    const path = kind === 'output' && id.startsWith('webclap:') ? '/icons/output-webclap.svg'
+        : kind === 'transformer' ? getTransformerIcon(id)
         : `/icons/device-${kind === 'input' ? INPUT_ICONS[id as InputId] ?? 'input'
             : kind === 'output' ? OUTPUT_ICONS[id as OutputId] ?? 'output' : 'instrument'}.svg`
     return `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`

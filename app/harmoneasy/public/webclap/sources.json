@@ -1,0 +1,15 @@
+{
+  "localChanges": [
+    "MIDI event input",
+    "lifecycle cleanup and initialization errors",
+    "parameter flags and legacy ABI compatibility",
+    "bundled UI path resolution",
+    "scoped UI resource service worker"
+  ],
+  "runtimeSource": "https://github.com/WebCLAP/browser-test-host",
+  "runtimeRevision": "b42ade615bef2c989f96400a7b0b2ef15cabd396",
+  "pluginSources": [
+    "https://github.com/WebCLAP/examples",
+    "https://plinken.org/shelf.json"
+  ]
+}

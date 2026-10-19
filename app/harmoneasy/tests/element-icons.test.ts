@@ -7,8 +7,26 @@ import { TRANSFORMERS, TRANSFORMER_TYPE } from 'audiobus/io/transformer-factory'
 import { TRANSFORMER_DEFINITIONS } from 'audiobus/io/transformer-definitions'
 import { deviceIcon, elementIcon } from '../source/components/graph/element-icons'
 import { fillDeviceCard, INPUT_GUIDANCE, OUTPUT_GUIDANCE } from '../source/components/graph/device-card'
+import { CLAP_PATCHES } from '../../../packages/audiobus/instruments/clap/clap-catalog'
+import { OUTPUT_DEFINITIONS } from '../../../packages/audiobus/io/output-definitions'
+import { webclapOutputId } from '../../../packages/audiobus/io/outputs/output-types'
+import { choiceMatches } from '../source/components/graph/device-filters'
 
 const assetExists = (src: string) => existsSync(resolve('public', src.replace(/^\//, '')))
+
+it('shows WebCLAP metadata and makes authors and licenses searchable', () => {
+    for (const patch of CLAP_PATCHES) {
+        const choice = OUTPUT_DEFINITIONS[webclapOutputId(patch.id)]
+        const button = document.createElement('button')
+        fillDeviceCard(button, choice, 'output')
+        expect(button.title).toContain(patch.title)
+        expect(button.querySelector('.item-classification')?.textContent).toContain(patch.category)
+        expect(button.querySelector('.item-attribution')?.textContent).toContain(patch.attribution!.author)
+        expect(button.dataset.search).toContain(patch.attribution!.license.toLowerCase())
+        expect(choiceMatches(choice, patch.attribution!.author, '')).toBe(true)
+        expect(choiceMatches(choice, patch.attribution!.license, '')).toBe(true)
+    }
+})
 
 it('has existing icon assets for every input, output, transformer and fallback', () => {
     for (const [kind, ids] of [

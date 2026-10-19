@@ -2,6 +2,7 @@ import type { InputId } from 'audiobus/io/inputs/input-types'
 import type { OutputId } from 'audiobus/io/outputs/output-types'
 import { elementDescription, elementIcon } from './element-icons'
 import { classificationLabel, type ClassifiedChoice } from './device-filters'
+import { OUTPUT_DEFINITIONS } from 'audiobus/io/output-definitions'
 
 type Guidance = { icon: string; usedFor: string; usefulFor: string; requirements: string }
 const guide = (icon: string, usedFor: string, usefulFor: string, requirements: string): Guidance => ({ icon, usedFor, usefulFor, requirements })
@@ -31,6 +32,14 @@ export const INPUT_GUIDANCE: Record<InputId, Guidance> = {
 }
 
 export const OUTPUT_GUIDANCE: Record<OutputId, Guidance> = {
+    ...Object.fromEntries(Object.values(OUTPUT_DEFINITIONS).map(definition => [definition.id,
+        guide('Plugin', definition.description,
+            definition.type === 'engine' ? `Playing ${definition.name} from incoming MIDI notes.`
+                : definition.type === 'visual' ? 'Inspecting the audio mix.' : 'Shaping the audio mix with a plugin.',
+            definition.id.startsWith('webclap:') ? audio + ' WebAssembly and AudioWorklet support. Native interfaces require HTTPS or localhost.'
+                : audio + ' The plugin engine and any samples must be available.')
+    ])),
+    moog: guide('M', 'Play the Photosynth Moog ladder synthesizer.', 'Shaping basses, leads and chords with cutoff, resonance and envelopes.', audio + ' Internet access to load the WAM SDK.'),
     describe: guide('Aa', 'Describe active notes and chords in musical language.', 'Identifying extended chords, added tones, and inversions while playing.', 'Notes from a connected input or transformer.'),
     console: guide('⌘', 'Log outgoing note events.', 'Debugging a chain and checking its output.', 'Development mode and the browser developer console.'),
     'pink-trombone': guide('🗣', 'Create vocal-like synthesized sound.', 'Exploring speech-like tones and unusual instruments.', audio),
@@ -45,6 +54,7 @@ export const OUTPUT_GUIDANCE: Record<OutputId, Guidance> = {
     'midi2-native': guide('🎹', 'Send MIDI 2.0 notes and per-note controls natively.', 'Controlling expressive MIDI 2.0 instruments.', native + ' MIDI 2.0 features require compatible hardware and drivers.'),
     supersonic: guide('∿', 'Generate sound with a SuperCollider-based engine.', 'Synthesized instrument playback in the app.', audio + ' The Supersonic engine assets must load.'),
     wam2: guide('▣', 'Host Web Audio Module instruments.', 'Playing a compatible browser audio plugin.', audio + ' A compatible WAM plugin must be loaded.'),
+    wam: guide('Plugin', 'Host legacy Web Audio Module instruments.', 'Playing Yoshimi or webDX7 from incoming MIDI notes.', audio + ' The selected WAM engine and its assets must load.'),
     yoshimi: guide('∿', 'Play a software synthesizer with instrument presets.', 'Exploring a broad range of synthesized sounds.', audio + ' The Yoshimi engine and preset assets must load.'),
     metronome: guide('⏱', 'Turn MIDI clock signals into audible clicks.', 'Hearing the timing pulse.', audio + ' MIDI clock events must reach this output.'),
     'audio-click': guide('⏱', 'Play selected click samples on bar events.', 'An audible bar reference using sample sounds.', audio + ' A click sample library and timing events.'),
@@ -54,7 +64,9 @@ export const OUTPUT_GUIDANCE: Record<OutputId, Guidance> = {
 export function fillDeviceCard(button: HTMLButtonElement, factory: Pick<ClassifiedChoice, 'id' | 'name' | 'description'> & Partial<ClassifiedChoice>, direction: 'input' | 'output' | 'instrument') {
     const guidance = (direction === 'input' ? INPUT_GUIDANCE[factory.id as InputId]
         : direction === 'output' ? OUTPUT_GUIDANCE[factory.id as OutputId] : undefined)
-        ?? (direction !== 'instrument'
+        ?? (factory.id.startsWith('webclap:')
+            ? guide('', factory.description, factory.type === 'engine' ? 'Playing MIDI notes through a browser instrument.' : factory.type === 'visual' ? 'Inspecting the audio mix.' : 'Shaping the audio mix with a plugin.', audio + ' WebAssembly and AudioWorklet support. Native interfaces require HTTPS or localhost.')
+        : direction !== 'instrument'
             ? guide('', factory.description, `Using ${factory.name} in a chain.`, 'A compatible device and any required browser permissions.')
         : guide('♫', 'Turn incoming notes into instrument audio.', `Playing ${factory.name} in a chain${factory.category ? ` (${factory.category})` : ''}.`, audio + ' Any instrument samples or engine assets must be available.')
         )
@@ -67,7 +79,7 @@ export function fillDeviceCard(button: HTMLButtonElement, factory: Pick<Classifi
     }
     button.replaceChildren()
     button.classList.add('device-choice-card')
-    button.title = elementDescription(direction, factory.id, factory.name, factory.description)
+    button.title = factory.title ? `${factory.title}: ${factory.description}` : elementDescription(direction, factory.id, factory.name, factory.description)
     const icon = document.createElement('span')
     icon.className = 'item-icon element-icon'
     icon.style.maskImage = `url("${elementIcon(direction, factory.id)}")`
@@ -77,6 +89,7 @@ export function fillDeviceCard(button: HTMLButtonElement, factory: Pick<Classifi
     append('item-name', factory.name)
     if (factory.type && factory.subtype) append('item-classification', `${classificationLabel(factory.type)} / ${classificationLabel(factory.subtype)}${factory.category ? ` / ${classificationLabel(factory.category)}` : ''}`)
     append('item-description', factory.description)
+    if (factory.attribution) append('item-attribution', `By ${factory.attribution.author} · ${factory.attribution.license}. Attribution and license links are in the plugin controls.`)
     for (const [label, value] of [['Used for', guidance.usedFor], ['Useful for', guidance.usefulFor], ['Requirements', guidance.requirements]]) {
         const row = document.createElement('span')
         row.className = 'device-choice-detail'
@@ -88,5 +101,5 @@ export function fillDeviceCard(button: HTMLButtonElement, factory: Pick<Classifi
         row.append(heading, text)
         button.appendChild(row)
     }
-    button.dataset.search = [factory.name, factory.description, guidance.usedFor, guidance.usefulFor, guidance.requirements].join(' ').toLowerCase()
+    button.dataset.search = [factory.name, factory.title, factory.description, factory.type, factory.subtype, factory.category, factory.attribution?.author, factory.attribution?.license, guidance.usedFor, guidance.usefulFor, guidance.requirements].join(' ').toLowerCase()
 }

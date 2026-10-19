@@ -1,0 +1,72 @@
+// @vitest-environment happy-dom
+import { afterEach, expect, it } from 'vitest'
+import startPage from '../index.html?raw'
+import { DEFAULT_PRESET_LIBRARY } from '../../../packages/audiobus/io/transformer-presets'
+import { parsePresetLibrary } from '../../../packages/audiobus/io/preset-library'
+import { createContextSetup, createStartContexts, START_CONTEXTS, START_SUGGESTIONS } from '../source/services/start-contexts'
+
+afterEach(() => document.body.replaceChildren())
+
+it('provides restorable contexts with valid routing and independent transformer settings', () => {
+    expect(START_CONTEXTS.length).toBeGreaterThanOrEqual(40)
+    expect(new Set(START_CONTEXTS.map(context => context.id)).size).toBe(START_CONTEXTS.length)
+    for (const context of START_CONTEXTS) {
+        const setup = createContextSetup(context)
+        expect(() => parsePresetLibrary(JSON.stringify({ ...DEFAULT_PRESET_LIBRARY, setups: [setup] }))).not.toThrow()
+        expect(setup.chains[0].inputs).toEqual(['computer-keyboard', 'keyboard'])
+        expect(setup.chains[0].outputs).toContain('synth')
+    }
+    const live = START_CONTEXTS.find(context => context.id === 'live')!
+    const first = createContextSetup(live)
+    first.chains[0].steps[0].config.root = 9
+    expect(createContextSetup(live).chains[0].steps[0].config.root).toBe(0)
+    expect(createContextSetup(START_CONTEXTS.find(context => context.id === 'convert')!).chains[0].steps).toEqual([])
+})
+
+it('filters contexts, retains selection when hidden and defaults to restoring the current session', () => {
+    document.body.innerHTML = startPage.match(/<dialog id="start-dialog"[\s\S]*?<\/dialog>/)![0]
+    const root = document.querySelector<HTMLElement>('#start-dialog')!
+    const picker = createStartContexts(root)
+    expect(picker.getSetup()).toBeUndefined()
+    const search = root.querySelector<HTMLInputElement>('#start-context-filter')!
+    search.value = 'classroom'
+    search.dispatchEvent(new Event('input'))
+    expect(root.querySelectorAll('#start-context-list label:not([hidden])').length).toBeGreaterThanOrEqual(2)
+    root.querySelector<HTMLInputElement>('input[value="classroom"]')!.click()
+    expect(picker.getSetup()?.name).toBe('Synchronise a classroom')
+    expect(root.querySelector('#start-context-selection')!.textContent).toContain('use Sync')
+    const category = root.querySelector<HTMLSelectElement>('#start-context-category')!
+    category.value = 'Files'
+    category.dispatchEvent(new Event('change'))
+    expect(root.querySelector('#start-context-count')!.textContent).toContain('No matching contexts')
+    expect(picker.getSetup()?.id).toBe('classroom')
+    root.querySelector<HTMLInputElement>('input[value=""]')!.click()
+    expect(picker.getSetup()).toBeUndefined()
+    expect(root.querySelector('#start-context-selection')!.textContent).toContain('restore your saved chains')
+})
+
+it('suggests concrete starting points by goal and lets people return to searching everything', () => {
+    document.body.innerHTML = startPage.match(/<dialog id="start-dialog"[\s\S]*?<\/dialog>/)![0]
+    const root = document.querySelector<HTMLElement>('#start-dialog')!
+    const picker = createStartContexts(root)
+    const buttons = [...root.querySelectorAll<HTMLButtonElement>('#start-context-suggestions button')]
+    expect(buttons).toHaveLength(START_SUGGESTIONS.length + 1)
+    for (const [index, suggestion] of START_SUGGESTIONS.entries()) {
+        expect(suggestion.contexts.every(id => START_CONTEXTS.some(context => context.id === id))).toBe(true)
+        buttons[index + 1].click()
+        expect(buttons[index + 1].getAttribute('aria-pressed')).toBe('true')
+        const visible = [...root.querySelectorAll<HTMLInputElement>('#start-context-list label:not([hidden]) input')].map(input => input.value).filter(Boolean)
+        expect(visible.sort()).toEqual([...suggestion.contexts].sort())
+        expect(picker.getSetup()).toBeUndefined()
+    }
+    root.querySelector<HTMLInputElement>('input[value="offbeat"]')!.click()
+    buttons[0].click()
+    expect(root.querySelectorAll('#start-context-list label:not([hidden])')).toHaveLength(START_CONTEXTS.length + 1)
+    expect(picker.getSetup()?.id).toBe('offbeat')
+    buttons[1].click()
+    const search = root.querySelector<HTMLInputElement>('#start-context-filter')!
+    search.value = 'tracker'
+    search.dispatchEvent(new Event('input'))
+    expect(buttons[1].getAttribute('aria-pressed')).toBe('false')
+    expect(root.querySelector<HTMLInputElement>('input[value="tracker-to-midi"]')!.closest('label')!.hidden).toBe(false)
+})

@@ -1,4 +1,25 @@
 import { defineConfig } from 'vite'
+import { createReadStream } from 'node:fs'
+import { resolve, sep } from 'node:path'
+
+// Vite's static middleware emits an empty MIME type for .tar.gz bundles.
+// Serve WCLAP archives explicitly so browser fetch does not treat them as downloads.
+const webclapBundlesPlugin = {
+  name: 'webclap-bundles',
+  configureServer(server) {
+    server.middlewares.use((request, response, next) => {
+      const pathname = new URL(request.url, 'http://localhost').pathname
+      if (!pathname.startsWith('/webclap/plugins/') || !pathname.endsWith('.tar.gz')) return next()
+      const root = resolve(server.config.publicDir)
+      const path = resolve(root, '.' + decodeURIComponent(pathname))
+      if (!path.startsWith(root + sep)) return next()
+      response.setHeader('Content-Type', 'application/gzip')
+      const stream = createReadStream(path)
+      stream.on('error', () => { response.statusCode = 404; response.end('WebCLAP bundle not found') })
+      stream.pipe(response)
+    })
+  },
+}
 
 const unavailableNativeAddon = '\0web-native-addon-unavailable'
 
@@ -23,7 +44,7 @@ const webNativeAddonPlugin = {
  */
 
 export default defineConfig({
-  plugins: [webNativeAddonPlugin],
+  plugins: [webNativeAddonPlugin, webclapBundlesPlugin],
   worker: { format: 'es' },
   // Resolve through the workspace package and bundle Nexus's CommonJS dependencies
   // (including toposort); serving the SDK unbundled breaks browser imports.

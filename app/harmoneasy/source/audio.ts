@@ -1,4 +1,5 @@
 import { createReverbImpulseResponse } from "audiobus/effects/reverb"
+import { connectCLAPMixer } from 'audiobus/instruments/clap/clap-mixer'
 
 export default class AudioBus extends EventTarget {
 	
@@ -45,7 +46,7 @@ export default class AudioBus extends EventTarget {
 		this.#reverb = reverb
 		this.volume = initialVolume
 
-		mixer.connect(reverb)
+		connectCLAPMixer(mixer, reverb)
 		reverb.connect( context.destination)
 
 		// Resume if suspended (required by browser autoplay policy)

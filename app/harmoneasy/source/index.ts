@@ -8,6 +8,9 @@ import State from './libs/state.ts'
 
 // Front End
 import UI from './ui.ts'
+import { createStartContexts } from './services/start-contexts'
+import { applySetup } from './components/graph/saved-presets'
+import type { PresetSetup } from 'audiobus/io/preset-library'
 import { createNetronomeLink } from './services/netronome-link'
 import { createMidiControlPanel } from './services/midi-control-panel'
 import { createClockSourceControls } from './services/clock-source-controls'
@@ -357,7 +360,7 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number 
  * @param onEveryTimingTick 
  * @returns 
  */
-const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: boolean = false) => {
+const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: boolean = false, startupSetup?: PresetSetup) => {
 
     // Get state from session and URL & update GUI
     const elementMain = document.querySelector('main')
@@ -410,7 +413,10 @@ const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: b
 
     // Check if there are saved IO configurations in state
     const savedIOState = state.get('io') as string | null
-    if (savedIOState) {
+    if (startupSetup) {
+        await applySetup(ioManager, startupSetup)
+        state.set('io', ioManager.exportWorkspace())
+    } else if (savedIOState) {
         try {
             await ioManager.restoreWorkspace(savedIOState)
         } catch (error) {
@@ -556,8 +562,6 @@ const onTick = (values: Record<string, any>) => {
  * This is the main initialisation routine
  * @param event 
  */
-const onAudioContextAvailable = async (event: Event) => await initialiseApplication(onTick)
-
 // Background data load from any stored sessions
 // If we have OPFS backend, initialize and load any previously recorded data
 if (storage) {
@@ -578,5 +582,28 @@ if (storage) {
     })
 }
 
-// Wait for user to initiate an action so that we can use AudioContext
-document.addEventListener("mousedown", onAudioContextAvailable, { once: true })
+// Keep context browsing available until the explicit audio activation gesture.
+const startDialog = document.querySelector<HTMLDialogElement>('#start-dialog')!
+const startContexts = createStartContexts(startDialog)
+document.querySelector<HTMLFormElement>('#start-form')!.addEventListener('submit', async event => {
+    event.preventDefault()
+    const button = startDialog.querySelector<HTMLButtonElement>('.btn-start')!
+    if (button.disabled) return
+    button.disabled = true
+    button.textContent = 'Starting…'
+    const errorMessage = startDialog.querySelector<HTMLElement>('#start-error')!
+    errorMessage.hidden = true
+    try {
+        const setup = startContexts.getSetup()
+        await initialiseApplication(onTick, false, setup)
+        startDialog.close()
+        if (setup) ui.showInfoDialog(setup.name, startDialog.querySelector('#start-context-selection')!.textContent!)
+    } catch (error) {
+        console.error('Failed to start application:', error)
+        errorMessage.textContent = error instanceof Error ? error.message : 'Could not start the application. Please reload and try again.'
+        errorMessage.hidden = false
+        button.textContent = 'Reload to try again'
+        button.disabled = false
+        button.onclick = event => { event.preventDefault(); window.location.reload() }
+    }
+})

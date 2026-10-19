@@ -16,20 +16,32 @@
 
 <body>
 
-	<dialog open closeby="any">
+	<dialog id="start-dialog" open aria-labelledby="start-title">
 		<a class="backlink float-left" href="/">
 			<img class="logo" src="/source/assets/logos/harmoneasy.svg" alt="">
 		</a>
-		<h1 class="h2">Harmoneasy</h1>
-		<h2 class="h2">Putting the Unity in Community</h2>
-		<p aria-summary>Harmoneasy is a web-based real-time music jamming platform that allows you
-			to play harmonically and in-time with friends.</p>
-		
-		<p>The transformers remix in real-time and can warp, quantise, synch timings, 
-		you can transpose into a shared key or add melodic harmonies.</p>
-
-		<p><strong>Note:</strong> this software requires WebMIDI or Bluetooth which your bowser will request your permission for - please press 'accept' to allow it.</p>
-		<form method="dialog">
+		<h1 id="start-title" class="h2">Harmoneasy</h1>
+		<h2 class="h2">What would you like to make music do?</h2>
+		<p>Turn one note into a chord, stay in key while you improvise, turn a melody into a bass line,
+			remix a music file, or get a group playing to the same clock.</p>
+		<p>You play or import notes. Harmoneasy changes their pitch, harmony or rhythm, then plays the result.
+			A chain connects those steps. These starting points build one for you.</p>
+		<p>Try it with your computer or onscreen keyboard. You can connect MIDI instruments after starting.</p>
+		<details id="start-contexts" open>
+			<summary>Find a starting point</summary>
+			<p id="start-suggestions-title">Not sure where to begin? Pick something you want to try.</p>
+			<div id="start-context-suggestions" role="group" aria-labelledby="start-suggestions-title"></div>
+			<p>Pick a starting point, then press Start. Choosing a context replaces the session chains; keep Current session to restore your setup.</p>
+			<label for="start-context-filter">Filter contexts</label>
+			<input id="start-context-filter" type="search" placeholder="Try one finger, bass, classroom, MIDI, triplets…">
+			<label for="start-context-category">Activity</label>
+			<select id="start-context-category"><option value="">All activities</option></select>
+			<p id="start-context-count" role="status"></p>
+			<fieldset id="start-context-list"><legend>Starting context</legend></fieldset>
+		</details>
+		<p id="start-context-selection" role="status">Current session: restore your saved chains or start with the default setup.</p>
+		<p id="start-error" role="alert" hidden></p>
+		<form id="start-form" method="dialog">
 			<!-- <button class="btn-close" type="submit">Begin</button> -->
 			<button autofocus class="btn-start primary cta" type="submit">Start</button>
 		</form>

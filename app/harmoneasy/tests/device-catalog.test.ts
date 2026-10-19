@@ -6,6 +6,7 @@ import { INPUT_FACTORIES } from '../../../packages/audiobus/io/input-factory'
 import { OUTPUT_FACTORIES } from '../../../packages/audiobus/io/output-factory'
 import * as inputTypes from '../../../packages/audiobus/io/inputs/input-types'
 import * as outputTypes from '../../../packages/audiobus/io/outputs/output-types'
+import { OUTPUT_DEFINITIONS } from '../../../packages/audiobus/io/output-definitions'
 
 afterEach(() => vi.restoreAllMocks())
 
@@ -14,7 +15,8 @@ describe('Device selector catalogs', () => {
         ['input', INPUT_FACTORIES, inputTypes, () => new InputManager().getAvailableFactories()],
         ['output', OUTPUT_FACTORIES, outputTypes, () => new OutputManager().getAvailableFactories()],
     ] as const)('lists every supported %s type through its manager', async (_, factories, types, available) => {
-        expect(factories.map(factory => factory.id).sort()).toEqual(Object.values(types).sort())
+        // Output definitions include individual plugins as well as fixed device IDs.
+        expect(factories.map(factory => factory.id).sort()).toEqual((types === outputTypes ? Object.keys(OUTPUT_DEFINITIONS) : Object.values(types)).sort())
         for (const factory of factories) vi.spyOn(factory, 'isAvailable').mockReturnValue(true)
         expect(await available()).toEqual(factories)
         vi.mocked(factories[0].isAvailable).mockReturnValue(false)
