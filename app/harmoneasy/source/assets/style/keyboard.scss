@@ -207,6 +207,7 @@ input[type="checkbox"][disabled]::after{
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 
 	.qwerty-keys {
+		touch-action: none;
 		width: 100%;
 		height: auto;
 		display: block;
