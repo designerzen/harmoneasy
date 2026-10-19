@@ -34,6 +34,10 @@ it('keeps the preset chooser collapsed and contains its controls inside the star
     expect(actions.querySelector<HTMLButtonElement>('.btn-start-preset')!.value).toBe('preset')
     expect(actions.contains(document.getElementById('start-context-selection'))).toBe(true)
     createStartContexts(dialog)
+    expect(dialog.querySelectorAll('button[value="session"]')).toHaveLength(1)
+    expect(details.querySelector('input[value=""]')).toBeNull()
+    expect(details.textContent).not.toContain('Continue your session')
+    expect(details.querySelectorAll('#start-context-list input')).toHaveLength(START_CONTEXTS.length)
     dialog.querySelector<HTMLInputElement>('input[value="live"]')!.click()
     expect(actions.querySelector('.btn-start-preset')!.textContent).toBe('Start Preset')
     expect(createEmptySetup().chains[0].steps).toEqual([])
@@ -56,7 +60,7 @@ it('provides restorable contexts with valid routing and independent transformer 
     expect(createContextSetup(START_CONTEXTS.find(context => context.id === 'convert')!).chains[0].steps).toEqual([])
 })
 
-it('filters contexts, retains selection when hidden and defaults to restoring the current session', () => {
+it('filters only presets, starts without a selection and retains selection when hidden', () => {
     document.body.innerHTML = startPage.match(/<dialog id="start-dialog"[\s\S]*?<\/dialog>/)![0]
     const root = document.querySelector<HTMLElement>('#start-dialog')!
     const picker = createStartContexts(root)
@@ -64,7 +68,7 @@ it('filters contexts, retains selection when hidden and defaults to restoring th
     const search = root.querySelector<HTMLInputElement>('#start-context-filter')!
     search.value = 'classroom'
     search.dispatchEvent(new Event('input'))
-    expect(root.querySelectorAll('#start-context-list label:not([hidden])').length).toBeGreaterThanOrEqual(2)
+    expect(root.querySelectorAll('#start-context-list label:not([hidden])').length).toBeGreaterThanOrEqual(1)
     root.querySelector<HTMLInputElement>('input[value="classroom"]')!.click()
     expect(picker.getSetup()?.name).toBe('Synchronise a classroom')
     expect(root.querySelector('#start-context-selection')!.textContent).toContain('Synchronise a classroom')
@@ -74,9 +78,7 @@ it('filters contexts, retains selection when hidden and defaults to restoring th
     category.dispatchEvent(new Event('change'))
     expect(root.querySelector('#start-context-count')!.textContent).toContain('No matching contexts')
     expect(picker.getSetup()?.id).toBe('classroom')
-    root.querySelector<HTMLInputElement>('input[value=""]')!.click()
-    expect(picker.getSetup()).toBeUndefined()
-    expect(root.querySelector('#start-context-selection')!.textContent).toContain('restore your saved chains')
+    expect(root.querySelector('input[value=""]')).toBeNull()
 })
 
 it('suggests concrete starting points by goal and lets people return to searching everything', () => {
@@ -95,7 +97,7 @@ it('suggests concrete starting points by goal and lets people return to searchin
     }
     root.querySelector<HTMLInputElement>('input[value="offbeat"]')!.click()
     buttons[0].click()
-    expect(root.querySelectorAll('#start-context-list label:not([hidden])')).toHaveLength(START_CONTEXTS.length + 1)
+    expect(root.querySelectorAll('#start-context-list label:not([hidden])')).toHaveLength(START_CONTEXTS.length)
     expect(picker.getSetup()?.id).toBe('offbeat')
     buttons[1].click()
     const search = root.querySelector<HTMLInputElement>('#start-context-filter')!

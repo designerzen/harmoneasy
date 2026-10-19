@@ -198,16 +198,6 @@ export function createStartContexts(root: HTMLElement) {
         option.value = name
         category.add(option)
     }
-    const current = document.createElement('label')
-    current.className = 'start-context-card start-context-current'
-    const radio = document.createElement('input')
-    radio.type = 'radio'; radio.name = 'start-context'; radio.value = ''; radio.checked = true
-    const currentTitle = document.createElement('strong')
-    currentTitle.textContent = 'Continue your session'
-    const currentDescription = document.createElement('span')
-    currentDescription.textContent = 'Restore your saved chains and pick up where you left off.'
-    current.append(radio, currentTitle, currentDescription)
-    list.append(current)
     const entries = START_CONTEXTS.map(context => {
         const entry = document.createElement('label')
         entry.className = 'start-context-card'
@@ -233,7 +223,7 @@ export function createStartContexts(root: HTMLElement) {
     })
     list.addEventListener('change', () => {
         selected = START_CONTEXTS.find(context => context.id === list.querySelector<HTMLInputElement>('input:checked')?.value)
-        selection.textContent = selected ? `${selected.name} — ready to start.` : 'Current session: restore your saved chains or start with the default setup.'
+        selection.textContent = selected ? `${selected.name} — ready to start.` : 'Choose a preset to get started.'
         const startPreset = root.querySelector<HTMLButtonElement>('.btn-start-preset')!
         startPreset.disabled = !selected
     })

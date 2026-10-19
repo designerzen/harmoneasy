@@ -33,8 +33,8 @@
 			<p id="start-suggestions-title">What brings you here?</p>
 			<div id="start-context-suggestions" role="group" aria-labelledby="start-suggestions-title"></div>
 			<div class="start-filters">
-			<label for="start-context-filter">Find an idea<input id="start-context-filter" type="search" placeholder="Try bass, classroom, MIDI…"></label>
-			<label for="start-context-category">Activity<select id="start-context-category"><option value="">All activities</option></select></label>
+			<label for="start-context-filter"><span class="sr-only">Search presets</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><input id="start-context-filter" type="search" placeholder="Search presets…"></label>
+			<label for="start-context-category"><span class="sr-only">Filter by activity</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg><select id="start-context-category"><option value="">All activities</option></select></label>
 			</div>
 			<p id="start-context-count" role="status"></p>
 			<fieldset id="start-context-list"><legend class="sr-only">Starting context</legend></fieldset>
@@ -45,7 +45,7 @@
 				<button autofocus class="btn-start-empty" type="submit" name="startup" value="empty">Start Empty</button>
 			</div>
 			<footer class="start-preset-actions">
-				<p id="start-context-selection" role="status">Current session: restore your saved chains or start with the default setup.</p>
+				<p id="start-context-selection" role="status">Choose a preset to get started.</p>
 				<button class="btn-start-preset primary" type="submit" name="startup" value="preset" disabled>Start Preset</button>
 			</footer>
 		</form>

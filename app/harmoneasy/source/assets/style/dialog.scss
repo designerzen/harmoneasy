@@ -92,7 +92,7 @@ body:has(#start-dialog[open]) {
 		margin: 0;
 		position: relative;
 		&:not(:has(#start-contexts[open])) .start-preset-actions { display: none; }
-		&:not(:has(input[name="start-context"]:checked:not([value=""]))) .start-preset-actions { display: none; }
+		&:not(:has(input[name="start-context"]:checked)) .start-preset-actions { display: none; }
 	}
 
 	#start-contexts {
@@ -203,22 +203,24 @@ body:has(#start-dialog[open]) {
 
 	.start-filters {
 		display: grid;
-		grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+		grid-template-columns: minmax(0, 1fr) min(42%, 13rem);
 		gap: .75rem;
 		margin-top: 1rem;
-		label { min-width: 0; font-size: .75rem; font-weight: 600; color: var(--start-muted); }
+		label { display: flex; align-items: center; min-width: 0; border: 1px solid var(--start-line); border-radius: 8px; background: var(--start-surface); color: var(--start-muted); }
+		svg { flex: 0 0 18px; width: 18px; height: 18px; margin-left: .75rem; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+		label:focus-within { outline: 2px solid var(--start-accent); outline-offset: 2px; }
 		input, select {
 			display: block;
 			width: 100%;
 			min-width: 0;
 			min-height: 44px;
-			margin-top: .35rem;
+			margin: 0;
 			padding: .65rem .75rem;
-			border: 1px solid var(--start-line);
+			border: 0;
 			border-radius: 8px;
 			background: var(--start-surface);
 			color: inherit;
-			font: inherit;
+			font-family: inherit;
 			font-size: .85rem;
 			text-decoration: none;
 		}
@@ -265,7 +267,6 @@ body:has(#start-dialog[open]) {
 			&:has(:checked) .start-context-chain { display: block; font-size: .7rem; padding-top: .5rem; border-top: 1px solid var(--start-line); color: var(--start-muted); }
 			&:has(:checked) .start-context-next { display: block; font-size: .75rem; color: var(--start-muted); }
 		}
-		.start-context-current { grid-column: 1 / -1; border-top-width: 1px; padding: .75rem 1rem; strong { grid-column: 1; grid-row: 1; } }
 	}
 
 	@media (max-width: 540px) {
@@ -275,7 +276,7 @@ body:has(#start-dialog[open]) {
 		.start-heading { padding: 1rem; p { font-size: .8rem; } }
 		.start-presets-content { padding: .85rem 1rem; }
 		#start-context-list { grid-template-columns: minmax(0, 1fr); }
-		.start-filters { grid-template-columns: minmax(0, 1fr); gap: .5rem; }
+		.start-filters { gap: .5rem; svg { margin-left: .5rem; } input, select { padding-inline: .5rem; font-size: .75rem; } }
 		.start-preset-actions { padding: .85rem 1rem; gap: .6rem; p { font-size: .7rem; } button { font-size: .8rem; padding: .65rem .75rem; } }
 		.start-presets-hint { display: none; }
 	}
