@@ -286,6 +286,69 @@ body:has(#start-dialog[open]) {
 	}
 }
 
+#opendaw-export-dialog {
+	--export-line: light-dark(#e3dfeb, #3c3749);
+	--export-muted: light-dark(#666272, #b4afc2);
+	--export-accent: light-dark(#6943ab, #c9adff);
+	width: 52rem;
+	height: min(40rem, calc(100dvh - 2rem));
+	max-width: calc(100% - 2rem);
+	max-height: calc(100dvh - 2rem);
+	padding: 0;
+	border: 1px solid var(--export-line);
+	border-radius: 16px;
+	background: light-dark(#faf9fc, #1c1a23);
+	color: light-dark(#282235, #f3effb);
+	box-shadow: 0 24px 100px #0006;
+	overflow: hidden;
+	isolation: isolate;
+	font-size: 1rem;
+	line-height: 1.5;
+	&[open] { display: flex; flex-direction: column; }
+	&::before, &::after { display: none; }
+	&::backdrop { background: #100d1cb3; backdrop-filter: blur(8px); }
+	*, *::before, *::after { box-sizing: border-box; }
+	form, p { margin: 0; }
+	button { min-height: 40px; padding: .6rem 1rem; border-radius: 8px; font-size: .85rem; text-transform: none; letter-spacing: normal; }
+	button:focus-visible, a:focus-visible { outline: 2px solid var(--export-accent); outline-offset: 3px; }
+	.opendaw-export-heading {
+		display: flex; align-items: start; justify-content: space-between; gap: 1rem; padding: 1.5rem;
+		h2 { margin: 0; font-size: 1.3rem; font-weight: 700; text-transform: none; letter-spacing: -.025em; }
+		p { margin-top: .4rem; max-width: none; color: var(--export-muted); font-size: .85rem; }
+		form { flex: 0 0 auto; }
+		button { background: transparent; color: var(--export-muted); border: 1px solid var(--export-line); }
+	}
+	.opendaw-code-panel {
+		display: flex; flex-direction: column; flex: 1; min-height: 0; margin: 0 1.5rem;
+		border: 1px solid var(--export-line); border-radius: 10px; overflow: hidden;
+		background: light-dark(#fff, #17151e);
+	}
+	.opendaw-code-heading {
+		display: flex; justify-content: space-between; gap: 1rem; padding: .65rem 1rem;
+		border-bottom: 1px solid var(--export-line); color: var(--export-muted); font-size: .75rem;
+		label { font-weight: 600; } span { font-family: monospace; }
+	}
+	#opendaw-export-code {
+		display: block; flex: 1; width: 100%; min-height: 0; margin: 0; padding: 1rem;
+		border: 0; border-radius: 0; resize: none; overflow: auto;
+		background: transparent; color: inherit; font: .8rem/1.65 ui-monospace, Consolas, monospace;
+		white-space: pre; tab-size: 4; user-select: text;
+		&:focus-visible { outline: 2px solid var(--export-accent); outline-offset: -2px; }
+	}
+	.opendaw-export-actions {
+		display: flex; align-items: center; gap: 1rem; padding: 1rem 1.5rem;
+		p { flex: 1; font-size: .75rem; color: var(--export-muted); }
+		a { color: var(--export-accent); font-size: .85rem; text-decoration: none; white-space: nowrap; &:hover { text-decoration: underline; } }
+		button { flex: 0 0 auto; background: var(--export-accent); color: light-dark(#fff, #21132e); border: 1px solid transparent; }
+		button:disabled { opacity: .65; cursor: wait; }
+	}
+	@media (max-width: 540px) {
+		.opendaw-export-heading { padding: 1rem; gap: .5rem; h2 { font-size: 1.1rem; } }
+		.opendaw-code-panel { margin-inline: 1rem; }
+		.opendaw-export-actions { padding: 1rem; flex-wrap: wrap; gap: .75rem; p { flex-basis: 100%; &:empty { display: none; } } a { flex: 1; } }
+	}
+}
+
 #midi-devices-dialog {
 	width: 64rem;
 	.midi-devices-table { max-width: 100%; overflow: auto; margin-block: var(--pad); }

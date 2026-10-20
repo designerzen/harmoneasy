@@ -243,6 +243,25 @@
 		</form>
 	</dialog>
 
+	<dialog id="opendaw-export-dialog" hidden closedby="any" aria-labelledby="opendaw-export-title" aria-describedby="opendaw-export-help">
+		<header class="opendaw-export-heading">
+			<div>
+				<h2 id="opendaw-export-title">Export to OpenDAW</h2>
+				<p id="opendaw-export-help">Copy the code, paste it into OpenDAW’s script editor, then run it.</p>
+			</div>
+			<form method="dialog"><button type="submit" aria-label="Close OpenDAW export">Close</button></form>
+		</header>
+		<div class="opendaw-code-panel">
+			<div class="opendaw-code-heading"><label for="opendaw-export-code">Project script</label><span>JavaScript</span></div>
+			<textarea id="opendaw-export-code" class="selectable" readonly spellcheck="false" wrap="off" aria-describedby="opendaw-export-help"></textarea>
+		</div>
+		<footer class="opendaw-export-actions">
+			<p id="opendaw-export-status" role="status" aria-live="polite"></p>
+			<a href="https://opendaw.studio/scripting" target="_blank" rel="noopener noreferrer">Open script editor <span aria-hidden="true">↗</span></a>
+			<button type="button" id="opendaw-copy-code" autofocus>Copy code</button>
+		</footer>
+	</dialog>
+
 	<dialog id="error-dialog" hidden closedby="any" aria-labelledby="error-dialog-title" aria-describedby="error-message">
 		<header>
 			<h5 id="error-dialog-title">Error</h5>
@@ -269,7 +288,7 @@
 			</button>
 			<button type="button" id="btn-opendaw-export" class="export-option">
 				<img src="source/assets/logos/opendaw.svg" alt="OpenDAW" class="logo-inline">
-				Open in OpenDAW
+				Export to OpenDAW
 			</button>
 
 			<hr>

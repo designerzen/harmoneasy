@@ -324,8 +324,7 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number 
     frontEnd.whenOpenDAWExportRequestedRun(async () => {
         const script = await createOpenDAWProjectFromAudioEventRecording(recorder, timer)
         console.info("Exporting Data to OpenDAW", { recorder, script })
-        frontEnd.setExportOverlayText("Copy and paste this into openDAW script editor")
-        frontEnd.showInfoDialog("Exporting Data to OpenDAW", script)
+        frontEnd.showOpenDAWExportDialog(script)
     })
     frontEnd.whenDawProjectExportRequestedRun(async () => {
         const blob = await createDawProjectFromAudioEventRecording(recorder, timer)

@@ -5,6 +5,7 @@ import NoteVisualiser from 'audiobus/ui/note-visualiser.js'
 import NoteTimelineVisualiser from 'audiobus/ui/note-timeline-visualiser'
 import SVGKeyboard from 'audiobus/ui/keyboard-svg.ts'
 import { getPackagesListHTML } from './services/packages-service'
+import { createOpenDAWExportDialog } from './services/opendaw-export-dialog'
 
 import type NoteModel from "audiobus/note-model.ts"
 import type { IAudioCommand } from "audiobus/audio-command-interface.ts"
@@ -400,6 +401,12 @@ export default class UI implements IAudioOutput {
 	}
 
 	// Dialogs ----------------------------------------------------------------------
+	private openDAWExportDialog?: (script: string) => void
+
+	showOpenDAWExportDialog(script: string) {
+		this.openDAWExportDialog ??= createOpenDAWExportDialog(document, this.abortController.signal)
+		this.openDAWExportDialog(script)
+	}
 
 
 	showInfoDialog(title:string, message:string) {
