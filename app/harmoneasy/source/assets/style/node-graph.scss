@@ -81,6 +81,7 @@
 
 // Visualizers use the whole viewport, with the exit controls over the canvas.
 .node-viewport-editor > .graph-node.is-fullscreen:has(.audiobus-butterchurn) {
+    --node-content-padding: 0px;
     height: 100%;
     min-height: 0;
     padding: 0;
@@ -2029,19 +2030,29 @@ html:has(.preset-browser[open]), body:has(.preset-browser[open]) { overflow: hid
     }
 }
 
+.graph-node.can-remove {
+    --node-content-padding: var(--pad);
+    padding: 0 var(--node-content-padding) var(--node-content-padding);
+}
+
 .graph-node.can-remove > .device-node-header {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: .75rem;
-    padding: .625rem;
-    border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
-    border-radius: 10px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 11px;
+    width: calc(100% + 2 * var(--node-content-padding));
+    margin-inline: calc(-1 * var(--node-content-padding));
+    box-sizing: border-box;
+    padding: 0;
+    border: 0;
+    border-radius: var(--curve) var(--curve) 0 0;
     background: light-dark(#ffffffcc, #161522dd);
     color: light-dark(#252333, #f1eefb);
 
     > h6 {
-        flex: 1 1 8rem;
+        flex: none;
+        margin: 0;
+        padding: 0 var(--node-content-padding) 11px;
         text-align: left;
         font-size: .9rem;
         line-height: 1.3;
@@ -2051,23 +2062,36 @@ html:has(.preset-browser[open]), body:has(.preset-browser[open]) { overflow: hid
 
     .device-title-controls {
         display: flex;
+        flex-wrap: wrap;
         align-items: center;
-        gap: .375rem;
-        margin-left: auto;
+        gap: 11px;
+        margin: 0;
+        padding: 0;
         flex: none;
 
-        .transformer-move-controls { display: flex; gap: .375rem; }
+        .transformer-move-controls { display: flex; gap: 11px; margin: 0; padding: 0; }
+
+        .node-actions-left,
+        .node-actions-right {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            margin: 0;
+            padding: 0;
+        }
+        .node-actions-right { margin-left: auto; }
 
         button {
+            flex: 0 0 auto;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: .375rem;
             position: static;
             width: auto;
-            min-width: 36px;
-            height: 36px;
-            min-height: 36px;
+            min-width: 40px;
+            height: 40px;
+            min-height: 40px;
             padding: .375rem;
             margin: 0;
             border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
@@ -2094,15 +2118,29 @@ html:has(.preset-browser[open]), body:has(.preset-browser[open]) { overflow: hid
         .device-toggle[aria-pressed='true'] { background: #176447; color: #fff; }
         .device-toggle[aria-pressed='false'] { border-style: dashed; }
         .device-remove {
-            margin-left: 1rem;
+            order: -1;
+            width: 40px;
+            padding: 0;
+            border: 0;
+            border-radius: var(--curve) 0 0 0;
             background: #a92446;
             color: #fff;
         }
     }
 }
 
+/* Keep device interfaces mounted while folding their controls out of the graph. */
+.graph-node.can-remove.is-compact {
+    min-height: 0;
+    padding-bottom: 0;
+    gap: 0;
+
+    > :not(.device-node-header):not(.react-flow__handle) { display: none; }
+}
+
 /* Expanded nodes become focused instrument editors, not enlarged graph cards. */
 .node-viewport-editor > .graph-node.is-fullscreen {
+    --node-content-padding: clamp(1.25rem, 4vw, 3rem);
     --editor-accent: oklch(72% .14 var(--hue-accent, 280));
     --node-corner-size: 64px;
     color: light-dark(#252333, #f1eefb);
@@ -2111,7 +2149,7 @@ html:has(.preset-browser[open]), body:has(.preset-browser[open]) { overflow: hid
         light-dark(#f5f3fa, #161522);
     border: 1px solid color-mix(in oklch, var(--editor-accent) 45%, transparent);
     border-top: 3px solid var(--editor-accent);
-    padding: clamp(1.25rem, 4vw, 3rem);
+    padding: 0 var(--node-content-padding) var(--node-content-padding);
     gap: 1.5rem;
     text-transform: none;
     letter-spacing: normal;
@@ -2162,7 +2200,7 @@ html:has(.preset-browser[open]), body:has(.preset-browser[open]) { overflow: hid
             select { margin: 0; min-height: 44px; max-width: 100%; font: inherit; border-width: 1px; border-radius: 8px; }
         }
     }
-    > .device-node-header { padding: .75rem 1rem; }
+    > .device-node-header { padding: 0; }
     > .device-node-header > h6 { font-size: clamp(1rem, 2vw, 1.5rem); line-height: 1.2; }
     > .graph-node-menu { margin-top: auto; padding-top: 1rem; border-top: 1px solid color-mix(in srgb, currentColor 14%, transparent); }
     > .graph-node-menu button { font-size: .875rem; }

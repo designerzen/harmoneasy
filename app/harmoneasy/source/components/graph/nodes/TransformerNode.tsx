@@ -4,6 +4,9 @@ import React, { useCallback, useEffect, useState } from "react"
 import { TransformerSettings } from "../Widgets.tsx"
 import { elementDescription, elementIcon } from '../element-icons'
 import { ElementIcon } from '../ElementIcon'
+import { NodeHeader } from '../NodeHeader'
+import { TransformerDialog } from './AddTransformerNode'
+import { MinimiseButton } from '../MinimiseButton'
 
 function TransformerStatus({ element }: { element: { status: string; statusState?: string } }) {
     const readStatus = () => ({ text: element.status, state: element.statusState ?? 'idle' })
@@ -29,6 +32,7 @@ function TransformerStatus({ element }: { element: { status: string; statusState
 export function TransformerNode(props: any) {
 
 	const { chain, chainId } = useChain()
+    const [swapping, setSwapping] = useState(false)
 	const icon = elementIcon('transformer', props.data.element.type ?? props.data.element.id)
     const description = elementDescription('transformer', props.data.element.type ?? props.data.element.id, props.data.label, props.data.description)
 
@@ -48,6 +52,7 @@ export function TransformerNode(props: any) {
 
 	const isVertical = props.data.layoutMode === 'vertical'
 	const isFullscreen = props.data.isFullscreen || false
+    const isCompact = Boolean(props.data.isCompact) && !isFullscreen
 	const onFullscreen = props.data.onFullscreen
 
 	const handleFullscreen = useCallback(() => {
@@ -56,10 +61,10 @@ export function TransformerNode(props: any) {
 		}
 	}, [props.id, onFullscreen])
 
-    return <div title={description} data-midi-scope={`${chainId}:transformer:${props.data.element.midiControlId}`} className={`node-transformer graph-node can-remove category-${props.data.element.category.toLowerCase()} ${isFullscreen ? 'is-fullscreen' : ''}`}>
-        <header className="device-node-header node-actions">
-            <h6><ElementIcon src={icon} title={description} />{props.data.label}</h6>
-            <div className="device-title-controls nodrag nopan">
+    return <div title={description} data-midi-scope={`${chainId}:transformer:${props.data.element.midiControlId}`} className={`node-transformer graph-node can-remove category-${props.data.element.category.toLowerCase()} ${isFullscreen ? 'is-fullscreen' : ''} ${isCompact ? 'is-compact' : ''}`}>
+        <NodeHeader removeLabel="Delete transformer" onRemove={removeNode}
+            swap={<button type="button" className="device-swap" title="Swap transformer" aria-label="Swap transformer" onClick={() => setSwapping(true)}>Swap</button>}
+            title={<><ElementIcon src={icon} title={description} />{props.data.label}</>}>
                 {shouldShowMoveButtons && <div className="transformer-move-controls">
                     <button type="button" className="btn-previous nodrag nopan" onClick={moveBack}
                         title={isVertical ? 'Move transformer up' : 'Move transformer left'}
@@ -76,17 +81,17 @@ export function TransformerNode(props: any) {
                         </svg>
                     </button>
                 </div>}
+            <MinimiseButton compact={isCompact} direction="transformer" onClick={() => props.data.onMinimise?.(props.id)} />
             <button type="button" className="device-expand" onClick={handleFullscreen}
                 autoFocus={isFullscreen} aria-expanded={isFullscreen}
-                title={isFullscreen ? 'Minimise transformer' : 'Expand transformer'}
-                aria-label={isFullscreen ? 'Minimise transformer' : 'Expand transformer'}>
+                title={isFullscreen ? 'Exit fullscreen transformer' : 'Expand transformer'}
+                aria-label={isFullscreen ? 'Exit fullscreen transformer' : 'Expand transformer'}>
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                     <path d={isFullscreen ? 'M3 9h6V3m6 0v6h6M3 15h6v6m6 0v-6h6' : 'M9 3H3v6m12-6h6v6M3 15v6h6m6 0h6v-6'} />
                 </svg>
             </button>
-            <button type="button" className="device-remove" title="Delete transformer" aria-label="Delete transformer" onClick={removeNode}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg></button>
-            </div>
-        </header>
+        </NodeHeader>
+        {swapping && <TransformerDialog replacing={props.data.element} onClose={() => setSwapping(false)} />}
         {isFullscreen ? <header className="expanded-node-heading">
             <div className="expanded-node-emblem"><ElementIcon src={icon} title={description} /></div>
             <div>

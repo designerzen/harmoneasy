@@ -8,7 +8,7 @@ import { OUTPUT_DEFINITIONS } from 'audiobus/io/output-definitions'
 import { INSTRUMENTS } from 'audiobus/instruments/instrument-types'
 import { choiceMatches } from './device-filters'
 
-export function SharedDevices({ direction, search = '', selection = '' }: { direction: 'input' | 'output'; search?: string; selection?: string }) {
+export function SharedDevices({ direction, search = '', selection = '', disabled = false, onSelect }: { direction: 'input' | 'output'; search?: string; selection?: string; disabled?: boolean; onSelect?: (device: any) => void }) {
     const { chainId, manager } = useChain()
     const available = manager.devices.filter(entry => {
         if (entry.direction !== direction || entry.chains.has(chainId)) return false
@@ -24,7 +24,7 @@ export function SharedDevices({ direction, search = '', selection = '' }: { dire
     return <section className="shared-device-selector nodrag nopan nowheel" aria-label={`Use existing ${direction}`}>
         <h6>Use existing {direction}</h6>
         <ul>{available.map(entry => <li key={entry.id}>
-            <button className="element-choice" type="button" onClick={() => manager.attachDevice(chainId, entry.id)}
+            <button className="element-choice" type="button" disabled={disabled} onClick={() => onSelect ? onSelect(entry.device) : manager.attachDevice(chainId, entry.id)}
                 title={elementDescription(direction, entry.id, entry.device.name, entry.device.description)}>
                 <ElementIcon src={deviceIcon(entry.device, direction)} title={elementDescription(direction, entry.id, entry.device.name, entry.device.description)} />
                 <span>{entry.device.name}</span>

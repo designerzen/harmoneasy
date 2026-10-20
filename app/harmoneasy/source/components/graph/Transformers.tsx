@@ -4,6 +4,7 @@ import { choiceMatches, groupChoices } from './device-filters'
 import { useChain } from './ChainContext'
 import { elementDescription, elementIcon } from './element-icons'
 import { ElementIcon } from './ElementIcon'
+import type { Transformer } from 'audiobus/io/transformers/abstract-transformer'
 import React, { useState, useId } from "react"
 import { 
     tranformerFactory,
@@ -11,22 +12,32 @@ import {
 } from 'audiobus/io/transformer-factory'
 
 
-export function TransformerPicker({ dialog = false, onAdded }: { dialog?: boolean; onAdded?: () => void }) {
+export function TransformerPicker({ dialog = false, replacing, onAdded }: { dialog?: boolean; replacing?: Transformer<any>; onAdded?: () => void }) {
     const { chain } = useChain()
     const filterId = useId()
     const [transformersFilterText, setTransformersFilterText] = useState("")
   
     const [classification, setClassification] = useState('')
+    const [error, setError] = useState('')
     const choices = TRANSFORMERS.map(id => TRANSFORMER_DEFINITIONS[id])
     const filteredTransformers = choices.filter(choice => choiceMatches(choice, transformersFilterText, classification))
 
 	const onAdd = (transformerType: string) => () => {
-
-        chain.appendTransformer( tranformerFactory(transformerType) )
-        onAdded?.()
+        try {
+            if (chain.isDestroyed) throw new Error('This chain has been deleted')
+            const transformers = chain.transformerManager.activeTransformers
+            if (replacing && !transformers.includes(replacing)) throw new Error('This transformer has been removed')
+            const next = tranformerFactory(transformerType) as Transformer<any>
+            if (replacing) {
+                chain.clearNoteCommands()
+                chain.setTransformers(transformers.map(transformer => transformer === replacing ? next : transformer))
+            } else chain.appendTransformer(next)
+            onAdded?.()
+        } catch (error) { setError(String(error)) }
     }
 
     return (<div className="transformer-picker">
+            {error && <p role="alert">{error}</p>}
 			
             <div className="picker-filter-row">
 			<label className={dialog ? 'dialog-filter' : 'filter-label filter-transformer'} htmlFor={filterId}>

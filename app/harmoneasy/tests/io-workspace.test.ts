@@ -28,6 +28,43 @@ function setup() {
 const tick = () => new Promise(resolve => setTimeout(resolve, 15))
 
 describe('IO workspace', () => {
+    it('swaps a disabled input in one chain while keeping its shared instance attached elsewhere', () => {
+        const { manager, chain, input, id } = setup()
+        const clone = manager.getChain(manager.cloneChain(id))!
+        const replacement = new Input()
+        chain.setInputEnabled(input, false)
+        manager.replaceDevice(chain, input, replacement, 'input')
+        expect(chain.inputs).toEqual([replacement])
+        expect(chain.inputManager.isEnabled(replacement)).toBe(false)
+        expect(clone.inputs).toEqual([input])
+        expect(input.destroy).not.toHaveBeenCalled()
+        manager.destroy()
+    })
+    it('swaps an output without interrupting notes owned by another chain', async () => {
+        const { manager, chain, sink, id } = setup()
+        const clone = manager.getChain(manager.cloneChain(id))!
+        const replacement = { ...output(), uuid: 'replacement' }
+        await chain.outputManager.noteOn(60, 100)
+        await clone.outputManager.noteOn(60, 100)
+        manager.replaceDevice(chain, sink, replacement, 'output')
+        await OutputManager.settled(sink)
+        expect(chain.outputs).toEqual([replacement])
+        expect(clone.outputs).toEqual([sink])
+        expect(sink.noteOff).not.toHaveBeenCalled()
+        await clone.outputManager.noteOff(60)
+        expect(sink.noteOff).toHaveBeenCalledWith(60)
+        manager.destroy()
+    })
+    it('rejects a late replacement after its original device is removed', async () => {
+        const { manager, chain, input } = setup()
+        chain.removeInput(input)
+        const replacement = new Input()
+        expect(() => manager.replaceDevice(chain, input, replacement, 'input')).toThrow('removed')
+        await tick()
+        expect(chain.inputs).toEqual([])
+        expect(replacement.destroy).toHaveBeenCalledOnce()
+        manager.destroy()
+    })
     it('records chain identity without changing commands sent to shared outputs', () => {
         const { manager, chain, id } = setup()
         const cloneId = manager.cloneChain(id)

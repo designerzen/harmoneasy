@@ -7,15 +7,18 @@ import { TransformerPicker } from '../source/components/graph/Transformers'
 import { DeviceDialog } from '../source/components/graph/DeviceDialog'
 import { SharedDevices } from '../source/components/graph/SharedDevices'
 import { defineDevice } from 'audiobus/io/device-definition'
+import { EVENT_DEVICE_LIST_CHANGED } from 'audiobus/event-constants'
 
 const mocks = vi.hoisted(() => ({
     input: vi.fn(), output: vi.fn(), instrument: vi.fn(), addDevice: vi.fn(), appendTransformer: vi.fn(),
-    inputs: vi.fn(), outputs: vi.fn(), instruments: vi.fn(), devices: [] as any[], attachDevice: vi.fn()
+    inputs: vi.fn(), outputs: vi.fn(), instruments: vi.fn(), devices: [] as any[], attachDevice: vi.fn(),
+    midi: Object.assign(new EventTarget(), { inputs: [] as any[], outputs: [] as any[] })
 }))
+vi.mock('audiobus/midi/shared-webmidi', () => ({ sharedWebMidi: mocks.midi }))
 vi.mock('../source/components/graph/ChainContext', () => {
     const context = {
     chainId: 'lead',
-    chain: { inputManager: { getAvailableFactories: mocks.inputs }, outputManager: { getAvailableFactories: mocks.outputs }, appendTransformer: mocks.appendTransformer },
+    chain: { inputManager: { getAvailableFactories: mocks.inputs }, outputManager: { getAvailableFactories: mocks.outputs }, transformerManager: { activeTransformers: [] }, appendTransformer: mocks.appendTransformer },
     manager: { devices: mocks.devices, deviceOptions: { clock: 'test' }, outputMixer: { context: 'audio' }, addDevice: mocks.addDevice, attachDevice: mocks.attachDevice }
     }
     return { useChain: () => context }
@@ -42,6 +45,8 @@ const add = async (name: string) => {
 beforeEach(async () => {
     vi.clearAllMocks()
     mocks.devices.length = 0
+    mocks.midi.inputs = []
+    mocks.midi.outputs = [{ id: 'output-fixture', name: 'MIDI output' }]
     vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
     mocks.inputs.mockResolvedValue([
         { id: 'keyboard', name: 'Keyboard', description: 'Computer keys', type: 'controller', subtype: 'keyboard' },
@@ -127,6 +132,82 @@ it.each(['input', 'output'] as const)('uses the grouped picker and dropdown in t
     expect(close).toHaveBeenCalledOnce()
 })
 
+it.each(['input', 'output'] as const)('lists connected MIDI %ss directly and creates the chosen device already routed and connected', async direction => {
+    mocks.inputs.mockResolvedValue([
+        { id: 'webmidi', name: 'WebMIDI Device', description: 'Generic MIDI', type: 'midi', subtype: 'device' },
+        { id: 'digit-cmpsr', name: 'DIGIT CMPSR', description: 'Offline registry device', type: 'midi', subtype: 'device' }
+    ])
+    mocks.midi.inputs = [{ id: 'input-id', name: 'MiniLab 3', manufacturer: 'Arturia' }]
+    mocks.midi.outputs = [{ id: 'output-id', name: 'reface CS', manufacturer: 'Yamaha' }]
+    const connect = vi.fn(async () => {})
+    const created = { name: 'Selected hardware', connect }
+    const factory = direction === 'input' ? mocks.input : mocks.output
+    factory.mockResolvedValue(created)
+    await act(async () => root.render(<DeviceDialog direction={direction} onClose={vi.fn()} />))
+    const dialog = document.querySelector('dialog')!
+    const expectedName = direction === 'input' ? 'MiniLab 3' : 'reface CS'
+    const card = [...dialog.querySelectorAll<HTMLButtonElement>('.grid-item')].find(button => button.querySelector('.item-name')?.textContent === expectedName)!
+    expect(card).toBeDefined()
+    expect(card.textContent).toContain(direction === 'input' ? 'input-id' : 'output-id')
+    expect(card.querySelector<HTMLElement>('.item-icon')!.style.maskImage).toContain(direction === 'input' ? 'arturia-minilab-3/icon.svg' : 'yamaha-reface-cs/icon.svg')
+    expect(dialog.textContent).not.toContain('WebMIDI Device')
+    expect(dialog.textContent).not.toContain('Offline registry device')
+    expect(dialog.querySelectorAll('.item-name').length).toBeGreaterThanOrEqual(2)
+    await act(async () => card.click())
+    expect(factory).toHaveBeenCalledWith(direction === 'input' ? 'arturia-minilab-3' : 'webmidi', expect.objectContaining({
+        selectedDevice: direction === 'input' ? 'input-id' : 'output-id', devices: [direction === 'input' ? 'input-id' : 'output-id'],
+        ...(direction === 'input' ? { listenToAllDevices: false, clock: 'test' } : { sendToAllDevices: false, audioContext: 'audio' })
+    }))
+    expect(connect).toHaveBeenCalledOnce()
+    expect(mocks.addDevice).toHaveBeenCalledWith(expect.anything(), created, direction)
+    expect(connect.mock.invocationCallOrder[0]).toBeLessThan(mocks.addDevice.mock.invocationCallOrder[0])
+})
+
+it.each(['input', 'output'] as const)('updates MIDI %s choices on hot-plug and keeps All devices as an explicit choice', async direction => {
+    const factoryInfo = { id: 'webmidi', name: 'WebMIDI Device', description: 'MIDI', type: 'midi', subtype: 'device' }
+    mocks.inputs.mockResolvedValue([factoryInfo]); mocks.outputs.mockResolvedValue([factoryInfo])
+    mocks.midi.inputs = []; mocks.midi.outputs = []
+    await act(async () => root.render(<DeviceDialog direction={direction} onClose={vi.fn()} />))
+    const dialog = document.querySelector('dialog')!
+    expect(dialog.textContent).toContain(`No MIDI ${direction} devices connected.`)
+    expect([...dialog.querySelectorAll('.item-name')].some(name => name.textContent === 'WebMIDI Device')).toBe(false)
+    await act(async () => {
+        mocks.midi[direction === 'input' ? 'inputs' : 'outputs'] = [{ id: 'a', name: 'Controller' }, { id: 'b', name: 'Controller' }]
+        mocks.midi.dispatchEvent(new Event(EVENT_DEVICE_LIST_CHANGED))
+    })
+    const cards = [...dialog.querySelectorAll<HTMLButtonElement>('.grid-item')].filter(button => button.querySelector('.item-name')?.textContent === 'Controller')
+    expect(cards).toHaveLength(2)
+    expect(cards[0].textContent).toContain('MIDI ID: a')
+    expect(cards[1].textContent).toContain('MIDI ID: b')
+    const all = [...dialog.querySelectorAll<HTMLButtonElement>('.grid-item')].find(button => button.querySelector('.item-name')?.textContent === `All MIDI ${direction}s`)!
+    await act(async () => all.click())
+    expect(direction === 'input' ? mocks.input : mocks.output).toHaveBeenCalledWith('webmidi', expect.objectContaining({
+        selectedDevice: '', devices: [], ...(direction === 'input' ? { listenToAllDevices: true } : { sendToAllDevices: true })
+    }))
+    await act(async () => {
+        mocks.midi[direction === 'input' ? 'inputs' : 'outputs'] = []
+        mocks.midi.dispatchEvent(new Event(EVENT_DEVICE_LIST_CHANGED))
+    })
+    expect([...dialog.querySelectorAll('.item-name')].some(name => name.textContent === 'Controller')).toBe(false)
+    expect(dialog.textContent).toContain(`No MIDI ${direction} devices connected.`)
+})
+
+it('cleans up a MIDI device disconnected during creation and keeps the dialog available for another choice', async () => {
+    const destroy = vi.fn(async () => {})
+    mocks.output.mockResolvedValue({ name: 'MIDI output', destroy, connect: vi.fn(async () => {
+        mocks.midi.outputs = []
+        mocks.midi.dispatchEvent(new Event(EVENT_DEVICE_LIST_CHANGED))
+    }) })
+    await act(async () => root.render(<DeviceDialog direction="output" onClose={vi.fn()} />))
+    const dialog = document.querySelector('dialog')!
+    const card = [...dialog.querySelectorAll<HTMLButtonElement>('.grid-item')].find(button => button.querySelector('.item-name')?.textContent === 'MIDI output')!
+    await act(async () => card.click())
+    expect(dialog.querySelector('[role="alert"]')!.textContent).toContain('disconnected while being added')
+    expect(mocks.addDevice).not.toHaveBeenCalled()
+    expect(destroy).toHaveBeenCalledOnce()
+    expect(dialog.open).toBe(true)
+})
+
 it('filters transformer groups in both the sidebar and dialog', async () => {
     await choose('Transformers')
     await selectFilter(panel(), 'subtype:harmony')
@@ -185,7 +266,7 @@ it('adds transformers, outputs and instruments through their respective factorie
     expect(mocks.appendTransformer).toHaveBeenCalledWith({ type: 'Harmoniser' })
     await choose('Outputs')
     await add('MIDI output')
-    expect(mocks.output).toHaveBeenCalledWith('webmidi', { mixer: { context: 'audio' }, audioContext: 'audio' })
+    expect(mocks.output).toHaveBeenCalledWith('webmidi', expect.objectContaining({ mixer: { context: 'audio' }, audioContext: 'audio', selectedDevice: 'output-fixture', sendToAllDevices: false }))
     await add('Piano')
     expect(mocks.instrument).toHaveBeenCalledWith('audio', 'piano', expect.objectContaining({ mixer: { context: 'audio' } }))
     expect(mocks.addDevice).toHaveBeenLastCalledWith(expect.anything(), { name: 'Created instrument' }, 'output')

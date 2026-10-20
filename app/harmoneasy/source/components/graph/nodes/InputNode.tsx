@@ -41,6 +41,7 @@ export function InputNode(props: any) {
 
 	const isVertical = props.data?.layoutMode === 'vertical'
 	const isFullscreen = props.data?.isFullscreen || false
+    const isCompact = Boolean(props.data?.isCompact) && !isFullscreen
 	const onFullscreen = props.data?.onFullscreen
 
 	const handleFullscreen = useCallback(() => {
@@ -49,8 +50,8 @@ export function InputNode(props: any) {
 		}
 	}, [props.id, onFullscreen])
 
-	return <div data-midi-scope={`${chainId}:input:${deviceId(input)}`} className={`node-input graph-node can-remove ${hasControls ? 'has-controls' : 'no-controls'} ${isFullscreen ? 'is-fullscreen' : ''}`} title={elementDescription('input', '', input.name, input.description)}>
-        <DeviceTitleBar device={input} direction="input" expanded={isFullscreen} onExpand={handleFullscreen} onRemove={removeNode} />
+	return <div data-midi-scope={`${chainId}:input:${deviceId(input)}`} className={`node-input graph-node can-remove ${hasControls ? 'has-controls' : 'no-controls'} ${isFullscreen ? 'is-fullscreen' : ''} ${isCompact ? 'is-compact' : ''}`} title={elementDescription('input', '', input.name, input.description)}>
+        <DeviceTitleBar device={input} direction="input" expanded={isFullscreen} compact={isCompact} onMinimise={() => props.data.onMinimise?.(props.id)} onExpand={handleFullscreen} onRemove={removeNode} />
         {(ioManager.devices.find(entry => entry.device === input)?.chains.size ?? 0) > 1 && <small>Shared device</small>}
 		<p className="sr-only">{props.data.label }</p>
 		{

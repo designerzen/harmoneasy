@@ -2,22 +2,24 @@ import React, { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Handle, Position } from '@xyflow/react'
 import { TransformerPicker } from '../Transformers'
+import type { Transformer } from 'audiobus/io/transformers/abstract-transformer'
 
-function TransformerDialog({ onClose }: { onClose: () => void }) {
+export function TransformerDialog({ onClose, replacing }: { onClose: () => void; replacing?: Transformer<any> }) {
     const dialog = useRef<HTMLDialogElement>(null)
+    const title = replacing ? 'Swap Transformer' : 'Add New Transformer'
     useEffect(() => {
         dialog.current?.setAttribute('closedby', 'any')
         dialog.current?.showModal()
     }, [])
 
-    return createPortal(<dialog ref={dialog} className="add-transformer-dialog nodrag nopan nowheel" aria-label="Add New Transformer"
+    return createPortal(<dialog ref={dialog} className="add-transformer-dialog nodrag nopan nowheel" aria-label={title}
         onClose={onClose} onKeyDown={event => event.stopPropagation()}>
-        <header><h5>Add New Transformer</h5></header>
+        <header><h5>{title}</h5></header>
         <div className="dialog-content">
-            <TransformerPicker dialog onAdded={() => dialog.current?.close()} />
+            <TransformerPicker dialog replacing={replacing} onAdded={() => dialog.current?.close()} />
         </div>
         <form method="dialog">
-            <button className="btn-close" type="submit" aria-label="Cancel adding transformer" title="Cancel">×</button>
+            <button className="btn-close" type="submit" aria-label={`Cancel ${replacing ? 'swapping' : 'adding'} transformer`} title="Cancel">×</button>
         </form>
     </dialog>, document.body)
 }

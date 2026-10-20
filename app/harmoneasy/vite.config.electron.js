@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import path from 'path'
 import { midiDeviceFilesPlugin } from 'audiobus/midi/hardware/device-files.js'
+import { supersonicFilesPlugin } from 'audiobus/io/outputs/supersonic-files.js'
 
 /**
  * Vite config for Electron builds
@@ -65,7 +66,7 @@ export default defineConfig({
   resolve: {
     conditions: ['import']
   },
-  plugins: [nodeAddonPlugin, midiDeviceFilesPlugin()],
+  plugins: [nodeAddonPlugin, midiDeviceFilesPlugin(), supersonicFilesPlugin()],
   ssr: {
     external: ['fs', 'path', 'module', 'url']
   }

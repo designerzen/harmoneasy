@@ -49,6 +49,7 @@ export const OUTPUT_GUIDANCE: Record<OutputId, Guidance> = {
             definition.id.startsWith('webclap:') ? audio + ' WebAssembly and AudioWorklet support. Native interfaces require HTTPS or localhost.'
                 : audio + ' The plugin engine and any samples must be available.')
     ])),
+    'drum-accompaniment': guide('Dr', 'Add a drum groove alongside your instrument.', 'Choose a genre and hold notes to play; use Preview to audition.', audio),
     moog: guide('M', 'Play the Photosynth Moog ladder synthesizer.', 'Shaping basses, leads and chords with cutoff, resonance and envelopes.', audio + ' Internet access to load the WAM SDK.'),
     describe: guide('Aa', 'Describe active notes and chords in musical language.', 'Identifying extended chords, added tones, and inversions while playing.', 'Notes from a connected input or transformer.'),
     console: guide('⌘', 'Log outgoing note events.', 'Debugging a chain and checking its output.', 'Development mode and the browser developer console.'),

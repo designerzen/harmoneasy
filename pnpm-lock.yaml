@@ -290,6 +290,9 @@ importers:
       standardized-audio-context:
         specifier: ^25.3.77
         version: 25.3.77
+      supersonic-scsynth:
+        specifier: 0.64.0
+        version: 0.64.0
       supersonic-scsynth-bundle:
         specifier: ^0.64.0
         version: 0.64.0

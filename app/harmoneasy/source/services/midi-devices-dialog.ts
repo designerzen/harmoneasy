@@ -1,6 +1,6 @@
 import { sharedWebMidi } from 'audiobus/midi/shared-webmidi'
 import { loadMidiProfilesForPorts, matchMidiDeviceProfile, MIDI_DEVICE_PROFILES, onMidiDeviceProfilesChanged } from 'audiobus/midi/hardware/device-profiles'
-import type { MidiGuiNode } from 'audiobus/midi/hardware/device-profile-schema'
+import { createMidiDevicePreview } from 'audiobus/midi/hardware/device-preview'
 import { EVENT_CANCEL, EVENT_CLICK, EVENT_CLOSE, EVENT_CLOSED, EVENT_DEVICE_LIST_CHANGED,
     EVENT_MIDI_CHANNELS_CHANGED, EVENT_OPENED, EVENT_READY, EVENT_VISIBILITY_CHANGE } from 'audiobus/event-constants'
 
@@ -21,42 +21,6 @@ export function createMidiDevicesDialog(root: Document = document): () => void {
     let portListeners: (() => void)[] = []
     const visible = () => dialog.open && !dialog.hidden && !root.hidden
     const ports = () => [...sharedWebMidi.inputs, ...sharedWebMidi.outputs]
-    const imageIn = (node: MidiGuiNode): MidiGuiNode | undefined => node.type === 'image' ? node
-        : node.children?.map(imageIn).find(image => !!image)
-    const preview = (profileId: string): HTMLElement => {
-        const profile = MIDI_DEVICE_PROFILES[profileId]
-        const figure = root.createElement('figure')
-        figure.className = 'midi-device-preview'
-        figure.dataset.midiProfile = profileId
-        const artwork = imageIn(profile.gui)
-        const src = artwork?.src ?? profile.icon
-        if (src) {
-            const image = root.createElement('img')
-            image.src = src
-            image.alt = artwork?.alt || `${profile.name} preview`
-            image.loading = 'lazy'
-            image.decoding = 'async'
-            figure.append(image)
-        }
-        const caption = root.createElement('figcaption')
-        const name = root.createElement('strong')
-        name.textContent = profile.name
-        const description = root.createElement('p')
-        description.textContent = profile.description
-        caption.append(name, description)
-        for (const [label, url] of [['Manufacturer', profile.manufacturerUrl], ['Product', profile.productUrl],
-            ['MIDI documentation', profile.documentation[0]?.url]]) {
-            if (!url) continue
-            const link = root.createElement('a')
-            link.href = url
-            link.textContent = label!
-            link.target = '_blank'
-            link.rel = 'noopener noreferrer'
-            caption.append(link)
-        }
-        figure.append(caption)
-        return figure
-    }
     const refreshProfiles = () => {
         if (visible()) void loadMidiProfilesForPorts(ports()).catch(error => console.debug('MIDI previews unavailable', error))
     }
@@ -81,7 +45,7 @@ export function createMidiDevicesDialog(root: Document = document): () => void {
                 row.append(cell)
             }
             const profileId = matchMidiDeviceProfile(port)
-            if (profileId) row.firstElementChild!.append(preview(profileId))
+            if (profileId) row.firstElementChild!.append(createMidiDevicePreview(MIDI_DEVICE_PROFILES[profileId], root))
             return row
         })
         list.replaceChildren(...rows)

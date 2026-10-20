@@ -25,7 +25,7 @@ const OUTPUT_ICONS: Record<OutputId, string> = {
     'spectrum-analyser': 'spectrum', 'speech-synthesis': 'speech', vibrator: 'vibration',
     webmidi: 'midi', 'native-midi': 'midi', 'ble-midi': 'bluetooth', midi2: 'midi', 'midi2-native': 'midi',
     supersonic: 'synth', wam2: 'plugin', wam: 'plugin', yoshimi: 'synth', metronome: 'clock',
-    'audio-click': 'clock', butterchurn: 'visualizer'
+    'audio-click': 'clock', butterchurn: 'visualizer', 'drum-accompaniment': 'drums'
 }
 
 export function elementIcon(kind: ElementKind, id: string): string {

@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import { createReadStream } from 'node:fs'
 import { resolve, sep } from 'node:path'
 import { midiDeviceFilesPlugin } from 'audiobus/midi/hardware/device-files.js'
+import { supersonicFilesPlugin } from 'audiobus/io/outputs/supersonic-files.js'
 
 // Vite's static middleware emits an empty MIME type for .tar.gz bundles.
 // Serve WCLAP archives explicitly so browser fetch does not treat them as downloads.
@@ -45,7 +46,7 @@ const webNativeAddonPlugin = {
  */
 
 export default defineConfig({
-  plugins: [webNativeAddonPlugin, webclapBundlesPlugin, midiDeviceFilesPlugin()],
+  plugins: [webNativeAddonPlugin, webclapBundlesPlugin, midiDeviceFilesPlugin(), supersonicFilesPlugin()],
   worker: { format: 'es' },
   // Resolve through the workspace package and bundle Nexus's CommonJS dependencies
   // (including toposort); serving the SDK unbundled breaks browser imports.

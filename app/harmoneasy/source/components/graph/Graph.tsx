@@ -59,6 +59,7 @@ function FlowComponent() {
 	const fittedLayout = useRef<string | null>(null)
 	const nodesInitialized = useNodesInitialized()
 	const [fullscreenNodeId, setFullscreenNodeId] = useState<string | null>(null)
+    const [compactNodeIds, setCompactNodeIds] = useState<Set<string>>(() => new Set())
 
 	useEffect(() => {
 		const abortController = new AbortController()
@@ -164,12 +165,24 @@ function FlowComponent() {
 		setFullscreenNodeId(null)
 	}
 
+    const handleMinimise = (nodeId: string) => {
+        setCompactNodeIds(previous => {
+            const next = new Set(previous)
+            if (fullscreenNodeId === nodeId || !next.has(nodeId)) next.add(nodeId)
+            else next.delete(nodeId)
+            return next
+        })
+        if (fullscreenNodeId === nodeId) setFullscreenNodeId(null)
+    }
+
 	// Pass fullscreen handlers to node data
 	const nodesWithFullscreen: GraphNode[] = nodes.map(node => ({
 		...node,
 		data: {
 			...node.data,
 			onFullscreen: handleFullscreenMode,
+            onMinimise: handleMinimise,
+            isCompact: compactNodeIds.has(node.id),
 			isFullscreen: false,
 			layoutMode
 		}

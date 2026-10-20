@@ -19,14 +19,23 @@ it('exposes labelled title controls and updates the toggle when the manager chan
         setInputEnabled: (device: Input, enabled: boolean) => inputManager.setEnabled(device, enabled) }
     const host = document.body.appendChild(document.createElement('div'))
     const root = createRoot(host)
-    const onRemove = vi.fn(), onExpand = vi.fn()
+    const onRemove = vi.fn(), onExpand = vi.fn(), onMinimise = vi.fn()
     try {
         await act(async () => root.render(<ChainContext.Provider value={{ chain } as any}>
-            <DeviceTitleBar device={input} direction="input" expanded={false} onRemove={onRemove} onExpand={onExpand} />
+            <DeviceTitleBar device={input} direction="input" expanded={false} compact={false} onMinimise={onMinimise} onRemove={onRemove} onExpand={onExpand} />
         </ChainContext.Provider>))
         const buttons = host.querySelectorAll('button')
         const toggle = host.querySelector<HTMLButtonElement>('.device-toggle')!
-        expect(buttons).toHaveLength(3)
+        expect(buttons).toHaveLength(5)
+        expect(buttons[0].getAttribute('aria-label')).toBe('Remove input')
+        expect(host.querySelector('header')!.lastElementChild!.tagName).toBe('H6')
+        expect(host.querySelector('.device-swap')!.textContent).toBe('Swap')
+        expect(host.querySelector('.node-actions-left')!.querySelectorAll('button')).toHaveLength(2)
+        expect(host.querySelector('.node-actions-right')!.querySelectorAll('button')).toHaveLength(3)
+        const minimise = host.querySelector<HTMLButtonElement>('.device-minimise')!
+        expect(minimise.getAttribute('aria-label')).toBe('Minimise input')
+        await act(async () => minimise.click())
+        expect(onMinimise).toHaveBeenCalledOnce()
         expect([...buttons].every(button => button.title && button.getAttribute('aria-label'))).toBe(true)
         await act(async () => toggle.click())
         expect(inputManager.isEnabled(input)).toBe(false)
@@ -34,9 +43,14 @@ it('exposes labelled title controls and updates the toggle when the manager chan
         expect(toggle.getAttribute('aria-label')).toBe('Enable input')
         await act(async () => inputManager.setEnabled(input, true))
         expect(toggle.getAttribute('aria-pressed')).toBe('true')
-        await act(async () => { buttons[0].click(); buttons[2].click() })
+        await act(async () => { host.querySelector<HTMLButtonElement>('.device-expand')!.click(); buttons[0].click() })
         expect(onExpand).toHaveBeenCalledOnce()
         expect(onRemove).toHaveBeenCalledOnce()
+        await act(async () => root.render(<ChainContext.Provider value={{ chain } as any}>
+            <DeviceTitleBar device={input} direction="input" expanded={false} compact onMinimise={onMinimise} onRemove={onRemove} onExpand={onExpand} />
+        </ChainContext.Provider>))
+        expect(minimise.getAttribute('aria-label')).toBe('Restore input')
+        expect(minimise.getAttribute('aria-expanded')).toBe('false')
     } finally {
         await act(async () => root.unmount())
         host.remove(); inputManager.destroy(); outputManager.destroy()

@@ -54,6 +54,24 @@ afterEach(async () => {
 })
 
 describe('shared WebMIDI access', () => {
+    it('previews the selected WebMIDI Input and Output using raw port names without sending MIDI', async () => {
+        const inputPort = port('input-opaque-id', 'MiniLab 3'); inputPort.manufacturer = 'Arturia'
+        const outputPort = { id: 'output-opaque-id', name: 'reface CS', manufacturer: 'Yamaha', type: 'output', send: vi.fn() }
+        midi.inputs = [inputPort]; midi.outputs = [outputPort]
+        const input = new InputWebMIDIDevice(), output = new OutputWebMIDIDevice({ selectedDevice: outputPort.id })
+        resources.push(input, output)
+        const receive = vi.spyOn(input, 'dispatch')
+        await Promise.all([input.connect(), output.connect()])
+        const inputGui = await input.createGui(), outputGui = await output.createGui()
+        const select = inputGui.querySelector('select')!
+        select.value = inputPort.id; select.dispatchEvent(new Event(EVENT_CHANGE))
+        expect(inputGui.querySelector<HTMLElement>('[data-midi-profile]')!.dataset.midiProfile).toBe('arturia-minilab-3')
+        expect(outputGui.querySelector<HTMLElement>('[data-midi-profile]')!.dataset.midiProfile).toBe('yamaha-reface-cs')
+        expect(outputPort.send).not.toHaveBeenCalled()
+        expect(receive).not.toHaveBeenCalled()
+        output.setOutput('')
+        expect(outputGui.querySelector('figure')).toBeNull()
+    })
     it('automatically readies Output selectors and routing before and after global permission without a separate connect action', async () => {
         const before = await createOutputById('webmidi', { selectedDevice: 'synth', selectedChannel: 5 }) as OutputWebMIDIDevice
         const removed = await createOutputById('webmidi') as OutputWebMIDIDevice
