@@ -91,6 +91,26 @@ describe('Moog WAM processor', () => {
 })
 
 describe('Moog GUI and output', () => {
+    it('initializes the synth when its controls are mounted and resumes suspended audio', async () => {
+        vi.stubGlobal('AudioWorklet', class {})
+        const gain = { connect: vi.fn(), disconnect: vi.fn() }
+        const context = { state: 'suspended', resume: vi.fn(async () => { context.state = 'running' }),
+            createGain: () => gain, currentTime: 3, destination: {} }
+        const output = await createOutputById('moog', { audioContext: context })
+        const audioNode = { connect: vi.fn(), disconnect: vi.fn(), destroy: vi.fn(), scheduleEvents: vi.fn() }
+        const createGui = vi.fn(async () => document.createElement('section'))
+        const createPlugin = vi.spyOn(output as any, 'createPlugin').mockResolvedValue({ audioNode, createGui, descriptor: { name: 'Moog' } })
+        const gui = await output.createGui!()
+        expect(context.resume).toHaveBeenCalledOnce()
+        expect(output.isConnected).toBe(true)
+        expect(createGui).toHaveBeenCalledOnce()
+        expect(gui.querySelector('section')).not.toBeNull()
+        expect(gui.querySelector('input[type="url"]')).toBeNull()
+        await output.connect!()
+        expect(createPlugin).toHaveBeenCalledOnce()
+        await output.disconnect!()
+        await output.destroyGui!()
+    })
     it('schedules automation, reflects host changes and cleans up GUI listeners', async () => {
         const node = Object.assign(new EventTarget(), {
             context: { currentTime: 2 }, getParameterValues: async () => ({}), scheduleEvents: vi.fn(),
