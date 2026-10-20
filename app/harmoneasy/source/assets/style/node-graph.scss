@@ -1942,8 +1942,31 @@ html:has(.preset-browser[open]), body:has(.preset-browser[open]) { overflow: hid
     .chain-name { flex: 1; min-width: 0; padding-inline: .25rem; }
 }
 
-.add-input-dialog, .add-output-dialog {
-    .items-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); align-items: stretch; }
+dialog.add-input-dialog, dialog.add-output-dialog {
+    width: min(72rem, calc(100vw - 2rem));
+    min-width: 0;
+    max-width: 72rem;
+    box-sizing: border-box;
+    .device-picker-header {
+        padding-right: calc(var(--pad) + 3rem);
+        .dialog-filter { margin: 0; }
+        .dialog-filter > svg {
+            flex: 0 0 1.125rem;
+            width: 1.125rem;
+            height: 1.125rem;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+        }
+    }
+    .device-picker-title { margin: 0; }
+    .choice-group { width: 100%; }
+    .items-grid {
+        display: grid;
+        width: 100%;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+        align-items: stretch;
+    }
     .items-grid .device-choice-card {
         align-items: stretch;
         justify-content: flex-start;
@@ -1958,6 +1981,15 @@ html:has(.preset-browser[open]), body:has(.preset-browser[open]) { overflow: hid
         border-radius: 12px;
         min-width: 0;
         .item-icon { justify-content: flex-start; height: auto; font-size: 1.75rem; }
+        .item-icon[hidden] { display: none; }
+        .device-choice-preview {
+            display: block;
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            object-fit: contain;
+            background: #181818;
+            border-radius: .375rem;
+        }
         .item-name { font-size: 1rem; font-weight: 700; }
         .item-description { display: block; }
         .device-choice-detail { display: grid; gap: .125rem; }

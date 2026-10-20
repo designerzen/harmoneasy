@@ -3,6 +3,7 @@ import type { OutputId } from 'audiobus/io/outputs/output-types'
 import { elementDescription, elementIcon } from './element-icons'
 import { classificationLabel, type ClassifiedChoice } from './device-filters'
 import { OUTPUT_DEFINITIONS } from 'audiobus/io/output-definitions'
+import { EVENT_ERROR } from 'audiobus/event-constants'
 import { MIDI_DEVICE_PROFILES, onMidiDeviceProfilesChanged } from 'audiobus/midi/hardware/device-profiles'
 
 type Guidance = { icon: string; usedFor: string; usefulFor: string; requirements: string }
@@ -49,7 +50,7 @@ export const OUTPUT_GUIDANCE: Record<OutputId, Guidance> = {
             definition.id.startsWith('webclap:') ? audio + ' WebAssembly and AudioWorklet support. Native interfaces require HTTPS or localhost.'
                 : audio + ' The plugin engine and any samples must be available.')
     ])),
-    'drum-accompaniment': guide('Dr', 'Add a drum groove alongside your instrument.', 'Choose a genre and hold notes to play; use Preview to audition.', audio),
+    'drum-accompaniment': guide('Dr', 'Add a steady drum break alongside your instrument.', 'Choose a groove and tuning note, then start the global transport. Busy playing adds subtle variations.', audio),
     moog: guide('M', 'Play the Photosynth Moog ladder synthesizer.', 'Shaping basses, leads and chords with cutoff, resonance and envelopes.', audio + ' Internet access to load the WAM SDK.'),
     describe: guide('Aa', 'Describe active notes and chords in musical language.', 'Identifying extended chords, added tones, and inversions while playing.', 'Notes from a connected input or transformer.'),
     console: guide('⌘', 'Log outgoing note events.', 'Debugging a chain and checking its output.', 'Development mode and the browser developer console.'),
@@ -97,11 +98,23 @@ export function fillDeviceCard(button: HTMLButtonElement, factory: Pick<Classifi
     icon.setAttribute('aria-hidden', 'true')
     icon.title = button.title
     button.appendChild(icon)
+    const preview = factory.preview ?? (direction === 'output' ? OUTPUT_DEFINITIONS[factory.id]?.preview : undefined)
+    if (preview) {
+        const image = document.createElement('img')
+        image.className = 'device-choice-preview'
+        image.src = `${import.meta.env.BASE_URL}${preview.replace(/^\//, '')}`
+        image.alt = `${factory.name} controls`
+        image.loading = 'lazy'
+        icon.hidden = true
+        image.addEventListener(EVENT_ERROR, () => { image.remove(); icon.hidden = false }, { once: true })
+        button.appendChild(image)
+    }
     append('item-name', factory.name)
     if (factory.type && factory.subtype) append('item-classification', `${classificationLabel(factory.type)} / ${classificationLabel(factory.subtype)}${factory.category ? ` / ${classificationLabel(factory.category)}` : ''}`)
     append('item-description', factory.description)
     if (factory.attribution) append('item-attribution', `By ${factory.attribution.author} · ${factory.attribution.license}. Attribution and license links are in the plugin controls.`)
     for (const [label, value] of [['Used for', guidance.usedFor], ['Useful for', guidance.usefulFor], ['Requirements', guidance.requirements]]) {
+        if (label === 'Used for' && value.trim() === factory.description.trim()) continue
         const row = document.createElement('span')
         row.className = 'device-choice-detail'
         const heading = document.createElement('span')

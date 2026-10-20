@@ -1,4 +1,5 @@
 import React, { useEffect, useId, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useChain } from './ChainContext'
 import { SharedDevices } from './SharedDevices'
 import { elementDescription, elementIcon } from './element-icons'
@@ -17,7 +18,7 @@ import type { IAudioOutput } from 'audiobus/io/outputs/output-interface'
 
 type Choice = ClassifiedChoice & { kind: 'input' | 'output' | 'instrument'; factoryId?: string; midiOptions?: Record<string, any>; midiPortId?: string; profileId?: string }
 
-export function DevicePicker({ direction, replacing, dialog = false, onAdded }: { direction: 'input' | 'output'; replacing?: AbstractInput | IAudioOutput; dialog?: boolean; onAdded?: () => void }) {
+export function DevicePicker({ direction, replacing, dialog = false, filterHeader, onAdded }: { direction: 'input' | 'output'; replacing?: AbstractInput | IAudioOutput; dialog?: boolean; filterHeader?: HTMLElement | null; onAdded?: () => void }) {
     const { chain, manager } = useChain()
     const filterId = useId()
     const [choices, setChoices] = useState<Choice[]>([])
@@ -136,8 +137,7 @@ export function DevicePicker({ direction, replacing, dialog = false, onAdded }: 
     const availableChoices = [...choices.filter(choice => choice.id !== 'webmidi'
         && !(midiFactory && direction === 'input' && MIDI_DEVICE_PROFILES[choice.id])), ...connectedChoices]
     const filtered = availableChoices.filter(choice => choiceMatches(choice, filter, classification))
-    return <div className="device-picker" aria-busy={loading || busy}>
-        <div className="picker-filter-row">
+    const filters = <div className="picker-filter-row">
         <label className={dialog ? 'dialog-filter' : 'filter-label'} htmlFor={filterId}>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <circle cx="10" cy="10" r="6" /><path d="m15 15 5 5" />
@@ -147,6 +147,8 @@ export function DevicePicker({ direction, replacing, dialog = false, onAdded }: 
         </label>
         <ClassificationFilter compact choices={availableChoices} value={classification} onChange={setClassification} label={`Filter ${direction}s by type`} />
         </div>
+    return <div className="device-picker" aria-busy={loading || busy}>
+        {filterHeader ? createPortal(filters, filterHeader) : filters}
         <SharedDevices direction={direction} search={filter} selection={classification} disabled={busy} onSelect={device => {
             try { select(device) } catch (error) { setError(String(error)) }
         }} />

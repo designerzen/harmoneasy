@@ -545,6 +545,15 @@ const onTick = (values: Record<string, any>) => {
 		metronome?.playBeat(barsElapsed * bars + bar, timer.syncOptions.beatsPerBar ?? 4, values.scheduledContextTimeSeconds)
 	}
 	const events = ioManager.updateTime(now, divisionsElapsed, options)
+	const ticksPerStep = timer.divisions / 4
+	if (divisionsElapsed % ticksPerStep === 0) {
+		ioManager.updateClock({
+			step: (barsElapsed * bars + bar) * 4 + divisionsElapsed / ticksPerStep,
+			bpm: timer.BPM,
+			triggerAt: values.scheduledContextTimeSeconds ?? bus.audioContext.currentTime,
+			stepDuration: 60 / timer.BPM / 4,
+		})
+	}
 	const allEvents = recorder.addEvents(events)
 
     // Loop through all Chains managed by the IOManager and process events

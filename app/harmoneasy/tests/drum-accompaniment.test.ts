@@ -1,21 +1,17 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import OutputDrumAccompaniment from '../../../packages/audiobus/io/outputs/output-drum-accompaniment.ts'
-import OutputManager from '../../../packages/audiobus/io/output-manager.ts'
 import { DRUM_GENRES } from '../../../packages/audiobus/io/outputs/drum-accompaniment-settings.ts'
 import { DRUM_GROOVES } from '../../../packages/audiobus/timing/drum-patterns.ts'
-import { DrumArranger } from '../../../packages/audiobus/timing/drum-arranger.ts'
-import { createOutputById, OUTPUT_FACTORIES } from '../../../packages/audiobus/io/output-factory.ts'
+import { createOutputById } from '../../../packages/audiobus/io/output-factory.ts'
 import { DRUM_ACCOMPANIMENT } from '../../../packages/audiobus/io/outputs/output-types.ts'
 import { deviceDefinition } from '../../../packages/audiobus/io/device-definition.ts'
-import { NOTE_ON, NOTE_OFF } from '../../../packages/audiobus/commands.ts'
-import type { IAudioCommand } from '../../../packages/audiobus/audio-command-interface.ts'
 import type { PercussionHit } from '../../../packages/audiobus/timing/percussion-types.ts'
 
 const devices: OutputDrumAccompaniment[] = []
 function setup() {
 	vi.useFakeTimers()
-	const clock = { currentTime: 10, state: 'running', resume: vi.fn(async () => {}) }
+	const clock = { currentTime: 10, state: 'running' }
 	const percussion = {
 		trigger: vi.fn<(hit: Readonly<PercussionHit>) => void>(),
 		allNotesOff: vi.fn(),
@@ -25,15 +21,14 @@ function setup() {
 		percussionOutput: percussion,
 	})
 	devices.push(device)
-	const advance = (seconds: number) => {
-		for (let elapsed = 0; elapsed < seconds; elapsed += 0.025) {
-			clock.currentTime += 0.025
-			vi.advanceTimersByTime(25)
-		}
+	const tick = (step: number, bpm = 120) => {
+		const stepDuration = 60 / bpm / 4
+		const triggerAt = 10 + step * stepDuration
+		clock.currentTime = triggerAt
+		device.onClockTick({ step, bpm, triggerAt, stepDuration })
 	}
-	return { device, clock, percussion, advance }
+	return { device, clock, percussion, tick }
 }
-
 afterEach(() => {
 	for (const device of devices.splice(0)) device.destroy()
 	vi.useRealTimers()
@@ -41,247 +36,164 @@ afterEach(() => {
 	document.body.replaceChildren()
 })
 
-describe('Drum accompaniment output', () => {
-	it('schedules one groove for a chord and stops after the last note releases', async () => {
-		const { device, percussion, advance } = setup()
-		await device.noteOn(60, 100)
-		const first = percussion.trigger.mock.calls.length
-		await device.noteOn(64, 90)
-		expect(percussion.trigger).toHaveBeenCalledTimes(first)
-		expect(percussion.trigger.mock.calls.some(([hit]) => hit.part === 'kick')).toBe(true)
-		advance(0.5)
-		expect(percussion.trigger.mock.calls.length).toBeGreaterThan(first)
+describe('Global-clock drum accompaniment', () => {
+	it('plays a constant break without held notes, timers, or note-triggered restarts', () => {
+		const { device, percussion, tick } = setup()
+		device.noteOn(60, 100)
 		device.noteOff(60)
-		expect(device.isPlaying).toBe(true)
+		expect(percussion.trigger).not.toHaveBeenCalled()
+		expect(vi.getTimerCount()).toBe(0)
+		tick(0)
+		expect(percussion.trigger.mock.calls.some(([hit]) => hit.part === 'kick')).toBe(true)
+		const first = percussion.trigger.mock.calls.length
+		device.noteOn(64, 120)
 		device.noteOff(64)
-		expect(device.isPlaying).toBe(false)
-		const stopped = percussion.trigger.mock.calls.length
-		advance(1)
-		expect(percussion.trigger).toHaveBeenCalledTimes(stopped)
-		expect(vi.getTimerCount()).toBe(0)
-	})
-
-	it('preserves held note ownership while changing controls, including shared chains', async () => {
-		const { device, percussion } = setup()
-		const first = new OutputManager(),
-			second = new OutputManager()
-		first.add(device)
-		second.add(device)
-		const command = { type: NOTE_ON, number: 60, channel: 2, velocity: 100 } as IAudioCommand
-		await first.triggerAudioCommandOnDevice(command, device)
-		await second.triggerAudioCommandOnDevice(command, device)
-		device.configure({ genre: 'latin', groove: 'samba', swing: 0.4 })
-		first.setEnabled(device, false)
-		await OutputManager.settled(device)
+		expect(percussion.trigger).toHaveBeenCalledTimes(first)
+		for (let step = 1; step < 16; step++) tick(step)
+		const original = percussion.trigger.mock.calls.map(([hit]) => ({
+			...hit,
+			triggerAt: hit.triggerAt - 10,
+		}))
+		percussion.trigger.mockClear()
+		for (let step = 16; step < 32; step++) tick(step)
+		const repeated = percussion.trigger.mock.calls.map(([hit]) => ({
+			...hit,
+			triggerAt: hit.triggerAt - 12,
+		}))
+		expect(repeated).toEqual(original)
 		expect(device.isPlaying).toBe(true)
-		await second.triggerAudioCommandOnDevice({ ...command, type: NOTE_OFF }, device)
-		expect(device.isPlaying).toBe(false)
-		expect(percussion.allNotesOff).toHaveBeenCalled()
-		first.destroy()
-		second.destroy()
 	})
-
-	it('cancels pending voices when stopped, disconnected, or destroyed', async () => {
-		const { device, percussion, advance } = setup()
-		await device.noteOn(60)
-		device.allNotesOff()
-		const count = percussion.trigger.mock.calls.length
-		advance(0.5)
+	it('uses absolute transport positions and tempo changes without duplicate or catch-up hits', () => {
+		const { device, percussion, tick } = setup()
+		tick(8)
+		const expected = DRUM_GROOVES['funky-drummer']
+		const hits = percussion.trigger.mock.calls.map(([hit]) => hit)
+		expect(hits.find((hit) => hit.part === 'hat')?.velocity).toBeCloseTo(
+			(expected.hat[8] / 255) * 0.8 * 0.55,
+		)
+		const count = hits.length
+		tick(8)
 		expect(percussion.trigger).toHaveBeenCalledTimes(count)
-		await device.noteOn(60)
-		await device.disconnect()
-		expect(device.isConnected).toBe(false)
-		await device.noteOn(64)
+		percussion.trigger.mockClear()
+		tick(32, 90)
+		expect(
+			percussion.trigger.mock.calls.every(
+				([hit]) => hit.triggerAt === 10 + 32 * (60 / 90 / 4),
+			),
+		).toBe(true)
+		device.stopClock()
 		expect(device.isPlaying).toBe(false)
+		tick(0)
+		expect(device.isPlaying).toBe(true)
+	})
+	it('only adds bounded phrase-ending ghost notes after sustained activity', () => {
+		const quiet = setup(),
+			busy = setup()
+		quiet.device.configure({ activityResponse: 1, fillChance: 1, rapidPercussion: true })
+		busy.device.configure({ activityResponse: 1, fillChance: 1, rapidPercussion: true })
+		for (let step = 0; step < 16; step++) {
+			for (let note = 0; note < 4; note++) {
+				busy.device.noteOn(60 + note)
+				busy.device.noteOff(60 + note)
+			}
+			quiet.tick(step)
+			busy.tick(step)
+		}
+		const base = quiet.percussion.trigger.mock.calls.map(([hit]) => hit)
+		const expressive = busy.percussion.trigger.mock.calls.map(([hit]) => hit)
+		for (const hit of base) expect(expressive).toContainEqual(hit)
+		const additions = expressive.filter(
+			(hit) => !base.some((original) => JSON.stringify(original) === JSON.stringify(hit)),
+		)
+		expect(additions.length).toBeGreaterThan(0)
+		expect(additions.length).toBeLessThanOrEqual(8)
+		expect(additions.every((hit) => hit.triggerAt >= 11.5 && hit.velocity <= 0.2)).toBe(true)
+	})
+	it('keeps configured tuning independent of the keys being played', () => {
+		const { device, percussion, tick } = setup()
+		device.configure({ tuningNote: 57 })
+		device.noteOn(24)
+		tick(0)
+		device.noteOn(104)
+		tick(1)
+		expect(percussion.trigger.mock.calls.every(([hit]) => hit.tuningNote === 57)).toBe(true)
+		device.configure({ tuningNote: 200 })
+		expect(device.options.tuningNote).toBe(127)
+		device.configure({ tuningNote: Number.NaN })
+		expect(device.options.tuningNote).toBe(127)
+	})
+	it('stops on disconnect, prevents duplicate clocks, and destroys cleanly', async () => {
+		const { device, percussion, tick } = setup()
+		tick(0)
+		await device.disconnect()
+		const count = percussion.trigger.mock.calls.length
+		tick(1)
+		expect(percussion.trigger).toHaveBeenCalledTimes(count)
+		expect(percussion.allNotesOff).toHaveBeenCalled()
 		await device.connect()
-		await device.noteOn(60)
+		tick(2)
+		expect(percussion.trigger.mock.calls.length).toBeGreaterThan(count)
 		device.destroy()
+		tick(3)
+		expect(device.isPlaying).toBe(false)
 		expect(vi.getTimerCount()).toBe(0)
 	})
-
-	it('exposes working genre, groove, character, preview, and fill controls', async () => {
+	it('exposes genre and tuning controls without a private tempo or preview', async () => {
 		const { device } = setup()
 		const gui = await device.createGui()
 		document.body.append(gui)
-		expect(await device.createGui()).toBe(gui)
+		expect(gui.querySelector('[name="bpm"]')).toBeNull()
+		expect(gui.textContent).not.toContain('Preview')
+		expect(gui.textContent).toContain('global transport')
 		const genre = gui.querySelector<HTMLSelectElement>('[name="genre"]')!
 		genre.value = 'latin'
 		genre.dispatchEvent(new Event('change'))
 		const groove = gui.querySelector<HTMLSelectElement>('[name="groove"]')!
-		expect([...groove.options].map((option) => option.value)).toContain('samba')
 		groove.value = 'samba'
 		groove.dispatchEvent(new Event('change'))
-		const energy = gui.querySelector<HTMLInputElement>('[name="energy"]')!
-		energy.value = '0.8'
-		energy.dispatchEvent(new Event('input'))
-		const rapid = gui.querySelector<HTMLInputElement>('[name="rapidPercussion"]')!
-		rapid.checked = true
-		rapid.dispatchEvent(new Event('change'))
-		expect(device.options).toMatchObject({
-			genre: 'latin',
-			groove: 'samba',
-			energy: 0.8,
-			rapidPercussion: true,
-		})
-		const fill = vi.spyOn(device, 'requestFill')
-		const buttons = [...gui.querySelectorAll('button')]
-		buttons.find((button) => button.textContent === 'Request fill')!.click()
-		expect(fill).toHaveBeenCalledOnce()
-		const preview = buttons.find((button) => button.textContent === 'Preview groove')!
-		preview.click()
-		await Promise.resolve()
-		await Promise.resolve()
-		expect(device.isPreviewing).toBe(true)
-		expect(preview.getAttribute('aria-pressed')).toBe('true')
-		preview.click()
-		await Promise.resolve()
-		await Promise.resolve()
-		expect(device.isPlaying).toBe(false)
+		const tuning = gui.querySelector<HTMLSelectElement>('[name="tuningNote"]')!
+		expect(tuning.options).toHaveLength(128)
+		tuning.value = '69'
+		tuning.dispatchEvent(new Event('change'))
+		expect(device.options).toMatchObject({ genre: 'latin', groove: 'samba', tuningNote: 69 })
+		const request = vi.spyOn(device, 'requestFill')
+		gui.querySelector('button')!.click()
+		expect(request).toHaveBeenCalledOnce()
 		await device.destroyGui()
 		expect(document.body.contains(gui)).toBe(false)
 	})
-
-	it('registers the output and persists edited settings', async () => {
-		const { clock, percussion } = setup()
-		vi.stubGlobal('AudioContext', class {})
-		expect(
-			OUTPUT_FACTORIES.find((factory) => factory.id === DRUM_ACCOMPANIMENT)?.isAvailable(),
-		).toBe(true)
-		const device = (await createOutputById(DRUM_ACCOMPANIMENT, {
-			audioContext: clock,
-			percussionOutput: percussion,
-		})) as OutputDrumAccompaniment
-		devices.push(device)
-		device.configure({
-			genre: 'jazz',
-			bpm: 95,
-			volume: 0.2,
-			compressorThreshold: -30,
-			compressorEnabled: false,
-		})
-		expect(deviceDefinition(device)).toMatchObject({
-			factory: 'output',
-			type: DRUM_ACCOMPANIMENT,
-			options: {
-				genre: 'jazz',
-				groove: 'jazz-swing',
-				bpm: 95,
-				volume: 0.2,
-				compressorThreshold: -30,
-				compressorEnabled: false,
-			},
-		})
-		for (const genre of Object.values(DRUM_GENRES)) {
-			for (const groove of genre.grooves) expect(DRUM_GROOVES[groove], groove).toBeDefined()
-		}
-		expect(new Set(Object.values(DRUM_GENRES).flatMap((genre) => [...genre.grooves]))).toEqual(
-			new Set(Object.keys(DRUM_GROOVES)),
-		)
-	})
-
-	it('edits compressor controls, displays audio units, and preserves settings during bypass', async () => {
-		const { device } = setup()
+	it('preserves compressor controls and saved genre, tuning, and activity response', async () => {
+		const { device, clock, percussion } = setup()
 		const gui = await device.createGui()
 		const threshold = gui.querySelector<HTMLInputElement>('[name="compressorThreshold"]')!
-		const attack = gui.querySelector<HTMLInputElement>('[name="compressorAttack"]')!
-		const enabled = gui.querySelector<HTMLInputElement>('[name="compressorEnabled"]')!
-		expect(threshold.valueAsNumber).toBe(-18)
-		expect(enabled.checked).toBe(true)
 		threshold.value = '-27'
 		threshold.dispatchEvent(new Event('input'))
-		attack.value = '0.025'
-		attack.dispatchEvent(new Event('input'))
 		expect(threshold.parentElement!.querySelector('output')!.textContent).toBe('-27 dB')
-		expect(attack.parentElement!.querySelector('output')!.textContent).toBe('25 ms')
+		const enabled = gui.querySelector<HTMLInputElement>('[name="compressorEnabled"]')!
 		enabled.checked = false
 		enabled.dispatchEvent(new Event('change'))
 		expect(threshold.disabled).toBe(true)
-		expect(attack.disabled).toBe(true)
-		expect(device.options).toMatchObject({
-			compressorEnabled: false,
-			compressorThreshold: -27,
-			compressorAttack: 0.025,
+		vi.stubGlobal('AudioContext', class {})
+		const restored = (await createOutputById(DRUM_ACCOMPANIMENT, {
+			audioContext: clock,
+			percussionOutput: percussion,
+			...device.options,
+			tuningNote: 48,
+			activityResponse: 0.4,
+		})) as OutputDrumAccompaniment
+		devices.push(restored)
+		expect(deviceDefinition(restored)).toMatchObject({
+			factory: 'output',
+			options: {
+				tuningNote: 48,
+				activityResponse: 0.4,
+				compressorThreshold: -27,
+				compressorEnabled: false,
+			},
 		})
-		enabled.checked = true
-		enabled.dispatchEvent(new Event('change'))
-		expect(threshold.disabled).toBe(false)
-		expect(threshold.valueAsNumber).toBe(-27)
-		device.configure({
-			compressorRatio: 99,
-			compressorKnee: -1,
-			compressorRelease: -4,
-			compressorMakeupGain: Number.NaN,
-		})
-		expect(device.options).toMatchObject({
-			compressorRatio: 20,
-			compressorKnee: 0,
-			compressorRelease: 0.001,
-			compressorMakeupGain: 0,
-		})
-	})
-
-	it('keeps fills within a sixteenth step without mistaking subdivision for tempo', () => {
-		const arranger = new DrumArranger({
-			groove: 'garage-triplets',
-			bpm: 120,
-			rapidPercussion: true,
-			stepsPerBar: 16,
-		})
-		arranger.next({ bpm: 120, triggerAt: 10, stepDuration: 0.125 })
-		arranger.next({ bpm: 120, triggerAt: 10.125, stepDuration: 0.125 })
-		const parts = arranger.next({ bpm: 120, triggerAt: 10.25, stepDuration: 0.125 })
-		expect(arranger.getBPM()).toBe(120)
-		expect(parts.events).toHaveLength(2)
-		expect(parts.events[1].offset).toBeCloseTo((0.125 * 2) / 3)
-	})
-
-	it('applies sparse density, part mutes, and input dynamics', async () => {
-		const { device, percussion, advance } = setup()
-		device.configure({ density: 0 })
-		await device.noteOn(60, 30)
-		advance(0.5)
-		expect(percussion.trigger).not.toHaveBeenCalled()
-		device.configure({
-			density: 1,
-			muteHat: true,
-			muteKick: true,
-			muteSnare: true,
-			muteClap: true,
-			energy: 0,
-		})
-		percussion.trigger.mockClear()
-		advance(0.5)
-		expect(
-			percussion.trigger.mock.calls.every(
-				([hit]) => !['kick', 'snare', 'hat', 'clap'].includes(hit.part),
-			),
-		).toBe(true)
-		expect(device.options.energy).toBe(0)
-		expect(device.options.muteHat).toBe(true)
-		device.configure({ bpm: Number.NaN, volume: 9 })
-		expect(device.options.bpm).toBe(120)
-		expect(device.options.volume).toBe(1)
-	})
-
-	it('swings offbeat sixteenths and follows input velocity when enabled', async () => {
-		const { device, percussion, advance } = setup()
-		device.configure({ swing: 0.8, energy: 1 })
-		await device.noteOn(60, 30)
-		const loudKick = percussion.trigger.mock.calls.find(([hit]) => hit.part === 'kick')![0]
-			.velocity
-		advance(0.125)
-		expect(
-			percussion.trigger.mock.calls.some(
-				([hit]) => Math.abs(hit.triggerAt - 10.185) < 0.00001,
-			),
-		).toBe(true)
-		device.allNotesOff()
-		device.configure({ genre: 'latin' })
-		device.configure({ genre: 'funk', followDynamics: true })
-		percussion.trigger.mockClear()
-		await device.noteOn(60, 30)
-		const quietKick = percussion.trigger.mock.calls.find(([hit]) => hit.part === 'kick')![0]
-			.velocity
-		expect(quietKick).toBeLessThan(loudKick * 0.8)
+		expect(restored.options).not.toHaveProperty('bpm')
+		expect(new Set(Object.values(DRUM_GENRES).flatMap((genre) => [...genre.grooves]))).toEqual(
+			new Set(Object.keys(DRUM_GROOVES)),
+		)
 	})
 })

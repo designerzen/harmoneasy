@@ -7,6 +7,7 @@ export interface ClassifiedChoice extends DeviceClassification {
     category?: string
     title?: string
     attribution?: DeviceAttribution
+    preview?: string
 }
 
 const LABELS: Record<string, string> = {

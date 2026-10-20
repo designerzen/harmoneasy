@@ -119,3 +119,19 @@ it('chokes an open hat at the first closed hat without later hits extending it',
 	expect(sources.every((source) => source.disconnect.mock.calls.length > 0)).toBe(true)
 	synth.destroy()
 })
+
+it('tunes the kick to the specified MIDI note without altering its scheduled time', () => {
+	const { synth, sources } = setup()
+	synth.trigger({ part: 'kick', velocity: 0.8, triggerAt: 11, tuningNote: 69 })
+	expect(sources[0].frequency.exponentialRampToValueAtTime).toHaveBeenCalledWith(
+		440,
+		expect.any(Number),
+	)
+	expect(sources[0].start).toHaveBeenCalledWith(11)
+	synth.trigger({ part: 'kick', velocity: 0.8, triggerAt: 12, tuningNote: 57 })
+	expect(sources[1].frequency.exponentialRampToValueAtTime).toHaveBeenCalledWith(
+		220,
+		expect.any(Number),
+	)
+	synth.destroy()
+})
