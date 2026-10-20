@@ -80,6 +80,7 @@ export function DevicePicker({ direction, dialog = false, onAdded }: { direction
     }
     const filtered = choices.filter(choice => choiceMatches(choice, filter, classification))
     return <div className="device-picker" aria-busy={loading || busy}>
+        <div className="picker-filter-row">
         <label className={dialog ? 'dialog-filter' : 'filter-label'} htmlFor={filterId}>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <circle cx="10" cy="10" r="6" /><path d="m15 15 5 5" />
@@ -87,7 +88,8 @@ export function DevicePicker({ direction, dialog = false, onAdded }: { direction
             <input id={filterId} type="search" aria-label={`Search ${direction}s`}
                 autoFocus={dialog} className={dialog ? 'filter-input-global' : undefined} placeholder={`Filter ${direction}s...`} value={filter} onChange={event => setFilter(event.target.value)} />
         </label>
-        <ClassificationFilter choices={choices} value={classification} onChange={setClassification} label={`Filter ${direction}s by type`} />
+        <ClassificationFilter compact choices={choices} value={classification} onChange={setClassification} label={`Filter ${direction}s by type`} />
+        </div>
         <SharedDevices direction={direction} search={filter} selection={classification} />
         {error && <p role="alert">{error}</p>}
         {loading ? <p role="status">Loading {direction}s…</p> : <>
