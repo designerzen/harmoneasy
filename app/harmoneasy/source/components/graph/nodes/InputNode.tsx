@@ -12,8 +12,8 @@ import type { IAudioInput } from 'audiobus/io/inputs/input-interface'
 export function InputNode(props: any) {
 	const { chain, chainId, manager: ioManager } = useChain()
 	const input: AbstractInput & IAudioInput = props.data?.input
-	const hasConnectMethod = typeof input.connect === 'function'
-	const hasDisconnectMethod = typeof input.disconnect === 'function'
+	const hasConnectMethod = input.requiresConnectionControl !== false && typeof input.connect === 'function'
+	const hasDisconnectMethod = input.requiresConnectionControl !== false && typeof input.disconnect === 'function'
 	const hasControls = hasConnectMethod || hasDisconnectMethod
 
 	const removeNode = useCallback(() => {

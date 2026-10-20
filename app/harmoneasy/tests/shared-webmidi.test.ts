@@ -7,6 +7,7 @@ import IOChain from '../../../packages/audiobus/io/IO-chain'
 import IOChainManager from '../../../packages/audiobus/io/IO-chain-manager'
 import { deviceId } from '../../../packages/audiobus/io/device-definition'
 import { sharedWebMidi } from '../../../packages/audiobus/midi/shared-webmidi'
+import { createInputById } from '../../../packages/audiobus/io/input-factory'
 import { startKnownMidiInputs, type MidiInputDiscovery } from '../../../packages/audiobus/io/known-midi-inputs'
 import { UNAVAILABLE_MIDI_DEVICE } from '../../../packages/audiobus/io/inputs/midi-input-controls'
 import { EVENT_CONNECTED, EVENT_DISCONNECTED, EVENT_CHANGE, INPUT_EVENT } from '../../../packages/audiobus/event-constants'
@@ -52,6 +53,34 @@ afterEach(async () => {
 })
 
 describe('shared WebMIDI access', () => {
+    it('automatically routes generic Inputs created before and after global permission without requesting permission during creation', async () => {
+        const before = await createInputById('webmidi') as InputWebMIDIDevice
+        resources.push(before)
+        expect(midi.enable).not.toHaveBeenCalled()
+        expect(before.isEnabled).toBe(false)
+        expect(before.requiresConnectionControl).toBe(false)
+
+        // Readiness must also be announced when permission is granted with no ports.
+        const release = await sharedWebMidi.acquire()
+        try {
+            await vi.waitFor(() => expect(before.isEnabled).toBe(true))
+            const after = await createInputById('webmidi') as InputWebMIDIDevice
+            resources.push(after)
+            await vi.waitFor(() => expect(after.isEnabled).toBe(true))
+            const device = port('plugged-in-later')
+            midi.inputs = [device]; emit(EVENT_CONNECTED, device)
+            const first = vi.fn(), second = vi.fn()
+            before.addEventListener(INPUT_EVENT, first); after.addEventListener(INPUT_EVENT, second)
+            device.send([0x90, 60, 100])
+            expect(first).toHaveBeenCalledTimes(1)
+            expect(second).toHaveBeenCalledTimes(1)
+            expect(midi.enable).toHaveBeenCalledTimes(1)
+            await after.destroy()
+            device.send([0x80, 60, 0])
+            expect(first).toHaveBeenCalledTimes(2)
+            expect(second).toHaveBeenCalledTimes(1)
+        } finally { release() }
+    })
     it('enables once with one listener per port for concurrent inputs, clock inputs and outputs', async () => {
         const device = port('keyboard'); midi.inputs = [device]
         midi.outputs = [{ id: 'synth', name: 'Synth', type: 'output', send: vi.fn() }]
