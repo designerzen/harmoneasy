@@ -2,7 +2,7 @@ import { deviceDefinition } from 'audiobus/io/device-definition'
 import { getTransformerDefinition, getTransformerIcon } from 'audiobus/io/transformer-definitions'
 import type { InputId } from 'audiobus/io/inputs/input-types'
 import type { OutputId } from 'audiobus/io/outputs/output-types'
-import { MIDI_DEVICE_PROFILES } from 'audiobus/midi/device-profiles'
+import { MIDI_DEVICE_PROFILES } from 'audiobus/midi/hardware/device-profiles'
 
 export type ElementKind = 'input' | 'output' | 'instrument' | 'transformer'
 

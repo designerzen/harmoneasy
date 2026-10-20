@@ -1,5 +1,8 @@
-import { readdir, readFile, realpath, stat } from 'node:fs/promises'
+import { cp, readdir, readFile, realpath, stat } from 'node:fs/promises'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+export const MIDI_DEVICE_DIRECTORY = path.join(path.dirname(fileURLToPath(import.meta.url)), 'devices')
 
 const DEVICE_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const MIME = { '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.avif': 'image/avif', '.gif': 'image/gif' }
@@ -60,7 +63,10 @@ export function midiDeviceFilesPlugin() {
     return {
         name: 'runtime-midi-device-files',
         configResolved(resolved) { config = resolved },
-        configureServer(server) { server.middlewares.use(middleware(path.join(config.publicDir, 'midi-devices'))) },
+        configureServer(server) { server.middlewares.use(middleware(MIDI_DEVICE_DIRECTORY)) },
+        async writeBundle() {
+            await cp(MIDI_DEVICE_DIRECTORY, path.resolve(config.root, config.build.outDir, 'midi-devices'), { recursive: true })
+        },
         configurePreviewServer(server) { server.middlewares.use(middleware(path.resolve(config.root, config.build.outDir, 'midi-devices'))) }
     }
 }

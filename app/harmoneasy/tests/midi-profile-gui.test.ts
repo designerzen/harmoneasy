@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { loadMidiDeviceProfiles, MIDI_DEVICE_PROFILES } from '../../../packages/audiobus/midi/device-profiles'
-import { parseMidiDeviceProfile, profileMessageBytes } from '../../../packages/audiobus/midi/device-profile-schema'
-import { createProfiledMidiGui } from '../../../packages/audiobus/io/inputs/profiled-midi-gui'
+import { loadMidiDeviceProfiles, MIDI_DEVICE_PROFILES } from '../../../packages/audiobus/midi/hardware/device-profiles'
+import { parseMidiDeviceProfile, profileMessageBytes } from '../../../packages/audiobus/midi/hardware/device-profile-schema'
+import { createProfiledMidiGui } from '../../../packages/audiobus/midi/hardware/profiled-midi-gui'
 import { midiToCommand } from '../../../packages/audiobus/midi/midi-command-conversion'
 import { EVENT_CHANGE, EVENT_CLICK, EVENT_INPUT, EVENT_KEY_DOWN, EVENT_KEY_UP, EVENT_POINTER_DOWN, EVENT_POINTER_MOVE, EVENT_POINTER_UP } from '../../../packages/audiobus/event-constants'
 

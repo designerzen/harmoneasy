@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import { createReadStream } from 'node:fs'
 import { resolve, sep } from 'node:path'
-import { midiDeviceFilesPlugin } from './electron/midi-device-files.js'
+import { midiDeviceFilesPlugin } from 'audiobus/midi/hardware/device-files.js'
 
 // Vite's static middleware emits an empty MIME type for .tar.gz bundles.
 // Serve WCLAP archives explicitly so browser fetch does not treat them as downloads.

@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite'
 import path from 'path'
-import { midiDeviceFilesPlugin } from './electron/midi-device-files.js'
+import { midiDeviceFilesPlugin } from 'audiobus/midi/hardware/device-files.js'
 
 /**
  * Vite config for Electron builds

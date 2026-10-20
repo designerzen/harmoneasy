@@ -1,9 +1,10 @@
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { MIDI_DEVICE_PROFILES, matchMidiDeviceProfile } from 'audiobus/midi/device-profiles'
-import { parseMidiDeviceProfile } from 'audiobus/midi/device-profile-schema'
+import { MIDI_DEVICE_PROFILES, matchMidiDeviceProfile } from 'audiobus/midi/hardware/device-profiles'
+import { parseMidiDeviceProfile } from 'audiobus/midi/hardware/device-profile-schema'
 import { INPUT_FACTORIES } from 'audiobus/io/input-factory'
+import { MIDI_DEVICE_DIRECTORY } from 'audiobus/midi/hardware/device-files.js'
 
 const devices = [
     ['akai-mpk-mini-mk3', 'MPK mini 3'],
@@ -16,7 +17,7 @@ const devices = [
 
 describe('documented instrument registry folders', () => {
     it.each(devices)('loads %s with its own matching JSON, artwork, documentation and input factory', (id, name) => {
-        const folder = path.resolve('public/midi-devices', id)
+        const folder = path.join(MIDI_DEVICE_DIRECTORY, id)
         const raw = JSON.parse(readFileSync(path.join(folder, `${id}.json`), 'utf8'))
         const profile = parseMidiDeviceProfile(id, raw, asset => existsSync(path.join(folder, asset)) ? `/${id}/${asset}` : undefined)
         expect(profile.id).toBe(id)

@@ -2029,6 +2029,78 @@ html:has(.preset-browser[open]), body:has(.preset-browser[open]) { overflow: hid
     }
 }
 
+.graph-node.can-remove > .device-node-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .75rem;
+    padding: .625rem;
+    border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+    border-radius: 10px;
+    background: light-dark(#ffffffcc, #161522dd);
+    color: light-dark(#252333, #f1eefb);
+
+    > h6 {
+        flex: 1 1 8rem;
+        text-align: left;
+        font-size: .9rem;
+        line-height: 1.3;
+        text-transform: none;
+        letter-spacing: normal;
+    }
+
+    .device-title-controls {
+        display: flex;
+        align-items: center;
+        gap: .375rem;
+        margin-left: auto;
+        flex: none;
+
+        .transformer-move-controls { display: flex; gap: .375rem; }
+
+        button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .375rem;
+            position: static;
+            width: auto;
+            min-width: 36px;
+            height: 36px;
+            min-height: 36px;
+            padding: .375rem;
+            margin: 0;
+            border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+            border-radius: 6px;
+            background: light-dark(#e6e5ee, #353244);
+            color: inherit;
+            font: 600 .75rem/1 system-ui, sans-serif;
+            text-transform: none;
+            letter-spacing: normal;
+            cursor: pointer;
+            &::before, &::after { content: none; }
+            &:hover { filter: brightness(1.15); transform: none; }
+            &:focus-visible { outline: 3px solid light-dark(#235cc1, #a9c9ff); outline-offset: 3px; }
+            svg {
+                width: 18px;
+                height: 18px;
+                fill: none;
+                stroke: currentColor;
+                stroke-width: 2;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+            }
+        }
+        .device-toggle[aria-pressed='true'] { background: #176447; color: #fff; }
+        .device-toggle[aria-pressed='false'] { border-style: dashed; }
+        .device-remove {
+            margin-left: 1rem;
+            background: #a92446;
+            color: #fff;
+        }
+    }
+}
+
 /* Expanded nodes become focused instrument editors, not enlarged graph cards. */
 .node-viewport-editor > .graph-node.is-fullscreen {
     --editor-accent: oklch(72% .14 var(--hue-accent, 280));
@@ -2090,8 +2162,8 @@ html:has(.preset-browser[open]), body:has(.preset-browser[open]) { overflow: hid
             select { margin: 0; min-height: 44px; max-width: 100%; font: inherit; border-width: 1px; border-radius: 8px; }
         }
     }
-    > .device-node-header { padding: 1rem 2rem 1.5rem; border-bottom: 1px solid color-mix(in srgb, currentColor 14%, transparent); }
-    > .device-node-header > h6 { font-size: clamp(1.5rem, 3vw, 2.5rem); line-height: 1.2; }
+    > .device-node-header { padding: .75rem 1rem; }
+    > .device-node-header > h6 { font-size: clamp(1rem, 2vw, 1.5rem); line-height: 1.2; }
     > .graph-node-menu { margin-top: auto; padding-top: 1rem; border-top: 1px solid color-mix(in srgb, currentColor 14%, transparent); }
     > .graph-node-menu button { font-size: .875rem; }
 }

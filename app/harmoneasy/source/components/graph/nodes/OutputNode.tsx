@@ -1,6 +1,7 @@
 import { DeviceGui } from '../DeviceGui'
-import { deviceIcon, elementDescription } from '../element-icons'
-import { ElementIcon } from '../ElementIcon'
+import { elementDescription } from '../element-icons'
+import { DeviceTitleBar } from '../DeviceTitleBar'
+import { EVENT_CONFIGURATION_CHANGED } from 'audiobus/event-constants'
 import { deviceId } from 'audiobus/io/device-definition'
 import { useChain } from '../ChainContext'
 import { Handle, Position } from "@xyflow/react"
@@ -12,8 +13,8 @@ export function OutputNode(props: any) {
 	// This is awfully inefficient
 	const { chain, chainId, manager: ioManager } = useChain()
 	const output:IAudioOutput = props.data?.output
-	const hasConnectMethod = typeof output.connect === 'function'
-	const hasDisconnectMethod = typeof output.disconnect === 'function'
+	const hasConnectMethod = output.requiresConnectionControl !== false && typeof output.connect === 'function'
+	const hasDisconnectMethod = output.requiresConnectionControl !== false && typeof output.disconnect === 'function'
 	const hasControls = hasConnectMethod || hasDisconnectMethod
 
 	const removeNode = useCallback(() => {
@@ -23,7 +24,7 @@ export function OutputNode(props: any) {
 	const connectToOutput = useCallback(async () => {
 		try{
 			await output.connect?.()
-            chain.dispatchEvent(new Event('configurationChanged'))
+            chain.dispatchEvent(new Event(EVENT_CONFIGURATION_CHANGED))
 		}catch(error){
 			console.error(error)
 		}
@@ -32,7 +33,7 @@ export function OutputNode(props: any) {
 	const disconnectFromOutput = useCallback(async () => {
 		try{
 			await output.disconnect?.()
-            chain.dispatchEvent(new Event('configurationChanged'))
+            chain.dispatchEvent(new Event(EVENT_CONFIGURATION_CHANGED))
 		}catch(error){
 			console.error(error)
 		}
@@ -49,18 +50,7 @@ export function OutputNode(props: any) {
 	}, [props.id, onFullscreen])
 
 	return <div data-midi-scope={`${chainId}:output:${deviceId(output)}`} className={`node-output graph-node can-remove ${hasControls ? 'has-controls' : 'no-controls'} ${isFullscreen ? 'is-fullscreen' : ''}`} title={elementDescription('output', '', output.name, output.description)}>
-		<div className="device-node-header node-actions">
-			<button type="button" className="btn-remove nodrag nopan" title="Remove output" aria-label="Remove output" onClick={removeNode}>Remove</button>
-            <h6><ElementIcon src={deviceIcon(output, 'output')} title={elementDescription('output', '', output.name, output.description)} />{output.name}</h6>
-            <button type="button" className="btn-fullscreen nodrag nopan" onClick={handleFullscreen}
-                autoFocus={isFullscreen} aria-expanded={isFullscreen}
-                title={isFullscreen ? 'Minimise output' : 'Expand output'}
-                aria-label={isFullscreen ? 'Minimise output' : 'Expand output'}>
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                    <path d={isFullscreen ? 'M3 9h6V3m6 0v6h6M3 15h6v6m6 0v-6h6' : 'M9 3H3v6m12-6h6v6M3 15v6h6m6 0h6v-6'} />
-                </svg>
-            </button>
-		</div>
+        <DeviceTitleBar device={output} direction="output" expanded={isFullscreen} onExpand={handleFullscreen} onRemove={removeNode} />
         {(ioManager.devices.find(entry => entry.device === output)?.chains.size ?? 0) > 1 && <small>Shared device</small>}
 		<p className="sr-only">{props.data.label }</p>
 		{

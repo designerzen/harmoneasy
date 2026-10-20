@@ -1,6 +1,7 @@
 import { DeviceGui } from '../DeviceGui'
-import { deviceIcon, elementDescription } from '../element-icons'
-import { ElementIcon } from '../ElementIcon'
+import { elementDescription } from '../element-icons'
+import { DeviceTitleBar } from '../DeviceTitleBar'
+import { EVENT_CONFIGURATION_CHANGED } from 'audiobus/event-constants'
 import { deviceId } from 'audiobus/io/device-definition'
 import { useChain } from '../ChainContext'
 import { Handle, Position } from "@xyflow/react"
@@ -23,7 +24,7 @@ export function InputNode(props: any) {
 	const connectToInput = useCallback(async () => {
 		try{
 			await input.connect?.()
-            chain.dispatchEvent(new Event('configurationChanged'))
+            chain.dispatchEvent(new Event(EVENT_CONFIGURATION_CHANGED))
 		}catch(error){
 			console.error(error)
 		}
@@ -32,7 +33,7 @@ export function InputNode(props: any) {
 	const disconnectFromInput = useCallback(async () => {
 		try{
 			await input.disconnect?.()
-            chain.dispatchEvent(new Event('configurationChanged'))
+            chain.dispatchEvent(new Event(EVENT_CONFIGURATION_CHANGED))
 		}catch(error){
 			console.error(error)
 		}
@@ -49,18 +50,7 @@ export function InputNode(props: any) {
 	}, [props.id, onFullscreen])
 
 	return <div data-midi-scope={`${chainId}:input:${deviceId(input)}`} className={`node-input graph-node can-remove ${hasControls ? 'has-controls' : 'no-controls'} ${isFullscreen ? 'is-fullscreen' : ''}`} title={elementDescription('input', '', input.name, input.description)}>
-		<div className="device-node-header node-actions">
-			<button type="button" className="btn-remove nodrag nopan" title="Remove input" aria-label="Remove input" onClick={removeNode}>Remove</button>
-            <h6><ElementIcon src={deviceIcon(input, 'input')} title={elementDescription('input', '', input.name, input.description)} />{input.name}</h6>
-            <button type="button" className="btn-fullscreen nodrag nopan" onClick={handleFullscreen}
-                autoFocus={isFullscreen} aria-expanded={isFullscreen}
-                title={isFullscreen ? 'Minimise input' : 'Expand input'}
-                aria-label={isFullscreen ? 'Minimise input' : 'Expand input'}>
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                    <path d={isFullscreen ? 'M3 9h6V3m6 0v6h6M3 15h6v6m6 0v-6h6' : 'M9 3H3v6m12-6h6v6M3 15v6h6m6 0h6v-6'} />
-                </svg>
-            </button>
-		</div>
+        <DeviceTitleBar device={input} direction="input" expanded={isFullscreen} onExpand={handleFullscreen} onRemove={removeNode} />
         {(ioManager.devices.find(entry => entry.device === input)?.chains.size ?? 0) > 1 && <small>Shared device</small>}
 		<p className="sr-only">{props.data.label }</p>
 		{

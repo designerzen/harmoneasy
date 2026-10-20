@@ -1,9 +1,9 @@
 import path from 'node:path'
-import { createMidiDeviceStore } from '../electron/midi-device-files.js'
-import { refreshMidiDeviceProfiles, setMidiDeviceProfileSource } from '../../../packages/audiobus/midi/device-profiles'
+import { createMidiDeviceStore, MIDI_DEVICE_DIRECTORY } from 'audiobus/midi/hardware/device-files.js'
+import { refreshMidiDeviceProfiles, setMidiDeviceProfileSource } from '../../../packages/audiobus/midi/hardware/device-profiles'
 
-export const publicMidiDevices = path.resolve('public/midi-devices')
-export function useTestMidiProfileFiles(roots = [publicMidiDevices]) {
+export const bundledMidiDevices = MIDI_DEVICE_DIRECTORY
+export function useTestMidiProfileFiles(roots = [bundledMidiDevices]) {
     const store = createMidiDeviceStore(() => roots)
     setMidiDeviceProfileSource('http://midi.test/midi-devices/', async input => {
         const relative = new URL(String(input)).pathname.replace(/^\/midi-devices\//, '')

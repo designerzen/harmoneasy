@@ -1,7 +1,7 @@
 import path from 'path'
 import { registerMidi2IPC } from './midi2-ipc.js'
 import { app, BrowserWindow, Menu, ipcMain, session, systemPreferences, protocol } from 'electron'
-import { createMidiDeviceStore } from './midi-device-files.js'
+import { createMidiDeviceStore, MIDI_DEVICE_DIRECTORY } from 'audiobus/midi/hardware/device-files.js'
 import { mkdir } from 'node:fs/promises'
 import { fileURLToPath } from 'url'
 import { createRequire } from 'module'
@@ -156,7 +156,7 @@ app
 app.on('ready', async () => {
     const userMidiDevices = path.join(app.getPath('userData'), 'midi-devices')
     await mkdir(userMidiDevices, { recursive: true })
-    const profiles = createMidiDeviceStore(() => [userMidiDevices, path.join(app.getAppPath(), 'public', 'midi-devices')])
+    const profiles = createMidiDeviceStore(() => [userMidiDevices, MIDI_DEVICE_DIRECTORY])
     protocol.handle('midi-device', async request => {
         const url = new URL(request.url)
         const headers = { 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-store' }

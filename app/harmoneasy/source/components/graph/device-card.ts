@@ -3,7 +3,7 @@ import type { OutputId } from 'audiobus/io/outputs/output-types'
 import { elementDescription, elementIcon } from './element-icons'
 import { classificationLabel, type ClassifiedChoice } from './device-filters'
 import { OUTPUT_DEFINITIONS } from 'audiobus/io/output-definitions'
-import { MIDI_DEVICE_PROFILES, onMidiDeviceProfilesChanged } from 'audiobus/midi/device-profiles'
+import { MIDI_DEVICE_PROFILES, onMidiDeviceProfilesChanged } from 'audiobus/midi/hardware/device-profiles'
 
 type Guidance = { icon: string; usedFor: string; usefulFor: string; requirements: string }
 const guide = (icon: string, usedFor: string, usefulFor: string, requirements: string): Guidance => ({ icon, usedFor, usefulFor, requirements })

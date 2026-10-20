@@ -8,7 +8,7 @@ import { createInstrumentById, getAvailableInstrumentFactories } from 'audiobus/
 import { ClassificationFilter } from './ClassificationFilter'
 import { choiceMatches, groupChoices, type ClassifiedChoice } from './device-filters'
 import { fillDeviceCard } from './device-card'
-import { onMidiDeviceProfilesChanged } from 'audiobus/midi/device-profiles'
+import { onMidiDeviceProfilesChanged } from 'audiobus/midi/hardware/device-profiles'
 
 type Choice = ClassifiedChoice & { kind: 'input' | 'output' | 'instrument' }
 

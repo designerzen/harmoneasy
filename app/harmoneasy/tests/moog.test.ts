@@ -62,7 +62,7 @@ describe('Moog WAM processor', () => {
         for (let note = 60; note < 80; note++) node._onMidi({ bytes: [0x90, note, 127] })
         expect(node.voices).toHaveLength(16)
         const audio = render(node, 50)
-        expect(audio.every(s => Number.isFinite(s) && Math.abs(s) <= 1)).toBe(true)
+        expect(audio.every(s => Number.isFinite(s))).toBe(true)
         expect(rms(audio)).toBeGreaterThan(0)
     })
     it('honours channel sustain, pitch bend and channel-specific panic', () => {
@@ -90,6 +90,70 @@ describe('Moog WAM processor', () => {
     })
 })
 
+describe('Fontana Moog VCF equations', () => {
+    // Independent direct-form transfer function, not the worklet's state update:
+    // H(z) = b0^4(1+z^-1)^4 / [(1+a1*z^-1)^4 + k*b0^4(1+z^-1)^4].
+    it.each([22050, 44100, 48000, 96000])('matches the closed-loop transfer function sample by sample at %i Hz', rate => {
+        const node = processor(rate)
+        const binomial = [1, 4, 6, 4, 1]
+        for (const cutoff of [1000, Math.min(10000, rate * 0.48), Math.min(20000, rate * 0.49)]) {
+            const g = Math.tan(Math.PI * cutoff / rate)
+            const a1 = (g - 1) / (g + 1)
+            const b0 = g / (g + 1)
+            node._filterCoefficients(cutoff)
+            expect(node.b0).toBeCloseTo(b0, 14)
+            expect(node.a1).toBeCloseTo(a1, 14)
+            for (const k of [0, 1, 2, 3.8]) {
+                const numerator = binomial.map(c => c * b0 ** 4)
+                const denominator = binomial.map((c, j) => c * a1 ** j + k * numerator[j])
+                const inputs: number[] = []
+                const expected: number[] = []
+                const state = { s1: 0, s2: 0, s3: 0, s4: 0 }
+                let maximumError = 0
+                for (let n = 0; n < 4096; n++) {
+                    inputs.push(n === 0 ? 1 : 0.1 * Math.sin(n * 0.731))
+                    let y = numerator[0] * inputs[n]
+                    for (let j = 1; j <= Math.min(4, n); j++) {
+                        y += numerator[j] * inputs[n - j] - denominator[j] * expected[n - j]
+                    }
+                    y /= denominator[0]
+                    expected.push(y)
+                    const actual = node._filterSample(inputs[n], state, node.b0, node.a1, k)
+                    maximumError = Math.max(maximumError, Math.abs(actual - y))
+                }
+                expect(maximumError).toBeLessThan(1e-7)
+            }
+        }
+    })
+    it.each([0, 1, 2, 3])('preserves DC gain 1/(1+k) and the resonant cutoff response for k=%i', k => {
+        const rate = 48000, cutoff = 1000
+        const node = processor(rate)
+        node._filterCoefficients(cutoff)
+        const dc = { s1: 0, s2: 0, s3: 0, s4: 0 }
+        const impulse = { ...dc }
+        let constant = 0, real = 0, imaginary = 0
+        for (let n = 0; n < 32768; n++) {
+            constant = node._filterSample(1, dc, node.b0, node.a1, k)
+            const response = node._filterSample(n === 0 ? 1 : 0, impulse, node.b0, node.a1, k)
+            const angle = 2 * Math.PI * cutoff * n / rate
+            real += response * Math.cos(angle)
+            imaginary -= response * Math.sin(angle)
+        }
+        expect(constant).toBeCloseTo(1 / (1 + k), 10)
+        expect(real).toBeCloseTo(-1 / (4 - k), 10)
+        expect(imaginary).toBeCloseTo(0, 10)
+    })
+    it('does not add output saturation to the linear model', () => {
+        const quiet = processor(48000, { volume: 0.1 })
+        const loud = processor(48000, { volume: 1 })
+        quiet._onMidi({ bytes: [0x90, 60, 127] })
+        loud._onMidi({ bytes: [0x90, 60, 127] })
+        const a = render(quiet, 10), b = render(loud, 10)
+        const scale = loud._parameterInterpolators.volume.values[0] / quiet._parameterInterpolators.volume.values[0]
+        expect(Math.max(...b.map((value, i) => Math.abs(value - a[i] * scale)))).toBeLessThan(1e-7)
+    })
+})
+
 describe('Moog GUI and output', () => {
     it('initializes the synth when its controls are mounted and resumes suspended audio', async () => {
         vi.stubGlobal('AudioWorklet', class {})
@@ -106,6 +170,8 @@ describe('Moog GUI and output', () => {
         expect(createGui).toHaveBeenCalledOnce()
         expect(gui.querySelector('section')).not.toBeNull()
         expect(gui.querySelector('input[type="url"]')).toBeNull()
+        expect(gui.querySelector('input[type="search"], select, button')).toBeNull()
+        expect(output.requiresConnectionControl).toBe(false)
         await output.connect!()
         expect(createPlugin).toHaveBeenCalledOnce()
         await output.disconnect!()

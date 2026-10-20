@@ -1,6 +1,6 @@
 import { sharedWebMidi } from 'audiobus/midi/shared-webmidi'
-import { loadMidiProfilesForPorts, matchMidiDeviceProfile, MIDI_DEVICE_PROFILES, onMidiDeviceProfilesChanged } from 'audiobus/midi/device-profiles'
-import type { MidiGuiNode } from 'audiobus/midi/device-profile-schema'
+import { loadMidiProfilesForPorts, matchMidiDeviceProfile, MIDI_DEVICE_PROFILES, onMidiDeviceProfilesChanged } from 'audiobus/midi/hardware/device-profiles'
+import type { MidiGuiNode } from 'audiobus/midi/hardware/device-profile-schema'
 import { EVENT_CANCEL, EVENT_CLICK, EVENT_CLOSE, EVENT_CLOSED, EVENT_DEVICE_LIST_CHANGED,
     EVENT_MIDI_CHANNELS_CHANGED, EVENT_OPENED, EVENT_READY, EVENT_VISIBILITY_CHANGE } from 'audiobus/event-constants'
 

@@ -1,4 +1,4 @@
-import type { MidiDeviceLoss } from 'audiobus/io/known-midi-inputs'
+import type { MidiDeviceLoss } from 'audiobus/midi/hardware/known-midi-inputs'
 
 // Device and chain names are external text; the existing error dialog accepts
 // HTML, so escape these names before passing them to it.

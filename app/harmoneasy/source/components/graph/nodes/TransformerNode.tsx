@@ -31,7 +31,7 @@ export function TransformerNode(props: any) {
 	const { chain, chainId } = useChain()
 	const icon = elementIcon('transformer', props.data.element.type ?? props.data.element.id)
     const description = elementDescription('transformer', props.data.element.type ?? props.data.element.id, props.data.label, props.data.description)
-			
+
 	const removeNode = useCallback(() => {
         chain.transformerManager.removeTransformer(props.data.element)
     }, [props.data.element])
@@ -57,6 +57,36 @@ export function TransformerNode(props: any) {
 	}, [props.id, onFullscreen])
 
     return <div title={description} data-midi-scope={`${chainId}:transformer:${props.data.element.midiControlId}`} className={`node-transformer graph-node can-remove category-${props.data.element.category.toLowerCase()} ${isFullscreen ? 'is-fullscreen' : ''}`}>
+        <header className="device-node-header node-actions">
+            <h6><ElementIcon src={icon} title={description} />{props.data.label}</h6>
+            <div className="device-title-controls nodrag nopan">
+                {shouldShowMoveButtons && <div className="transformer-move-controls">
+                    <button type="button" className="btn-previous nodrag nopan" onClick={moveBack}
+                        title={isVertical ? 'Move transformer up' : 'Move transformer left'}
+                        aria-label={isVertical ? 'Move transformer up' : 'Move transformer left'}>
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d={isVertical ? 'M12 20V4m-6 6 6-6 6 6' : 'M20 12H4m6-6-6 6 6 6'} />
+                        </svg>
+                    </button>
+                    <button type="button" className="btn-next nodrag nopan" onClick={moveForwards}
+                        title={isVertical ? 'Move transformer down' : 'Move transformer right'}
+                        aria-label={isVertical ? 'Move transformer down' : 'Move transformer right'}>
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d={isVertical ? 'M12 4v16m-6-6 6 6 6-6' : 'M4 12h16m-6-6 6 6-6 6'} />
+                        </svg>
+                    </button>
+                </div>}
+            <button type="button" className="device-expand" onClick={handleFullscreen}
+                autoFocus={isFullscreen} aria-expanded={isFullscreen}
+                title={isFullscreen ? 'Minimise transformer' : 'Expand transformer'}
+                aria-label={isFullscreen ? 'Minimise transformer' : 'Expand transformer'}>
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d={isFullscreen ? 'M3 9h6V3m6 0v6h6M3 15h6v6m6 0v-6h6' : 'M9 3H3v6m12-6h6v6M3 15v6h6m6 0h6v-6'} />
+                </svg>
+            </button>
+            <button type="button" className="device-remove" title="Delete transformer" aria-label="Delete transformer" onClick={removeNode}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg></button>
+            </div>
+        </header>
         {isFullscreen ? <header className="expanded-node-heading">
             <div className="expanded-node-emblem"><ElementIcon src={icon} title={description} /></div>
             <div>
@@ -65,9 +95,7 @@ export function TransformerNode(props: any) {
                 <p>{props.data.description}</p>
             </div>
         </header> : <>
-        <ElementIcon src={icon} title={description} className="transformer-icon" />
-        <h6>{props.data.label}</h6>
-      
+
 	  	<details>
 			<summary className="summary-info" title={props.data.description}>Info</summary>
 			<p>{props.data.description}</p>
@@ -75,39 +103,10 @@ export function TransformerNode(props: any) {
 
         </>}
 
-        <menu className="node-actions">
-            <button type="button" className="btn-remove nodrag nopan" title="Delete transformer" aria-label="Delete transformer" onClick={removeNode}>Remove</button>
-            <button type="button" className="btn-fullscreen nodrag nopan" onClick={handleFullscreen}
-                autoFocus={isFullscreen} aria-expanded={isFullscreen}
-                title={isFullscreen ? 'Minimise transformer' : 'Expand transformer'}
-                aria-label={isFullscreen ? 'Minimise transformer' : 'Expand transformer'}>
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                    <path d={isFullscreen ? 'M3 9h6V3m6 0v6h6M3 15h6v6m6 0v-6h6' : 'M9 3H3v6m12-6h6v6M3 15v6h6m6 0h6v-6'} />
-                </svg>
-            </button>
-        </menu>
         {typeof props.data.element.status === 'string' && <TransformerStatus element={props.data.element} />}
-      
+
         <TransformerSettings fields={props.data.fields} element={props.data.element} expanded={isFullscreen} />
 
-		{ shouldShowMoveButtons ? 
-			(<menu className="graph-node-menu">
-				<button type="button" className="btn-previous nodrag nopan" onClick={moveBack}
-                    title={isVertical ? 'Move transformer up' : 'Move transformer left'}>
-                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                        <path d={isVertical ? 'M12 20V4m-6 6 6-6 6 6' : 'M20 12H4m6-6-6 6 6 6'} />
-                    </svg>
-                    {isVertical ? 'Move up' : 'Move left'}
-                </button>
-                <button type="button" className="btn-next nodrag nopan" onClick={moveForwards}
-                    title={isVertical ? 'Move transformer down' : 'Move transformer right'}>
-                    {isVertical ? 'Move down' : 'Move right'}
-                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                        <path d={isVertical ? 'M12 4v16m-6-6 6 6 6-6' : 'M4 12h16m-6-6 6 6-6 6'} />
-                    </svg>
-                </button>
-			</menu>) : null 
-		}
 
         {!isFullscreen && <Handle type="source" position={isVertical ? Position.Bottom : Position.Right} />}
         {!isFullscreen && <Handle type="target" position={isVertical ? Position.Top : Position.Left} />}

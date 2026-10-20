@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { createMidiDevicesDialog } from '../source/services/midi-devices-dialog'
-import * as registry from 'audiobus/midi/device-profiles'
+import * as registry from 'audiobus/midi/hardware/device-profiles'
 import { EVENT_CANCEL, EVENT_CLOSE, EVENT_CLOSED, EVENT_DEVICE_LIST_CHANGED, EVENT_MIDI_CHANNELS_CHANGED,
     EVENT_READY, EVENT_VISIBILITY_CHANGE } from 'audiobus/event-constants'
 

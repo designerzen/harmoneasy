@@ -8,7 +8,8 @@ import IOChainManager from '../../../packages/audiobus/io/IO-chain-manager'
 import { deviceId } from '../../../packages/audiobus/io/device-definition'
 import { sharedWebMidi } from '../../../packages/audiobus/midi/shared-webmidi'
 import { createInputById } from '../../../packages/audiobus/io/input-factory'
-import { startKnownMidiInputs, type MidiInputDiscovery } from '../../../packages/audiobus/io/known-midi-inputs'
+import { createOutputById } from '../../../packages/audiobus/io/output-factory'
+import { startKnownMidiInputs, type MidiInputDiscovery } from '../../../packages/audiobus/midi/hardware/known-midi-inputs'
 import { UNAVAILABLE_MIDI_DEVICE } from '../../../packages/audiobus/io/inputs/midi-input-controls'
 import { EVENT_CONNECTED, EVENT_DISCONNECTED, EVENT_CHANGE, INPUT_EVENT } from '../../../packages/audiobus/event-constants'
 import { NOTE_OFF } from '../../../packages/audiobus/commands'
@@ -53,6 +54,38 @@ afterEach(async () => {
 })
 
 describe('shared WebMIDI access', () => {
+    it('automatically readies Output selectors and routing before and after global permission without a separate connect action', async () => {
+        const before = await createOutputById('webmidi', { selectedDevice: 'synth', selectedChannel: 5 }) as OutputWebMIDIDevice
+        const removed = await createOutputById('webmidi') as OutputWebMIDIDevice
+        resources.push(before, removed)
+        expect(before.requiresConnectionControl).toBe(false)
+        expect(midi.enable).not.toHaveBeenCalled()
+        const gui = await before.createGui()
+        await removed.destroy()
+        const synth = { id: 'synth', name: 'Synth', type: 'output', send: vi.fn() }
+        midi.outputs = [synth]
+        const release = await sharedWebMidi.acquire()
+        try {
+            await vi.waitFor(() => expect(before.isConnected).toBe(true))
+            expect(removed.isConnected).toBe(false)
+            expect([...gui.querySelector('select')!.options].map(option => option.value)).toContain('synth')
+            const after = await createOutputById('webmidi', { selectedDevice: 'synth' }) as OutputWebMIDIDevice
+            resources.push(after)
+            await vi.waitFor(() => expect(after.isConnected).toBe(true))
+            await before.noteOn(60, 100, 2)
+            expect(synth.send).toHaveBeenCalledWith([0x94, 60, 100])
+            await before.destroy()
+            expect(synth.send).toHaveBeenCalledWith([0x84, 60, 0])
+            await after.noteOn(64, 90, 3)
+            expect(synth.send).toHaveBeenCalledWith([0x92, 64, 90])
+            midi.outputs = []; emit(EVENT_DISCONNECTED, synth)
+            expect(after.outputDevices).toEqual([])
+            midi.outputs = [synth]; emit(EVENT_CONNECTED, synth)
+            await after.noteOff(64, 3)
+            expect(synth.send).toHaveBeenLastCalledWith([0x82, 64, 0])
+            expect(midi.enable).toHaveBeenCalledTimes(1)
+        } finally { release() }
+    })
     it('automatically routes generic Inputs created before and after global permission without requesting permission during creation', async () => {
         const before = await createInputById('webmidi') as InputWebMIDIDevice
         resources.push(before)

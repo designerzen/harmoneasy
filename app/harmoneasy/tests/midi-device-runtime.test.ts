@@ -3,9 +3,9 @@ import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises'
 import path from 'node:path'
 import os from 'node:os'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createMidiDeviceStore } from '../electron/midi-device-files.js'
-import { useTestMidiProfileFiles, publicMidiDevices } from './midi-profile-runtime-setup'
-import { ensureMidiDeviceProfile, loadMidiProfilesForPorts, MIDI_DEVICE_PROFILES, refreshMidiDeviceProfiles, setMidiDeviceProfileSource } from '../../../packages/audiobus/midi/device-profiles'
+import { createMidiDeviceStore, midiDeviceFilesPlugin } from 'audiobus/midi/hardware/device-files.js'
+import { useTestMidiProfileFiles, bundledMidiDevices } from './midi-profile-runtime-setup'
+import { ensureMidiDeviceProfile, loadMidiProfilesForPorts, MIDI_DEVICE_PROFILES, refreshMidiDeviceProfiles, setMidiDeviceProfileSource } from '../../../packages/audiobus/midi/hardware/device-profiles'
 import { INPUT_FACTORIES, createInputById } from '../../../packages/audiobus/io/input-factory'
 import { INPUT_DEFINITIONS } from '../../../packages/audiobus/io/input-definitions'
 import { INPUT_GUIDANCE } from '../source/components/graph/device-card'
@@ -31,9 +31,30 @@ async function add(folder: string, id: string, filename = `${id}.json`) {
     for (const image of ['icon.svg', 'panel.svg']) await writeFile(path.join(device, image), '<svg xmlns="http://www.w3.org/2000/svg"/>')
 }
 describe('runtime device folders', () => {
+    it('serves package hardware assets in development and copies raw device folders for deployed builds', async () => {
+        const folder = await root()
+        const plugin = midiDeviceFilesPlugin()
+        plugin.configResolved({ base: '/test/', root: folder, build: { outDir: 'site' } })
+        const use = vi.fn()
+        plugin.configureServer({ middlewares: { use } })
+        const response = { setHeader: vi.fn(), end: vi.fn(), statusCode: 200 }
+        const next = vi.fn()
+        await use.mock.calls[0][0]({ url: '/test/midi-devices/digit-cmpsr/digit-cmpsr.json', method: 'GET' }, response, next)
+        expect(next).not.toHaveBeenCalled()
+        expect(JSON.parse(response.end.mock.calls[0][0].toString()).id).toBe('digit-cmpsr')
+        await plugin.writeBundle()
+        const built = createMidiDeviceStore(() => [path.join(folder, 'site', 'midi-devices')])
+        expect(await built.list()).toEqual(await createMidiDeviceStore(() => [bundledMidiDevices]).list())
+        expect((await built.read('digit-cmpsr/panel.svg'))?.type).toBe('image/svg+xml')
+        expect((await built.read('profile.schema.json'))?.type).toBe('application/json')
+        plugin.configurePreviewServer({ middlewares: { use } })
+        response.end.mockClear()
+        await use.mock.calls[1][0]({ url: '/test/midi-devices/digit-cmpsr/digit-cmpsr.json', method: 'GET' }, response, next)
+        expect(JSON.parse(response.end.mock.calls[0][0].toString()).id).toBe('digit-cmpsr')
+    })
     it('discovers folders added after startup without importing or rebuilding application code', async () => {
         const folder = await root()
-        useTestMidiProfileFiles([folder, publicMidiDevices])
+        useTestMidiProfileFiles([folder, bundledMidiDevices])
         await refreshMidiDeviceProfiles(true)
         expect(MIDI_DEVICE_PROFILES['runtime-controller']).toBeUndefined()
         await add(folder, 'runtime-controller')
@@ -69,7 +90,7 @@ describe('runtime device folders', () => {
     })
     it('prefers user-supplied device folders and serves images as separate runtime files', async () => {
         const folder = await root(); await add(folder, 'arcana-strum')
-        const store = createMidiDeviceStore(() => [folder, publicMidiDevices])
+        const store = createMidiDeviceStore(() => [folder, bundledMidiDevices])
         const file = await store.read('arcana-strum/arcana-strum.json')
         expect(JSON.parse(file!.bytes.toString()).name).toBe('Runtime instrument')
         expect((await store.read('arcana-strum/panel.svg'))?.type).toBe('image/svg+xml')
