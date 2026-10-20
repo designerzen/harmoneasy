@@ -22,9 +22,9 @@
 			<img class="logo" src="/source/assets/logos/harmoneasy.svg" alt="">
 			<span>Harmoneasy</span>
 		</a>
-		<h1 id="start-title">Your next musical idea starts here.</h1>
-		<p>One note into chords. A melody into a bass line. A classroom playing in time.
-			Choose a ready-made setup or start fresh with your keyboard.</p>
+		<h1 id="start-title">Your next musical idea <span>starts here.</span></h1>
+		<p>Turn one note into chords, shape a bass line, or play together in time.
+			Choose a setup and make it yours.</p>
 		</header>
 		<form id="start-form" method="dialog">
 		<details id="start-contexts">
@@ -41,8 +41,8 @@
 			</div>
 		</details>
 			<div class="start-secondary-actions">
-				<button class="btn-continue-session" type="submit" name="startup" value="session">Continue Session</button>
-				<button autofocus class="btn-start-empty" type="submit" name="startup" value="empty">Start Empty</button>
+				<button class="btn-continue-session" type="submit" name="startup" value="session"><span class="start-action-label">Continue Session</span><span class="start-action-hint">Pick up where you left off</span></button>
+				<button autofocus class="btn-start-empty" type="submit" name="startup" value="empty"><span class="start-action-label">Start Empty</span><span class="start-action-hint">Build your own setup</span></button>
 			</div>
 			<footer class="start-preset-actions">
 				<p id="start-context-selection" role="status">Choose a preset to get started.</p>
@@ -114,7 +114,7 @@
 		<p id="netronome-status" role="status">Initializing audio…</p>
 		<label for="netronome-local-link">Connection link</label>
 		<textarea id="netronome-local-link" readonly rows="2" spellcheck="false"></textarea>
-		<button type="button" id="netronome-copy">Copy link</button>
+		<button type="button" id="netronome-copy" autofocus>Copy link</button>
 		<label for="netronome-remote-link">Link from the other browser</label>
 		<textarea id="netronome-remote-link" rows="2" spellcheck="false" placeholder="Paste the reply link here"></textarea>
 		<button type="button" id="netronome-apply">Connect</button>
@@ -131,6 +131,9 @@
 		</menu>
 
             <div id="midi-transport-control" class="controls" role="group" aria-labelledby="transport-label">
+                <button type="button" id="btn-record" aria-pressed="false" disabled title="Record audio; replaces the previous take">Record</button>
+                <output id="recording-clock" aria-label="Recording duration">00:00:00</output>
+                <button type="button" id="btn-recording-review" aria-haspopup="dialog" aria-controls="recording-dialog" disabled>Last take</button>
                 <label class="sr-only" id="transport-label" for="transport-status">MIDI transport</label>
                 <button type="button" title="Start playback" id="btn-transport-start" class="btn-transport" disabled>
                     <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" /></svg>
@@ -155,6 +158,26 @@
                 <nav id="chain-navigation" aria-label="IOChains"></nav>
             </div>
 
+    <dialog id="recording-dialog" aria-labelledby="recording-title" hidden>
+        <div class="recording-content" tabindex="0" role="region" aria-label="Recording playback and save options">
+        <h2 id="recording-title">Audio recording</h2>
+        <p id="recording-details"></p>
+        <audio id="recording-playback" controls preload="metadata" aria-label="Play recorded take"></audio>
+        <label for="recording-filename">Filename</label>
+        <input id="recording-filename" type="text" value="Harmoneasy recording" maxlength="120">
+        <label for="recording-format">Save format</label>
+        <select id="recording-format">
+            <option value="16">WAV · 16-bit PCM (smaller)</option>
+            <option value="32">WAV · 32-bit float (original quality)</option>
+        </select>
+        <p id="recording-status" role="status"></p>
+        <p class="recording-hint">One take is kept locally. Starting a new recording replaces it. Clearing site data deletes browser recordings. External MIDI instruments and system speech voices are not captured.</p>
+        </div>
+        <div class="recording-actions">
+            <button type="button" id="recording-save" autofocus>Save audio…</button>
+            <button type="button" id="recording-close">Close</button>
+        </div>
+    </dialog>
 	<main>
 
 
@@ -237,7 +260,7 @@
 		</header>
 		<pre id="info-message" class="selectable" role="status" aria-live="polite"></pre>
 		<form method="dialog">
-			<button class="btn-close" type="submit" formmethod="dialog">
+			<button class="btn-close" type="submit" formmethod="dialog" autofocus>
 				Close
 			</button>
 		</form>
@@ -293,7 +316,7 @@
 
 			<hr>
 
-			<button type="button" id="btn-midi-export" class="export-option">Export as MIDI file</button>
+			<button type="button" id="btn-midi-export" class="export-option" autofocus>Export as MIDI file</button>
 			<button type="button" id="btn-med-export" class="export-option">Export as ProTracker MED</button>
 			<button type="button" id="btn-dawproject-export" class="export-option">Export as .dawProject</button>
 			<button type="button" id="btn-midi-markdown-export" class="export-option">Export as Markdown</button>
@@ -301,7 +324,7 @@
 			<button type="button" id="btn-vexflow-export" class="export-option">Download Sheet Music</button>
 		</menu>
 		<form method="dialog">
-			<button autofocus class="btn-close" type="submit" formmethod="dialog">
+			<button class="btn-close" type="submit" formmethod="dialog">
 				Close
 			</button>
 		</form>
@@ -320,7 +343,7 @@
 		</header>
 		<div id="packages-message" class="packages-list selectable"></div>
 		<form method="dialog">
-			<button class="btn-close" type="submit" formmethod="dialog">
+			<button class="btn-close" type="submit" formmethod="dialog" autofocus>
 				Close
 			</button>
 		</form>
@@ -366,7 +389,7 @@
 			</fieldset>
 		</form>
 		<form method="dialog">
-			<button class="btn-close" type="submit" formmethod="dialog">
+			<button class="btn-close" type="submit" formmethod="dialog" autofocus>
 				Close
 			</button>
 		</form>

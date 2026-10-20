@@ -732,7 +732,7 @@ song-explorer-ui{
 
 // Packages Information Dialog
 #packages-dialog {
-	min-width: 400px;
+	min-width: min(400px, calc(100vw - 2rem));
 	max-width: 90vw;
 	max-height: 90vh;
 }
@@ -832,7 +832,7 @@ song-explorer-ui{
 // Overlays
 
 #export-dialog {
-     min-width: 300px;
+     min-width: min(300px, calc(100vw - 2rem));
      max-width: 90vw;
 }
 

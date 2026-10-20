@@ -15,13 +15,15 @@ it('keeps the preset chooser collapsed and contains its controls inside the star
     expect(details.open).toBe(false)
     expect(details.querySelector('.start-presets-label')!.textContent).toBe('Presets')
     expect(details.querySelector('summary')!.textContent).toContain('Browse ready-made setups')
+    expect(dialog.querySelectorAll('[autofocus]')).toHaveLength(1)
+    expect(dialog.querySelector('[autofocus]')).toBe(dialog.querySelector('.btn-start-empty'))
     const empty = dialog.querySelector<HTMLButtonElement>('.btn-start-empty')!
-    expect(empty.textContent).toBe('Start Empty')
+    expect(empty.querySelector('.start-action-label')!.textContent).toBe('Start Empty')
     expect(empty.value).toBe('empty')
     expect(empty.form?.id).toBe('start-form')
     expect(details.contains(empty)).toBe(false)
     const continueSession = dialog.querySelector<HTMLButtonElement>('.btn-continue-session')!
-    expect(continueSession.textContent).toBe('Continue Session')
+    expect(continueSession.querySelector('.start-action-label')!.textContent).toBe('Continue Session')
     expect(continueSession.value).toBe('session')
     expect(continueSession.form).toBe(empty.form)
     expect(continueSession.parentElement).toBe(empty.parentElement)

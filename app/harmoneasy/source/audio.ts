@@ -1,11 +1,13 @@
 import { createReverbImpulseResponse } from "audiobus/effects/reverb"
 import { connectCLAPMixer } from 'audiobus/instruments/clap/clap-mixer'
+import { setAudioDestination } from 'audiobus/audio-destination'
 
 export default class AudioBus extends EventTarget {
 	
 	#audioContext:AudioContext
 	#mixer:GainNode
 	#reverb:ConvolverNode
+	#output:GainNode
 	
 	loaded:Promise<void>
 
@@ -19,6 +21,10 @@ export default class AudioBus extends EventTarget {
 
 	get reverb():ConvolverNode {
 		return this.#reverb
+	}
+
+	get output(): GainNode {
+		return this.#output
 	}
 
 	get hasAudioWorklets(){
@@ -44,10 +50,13 @@ export default class AudioBus extends EventTarget {
 		this.#audioContext = context
 		this.#mixer = mixer
 		this.#reverb = reverb
+		this.#output = context.createGain()
+		setAudioDestination(context, this.#output)
 		this.volume = initialVolume
 
 		connectCLAPMixer(mixer, reverb)
-		reverb.connect( context.destination)
+		reverb.connect(this.#output)
+		this.#output.connect(context.destination)
 
 		// Resume if suspended (required by browser autoplay policy)
 		// This must complete before AudioWorklet can be used

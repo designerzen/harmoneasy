@@ -24,6 +24,17 @@ function setup() {
 }
 
 describe('speech readout', () => {
+    it('routes shared-context speech to the mixer without closing the application context', async () => {
+        const { generate, audio, context, source } = setup()
+        generate.mockResolvedValue(audio)
+        const mixer = {} as AudioNode
+        const output = new OutputSpeechSynthesis({}, context as unknown as AudioContext, mixer)
+        output.noteOn(60)
+        await vi.waitFor(() => expect(source.start).toHaveBeenCalledOnce())
+        expect(context.createGain().connect).toHaveBeenCalledWith(mixer)
+        await output.disconnect()
+        expect(context.close).not.toHaveBeenCalled()
+    })
     it('prefers Kokoro and applies rate, pitch and volume', async () => {
         const { synth, source, generate, audio, context } = setup()
         generate.mockResolvedValue(audio)

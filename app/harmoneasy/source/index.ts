@@ -16,6 +16,7 @@ import { createMidiControlPanel } from './services/midi-control-panel'
 import { startKnownMidiInputs } from 'audiobus/midi/hardware/known-midi-inputs'
 import { showMidiDeviceDisconnected } from './services/midi-device-errors'
 import { createMidiDevicesDialog } from './services/midi-devices-dialog'
+import { createRecordingControls } from './services/recording-dialog'
 import { createClockSourceControls } from './services/clock-source-controls'
 import { isClockSource, clockMidiPorts, type ClockSourceController } from './services/clock-source'
 import { createGraph } from './components/transformers-graph.tsx'
@@ -382,6 +383,7 @@ const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: b
 
     bus = new AudioBus(initialVolume)
     await bus.loaded
+    createRecordingControls(bus.audioContext, bus.output)
     
     timer = new AudioTimer(bus.audioContext, bus.hasAudioWorklets)
     await timer.loaded

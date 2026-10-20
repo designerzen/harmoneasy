@@ -1,12 +1,15 @@
 dialog {
 	box-sizing: border-box;
 	width: fit-content;
+	min-width: 0;
 	height:auto;
-	max-width:calc( 100% - var(--pad,1rem) * 2 );
-	max-height:calc( 100% - var(--pad,1rem) * 2 );
+	max-width:calc(100vw - 2rem);
+	max-height:calc(100dvh - 2rem);
 	margin: auto;
-	padding: calc(2 * var(--pad)) calc(3 * var(--pad));
+	padding: clamp(1rem, 4vw, 2rem) clamp(1rem, 5vw, 3rem);
 	overflow:auto;
+	overscroll-behavior: contain;
+	overflow-wrap: anywhere;
 	z-index: 9009;
 
 	align-self: center;
@@ -15,44 +18,33 @@ dialog {
 	top:0;
 	bottom:0;
 
-	&::before{
-		content: '';
-		position: fixed;
-		inset:-2048px;
-		background: radial-gradient(circle at center, var(--col-black) 0%, rgba(100, 20, 20, 0.4) 20%, rgba(50, 10, 10, 0.1) 100%);
-		backdrop-filter: blur(20px);
-		z-index: -2;
-	}
-
-	// actual background
-	&::after{
-		content:'';
-		background: inherit;
-		border:inherit;
-		position: absolute;
-		inset:0;
-		z-index: -1;
-	}
+	// Keep backdrop decoration outside the dialog's scrolling content.
+	&::before, &::after { content: none; }
+	*, *::before, *::after { box-sizing: border-box; }
+	> * { min-width: 0; }
+	> header, > footer { flex-shrink: 0; }
+	:where(input, select, textarea, fieldset, pre, audio) { min-width: 0; max-width: 100%; }
+	:where(button) { white-space: normal; }
+	:where(pre) { white-space: pre-wrap; overflow-wrap: anywhere; }
 }
 
 ::backdrop {
-	background-color: light-dark(rgba(43, 30, 30, 0.5), rgba(0, 0, 0, 0.7));
-	// background-color: var(--col-purple);
-	display: block;
+	background: radial-gradient(circle at center, var(--col-black) 0%, rgba(100, 20, 20, 0.4) 20%, rgba(50, 10, 10, 0.1) 100%);
+	backdrop-filter: blur(20px);
 }
 
-html:has(#start-dialog[open]),
-body:has(#start-dialog[open]) {
+html:has(dialog:modal),
+body:has(dialog:modal) {
 	overflow: hidden;
 }
 
 #start-dialog {
-	--start-actions-width: 22rem;
-	--start-accent: light-dark(#6943ab, #c9adff);
+	--start-actions-width: 58%;
+	--start-accent: var(--col-accent);
 	--start-surface: light-dark(#ffffff, #24232d);
 	--start-muted: light-dark(#666272, #b4afc2);
 	--start-line: light-dark(#e3dfeb, #3c3749);
-	width: 56rem;
+	width: 52rem;
 	max-width: calc(100% - 2rem);
 	max-height: calc(100dvh - 2rem);
 	height: fit-content;
@@ -77,20 +69,23 @@ body:has(#start-dialog[open]) {
 	p { max-width: none; }
 
 	.start-heading {
-		padding: 1.5rem 1.75rem 1.25rem;
-		background: linear-gradient(120deg, light-dark(#eee7fa, #30263f), transparent);
-		.backlink { display: flex; align-items: center; gap: .35rem; color: var(--start-accent); font-size: .8rem; font-weight: 800; letter-spacing: .08em; }
-		h1 { margin-top: .75rem; font-size: clamp(1.4rem, 3vw, 2rem); text-transform: none; letter-spacing: -.035em; }
-		p { margin: .75rem 0 0; color: var(--start-muted); font-size: .9rem; max-width: 40rem; }
+		padding: 2rem 2rem 1.75rem;
+		background: radial-gradient(ellipse at top right, light-dark(#e9dff7, #382a4b), transparent 75%);
+		.backlink { display: inline-flex; align-items: center; gap: .6rem; color: var(--start-accent); font-size: .8rem; font-weight: 800; letter-spacing: .04em; }
+		.logo { width: 1.4rem; height: 1.4rem; margin: 0; }
+		h1 { margin: 1.25rem 0 0; max-width: 24ch; font-size: clamp(1.65rem, 3.5vw, 2.4rem); line-height: 1.12; font-weight: 700; text-wrap: balance; text-transform: none; letter-spacing: -.045em; }
+		h1 span { color: var(--start-accent); }
+		p { margin: 1rem 0 0; color: var(--start-muted); font-size: .9rem; line-height: 1.65; max-width: 48ch; text-wrap: pretty; }
 	}
 
 	#start-form {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
+		grid-template-columns: minmax(0, 1fr) var(--start-actions-width);
 		grid-template-rows: minmax(0, 1fr) auto;
 		min-height: 0;
 		margin: 0;
 		position: relative;
+		border-top: 1px solid var(--start-line);
 		&:not(:has(#start-contexts[open])) .start-preset-actions { display: none; }
 		&:not(:has(input[name="start-context"]:checked)) .start-preset-actions { display: none; }
 	}
@@ -110,20 +105,42 @@ body:has(#start-dialog[open]) {
 		grid-area: 1 / 2;
 		align-self: start;
 		display: flex;
-		gap: .5rem;
-		width: var(--start-actions-width);
-		margin: .75rem 1rem .75rem 0;
+		gap: .65rem;
+		min-width: 0;
+		width: auto;
+		margin: 1rem 1rem 1rem 0;
 		z-index: 1;
 		button { flex: 1; min-width: 0; }
 	}
 
 	.btn-start-empty, .btn-continue-session {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		justify-content: center;
+		gap: .35rem;
+		min-height: 5rem;
+		margin: 0;
 		background: var(--start-surface);
 		color: inherit;
 		border: 1px solid var(--start-line);
-		padding: .75rem 1rem;
+		padding: .85rem 1rem;
+		border-radius: 10px;
+		font-size: .9rem;
+		text-align: left;
+		line-height: 1.3;
 		white-space: normal;
+		&:hover { border-color: var(--start-accent); background: light-dark(#f0eaf8, #30283d); }
+		&:focus-visible { outline: 2px solid var(--start-accent); outline-offset: 3px; }
+		&[autofocus] {
+			background: var(--start-accent);
+			color: var(--col-on-accent);
+			border-color: transparent;
+			.start-action-hint { color: inherit; }
+			&:hover { background: color-mix(in srgb, var(--start-accent) 85%, var(--col-fg)); }
+		}
 	}
+	.start-action-hint { color: var(--start-muted); font-size: .7rem; font-weight: 500; }
 
 	.start-presets-content {
 		display: block;
@@ -176,25 +193,28 @@ body:has(#start-dialog[open]) {
 	#start-contexts > summary {
 		flex: 0 0 auto;
 		display: grid;
-		width: calc(100% - var(--start-actions-width) - 2.5rem);
-		min-height: 48px;
+		width: calc(100% - var(--start-actions-width) - 1.65rem);
+		min-height: 5rem;
 		grid-template-areas: none;
 		grid-template-columns: minmax(0, 1fr) auto;
 		gap: .15rem .75rem;
 		place-items: start;
-		margin: .65rem 0 .65rem 1rem;
-		padding: .5rem .8rem;
+		align-content: center;
+		margin: 1rem 0 1rem 1rem;
+		padding: .85rem 1rem;
 		border: 1px solid var(--start-accent);
 		border-radius: 10px;
-		background: light-dark(#efe8fb, #352a47);
-		color: var(--start-accent);
+		background: var(--start-surface);
+		color: inherit;
+		font-size: .9rem;
+		line-height: 1.3;
 		text-transform: none;
 		letter-spacing: normal;
 		cursor: pointer;
 		font-weight: 700;
 		&::before, &::after { display: none; }
-		&:hover { background: light-dark(#e3d6f7, #443457); }
-		&:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+		&:hover { background: light-dark(#f0eaf8, #30283d); }
+		&:focus-visible { outline: 2px solid var(--start-accent); outline-offset: 3px; }
 		.start-presets-label { grid-column: 1; }
 		.start-presets-hint { grid-column: 1; font-size: .7rem; font-weight: 500; }
 		.start-presets-chevron { grid-column: 2; grid-row: 1 / 3; align-self: center; width: .55rem; height: .55rem; border-right: 2px solid; border-bottom: 2px solid; transform: rotate(45deg); transition: transform .15s; }
@@ -269,16 +289,21 @@ body:has(#start-dialog[open]) {
 		}
 	}
 
+	@media (max-width: 680px) {
+		#start-form { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto auto; }
+		#start-contexts { grid-area: 1 / 1; }
+		.start-secondary-actions { grid-area: 2 / 1; width: auto; margin: 0 1rem 1rem; }
+		#start-contexts > summary { width: auto; margin: 1rem; min-height: 4.25rem; }
+		.start-preset-actions { grid-row: 3; }
+		.start-heading { padding: 1.5rem; }
+	}
 	@media (max-width: 540px) {
-		--start-actions-width: calc(64vw - 2.56rem);
-		.start-secondary-actions { gap: .4rem; button { font-size: .75rem; padding: .5rem .35rem; min-height: 48px; } }
-		#start-contexts > summary { font-size: .75rem; padding-inline: .4rem; gap: .3rem; }
-		.start-heading { padding: 1rem; p { font-size: .8rem; } }
+		.start-secondary-actions { gap: .6rem; button { font-size: .8rem; padding: .75rem; min-height: 4.5rem; } }
+		.start-heading { padding: 1.25rem; p { font-size: .85rem; } }
 		.start-presets-content { padding: .85rem 1rem; }
 		#start-context-list { grid-template-columns: minmax(0, 1fr); }
 		.start-filters { gap: .5rem; svg { margin-left: .5rem; } input, select { padding-inline: .5rem; font-size: .75rem; } }
 		.start-preset-actions { padding: .85rem 1rem; gap: .6rem; p { font-size: .7rem; } button { font-size: .8rem; padding: .65rem .75rem; } }
-		.start-presets-hint { display: none; }
 	}
 	@media (max-height: 480px) {
 		.start-heading { padding: .65rem 1rem; h1 { font-size: 1.2rem; margin-top: .35rem; } p { display: none; } }

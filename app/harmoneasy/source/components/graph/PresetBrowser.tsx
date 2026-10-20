@@ -44,7 +44,10 @@ export function PresetBrowser({ manager, onApply }: {
         setUndo(before); setSelection(''); setEditor(null); setMessage('Deleted from your library. You can undo this change.')
     })
     return <>
-        <button type="button" className="preset-browse" onClick={() => dialog.current?.showModal()}>Apply a preset…</button>
+        <button type="button" className="preset-browse" onClick={() => {
+            dialog.current?.showModal()
+            dialog.current?.querySelector<HTMLButtonElement>('.preset-apply-button:not(:disabled)')?.focus({ preventScroll: true })
+        }}>Apply a preset…</button>
         <dialog ref={dialog} className="preset-browser" aria-labelledby={titleId}>
             <header><div><h2 id={titleId}>Find your next sound</h2><p>Choose a preset, explore its pattern, then apply it to your chain.</p></div>
                 <button type="button" onClick={() => dialog.current?.close()} aria-label="Close presets">Close</button></header>
@@ -140,7 +143,7 @@ export function PresetBrowser({ manager, onApply }: {
             </div>
             {!editor && (preset || setup) && <footer className="preset-apply-bar">
                 <p>{setup ? 'Replaces every chain and its routing.' : 'Replaces transformers on this chain. Your input and instrument stay connected.'}</p>
-                <button type="button" className="preset-apply-button" disabled={busy || !!storageError || (!!setup && !manager)} onClick={async () => {
+                <button type="button" className="preset-apply-button primary" disabled={busy || !!storageError || (!!setup && !manager)} onClick={async () => {
                     if (preset) { run(() => { onApply(preset); dialog.current?.close() }); return }
                     if (!setup || !manager) return
                     setBusy(true)

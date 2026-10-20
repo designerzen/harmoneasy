@@ -19,15 +19,12 @@ button {
         background 0.2s ease,
         border-color 0.25s;
 
-    &.primary{
-        background-color: light-dark(
-			color-mix(in oklch, var(--col-pink) 40%, #fff), 
-			var(--col-pink)
-		);
-        color: light-dark(var(--col-pink), #fff);
+    &.primary, &[autofocus], dialog[open] &[autofocus]{
+        background-color: var(--col-accent);
+        color: var(--col-on-accent);
 
         &:hover {
-            background-color: light-dark(color-mix(in oklch, var(--col-plum) 60%, #fff), color-mix(in oklch, var(--col-plum) 120%, #fff));
+            background-color: color-mix(in srgb, var(--col-accent) 85%, var(--col-fg));
         }
     }
 
