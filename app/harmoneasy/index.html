@@ -126,6 +126,7 @@
 			<button id="btn-import" class="btn-import primary" type="button">Import</button>
 			<button id="btn-export" class="btn-export primary" type="button">Export</button>
 			<button id="btn-settings" class="btn-settings" type="button">Settings</button>
+			<button id="btn-midi-devices" type="button" aria-haspopup="dialog" aria-controls="midi-devices-dialog" disabled>MIDI devices</button>
 			<button id="btn-kill-switch" class="btn-kill-switch btn-panic primary" type="button">Panic</button>
 		</menu>
 
@@ -304,6 +305,19 @@
 				Close
 			</button>
 		</form>
+	</dialog>
+
+	<dialog id="midi-devices-dialog" closedby="any" aria-labelledby="midi-devices-title">
+		<header><h5 id="midi-devices-title">MIDI devices</h5></header>
+		<p id="midi-devices-status" role="status"></p>
+		<div class="midi-devices-table" tabindex="0" role="region" aria-label="Connected MIDI devices">
+			<table>
+				<caption>Connected MIDI input and output ports</caption>
+				<thead><tr><th scope="col">Device</th><th scope="col">Manufacturer</th><th scope="col">Direction</th><th scope="col">Status</th><th scope="col">Detected channels</th><th scope="col">ID</th></tr></thead>
+				<tbody id="midi-devices-list"></tbody>
+			</table>
+		</div>
+		<form method="dialog"><button class="btn-close" type="submit" autofocus>Close</button></form>
 	</dialog>
 
 	<dialog id="settings-dialog" closedby="any" aria-labelledby="settings-dialog-title">

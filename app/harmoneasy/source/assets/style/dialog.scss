@@ -286,6 +286,24 @@ body:has(#start-dialog[open]) {
 	}
 }
 
+#midi-devices-dialog {
+	width: 64rem;
+	.midi-devices-table { max-width: 100%; overflow: auto; margin-block: var(--pad); }
+	table { width: 100%; border-collapse: collapse; text-align: left; font-size: .85rem; }
+	caption { text-align: left; margin-bottom: .75rem; }
+	th, td { padding: .65rem; border-bottom: 1px solid currentColor; vertical-align: top; }
+	td { overflow-wrap: anywhere; min-width: 6rem; }
+	td:last-child { font-family: monospace; min-width: 10rem; }
+	form { margin-top: var(--pad); }
+	.midi-device-preview {
+		width: 15rem; max-width: 100%; margin: .65rem 0 0;
+		img { display: block; width: 100%; height: 6rem; object-fit: contain; border-radius: .5rem; }
+		figcaption { margin-top: .5rem; }
+		p { margin-block: .4rem; font-size: .8rem; }
+		a { display: inline-block; margin: .25rem .75rem .25rem 0; font-size: .75rem; }
+	}
+}
+
 #midi-control-settings {
 	display: flex;
 	flex-wrap: wrap;

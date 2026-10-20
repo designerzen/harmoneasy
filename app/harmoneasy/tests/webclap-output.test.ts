@@ -6,6 +6,7 @@ import { openCLAPInterface } from '../../../packages/audiobus/instruments/clap/c
 import { connectCLAPMixer, insertCLAPEffect } from '../../../packages/audiobus/instruments/clap/clap-mixer'
 import { createOutputById, getAvailableOutputFactories } from '../../../packages/audiobus/io/output-factory'
 import { webclapOutputId } from '../../../packages/audiobus/io/outputs/output-types'
+import { OUTPUT_DEFINITIONS } from '../../../packages/audiobus/io/output-definitions'
 import { deviceDefinition } from '../../../packages/audiobus/io/device-definition'
 import { CONTROL_CHANGE, PITCH_BEND, NOTE_ON } from '../../../packages/audiobus/commands'
 import CLAPInstrument from '../../../packages/audiobus/instruments/clap/clap-instrument'
@@ -49,7 +50,16 @@ beforeEach(() => {
 })
 afterEach(() => { vi.unstubAllGlobals(); vi.clearAllMocks() })
 
-it.each(CLAP_PATCHES)('adds and mounts controls for $name with the correct audio route', async patch => {
+it('excludes WebCLAP effects and processors from output definitions and factories', () => {
+    const factories = getAvailableOutputFactories()
+    for (const patch of CLAP_PATCHES.filter(patch => !patch.features?.includes('instrument'))) {
+        const id = webclapOutputId(patch.id)
+        expect(OUTPUT_DEFINITIONS[id]).toBeUndefined()
+        expect(factories.some(factory => factory.id === id)).toBe(false)
+    }
+})
+
+it.each(CLAP_PATCHES.filter(patch => patch.features?.includes('instrument')))('adds and mounts controls for $name with the correct audio route', async patch => {
     const id = webclapOutputId(patch.id)
     expect(getAvailableOutputFactories().some(factory => factory.id === id)).toBe(true)
     const output = await createOutputById(id, { audioContext: context, mixer })
@@ -60,6 +70,8 @@ it.each(CLAP_PATCHES)('adds and mounts controls for $name with the correct audio
     expect(gui.textContent).not.toContain('could not load')
     expect(gui.querySelector('iframe')?.title).toBe(patch.name)
     expect(gui.querySelector('select')?.value).toBe(patch.id)
+    expect(Array.from(gui.querySelectorAll('select option'), option => (option as HTMLOptionElement).value))
+        .toEqual(CLAP_PATCHES.filter(patch => patch.features?.includes('instrument')).map(patch => patch.id))
     expect(gui.querySelector('input[aria-label="Gain"]')).not.toBeNull()
     expect(gui.querySelector('h3')?.textContent).toBe(patch.title)
     expect(gui.textContent).toContain(patch.description)

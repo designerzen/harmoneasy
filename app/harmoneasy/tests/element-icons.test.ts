@@ -15,7 +15,7 @@ import { choiceMatches } from '../source/components/graph/device-filters'
 const assetExists = (src: string) => existsSync(resolve('public', src.replace(/^\//, '')))
 
 it('shows WebCLAP metadata and makes authors and licenses searchable', () => {
-    for (const patch of CLAP_PATCHES) {
+    for (const patch of CLAP_PATCHES.filter(patch => patch.features?.includes('instrument'))) {
         const choice = OUTPUT_DEFINITIONS[webclapOutputId(patch.id)]
         const button = document.createElement('button')
         fillDeviceCard(button, choice, 'output')

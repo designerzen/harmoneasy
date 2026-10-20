@@ -54,7 +54,7 @@ describe('device folders and declarative GUIs', () => {
         expect(gui.element.querySelector('[data-gui-type="control"]')?.getAttribute('style')).toContain('left: 30%')
         gui.destroy()
     })
-    it('loads both real devices, their images and their GUI trees directly from folders', () => {
+    it('loads registry devices, their images and their GUI trees directly from folders', () => {
         expect(Object.keys(MIDI_DEVICE_PROFILES)).toEqual(expect.arrayContaining(['arcana-strum', 'digit-cmpsr']))
         for (const device of Object.values(MIDI_DEVICE_PROFILES)) {
             const gui = createProfiledMidiGui(device, {}, vi.fn(), vi.fn())

@@ -29,6 +29,58 @@ afterEach(() => {
 })
 
 describe('interactive QWERTY display', () => {
+    it.each([
+        ['q', 'Q', 'KeyQ'],
+        ['2', '@', 'Digit2'],
+    ])('releases %s by physical key when modifiers change its character', (down, up, code) => {
+        const { command, key } = setup()
+        window.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: down, code }))
+        window.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: up, code, repeat: true, shiftKey: true }))
+        window.dispatchEvent(new KeyboardEvent(EVENT_KEY_UP, { key: up, code, shiftKey: true }))
+        expect(command.mock.calls.map(call => call.slice(0, 3))).toEqual([
+            [NOTE_ON, down, down === 'q' ? 41 : 42],
+            [NOTE_OFF, down, down === 'q' ? 41 : 42],
+        ])
+        expect(key(down).classList.contains('active')).toBe(false)
+    })
+
+    it.each([EVENT_BLUR, EVENT_VISIBILITY_CHANGE, 'dispose'])('releases all physical notes on %s without duplicate note-offs', type => {
+        const command = vi.fn()
+        const dispose = addKeyboardDownEvents(command)
+        cleanup.push(dispose)
+        for (const key of ['q', 'w']) window.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key }))
+        if (type === 'dispose') dispose()
+        else if (type === EVENT_BLUR) window.dispatchEvent(new Event(type))
+        else {
+            vi.spyOn(document, 'hidden', 'get').mockReturnValue(true)
+            document.dispatchEvent(new Event(type))
+        }
+        for (const key of ['q', 'w']) window.dispatchEvent(new KeyboardEvent(EVENT_KEY_UP, { key }))
+        expect(command.mock.calls.map(call => call.slice(0, 3))).toEqual([
+            [NOTE_ON, 'q', 41], [NOTE_ON, 'w', 43],
+            [NOTE_OFF, 'q', 41], [NOTE_OFF, 'w', 43],
+        ])
+    })
+
+    it('releases notes even when a focused control stops keyup propagation', () => {
+        const { command } = setup()
+        window.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: 'q', code: 'KeyQ' }))
+        const input = document.body.appendChild(document.createElement('input'))
+        input.focus()
+        input.addEventListener(EVENT_KEY_UP, event => event.stopPropagation())
+        input.dispatchEvent(new KeyboardEvent(EVENT_KEY_UP, { key: 'q', code: 'KeyQ', bubbles: true }))
+        expect(command.mock.lastCall!.slice(0, 3)).toEqual([NOTE_OFF, 'q', 41])
+    })
+
+    it('does not emit a note-off for a note that was never started', () => {
+        const { command } = setup()
+        const input = document.body.appendChild(document.createElement('input'))
+        input.focus()
+        window.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: 'q', code: 'KeyQ' }))
+        window.dispatchEvent(new KeyboardEvent(EVENT_KEY_UP, { key: 'q', code: 'KeyQ' }))
+        expect(command).not.toHaveBeenCalled()
+    })
+
     it.each(['mouse', 'touch', 'pen'])('plays and releases notes using %s, including releases outside the visual', pointerType => {
         const { key, command } = setup()
         const input = document.body.appendChild(document.createElement('input'))

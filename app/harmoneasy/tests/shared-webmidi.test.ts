@@ -76,9 +76,10 @@ describe('shared WebMIDI access', () => {
             expect(second).toHaveBeenCalledTimes(1)
             expect(midi.enable).toHaveBeenCalledTimes(1)
             await after.destroy()
+            second.mockClear()
             device.send([0x80, 60, 0])
             expect(first).toHaveBeenCalledTimes(2)
-            expect(second).toHaveBeenCalledTimes(1)
+            expect(second).not.toHaveBeenCalled()
         } finally { release() }
     })
     it('enables once with one listener per port for concurrent inputs, clock inputs and outputs', async () => {
