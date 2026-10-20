@@ -43,7 +43,7 @@ it('keeps the preset chooser collapsed and contains its controls inside the star
     dialog.querySelector<HTMLInputElement>('input[value="live"]')!.click()
     expect(actions.querySelector('.btn-start-preset')!.textContent).toBe('Start Preset')
     expect(createEmptySetup().chains[0].steps).toEqual([])
-    expect(createEmptySetup().chains[0].options.name).toBe('Start a fresh chain')
+    expect(createEmptySetup().chains[0].options.name).toBe('Chain 1')
 })
 
 it('provides restorable contexts with valid routing and independent transformer settings', () => {

@@ -460,6 +460,31 @@
 	min-width:404px;
 }
 
+.graph-node.node-output:has(.webclap-gui) {
+    --node-content-padding: 0px;
+    width: min(1000px, calc(100vw - 3rem));
+    min-width: 0;
+    padding: 0;
+    gap: 0;
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: normal;
+
+    > .nodrag {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    .webclap-gui > details {
+        flex: 0 0 auto;
+        padding: .75rem 1rem;
+    }
+
+    .webclap-gui p { max-width: none; }
+}
+
 .category-tuning{
 	--hue-accent:219;
 }
@@ -2136,6 +2161,16 @@ html:has(.preset-browser[open]), body:has(.preset-browser[open]) { overflow: hid
     gap: 0;
 
     > :not(.device-node-header):not(.react-flow__handle) { display: none; }
+}
+
+.node-viewport-editor > .node-output.is-fullscreen:has(.webclap-gui) {
+    --node-content-padding: 0px;
+    width: 100%;
+    padding: 0;
+    gap: 0;
+    min-height: 100dvh;
+
+    > .nodrag { min-height: calc(100dvh - var(--node-corner-size, 64px)); }
 }
 
 /* Expanded nodes become focused instrument editors, not enlarged graph cards. */

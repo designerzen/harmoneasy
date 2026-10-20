@@ -18,7 +18,10 @@
 @media (prefers-reduced-motion: reduce) {
     #btn-record.is-recording { animation: none; outline: 2px solid #d6293e; }
 }
-#recording-clock { font-variant-numeric: tabular-nums; }
+#clock {
+    font-variant-numeric: tabular-nums;
+    &.is-recording { color: light-dark(#bd1730, #ff6578); }
+}
 #recording-dialog {
     width: min(32rem, calc(100vw - 2rem));
     box-sizing: border-box;

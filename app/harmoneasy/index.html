@@ -131,30 +131,29 @@
 		</menu>
 
             <div id="midi-transport-control" class="controls" role="group" aria-labelledby="transport-label">
-                <button type="button" id="btn-record" aria-pressed="false" disabled title="Record audio; replaces the previous take">Record</button>
-                <output id="recording-clock" aria-label="Recording duration">00:00:00</output>
-                <button type="button" id="btn-recording-review" aria-haspopup="dialog" aria-controls="recording-dialog" disabled>Last take</button>
                 <label class="sr-only" id="transport-label" for="transport-status">MIDI transport</label>
+                <button type="button" id="btn-transport-reset" class="btn-transport" disabled title="Stop and rewind the shared transport">
+                    <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M4 4h3v16H4zm16 0v16L8 12z" /></svg>
+                    <span class="sr-only">Reset</span>
+                </button>
                 <button type="button" title="Start playback" id="btn-transport-start" class="btn-transport" disabled>
-                    <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" /></svg>
+                    <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M7 4v16l13-8z" /></svg>
                     <span class="sr-only">Start</span>
                 </button>
                 <button type="button" title="Stop playback" id="btn-transport-stop" class="btn-transport" hidden disabled>
                     <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M5 4h5v16H5zm9 0h5v16h-5z" /></svg>
                     <span class="sr-only">Stop</span>
                 </button>
-                <button type="button" id="btn-transport-reset" class="btn-transport" disabled title="Stop and rewind the shared transport">
-                    <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M4 4h3v16H4zm16 0v16L8 12z" /></svg>
-                    <span class="sr-only">Reset</span>
-                </button>
                 <output class="sr-only" id="transport-status" role="status">Loading</output>
                 <div id="transport">
                     <button type="button" id="btn-transport-details" title="Show MIDI events">
                         <span class="sr-only">Time / duration; show MIDI events:</span>
-                        <time id="clock">...</time>
+                        <time id="clock">00:00:00:00</time>
                     </button>
 
                 </div>
+                <button type="button" id="btn-record" aria-pressed="false" disabled title="Record audio; replaces the previous take">Record</button>
+                <button type="button" id="btn-recording-review" aria-haspopup="dialog" aria-controls="recording-dialog" disabled>Last take</button>
                 <nav id="chain-navigation" aria-label="IOChains"></nav>
             </div>
 

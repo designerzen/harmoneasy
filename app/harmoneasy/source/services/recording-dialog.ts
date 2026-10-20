@@ -6,7 +6,7 @@ export function createRecordingControls(context: AudioContext, source: AudioNode
     const recording = new AudioRecording(context, source)
     const button = root.querySelector<HTMLButtonElement>('#btn-record')!
     const review = root.querySelector<HTMLButtonElement>('#btn-recording-review')!
-    const clock = root.querySelector<HTMLOutputElement>('#recording-clock')!
+    const clock = root.querySelector<HTMLElement>('#clock')!
     const dialog = root.querySelector<HTMLDialogElement>('#recording-dialog')!
     const audio = root.querySelector<HTMLAudioElement>('#recording-playback')!
     const filename = root.querySelector<HTMLInputElement>('#recording-filename')!
@@ -37,7 +37,8 @@ export function createRecordingControls(context: AudioContext, source: AudioNode
         button.textContent = active ? 'Stop recording' : recording.state === 'stopping' ? 'Finishing…' : 'Record'
         button.title = active ? 'Stop recording and review take' : 'Record audio; replaces the previous take'
         review.disabled = busy || recording.state !== 'idle' || !recording.hasTake
-        clock.textContent = `${active ? 'Recording ' : ''}${duration()}`
+        clock.classList.toggle('is-recording', active)
+        clock.setAttribute('aria-label', active ? 'Transport time; recording audio' : 'Transport time')
         save.disabled = busy || recording.state !== 'idle' || !recording.hasTake
         format.disabled = busy
         filename.disabled = busy
@@ -73,7 +74,10 @@ export function createRecordingControls(context: AudioContext, source: AudioNode
 
     recording.addEventListener(RECORDING_STATE_CHANGED, () => {
         render()
-        if (recording.state === 'idle' && recording.error) clock.textContent = recording.error
+        if (recording.state === 'idle' && recording.error) {
+            status.textContent = recording.error
+            button.title = recording.error
+        }
     })
     let wasRecording = false
     recording.addEventListener(RECORDING_STATE_CHANGED, () => {

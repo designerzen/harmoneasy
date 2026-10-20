@@ -175,7 +175,7 @@ export function createContextSetup(context: StartContext): PresetSetup {
             { id: 'synth', direction: 'output', definition: { factory: 'polyphonic' } },
             { id: 'ui', direction: 'output', definition: { factory: 'external', type: 'ui' } }
         ],
-        chains: [{ id: 'context-chain', options: { name: context.name, active: true }, steps,
+        chains: [{ id: 'context-chain', options: { name: context.id === 'blank' ? 'Chain 1' : context.name, active: true }, steps,
             inputs: ['computer-keyboard', 'keyboard'], outputs: ['keyboard-display', 'synth', 'ui'] }]
     }
 }
