@@ -71,7 +71,7 @@ export default async function getWclap(options) {
 	for (let path in tarFiles) {
 		options.files[`${options.pluginPath}/${path}`] = tarFiles[path];
 	}
-	if (!options.files[wasmPath]) {
+	if (!options.files[wasmPath]?.byteLength) {
 		// Find first `module.wasm` in the bundle (in case it's not top-level)
 		for (let path in tarFiles) {
 			if (/\/module.wasm$/.test(path)) {
@@ -81,7 +81,7 @@ export default async function getWclap(options) {
 			}
 		}
 	}
-	if (!options.files[wasmPath]) {
+	if (!options.files[wasmPath]?.byteLength) {
 		throw Error("No `module.wasm` found in WCLAP bundle");
 	}
 

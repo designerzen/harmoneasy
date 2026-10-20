@@ -2,6 +2,7 @@ import { deviceDefinition } from 'audiobus/io/device-definition'
 import { getTransformerDefinition, getTransformerIcon } from 'audiobus/io/transformer-definitions'
 import type { InputId } from 'audiobus/io/inputs/input-types'
 import type { OutputId } from 'audiobus/io/outputs/output-types'
+import { MIDI_DEVICE_PROFILES } from 'audiobus/midi/device-profiles'
 
 export type ElementKind = 'input' | 'output' | 'instrument' | 'transformer'
 
@@ -10,7 +11,7 @@ export function elementDescription(kind: ElementKind, id: string, name: string, 
         || (kind === 'instrument' ? `Turn incoming notes into ${name} instrument audio.` : `Use ${name} as a ${kind} in this chain.`)
 }
 
-const INPUT_ICONS: Record<InputId, string> = {
+const INPUT_ICONS: Partial<Record<InputId, string>> = {
     keyboard: 'keyboard', gamepad: 'gamepad', 'gamepad-music': 'gamepad',
     webmidi: 'midi', 'native-midi': 'midi', 'midi2-native': 'midi', 'ble-midi': 'bluetooth',
     'microphone-formant': 'microphone', 'leap-motion': 'hand', 'onscreen-keyboard': 'piano',
@@ -28,6 +29,7 @@ const OUTPUT_ICONS: Record<OutputId, string> = {
 }
 
 export function elementIcon(kind: ElementKind, id: string): string {
+    if (kind === 'input' && MIDI_DEVICE_PROFILES[id]?.icon) return MIDI_DEVICE_PROFILES[id].icon!
     const path = kind === 'output' && id.startsWith('webclap:') ? '/icons/output-webclap.svg'
         : kind === 'transformer' ? getTransformerIcon(id)
         : `/icons/device-${kind === 'input' ? INPUT_ICONS[id as InputId] ?? 'input'

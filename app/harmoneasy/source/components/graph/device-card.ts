@@ -3,6 +3,7 @@ import type { OutputId } from 'audiobus/io/outputs/output-types'
 import { elementDescription, elementIcon } from './element-icons'
 import { classificationLabel, type ClassifiedChoice } from './device-filters'
 import { OUTPUT_DEFINITIONS } from 'audiobus/io/output-definitions'
+import { MIDI_DEVICE_PROFILES, onMidiDeviceProfilesChanged } from 'audiobus/midi/device-profiles'
 
 type Guidance = { icon: string; usedFor: string; usefulFor: string; requirements: string }
 const guide = (icon: string, usedFor: string, usefulFor: string, requirements: string): Guidance => ({ icon, usedFor, usefulFor, requirements })
@@ -13,6 +14,10 @@ const bluetooth = 'A BLE MIDI device, Bluetooth enabled, and a browser with Web 
 const mic = 'A microphone or audio input and microphone permission.'
 
 export const INPUT_GUIDANCE: Record<InputId, Guidance> = {
+    ...Object.fromEntries(Object.entries(MIDI_DEVICE_PROFILES).map(([id, profile]) => [id,
+        guide('MIDI', profile.description, profile.abilities.join(', '),
+            `A connected ${profile.name}, MIDI permission, and Web MIDI or native desktop MIDI support.`)
+    ])),
     keyboard: guide('⌨', 'Play notes with computer keys.', 'Trying a chain without a MIDI controller.', 'A physical keyboard and focus on the app.'),
     gamepad: guide('🎮', 'Turn controller buttons and axes into musical input.', 'Playing with a game controller.', 'A connected gamepad and browser Gamepad API support.'),
     'gamepad-music': guide('🎮', 'Play chords, melodies, drums, and arpeggios from a controller.', 'Performing musical patterns with a gamepad.', 'A connected gamepad and browser Gamepad API support.'),
@@ -30,6 +35,11 @@ export const INPUT_GUIDANCE: Record<InputId, Guidance> = {
     'microphone-pitch': guide('🎤', 'Detect played or sung pitches from microphone audio.', 'Turning an acoustic instrument or voice into note input.', mic + ' The pitch-detection model must load.'),
     'dvs-control-vinyl': guide('◉', 'Estimate relative playback speed from a control-vinyl tone.', 'Driving timing from a turntable; not absolute position or direction.', 'Control vinyl, a turntable connected to an audio input, and microphone permission.'),
 }
+
+onMidiDeviceProfilesChanged(() => {
+    for (const [id, profile] of Object.entries(MIDI_DEVICE_PROFILES)) INPUT_GUIDANCE[id] = guide('MIDI', profile.description,
+        profile.abilities.join(', ') || `Playing ${profile.name}.`, `A connected ${profile.name} and MIDI access.`)
+})
 
 export const OUTPUT_GUIDANCE: Record<OutputId, Guidance> = {
     ...Object.fromEntries(Object.values(OUTPUT_DEFINITIONS).map(definition => [definition.id,

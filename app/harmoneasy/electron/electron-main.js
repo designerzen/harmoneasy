@@ -1,12 +1,15 @@
 import path from 'path'
 import { registerMidi2IPC } from './midi2-ipc.js'
-import { app, BrowserWindow, Menu, ipcMain, session, systemPreferences } from 'electron'
+import { app, BrowserWindow, Menu, ipcMain, session, systemPreferences, protocol } from 'electron'
+import { createMidiDeviceStore } from './midi-device-files.js'
+import { mkdir } from 'node:fs/promises'
 import { fileURLToPath } from 'url'
 import { createRequire } from 'module'
 import { loadElectronModule } from './electron-loader.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
+protocol.registerSchemesAsPrivileged([{ scheme: 'midi-device', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }])
 
 const require = createRequire(import.meta.url)
 registerMidi2IPC(ipcMain, () => require('../build/Release/midi2-native.node'))
@@ -151,6 +154,20 @@ app
 	.appendSwitch('enable-web-bluetooth', true)
 
 app.on('ready', async () => {
+    const userMidiDevices = path.join(app.getPath('userData'), 'midi-devices')
+    await mkdir(userMidiDevices, { recursive: true })
+    const profiles = createMidiDeviceStore(() => [userMidiDevices, path.join(app.getAppPath(), 'public', 'midi-devices')])
+    protocol.handle('midi-device', async request => {
+        const url = new URL(request.url)
+        const headers = { 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-store' }
+        if (url.hostname !== 'registry' || request.method !== 'GET') return new Response(null, { status: 404, headers })
+        try {
+            const relative = decodeURIComponent(url.pathname.slice(1))
+            const file = relative ? await profiles.read(relative) : { type: 'application/json', bytes: JSON.stringify(await profiles.list()) }
+            if (!file) return new Response(null, { status: 404, headers })
+            return new Response(file.bytes, { headers: { ...headers, 'Content-Type': file.type } })
+        } catch { return new Response(null, { status: 500, headers }) }
+    })
 
 	await initializeSocketServer()
 	

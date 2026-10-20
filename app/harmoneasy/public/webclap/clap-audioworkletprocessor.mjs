@@ -162,6 +162,12 @@ class ClapAudioWorkletProcessor extends AudioWorkletProcessor {
 
 			// initial message lists plugin descriptor and remote methods
 			let pluginInfo = this.decodeCbor(hostApi.pluginGetInfo(this.pluginPtr, this.hostedBytes));
+			// Ports may report a bundle-relative webview instead of a file URL.
+			if (pluginInfo.webview && !/^[a-z][a-z\d+.-]*:/i.test(pluginInfo.webview)) {
+				const suffix = '/' + pluginInfo.webview.replace(/^\/+/, '');
+				const paths = Object.keys(init.wclap.files).filter(path => path.endsWith(suffix));
+				if (paths.length === 1) pluginInfo.webview = 'file://' + paths[0];
+			}
 			this.port.postMessage(Object.assign(pluginInfo, {
 				routingId: this.routingId,
 				methods: Object.keys(this.remoteMethods),

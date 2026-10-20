@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import { createReadStream } from 'node:fs'
 import { resolve, sep } from 'node:path'
+import { midiDeviceFilesPlugin } from './electron/midi-device-files.js'
 
 // Vite's static middleware emits an empty MIME type for .tar.gz bundles.
 // Serve WCLAP archives explicitly so browser fetch does not treat them as downloads.
@@ -44,7 +45,7 @@ const webNativeAddonPlugin = {
  */
 
 export default defineConfig({
-  plugins: [webNativeAddonPlugin, webclapBundlesPlugin],
+  plugins: [webNativeAddonPlugin, webclapBundlesPlugin, midiDeviceFilesPlugin()],
   worker: { format: 'es' },
   // Resolve through the workspace package and bundle Nexus's CommonJS dependencies
   // (including toposort); serving the SDK unbundled breaks browser imports.
@@ -61,6 +62,7 @@ export default defineConfig({
     }
   },
   test: {
+    setupFiles: ['./tests/midi-profile-runtime-setup.ts'],
     globals: true,
     environment: 'node'
   },

@@ -13,6 +13,8 @@ import { applySetup } from './components/graph/saved-presets'
 import type { PresetSetup } from 'audiobus/io/preset-library'
 import { createNetronomeLink } from './services/netronome-link'
 import { createMidiControlPanel } from './services/midi-control-panel'
+import { startKnownMidiInputs } from 'audiobus/io/known-midi-inputs'
+import { showMidiDeviceDisconnected } from './services/midi-device-errors'
 import { createClockSourceControls } from './services/clock-source-controls'
 import { isClockSource, clockMidiPorts, type ClockSourceController } from './services/clock-source'
 import { createGraph } from './components/transformers-graph.tsx'
@@ -481,6 +483,8 @@ const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: b
     createGraph('graph', ioManager)
     createMidiControlPanel(ioManager, state.get('midiControls') as string | undefined,
         serialized => state.set('midiControls', serialized))
+    void startKnownMidiInputs(ioManager, { onDeviceDisconnected: loss => showMidiDeviceDisconnected(ui, loss) })
+        .catch(error => console.warn('MIDI instrument discovery unavailable', error))
 
     // start the clock going 
     timer.bpm = parseFloat(state.get('tempo') ?? 99)

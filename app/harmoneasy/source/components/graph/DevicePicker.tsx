@@ -8,6 +8,7 @@ import { createInstrumentById, getAvailableInstrumentFactories } from 'audiobus/
 import { ClassificationFilter } from './ClassificationFilter'
 import { choiceMatches, groupChoices, type ClassifiedChoice } from './device-filters'
 import { fillDeviceCard } from './device-card'
+import { onMidiDeviceProfilesChanged } from 'audiobus/midi/device-profiles'
 
 type Choice = ClassifiedChoice & { kind: 'input' | 'output' | 'instrument' }
 
@@ -15,6 +16,8 @@ export function DevicePicker({ direction, dialog = false, onAdded }: { direction
     const { chain, manager } = useChain()
     const filterId = useId()
     const [choices, setChoices] = useState<Choice[]>([])
+    const [profileRevision, setProfileRevision] = useState(0)
+    useEffect(() => onMidiDeviceProfilesChanged(() => setProfileRevision(value => value + 1)), [])
     const [filter, setFilter] = useState('')
     const [classification, setClassification] = useState('')
     const [loading, setLoading] = useState(true)
@@ -50,7 +53,7 @@ export function DevicePicker({ direction, dialog = false, onAdded }: { direction
             .catch(error => { if (!cancelled) setError(String(error)) })
             .finally(() => { if (!cancelled) setLoading(false) })
         return () => { cancelled = true }
-    }, [chain, direction])
+    }, [chain, direction, profileRevision])
 
     const add = async (choice: Choice) => {
         if (adding.current) return

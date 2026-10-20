@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import InputWebMIDIDevice from '../../../packages/audiobus/io/inputs/input-webmidi-device'
-import { acceptsMidiInput } from '../../../packages/audiobus/io/inputs/midi-input-controls'
+import { acceptsMidiInput, UNAVAILABLE_MIDI_DEVICE } from '../../../packages/audiobus/io/inputs/midi-input-controls'
 import { NOTE_OFF, NOTE_ON } from '../../../packages/audiobus/commands'
 
 const midi = vi.hoisted(() => ({ inputs: [] as any[], enable: vi.fn(async () => {}), addListener: vi.fn(), removeListener: vi.fn() }))
@@ -82,9 +82,10 @@ describe('MIDI input selection', () => {
         await b.input.destroy()
     })
 
-    it('restores selections and retains an unavailable device through hotplug', async () => {
+    it('retains a saved selection without listing an absent physical device and reconnects it through hotplug', async () => {
         const a = await setup({ selectedDevice: 'later', selectedChannel: 16 })
-        expect(a.deviceSelect.value).toBe('later')
+        expect(a.deviceSelect.value).toBe(UNAVAILABLE_MIDI_DEVICE)
+        expect(a.deviceSelect.children.some(option => option.value === 'later')).toBe(false)
         expect(a.channelSelect.value).toBe('16')
         midi.inputs[0].send(16)
         expect(a.dispatch).not.toHaveBeenCalled()

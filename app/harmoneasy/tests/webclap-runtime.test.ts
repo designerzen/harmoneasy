@@ -42,7 +42,8 @@ it.each(CLAP_PATCHES)('processes real WebCLAP audio and parameters: $name', asyn
     const methods = processor.remoteMethods
     const params = methods.getParams.call(processor)
     for (const param of params.filter((param: any) => !param.flags.readonly)) {
-        const value = methods.setParam.call(processor, param.id, param.default)
+        // Preserve the factory patch: parameter defaults can differ from its values.
+        const value = methods.setParam.call(processor, param.id, param.value.value)
         expect(Number.isFinite(value.value), JSON.stringify({ param, value })).toBe(true)
     }
     const synth = patch.features?.includes('instrument')

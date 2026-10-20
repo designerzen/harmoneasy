@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import path from 'path'
+import { midiDeviceFilesPlugin } from './electron/midi-device-files.js'
 
 /**
  * Vite config for Electron builds
@@ -57,13 +58,14 @@ export default defineConfig({
     minify: 'esbuild'
   },
   test: {
+    setupFiles: ['./tests/midi-profile-runtime-setup.ts'],
     globals: true,
     environment: 'node'
   },
   resolve: {
     conditions: ['import']
   },
-  plugins: [nodeAddonPlugin],
+  plugins: [nodeAddonPlugin, midiDeviceFilesPlugin()],
   ssr: {
     external: ['fs', 'path', 'module', 'url']
   }
