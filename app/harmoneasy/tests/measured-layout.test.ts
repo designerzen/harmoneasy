@@ -8,7 +8,7 @@ const node = (id: string, column: number, row: number, width: number, height: nu
 })
 
 describe('Measured graph layout', () => {
-    it.each(['vertical', 'horizontal'])('keeps the transformer picker before outputs in %s mode, including an empty chain', mode => {
+    it.each(['vertical', 'horizontal'])('places the transformer picker beside existing transformers or on the empty trunk in %s mode', mode => {
         for (const count of [0, 2]) {
             const chain = {
                 options: {}, inputs: [], outputs: [], transformerQuantity: count,
@@ -19,12 +19,41 @@ describe('Measured graph layout', () => {
             const end = nodes.find(node => node.type === 'end')!
             const previous = nodes.find(node => node.id === (count ? 'test:transformer-t1' : 'test:node-start'))!
             expect(picker.deletable).toBe(false)
-            expect(edges.some(edge => edge.source === previous.id && edge.target === picker.id && !edge.deletable)).toBe(true)
-            expect(edges.some(edge => edge.source === picker.id && edge.target === end.id && !edge.deletable)).toBe(true)
             const axis = mode === 'vertical' ? 'y' : 'x'
-            expect(previous.position[axis]).toBeLessThan(picker.position[axis])
+            if (count) {
+                expect(picker.position[axis]).toBe(previous.position[axis])
+                expect(edges.some(edge => edge.source === picker.id || edge.target === picker.id)).toBe(false)
+                expect(edges.some(edge => edge.source === previous.id && edge.target === end.id)).toBe(true)
+            } else {
+                expect(previous.position[axis]).toBeLessThan(picker.position[axis])
+                expect(edges.some(edge => edge.source === previous.id && edge.target === picker.id)).toBe(true)
+                expect(edges.some(edge => edge.source === picker.id && edge.target === end.id)).toBe(true)
+            }
             expect(picker.position[axis]).toBeLessThan(end.position[axis])
         }
+    })
+    it.each(['vertical', 'horizontal'])('appends device add buttons beside their nodes and routes devices directly in %s mode', mode => {
+        const chain = {
+            options: {},
+            inputs: [{ id: 'input-a', name: 'Input A' }, { id: 'input-b', name: 'Input B' }],
+            outputs: [{ id: 'output-a', name: 'Output A' }, { id: 'output-b', name: 'Output B' }],
+            transformers: [{ uuid: 't0', name: 'Transformer' }],
+        } as unknown as IOChain
+        const { nodes, edges } = getStructure(chain, true, true, mode, 'test')
+        const axis = mode === 'vertical' ? 'y' : 'x'
+        const cross = mode === 'vertical' ? 'x' : 'y'
+        for (const [type, buttonType] of [['input', 'start'], ['output', 'end']]) {
+            const devices = nodes.filter(node => node.type === type)
+            const button = nodes.find(node => node.type === buttonType)!
+            expect(button.data.standalone).toBe(true)
+            expect(button.position[axis]).toBe(devices[0].position[axis])
+            expect(button.position[cross]).toBeGreaterThan(devices.at(-1)!.position[cross])
+            expect(edges.some(edge => edge.source === button.id || edge.target === button.id)).toBe(false)
+            for (const device of devices) {
+                expect(edges.some(edge => (type === 'input' ? edge.source : edge.target) === device.id && edge.deletable)).toBe(true)
+            }
+        }
+        expect(edges).toHaveLength(4)
     })
     it.each(['vertical', 'horizontal'])('uses actual dimensions in %s mode', mode => {
         const nodes = layoutMeasuredNodes([

@@ -24,16 +24,17 @@ export function TransformerDialog({ onClose, replacing }: { onClose: () => void;
     </dialog>, document.body)
 }
 
-export function AddTransformerNode({ data }: { data?: { layoutMode?: string } }) {
+export function AddTransformerNode({ data }: { data?: { layoutMode?: string; standalone?: boolean } }) {
     const [open, setOpen] = useState(false)
     const vertical = data?.layoutMode === 'vertical'
     return <div className="node-add-transformer graph-node">
-        <h6>Transformers</h6>
         <button className="cta btn-add nodrag nopan" type="button" onClick={() => setOpen(true)}>
-            Add New Transformer
+            Transformer
         </button>
-        <Handle type="target" position={vertical ? Position.Top : Position.Left} />
-        <Handle type="source" position={vertical ? Position.Bottom : Position.Right} />
+        {!data?.standalone && <>
+            <Handle type="target" position={vertical ? Position.Top : Position.Left} />
+            <Handle type="source" position={vertical ? Position.Bottom : Position.Right} />
+        </>}
         {open && <TransformerDialog onClose={() => setOpen(false)} />}
     </div>
 }

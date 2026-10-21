@@ -32,29 +32,33 @@ export const getStructure = (chain: IOChain, showInputs = true, showOutputs = tr
         deletable: source.type === 'input' || target.type === 'output',
         data: { type: source.type, name: source.data.input?.name }
     })
-    const start = addNode('node-start', 'start', 1, 0, { label: 'Inputs' })
     const inputs = showInputs ? chain.inputs.filter(input => !input.isHidden) : []
-    inputs.forEach((input, index) => {
-        const node = addNode('node-input-' + deviceId(input), 'input', 0,
-            index - (inputs.length - 1) / 2, { label: input.name, input })
-        connect(node, start)
-    })
-    let previous = start
+    const start = addNode('node-start', 'start', 0, inputs.length, { label: 'Inputs', standalone: inputs.length > 0 })
+    const inputNodes = inputs.map((input, index) =>
+        addNode('node-input-' + deviceId(input), 'input', 0, index, { label: input.name, input }))
+    let previous = inputNodes.length ? inputNodes : [start]
     chain.transformers.forEach((element, index) => {
-        const node = addNode('transformer-' + element.uuid, 'transformer', index + 2, 0,
+        const node = addNode('transformer-' + element.uuid, 'transformer', index + 1, 0,
             { label: element.name, element, fields: element.fields, description: element.description }, `transformer:${index}`)
-        connect(previous, node)
-        previous = node
+        previous.forEach(source => connect(source, node))
+        previous = [node]
     })
-    const addTransformer = addNode('node-add-transformer', 'addTransformer', chain.transformerQuantity + 2, 0, { label: 'Transformers' })
-    connect(previous, addTransformer)
-    const end = addNode('node-end', 'end', chain.transformerQuantity + 3, 0, { label: 'Outputs' })
-    connect(addTransformer, end)
+    const hasTransformers = chain.transformers.length > 0
+    const transformerColumn = Math.max(1, chain.transformers.length)
+    const addTransformer = addNode('node-add-transformer', 'addTransformer', transformerColumn, hasTransformers ? 1 : 0,
+        { label: 'Transformers', standalone: hasTransformers })
+    if (!hasTransformers) {
+        previous.forEach(source => connect(source, addTransformer))
+        previous = [addTransformer]
+    }
     const outputs = showOutputs ? chain.outputs.filter(output => !output.isHidden) : []
+    const end = addNode('node-end', 'end', transformerColumn + 1, outputs.length,
+        { label: 'Outputs', standalone: outputs.length > 0 })
+    if (!outputs.length) previous.forEach(source => connect(source, end))
     outputs.forEach((output, index) => {
-        const node = addNode('node-output-' + deviceId(output), 'output', chain.transformerQuantity + 4,
-            index - (outputs.length - 1) / 2, { label: output.name, output })
-        connect(end, node)
+        const node = addNode('node-output-' + deviceId(output), 'output', transformerColumn + 1,
+            index, { label: output.name, output })
+        previous.forEach(source => connect(source, node))
     })
     return { nodes: layoutMeasuredNodes(nodes, layoutMode), edges }
 }
@@ -80,7 +84,8 @@ export function layoutMeasuredNodes(nodes: GraphNode[], mode: string): GraphNode
         group.sort((a, b) => a.data.layoutRow - b.data.layoutRow)
         const crossSize = (node: GraphNode) => vertical ? size(node).width : size(node).height
         const alongSize = (node: GraphNode) => vertical ? size(node).height : size(node).width
-        const total = group.reduce((sum, node) => sum + crossSize(node), 0) + NODE_GAP * (group.length - 1)
+        const routingNodes = group.filter(node => !node.data.standalone)
+        const total = routingNodes.reduce((sum, node) => sum + crossSize(node), 0) + NODE_GAP * (routingNodes.length - 1)
         let cross = -total / 2
         for (const node of group) {
             positions.set(node.id, node.data.manualPosition ?? (vertical ? { x: cross, y: along } : { x: along, y: cross }))

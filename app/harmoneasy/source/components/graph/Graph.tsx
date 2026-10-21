@@ -139,8 +139,11 @@ function FlowComponent() {
     const validConnection = (connection: Connection | Edge) => {
         const source = nodes.find(node => node.id === connection.source)
         const target = nodes.find(node => node.id === connection.target)
-        return Boolean((source?.type === 'input' && target?.type === 'start') ||
-            (source?.type === 'end' && target?.type === 'output'))
+        return Boolean(source && target && edges.some(edge =>
+            (source.type === 'input' && edge.target === target.id &&
+                nodes.some(node => node.id === edge.source && node.type === 'input')) ||
+            (target.type === 'output' && edge.source === source.id &&
+                nodes.some(node => node.id === edge.target && node.type === 'output'))))
     }
     const onConnect = (connection: Connection) => {
         if (!validConnection(connection)) return

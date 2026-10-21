@@ -401,8 +401,12 @@
 .node-start,
 .node-add-transformer,
 .node-end {
-    --size: 280px;
-    width: 320px;
+    --size: 0;
+    width: max-content;
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
     box-sizing: border-box;
     border-radius: 16px;
     align-items: stretch;
@@ -411,7 +415,7 @@
     letter-spacing: normal;
 
     h6 { margin: 0; text-align: center; }
-    > .btn-add { width: 100%; }
+    > .btn-add { margin: 0; white-space: nowrap; }
 
     .shared-device-selector {
         display: flex;
