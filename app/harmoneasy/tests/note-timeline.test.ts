@@ -4,6 +4,26 @@ import { NoteTimeline } from '../../../packages/audiobus/ui/note-timeline'
 afterEach(() => vi.unstubAllGlobals())
 
 describe('note timeline', () => {
+    it('culls expired blocks while retaining held notes and historical navigation', () => {
+        const timeline = new NoteTimeline()
+        timeline.noteOn(48, 0, 'held')
+        for (let i = 0; i < 2000; i++) {
+            timeline.noteOn(60, i, 'red')
+            timeline.noteOff(60, i + .5)
+        }
+        for (const [start, end] of [[0, 1], [255, 257], [1000, 1010], [3000, 3010]]) {
+            expect([...timeline.visibleNotes(start, end)]).toEqual(timeline.notes.filter(note =>
+                note.start <= end && (note.end === null || note.end >= start)))
+        }
+        timeline.allNotesOff(3000)
+        expect([...timeline.visibleNotes(3001, 4000)]).toEqual([])
+        timeline.clear()
+        expect(timeline.notes).toEqual([])
+        expect([...timeline.visibleNotes(0, 4000)]).toEqual([])
+        timeline.noteOn(72, 5, 'new')
+        expect([...timeline.visibleNotes(5, 6)]).toEqual(timeline.notes)
+    })
+
     it('retains short notes, chords and repeated pitches with separate durations', () => {
         const timeline = new NoteTimeline()
         timeline.noteOn(60, 0, 'red')

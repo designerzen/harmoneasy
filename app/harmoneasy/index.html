@@ -146,8 +146,8 @@
                 </button>
                 <output class="sr-only" id="transport-status" role="status">Loading</output>
                 <div id="transport">
-                    <button type="button" id="btn-transport-details" title="Show MIDI events">
-                        <span class="sr-only">Time / duration; show MIDI events:</span>
+                    <button type="button" id="btn-transport-details" title="Inspect recorded MIDI commands" aria-controls="recordings">
+                        <span class="sr-only">Time / duration; inspect recorded MIDI commands:</span>
                         <time id="clock">00:00:00:00</time>
                     </button>
 
@@ -205,53 +205,6 @@
 		</section>
 	</main>
 	
-	<!-- Sidebars for MIDI Events -->
-	<aside id="sidebar">
-
-		<header id="sidebar-header">
-			<h4>MIDI Events</h4>
-			<button type="button" id="sidebar-close" class="btn-close">Hide MIDI Events</button>
-		</header>
-
-		<div id="sidebar-content">
-			<output id="midi-devices"></output>
-			<output id="midi-input-commands"></output>
-			<output id="midi-output-commands"></output>
-
-			<div id="ble-manual-send-fieldset" hidden>
-				<legend>Manual BLE Send</legend>
-
-				<label for="midi-channel-selector">BLE MIDI Channel:
-					<select id="midi-channel-selector">
-						<option value="1">1</option>
-						<option value="2">2</option>
-						<option value="3">3</option>
-						<option value="4">4</option>
-						<option value="5">5</option>
-						<option value="6">6</option>
-						<option value="7">7</option>
-						<option value="8">8</option>
-						<option value="9">9</option>
-						<option value="10">10</option>
-						<option value="11">11</option>
-						<option value="12">12</option>
-						<option value="13">13</option>
-						<option value="14">14</option>
-						<option value="15">15</option>
-						<option value="16">16</option>
-					</select>
-				</label>
-
-				<label for="ble-manual-input">Manual BLE Send
-					<input id="ble-manual-input" type="text" placeholder="Enter bytes e.g. 144,60,127">
-				</label>
-
-				<button type="button" id="btn-send-ble-manual">Send BLE</button>
-			</div>
-		</div>
-
-	</aside>
-
 	<!-- Overlays -->
 	<dialog id="info-dialog" closedby="any" hidden aria-labelledby="info-dialog-title" aria-describedby="info-message">
 		<header>
@@ -373,6 +326,36 @@
 			<fieldset>
 				<legend>Graph layout</legend>
 				<div id="graph-layout-settings"></div>
+			</fieldset>
+			<fieldset id="ble-manual-send-fieldset" hidden>
+				<legend>Manual BLE Send</legend>
+
+				<label for="midi-channel-selector">BLE MIDI Channel:
+					<select id="midi-channel-selector">
+						<option value="1">1</option>
+						<option value="2">2</option>
+						<option value="3">3</option>
+						<option value="4">4</option>
+						<option value="5">5</option>
+						<option value="6">6</option>
+						<option value="7">7</option>
+						<option value="8">8</option>
+						<option value="9">9</option>
+						<option value="10">10</option>
+						<option value="11">11</option>
+						<option value="12">12</option>
+						<option value="13">13</option>
+						<option value="14">14</option>
+						<option value="15">15</option>
+						<option value="16">16</option>
+					</select>
+				</label>
+
+				<label for="ble-manual-input">Manual BLE Send
+					<input id="ble-manual-input" type="text" placeholder="Enter bytes e.g. 144,60,127">
+				</label>
+
+				<button type="button" id="btn-send-ble-manual">Send BLE</button>
 			</fieldset>
 			<fieldset>
 				<legend>Timer Settings</legend>

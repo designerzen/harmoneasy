@@ -20,7 +20,7 @@ import { createRecordingControls } from './services/recording-dialog'
 import { createClockSourceControls } from './services/clock-source-controls'
 import { isClockSource, clockMidiPorts, type ClockSourceController } from './services/clock-source'
 import { createGraph } from './components/transformers-graph.tsx'
-import SongVisualiser from 'audiobus/ui/song-visualiser.js'
+import type { SongVisualiserUI } from 'audiobus/ui/song-visualiser-ui'
 
 // Import Data
 import { importDawProjectFile } from 'audiobus/importers/import-dawproject'
@@ -68,7 +68,8 @@ let timer: any = null
 let bus: AudioBus
 let state: State
 let ui: UI
-let songVisualiser: SongVisualiser | null = null
+let songVisualiser: SongVisualiserUI | null = null
+let commandStorage: OPFSStorage | null = null
 let ioManager: IOChainManager
 let metronome: OutputMetronome | null = null
 let metronomeEnabled = false
@@ -349,9 +350,8 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number 
     //     synthesizer.setRandomTimbre()
     // })
 
-    frontEnd.addSongVisualser(recorder.exportData()).then(e => {
-        console.log("Song visualiser added", e)
-    })
+    songVisualiser = await frontEnd.addSongVisualser(recorder.exportData(), () => recorder.exportData())
+    if (commandStorage) songVisualiser.setStorage(commandStorage)
 
     return frontEnd
 }
@@ -583,10 +583,13 @@ const onTick = (values: Record<string, any>) => {
 if (storage) {
     recorder.setStorage(storage)
     // Initialize storage and load existing commands on app startup
-    storage.prepare('harmoneasy-commands.bin').then(success => {
+    storage.prepare('harmoneasy-commands.bin').then(async success => {
         if (success) {
             // console.info('OPFS storage initialized, loading existing commands...')
-            recorder.loadDataFromStorage()
+            await recorder.loadDataFromStorage()
+            commandStorage = storage
+            songVisualiser?.setStorage(storage)
+            await songVisualiser?.loadCommands(recorder.exportData())
             // TODO: add timer starts at position from recorder.duration
             // TODO: SET AS LOADED
             // ui.setLoaded()

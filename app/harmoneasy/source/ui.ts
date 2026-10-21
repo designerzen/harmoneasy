@@ -1,20 +1,17 @@
 import { formatTimeStampFromSeconds } from "netronome"
-import SongVisualiser from 'audiobus/ui/song-visualiser.js'
 import { SongVisualiserUI } from 'audiobus/ui/song-visualiser-ui.js'
 import NoteVisualiser from 'audiobus/ui/note-visualiser.js'
 import NoteTimelineVisualiser from 'audiobus/ui/note-timeline-visualiser'
 import SVGKeyboard from 'audiobus/ui/keyboard-svg.ts'
 import { getPackagesListHTML } from './services/packages-service'
 import { createOpenDAWExportDialog } from './services/opendaw-export-dialog'
+import { EVENT_CLICK } from 'audiobus/event-constants'
 
 import type NoteModel from "audiobus/note-model.ts"
 import type { IAudioCommand } from "audiobus/audio-command-interface.ts"
 import type { IAudioOutput } from "audiobus/io/outputs/output-interface.ts"
 import { convertNoteNumberToColour } from "audiobus/conversion/note-to-colour.ts"
 
-const DOM_ID_MIDI_INPUTS = "midi-input-commands"
-const DOM_ID_MIDI_OUTPUTS = "midi-output-commands"
-const DOM_ID_MIDI_DEVICES = "midi-devices"
 const DOM_ID_CLOCK = "clock"
 const DOM_ID_SELECTOR_SCALE = "scale-selector"
 const DOM_ID_ROOT_SELECTOR = "root-selector"
@@ -75,9 +72,7 @@ export default class UI implements IAudioOutput {
 	abortController = new AbortController()
 	clockAnimationFrame = -1
 
-	devices: HTMLElement | null
-	inputs: HTMLElement | null
-	outputs: HTMLElement | null
+	songVisualiser: SongVisualiserUI | null = null
 	elementClock: HTMLElement | null
 	elementScaleSelector: HTMLElement | null
 	elementRootSelector: HTMLElement | null
@@ -148,10 +143,6 @@ export default class UI implements IAudioOutput {
 	constructor(keyboardNotes: Array<NoteModel>, options = DEFAULT_OPTIONS) {
 
 		this.options = { ...DEFAULT_OPTIONS, ...options }
-		this.devices = document.getElementById(DOM_ID_MIDI_DEVICES)
-
-		this.inputs = document.getElementById(DOM_ID_MIDI_INPUTS)
-		this.outputs = document.getElementById(DOM_ID_MIDI_OUTPUTS)
 
 		this.elementClock = document.getElementById(DOM_ID_CLOCK)
 		this.elementScaleSelector = document.getElementById(DOM_ID_SELECTOR_SCALE)
@@ -201,7 +192,10 @@ export default class UI implements IAudioOutput {
 		this.elementSettingsDialog = document.getElementById(DOM_ID_DIALOG_SETTINGS)
 		this.elementTimerTypeSelect = document.getElementById(DOM_ID_TIMER_TYPE_SELECT)
 
-		this.activateSidebar()
+		document.getElementById('btn-transport-details')?.addEventListener(EVENT_CLICK, () => {
+			void this.songVisualiser?.showCommands()
+			document.getElementById('recordings')?.scrollIntoView({ behavior: 'smooth' })
+		}, { signal: this.abortController.signal })
 
 		this.noteVisualiserCanvas = document.getElementById(DOM_ID_NOTE_VISUALISER_CANVAS)
 		this.noteVisualiser = new NoteVisualiser(keyboardNotes, this.noteVisualiserCanvas, this.options.verticalNoteBars, 0) // ALL_KEYBOARD_NOTES
@@ -290,61 +284,16 @@ export default class UI implements IAudioOutput {
 	 * 
 	 * @param commands 
 	 */
-	async addSongVisualser(commands: IAudioCommand[]) {
+	async addSongVisualser(commands: IAudioCommand[], readCommands?: () => IAudioCommand[] | Promise<IAudioCommand[]>) {
 		const visualiser = new SongVisualiserUI()
+		this.songVisualiser = visualiser
+		if (readCommands) visualiser.setCommandSource(readCommands)
 		document.getElementById('recordings').appendChild(visualiser)
-		// Wait for connectedCallback to complete
-		await new Promise(resolve => {
-			const checkReady = setInterval(() => {
-				if (visualiser.getVisualiser()) {
-					clearInterval(checkReady)
-					resolve(undefined)
-				}
-			}, 10)
-		})
 		await visualiser.loadCommands(commands)
+		return visualiser
 	}
 
 
-	activateSidebar() {
-		// Sidebar toggle functionality
-		const timerBar = document.getElementById('btn-transport-details')
-		const sidebar = document.getElementById('sidebar')
-		const sidebarClose = document.getElementById('sidebar-close')
-
-		timerBar.addEventListener('click', () => {
-			sidebar.classList.toggle('open')
-		}, { signal: this.abortController.signal })
-
-		sidebarClose.addEventListener('click', () => sidebar.classList.remove('open'), { signal: this.abortController.signal })
-
-		// Close sidebar when clicking outside of it
-		document.addEventListener('click', (e) => {
-			if (sidebar.classList.contains('open') &&
-				!sidebar.contains(e.target) &&
-				!timerBar.contains(e.target)) {
-				sidebar.classList.remove('open')
-			}
-		}, { signal: this.abortController.signal })
-	}
-
-	/**
-	 * 
-	 * @param {MIDIDevice} device 
-	 * @param {Number} index 
-	 */
-	addDevice(device, index) {
-		this.devices.innerHTML += `MIDI Device #${index} : ${device.manufacturer} ${device.name} <br>`
-	}
-
-	/**
-	 * 
-	 * @param {MIDIDevice} device 
-	 * @param {Number} index 
-	 */
-	addInput(device, index) {
-		this.inputs.innerHTML += `MIDI Device #${index} : ${device.manufacturer} ${device.name} <br>`
-	}
 
 	/**
 	 * setTempo(tempo)
@@ -423,9 +372,6 @@ export default class UI implements IAudioOutput {
 	 * @param {Boolean} fatal - does this break the app?
 	 */
 	showError(errorMessage:string, solution = "", fatal = false) {
-		this.inputs.innerHTML = errorMessage
-		this.inputs.classList.toggle("error", true)
-
 		const elementIssue = this.elementErrorDialog.querySelector("#error-message")
 		const elementSolution = this.elementErrorDialog.querySelector("#error-solution")
 
@@ -464,32 +410,6 @@ export default class UI implements IAudioOutput {
 	 */
 	showBluetoothStatus(message:string) {
 		this.elementButtonBluetoothConnect.textContent = message
-	}
-
-	/**
-	 * Display BLE device info and capabilities
-	 * @param {BluetoothDevice} device
-	 * @param {Object} capabilities { services: Array }
-	 */
-	addBluetoothDevice(device:BluetoothDevice, capabilities) {
-		let html = `<strong>BLE Device: ${device.name || 'Unknown'}</strong><br>`
-		html += `UUID: ${device.id}<br>`
-		if (capabilities && capabilities.services) {
-			html += `<details><summary>Services & Characteristics (${capabilities.services.length})</summary>`
-			capabilities.services.forEach(svc => {
-				html += `<div">`
-				html += `<strong>Service:</strong> ${svc.uuid}<br>`
-				if (svc.characteristics) {
-					svc.characteristics.forEach(ch => {
-						const props = ch.properties ? Object.keys(ch.properties).filter(k => ch.properties[k]) : []
-						html += `<div style="margin-left: 1em;"><code>${ch.uuid}</code> [${props.join(', ')}]</div>`
-					})
-				}
-				html += `</div>`
-			})
-			html += `</details>`
-		}
-		this.devices.innerHTML += html
 	}
 
 	/**
@@ -817,23 +737,6 @@ export default class UI implements IAudioOutput {
 		this.noteVisualiserCanvas && this.noteVisualiserCanvas.addEventListener("dblclick", e => callback && callback(e), { signal: this.abortController.signal })
 	}
 
-	/**
-	 * 
-	 * @param {MIDIDevice} device 
-	 * @param {Number} index 
-	 */
-	addOutput(device, index) {
-		this.outputs.innerHTML += `MIDI Device #${index} : ${device.manufacturer} ${device.name} <br>`
-	}
-
-	addCommand(command) {
-		this.inputs.innerHTML = `MIDI Command START #${command} <br>` + this.inputs.innerHTML
-	}
-
-	removeCommand(command) {
-		this.inputs.innerHTML = `MIDI Command STOP #${command} <br>` + this.inputs.innerHTML
-	}
-
 	updateClock(values, audioCommandQuantity:number = 0) {
 		const {
 			divisionsElapsed,
@@ -861,7 +764,6 @@ export default class UI implements IAudioOutput {
 		const colour = convertNoteNumberToColour(noteNumber)
 		this.noteVisualiser.noteOn(noteNumber, velocity, colour)
 		this.noteTimeline.noteOn(noteNumber, velocity, colour)
-		this.addCommand("NoteOn #" + noteNumber)
 		// console.info("UI::NoteOn", {noteNumber, velocity, colour})
 	}
 
@@ -872,7 +774,6 @@ export default class UI implements IAudioOutput {
 	noteOff(noteNumber:number) {
 		this.noteVisualiser.noteOff(noteNumber)
 		this.noteTimeline.noteOff(noteNumber)
-		this.removeCommand("NoteOff #" + noteNumber)
 		// console.info("UI::NoteOff", noteNumber )
 	}
 
@@ -1027,6 +928,7 @@ export default class UI implements IAudioOutput {
 	 * Clean up
 	 */
 	destroy() {
+		this.songVisualiser?.remove()
 		this.noteVisualiser.destroy()
 		this.noteTimeline.destroy()
 		this.#keyboard?.destroy()

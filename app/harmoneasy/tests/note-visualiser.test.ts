@@ -32,6 +32,12 @@ it('retains short notes as transparent scrolling trails without a piano-roll gri
     expect(context.fillRect).not.toHaveBeenCalled()
 })
 
+it('keeps drawing on successive 60 Hz frames despite timestamp rounding', async () => {
+    const { context, render } = await setup()
+    for (const time of [16.6, 33.3, 50, 66.6, 83.3, 100]) render(time)
+    expect(context.clearRect).toHaveBeenCalledTimes(6)
+})
+
 it('keeps vertical direction through note events and resizes both dimensions', async () => {
     const { context, canvas, send, render } = await setup(true)
     send({ type: 'resize', displayWidth: 640, displayHeight: 256 })
