@@ -1,5 +1,7 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
 import OutputWAM2 from '../../../packages/audiobus/io/outputs/output-wam2'
+import OutputYoshimi from '../../../packages/audiobus/io/outputs/output-yoshimi'
+import { yoshimiAsset } from '../../../packages/audiobus/wam/yoshimi-assets'
 import registry, { WAM2_INSTRUMENTS } from '../../../packages/audiobus/wam/registry'
 import { WAM_MIDI_EVENT } from '../../../packages/audiobus/wam/host'
 import { midiToCommand } from '../../../packages/audiobus/midi/midi-command-conversion'
@@ -21,6 +23,28 @@ beforeEach(() => vi.stubGlobal('AudioWorkletNode', class {}))
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks() })
 
 describe('WAM outputs', () => {
+    it('loads Yoshimi presets into independent parts and rejects unsafe part indexes', async () => {
+        const postMessage = vi.fn()
+        vi.stubGlobal('AudioWorkletNode', class {
+            port = { postMessage, close: vi.fn() }
+            connect = vi.fn()
+            disconnect = vi.fn()
+        })
+        vi.mocked(yoshimiAsset).mockImplementation(path => path)
+        vi.stubGlobal('fetch', vi.fn(async (path: string) => path.endsWith('root.json')
+            ? { text: async () => '[]' }
+            : { ok: true, arrayBuffer: async () => new TextEncoder().encode('<instrument/>').buffer }))
+        const output = new OutputYoshimi(context(), undefined, null)
+        await output.connect()
+        await output.loadPreset('Organ', 'organ.xiz', 1)
+        expect(postMessage).toHaveBeenLastCalledWith({ type: 'msg', verb: 'set', prop: 'patch1', data: '<instrument/>' })
+        await output.loadPreset('SynthPiano', 'piano.xiz')
+        expect(postMessage).toHaveBeenLastCalledWith({ type: 'msg', verb: 'set', prop: 'patch0', data: '<instrument/>' })
+        for (const part of [-1, 16, 0.5, NaN]) {
+            await expect(output.loadPreset('Organ', 'organ.xiz', part)).rejects.toThrow(RangeError)
+        }
+        await output.destroy()
+    })
     it('routes actual audio through a stable output and switches/destroys plugins', async () => {
         const ctx = context(), mixer = {}
         const output = new TestOutput(ctx, 'https://example.com/first.js', undefined, mixer as any)

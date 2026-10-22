@@ -415,7 +415,24 @@
     letter-spacing: normal;
 
     h6 { margin: 0; text-align: center; }
-    > .btn-add { margin: 0; white-space: nowrap; }
+    > .btn-add {
+        margin: 0;
+        min-width: 360px;
+        min-height: 128px;
+        padding: 1.5rem 2.5rem;
+        border: 3px solid oklch(72% .10 var(--hue-accent));
+        border-radius: 16px;
+        background: oklch(45% .14 var(--hue-accent));
+        color: #fff;
+        font-size: 2rem;
+        line-height: 1.2;
+        white-space: nowrap;
+
+        &:hover {
+            background: oklch(52% .14 var(--hue-accent));
+            border-color: oklch(82% .10 var(--hue-accent));
+        }
+    }
 
     .shared-device-selector {
         display: flex;
