@@ -1,16 +1,20 @@
 import React, { useId, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type IOChainManager from 'audiobus/io/IO-chain-manager'
-import type { TransformerPreset } from 'audiobus/io/preset-library'
+import type { TransformerPreset, PresetSetup } from 'audiobus/io/preset-library'
 import { PresetDetails } from './PresetDetails'
 import { PresetArtwork } from './PresetArtwork'
+import { completePresets } from './preset-catalogue'
 import { applySetup, deleteLibraryItem, downloadLibrary, exportLibrary, importLibrary, readLibrary,
     saveSetup, updatePreset, usePresetLibrary, writeLibrary } from './saved-presets'
 
-export function PresetBrowser({ manager, onApply, createChain = false, hideTrigger = false }: {
+export function PresetBrowser({ manager, onApply, createChain = false, hideTrigger = false, startup = false, onChooseSetup }: {
     manager?: IOChainManager
     onApply: (preset: TransformerPreset) => void | Promise<void>
     createChain?: boolean
     hideTrigger?: boolean
+    startup?: boolean
+    onChooseSetup?: (setup: PresetSetup) => void
 }) {
     const dialog = useRef<HTMLDialogElement>(null)
     const fileInput = useRef<HTMLInputElement>(null)
@@ -25,13 +29,14 @@ export function PresetBrowser({ manager, onApply, createChain = false, hideTrigg
     const [editor, setEditor] = useState<{ kind: 'presets' | 'setups'; id: string; json: string } | null>(null)
     const [undo, setUndo] = useState<string | null>(null)
     const setup = library.setups.find(item => `setup:${item.id}` === selection)
-    const preset = setup ? undefined : library.presets.find(item => `preset:${item.id}` === selection) ?? library.presets[0]
-    const categories = [...new Set(library.presets.map(item => item.category))]
+    const presets = completePresets(library.presets)
+    const preset = setup ? undefined : presets.find(item => `preset:${item.id}` === selection) ?? presets[0]
+    const categories = [...new Set(presets.map(item => item.category))]
     const words = query.trim().toLowerCase().split(/\s+/)
     const matches = (item: { name: string; description: string; category?: string; useCase?: string }) =>
         words.every(word => `${item.name} ${item.description} ${item.category ?? ''} ${item.useCase ?? ''}`.toLowerCase().includes(word))
-    const filteredPresets = library.presets.filter(matches)
-    const filteredSetups = createChain ? [] : library.setups.filter(matches)
+    const filteredPresets = presets.filter(matches)
+    const filteredSetups = createChain && !startup ? [] : library.setups.filter(matches)
     const run = (action: () => void) => {
         try { action() }
         catch (error) { setMessage(error instanceof Error ? error.message : String(error)) }
@@ -49,8 +54,8 @@ export function PresetBrowser({ manager, onApply, createChain = false, hideTrigg
         <button type="button" className="preset-browse" hidden={hideTrigger} onClick={() => {
             dialog.current?.showModal()
             dialog.current?.querySelector<HTMLButtonElement>('.preset-apply-button:not(:disabled)')?.focus({ preventScroll: true })
-        }}>{createChain ? 'New chain' : 'Apply a preset…'}</button>
-        <dialog ref={dialog} className="preset-browser" aria-labelledby={titleId}>
+        }}>{startup ? 'Browse all presets…' : createChain ? 'New chain' : 'Apply a preset…'}</button>
+        {createPortal(<dialog ref={dialog} className="preset-browser" aria-labelledby={titleId}>
             <header><div><h2 id={titleId}>Find your next sound</h2><p>{createChain ? 'Choose a preset for your new chain, or start with a blank chain.' : 'Choose a preset, explore its pattern, then apply it to your chain.'}</p></div>
                 <button type="button" onClick={() => dialog.current?.close()} aria-label="Close presets">Close</button></header>
             <div className="preset-browser-scroll">
@@ -101,7 +106,7 @@ export function PresetBrowser({ manager, onApply, createChain = false, hideTrigg
                         <h3>{category}</h3>
                         {filteredPresets.filter(item => item.category === category).map(item =>
                             <button type="button" key={item.id} disabled={busy} aria-pressed={preset?.id === item.id}
-                                onClick={() => select(`preset:${item.id}`)}><PresetArtwork preset={item} compact /><span>{item.name}</span></button>)}
+                                onClick={() => select(`preset:${item.id}`)}><PresetArtwork preset={item} compact /><span>{item.name}<small className="preset-list-description">{item.description}</small></span></button>)}
                     </section>)}
                     {filteredSetups.length > 0 && <section><h3>Setups · multiple chains</h3>{filteredSetups.map(item =>
                         <button type="button" key={item.id} disabled={busy} aria-pressed={setup?.id === item.id}
@@ -139,7 +144,7 @@ export function PresetBrowser({ manager, onApply, createChain = false, hideTrigg
                             <p>Loading replaces all current chains and routing. Save your current setup first if you want to keep it.</p>
                         </article>}
                         {!preset && !setup && <p>Your library is empty. Create a preset or import a JSON file to get started.</p>}
-                        {(preset || setup) && <details className="preset-item-tools"><summary>Manage this {setup ? 'setup' : 'preset'}</summary><div className="preset-item-actions">
+                        {(preset || setup) && !preset?.id.startsWith('activity:') && <details className="preset-item-tools"><summary>Manage this {setup ? 'setup' : 'preset'}</summary><div className="preset-item-actions">
                             <button type="button" disabled={busy || !!storageError} onClick={() => run(() => downloadLibrary(exportLibrary(preset?.id, setup?.id), (preset ?? setup)!.name))}>Save selected to file</button>
                             <button type="button" disabled={busy || !!storageError} onClick={() => setEditor({ kind: setup ? 'setups' : 'presets', id: (preset ?? setup)!.id, json: JSON.stringify(preset ?? setup, null, 2) })}>Edit JSON</button>
                             {preset && <button type="button" disabled={busy || !!storageError} onClick={() => setEditor({ kind: 'presets', id: crypto.randomUUID(), json: JSON.stringify({ ...preset, name: `${preset.name} copy` }, null, 2) })}>Duplicate preset</button>}
@@ -150,8 +155,9 @@ export function PresetBrowser({ manager, onApply, createChain = false, hideTrigg
             </div>
             </div>
             {!editor && (preset || setup) && <footer className="preset-apply-bar">
-                <p>{createChain ? 'Creates a new chain with this preset.' : setup ? 'Replaces every chain and its routing.' : 'Replaces transformers on this chain. Your input and instrument stay connected.'}</p>
-                <button type="button" className="preset-apply-button primary" disabled={busy || !!storageError || (!!setup && !manager)} onClick={async () => {
+                <p>{startup ? 'Choose this preset, then press Start Preset to begin.' : createChain ? 'Creates a new chain with this preset.' : setup ? 'Replaces every chain and its routing.' : 'Replaces transformers on this chain. Your input and instrument stay connected.'}</p>
+                <button type="button" className="preset-apply-button primary" disabled={busy || !!storageError || (!!setup && !manager && !onChooseSetup)} onClick={async () => {
+                    if (setup && onChooseSetup) { onChooseSetup(setup); dialog.current?.close(); return }
                     if (preset) {
                         setBusy(true)
                         try { const result = onApply(preset); if (result) await result; dialog.current?.close() }
@@ -164,8 +170,8 @@ export function PresetBrowser({ manager, onApply, createChain = false, hideTrigg
                     try { await applySetup(manager, setup); dialog.current?.close() }
                     catch (error) { setMessage(error instanceof Error ? error.message : String(error)) }
                     finally { setBusy(false) }
-                }}>{setup ? `Replace workspace with ${setup.name}` : createChain ? `Create ${preset!.name} chain` : `Apply ${preset!.name}`}</button>
+                }}>{startup ? `Choose ${(preset ?? setup)!.name}` : setup ? `Replace workspace with ${setup.name}` : createChain ? `Create ${preset!.name} chain` : `Apply ${preset!.name}`}</button>
             </footer>}
-        </dialog>
+        </dialog>, document.body)}
     </>
 }

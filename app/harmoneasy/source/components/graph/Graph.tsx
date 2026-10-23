@@ -258,23 +258,19 @@ export default function App({ manager }: { manager: IOChainManager }) {
     useEffect(() => {
         const transport = document.getElementById('midi-transport-control')
         const actionBar = document.getElementById('action-bar')
-        const navigation = document.getElementById('chain-navigation')
         if (!transport) return
         const updateOffset = () => {
             document.documentElement.style.setProperty('--transport-height', `${transport.getBoundingClientRect().height}px`)
             document.documentElement.style.setProperty('--action-bar-height', `${actionBar?.getBoundingClientRect().height ?? 0}px`)
-            document.documentElement.style.setProperty('--chain-navigation-height', `${navigation?.getBoundingClientRect().height ?? 0}px`)
         }
         updateOffset()
         const observer = new ResizeObserver(updateOffset)
         observer.observe(transport)
         if (actionBar) observer.observe(actionBar)
-        if (navigation) observer.observe(navigation)
         return () => {
             observer.disconnect()
             document.documentElement.style.removeProperty('--transport-height')
             document.documentElement.style.removeProperty('--action-bar-height')
-            document.documentElement.style.removeProperty('--chain-navigation-height')
         }
     }, [])
     useEffect(() => {

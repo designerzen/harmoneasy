@@ -1569,6 +1569,7 @@ dialog.add-output-dialog {
     .preset-editor textarea { width: 100%; box-sizing: border-box; resize: vertical; min-height: 12rem; font: .85rem/1.5 monospace; }
     .preset-editor button + button { margin-left: .5rem; }
     .preset-browser-content { display: grid; grid-template-columns: minmax(14rem, 2fr) minmax(0, 3fr); align-items: start; }
+    .preset-list-description { display: block; margin-top: .25rem; font-size: .75rem; line-height: 1.4; color: var(--preset-muted); font-weight: normal; }
     nav { min-width: 0; padding: 1rem; border-right: 1px solid var(--preset-line); }
     nav h3 { margin: .5rem .5rem .65rem; font-size: .7rem; text-transform: uppercase; letter-spacing: .07em; color: var(--preset-muted); }
     nav section + section { margin-top: 1.25rem; }

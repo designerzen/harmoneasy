@@ -30,14 +30,6 @@
 		<details id="start-contexts">
 			<summary title="Show or hide preset setups"><span class="start-presets-label">Presets</span><span class="start-presets-hint">Browse ready-made setups</span><span class="start-presets-chevron" aria-hidden="true"></span></summary>
 			<div class="start-presets-content">
-			<p id="start-suggestions-title">What brings you here?</p>
-			<div id="start-context-suggestions" role="group" aria-labelledby="start-suggestions-title"></div>
-			<div class="start-filters">
-			<label for="start-context-filter"><span class="sr-only">Search presets</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><input id="start-context-filter" type="search" placeholder="Search presets…"></label>
-			<label for="start-context-category"><span class="sr-only">Filter by activity</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg><select id="start-context-category"><option value="">All activities</option></select></label>
-			</div>
-			<p id="start-context-count" role="status"></p>
-			<fieldset id="start-context-list"><legend class="sr-only">Starting context</legend></fieldset>
 			</div>
 		</details>
 			<div class="start-secondary-actions">
@@ -154,6 +146,7 @@
                 </div>
                 <button type="button" id="btn-record" aria-pressed="false" disabled title="Record audio; replaces the previous take">Record</button>
                 <button type="button" id="btn-recording-review" aria-haspopup="dialog" aria-controls="recording-dialog" disabled>Last take</button>
+                <nav id="chain-navigation" aria-label="IOChains"></nav>
             </div>
 
     <dialog id="recording-dialog" aria-labelledby="recording-title" hidden>
@@ -181,7 +174,6 @@
 
 
 		<div id="chain">
-            <nav id="chain-navigation" aria-label="IOChains"></nav>
 			<canvas id="note-visualiser" width="1080" height="512" aria-hidden="true"></canvas>
 			<div id="graph"></div>
 		</div>

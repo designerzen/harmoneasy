@@ -915,10 +915,8 @@ song-explorer-ui{
     overflow-x: auto;
     margin-left:auto;
     justify-content: safe flex-end;
-    position: sticky;
-    top: calc(var(--action-bar-height, 0px) + var(--transport-height, 52px));
-    z-index: 101;
-    padding: .5rem .375rem 0;
+    align-self: stretch;
+    padding: 0;
     background: var(--col-bg);
     border-bottom: 2px solid var(--col-orange);
 
@@ -942,13 +940,14 @@ song-explorer-ui{
         &:focus-visible { outline: 2px solid var(--col-orange); outline-offset: 1px; }
     }
 
-    > button, > .preset-browser-trigger { margin-bottom: .375rem; }
+    > button { align-self: center; margin: 0 0 0 .25rem; }
 
     [role="tablist"] { display: flex; align-items: flex-end; gap: 2px; flex: none; }
     [role="tab"] {
         position: relative;
         margin: 0 0 -2px;
-        padding: .5rem 1rem;
+        min-height: 36px;
+        padding: .25rem .75rem;
         border: 2px solid color-mix(in srgb, currentColor 25%, transparent);
         border-bottom: 2px solid var(--col-orange);
         border-radius: .5rem .5rem 0 0;
@@ -956,7 +955,6 @@ song-explorer-ui{
         color: color-mix(in srgb, currentColor 70%, transparent);
 
         &[aria-selected="true"] {
-            padding-top: .625rem;
             border-color: var(--col-orange);
             border-bottom-color: var(--col-bg);
             background: var(--col-bg);
@@ -984,7 +982,7 @@ body:has(.chains-workspace) { scroll-snap-type: none; }
 }
 .chains-expanded {
     position: fixed;
-    inset: calc(var(--action-bar-height, 0px) + var(--transport-height, 52px) + var(--chain-navigation-height, 48px)) 0 0;
+    inset: calc(var(--action-bar-height, 0px) + var(--transport-height, 52px)) 0 0;
     z-index: 100;
     overflow: auto;
     align-content: start;
