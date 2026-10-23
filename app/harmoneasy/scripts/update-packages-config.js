@@ -70,6 +70,37 @@ export const PACKAGES: PackageInfo[] = ${JSON.stringify(packages, null, 2)}
 	
 	try {
 		fs.writeFileSync(configPath, configContent, 'utf-8')
+		const seen = new Set()
+		const credits = []
+		function collect(packagePath) {
+			const realPath = fs.realpathSync(packagePath)
+			if (seen.has(realPath)) return
+			seen.add(realPath)
+			const pkg = JSON.parse(fs.readFileSync(realPath, 'utf-8'))
+			const person = value => typeof value === 'string' ? value.replace(/\s*<[^>]*>/g, '') : value?.name || ''
+			if (pkg.name && !pkg.private && !pkg.name.startsWith('@harmoneasy/')) {
+				const authors = [...new Set([pkg.author, ...(pkg.contributors || [])].map(person).filter(Boolean))]
+				credits.push({ name: pkg.name, version: pkg.version || '', authors, license: typeof pkg.license === 'string' ? pkg.license : pkg.license?.type || '',
+					url: pkg.homepage || (typeof pkg.repository === 'string' ? pkg.repository : pkg.repository?.url) || '' })
+			}
+			for (const name of Object.keys({ ...pkg.dependencies, ...pkg.optionalDependencies })) {
+				let dir = path.dirname(realPath)
+				while (true) {
+					const candidate = path.join(dir, 'node_modules', name, 'package.json')
+					if (fs.existsSync(candidate)) { collect(candidate); break }
+					const parent = path.dirname(dir)
+					if (parent === dir) break
+					dir = parent
+				}
+			}
+		}
+		collect(path.join(appDir, 'package.json'))
+		credits.sort((a, b) => a.name.localeCompare(b.name) || a.version.localeCompare(b.version))
+		fs.writeFileSync(path.join(appDir, 'source/config/credits-config.json'), JSON.stringify(credits, null, 2) + '\n')
+		const bundled = fs.readdirSync(path.join(appDir, 'public/webclap'), { recursive: true })
+			.filter(file => /LICENSE.*\.txt$/i.test(file))
+			.map(file => `webclap/${file.replaceAll(path.sep, '/')}`).sort()
+		fs.writeFileSync(path.join(appDir, 'source/config/bundled-credits-config.json'), JSON.stringify(bundled, null, 2) + '\n')
 		console.log(`✓ Updated ${configPath}`)
 		console.log(`✓ Synced ${packages.length} packages`)
 		packages.forEach(pkg => {

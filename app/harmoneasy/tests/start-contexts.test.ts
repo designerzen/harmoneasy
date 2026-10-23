@@ -18,14 +18,35 @@ it('finds acid house in the presets panel and filters the existing cards by genr
     expect(visible()).toHaveLength(1)
     expect(visible()[0].textContent).toContain('Write acid house')
     expect(visible()[0].querySelector('.start-context-chain')!.textContent).toContain('→ TB-303')
+    expect(visible()[0].querySelector('.start-context-chain')!.textContent).toContain('+ Drum Accompaniment')
     visible()[0].querySelector('input')!.click()
     expect(picker.getSetup()?.chains[0].steps).toEqual(DEFAULT_PRESET_LIBRARY.presets.find(preset => preset.id === 'acid-house')!.steps)
     expect(root.querySelector<HTMLButtonElement>('.btn-start-preset')!.disabled).toBe(false)
     const genres = [...root.querySelectorAll<HTMLButtonElement>('#start-context-suggestions button')].find(button => button.textContent === 'Genres')!
     genres.click()
     expect(genres.getAttribute('aria-pressed')).toBe('true')
-    expect(visible()).toHaveLength(5)
+    expect(visible()).toHaveLength(6)
     expect(visible().every(card => card.dataset.category === 'Genres')).toBe(true)
+})
+
+it('finds drum and bass and starts with Moog bass and an Amen accompaniment', () => {
+    document.body.innerHTML = startPage.match(/<dialog id="start-dialog"[\s\S]*?<\/dialog>/)![0]
+    const root = document.querySelector<HTMLElement>('#start-dialog')!
+    const picker = createStartContexts(root)
+    const search = root.querySelector<HTMLInputElement>('#start-context-filter')!
+    search.value = 'drum and bass'
+    search.dispatchEvent(new Event('input'))
+    const cards = root.querySelectorAll('#start-context-list label:not([hidden])')
+    expect(cards).toHaveLength(1)
+    expect(cards[0].textContent).toContain('Moog + Drum Accompaniment')
+    cards[0].querySelector('input')!.click()
+    const setup = picker.getSetup()!
+    expect(setup.id).toBe('drum-and-bass')
+    expect(setup.devices.find(device => device.id === 'synth')!.definition).toEqual({ factory: 'output', type: 'moog' })
+    const drums = setup.devices.find(device => device.definition.type === 'drum-accompaniment')!
+    expect(drums.definition.options).toMatchObject({ genre: 'breaks', groove: 'amen' })
+    expect(setup.chains[0].outputs).toContain(drums.id)
+    expect(setup.chains[0].steps).toEqual(DEFAULT_PRESET_LIBRARY.presets.find(preset => preset.id === 'low-minor-pulse')!.steps)
 })
 
 it('starts each genre with its sound output and independent settings', () => {
@@ -33,10 +54,15 @@ it('starts each genre with its sound output and independent settings', () => {
         const setup = createContextSetup(START_CONTEXTS.find(context => context.id === id)!)
         expect(setup.devices.find(device => device.id === 'synth')!.definition).toEqual({ factory: 'output', type })
         expect(setup.chains[0].outputs).toContain('synth')
+        const drums = setup.devices.find(device => device.definition.type === 'drum-accompaniment')!
+        expect(drums.definition).toEqual({ factory: 'output', type: 'drum-accompaniment',
+            options: id === 'dub' ? { genre: 'reggae', groove: 'reggae' } : { genre: 'electronic', groove: 'disco' } })
+        expect(setup.chains[0].outputs).toContain(drums.id)
     }
     const ambient = START_CONTEXTS.find(context => context.id === 'ambient')!
     const pad = createContextSetup(ambient).devices.find(device => device.id === 'synth')!.definition
     expect(pad.factory).toBe('polyphonic')
+    expect(createContextSetup(ambient).devices.some(device => device.definition.type === 'drum-accompaniment')).toBe(false)
     expect(pad.options).toMatchObject({ shape: 'triangle', attack: 0.8, release: 3, filterCutOff: 1200 })
     pad.options!.release = 0
     expect(createContextSetup(ambient).devices.find(device => device.id === 'synth')!.definition.options!.release).toBe(3)

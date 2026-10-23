@@ -18,10 +18,10 @@
 
 	<dialog id="start-dialog" open aria-labelledby="start-title">
 		<header class="start-heading">
-		<a class="backlink" href="/">
+		<button class="backlink" type="button" data-about aria-label="About Harmoneasy" aria-haspopup="dialog" aria-controls="about-dialog">
 			<img class="logo" src="/source/assets/logos/harmoneasy.svg" alt="">
 			<span>Harmoneasy</span>
-		</a>
+		</button>
 		<h1 id="start-title">Your next musical idea <span>starts here.</span></h1>
 		<p>Turn one note into chords, shape a bass line, or play together in time.
 			Choose a setup and make it yours.</p>
@@ -53,10 +53,10 @@
 	</dialog>
 
 	<header class="header-main">
-		<a class="backlink" href="/">
+		<button class="backlink" type="button" data-about aria-label="About Harmoneasy" aria-haspopup="dialog" aria-controls="about-dialog">
 			<img class="logo" src="/source/assets/logos/harmoneasy.svg" alt="">
 			<p class="h2">Harmoneasy</p>
-		</a>
+		</button>
 		
 		<div class="header-controls" role="group" aria-label="Session controls">
 			<div id="tempo-control" class="controls">
@@ -292,16 +292,25 @@
 		<p>Please wait while we create your project</p>
 	</dialog>
 
-	<dialog id="packages-dialog" closedby="any" aria-labelledby="packages-dialog-title" aria-describedby="packages-message">
+	<dialog id="about-dialog" closedby="any" aria-labelledby="about-title">
 		<header>
-			<h5 id="packages-dialog-title">Built-in Packages</h5>
+			<h2 id="about-title">About Harmoneasy</h2>
+			<form method="dialog"><button type="submit" autofocus>Close</button></form>
 		</header>
-		<div id="packages-message" class="packages-list selectable"></div>
-		<form method="dialog">
-			<button class="btn-close" type="submit" formmethod="dialog" autofocus>
-				Close
-			</button>
-		</form>
+		<div class="about-content selectable" tabindex="0" role="region" aria-label="About and credits">
+			<p id="about-version"></p>
+			<p id="about-copyright"></p>
+			<h3>With thanks</h3>
+			<p>Harmoneasy is made possible by the people who build and share open source software, instruments, presets, samples, research, and musical tools. Thank you to their authors, maintainers, contributors, sound designers, and communities.</p>
+			<p>Special thanks to the creators and contributors of Pink Trombone, Flod, Yoshimi and ZynAddSubFX, SuperCollider and SuperSonic, Web Audio Modules, Faust, Magenta, Basic Pitch, Kokoro, Butterchurn and MilkDrop, Tone.js, WebMidi.js, JZZ, OpenDAW, AudioTool, React, and React Flow.</p>
+			<p>Flod is based on the original FlodJS by Christian Corti. Instrument and preset authors retain credit for their own work.</p>
+			<details><summary>Bundled instruments and licences</summary>
+				<p>Thanks also to the teams behind Surge XT, Six Sines, Shortcircuit XT, RipplerX, Odin 2, OB-Xf, Signalsmith, Clack, and the WebCLAP ports and runtime.</p>
+				<ul id="about-asset-credits"></ul>
+			</details>
+			<details><summary>Built-in packages</summary><div id="about-packages"></div></details>
+			<details><summary>Libraries and contributors</summary><ul id="about-credits"><li>Loading credits…</li></ul></details>
+		</div>
 	</dialog>
 
 	<dialog id="midi-devices-dialog" closedby="any" aria-labelledby="midi-devices-title">
@@ -310,7 +319,7 @@
 		<div class="midi-devices-table" tabindex="0" role="region" aria-label="Connected MIDI devices">
 			<table>
 				<caption>Connected MIDI input and output ports</caption>
-				<thead><tr><th scope="col">Device</th><th scope="col">Manufacturer</th><th scope="col">Direction</th><th scope="col">Status</th><th scope="col">Detected channels</th><th scope="col">ID</th></tr></thead>
+				<thead><tr><th scope="col">Device</th><th scope="col">Manufacturer</th><th scope="col">Direction</th><th scope="col">Status</th><th scope="col">Activity</th><th scope="col">ID</th></tr></thead>
 				<tbody id="midi-devices-list"></tbody>
 			</table>
 		</div>
@@ -380,10 +389,6 @@
 		</form>
 	</dialog>
 
-	<footer>
-		<small>© 2026</small>
-		<button id="btn-packages-info" type="button" class="packages-info-btn" title="View package information">Packages</button>
-	</footer>
 
 	<!-- Input Manager -->
 	<template id="add-input-overlay-template">

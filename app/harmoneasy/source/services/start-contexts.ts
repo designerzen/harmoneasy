@@ -2,7 +2,7 @@ import { DEFAULT_PRESET_LIBRARY } from 'audiobus/io/transformer-presets'
 import type { PresetSetup } from 'audiobus/io/preset-library'
 import type { DeviceDefinition } from 'audiobus/io/device-definition'
 import { OUTPUT_DEFINITIONS } from 'audiobus/io/output-definitions'
-import { MOOG, TB303, webclapOutputId } from 'audiobus/io/outputs/output-types'
+import { DRUM_ACCOMPANIMENT, MOOG, TB303, webclapOutputId } from 'audiobus/io/outputs/output-types'
 
 interface StartContext {
     id: string
@@ -11,7 +11,7 @@ interface StartContext {
     description: string
     next: string
     presets: string[]
-    output?: DeviceDefinition
+    outputs?: DeviceDefinition[]
 }
 
 export const START_CONTEXTS: StartContext[] = [
@@ -45,23 +45,27 @@ export const START_CONTEXTS: StartContext[] = [
     { id: 'acid-house', name: 'Write acid house', category: 'Genres',
         description: 'Play resonant TB-303 acid bass with short A minor figures at sixteenth-note spacing.',
         next: 'Play single notes around A3. Try 120–130 BPM and adjust the TB-303 cutoff, resonance and accent controls.', presets: ['acid-house'],
-        output: { factory: 'output', type: TB303 } },
+        outputs: [{ factory: 'output', type: TB303 }, { factory: 'output', type: DRUM_ACCOMPANIMENT, options: { genre: 'electronic', groove: 'disco' } }] },
     { id: 'techno', name: 'Write techno', category: 'Genres',
         description: 'Sketch a driving Moog bass motif with clipped, low A minor notes.',
         next: 'Play a repeating sixteenth-note rhythm around A3 and shape the Moog filter for a driving bass sound.', presets: ['techno-pulse'],
-        output: { factory: 'output', type: MOOG } },
+        outputs: [{ factory: 'output', type: MOOG }, { factory: 'output', type: DRUM_ACCOMPANIMENT, options: { genre: 'electronic', groove: 'disco' } }] },
     { id: 'dub', name: 'Write dub', category: 'Genres',
         description: 'Play short minor organ chord stabs on the offbeat.',
         next: 'Play on quarter-note beats to hear organ stabs an eighth note later. Shape the tone with the organ drawbars.', presets: ['dub-stabs'],
-        output: { factory: 'output', type: webclapOutputId('com.plinken.organ') } },
+        outputs: [{ factory: 'output', type: webclapOutputId('com.plinken.organ') }, { factory: 'output', type: DRUM_ACCOMPANIMENT, options: { genre: 'reggae', groove: 'reggae' } }] },
     { id: 'disco', name: 'Write disco', category: 'Genres',
         description: 'Play bright piano seventh chords with short rhythmic gates in C major.',
         next: 'Play syncopated single notes to sketch rhythmic piano chords over a bass groove.', presets: ['disco-keys'],
-        output: { factory: 'output', type: webclapOutputId('com.plinken.piano') } },
+        outputs: [{ factory: 'output', type: webclapOutputId('com.plinken.piano') }, { factory: 'output', type: DRUM_ACCOMPANIMENT, options: { genre: 'electronic', groove: 'disco' } }] },
+    { id: 'drum-and-bass', name: 'Write drum and bass', category: 'Genres',
+        description: 'Play low A minor Moog bass over an Amen break for a drum and bass (DnB) sketch.',
+        next: 'Set the tempo around 170 BPM. Play short, syncopated bass phrases and shape the Moog filter; the Amen break follows the global clock.', presets: ['low-minor-pulse'],
+        outputs: [{ factory: 'output', type: MOOG }, { factory: 'output', type: DRUM_ACCOMPANIMENT, options: { genre: 'breaks', groove: 'amen', energy: 0.75, density: 0.65 } }] },
     { id: 'ambient', name: 'Write ambient', category: 'Genres',
         description: 'Explore slow descending A minor chord tones through a soft pad with a long release.',
         next: 'Play sparse single notes and let the pad fade out. Lower the tempo to spread the arpeggio.', presets: ['ambient-drift'],
-        output: { factory: 'polyphonic', options: { shape: 'triangle', attack: 0.8, decay: 1.2, sustain: 0.7, release: 3, filterCutOff: 1200, filterResonance: 0.7, filterOverdrive: 1 } } },
+        outputs: [{ factory: 'polyphonic', options: { shape: 'triangle', attack: 0.8, decay: 1.2, sustain: 0.7, release: 3, filterCutOff: 1200, filterResonance: 0.7, filterOverdrive: 1 } }] },
     { id: 'blank', name: 'Start a fresh chain', category: 'Custom',
         description: 'Prepare an untransformed keyboard and synth chain for your own setup.',
         next: 'Add inputs, transformers and outputs in the graph after starting.', presets: [] },
@@ -181,7 +185,7 @@ export const START_SUGGESTIONS = [
     { name: 'I need a song idea', contexts: ['songwriting', 'minor-song', 'melody-hook', 'rolling-accompaniment', 'answer-vocal', 'sparkle-hook', 'bass'] },
     { name: 'I have a file to work with', contexts: ['convert', 'midi-to-score', 'score-to-midi', 'tracker-to-midi', 'remix', 'remix-minor', 'remix-bass', 'remix-plucks', 'remix-fifths', 'daw-handoff'] },
     { name: 'I want to perform live', contexts: ['live', 'midi-chords', 'midi-fifths', 'gamepad-music', 'clean-lead', 'high-live', 'arpeggios', 'minor-arpeggio'] },
-    { name: 'I want to write in a genre', contexts: ['acid-house', 'techno', 'dub', 'disco', 'ambient'] },
+    { name: 'I want to write in a genre', contexts: ['acid-house', 'techno', 'dub', 'disco', 'drum-and-bass', 'ambient'] },
     { name: 'Surprise me with a new pattern', contexts: ['shuffle-ideas', 'wide-pattern', 'dorian-colour', 'offbeat', 'chord-pulse', 'double-hit', 'rapid-fill', 'delayed-phrase', 'triplet-song'] }
 ]
 
@@ -191,17 +195,20 @@ export function createContextSetup(context: StartContext): PresetSetup {
         if (!preset) throw new Error(`Unknown context preset: ${id}`)
         return structuredClone(preset.steps)
     })
+    const outputs = (context.outputs ?? [{ factory: 'polyphonic' } satisfies DeviceDefinition]).map((definition, index) => ({
+        id: index === 0 ? 'synth' : `output-${index}`, direction: 'output' as const, definition: structuredClone(definition)
+    }))
     return {
         id: context.id, name: context.name, description: context.description, activeChainId: 'context-chain',
         devices: [
             { id: 'computer-keyboard', direction: 'input', definition: { factory: 'input', type: 'keyboard' } },
             { id: 'keyboard', direction: 'input', definition: { factory: 'keyboard-input' } },
             { id: 'keyboard-display', direction: 'output', definition: { factory: 'keyboard-output', inputId: 'keyboard' } },
-            { id: 'synth', direction: 'output', definition: structuredClone(context.output ?? { factory: 'polyphonic' }) },
+            ...outputs,
             { id: 'ui', direction: 'output', definition: { factory: 'external', type: 'ui' } }
         ],
         chains: [{ id: 'context-chain', options: { name: context.id === 'blank' ? 'Chain 1' : context.name, active: true }, steps,
-            inputs: ['computer-keyboard', 'keyboard'], outputs: ['keyboard-display', 'synth', 'ui'] }]
+            inputs: ['computer-keyboard', 'keyboard'], outputs: ['keyboard-display', ...outputs.map(output => output.id), 'ui'] }]
     }
 }
 
@@ -242,7 +249,7 @@ export function createStartContexts(root: HTMLElement) {
         badge.className = 'start-context-badge'
         badge.textContent = context.category
         preview.className = 'start-context-chain'
-        const outputName = context.output?.type ? OUTPUT_DEFINITIONS[context.output.type]?.name ?? context.output.type : context.output ? 'Soft pad' : 'Synth'
+        const outputName = context.outputs?.map(output => output.type ? OUTPUT_DEFINITIONS[output.type]?.name ?? output.type : 'Soft pad').join(' + ') ?? 'Synth'
         preview.textContent = `Your chain: Keyboard or imported notes → ${context.presets.map(id => DEFAULT_PRESET_LIBRARY.presets.find(preset => preset.id === id)!.name).join(' → ') || 'Notes unchanged'} → ${outputName}`
         entry.append(input, badge, title, description, preview, next)
         list.append(entry)

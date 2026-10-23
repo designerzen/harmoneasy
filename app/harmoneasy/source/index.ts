@@ -8,6 +8,7 @@ import State from './libs/state.ts'
 
 // Front End
 import UI from './ui.ts'
+import { createAboutDialog } from './services/about-dialog'
 import { createEmptySetup, createStartContexts } from './services/start-contexts'
 import { applySetup } from './components/graph/saved-presets'
 import type { PresetSetup } from 'audiobus/io/preset-library'
@@ -60,6 +61,8 @@ import OPFSStorage, { hasOPFS } from 'audiobus/storage/opfs-storage.ts'
 import type { IAudioCommand } from 'audiobus/audio-command-interface.ts'
 import type InputAudioEvent from 'audiobus/io/events/input-audio-event.ts'
 
+
+createAboutDialog(document)
 
 const storage = hasOPFS() ? new OPFSStorage() : null
 const recorder: AudioEventRecorder = new AudioEventRecorder()
@@ -256,10 +259,6 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number 
         )
     })
 
-    // Show packages information
-    frontEnd.whenPackagesInfoRequestedRun(async () => {
-        await frontEnd.showPackagesDialog()
-    })
 
     // Import file from device and interpret
     frontEnd.whenFileImportRequestedRun(async (file: File) => {

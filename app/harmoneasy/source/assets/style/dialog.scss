@@ -1,3 +1,38 @@
+.backlink[data-about] {
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: inherit;
+	text-transform: none;
+	letter-spacing: normal;
+	&::before, &::after { content: none; }
+	&:hover { background: transparent; }
+	&:active { transform: none; }
+}
+
+#about-dialog {
+	width: min(48rem, calc(100vw - 2rem));
+	height: min(42rem, calc(100dvh - 2rem));
+	padding: 0;
+	overflow: hidden;
+	&[open] { display: flex; flex-direction: column; }
+	> header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .75rem 1rem; border-bottom: 1px solid color-mix(in srgb, currentColor 20%, transparent); }
+	h2 { margin: 0; font-size: 1.25rem; }
+	form { margin: 0; }
+	.about-content { min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable; padding: 1rem; }
+	p { margin: 0 0 .75rem; max-width: none; line-height: 1.6; }
+	h3 { margin: 1rem 0 .5rem; }
+	details { display: block; border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent); }
+	summary { justify-items: start; padding: .75rem 0; font-size: .875rem; font-weight: 700; }
+	summary::after { transform: rotate(-90deg); }
+	details[open] > summary::after { transform: rotate(180deg); }
+	ul { margin: 0 0 1rem; padding-left: 1.25rem; }
+	li { margin-bottom: .625rem; }
+	#about-credits span { display: block; font-size: .8125rem; opacity: .8; }
+	#about-packages { display: grid; gap: .5rem; padding-bottom: 1rem; }
+	.package-item { padding: .75rem; h6 { margin: 0 0 .25rem; } p { font-size: .875rem; } }
+}
+
 dialog {
 	box-sizing: border-box;
 	width: fit-content;
@@ -390,7 +425,9 @@ body:has(dialog:modal) {
 	table { width: 100%; border-collapse: collapse; text-align: left; font-size: .85rem; }
 	caption { text-align: left; margin-bottom: .75rem; }
 	th, td { padding: .65rem; border-bottom: 1px solid currentColor; vertical-align: top; }
+	th { white-space: nowrap; }
 	td { overflow-wrap: anywhere; min-width: 6rem; }
+	td:nth-child(4), td:nth-child(5) { white-space: nowrap; }
 	td:last-child { font-family: monospace; min-width: 10rem; }
 	form { margin-top: var(--pad); }
 	.midi-device-preview {

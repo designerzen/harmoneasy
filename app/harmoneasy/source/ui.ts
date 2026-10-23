@@ -2,7 +2,6 @@ import { formatTimeStampFromSeconds } from "netronome"
 import NoteVisualiser from 'audiobus/ui/note-visualiser.js'
 import NoteTimelineVisualiser from 'audiobus/ui/note-timeline-visualiser'
 import SVGKeyboard from 'audiobus/ui/keyboard-svg.ts'
-import { getPackagesListHTML } from './services/packages-service'
 import { createOpenDAWExportDialog } from './services/opendaw-export-dialog'
 import { EVENT_CLICK } from 'audiobus/event-constants'
 
@@ -51,8 +50,6 @@ const DOM_ID_NOTE_VISUALISER_CANVAS = "note-visualiser"
 
 const DOM_ID_DIALOG_ERROR = "error-dialog"
 const DOM_ID_DIALOG_INFO = "info-dialog"
-const DOM_ID_DIALOG_PACKAGES = "packages-dialog"
-const DOM_ID_BUTTON_PACKAGES_INFO = "btn-packages-info"
 
 const DOM_ID_BUTTON_SETTINGS = "btn-settings"
 const DOM_ID_DIALOG_SETTINGS = "settings-dialog"
@@ -106,8 +103,6 @@ export default class UI implements IAudioOutput {
 	elementOverlayExport: HTMLElement | null
 	elementInfoDialog: HTMLElement | null
 	elementErrorDialog: HTMLElement | null
-	elementPackagesDialog: HTMLElement | null
-	elementButtonPackagesInfo: HTMLElement | null
 	elementButtonSettings: HTMLElement | null
 	elementSettingsDialog: HTMLElement | null
 	elementTimerTypeSelect: HTMLElement | null
@@ -182,8 +177,6 @@ export default class UI implements IAudioOutput {
 		this.elementOverlayExport = document.getElementById(DOM_ID_EXPORT_OVERLAY)
 		this.elementInfoDialog = document.getElementById(DOM_ID_DIALOG_INFO)
 		this.elementErrorDialog = document.getElementById(DOM_ID_DIALOG_ERROR)
-		this.elementPackagesDialog = document.getElementById(DOM_ID_DIALOG_PACKAGES)
-		this.elementButtonPackagesInfo = document.getElementById(DOM_ID_BUTTON_PACKAGES_INFO)
 		
 		this.elementButtonSettings = document.getElementById(DOM_ID_BUTTON_SETTINGS)
 		this.elementSettingsDialog = document.getElementById(DOM_ID_DIALOG_SETTINGS)
@@ -779,51 +772,6 @@ export default class UI implements IAudioOutput {
 		document.getElementById('btn-metronome')?.addEventListener('click', callback, {
 			signal: this.abortController.signal
 		})
-	}
-
-	/**
-	 * Display the packages information dialog
-	 * Lazily loads package information when called
-	 */
-	async showPackagesDialog() {
-		if (!this.elementPackagesDialog) {
-			console.error('Packages dialog element not found')
-			return
-		}
-
-		const packagesMessage = document.querySelector("#packages-message")
-		
-		// Show loading state while fetching packages
-		if (packagesMessage) {
-			packagesMessage.innerHTML = '<p style="text-align: center; color: var(--col-grey);">Loading packages...</p>'
-		}
-
-		try {
-			const packagesList = await getPackagesListHTML()
-			
-			if (packagesMessage) {
-				packagesMessage.innerHTML = packagesList
-			}
-
-			// Show the dialog after loading content
-			this.elementPackagesDialog.showModal()
-		} catch (error) {
-			console.error('Failed to load packages list:', error)
-			if (packagesMessage) {
-				packagesMessage.innerHTML = '<p style="color: var(--col-red);">Failed to load packages information</p>'
-			}
-			// Show the dialog even on error
-			this.elementPackagesDialog.showModal()
-		}
-	}
-
-	/**
-	 * Register a callback for when the packages info button is clicked
-	 */
-	whenPackagesInfoRequestedRun(callback: Function) {
-		this.elementButtonPackagesInfo && this.elementButtonPackagesInfo.addEventListener('click', () => {
-			callback && callback()
-		}, { signal: this.abortController.signal })
 	}
 
 	/**
