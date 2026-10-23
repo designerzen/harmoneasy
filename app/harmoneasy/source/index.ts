@@ -373,7 +373,6 @@ const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: b
 
     bus = new AudioBus(initialVolume)
     await bus.loaded
-    createRecordingControls(bus.audioContext, bus.output)
     
     timer = new AudioTimer(bus.audioContext, bus.hasAudioWorklets)
     await timer.loaded
@@ -388,6 +387,7 @@ const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: b
         autoConnect,
         externalDevices: { ui }
     })
+    createRecordingControls(bus.audioContext, bus.output, document, ioManager)
 
     const transportError = (error: unknown) => {
         console.error('Shared MIDI transport failed', error)

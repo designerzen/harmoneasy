@@ -814,9 +814,9 @@ song-explorer-ui{
     flex-wrap: nowrap;
     align-items: center;
     gap: .25rem;
-    padding: 2px .5rem;
+    padding: 2px .5rem 0;
     border-radius: 0;
-    border-bottom: var(--border);
+    border-bottom: 2px solid var(--col-orange);
     min-width: 0;
 
     .btn-transport {
@@ -916,9 +916,12 @@ song-explorer-ui{
     margin-left:auto;
     justify-content: safe flex-end;
     align-self: stretch;
+    position: relative;
+    z-index: 1;
+    margin-bottom: -2px;
     padding: 0;
     background: var(--col-bg);
-    border-bottom: 2px solid var(--col-orange);
+    border-bottom: 0;
 
     a, button {
         flex: none;
@@ -941,6 +944,15 @@ song-explorer-ui{
     }
 
     > button { align-self: center; margin: 0 0 0 .25rem; }
+    > .secondary-action {
+        gap: .35rem;
+        background: var(--col-plum);
+        color: #fff;
+        border-color: transparent;
+
+        &::before { content: '+'; }
+        &:hover { background: color-mix(in srgb, var(--col-plum) 85%, #fff); }
+    }
 
     [role="tablist"] { display: flex; align-items: flex-end; gap: 2px; flex: none; }
     .chain-tab { position: relative; display: inline-flex; flex: none; }
@@ -964,7 +976,7 @@ song-explorer-ui{
     }
     [role="tab"] {
         position: relative;
-        margin: 0 0 -2px;
+        margin: 0;
         min-height: 36px;
         padding: .25rem .75rem;
         border: 2px solid color-mix(in srgb, currentColor 25%, transparent);
@@ -983,8 +995,13 @@ song-explorer-ui{
     }
 }
 
-#graph > .chains-stacked { padding-top: 0; }
-.chains-stacked > .chain-panel.chain-front { border-top: 0; background: var(--col-bg); }
+#graph > .chains-stacked { padding: 0; gap: 0; background: var(--col-bg); }
+.chains-stacked > .chain-panel.chain-front {
+    box-sizing: border-box;
+    border: 2px solid var(--col-orange);
+    border-top: 0;
+    background: var(--col-bg);
+}
 
 /* Chains participate in page scrolling so fragment links target the window. */
 body:has(.chains-workspace) { scroll-snap-type: none; }
@@ -999,14 +1016,7 @@ body:has(.chains-workspace) { scroll-snap-type: none; }
     pointer-events: auto;
     z-index: 1;
 }
-.chains-expanded {
-    position: fixed;
-    inset: calc(var(--action-bar-height, 0px) + var(--transport-height, 52px)) 0 0;
-    z-index: 100;
-    overflow: auto;
-    align-content: start;
-    background: light-dark(#fafafa, #1a1a1a);
-}
+.chains-stacked > .chain-panel.chain-solo { z-index: 1000; }
 #chain:has(.chains-workspace) {
     position: relative;
     top: auto;

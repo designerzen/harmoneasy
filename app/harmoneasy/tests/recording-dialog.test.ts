@@ -1,4 +1,7 @@
 // @vitest-environment happy-dom
+import OutputRecorder from '../../../packages/audiobus/io/outputs/output-recorder'
+import type IOChainManager from '../../../packages/audiobus/io/IO-chain-manager'
+import { EVENT_CHAINS_UPDATED } from '../../../packages/audiobus/event-constants'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
@@ -98,4 +101,35 @@ it('streams the selected WAV format to the chosen destination', async () => {
     expect(recording.wave).toHaveBeenLastCalledWith(32)
     expect(write).toHaveBeenCalled()
     expect(close).toHaveBeenCalled()
+})
+
+it('only shows the global recording toggle while Recorder outputs are attached and synchronises their controls', async () => {
+    const outputs: OutputRecorder[] = []
+    const manager = Object.assign(new EventTarget(), { chains: [{ outputs }] })
+    const recording = createRecordingControls({} as AudioContext, {} as AudioNode, document, manager as unknown as IOChainManager)
+    await recording.ready
+    expect(button('btn-record').hidden).toBe(true)
+    expect(button('btn-recording-review').hidden).toBe(true)
+    const first = new OutputRecorder()
+    const second = new OutputRecorder()
+    const firstGui = await first.createGui()
+    const secondGui = await second.createGui()
+    outputs.push(first, second)
+    manager.dispatchEvent(new Event(EVENT_CHAINS_UPDATED))
+    await vi.waitFor(() => expect(recording.state).toBe('recording'))
+    expect(button('btn-record').hidden).toBe(false)
+    expect(document.querySelector('#clock')!.classList.contains('is-recording')).toBe(true)
+    for (const gui of [firstGui, secondGui]) expect(gui.querySelector('[data-record]')!.getAttribute('aria-pressed')).toBe('true')
+    button('btn-record').click()
+    await vi.waitFor(() => expect(button('recording-save').disabled).toBe(false))
+    for (const gui of [firstGui, secondGui]) expect(gui.querySelector('[data-record]')!.getAttribute('aria-pressed')).toBe('false')
+    button('recording-close').click()
+    firstGui.querySelector<HTMLButtonElement>('[data-record]')!.click()
+    await vi.waitFor(() => expect(recording.state).toBe('recording'))
+    outputs.splice(0)
+    manager.dispatchEvent(new Event(EVENT_CHAINS_UPDATED))
+    await vi.waitFor(() => expect(recording.state).toBe('idle'))
+    expect(button('btn-record').hidden).toBe(true)
+    expect(document.querySelector('#clock')!.classList.contains('is-recording')).toBe(false)
+    expect(document.body.classList.contains('is-recording')).toBe(false)
 })

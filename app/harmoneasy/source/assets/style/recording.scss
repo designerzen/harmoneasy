@@ -7,6 +7,15 @@
     border-radius: 50%;
     background: #d6293e;
 }
+
+.recorder-output {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    padding: .75rem;
+    output { flex-basis: 100%; font-size: .8125rem; }
+    button[aria-pressed="true"] { background: #bd1730; color: #fff; }
+}
 #btn-record.is-recording {
     color: #fff;
     background: #8e1729;

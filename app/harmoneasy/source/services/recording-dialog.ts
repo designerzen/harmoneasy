@@ -1,9 +1,12 @@
-import { EVENT_CLICK, EVENT_CLOSE, EVENT_ERROR } from 'audiobus/event-constants'
+import { EVENT_CLICK, EVENT_CLOSE, EVENT_ERROR, EVENT_CHAINS_UPDATED, EVENT_RECORDER_TOGGLE, EVENT_RECORDER_REVIEW } from 'audiobus/event-constants'
+import type IOChainManager from 'audiobus/io/IO-chain-manager'
+import OutputRecorder from 'audiobus/io/outputs/output-recorder'
 import { AudioRecording } from './audio-recording'
 import { RECORDING_STATE_CHANGED, type RecordingBits } from './recording-format'
 
-export function createRecordingControls(context: AudioContext, source: AudioNode, root: Document = document) {
+export function createRecordingControls(context: AudioContext, source: AudioNode, root: Document = document, manager?: IOChainManager) {
     const recording = new AudioRecording(context, source)
+    const recorders = new Set<OutputRecorder>()
     const button = root.querySelector<HTMLButtonElement>('#btn-record')!
     const review = root.querySelector<HTMLButtonElement>('#btn-recording-review')!
     const clock = root.querySelector<HTMLElement>('#clock')!
@@ -31,14 +34,18 @@ export function createRecordingControls(context: AudioContext, source: AudioNode
     }
     const render = () => {
         const active = recording.state === 'recording'
+        button.hidden = !!manager && recorders.size === 0
+        review.hidden = true
         button.disabled = busy || recording.state === 'starting' || recording.state === 'stopping'
         button.classList.toggle('is-recording', active)
         button.setAttribute('aria-pressed', String(active))
         button.textContent = active ? 'Stop recording' : recording.state === 'stopping' ? 'Finishing…' : 'Record'
-        button.title = active ? 'Stop recording and review take' : 'Record audio; replaces the previous take'
+        button.title = active ? 'Stop all Recorder outputs and review take' : 'Start all Recorder outputs; replaces the previous take'
         review.disabled = busy || recording.state !== 'idle' || !recording.hasTake
         clock.classList.toggle('is-recording', active)
         clock.setAttribute('aria-label', active ? 'Transport time; recording audio' : 'Transport time')
+        root.body.classList.toggle('is-recording', active)
+        for (const recorder of recorders) recorder.setRecordingState(active, button.disabled, recording.hasTake)
         save.disabled = busy || recording.state !== 'idle' || !recording.hasTake
         format.disabled = busy
         filename.disabled = busy
@@ -74,6 +81,7 @@ export function createRecordingControls(context: AudioContext, source: AudioNode
 
     recording.addEventListener(RECORDING_STATE_CHANGED, () => {
         render()
+        if (manager && !recorders.size && recording.state === 'recording') void recording.stop()
         if (recording.state === 'idle' && recording.error) {
             status.textContent = recording.error
             button.title = recording.error
@@ -84,12 +92,16 @@ export function createRecordingControls(context: AudioContext, source: AudioNode
         if (wasRecording && recording.state === 'idle') { wasRecording = false; void show() }
         if (recording.state === 'recording') wasRecording = true
     })
-    button.addEventListener(EVENT_CLICK, async () => {
+    const toggle = async () => {
+        if (busy || (manager && !recorders.size) || recording.state === 'starting' || recording.state === 'stopping') return
         if (recording.state === 'recording') { await recording.stop(); return }
         clearPlayback()
         dialog.close()
         await recording.start()
-    })
+    }
+    const toggleRecorder = () => { void toggle() }
+    const reviewRecorder = () => { void show() }
+    button.addEventListener(EVENT_CLICK, toggleRecorder)
     review.addEventListener(EVENT_CLICK, () => { void show() })
     root.querySelector('#recording-close')!.addEventListener(EVENT_CLICK, () => dialog.close())
     dialog.addEventListener(EVENT_CLOSE, () => audio.pause())
@@ -133,6 +145,28 @@ export function createRecordingControls(context: AudioContext, source: AudioNode
         } finally { busy = false; render() }
     })
     button.disabled = true
+    const syncRecorders = () => {
+        const next = new Set(manager?.chains.flatMap(chain => chain.outputs.filter(output => output instanceof OutputRecorder)) as OutputRecorder[])
+        let added = false
+        for (const recorder of recorders) if (!next.has(recorder)) {
+            recorder.removeEventListener(EVENT_RECORDER_TOGGLE, toggleRecorder)
+            recorder.removeEventListener(EVENT_RECORDER_REVIEW, reviewRecorder)
+            recorders.delete(recorder)
+        }
+        for (const recorder of next) if (!recorders.has(recorder)) {
+            recorders.add(recorder)
+            recorder.addEventListener(EVENT_RECORDER_TOGGLE, toggleRecorder)
+            recorder.addEventListener(EVENT_RECORDER_REVIEW, reviewRecorder)
+            added = true
+        }
+        render()
+        if (added) void recording.ready.then(async () => {
+            if (recorders.size && recording.state === 'idle') await toggle()
+        })
+        if (!recorders.size && recording.state === 'recording') void recording.stop()
+    }
+    manager?.addEventListener(EVENT_CHAINS_UPDATED, syncRecorders)
+    if (manager) syncRecorders()
     void recording.ready.then(() => { render() })
     return recording
 }

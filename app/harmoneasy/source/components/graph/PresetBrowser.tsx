@@ -51,10 +51,11 @@ export function PresetBrowser({ manager, onApply, createChain = false, hideTrigg
         setUndo(before); setSelection(''); setEditor(null); setMessage('Deleted from your library. You can undo this change.')
     })
     return <>
-        <button type="button" className="preset-browse" hidden={hideTrigger} onClick={() => {
+        <button type="button" className={`preset-browse${createChain && !startup ? ' secondary-action' : ''}`}
+            aria-label={createChain && !startup ? 'Add new chain' : undefined} hidden={hideTrigger} onClick={() => {
             dialog.current?.showModal()
             dialog.current?.querySelector<HTMLButtonElement>('.preset-apply-button:not(:disabled)')?.focus({ preventScroll: true })
-        }}>{startup ? 'Browse all presets…' : createChain ? 'New chain' : 'Apply a preset…'}</button>
+        }}>{startup ? 'Browse all presets…' : createChain ? 'New' : 'Apply a preset…'}</button>
         {createPortal(<dialog ref={dialog} className="preset-browser" aria-labelledby={titleId}>
             <header><div><h2 id={titleId}>Find your next sound</h2><p>{createChain ? 'Choose a preset for your new chain, or start with a blank chain.' : 'Choose a preset, explore its pattern, then apply it to your chain.'}</p></div>
                 <button type="button" onClick={() => dialog.current?.close()} aria-label="Close presets">Close</button></header>
