@@ -908,12 +908,19 @@ song-explorer-ui{
 
 #chain-navigation {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     gap: var(--gap,2px);
     flex: 1;
     min-width: 0;
     overflow-x: auto;
     margin-left:auto;
+    justify-content: safe flex-end;
+    position: sticky;
+    top: calc(var(--action-bar-height, 0px) + var(--transport-height, 52px));
+    z-index: 101;
+    padding: .5rem .375rem 0;
+    background: var(--col-bg);
+    border-bottom: 2px solid var(--col-orange);
 
     a, button {
         flex: none;
@@ -934,10 +941,55 @@ song-explorer-ui{
         &:hover { background: color-mix(in srgb, currentColor 12%, transparent); }
         &:focus-visible { outline: 2px solid var(--col-orange); outline-offset: 1px; }
     }
+
+    > button, > .preset-browser-trigger { margin-bottom: .375rem; }
+
+    [role="tablist"] { display: flex; align-items: flex-end; gap: 2px; flex: none; }
+    [role="tab"] {
+        position: relative;
+        margin: 0 0 -2px;
+        padding: .5rem 1rem;
+        border: 2px solid color-mix(in srgb, currentColor 25%, transparent);
+        border-bottom: 2px solid var(--col-orange);
+        border-radius: .5rem .5rem 0 0;
+        background: color-mix(in srgb, var(--col-bg) 90%, currentColor);
+        color: color-mix(in srgb, currentColor 70%, transparent);
+
+        &[aria-selected="true"] {
+            padding-top: .625rem;
+            border-color: var(--col-orange);
+            border-bottom-color: var(--col-bg);
+            background: var(--col-bg);
+            color: inherit;
+            z-index: 1;
+        }
+    }
 }
+
+#graph > .chains-stacked { padding-top: 0; }
+.chains-stacked > .chain-panel.chain-front { border-top: 0; background: var(--col-bg); }
 
 /* Chains participate in page scrolling so fragment links target the window. */
 body:has(.chains-workspace) { scroll-snap-type: none; }
+.chains-stacked > .chain-panel {
+    grid-area: 1 / 1;
+    visibility: hidden;
+    pointer-events: none;
+}
+.chains-stacked > .chain-panel.chain-front,
+.chains-stacked > .chain-panel.chain-solo {
+    visibility: visible;
+    pointer-events: auto;
+    z-index: 1;
+}
+.chains-expanded {
+    position: fixed;
+    inset: calc(var(--action-bar-height, 0px) + var(--transport-height, 52px) + var(--chain-navigation-height, 48px)) 0 0;
+    z-index: 100;
+    overflow: auto;
+    align-content: start;
+    background: light-dark(#fafafa, #1a1a1a);
+}
 #chain:has(.chains-workspace) {
     position: relative;
     top: auto;

@@ -1,4 +1,5 @@
 import { GraphControls } from './GraphControls'
+import { EVENT_CHAINS_UPDATED, EVENT_CHAIN_ACTIVE_CHANGED } from 'audiobus/event-constants'
 import ChainName from './ChainName'
 import { ChainContext, useChain } from './ChainContext'
 import type IOChainManager from 'audiobus/io/IO-chain-manager'
@@ -247,6 +248,9 @@ function FlowComponent() {
 
 export default function App({ manager }: { manager: IOChainManager }) {
     const [, refresh] = useState(0)
+    const [frontChainId, setFrontChainId] = useState<string | null>(null)
+    const [expanded, setExpanded] = useState(false)
+    const frontChain = manager.getChain(frontChainId ?? '') ? frontChainId : manager.entries[0]?.[0]
     const [soloId, setSoloId] = useState<string | null>(null)
     const solo = soloId && manager.getChain(soloId) ? soloId : null
     const layoutSettings = document.getElementById('graph-layout-settings')
@@ -254,28 +258,33 @@ export default function App({ manager }: { manager: IOChainManager }) {
     useEffect(() => {
         const transport = document.getElementById('midi-transport-control')
         const actionBar = document.getElementById('action-bar')
+        const navigation = document.getElementById('chain-navigation')
         if (!transport) return
         const updateOffset = () => {
             document.documentElement.style.setProperty('--transport-height', `${transport.getBoundingClientRect().height}px`)
             document.documentElement.style.setProperty('--action-bar-height', `${actionBar?.getBoundingClientRect().height ?? 0}px`)
+            document.documentElement.style.setProperty('--chain-navigation-height', `${navigation?.getBoundingClientRect().height ?? 0}px`)
         }
         updateOffset()
         const observer = new ResizeObserver(updateOffset)
         observer.observe(transport)
         if (actionBar) observer.observe(actionBar)
+        if (navigation) observer.observe(navigation)
         return () => {
             observer.disconnect()
             document.documentElement.style.removeProperty('--transport-height')
             document.documentElement.style.removeProperty('--action-bar-height')
+            document.documentElement.style.removeProperty('--chain-navigation-height')
         }
     }, [])
     useEffect(() => {
-        if (!solo) return
+        if (!solo && !expanded) return
         const previousOverflow = document.body.style.overflow
         document.body.style.overflow = 'hidden'
         const onKeyDown = (event: KeyboardEvent) => {
             if (event.key === 'Escape' && !document.querySelector('dialog[open]')) {
                 setSoloId(null)
+                setExpanded(false)
             }
         }
         document.addEventListener('keydown', onKeyDown)
@@ -283,23 +292,50 @@ export default function App({ manager }: { manager: IOChainManager }) {
             document.body.style.overflow = previousOverflow
             document.removeEventListener('keydown', onKeyDown)
         }
-    }, [solo])
+    }, [solo, expanded])
     useEffect(() => {
         const update = () => refresh(value => value + 1)
-        manager.addEventListener('chainsUpdated', update)
-        manager.addEventListener('chainActiveChanged', update)
+        manager.addEventListener(EVENT_CHAINS_UPDATED, update)
+        manager.addEventListener(EVENT_CHAIN_ACTIVE_CHANGED, update)
         return () => {
-            manager.removeEventListener('chainsUpdated', update)
-            manager.removeEventListener('chainActiveChanged', update)
+            manager.removeEventListener(EVENT_CHAINS_UPDATED, update)
+            manager.removeEventListener(EVENT_CHAIN_ACTIVE_CHANGED, update)
         }
     }, [manager])
-    return <div className="chains-workspace">
+    return <div className={`chains-workspace ${expanded ? 'chains-expanded' : 'chains-stacked'}`}>
         {chainNavigation && createPortal(<>
-            {manager.entries.map(([chainId, chain], index) => <a key={chainId}
-                href={`#${encodeURIComponent(`iochain-${chainId}`)}`}>
+            <div role="tablist" aria-label="Chains">
+            {manager.entries.map(([chainId, chain], index) => <button key={chainId}
+                type="button" role="tab" id={`chain-tab-${chainId}`}
+                aria-controls={`iochain-${chainId}`} aria-selected={frontChain === chainId}
+                tabIndex={frontChain === chainId ? 0 : -1}
+                onKeyDown={event => {
+                    const entries = manager.entries
+                    let next = index
+                    if (event.key === 'ArrowRight') next = (index + 1) % entries.length
+                    else if (event.key === 'ArrowLeft') next = (index + entries.length - 1) % entries.length
+                    else if (event.key === 'Home') next = 0
+                    else if (event.key === 'End') next = entries.length - 1
+                    else return
+                    event.preventDefault()
+                    document.getElementById(`chain-tab-${entries[next][0]}`)?.click()
+                    document.getElementById(`chain-tab-${entries[next][0]}`)?.focus()
+                }}
+                onClick={() => {
+                    setFrontChainId(chainId)
+                    if (expanded) document.getElementById(`iochain-${chainId}`)?.scrollIntoView({ block: 'start' })
+                }}>
                 {chain.options.name ?? `Chain ${index + 1}`}
-            </a>)}
+            </button>)}
+            </div>
             <IOChainManagerUI manager={manager} />
+            <button type="button" aria-label={expanded ? 'Exit fullscreen chains' : 'Show all chains fullscreen'}
+                title={expanded ? 'Exit fullscreen chains' : 'Show all chains fullscreen'}
+                aria-pressed={expanded} onClick={() => { setSoloId(null); setExpanded(value => !value) }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path d={expanded ? 'M3 9h6V3m6 0v6h6M3 15h6v6m6 0v-6h6' : 'M9 3H3v6m12-6h6v6M3 15v6h6m6 0h6v-6'} />
+                </svg>
+            </button>
         </>, chainNavigation)}
         {layoutSettings && createPortal(<>
             {manager.entries.map(([chainId, chain], index) => <label key={chainId} data-midi-scope={`${chainId}:layout`}>
@@ -319,7 +355,10 @@ export default function App({ manager }: { manager: IOChainManager }) {
         {manager.restoreWarnings.map(warning => <p role="status" key={warning}>{warning}</p>)}
         {manager.entries.map(([chainId, chain], index) => <section key={chainId}
             id={`iochain-${chainId}`} data-midi-scope={chainId} tabIndex={-1}
-            className={`chain-panel ${chain.isActive ? 'active' : 'inactive'} ${solo === chainId ? 'chain-solo' : ''}`}
+            role={expanded ? 'region' : 'tabpanel'}
+            aria-labelledby={!expanded ? `chain-tab-${chainId}` : undefined}
+            inert={!expanded && !solo && frontChain !== chainId}
+            className={`chain-panel ${chain.isActive ? 'active' : 'inactive'} ${frontChain === chainId ? 'chain-front' : ''} ${solo === chainId ? 'chain-solo' : ''}`}
             hidden={!!solo && solo !== chainId}
             aria-label={chain.options.name ?? `Chain ${index + 1}`}>
             <header className="chain-toolbar">

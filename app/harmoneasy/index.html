@@ -154,7 +154,6 @@
                 </div>
                 <button type="button" id="btn-record" aria-pressed="false" disabled title="Record audio; replaces the previous take">Record</button>
                 <button type="button" id="btn-recording-review" aria-haspopup="dialog" aria-controls="recording-dialog" disabled>Last take</button>
-                <nav id="chain-navigation" aria-label="IOChains"></nav>
             </div>
 
     <dialog id="recording-dialog" aria-labelledby="recording-title" hidden>
@@ -182,6 +181,7 @@
 
 
 		<div id="chain">
+            <nav id="chain-navigation" aria-label="IOChains"></nav>
 			<canvas id="note-visualiser" width="1080" height="512" aria-hidden="true"></canvas>
 			<div id="graph"></div>
 		</div>
