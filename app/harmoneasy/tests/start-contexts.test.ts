@@ -3,6 +3,8 @@ import { afterEach, expect, it } from 'vitest'
 import startPage from '../index.html?raw'
 import { DEFAULT_PRESET_LIBRARY } from '../../../packages/audiobus/io/transformer-presets'
 import { parsePresetLibrary } from '../../../packages/audiobus/io/preset-library'
+import { DRUM_GENRES } from '../../../packages/audiobus/io/outputs/drum-accompaniment-settings'
+import { DRUM_GROOVES } from '../../../packages/audiobus/timing/drum-patterns'
 import { createContextSetup, createEmptySetup, createStartContexts, START_CONTEXTS, START_SUGGESTIONS } from '../source/services/start-contexts'
 
 afterEach(() => document.body.replaceChildren())
@@ -25,7 +27,7 @@ it('finds acid house in the presets panel and filters the existing cards by genr
     const genres = [...root.querySelectorAll<HTMLButtonElement>('#start-context-suggestions button')].find(button => button.textContent === 'Genres')!
     genres.click()
     expect(genres.getAttribute('aria-pressed')).toBe('true')
-    expect(visible()).toHaveLength(6)
+    expect(visible()).toHaveLength(START_CONTEXTS.filter(context => context.category === 'Genres').length)
     expect(visible().every(card => card.dataset.category === 'Genres')).toBe(true)
 })
 
@@ -37,9 +39,10 @@ it('finds drum and bass and starts with Moog bass and an Amen accompaniment', ()
     search.value = 'drum and bass'
     search.dispatchEvent(new Event('input'))
     const cards = root.querySelectorAll('#start-context-list label:not([hidden])')
-    expect(cards).toHaveLength(1)
-    expect(cards[0].textContent).toContain('Moog + Drum Accompaniment')
-    cards[0].querySelector('input')!.click()
+    const card = [...cards].find(card => card.querySelector('input')!.value === 'drum-and-bass')!
+    expect(card).toBeDefined()
+    expect(card.textContent).toContain('Moog + Drum Accompaniment')
+    card.querySelector('input')!.click()
     const setup = picker.getSetup()!
     expect(setup.id).toBe('drum-and-bass')
     expect(setup.devices.find(device => device.id === 'synth')!.definition).toEqual({ factory: 'output', type: 'moog' })
@@ -47,6 +50,24 @@ it('finds drum and bass and starts with Moog bass and an Amen accompaniment', ()
     expect(drums.definition.options).toMatchObject({ genre: 'breaks', groove: 'amen' })
     expect(setup.chains[0].outputs).toContain(drums.id)
     expect(setup.chains[0].steps).toEqual(DEFAULT_PRESET_LIBRARY.presets.find(preset => preset.id === 'low-minor-pulse')!.steps)
+})
+
+it('covers the percussion genres with valid grooves and connected sound outputs', () => {
+    const covered = new Set<string>()
+    for (const context of START_CONTEXTS.filter(context => context.category === 'Genres' && context.id !== 'ambient')) {
+        const setup = createContextSetup(context)
+        const drums = setup.devices.find(device => device.definition.type === 'drum-accompaniment')!
+        expect(drums, context.name).toBeDefined()
+        const { genre, groove } = drums.definition.options!
+        expect(DRUM_GENRES[genre as keyof typeof DRUM_GENRES].grooves as readonly string[]).toContain(groove)
+        expect(DRUM_GROOVES[groove]).toBeDefined()
+        expect(setup.chains[0].outputs).toContain(drums.id)
+        if (genre !== 'percussion') {
+            expect(setup.devices.some(device => device.id === 'synth' && device.id !== drums.id)).toBe(true)
+        }
+        covered.add(genre)
+    }
+    expect([...covered].sort()).toEqual(Object.keys(DRUM_GENRES).filter(genre => genre !== 'transitions').sort())
 })
 
 it('starts each genre with its sound output and independent settings', () => {
