@@ -301,7 +301,7 @@ export default function App({ manager }: { manager: IOChainManager }) {
     return <div className={`chains-workspace ${expanded ? 'chains-expanded' : 'chains-stacked'}`}>
         {chainNavigation && createPortal(<>
             <div role="tablist" aria-label="Chains">
-            {manager.entries.map(([chainId, chain], index) => <button key={chainId}
+            {manager.entries.map(([chainId, chain], index) => <span key={chainId} className="chain-tab" role="presentation"><button
                 type="button" role="tab" id={`chain-tab-${chainId}`}
                 aria-controls={`iochain-${chainId}`} aria-selected={frontChain === chainId}
                 tabIndex={frontChain === chainId ? 0 : -1}
@@ -322,7 +322,16 @@ export default function App({ manager }: { manager: IOChainManager }) {
                     if (expanded) document.getElementById(`iochain-${chainId}`)?.scrollIntoView({ block: 'start' })
                 }}>
                 {chain.options.name ?? `Chain ${index + 1}`}
-            </button>)}
+            </button><button type="button" className="chain-tab-remove"
+                aria-label={`Remove ${chain.options.name ?? `Chain ${index + 1}`}`}
+                title="Remove chain" onClick={() => {
+                    if (!window.confirm(`Are you sure you want to remove “${chain.options.name ?? `Chain ${index + 1}`}”?`)) return
+                    const entries = manager.entries
+                    const nextId = entries[index + 1]?.[0] ?? entries[index - 1]?.[0] ?? null
+                    if (frontChain === chainId) setFrontChainId(nextId)
+                    manager.removeChain(chainId)
+                    if (nextId) document.getElementById(`chain-tab-${nextId}`)?.focus()
+                }}><span aria-hidden="true">×</span></button></span>)}
             </div>
             <IOChainManagerUI manager={manager} />
             <button type="button" aria-label={expanded ? 'Exit fullscreen chains' : 'Show all chains fullscreen'}
