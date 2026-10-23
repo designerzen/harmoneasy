@@ -1,3 +1,40 @@
+diff --git a/out/node-module-collector/nodeModulesCollector.js b/out/node-module-collector/nodeModulesCollector.js
+--- a/out/node-module-collector/nodeModulesCollector.js
++++ b/out/node-module-collector/nodeModulesCollector.js
+@@ -316,6 +316,7 @@ class NodeModulesCollector {
+         }
+         await new Promise((resolve, reject) => {
+             const outStream = (0, fs_extra_1.createWriteStream)(tempOutputFile);
++            outStream.on("error", reject);
+             const child = childProcess.spawn(command, args, {
+                 cwd,
+                 env: { COREPACK_ENABLE_STRICT: "0", ...process.env }, // allow `process.env` overrides
+@@ -331,7 +332,6 @@ class NodeModulesCollector {
+                 reject(new Error(`Node module collector spawn failed: ${err.message}`));
+             });
+             child.on("close", code => {
+-                outStream.close();
+                 // https://github.com/npm/npm/issues/17624
+                 const shouldIgnore = code === 1 && "npm" === execName.toLowerCase() && args.includes("list");
+                 if (shouldIgnore) {
+@@ -342,7 +342,16 @@ class NodeModulesCollector {
+                     this.cache.logSummary[moduleManager_1.LogMessageByKey.PKG_COLLECTOR_OUTPUT].push(stderr);
+                 }
+                 const shouldResolve = code === 0 || shouldIgnore;
+-                return shouldResolve ? resolve() : reject(new Error(`Node module collector process exited with code ${code}:\n${stderr}`));
++                if (!shouldResolve) {
++                    reject(new Error(`Node module collector process exited with code ${code}:\n${stderr}`));
++                }
++                else if (outStream.writableFinished) {
++                    resolve();
++                }
++                else {
++                    // Process exit can precede disk writes; pipe() ends the stream once stdout drains.
++                    outStream.once("finish", resolve);
++                }
+             });
+         });
+     }
 diff --git a/out/node-module-collector/pnpmNodeModulesCollector.js b/out/node-module-collector/pnpmNodeModulesCollector.js
 index 602599280ab621d078748187bb6b4ae9431c1739..1db94c17c6b24d6fae46f9bbbf5ae9e2c735833c 100644
 --- a/out/node-module-collector/pnpmNodeModulesCollector.js
