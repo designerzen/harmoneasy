@@ -299,11 +299,7 @@ export default function App({ manager }: { manager: IOChainManager }) {
                 href={`#${encodeURIComponent(`iochain-${chainId}`)}`}>
                 {chain.options.name ?? `Chain ${index + 1}`}
             </a>)}
-            <button className="btn-add" type="button" onClick={() => {
-                const section = document.getElementById('add-iochain')
-                section?.scrollIntoView({ block: 'start', behavior: 'auto' })
-                section?.querySelector('select')?.focus({ preventScroll: true })
-            }}>Add</button>
+            <IOChainManagerUI manager={manager} />
         </>, chainNavigation)}
         {layoutSettings && createPortal(<>
             {manager.entries.map(([chainId, chain], index) => <label key={chainId} data-midi-scope={`${chainId}:layout`}>
@@ -319,6 +315,7 @@ export default function App({ manager }: { manager: IOChainManager }) {
             {manager.chainCount === 0 && <p>Add a chain to choose its layout.</p>}
         </>, layoutSettings)}
        
+        {!chainNavigation && <IOChainManagerUI manager={manager} />}
         {manager.restoreWarnings.map(warning => <p role="status" key={warning}>{warning}</p>)}
         {manager.entries.map(([chainId, chain], index) => <section key={chainId}
             id={`iochain-${chainId}`} data-midi-scope={chainId} tabIndex={-1}
@@ -371,6 +368,6 @@ export default function App({ manager }: { manager: IOChainManager }) {
 		</section>)}
         
 		{manager.chainCount === 0 && <p>No IOChains. Add a chain to start routing inputs to outputs.</p>}
-         <IOChainManagerUI manager={manager} />
+
     </div>
 }

@@ -6,9 +6,10 @@ import { PresetArtwork } from './PresetArtwork'
 import { applySetup, deleteLibraryItem, downloadLibrary, exportLibrary, importLibrary, readLibrary,
     saveSetup, updatePreset, usePresetLibrary, writeLibrary } from './saved-presets'
 
-export function PresetBrowser({ manager, onApply }: {
+export function PresetBrowser({ manager, onApply, createChain = false }: {
     manager?: IOChainManager
-    onApply: (preset: TransformerPreset) => void
+    onApply: (preset: TransformerPreset) => void | Promise<void>
+    createChain?: boolean
 }) {
     const dialog = useRef<HTMLDialogElement>(null)
     const fileInput = useRef<HTMLInputElement>(null)
@@ -29,7 +30,7 @@ export function PresetBrowser({ manager, onApply }: {
     const matches = (item: { name: string; description: string; category?: string; useCase?: string }) =>
         words.every(word => `${item.name} ${item.description} ${item.category ?? ''} ${item.useCase ?? ''}`.toLowerCase().includes(word))
     const filteredPresets = library.presets.filter(matches)
-    const filteredSetups = library.setups.filter(matches)
+    const filteredSetups = createChain ? [] : library.setups.filter(matches)
     const run = (action: () => void) => {
         try { action() }
         catch (error) { setMessage(error instanceof Error ? error.message : String(error)) }
@@ -47,12 +48,18 @@ export function PresetBrowser({ manager, onApply }: {
         <button type="button" className="preset-browse" onClick={() => {
             dialog.current?.showModal()
             dialog.current?.querySelector<HTMLButtonElement>('.preset-apply-button:not(:disabled)')?.focus({ preventScroll: true })
-        }}>Apply a preset…</button>
+        }}>{createChain ? 'New chain' : 'Apply a preset…'}</button>
         <dialog ref={dialog} className="preset-browser" aria-labelledby={titleId}>
-            <header><div><h2 id={titleId}>Find your next sound</h2><p>Choose a preset, explore its pattern, then apply it to your chain.</p></div>
+            <header><div><h2 id={titleId}>Find your next sound</h2><p>{createChain ? 'Choose a preset for your new chain, or start with a blank chain.' : 'Choose a preset, explore its pattern, then apply it to your chain.'}</p></div>
                 <button type="button" onClick={() => dialog.current?.close()} aria-label="Close presets">Close</button></header>
             <div className="preset-browser-scroll">
             <div className="preset-browser-toolbar">
+            {createChain && <button type="button" disabled={busy} onClick={async () => {
+                setBusy(true)
+                try { await onApply({ id: '', name: 'Blank chain', category: '', description: '', useCase: '', steps: [] }); dialog.current?.close() }
+                catch (error) { setMessage(String(error)) }
+                finally { setBusy(false) }
+            }}>Create blank chain</button>}
             <label className="preset-search"><span className="sr-only">Search presets</span><input type="search" value={query} placeholder="Search sounds, moods or ideas…" onInput={event => setQuery(event.currentTarget.value)} /></label>
             <details className="preset-library-tools"><summary>Library options</summary><div className="preset-library-actions">
                 <button type="button" disabled={busy || !!storageError} onClick={() => run(() => downloadLibrary(exportLibrary()))}>Save library to file</button>
@@ -142,15 +149,21 @@ export function PresetBrowser({ manager, onApply }: {
             </div>
             </div>
             {!editor && (preset || setup) && <footer className="preset-apply-bar">
-                <p>{setup ? 'Replaces every chain and its routing.' : 'Replaces transformers on this chain. Your input and instrument stay connected.'}</p>
+                <p>{createChain ? 'Creates a new chain with this preset.' : setup ? 'Replaces every chain and its routing.' : 'Replaces transformers on this chain. Your input and instrument stay connected.'}</p>
                 <button type="button" className="preset-apply-button primary" disabled={busy || !!storageError || (!!setup && !manager)} onClick={async () => {
-                    if (preset) { run(() => { onApply(preset); dialog.current?.close() }); return }
+                    if (preset) {
+                        setBusy(true)
+                        try { const result = onApply(preset); if (result) await result; dialog.current?.close() }
+                        catch (error) { setMessage(String(error)) }
+                        finally { setBusy(false) }
+                        return
+                    }
                     if (!setup || !manager) return
                     setBusy(true)
                     try { await applySetup(manager, setup); dialog.current?.close() }
                     catch (error) { setMessage(error instanceof Error ? error.message : String(error)) }
                     finally { setBusy(false) }
-                }}>{setup ? `Replace workspace with ${setup.name}` : `Apply ${preset!.name}`}</button>
+                }}>{setup ? `Replace workspace with ${setup.name}` : createChain ? `Create ${preset!.name} chain` : `Apply ${preset!.name}`}</button>
             </footer>}
         </dialog>
     </>

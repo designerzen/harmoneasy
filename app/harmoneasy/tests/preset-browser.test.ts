@@ -4,7 +4,6 @@ import { createRoot } from 'react-dom/client'
 import { afterEach, expect, it, vi } from 'vitest'
 import { PresetBrowser } from '../source/components/graph/PresetBrowser'
 import { createChainPresetPicker, updateChainPresetOptions } from '../source/components/graph/chain-preset-picker'
-import { elementIcon } from '../source/components/graph/element-icons'
 import { IOChainManagerUI } from '../source/components/graph/IOChainManagerUI'
 import type IOChainManager from 'audiobus/io/IO-chain-manager'
 import { DEFAULT_PRESET_LIBRARY } from '../../../packages/audiobus/io/transformer-presets'
@@ -102,32 +101,19 @@ it('describes every new-chain option before selection and adds only when confirm
     const chain = { options: {}, isActive: true, clearNoteCommands: vi.fn(), importConfiguration: vi.fn(), setGraphOptions: vi.fn(), setName: vi.fn() }
     const manager = { createDefaultChain: vi.fn().mockResolvedValue('new-chain'), getChain: vi.fn(() => chain), setActiveChain: vi.fn() }
     act(() => root.render(React.createElement(IOChainManagerUI, { manager: manager as unknown as IOChainManager })))
-    const picker = host.querySelector('select')!
-    expect(picker.value).toBe('')
-    expect(picker.labels?.[0].textContent).toBe('New chain')
-    expect(picker.querySelector('button > selectedcontent')).not.toBeNull()
-    expect(picker.querySelectorAll('optgroup')).toHaveLength(6)
-    for (const preset of DEFAULT_PRESET_LIBRARY.presets) {
-        const option = [...picker.options].find(option => option.value === preset.id)!
-        expect(option.selected).toBe(false)
-        expect(option.querySelector('.chain-preset-description')?.textContent).toBe(preset.description)
-        expect(option.querySelector('.chain-preset-use-case')?.textContent).toBe(preset.useCase)
-        const icons = option.querySelectorAll<HTMLElement>('.chain-preset-step .element-icon')
-        expect(icons).toHaveLength(preset.steps.length)
-        preset.steps.forEach((step, index) => {
-            expect(icons[index].style.maskImage).toContain(elementIcon('transformer', step.type))
-            expect(icons[index].parentElement?.textContent).toBe(step.summary || step.type)
-        })
-    }
+    const dialog = host.querySelector('dialog')!
+    dialog.showModal = vi.fn(() => dialog.setAttribute('open', ''))
+    dialog.close = vi.fn(() => dialog.removeAttribute('open'))
+    expect(host.querySelector('select')).toBeNull()
+    act(() => host.querySelector<HTMLButtonElement>('.preset-browse')!.click())
+    expect(dialog.hasAttribute('open')).toBe(true)
+    expect(host.querySelectorAll('nav button')).toHaveLength(DEFAULT_PRESET_LIBRARY.presets.length)
     const preset = DEFAULT_PRESET_LIBRARY.presets.find(item => item.name === 'Ratchet Fill')!
-    act(() => {
-        picker.value = preset.id
-        picker.dispatchEvent(new Event('change', { bubbles: true }))
-    })
-    expect(picker.value).toBe(preset.id)
+    act(() => [...host.querySelectorAll<HTMLButtonElement>('nav button')].find(button => button.textContent === preset.name)!.click())
+    expect(host.querySelector('.preset-details')?.textContent).toContain(preset.description)
     expect(manager.createDefaultChain).not.toHaveBeenCalled()
-    expect(host.querySelector('.preset-details')).toBeNull()
-    await act(async () => host.querySelector<HTMLButtonElement>('.chain-create-control > button')!.click())
+    await act(async () => host.querySelector<HTMLButtonElement>('.preset-apply-button')!.click())
+    expect(dialog.hasAttribute('open')).toBe(false)
     expect(manager.createDefaultChain).toHaveBeenCalledOnce()
     expect(chain.setName).toHaveBeenCalledWith(preset.name)
     expect(manager.setActiveChain).toHaveBeenCalledWith('new-chain')
