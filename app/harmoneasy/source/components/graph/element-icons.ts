@@ -21,6 +21,7 @@ const INPUT_ICONS: Partial<Record<InputId, string>> = {
 
 const OUTPUT_ICONS: Record<OutputId, string> = {
     moog: 'synth',
+    tb303: 'synth',
     describe: 'describe', console: 'console', 'pink-trombone': 'speech', notation: 'notation',
     'spectrum-analyser': 'spectrum', 'speech-synthesis': 'speech', vibrator: 'vibration',
     webmidi: 'midi', 'native-midi': 'midi', 'ble-midi': 'bluetooth', midi2: 'midi', 'midi2-native': 'midi',

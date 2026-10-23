@@ -52,6 +52,7 @@ export const OUTPUT_GUIDANCE: Record<OutputId, Guidance> = {
     ])),
     'drum-accompaniment': guide('Dr', 'Add a steady drum break alongside your instrument.', 'Choose a groove and tuning note, then start the global transport. Busy playing adds subtle variations.', audio),
     moog: guide('M', 'Play the Photosynth Moog ladder synthesizer.', 'Shaping basses, leads and chords with cutoff, resonance and envelopes.', audio + ' Internet access to load the WAM SDK.'),
+    tb303: guide('303', 'Play a monophonic TB-303 bass synthesizer.', 'Acid bass with live filter controls. Overlap notes for slide; velocity 100–127 adds accent.', audio + ' AudioWorklet support and internet access to load the WAM SDK.'),
     describe: guide('Aa', 'Describe active notes and chords in musical language.', 'Identifying extended chords, added tones, and inversions while playing.', 'Notes from a connected input or transformer.'),
     console: guide('⌘', 'Log outgoing note events.', 'Debugging a chain and checking its output.', 'Development mode and the browser developer console.'),
     'pink-trombone': guide('🗣', 'Create vocal-like synthesized sound.', 'Exploring speech-like tones and unusual instruments.', audio),

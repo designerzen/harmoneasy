@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import registerMoogProcessor from '../../../packages/audiobus/wam/moog/processor.js'
-import { MOOG_ID, MOOG_PARAMETERS } from '../../../packages/audiobus/wam/moog/parameters'
+import { MOOG_CONTROL_GROUPS, MOOG_ID, MOOG_PARAMETERS } from '../../../packages/audiobus/wam/moog/parameters'
 import { createMoogGui, destroyMoogGui } from '../../../packages/audiobus/wam/moog/gui'
 import { WAM_AUTOMATION_EVENT, WAM_MIDI_EVENT } from '../../../packages/audiobus/wam/host'
 import { createOutputById } from '../../../packages/audiobus/io/output-factory'
@@ -91,6 +91,15 @@ describe('Moog WAM processor', () => {
 })
 
 describe('Fontana Moog VCF equations', () => {
+    it('matches paper equations (8), (5) and (4) with nonzero stored filter states', () => {
+        const node = processor(48000)
+        node._filterCoefficients(1000)
+        const state = { s1: 0.1, s2: -0.2, s3: 0.3, s4: -0.4 }
+        const b = node.b0 ** 4
+        const s = node.b0 ** 3 * state.s1 + node.b0 ** 2 * state.s2 + node.b0 * state.s3 + state.s4
+        const y = (b * 0.7 + s) / (1 + b * 3)
+        expect(node._filterSample(0.7, state, node.b0, node.a1, 3)).toBeCloseTo(y, 14)
+    })
     // Independent direct-form transfer function, not the worklet's state update:
     // H(z) = b0^4(1+z^-1)^4 / [(1+a1*z^-1)^4 + k*b0^4(1+z^-1)^4].
     it.each([22050, 44100, 48000, 96000])('matches the closed-loop transfer function sample by sample at %i Hz', rate => {
@@ -154,6 +163,121 @@ describe('Fontana Moog VCF equations', () => {
     })
 })
 
+describe('Moog sound controls', () => {
+    it.each([22050, 48000, 96000])('keeps all new modulation paths finite at %i Hz', rate => {
+        const node = processor(rate, { filterAmount: 6, keyTracking: 1, filterAttack: 0.001,
+            lfoRate: 20, lfoPitch: 2, lfoFilter: 4, lfoAmp: 1, oscillatorMix: 0.5,
+            noise: 1, sub: 1, detune: 50, octave: 4, octave2: 0, gain: 3, glide: 0.1 })
+        for (const note of [36, 60, 72, 96]) node._onMidi({ bytes: [0x90, note, 127] })
+        expect(render(node, 120).every(Number.isFinite)).toBe(true)
+        for (const note of [36, 60, 72, 96]) node._onMidi({ bytes: [0x80, note, 0] })
+        expect(render(node, 160).every(Number.isFinite)).toBe(true)
+        expect(node.voices).toHaveLength(0)
+    })
+    it('advances ADSR through attack, decay, sustain and release from the current level', () => {
+        const node = processor(1000)
+        const env = { value: 0, stage: 0, releaseStart: 0 }
+        for (let i = 0; i < 10; i++) node._advanceEnvelope(env, false, 0.01, 0.02, 0.4, 0.01)
+        expect(env.value).toBeCloseTo(1)
+        for (let i = 0; i < 21; i++) node._advanceEnvelope(env, false, 0.01, 0.02, 0.4, 0.01)
+        expect(env.value).toBeCloseTo(0.4)
+        expect(env.stage).toBe(2)
+        for (let i = 0; i < 5; i++) node._advanceEnvelope(env, true, 0.01, 0.02, 0.4, 0.01)
+        expect(env.value).toBeCloseTo(0.2)
+        for (let i = 0; i < 6; i++) node._advanceEnvelope(env, true, 0.01, 0.02, 0.4, 0.01)
+        expect(env.value).toBe(0)
+    })
+    it('modulates cutoff with the filter envelope and keyboard tracking', () => {
+        const node = processor(48000, { frequency: 500, filterAmount: 2, filterAttack: 0.001,
+            filterDecay: 0.005, filterSustain: 0.25, keyTracking: 1 })
+        node._onMidi({ bytes: [0x90, 72, 100] })
+        render(node, 5)
+        expect(node.voices[0].filter.value).toBeCloseTo(0.25)
+        expect(node.voices[0].filterCutoff).toBeCloseTo(500 * 2 ** 1.5)
+        node._onMidi({ bytes: [0x80, 72, 0] })
+        render(node)
+        expect(node.voices[0].filter.value).toBeLessThan(0.25)
+    })
+    it('mixes a separately tuned second oscillator and adds sub and noise signals', () => {
+        const sound = (params: Record<string, number>) => {
+            const node = processor(48000, { waveform: 3, frequency: 18000, gain: 0, ...params })
+            node._onMidi({ bytes: [0x90, 69, 127] })
+            render(node, 10)
+            return render(node, 40)
+        }
+        const original = sound({})
+        const second = sound({ oscillatorMix: 1, waveform2: 3, octave2: 1, detune: 0 })
+        const energy = (samples: number[], hz: number) => {
+            let re = 0, im = 0
+            samples.forEach((x, i) => { re += x * Math.cos(2 * Math.PI * hz * i / 48000); im += x * Math.sin(2 * Math.PI * hz * i / 48000) })
+            return Math.hypot(re, im)
+        }
+        expect(energy(original, 440)).toBeGreaterThan(energy(original, 220) * 10)
+        expect(energy(second, 220)).toBeGreaterThan(energy(second, 440) * 10)
+        const sub = sound({ sub: 1 })
+        expect(energy(sub, 220)).toBeGreaterThan(energy(original, 220) * 10)
+        expect(sound({ noise: 1 })).not.toEqual(original)
+        expect(sound({ oscillatorMix: 0.5, detune: 25 })).not.toEqual(original)
+    })
+    it('applies LFO cutoff, pitch and volume depths, with zero depths neutral', () => {
+        const node = processor(48000, { lfoFilter: 1, frequency: 1000, lfoRate: 5 })
+        node._onMidi({ bytes: [0x90, 60, 127] })
+        const cutoffs: number[] = []
+        const coefficients = node._filterCoefficients.bind(node)
+        node._filterCoefficients = (frequency: number, state: any) => { cutoffs.push(frequency); coefficients(frequency, state) }
+        render(node, 100)
+        expect(Math.min(...cutoffs)).toBeCloseTo(500, 2)
+        expect(Math.max(...cutoffs)).toBeCloseTo(2000, 2)
+        const plain = processor(), vibrato = processor(48000, { lfoPitch: 2 })
+        plain._onMidi({ bytes: [0x90, 60, 127] }); vibrato._onMidi({ bytes: [0x90, 60, 127] })
+        expect(render(vibrato, 10)).not.toEqual(render(plain, 10))
+        const tremolo = processor(48000, { lfoAmp: 1 })
+        tremolo._onMidi({ bytes: [0x90, 60, 127] })
+        render(tremolo, 10)
+        tremolo.lfoPhase = 0.75
+        const channel = new Float32Array(128)
+        tremolo._process(0, 1, [], [[channel]])
+        expect(channel[0]).toBe(0)
+    })
+    it('keeps one legato voice, glides to the newest key and returns to a held key', () => {
+        const node = processor(48000, { voiceMode: 2, glide: 0.2, release: 0.005 })
+        node._onMidi({ bytes: [0x90, 60, 100] })
+        render(node, 10)
+        const voice = node.voices[0]
+        const amplitude = voice.amp.value
+        node._onMidi({ bytes: [0x90, 72, 100] })
+        expect(node.voices).toEqual([voice])
+        expect(voice.amp.value).toBe(amplitude)
+        render(node)
+        expect(voice.pitch).toBeGreaterThan(60)
+        expect(voice.pitch).toBeLessThan(72)
+        node._onMidi({ bytes: [0x80, 72, 0] })
+        expect(voice.note).toBe(60)
+        expect(voice.released).toBe(false)
+        node._onMidi({ bytes: [0x80, 60, 0] })
+        render(node, 4)
+        expect(node.voices).toHaveLength(0)
+    })
+    it('retriggers mono envelopes and honours sustain across voice-mode changes', () => {
+        const node = processor(48000, { voiceMode: 1 })
+        node._onMidi({ bytes: [0x90, 60, 100] })
+        render(node, 10)
+        node._onMidi({ bytes: [0x90, 60, 100] })
+        expect(node.voices[0].amp.value).toBe(0)
+        node._onMidi({ bytes: [0xb0, 64, 127] })
+        node._onMidi({ bytes: [0x80, 60, 0] })
+        expect(node.voices[0].released).toBe(false)
+        node._parameterInterpolators.voiceMode.values.fill(0)
+        render(node)
+        expect(node.voices[0].held).toBe(false)
+        node._onMidi({ bytes: [0xb0, 64, 0] })
+        expect(node.voices[0].released).toBe(true)
+        node._onMidi({ bytes: [0xb0, 120, 0] })
+        expect(node.voices).toHaveLength(0)
+        expect(node.heldNotes).toHaveLength(0)
+    })
+})
+
 describe('Moog GUI and output', () => {
     it('initializes the synth when its controls are mounted and resumes suspended audio', async () => {
         vi.stubGlobal('AudioWorklet', class {})
@@ -183,6 +307,9 @@ describe('Moog GUI and output', () => {
         })
         const remove = vi.spyOn(node, 'removeEventListener')
         const gui = await createMoogGui(node)
+        expect(gui.shadowRoot!.querySelectorAll('fieldset')).toHaveLength(6)
+        expect(gui.shadowRoot!.querySelectorAll('input, select')).toHaveLength(Object.keys(MOOG_PARAMETERS).length)
+        expect(Object.values(MOOG_CONTROL_GROUPS).flat().sort()).toEqual(Object.keys(MOOG_PARAMETERS).sort())
         const cutoff = gui.shadowRoot!.querySelector<HTMLInputElement>('[aria-label="Cutoff"]')!
         cutoff.value = '1'
         cutoff.dispatchEvent(new Event('input'))
