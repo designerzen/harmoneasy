@@ -38,6 +38,21 @@ export const START_CONTEXTS: StartContext[] = [
     { id: 'practice', name: 'Practise in a minor key', category: 'Learning',
         description: 'Explore a reflective melody while your notes stay in A minor.',
         next: 'Use a keyboard to play; inspect the chain to change the scale as you learn.', presets: ['a-minor-nocturne'] },
+    { id: 'acid-house', name: 'Write acid house', category: 'Genres',
+        description: 'Build short A minor bass figures with sixteenth-note spacing.',
+        next: 'Play single notes around A3. Try 120–130 BPM and a resonant mono synth; vary accents and filter cutoff on your instrument.', presets: ['acid-house'] },
+    { id: 'techno', name: 'Write techno', category: 'Genres',
+        description: 'Sketch a driving bass motif with clipped, low A minor notes.',
+        next: 'Play a repeating sixteenth-note rhythm around A3 over a four-on-the-floor kick.', presets: ['techno-pulse'] },
+    { id: 'dub', name: 'Write dub', category: 'Genres',
+        description: 'Turn single notes into short minor chord stabs on the offbeat.',
+        next: 'Play on quarter-note beats to hear stabs an eighth note later. Add delay and reverb on your instrument.', presets: ['dub-stabs'] },
+    { id: 'disco', name: 'Write disco', category: 'Genres',
+        description: 'Sketch bright C major seventh chords with short rhythmic gates.',
+        next: 'Play syncopated single notes over a bass groove. Try a piano or electric piano patch.', presets: ['disco-keys'] },
+    { id: 'ambient', name: 'Write ambient', category: 'Genres',
+        description: 'Explore slow descending A minor chord tones for a spacious sketch.',
+        next: 'Play sparse single notes into a pad with a long release and reverb. Lower the tempo to spread the arpeggio.', presets: ['ambient-drift'] },
     { id: 'blank', name: 'Start a fresh chain', category: 'Custom',
         description: 'Prepare an untransformed keyboard and synth chain for your own setup.',
         next: 'Add inputs, transformers and outputs in the graph after starting.', presets: [] },
@@ -157,6 +172,7 @@ export const START_SUGGESTIONS = [
     { name: 'I need a song idea', contexts: ['songwriting', 'minor-song', 'melody-hook', 'rolling-accompaniment', 'answer-vocal', 'sparkle-hook', 'bass'] },
     { name: 'I have a file to work with', contexts: ['convert', 'midi-to-score', 'score-to-midi', 'tracker-to-midi', 'remix', 'remix-minor', 'remix-bass', 'remix-plucks', 'remix-fifths', 'daw-handoff'] },
     { name: 'I want to perform live', contexts: ['live', 'midi-chords', 'midi-fifths', 'gamepad-music', 'clean-lead', 'high-live', 'arpeggios', 'minor-arpeggio'] },
+    { name: 'I want to write in a genre', contexts: ['acid-house', 'techno', 'dub', 'disco', 'ambient'] },
     { name: 'Surprise me with a new pattern', contexts: ['shuffle-ideas', 'wide-pattern', 'dorian-colour', 'offbeat', 'chord-pulse', 'double-hit', 'rapid-fill', 'delayed-phrase', 'triplet-song'] }
 ]
 
@@ -198,6 +214,7 @@ export function createStartContexts(root: HTMLElement) {
         option.value = name
         category.add(option)
     }
+    category.value = ''
     const entries = START_CONTEXTS.map(context => {
         const entry = document.createElement('label')
         entry.className = 'start-context-card'
@@ -241,7 +258,7 @@ export function createStartContexts(root: HTMLElement) {
     const updateSuggestions = () => suggestionButtons.forEach((button, index) => {
         button.setAttribute('aria-pressed', String(index > 0 ? suggestion === START_SUGGESTIONS[index - 1] : !suggestion))
     })
-    const suggestionLabels = ['All ideas', 'First steps', 'Play together', 'Write a song', 'Work with a file', 'Perform live', 'Experiment']
+    const suggestionLabels = ['All ideas', 'First steps', 'Play together', 'Write a song', 'Work with a file', 'Perform live', 'Genres', 'Experiment']
     for (const [index, item] of [undefined, ...START_SUGGESTIONS].entries()) {
         const button = document.createElement('button')
         button.type = 'button'

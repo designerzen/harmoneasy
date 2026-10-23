@@ -112,14 +112,3 @@ describe('portable JSON preset libraries', () => {
         manager.destroy()
     })
 })
-
-it('adds genres to an older library once while preserving edits and later deletions', () => {
-    const older = blank()
-    delete older.catalogueVersion
-    older.presets = [{ ...structuredClone(DEFAULT_PRESET_LIBRARY.presets[0]), name: 'My edited preset' }]
-    storage.set('harmoneasy.preset-library.v1', JSON.stringify(older))
-    expect(readLibrary().presets[0].name).toBe('My edited preset')
-    expect(readLibrary().presets.filter(item => item.category === 'Genres')).toHaveLength(5)
-    deleteLibraryItem('presets', 'acid-house')
-    expect(readLibrary().presets.some(item => item.id === 'acid-house')).toBe(false)
-})

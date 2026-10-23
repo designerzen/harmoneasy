@@ -14,9 +14,6 @@ export function PresetBrowser({ manager, onApply }: {
     const fileInput = useRef<HTMLInputElement>(null)
     const preview = useRef<HTMLDivElement>(null)
     const titleId = useId()
-    const tabs = ['All presets', 'Genres'] as const
-    const tabButtons = useRef<(HTMLButtonElement | null)[]>([])
-    const [tab, setTab] = useState(0)
     const { library, error: storageError } = usePresetLibrary()
     const [selection, setSelection] = useState('')
     const [message, setMessage] = useState('')
@@ -26,15 +23,13 @@ export function PresetBrowser({ manager, onApply }: {
     const [editor, setEditor] = useState<{ kind: 'presets' | 'setups'; id: string; json: string } | null>(null)
     const [undo, setUndo] = useState<string | null>(null)
     const setup = library.setups.find(item => `setup:${item.id}` === selection)
-    const visiblePresets = library.presets.filter(item => tab === 0 || item.category === 'Genres')
-    const preset = setup ? undefined : visiblePresets.find(item => `preset:${item.id}` === selection) ?? visiblePresets[0]
+    const preset = setup ? undefined : library.presets.find(item => `preset:${item.id}` === selection) ?? library.presets[0]
     const categories = [...new Set(library.presets.map(item => item.category))]
     const words = query.trim().toLowerCase().split(/\s+/)
     const matches = (item: { name: string; description: string; category?: string; useCase?: string }) =>
         words.every(word => `${item.name} ${item.description} ${item.category ?? ''} ${item.useCase ?? ''}`.toLowerCase().includes(word))
-    const filteredPresets = visiblePresets.filter(matches)
-    const filteredSetups = tab === 0 ? library.setups.filter(matches) : []
-    const changeTab = (index: number) => { setTab(index); setSelection(''); setEditor(null); setMessage('') }
+    const filteredPresets = library.presets.filter(matches)
+    const filteredSetups = library.setups.filter(matches)
     const run = (action: () => void) => {
         try { action() }
         catch (error) { setMessage(error instanceof Error ? error.message : String(error)) }
@@ -74,7 +69,6 @@ export function PresetBrowser({ manager, onApply }: {
                     finally { input.value = ''; setBusy(false) }
                 }} />
                 <button type="button" disabled={busy || !!storageError} onClick={() => {
-                    setTab(0)
                     const item: TransformerPreset = { id: crypto.randomUUID(), name: 'New preset', category: 'My presets', description: '', useCase: '', steps: [] }
                     setEditor({ kind: 'presets', id: item.id, json: JSON.stringify(item, null, 2) }); setMessage('')
                 }}>New preset</button>
@@ -93,19 +87,7 @@ export function PresetBrowser({ manager, onApply }: {
                 <button type="submit">Save setup</button><button type="button" onClick={() => setSetupName(null)}>Cancel</button>
             </form>}
             {(message || storageError) && <p className="preset-library-note" role="status">{storageError || message}</p>}
-            <div className="preset-browser-tabs" role="tablist" aria-label="Browse presets">
-                {tabs.map((label, index) => <button key={label} type="button" role="tab"
-                    ref={element => { tabButtons.current[index] = element }} id={`${titleId}-tab-${index}`}
-                    aria-selected={tab === index} aria-controls={`${titleId}-panel`} tabIndex={tab === index ? 0 : -1}
-                    onClick={() => changeTab(index)} onKeyDown={event => {
-                        const next = event.key === 'ArrowRight' ? (index + 1) % tabs.length
-                            : event.key === 'ArrowLeft' ? (index + tabs.length - 1) % tabs.length
-                            : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : null
-                        if (next === null) return
-                        event.preventDefault(); changeTab(next); tabButtons.current[next]?.focus()
-                    }}>{label}</button>)}
-            </div>
-            <div className="preset-browser-content" role="tabpanel" id={`${titleId}-panel`} aria-labelledby={`${titleId}-tab-${tab}`}>
+            <div className="preset-browser-content">
                 <nav aria-label="Preset sections">
                     {categories.filter(category => filteredPresets.some(item => item.category === category)).map(category => <section key={category}>
                         <h3>{category}</h3>
@@ -130,7 +112,6 @@ export function PresetBrowser({ manager, onApply }: {
                                 writeLibrary(latest)
                             }
                             setSelection(`${editor.kind === 'presets' ? 'preset' : 'setup'}:${item.id}`)
-                            setTab(0)
                             setEditor(null); setUndo(null); setMessage('Changes saved in this browser. Save to file for a portable copy.')
                         })
                     }}>

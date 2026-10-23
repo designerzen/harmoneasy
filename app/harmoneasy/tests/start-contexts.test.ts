@@ -7,6 +7,26 @@ import { createContextSetup, createEmptySetup, createStartContexts, START_CONTEX
 
 afterEach(() => document.body.replaceChildren())
 
+it('finds acid house in the presets panel and filters the existing cards by genre', () => {
+    document.body.innerHTML = startPage.match(/<dialog id="start-dialog"[\s\S]*?<\/dialog>/)![0]
+    const root = document.querySelector<HTMLElement>('#start-dialog')!
+    const picker = createStartContexts(root)
+    const search = root.querySelector<HTMLInputElement>('#start-context-filter')!
+    search.value = 'acid'
+    search.dispatchEvent(new Event('input'))
+    const visible = () => [...root.querySelectorAll<HTMLLabelElement>('#start-context-list label:not([hidden])')]
+    expect(visible()).toHaveLength(1)
+    expect(visible()[0].textContent).toContain('Write acid house')
+    visible()[0].querySelector('input')!.click()
+    expect(picker.getSetup()?.chains[0].steps).toEqual(DEFAULT_PRESET_LIBRARY.presets.find(preset => preset.id === 'acid-house')!.steps)
+    expect(root.querySelector<HTMLButtonElement>('.btn-start-preset')!.disabled).toBe(false)
+    const genres = [...root.querySelectorAll<HTMLButtonElement>('#start-context-suggestions button')].find(button => button.textContent === 'Genres')!
+    genres.click()
+    expect(genres.getAttribute('aria-pressed')).toBe('true')
+    expect(visible()).toHaveLength(5)
+    expect(visible().every(card => card.dataset.category === 'Genres')).toBe(true)
+})
+
 it('keeps the preset chooser collapsed and contains its controls inside the start dialog', () => {
     document.body.innerHTML = startPage
         .replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '')

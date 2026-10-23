@@ -1568,8 +1568,6 @@ dialog.add-output-dialog {
     .preset-editor label { display: grid; gap: .5rem; }
     .preset-editor textarea { width: 100%; box-sizing: border-box; resize: vertical; min-height: 12rem; font: .85rem/1.5 monospace; }
     .preset-editor button + button { margin-left: .5rem; }
-    .preset-browser-tabs { display: flex; gap: .5rem; padding: .75rem 1.5rem; border-bottom: 1px solid var(--preset-line); }
-    .preset-browser-tabs [aria-selected="true"] { background: var(--preset-accent); color: light-dark(#fff, #25132e); border-color: transparent; }
     .preset-browser-content { display: grid; grid-template-columns: minmax(14rem, 2fr) minmax(0, 3fr); align-items: start; }
     nav { min-width: 0; padding: 1rem; border-right: 1px solid var(--preset-line); }
     nav h3 { margin: .5rem .5rem .65rem; font-size: .7rem; text-transform: uppercase; letter-spacing: .07em; color: var(--preset-muted); }
