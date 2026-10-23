@@ -1,7 +1,7 @@
 import { DEFAULT_PRESET_LIBRARY } from 'audiobus/io/transformer-presets'
 import type { PresetSetup } from 'audiobus/io/preset-library'
 import type { DeviceDefinition } from 'audiobus/io/device-definition'
-import { DRUM_ACCOMPANIMENT, MOOG, TB303, webclapOutputId } from 'audiobus/io/outputs/output-types'
+import { DESCRIBE, NOTATION, SPEECH_SYNTHESIS, VIBRATOR, DRUM_ACCOMPANIMENT, MOOG, TB303, webclapOutputId } from 'audiobus/io/outputs/output-types'
 
 interface StartContext {
     id: string
@@ -14,6 +14,26 @@ interface StartContext {
 }
 
 export const START_CONTEXTS: StartContext[] = [
+    { id: 'describe-readout', name: 'Describe and read out', category: 'Accessibility',
+        description: 'Describe notes and chords in text and read them aloud, without an instrument sound.',
+        next: 'Play a note or chord to see its description and hear the readout.', presets: [],
+        outputs: [{ factory: 'output', type: DESCRIBE }, { factory: 'output', type: SPEECH_SYNTHESIS }] },
+    { id: 'show-notation', name: 'Show notation', category: 'Accessibility',
+        description: 'Follow your notes on a musical staff without audio.',
+        next: 'Play or import notes to see them as notation.', presets: [],
+        outputs: [{ factory: 'output', type: NOTATION }] },
+    { id: 'vibrate-notes', name: 'Vibrate on notes', category: 'Accessibility',
+        description: 'Feel notes through vibration on a supported phone or game controller, without audio.',
+        next: 'Use a device with vibration support or connect a haptic gamepad, then play notes.', presets: [],
+        outputs: [{ factory: 'output', type: VIBRATOR }] },
+    { id: 'describe-silently', name: 'Describe chords in text', category: 'Accessibility',
+        description: 'Show note names, chord names and inversions in text, with screen reader announcements.',
+        next: 'Play notes together to explore their chord description without instrument audio.', presets: [],
+        outputs: [{ factory: 'output', type: DESCRIBE }] },
+    { id: 'notation-touch', name: 'See and feel notes', category: 'Accessibility',
+        description: 'Combine musical notation with tactile feedback, without audio.',
+        next: 'Play notes on a device or gamepad with vibration support and follow the staff.', presets: [],
+        outputs: [{ factory: 'output', type: NOTATION }, { factory: 'output', type: VIBRATOR }] },
     { id: 'classroom', name: 'Synchronise a classroom', category: 'Together',
         description: 'Help a classroom improvise together: everyone plays in C major and can share a clock.',
         next: 'After starting, use Sync to connect browsers to a shared clock, then connect each learner’s controller.', presets: ['c-major-sketchbook'] },
@@ -266,12 +286,11 @@ export function createContextSetup(context: StartContext): PresetSetup {
         devices: [
             { id: 'computer-keyboard', direction: 'input', definition: { factory: 'input', type: 'keyboard' } },
             { id: 'keyboard', direction: 'input', definition: { factory: 'keyboard-input' } },
-            { id: 'keyboard-display', direction: 'output', definition: { factory: 'keyboard-output', inputId: 'keyboard' } },
             ...outputs,
             { id: 'ui', direction: 'output', definition: { factory: 'external', type: 'ui' } }
         ],
         chains: [{ id: 'context-chain', options: { name: context.id === 'blank' ? 'Chain 1' : context.name, active: true }, steps,
-            inputs: ['computer-keyboard', 'keyboard'], outputs: ['keyboard-display', ...outputs.map(output => output.id), 'ui'] }]
+            inputs: ['computer-keyboard', 'keyboard'], outputs: [...outputs.map(output => output.id), 'ui'] }]
     }
 }
 

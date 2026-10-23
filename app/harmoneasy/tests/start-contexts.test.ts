@@ -166,3 +166,21 @@ it('starts factory genre presets with the same sound outputs as their activity p
         expect(setup.chains[0].options.name).toBe(preset.name)
     }
 })
+
+
+it('keeps accessibility presets focused and free of instrument outputs', () => {
+    const presets = completePresets([]).filter(preset => preset.category === 'Accessibility')
+    expect(presets.map(preset => preset.name)).toEqual([
+        'Describe and read out', 'Show notation', 'Vibrate on notes', 'Describe chords in text', 'See and feel notes'
+    ])
+    for (const preset of presets) {
+        const setup = presetSetup(preset)
+        const outputs = setup.devices.filter(device => device.direction === 'output' && device.definition.factory !== 'external')
+        expect(outputs.length).toBeGreaterThan(0)
+        expect(outputs.length).toBeLessThanOrEqual(2)
+        expect(outputs.every(device => device.definition.factory === 'output')).toBe(true)
+        expect(outputs.some(device => ['polyphonic', 'instrument'].includes(device.definition.factory))).toBe(false)
+        expect(setup.chains[0].outputs).toEqual([...outputs.map(device => device.id), 'ui'])
+    }
+    expect(presetSetup(presets[0]).devices.filter(device => device.direction === 'output').map(device => device.definition.type)).toEqual(['describe', 'speech-synthesis', 'ui'])
+})

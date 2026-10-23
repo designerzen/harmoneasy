@@ -4,7 +4,7 @@ import { START_CONTEXTS, createContextSetup } from '../../services/start-context
 import { OUTPUT_DEFINITIONS } from 'audiobus/io/output-definitions'
 
 export const ACTIVITY_PRESETS: TransformerPreset[] = START_CONTEXTS.map(context => ({
-    id: `activity:${context.id}`, name: context.name, category: `Activities · ${context.category}`,
+    id: `activity:${context.id}`, name: context.name, category: context.category === 'Accessibility' ? context.category : `Activities · ${context.category}`,
     description: context.description, useCase: context.next,
     steps: createContextSetup(context).chains[0].steps
 }))
