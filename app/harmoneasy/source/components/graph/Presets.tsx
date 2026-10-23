@@ -10,7 +10,7 @@ export function Presets() {
     const [message, setMessage] = useState('')
 
     return <div className="presets">
-        <PresetBrowser manager={manager} onApply={preset => {
+        <PresetBrowser hideTrigger manager={manager} onApply={preset => {
             applyPreset(chain, preset)
             setMessage(`${preset.name} applied`)
         }} />

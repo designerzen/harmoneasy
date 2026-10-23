@@ -6,10 +6,11 @@ import { PresetArtwork } from './PresetArtwork'
 import { applySetup, deleteLibraryItem, downloadLibrary, exportLibrary, importLibrary, readLibrary,
     saveSetup, updatePreset, usePresetLibrary, writeLibrary } from './saved-presets'
 
-export function PresetBrowser({ manager, onApply, createChain = false }: {
+export function PresetBrowser({ manager, onApply, createChain = false, hideTrigger = false }: {
     manager?: IOChainManager
     onApply: (preset: TransformerPreset) => void | Promise<void>
     createChain?: boolean
+    hideTrigger?: boolean
 }) {
     const dialog = useRef<HTMLDialogElement>(null)
     const fileInput = useRef<HTMLInputElement>(null)
@@ -45,7 +46,7 @@ export function PresetBrowser({ manager, onApply, createChain = false }: {
         setUndo(before); setSelection(''); setEditor(null); setMessage('Deleted from your library. You can undo this change.')
     })
     return <>
-        <button type="button" className="preset-browse" onClick={() => {
+        <button type="button" className="preset-browse" hidden={hideTrigger} onClick={() => {
             dialog.current?.showModal()
             dialog.current?.querySelector<HTMLButtonElement>('.preset-apply-button:not(:disabled)')?.focus({ preventScroll: true })
         }}>{createChain ? 'New chain' : 'Apply a preset…'}</button>
