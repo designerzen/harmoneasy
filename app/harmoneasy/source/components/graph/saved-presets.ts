@@ -10,7 +10,15 @@ const KEY = 'harmoneasy.preset-library.v1'
 const LEGACY_KEY = 'harmoneasy.chain-presets.v1'
 export function readLibrary(): PresetLibrary {
     const stored = localStorage.getItem(KEY)
-    if (stored !== null) return parsePresetLibrary(stored)
+    if (stored !== null) {
+        const library = parsePresetLibrary(stored)
+        if ((library.catalogueVersion ?? 0) < 1) {
+            const additions = DEFAULT_PRESET_LIBRARY.presets.filter(preset => preset.category === 'Genres' && !library.presets.some(item => item.id === preset.id))
+            library.presets.push(...structuredClone(additions))
+            library.catalogueVersion = 1
+        }
+        return library
+    }
     const library = structuredClone(DEFAULT_PRESET_LIBRARY)
     const legacy = JSON.parse(localStorage.getItem(LEGACY_KEY) ?? '[]')
     if (!Array.isArray(legacy)) throw new Error('Saved presets could not be read')

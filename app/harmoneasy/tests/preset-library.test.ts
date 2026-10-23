@@ -17,7 +17,7 @@ const blank = () => ({ ...structuredClone(DEFAULT_PRESET_LIBRARY), presets: [], 
 
 describe('portable JSON preset libraries', () => {
     it('loads defaults from JSON and persists edits, deletions and an empty list', () => {
-        expect(parsePresetLibrary(JSON.stringify(DEFAULT_PRESET_LIBRARY)).presets).toHaveLength(22)
+        expect(parsePresetLibrary(JSON.stringify(DEFAULT_PRESET_LIBRARY)).presets).toHaveLength(DEFAULT_PRESET_LIBRARY.presets.length)
         const edited = { ...readLibrary().presets[0], name: 'My version' }
         updatePreset(edited)
         expect(readLibrary().presets[0].name).toBe('My version')
@@ -42,14 +42,14 @@ describe('portable JSON preset libraries', () => {
         const exported = exportLibrary(original.id)
         expect(parsePresetLibrary(exported).presets).toHaveLength(1)
         importLibrary(exported)
-        expect(readLibrary().presets).toHaveLength(22)
+        expect(readLibrary().presets).toHaveLength(DEFAULT_PRESET_LIBRARY.presets.length)
         const conflicting = parsePresetLibrary(exported)
         conflicting.presets[0].steps[0].config.root = 7
         importLibrary(JSON.stringify(conflicting))
         const library = readLibrary()
-        expect(library.presets).toHaveLength(23)
-        expect(library.presets[22].id).not.toBe(original.id)
-        expect(library.presets[22].name).toBe(`${original.name} (2)`)
+        expect(library.presets).toHaveLength(DEFAULT_PRESET_LIBRARY.presets.length + 1)
+        expect(library.presets[DEFAULT_PRESET_LIBRARY.presets.length].id).not.toBe(original.id)
+        expect(library.presets[DEFAULT_PRESET_LIBRARY.presets.length].name).toBe(`${original.name} (2)`)
         expect(library.presets[0].steps[0].config.root).toBe(0)
     })
     it('rejects invalid and future files without changing stored data', () => {
@@ -111,4 +111,15 @@ describe('portable JSON preset libraries', () => {
         expect(before).toBe('workspace:' + compressToBase64(JSON.stringify(data)))
         manager.destroy()
     })
+})
+
+it('adds genres to an older library once while preserving edits and later deletions', () => {
+    const older = blank()
+    delete older.catalogueVersion
+    older.presets = [{ ...structuredClone(DEFAULT_PRESET_LIBRARY.presets[0]), name: 'My edited preset' }]
+    storage.set('harmoneasy.preset-library.v1', JSON.stringify(older))
+    expect(readLibrary().presets[0].name).toBe('My edited preset')
+    expect(readLibrary().presets.filter(item => item.category === 'Genres')).toHaveLength(5)
+    deleteLibraryItem('presets', 'acid-house')
+    expect(readLibrary().presets.some(item => item.id === 'acid-house')).toBe(false)
 })

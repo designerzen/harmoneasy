@@ -4,6 +4,11 @@ import type { TransformerPreset } from 'audiobus/io/preset-library'
 // Stylised note diagrams, rather than audio waveforms: each score describes the
 // musical gesture of the preset, not a promised recording of its output.
 const SCORES: Record<string, { notes: number[][]; colour: string; gesture: string }> = {
+    'acid-house': { notes: [[0, 1], [1, 3], [2, 5], [4, 1], [5, 3], [6, 5], [8, 1], [9, 3], [10, 5]], colour: '#b8e66c', gesture: 'Short ascending minor bass figures' },
+    'techno-pulse': { notes: [[0, 1], [2, 1], [4, 1], [6, 2], [8, 1], [10, 3]], colour: '#f38e94', gesture: 'Clipped low notes in a driving rhythm' },
+    'dub-stabs': { notes: [[1, 1], [1, 3], [1, 5], [5, 1], [5, 3], [5, 5], [9, 2], [9, 4], [9, 6]], colour: '#88d6a4', gesture: 'Minor chord stabs on the offbeat' },
+    'disco-keys': { notes: [[0, 2], [0, 4], [0, 6], [0, 8], [3, 3], [3, 5], [3, 7], [3, 9]], colour: '#efbce2', gesture: 'Bright seventh chords with short gates' },
+    'ambient-drift': { notes: [[0, 8], [3, 6], [6, 4], [9, 2]], colour: '#a5c8ef', gesture: 'Widely spaced descending chord tones' },
     'c-major-sketchbook': { notes: [[0, 3], [2, 5], [4, 7], [6, 5], [8, 3]], colour: '#60c9b2', gesture: 'A melody settling into a major scale' },
     'a-minor-nocturne': { notes: [[0, 7], [2, 5], [4, 4], [6, 2], [8, 4]], colour: '#b3a0f4', gesture: 'A descending minor melody' },
     'd-dorian-session': { notes: [[0, 2], [2, 4], [4, 5], [6, 8], [8, 7]], colour: '#87b9f7', gesture: 'A rising modal melody' },

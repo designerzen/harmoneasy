@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { PRESETS, createPresetTransformers } from '../../../packages/audiobus/io/transformer-presets'
-import { NOTE_ON } from '../../../packages/audiobus/commands'
+import { NOTE_ON, NOTE_OFF } from '../../../packages/audiobus/commands'
 import { createAudioCommand } from '../../../packages/audiobus/audio-command-factory'
 
 const play = (name: string, number: number) => createPresetTransformers(PRESETS.find(preset => preset.name === name)!)
@@ -42,3 +42,12 @@ describe('musical preset settings', () => {
     })
 })
 
+
+it('creates tempo-synced acid bass figures with short gates', () => {
+    const notes = play('Acid House', 69)
+    const on = notes.filter(note => note.type === NOTE_ON)
+    const off = notes.filter(note => note.type === NOTE_OFF)
+    expect(on.map(note => note.number)).toEqual([57, 60, 64])
+    expect(on.map(note => note.startAt)).toEqual([1, 1.125, 1.25])
+    expect(off.map(note => note.startAt)).toEqual([1.0625, 1.1875, 1.3125])
+})

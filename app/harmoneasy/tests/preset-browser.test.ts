@@ -38,7 +38,7 @@ it('lets users inspect grouped presets before applying and keeps saved presets a
     })
     click('Apply a preset…')
     expect(dialog.hasAttribute('open')).toBe(true)
-    expect(host.querySelectorAll('nav section')).toHaveLength(6)
+    expect(host.querySelectorAll('nav section')).toHaveLength(7)
     click('Triplet Cascade')
     expect(onApply).not.toHaveBeenCalled()
     expect(host.querySelector('.preset-details')?.textContent).toContain('Why use it')
@@ -55,8 +55,8 @@ it('lets users inspect grouped presets before applying and keeps saved presets a
 it('uses the same sections for new-chain options', () => {
     const picker = createChainPresetPicker('test-picker')
     updateChainPresetOptions(picker, DEFAULT_PRESET_LIBRARY.presets)
-    expect(picker.querySelectorAll('optgroup')).toHaveLength(5)
-    expect(picker.querySelectorAll('option')).toHaveLength(23)
+    expect(picker.querySelectorAll('optgroup')).toHaveLength(6)
+    expect(picker.querySelectorAll('option')).toHaveLength(DEFAULT_PRESET_LIBRARY.presets.length + 1)
     const preset = DEFAULT_PRESET_LIBRARY.presets[0]
     picker.value = preset.id
     updateChainPresetOptions(picker, DEFAULT_PRESET_LIBRARY.presets)
@@ -106,7 +106,7 @@ it('describes every new-chain option before selection and adds only when confirm
     expect(picker.value).toBe('')
     expect(picker.labels?.[0].textContent).toBe('New chain')
     expect(picker.querySelector('button > selectedcontent')).not.toBeNull()
-    expect(picker.querySelectorAll('optgroup')).toHaveLength(5)
+    expect(picker.querySelectorAll('optgroup')).toHaveLength(6)
     for (const preset of DEFAULT_PRESET_LIBRARY.presets) {
         const option = [...picker.options].find(option => option.value === preset.id)!
         expect(option.selected).toBe(false)
@@ -161,4 +161,26 @@ it('persists new presets and deletions, supports undo, and downloads the selecte
     expect(createObjectURL).toHaveBeenCalledOnce()
     expect(anchorClick).toHaveBeenCalledOnce()
     createObjectURL.mockRestore(); anchorClick.mockRestore()
+})
+
+it('browses genres with keyboard navigation and applies the selected style', () => {
+    vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+    vi.stubGlobal('localStorage', { getItem: () => null })
+    const host = document.createElement('div')
+    document.body.append(host)
+    root = createRoot(host)
+    const onApply = vi.fn()
+    act(() => root.render(React.createElement(PresetBrowser, { onApply })))
+    const tabs = host.querySelectorAll<HTMLButtonElement>('[role="tab"]')
+    act(() => tabs[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })))
+    expect(tabs[1].getAttribute('aria-selected')).toBe('true')
+    expect(document.activeElement).toBe(tabs[1])
+    expect(host.querySelectorAll('nav button')).toHaveLength(5)
+    expect(host.querySelector('nav')?.textContent).not.toContain('C Major Sketchbook')
+    expect(host.querySelector('.preset-details h3')?.textContent).toBe('Acid House')
+    expect(onApply).not.toHaveBeenCalled()
+    act(() => host.querySelector<HTMLButtonElement>('.preset-apply-button')!.click())
+    expect(onApply.mock.calls[0][0].id).toBe('acid-house')
+    act(() => tabs[0].click())
+    expect(host.querySelectorAll('nav button')).toHaveLength(DEFAULT_PRESET_LIBRARY.presets.length)
 })
