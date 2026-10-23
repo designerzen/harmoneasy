@@ -17,6 +17,7 @@ it('finds acid house in the presets panel and filters the existing cards by genr
     const visible = () => [...root.querySelectorAll<HTMLLabelElement>('#start-context-list label:not([hidden])')]
     expect(visible()).toHaveLength(1)
     expect(visible()[0].textContent).toContain('Write acid house')
+    expect(visible()[0].querySelector('.start-context-chain')!.textContent).toContain('→ TB-303')
     visible()[0].querySelector('input')!.click()
     expect(picker.getSetup()?.chains[0].steps).toEqual(DEFAULT_PRESET_LIBRARY.presets.find(preset => preset.id === 'acid-house')!.steps)
     expect(root.querySelector<HTMLButtonElement>('.btn-start-preset')!.disabled).toBe(false)
@@ -25,6 +26,21 @@ it('finds acid house in the presets panel and filters the existing cards by genr
     expect(genres.getAttribute('aria-pressed')).toBe('true')
     expect(visible()).toHaveLength(5)
     expect(visible().every(card => card.dataset.category === 'Genres')).toBe(true)
+})
+
+it('starts each genre with its sound output and independent settings', () => {
+    for (const [id, type] of [['acid-house', 'tb303'], ['techno', 'moog'], ['dub', 'webclap:com.plinken.organ'], ['disco', 'webclap:com.plinken.piano']]) {
+        const setup = createContextSetup(START_CONTEXTS.find(context => context.id === id)!)
+        expect(setup.devices.find(device => device.id === 'synth')!.definition).toEqual({ factory: 'output', type })
+        expect(setup.chains[0].outputs).toContain('synth')
+    }
+    const ambient = START_CONTEXTS.find(context => context.id === 'ambient')!
+    const pad = createContextSetup(ambient).devices.find(device => device.id === 'synth')!.definition
+    expect(pad.factory).toBe('polyphonic')
+    expect(pad.options).toMatchObject({ shape: 'triangle', attack: 0.8, release: 3, filterCutOff: 1200 })
+    pad.options!.release = 0
+    expect(createContextSetup(ambient).devices.find(device => device.id === 'synth')!.definition.options!.release).toBe(3)
+    expect(createEmptySetup().devices.find(device => device.id === 'synth')!.definition).toEqual({ factory: 'polyphonic' })
 })
 
 it('keeps the preset chooser collapsed and contains its controls inside the start dialog', () => {

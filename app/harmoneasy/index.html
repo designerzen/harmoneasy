@@ -146,8 +146,8 @@
                 </button>
                 <output class="sr-only" id="transport-status" role="status">Loading</output>
                 <div id="transport">
-                    <button type="button" id="btn-transport-details" title="Inspect recorded MIDI commands" aria-controls="recordings">
-                        <span class="sr-only">Time / duration; inspect recorded MIDI commands:</span>
+                    <button type="button" id="btn-transport-details" title="View note timeline" aria-controls="recordings">
+                        <span class="sr-only">Time / duration; view note timeline:</span>
                         <time id="clock">00:00:00:00</time>
                     </button>
 
@@ -186,12 +186,13 @@
 			<div id="graph"></div>
 		</div>
 		<div id="onscreen-keyboard"></div>
-		<!-- <song-explorer></song-explorer> -->
-		<!-- <canvas id="song-explorer" width="1920" height="1080"></canvas> -->
 	
 
 
 		<section id="recordings" aria-label="Recordings">
+			<details id="recordings-panel">
+				<summary>Note timeline</summary>
+				<div class="recordings-content">
 			<div class="note-timeline-panel">
 				<canvas id="note-timeline" width="1080" height="320" tabindex="0" aria-label="Note timeline. Arrow keys scroll, plus and minus zoom, Home follows live notes."></canvas>
 				<div class="note-timeline-controls" role="group" aria-label="Timeline controls">
@@ -202,6 +203,8 @@
 				</div>
 				<p class="note-timeline-hint" id="note-timeline-hint">Drag to pan · Scroll for pitches · Shift+scroll for time · Ctrl+scroll to zoom</p>
 			</div>
+				</div>
+			</details>
 		</section>
 	</main>
 	

@@ -1287,7 +1287,7 @@ dialog.add-output-dialog {
     display: block;
     overflow: auto;
 }
-.chains-workspace { display: grid; gap: 1rem; padding: .5rem; }
+.chains-workspace { display: grid; gap: .5rem; padding: .375rem; }
 .chain-panel { border: 1px solid var(--col-fg); min-width: 0; container-type: inline-size; container-name: chain-panel; }
 .chain-panel.active { border-width: 2px; }
 .chain-toolbar, .iochain-manager { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; padding: .5rem; }
@@ -1296,7 +1296,7 @@ dialog.add-output-dialog {
     display: grid;
     grid-template-areas: "sidebar graph";
     grid-template-columns: minmax(8rem, 14rem) minmax(0, 1fr);
-    grid-template-rows: minmax(22rem, 55vh);
+    grid-template-rows: minmax(18rem, min(55dvh, 36rem));
     min-width: 0;
     position: relative;
     .presets { grid-area: presets; }
@@ -1712,6 +1712,8 @@ html:has(.preset-browser[open]), body:has(.preset-browser[open]) { overflow: hid
         .chain-sidebar-tabs {
             display: flex;
             flex-direction: column;
+            min-width: 0;
+            overflow-x: hidden;
             overflow-y: auto;
             border-right: 1px solid color-mix(in srgb, currentColor 15%, transparent);
 
@@ -1720,7 +1722,7 @@ html:has(.preset-browser[open]), body:has(.preset-browser[open]) { overflow: hid
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                width: 44px;
+                width: 100%;
                 min-height: 110px;
                 box-sizing: border-box;
                 margin: 0;
@@ -1774,6 +1776,9 @@ html:has(.preset-browser[open]), body:has(.preset-browser[open]) { overflow: hid
             height: 100%;
             padding: 0 .5rem .5rem;
             overflow: auto;
+            scrollbar-gutter: stable;
+            scrollbar-width: auto;
+            scrollbar-color: var(--col-blue) color-mix(in srgb, currentColor 8%, transparent);
             overscroll-behavior-y: contain;
             box-sizing: border-box;
             min-width: 0;

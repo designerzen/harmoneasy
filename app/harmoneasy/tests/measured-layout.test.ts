@@ -8,10 +8,10 @@ const node = (id: string, column: number, row: number, width: number, height: nu
 })
 
 describe('Measured graph layout', () => {
-    it.each(['vertical', 'horizontal'])('places the transformer picker beside existing transformers or on the empty trunk in %s mode', mode => {
+    it.each(['vertical', 'horizontal'])('keeps the transformer picker on the trunk after all transformers in %s mode', mode => {
         for (const count of [0, 2]) {
             const chain = {
-                options: {}, inputs: [], outputs: [], transformerQuantity: count,
+                options: { positions: { 'node-add-transformer': { x: 9999, y: 9999 } } }, inputs: [], outputs: [], transformerQuantity: count,
                 transformers: Array.from({ length: count }, (_, index) => ({ uuid: `t${index}`, name: `Transformer ${index}` }))
             } as unknown as IOChain
             const { nodes, edges } = getStructure(chain, true, true, mode, 'test')
@@ -19,16 +19,14 @@ describe('Measured graph layout', () => {
             const end = nodes.find(node => node.type === 'end')!
             const previous = nodes.find(node => node.id === (count ? 'test:transformer-t1' : 'test:node-start'))!
             expect(picker.deletable).toBe(false)
+            expect(picker.draggable).toBe(false)
+            expect(picker.data.manualPosition).toBeUndefined()
             const axis = mode === 'vertical' ? 'y' : 'x'
-            if (count) {
-                expect(picker.position[axis]).toBe(previous.position[axis])
-                expect(edges.some(edge => edge.source === picker.id || edge.target === picker.id)).toBe(false)
-                expect(edges.some(edge => edge.source === previous.id && edge.target === end.id)).toBe(true)
-            } else {
-                expect(previous.position[axis]).toBeLessThan(picker.position[axis])
-                expect(edges.some(edge => edge.source === previous.id && edge.target === picker.id)).toBe(true)
-                expect(edges.some(edge => edge.source === picker.id && edge.target === end.id)).toBe(true)
-            }
+            const cross = mode === 'vertical' ? 'x' : 'y'
+            expect(picker.position[cross]).toBe(previous.position[cross])
+            expect(previous.position[axis]).toBeLessThan(picker.position[axis])
+            expect(edges.some(edge => edge.source === previous.id && edge.target === picker.id)).toBe(true)
+            expect(edges.some(edge => edge.source === picker.id && edge.target === end.id)).toBe(true)
             expect(picker.position[axis]).toBeLessThan(end.position[axis])
         }
     })
@@ -53,7 +51,7 @@ describe('Measured graph layout', () => {
                 expect(edges.some(edge => (type === 'input' ? edge.source : edge.target) === device.id && edge.deletable)).toBe(true)
             }
         }
-        expect(edges).toHaveLength(4)
+        expect(edges).toHaveLength(5)
     })
     it.each(['vertical', 'horizontal'])('uses actual dimensions in %s mode', mode => {
         const nodes = layoutMeasuredNodes([

@@ -4,7 +4,8 @@ import registerTB303Processor from '../../../packages/audiobus/wam/tb303/process
 import { TB303_ID, TB303_PARAMETERS } from '../../../packages/audiobus/wam/tb303/parameters'
 import { createTB303Gui, destroyTB303Gui } from '../../../packages/audiobus/wam/tb303/gui'
 import { WAM_AUTOMATION_EVENT, WAM_MIDI_EVENT } from '../../../packages/audiobus/wam/host'
-import { createOutputById } from '../../../packages/audiobus/io/output-factory'
+import { restoreDevice } from '../../../packages/audiobus/io/workspace-devices'
+import { createContextSetup, START_CONTEXTS } from '../source/services/start-contexts'
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -216,12 +217,15 @@ describe('TB-303 circuit and rendering', () => {
 })
 
 describe('TB-303 output and panel', () => {
-    it('registers the output, routes to the mixer, forwards MIDI, resumes audio and cleans up', async () => {
+    it('restores the acid house preset output, routes to the mixer, forwards MIDI, resumes audio and cleans up', async () => {
         vi.stubGlobal('AudioWorkletNode', class {})
         const gain = { connect: vi.fn(), disconnect: vi.fn() }, mixer = {} as AudioNode
         const context = { state: 'suspended', resume: vi.fn(async () => { context.state = 'running' }),
             currentTime: 4, createGain: () => gain, destination: {} }
-        const output = await createOutputById('tb303', { audioContext: context, mixer })
+        const setup = createContextSetup(START_CONTEXTS.find(context => context.id === 'acid-house')!)
+        const saved = setup.devices.find(device => device.id === 'synth')!
+        const output = await restoreDevice(saved, { audioContext: context as unknown as AudioContext,
+            outputMixer: mixer as GainNode, now: () => context.currentTime }, new Map())
         const audioNode = { connect: vi.fn(), disconnect: vi.fn(), destroy: vi.fn(), scheduleEvents: vi.fn() }
         vi.spyOn(output as any, 'createPlugin').mockResolvedValue({ audioNode, descriptor: { name: 'TB-303' },
             createGui: async () => document.createElement('section') })

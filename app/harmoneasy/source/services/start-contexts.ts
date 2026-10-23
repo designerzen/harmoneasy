@@ -1,5 +1,8 @@
 import { DEFAULT_PRESET_LIBRARY } from 'audiobus/io/transformer-presets'
 import type { PresetSetup } from 'audiobus/io/preset-library'
+import type { DeviceDefinition } from 'audiobus/io/device-definition'
+import { OUTPUT_DEFINITIONS } from 'audiobus/io/output-definitions'
+import { MOOG, TB303, webclapOutputId } from 'audiobus/io/outputs/output-types'
 
 interface StartContext {
     id: string
@@ -8,6 +11,7 @@ interface StartContext {
     description: string
     next: string
     presets: string[]
+    output?: DeviceDefinition
 }
 
 export const START_CONTEXTS: StartContext[] = [
@@ -39,20 +43,25 @@ export const START_CONTEXTS: StartContext[] = [
         description: 'Explore a reflective melody while your notes stay in A minor.',
         next: 'Use a keyboard to play; inspect the chain to change the scale as you learn.', presets: ['a-minor-nocturne'] },
     { id: 'acid-house', name: 'Write acid house', category: 'Genres',
-        description: 'Build short A minor bass figures with sixteenth-note spacing.',
-        next: 'Play single notes around A3. Try 120–130 BPM and a resonant mono synth; vary accents and filter cutoff on your instrument.', presets: ['acid-house'] },
+        description: 'Play resonant TB-303 acid bass with short A minor figures at sixteenth-note spacing.',
+        next: 'Play single notes around A3. Try 120–130 BPM and adjust the TB-303 cutoff, resonance and accent controls.', presets: ['acid-house'],
+        output: { factory: 'output', type: TB303 } },
     { id: 'techno', name: 'Write techno', category: 'Genres',
-        description: 'Sketch a driving bass motif with clipped, low A minor notes.',
-        next: 'Play a repeating sixteenth-note rhythm around A3 over a four-on-the-floor kick.', presets: ['techno-pulse'] },
+        description: 'Sketch a driving Moog bass motif with clipped, low A minor notes.',
+        next: 'Play a repeating sixteenth-note rhythm around A3 and shape the Moog filter for a driving bass sound.', presets: ['techno-pulse'],
+        output: { factory: 'output', type: MOOG } },
     { id: 'dub', name: 'Write dub', category: 'Genres',
-        description: 'Turn single notes into short minor chord stabs on the offbeat.',
-        next: 'Play on quarter-note beats to hear stabs an eighth note later. Add delay and reverb on your instrument.', presets: ['dub-stabs'] },
+        description: 'Play short minor organ chord stabs on the offbeat.',
+        next: 'Play on quarter-note beats to hear organ stabs an eighth note later. Shape the tone with the organ drawbars.', presets: ['dub-stabs'],
+        output: { factory: 'output', type: webclapOutputId('com.plinken.organ') } },
     { id: 'disco', name: 'Write disco', category: 'Genres',
-        description: 'Sketch bright C major seventh chords with short rhythmic gates.',
-        next: 'Play syncopated single notes over a bass groove. Try a piano or electric piano patch.', presets: ['disco-keys'] },
+        description: 'Play bright piano seventh chords with short rhythmic gates in C major.',
+        next: 'Play syncopated single notes to sketch rhythmic piano chords over a bass groove.', presets: ['disco-keys'],
+        output: { factory: 'output', type: webclapOutputId('com.plinken.piano') } },
     { id: 'ambient', name: 'Write ambient', category: 'Genres',
-        description: 'Explore slow descending A minor chord tones for a spacious sketch.',
-        next: 'Play sparse single notes into a pad with a long release and reverb. Lower the tempo to spread the arpeggio.', presets: ['ambient-drift'] },
+        description: 'Explore slow descending A minor chord tones through a soft pad with a long release.',
+        next: 'Play sparse single notes and let the pad fade out. Lower the tempo to spread the arpeggio.', presets: ['ambient-drift'],
+        output: { factory: 'polyphonic', options: { shape: 'triangle', attack: 0.8, decay: 1.2, sustain: 0.7, release: 3, filterCutOff: 1200, filterResonance: 0.7, filterOverdrive: 1 } } },
     { id: 'blank', name: 'Start a fresh chain', category: 'Custom',
         description: 'Prepare an untransformed keyboard and synth chain for your own setup.',
         next: 'Add inputs, transformers and outputs in the graph after starting.', presets: [] },
@@ -188,7 +197,7 @@ export function createContextSetup(context: StartContext): PresetSetup {
             { id: 'computer-keyboard', direction: 'input', definition: { factory: 'input', type: 'keyboard' } },
             { id: 'keyboard', direction: 'input', definition: { factory: 'keyboard-input' } },
             { id: 'keyboard-display', direction: 'output', definition: { factory: 'keyboard-output', inputId: 'keyboard' } },
-            { id: 'synth', direction: 'output', definition: { factory: 'polyphonic' } },
+            { id: 'synth', direction: 'output', definition: structuredClone(context.output ?? { factory: 'polyphonic' }) },
             { id: 'ui', direction: 'output', definition: { factory: 'external', type: 'ui' } }
         ],
         chains: [{ id: 'context-chain', options: { name: context.id === 'blank' ? 'Chain 1' : context.name, active: true }, steps,
@@ -233,7 +242,8 @@ export function createStartContexts(root: HTMLElement) {
         badge.className = 'start-context-badge'
         badge.textContent = context.category
         preview.className = 'start-context-chain'
-        preview.textContent = `Your chain: Keyboard or imported notes → ${context.presets.map(id => DEFAULT_PRESET_LIBRARY.presets.find(preset => preset.id === id)!.name).join(' → ') || 'Notes unchanged'} → Synth`
+        const outputName = context.output?.type ? OUTPUT_DEFINITIONS[context.output.type]?.name ?? context.output.type : context.output ? 'Soft pad' : 'Synth'
+        preview.textContent = `Your chain: Keyboard or imported notes → ${context.presets.map(id => DEFAULT_PRESET_LIBRARY.presets.find(preset => preset.id === id)!.name).join(' → ') || 'Notes unchanged'} → ${outputName}`
         entry.append(input, badge, title, description, preview, next)
         list.append(entry)
         return { context, entry }

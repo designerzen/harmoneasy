@@ -204,6 +204,9 @@ function FlowComponent() {
 			<ReactFlow
 				className={ExpandedNode ? 'node-expanded' : undefined}
 				panOnScroll={false}
+				zoomOnScroll={false}
+				zoomActivationKeyCode={['Control', 'Meta']}
+				preventScrolling={false}
 				panOnDrag={!isFullscreenActive}
 				selectionOnDrag={!isFullscreenActive}
 				nodesFocusable={true}
@@ -250,15 +253,20 @@ export default function App({ manager }: { manager: IOChainManager }) {
     const chainNavigation = document.getElementById('chain-navigation')
     useEffect(() => {
         const transport = document.getElementById('midi-transport-control')
+        const actionBar = document.getElementById('action-bar')
         if (!transport) return
-        const updateOffset = () => document.documentElement.style.setProperty(
-            '--transport-height', `${transport.getBoundingClientRect().height}px`)
+        const updateOffset = () => {
+            document.documentElement.style.setProperty('--transport-height', `${transport.getBoundingClientRect().height}px`)
+            document.documentElement.style.setProperty('--action-bar-height', `${actionBar?.getBoundingClientRect().height ?? 0}px`)
+        }
         updateOffset()
         const observer = new ResizeObserver(updateOffset)
         observer.observe(transport)
+        if (actionBar) observer.observe(actionBar)
         return () => {
             observer.disconnect()
             document.documentElement.style.removeProperty('--transport-height')
+            document.documentElement.style.removeProperty('--action-bar-height')
         }
     }, [])
     useEffect(() => {

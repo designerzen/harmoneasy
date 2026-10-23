@@ -1,5 +1,4 @@
 import { formatTimeStampFromSeconds } from "netronome"
-import { SongVisualiserUI } from 'audiobus/ui/song-visualiser-ui.js'
 import NoteVisualiser from 'audiobus/ui/note-visualiser.js'
 import NoteTimelineVisualiser from 'audiobus/ui/note-timeline-visualiser'
 import SVGKeyboard from 'audiobus/ui/keyboard-svg.ts'
@@ -8,7 +7,6 @@ import { createOpenDAWExportDialog } from './services/opendaw-export-dialog'
 import { EVENT_CLICK } from 'audiobus/event-constants'
 
 import type NoteModel from "audiobus/note-model.ts"
-import type { IAudioCommand } from "audiobus/audio-command-interface.ts"
 import type { IAudioOutput } from "audiobus/io/outputs/output-interface.ts"
 import { convertNoteNumberToColour } from "audiobus/conversion/note-to-colour.ts"
 
@@ -72,7 +70,6 @@ export default class UI implements IAudioOutput {
 	abortController = new AbortController()
 	clockAnimationFrame = -1
 
-	songVisualiser: SongVisualiserUI | null = null
 	elementClock: HTMLElement | null
 	elementScaleSelector: HTMLElement | null
 	elementRootSelector: HTMLElement | null
@@ -193,7 +190,8 @@ export default class UI implements IAudioOutput {
 		this.elementTimerTypeSelect = document.getElementById(DOM_ID_TIMER_TYPE_SELECT)
 
 		document.getElementById('btn-transport-details')?.addEventListener(EVENT_CLICK, () => {
-			void this.songVisualiser?.showCommands()
+			const panel = document.getElementById('recordings-panel') as HTMLDetailsElement | null
+			if (panel) panel.open = true
 			document.getElementById('recordings')?.scrollIntoView({ behavior: 'smooth' })
 		}, { signal: this.abortController.signal })
 
@@ -201,10 +199,6 @@ export default class UI implements IAudioOutput {
 		this.noteVisualiser = new NoteVisualiser(keyboardNotes, this.noteVisualiserCanvas, this.options.verticalNoteBars, 0) // ALL_KEYBOARD_NOTES
 		this.noteTimeline = new NoteTimelineVisualiser(document.getElementById('note-timeline') as HTMLCanvasElement)
 		// wallpaperCanvas.addEventListener( "dblclick", e => scale === SCALES[ (SCALES.indexOf(scale) + 1) % SCALES.length] )
-
-		// Create Note Explorer & visualiser
-		// const visualiser = new SongVisualiser()
-		// this.wallpaperCanvas.parentNode.appendChild(visualiser)
 
 		this.setupDragAndDrop()
 	}
@@ -280,18 +274,6 @@ export default class UI implements IAudioOutput {
 		window.onMIDIFileDropped = callback
 	}
 
-	/**
-	 * 
-	 * @param commands 
-	 */
-	async addSongVisualser(commands: IAudioCommand[], readCommands?: () => IAudioCommand[] | Promise<IAudioCommand[]>) {
-		const visualiser = new SongVisualiserUI()
-		this.songVisualiser = visualiser
-		if (readCommands) visualiser.setCommandSource(readCommands)
-		document.getElementById('recordings').appendChild(visualiser)
-		await visualiser.loadCommands(commands)
-		return visualiser
-	}
 
 
 
@@ -928,7 +910,6 @@ export default class UI implements IAudioOutput {
 	 * Clean up
 	 */
 	destroy() {
-		this.songVisualiser?.remove()
 		this.noteVisualiser.destroy()
 		this.noteTimeline.destroy()
 		this.#keyboard?.destroy()

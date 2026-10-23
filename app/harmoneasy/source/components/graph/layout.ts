@@ -17,11 +17,13 @@ export const getStructure = (chain: IOChain, showInputs = true, showOutputs = tr
     const prefix = (id: string) => `${chainId}:${id}`
     const addNode = (id: string, type: string, column: number, row: number, data: Record<string, any>, positionKey = id) => {
         const node: GraphNode = {
-            id: prefix(id), type, data: { ...data, layoutMode, positionKey, layoutColumn: column, layoutRow: row, manualPosition: chain.options.positions?.[positionKey] },
+            id: prefix(id), type, data: { ...data, layoutMode, positionKey, layoutColumn: column, layoutRow: row,
+                manualPosition: type === 'addTransformer' ? undefined : chain.options.positions?.[positionKey] },
             position: chain.options.positions?.[positionKey] ?? { x: 0, y: 0 },
             sourcePosition: vertical ? Position.Bottom : Position.Right,
             targetPosition: vertical ? Position.Top : Position.Left,
-            deletable: type !== 'start' && type !== 'end' && type !== 'addTransformer'
+            deletable: type !== 'start' && type !== 'end' && type !== 'addTransformer',
+            draggable: type !== 'addTransformer'
         }
         nodes.push(node)
         return node
@@ -43,14 +45,11 @@ export const getStructure = (chain: IOChain, showInputs = true, showOutputs = tr
         previous.forEach(source => connect(source, node))
         previous = [node]
     })
-    const hasTransformers = chain.transformers.length > 0
-    const transformerColumn = Math.max(1, chain.transformers.length)
-    const addTransformer = addNode('node-add-transformer', 'addTransformer', transformerColumn, hasTransformers ? 1 : 0,
-        { label: 'Transformers', standalone: hasTransformers })
-    if (!hasTransformers) {
-        previous.forEach(source => connect(source, addTransformer))
-        previous = [addTransformer]
-    }
+    const transformerColumn = chain.transformers.length + 1
+    const addTransformer = addNode('node-add-transformer', 'addTransformer', transformerColumn, 0,
+        { label: 'Transformers' })
+    previous.forEach(source => connect(source, addTransformer))
+    previous = [addTransformer]
     const outputs = showOutputs ? chain.outputs.filter(output => !output.isHidden) : []
     const end = addNode('node-end', 'end', transformerColumn + 1, outputs.length,
         { label: 'Outputs', standalone: outputs.length > 0 })
