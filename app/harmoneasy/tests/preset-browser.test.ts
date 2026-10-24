@@ -75,6 +75,9 @@ it('illustrates every preset, filters by intent and keeps Apply outside the scro
     const onApply = vi.fn()
     act(() => root.render(React.createElement(PresetBrowser, { onApply })))
     expect(document.querySelectorAll('nav button svg')).toHaveLength(DEFAULT_PRESET_LIBRARY.presets.length + ACTIVITY_PRESETS.length)
+    const icons = [...document.querySelectorAll('nav .preset-artwork-icon')]
+    expect(icons).toHaveLength(DEFAULT_PRESET_LIBRARY.presets.length + ACTIVITY_PRESETS.length)
+    expect(icons.every(icon => icon.getAttribute('href')?.includes('/icons/'))).toBe(true)
     const scores = [...document.querySelectorAll('nav svg')].map(svg => [...svg.querySelectorAll('rect:not(:first-child)')].map(rect => `${rect.getAttribute('x')}:${rect.getAttribute('y')}:${rect.getAttribute('fill')}`).join('|'))
     expect(new Set(scores).size).toBeGreaterThanOrEqual(DEFAULT_PRESET_LIBRARY.presets.length)
     const scroll = document.querySelector('.preset-browser-scroll')!

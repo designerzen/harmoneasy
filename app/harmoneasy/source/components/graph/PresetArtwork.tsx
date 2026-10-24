@@ -1,5 +1,7 @@
 import React, { useId } from 'react'
 import type { TransformerPreset } from 'audiobus/io/preset-library'
+import { presetContext } from './preset-catalogue'
+import { elementIcon } from './element-icons'
 
 // Stylised note diagrams, rather than audio waveforms: each score describes the
 // musical gesture of the preset, not a promised recording of its output.
@@ -35,9 +37,14 @@ const SCORES: Record<string, { notes: number[][]; colour: string; gesture: strin
 
 export function PresetArtwork({ preset, compact = false }: { preset: Pick<TransformerPreset, 'id' | 'name' | 'steps'>; compact?: boolean }) {
     const id = useId()
-    const score = SCORES[preset.id] ?? {
-        notes: preset.steps.length ? preset.steps.map((_, i) => [i * 10 / Math.max(1, preset.steps.length), 2 + (i * 3) % 7]) : [[1, 4], [4, 4], [7, 4]],
-        colour: '#aaa2e8', gesture: 'A custom musical chain'
+    const context = presetContext(preset)
+    const output = context?.outputs?.[0]
+    const icon = output ? elementIcon(output.factory === 'polyphonic' || output.factory === 'instrument' ? 'instrument' : 'output', output.type ?? '')
+        : preset.steps.length ? elementIcon('transformer', preset.steps[0].type) : elementIcon('input', 'onscreen-keyboard')
+    const seed = [...preset.id].reduce((value, character) => (value * 31 + character.charCodeAt(0)) >>> 0, 0)
+    const score = SCORES[preset.id] ?? (context?.presets[0] ? SCORES[context.presets[0]] : undefined) ?? {
+        notes: Array.from({ length: Math.max(3, preset.steps.length) }, (_, i) => [i * 10 / Math.max(3, preset.steps.length), 2 + ((seed >>> (i % 8)) + i * 3) % 7]),
+        colour: `hsl(${seed % 360} 65% 72%)`, gesture: context?.description ?? 'A custom musical chain'
     }
     const short = /staccato|minimal|tap|ratchet|pulse|stabs|sparkle/.test(preset.id)
     return <svg className={`preset-artwork${compact ? ' preset-artwork-small' : ''}`} viewBox="0 0 320 160"
@@ -49,6 +56,12 @@ export function PresetArtwork({ preset, compact = false }: { preset: Pick<Transf
         {[0, 1, 2, 3].map(i => <path key={i} d={`M${32 + i * 80} 24V140`} stroke="#ffffff" strokeOpacity=".06" />)}
         {score.notes.map(([time, pitch], index) => <rect key={index} x={28 + time * 23} y={132 - pitch * 11}
             width={short ? 11 : 25} height="7" rx="3.5" fill={score.colour} opacity={.65 + (index % 3) * .15} />)}
+        <circle cx="278" cy="34" r="24" fill="#171a29" />
+        <image className="preset-artwork-icon" href={icon} x="262" y="18" width="32" height="32" />
+        {context?.category === 'Accessibility' && <g>
+            <rect x="106" y="42" width="108" height="76" rx="16" fill="#171a29" stroke={score.colour} />
+            <image href={icon} x="130" y="50" width="60" height="60" />
+        </g>}
         <path d="M24 144H296" stroke={score.colour} strokeOpacity=".25" />
     </svg>
 }

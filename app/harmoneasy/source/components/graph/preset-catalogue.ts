@@ -9,7 +9,7 @@ export const ACTIVITY_PRESETS: TransformerPreset[] = START_CONTEXTS.map(context 
     steps: createContextSetup(context).chains[0].steps
 }))
 
-export function presetContext(preset: TransformerPreset) {
+export function presetContext(preset: Pick<TransformerPreset, 'id'>) {
     const activity = START_CONTEXTS.find(context => preset.id === `activity:${context.id}`)
     if (activity) return activity
     // Factory genre presets share the sounds of their corresponding starter.
