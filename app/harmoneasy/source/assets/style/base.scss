@@ -10,8 +10,8 @@ body {
 	// overflow-x: hidden;
 	overflow-y: scroll;
 	scroll-snap-type: y mandatory;
-	background-color: light-dark(#fafafa, #1a1a1a);
-	color: light-dark(#333, #e0e0e0);
+	background-color: var(--col-bg);
+	color: var(--col-fg);
 	display: flex;
 	flex-direction: column;
 
@@ -24,13 +24,20 @@ body {
 
 a {
 	font-weight: 500;
-	color: light-dark(var(--col-purple), var(--col-blue));
+	color: var(--col-accent);
 	text-decoration: inherit;
 }
 
 a:hover {
-	color: light-dark(var(--col-purple), color-mix(in oklch, var(--col-blue) 110%, #fff));
+	color: var(--col-accent-hover);
 }
+
+dialog {
+	background: var(--col-surface);
+	color: var(--col-fg);
+}
+
+::selection { background: var(--col-accent); color: var(--col-on-accent); }
 
 
 

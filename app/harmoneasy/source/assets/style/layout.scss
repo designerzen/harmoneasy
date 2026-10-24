@@ -165,8 +165,8 @@
 	inset: 0;
 	padding: 0;
 	overflow: hidden;
-	background: light-dark(#fafafa, #1a1a1a);
-	color: light-dark(#333, #e0e0e0);
+	background: var(--col-bg);
+	color: var(--col-fg);
 	&[open] { display: grid; grid-template-rows: auto minmax(0, 1fr); }
 	&::before, &::after { content: none; }
 	&::backdrop { background: rgb(0 0 0 / .6); }
@@ -292,7 +292,7 @@ body > footer{
 		color-mix(in oklch, var(--col-white) 94%, var(--col-black)),
 		color-mix(in oklch, var(--col-black) 85%, #000)
 	);
-	color: light-dark(#333, var(--col-white));
+	color: var(--col-fg);
 	border: 1px solid light-dark(
 		color-mix(in oklch, var(--col-black) 13%, var(--col-white)),
 		color-mix(in oklch, var(--col-white) 25%, var(--col-black))
@@ -456,7 +456,7 @@ song-explorer-ui{
 		);
 		border-radius: 4px;
 		background: light-dark(var(--col-white), color-mix(in oklch, var(--col-black) 90%, #000));
-		color: light-dark(#333, var(--col-white));
+		color: var(--col-fg);
 	}
 }
 
@@ -592,7 +592,7 @@ song-explorer-ui{
 				color-mix(in oklch, var(--col-white) 94%, var(--col-black)),
 				color-mix(in oklch, var(--col-black) 85%, #000)
 			);
-			color: light-dark(#333, var(--col-white));
+			color: var(--col-fg);
 			border: 1px solid light-dark(
 				color-mix(in oklch, var(--col-black) 13%, var(--col-white)),
 				color-mix(in oklch, var(--col-white) 25%, var(--col-black))
@@ -787,7 +787,7 @@ song-explorer-ui{
              color-mix(in oklch, var(--col-white) 94%, var(--col-black)),
              color-mix(in oklch, var(--col-black) 85%, #000)
          );
-         color: light-dark(#333, var(--col-white));
+         color: var(--col-fg);
          border: 1px solid light-dark(
              color-mix(in oklch, var(--col-black) 13%, var(--col-white)),
              color-mix(in oklch, var(--col-white) 25%, var(--col-black))
@@ -947,11 +947,11 @@ song-explorer-ui{
     > .secondary-action {
         gap: .35rem;
         background: var(--col-plum);
-        color: #fff;
+        color: var(--col-on-accent);
         border-color: transparent;
 
         &::before { content: '+'; }
-        &:hover { background: color-mix(in srgb, var(--col-plum) 85%, #fff); }
+        &:hover { background: var(--col-accent-hover); }
     }
 
     [role="tablist"] { display: flex; align-items: flex-end; gap: 2px; flex: none; }

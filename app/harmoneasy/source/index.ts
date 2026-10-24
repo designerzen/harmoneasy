@@ -9,6 +9,8 @@ import State from './libs/state.ts'
 // Front End
 import UI from './ui.ts'
 import { createAboutDialog } from './services/about-dialog'
+import { createCommandPalette } from './services/command-palette'
+import { createThemeControls } from './services/theme'
 import { createEmptySetup, createStartContexts } from './services/start-contexts'
 import { applySetup } from './components/graph/saved-presets'
 import type { PresetSetup } from 'audiobus/io/preset-library'
@@ -62,7 +64,9 @@ import type { IAudioCommand } from 'audiobus/audio-command-interface.ts'
 import type InputAudioEvent from 'audiobus/io/events/input-audio-event.ts'
 
 
+createThemeControls(document)
 createAboutDialog(document)
+createCommandPalette(document)
 
 const storage = hasOPFS() ? new OPFSStorage() : null
 const recorder: AudioEventRecorder = new AudioEventRecorder()

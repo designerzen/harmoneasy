@@ -4,11 +4,12 @@
 	--gap: 11px;
 	--pad: 1rem;
 
-	--hue-accent: 30;
-	--hue-background: 50;
+	--theme-hue: 290;
+	--hue-accent: var(--theme-hue);
+	--hue-background: var(--theme-hue);
 
-	--col-white: oklch(95.698% 0.02111 241.502);
-	--col-black: oklch(11.813% 0.03195 23.316);
+	--col-white: oklch(98% 0.008 var(--theme-hue));
+	--col-black: oklch(17% 0.018 var(--theme-hue));
 
 	// texts
 	--col-fg: light-dark(var(--col-black), var(--col-white));
@@ -16,21 +17,30 @@
 	--col-bg: light-dark(var(--col-white), var(--col-black));
 
 	--col-red: oklch(48.786% 0.19393 28.533); // Minimoog red panel accent
-	--col-orange: oklch(62% 0.22 55); // Moog Mother-32 warm orange
-	--col-plum: oklch(45% 0.15 310); // Juno-106 deep panel purple
-	--col-pink: oklch(65% 0.18 350); // ARP Odyssey bright pink
-	--col-purple: oklch(52% 0.20 290); // Prophet-5 rich purple
-	--col-accent: light-dark(#6943ab, #c9adff);
-	--col-on-accent: light-dark(#fff, #21132e);
-	--col-blue: oklch(55% 0.19 260); // Roland TR-808 cyan blue
-	--col-green: oklch(58% 0.18 140); // Moog Minitaur classic green
+	--col-accent: light-dark(oklch(43% 0.13 var(--theme-hue)), oklch(82% 0.10 var(--theme-hue)));
+	--col-accent-hover: color-mix(in oklch, var(--col-accent) 90%, var(--col-fg));
+	--col-on-accent: light-dark(white, black);
+	--col-orange: var(--col-accent);
+	--col-plum: var(--col-accent);
+	--col-pink: var(--col-accent-soft);
+	--col-purple: var(--col-accent);
+	--col-blue: var(--col-accent);
+	--col-green: var(--col-accent-soft);
+	--col-surface: light-dark(oklch(100% 0 var(--theme-hue)), oklch(23% 0.02 var(--theme-hue)));
+	--col-surface-raised: color-mix(in oklch, var(--col-surface) 94%, var(--col-accent));
+	--col-muted: light-dark(oklch(43% 0.025 var(--theme-hue)), oklch(78% 0.025 var(--theme-hue)));
+	--col-line: color-mix(in oklch, var(--col-fg) 45%, var(--col-bg));
+	--col-accent-soft: color-mix(in oklch, var(--col-accent) 12%, var(--col-surface));
+	--col-accent-selected: color-mix(in oklch, var(--col-accent) 20%, var(--col-surface));
+	--col-backdrop: oklch(12% 0.025 var(--theme-hue) / 0.75);
+	--col-danger: light-dark(oklch(43% 0.17 25), oklch(82% 0.10 25));
+	--col-success: light-dark(oklch(43% 0.10 150), oklch(82% 0.10 150));
+	--col-info: var(--col-accent);
+	--accent-color: var(--col-accent);
 
 	--curve: 12px;
 
-	--border: 3px solid  light-dark(
-		color-mix(in oklch, var(--col-black) 50%, transparent),
-		color-mix(in oklch, var(--col-white) 50%, transparent)
-	);
+	--border: 3px solid var(--col-line);
 
 	--time-short:90ms;
 	--time-medium:145ms;
@@ -44,4 +54,12 @@
 		var(--col-black, black) ,
 		var(--col-white,white)
 	);
+}
+
+:root[data-theme-mode="light"] { color-scheme: light; }
+:root[data-theme-mode="dark"] { color-scheme: dark; }
+
+// Keep the explicit light/dark pair above for browsers without contrast-color().
+@supports (color: contrast-color(red)) {
+	:root { --col-on-accent: contrast-color(var(--col-accent)); }
 }

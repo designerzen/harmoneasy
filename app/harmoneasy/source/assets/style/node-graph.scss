@@ -18,7 +18,6 @@
 		width: 100%;
 	}
 	.react-flow__node{
-		--hue-accent:90%;
 		--xy-node-border:transparent;
 		--xy-node-group-background-color-default:transparent;
 		padding:0;
@@ -121,13 +120,12 @@
     text-transform: uppercase;
     letter-spacing: 1px;
 	
-	background-color:   color-mix( in oklch, oklch(50% 0.1385  var(--hue-accent)) 90%, transparent);
+	background-color: light-dark(oklch(96% 0.025 var(--hue-accent)), oklch(23% 0.035 var(--hue-accent)));
 	background-image: linear-gradient(
         0deg, 
-        color-mix( in oklch, oklch(50% 0.16392 var(--hue-accent)) 90%, transparent),
-        color-mix( in oklch, oklch(50% 0.1385  var(--hue-accent)) 90%, transparent)
+        color-mix(in oklch, var(--col-accent) 6%, transparent),
+        transparent
 	);
-	background-blend-mode:hue;
    
 	position: relative;
 	min-width: var(--size, 150px);
@@ -427,10 +425,10 @@
         min-width: 360px;
         min-height: 360px;
         padding: 1.5rem 2.5rem;
-        border: 3px solid oklch(72% .10 var(--hue-accent));
+        border: 3px solid var(--col-accent);
         border-radius: 16px;
-        background: oklch(45% .14 var(--hue-accent));
-        color: #fff;
+        background: var(--col-accent);
+        color: var(--col-on-accent);
         font-size: 2rem;
         line-height: 1.2;
         white-space: nowrap;
@@ -442,8 +440,8 @@
         }
 
         &:hover {
-            background: oklch(52% .14 var(--hue-accent));
-            border-color: oklch(82% .10 var(--hue-accent));
+            background: var(--col-accent-hover);
+            border-color: var(--col-accent);
         }
     }
 
@@ -465,14 +463,14 @@
 }
 
 .node-start {
-	--hue-accent:162;	// green
+	--hue-accent: calc(var(--theme-hue) - 20);
 }
 
 .node-end {
-	--hue-accent:25;	// red
+	--hue-accent: calc(var(--theme-hue) + 20);
 }
 
-.node-add-transformer { --hue-accent: 280; }
+.node-add-transformer { --hue-accent: var(--theme-hue); }
 
 .add-transformer-dialog .transformer-picker {
     display: flex;
@@ -485,12 +483,12 @@
 }
 
 .node-input{
-	--hue-accent:162;	// green
+	--hue-accent: calc(var(--theme-hue) - 20);
 	min-width:404px;
 }
 
 .node-output{
-	--hue-accent:25;	// red
+	--hue-accent: calc(var(--theme-hue) + 20);
 	min-width:404px;
 }
 
@@ -520,11 +518,11 @@
 }
 
 .category-tuning{
-	--hue-accent:219;
+	--hue-accent: calc(var(--theme-hue) - 10);
 }
 
 .category-timing{
-	--hue-accent:280;
+	--hue-accent: calc(var(--theme-hue) + 10);
 }
 
 
@@ -680,7 +678,7 @@
 				color-mix(in oklch, var(--col-white) 94%, var(--col-black)),
 				color-mix(in oklch, var(--col-black) 85%, #000)
 			);
-			color: light-dark(#333, var(--col-white));
+			color: var(--col-fg);
 			border: 1px solid light-dark(
 				color-mix(in oklch, var(--col-black) 13%, var(--col-white)),
 				color-mix(in oklch, var(--col-white) 25%, var(--col-black))
@@ -729,7 +727,7 @@
 				color-mix(in oklch, var(--col-white) 94%, var(--col-black)),
 				color-mix(in oklch, var(--col-black) 85%, #000)
 			);
-			color: light-dark(#333, var(--col-white));
+			color: var(--col-fg);
 			border: 1px solid light-dark(
 				color-mix(in oklch, var(--col-black) 13%, var(--col-white)),
 				color-mix(in oklch, var(--col-white) 25%, var(--col-black))
@@ -1485,10 +1483,10 @@ dialog.add-output-dialog {
 }
 .chain-panel.inactive {
     border-style: dashed;
-    border-color: light-dark(#888, #777);
-    background: light-dark(#ededed, #202020);
+    border-color: var(--col-line);
+    background: var(--col-surface);
 
-    > .chain-toolbar { background: light-dark(#e4e4e4, #292929); }
+    > .chain-toolbar { background: var(--col-surface-raised); }
     > .chain-graph,
     > .chain-toolbar > :not(.chain-identity),
     .chain-identity > :not(.chain-power) {
@@ -1516,10 +1514,10 @@ dialog.add-output-dialog {
 }
 .chain-toolbar .presets .preset-browse { min-height: 44px; width: 100%; text-align: left; background: transparent; }
 .preset-browser {
-    --preset-surface: light-dark(#fff, #24212d);
-    --preset-line: light-dark(#e3dfeb, #423a50);
-    --preset-accent: light-dark(#6943ab, #ceb0ff);
-    --preset-muted: light-dark(#696274, #b9b1c8);
+    --preset-surface: var(--col-surface);
+    --preset-line: var(--col-line);
+    --preset-accent: var(--col-accent);
+    --preset-muted: var(--col-muted);
     width: min(62rem, calc(100vw - 2rem));
     max-width: calc(100vw - 2rem);
     height: min(52rem, calc(100dvh - 2rem));
@@ -1527,8 +1525,8 @@ dialog.add-output-dialog {
     padding: 0;
     border: 1px solid var(--preset-line);
     border-radius: 18px;
-    color: light-dark(#2e273b, #f2edf8);
-    background: light-dark(#f8f6fc, #1b1822);
+    color: var(--col-fg);
+    background: var(--col-bg);
     text-align: left;
     box-sizing: border-box;
     overflow: hidden;
@@ -1538,7 +1536,7 @@ dialog.add-output-dialog {
     line-height: 1.5;
     &[open] { display: flex; flex-direction: column; }
     &::before, &::after { display: none; }
-    &::backdrop { background: #100d1cc9; backdrop-filter: blur(8px); }
+    &::backdrop { background: var(--col-backdrop); backdrop-filter: blur(8px); }
     *, *::before, *::after { box-sizing: border-box; }
     > header { flex: 0 0 auto; display: flex; align-items: start; gap: 1rem; justify-content: space-between; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--preset-line); background: var(--preset-surface); }
     h2 { margin: 0; font-size: 1.4rem; text-transform: none; letter-spacing: -.02em; }
@@ -1575,8 +1573,8 @@ dialog.add-output-dialog {
     nav section + section { margin-top: 1.25rem; }
     nav button { display: flex; align-items: center; gap: .75rem; width: 100%; text-align: left; border: 1px solid transparent; background: transparent; margin: .25rem 0; padding: .5rem; font-size: .85rem; line-height: 1.3; }
     nav .preset-artwork { flex: 0 0 72px; width: 72px; height: 40px; border-radius: 6px; }
-    nav button[aria-pressed="true"] { background: light-dark(#eee7fa, #382b4a); border-color: var(--preset-accent); }
-    nav button:hover { background: light-dark(#f0ecf6, #2d2737); }
+    nav button[aria-pressed="true"] { background: var(--col-accent-selected); border-color: var(--preset-accent); }
+    nav button:hover { background: var(--col-accent-soft); }
     :is(button, input, summary):focus-visible { outline: 2px solid var(--preset-accent); outline-offset: 2px; }
     .preset-preview { display: block; min-width: 0; padding: 1.25rem 1.5rem; position: sticky; top: 0; }
     .preset-details { font-size: .85rem; line-height: 1.5; h3 { text-transform: none; letter-spacing: -.02em; } h4 { text-transform: none; letter-spacing: normal; font-size: .9rem; } }
@@ -1584,7 +1582,7 @@ dialog.add-output-dialog {
     .preset-steps li { font-size: .8rem; }
     .preset-apply-bar { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.5rem; background: var(--preset-surface); border-top: 1px solid var(--preset-line); }
     .preset-apply-bar p { margin: 0; font-size: .75rem; color: var(--preset-muted); max-width: 26rem; }
-    .preset-apply-button { flex: 0 1 auto; background: var(--preset-accent); color: light-dark(#fff, #25132e); border-color: transparent; font-weight: 700; padding: .7rem 1rem; }
+    .preset-apply-button { flex: 0 1 auto; background: var(--preset-accent); color: var(--col-on-accent); border-color: transparent; font-weight: 700; padding: .7rem 1rem; }
 }
 @media (max-width: 640px) {
     .preset-browser {
@@ -1758,7 +1756,7 @@ html:has(.preset-browser[open]), body:has(.preset-browser[open]) { overflow: hid
             margin: 0;
             padding: .5rem;
             border-radius: 0 .5rem .5rem 0;
-            background: light-dark(#fafafa, #1a1a1a);
+            background: var(--col-bg);
             &::before { content: none; }
             svg {
                 width: 24px;
@@ -1795,7 +1793,7 @@ html:has(.preset-browser[open]), body:has(.preset-browser[open]) { overflow: hid
                 min-width: 0;
                 margin: 0;
                 padding-block: .5rem;
-                background: light-dark(#fafafa, #1a1a1a);
+                background: var(--col-bg);
                 svg {
                     flex: 0 0 1.125rem;
                     width: 1.125rem;
@@ -1954,7 +1952,7 @@ html:has(.preset-browser[open]), body:has(.preset-browser[open]) { overflow: hid
     box-sizing: border-box;
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
-    background: light-dark(#fafafa, #1a1a1a);
+    background: var(--col-bg);
     border: 0;
     overflow: auto;
 
@@ -2109,7 +2107,8 @@ dialog.add-input-dialog, dialog.add-output-dialog {
     > .node-actions > .btn-fullscreen {
         right: 0;
         left: auto;
-        background: #236dc1;
+        background: var(--col-accent);
+        color: var(--col-on-accent);
         border-radius: 0 var(--curve) 0 0;
         clip-path: polygon(0 0, 100% 0, 100% 100%);
         svg {
@@ -2143,8 +2142,8 @@ dialog.add-input-dialog, dialog.add-output-dialog {
     padding: 0;
     border: 0;
     border-radius: var(--curve) var(--curve) 0 0;
-    background: light-dark(#ffffffcc, #161522dd);
-    color: light-dark(#252333, #f1eefb);
+    background: color-mix(in oklch, var(--col-surface) 90%, transparent);
+    color: var(--col-fg);
 
     > h6 {
         flex: none;
@@ -2193,7 +2192,7 @@ dialog.add-input-dialog, dialog.add-output-dialog {
             margin: 0;
             border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
             border-radius: 6px;
-            background: light-dark(#e6e5ee, #353244);
+            background: var(--col-line);
             color: inherit;
             font: 600 .75rem/1 system-ui, sans-serif;
             text-transform: none;
@@ -2201,7 +2200,7 @@ dialog.add-input-dialog, dialog.add-output-dialog {
             cursor: pointer;
             &::before, &::after { content: none; }
             &:hover { filter: brightness(1.15); transform: none; }
-            &:focus-visible { outline: 3px solid light-dark(#235cc1, #a9c9ff); outline-offset: 3px; }
+            &:focus-visible { outline: 3px solid var(--col-accent); outline-offset: 3px; }
             svg {
                 width: 18px;
                 height: 18px;
@@ -2250,10 +2249,10 @@ dialog.add-input-dialog, dialog.add-output-dialog {
     --node-content-padding: clamp(1.25rem, 4vw, 3rem);
     --editor-accent: oklch(72% .14 var(--hue-accent, 280));
     --node-corner-size: 64px;
-    color: light-dark(#252333, #f1eefb);
+    color: var(--col-fg);
     background:
         radial-gradient(ellipse at 80% 0%, color-mix(in oklch, var(--editor-accent) 22%, transparent), transparent 65%),
-        light-dark(#f5f3fa, #161522);
+        var(--col-bg);
     border: 1px solid color-mix(in oklch, var(--editor-accent) 45%, transparent);
     border-top: 3px solid var(--editor-accent);
     padding: 0 var(--node-content-padding) var(--node-content-padding);
@@ -2283,7 +2282,7 @@ dialog.add-input-dialog, dialog.add-output-dialog {
             box-shadow: 0 8px 30px color-mix(in oklch, var(--editor-accent) 12%, transparent);
             .element-icon { width: 52px; height: 52px; }
         }
-        .expanded-node-category { font-size: .7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: light-dark(#555068, #b9b0d1); }
+        .expanded-node-category { font-size: .7rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--col-muted); }
         h2 { margin: .375rem 0; font-size: clamp(1.5rem, 3vw, 2.5rem); line-height: 1.15; }
         p { margin: 0; max-width: 65ch; font-size: .95rem; font-weight: normal; line-height: 1.6; }
     }

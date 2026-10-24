@@ -6,6 +6,7 @@
 @use "./keyboard.scss";
 @use './node-graph.scss';
 @use './dialog.scss';
+@use './command-palette.scss';
 @use './layout.scss';
 @use './typography.scss';
 @use './keyframes.scss';
@@ -14,6 +15,7 @@
 @use './prompt-ai.scss';
 @use './audiotool.scss';
 @use './recording.scss';
+@use './theme.scss';
 
 #app {
 	display: none;

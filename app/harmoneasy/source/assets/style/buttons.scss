@@ -24,7 +24,7 @@ button {
         color: var(--col-on-accent);
 
         &:hover {
-            background-color: color-mix(in srgb, var(--col-accent) 85%, var(--col-fg));
+            background-color: var(--col-accent-hover);
         }
     }
 
@@ -43,7 +43,7 @@ button:active{
 
 #btn-metronome[aria-pressed="true"] {
     background-color: var(--col-plum);
-    color: #fff;
+    color: var(--col-on-accent);
     border-color: currentColor;
 }
 
@@ -142,6 +142,7 @@ dialog .btn-close{
 
 .btn-kill-switch{
 	--col-bg:var(--col-red, red);
+	color: white;
 	text-transform: uppercase;
 }
 

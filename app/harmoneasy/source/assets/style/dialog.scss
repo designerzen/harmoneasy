@@ -64,7 +64,7 @@ dialog {
 }
 
 ::backdrop {
-	background: radial-gradient(circle at center, var(--col-black) 0%, rgba(100, 20, 20, 0.4) 20%, rgba(50, 10, 10, 0.1) 100%);
+	background: var(--col-backdrop);
 	backdrop-filter: blur(20px);
 }
 
@@ -76,9 +76,9 @@ body:has(dialog:modal) {
 #start-dialog {
 	--start-actions-width: 58%;
 	--start-accent: var(--col-accent);
-	--start-surface: light-dark(#ffffff, #24232d);
-	--start-muted: light-dark(#666272, #b4afc2);
-	--start-line: light-dark(#e3dfeb, #3c3749);
+	--start-surface: var(--col-surface);
+	--start-muted: var(--col-muted);
+	--start-line: var(--col-line);
 	width: 52rem;
 	max-width: calc(100% - 2rem);
 	max-height: calc(100dvh - 2rem);
@@ -86,8 +86,8 @@ body:has(dialog:modal) {
 	padding: 0;
 	border: 1px solid var(--start-line);
 	border-radius: 20px;
-	background: light-dark(#f8f6fc, #1c1a23);
-	color: light-dark(#282235, #f3effb);
+	background: var(--col-bg);
+	color: var(--col-fg);
 	overflow: hidden;
 	isolation: isolate;
 	box-shadow: 0 24px 100px #0006;
@@ -99,13 +99,13 @@ body:has(dialog:modal) {
 	&:has(#start-contexts[open]) { height: min(52rem, calc(100dvh - 2rem)); }
 
 	&::before, &::after { display: none; }
-	&::backdrop { background: #100d1cc9; backdrop-filter: blur(8px); }
+	&::backdrop { background: var(--col-backdrop); backdrop-filter: blur(8px); }
 	*, *::before, *::after { box-sizing: border-box; }
 	p { max-width: none; }
 
 	.start-heading {
 		padding: 2rem 2rem 1.75rem;
-		background: radial-gradient(ellipse at top right, light-dark(#e9dff7, #382a4b), transparent 75%);
+		background: radial-gradient(ellipse at top right, var(--col-accent-selected), transparent 75%);
 		.backlink { display: inline-flex; align-items: center; gap: .6rem; color: var(--start-accent); font-size: .8rem; font-weight: 800; letter-spacing: .04em; }
 		.logo { width: 1.4rem; height: 1.4rem; margin: 0; }
 		h1 { margin: 1.25rem 0 0; max-width: 24ch; font-size: clamp(1.65rem, 3.5vw, 2.4rem); line-height: 1.12; font-weight: 700; text-wrap: balance; text-transform: none; letter-spacing: -.045em; }
@@ -165,7 +165,7 @@ body:has(dialog:modal) {
 		text-align: left;
 		line-height: 1.3;
 		white-space: normal;
-		&:hover { border-color: var(--start-accent); background: light-dark(#f0eaf8, #30283d); }
+		&:hover { border-color: var(--start-accent); background: var(--col-accent-soft); }
 		&:focus-visible { outline: 2px solid var(--start-accent); outline-offset: 3px; }
 		&[autofocus] {
 			background: var(--start-accent);
@@ -197,7 +197,7 @@ body:has(dialog:modal) {
 		border-top: 1px solid var(--start-line);
 		background: var(--start-surface);
 		p { margin: 0; flex: 1; font-size: .8rem; color: var(--start-muted); }
-		button { flex: 0 0 auto; background: var(--start-accent); color: light-dark(#fff, #21132e); padding: .8rem 1.2rem; }
+		button { flex: 0 0 auto; background: var(--start-accent); color: var(--col-on-accent); padding: .8rem 1.2rem; }
 	}
 	#start-error { padding: .5rem 1.5rem; margin: 0; }
 	#start-suggestions-title { margin: 0 0 .65rem; font-weight: 700; font-size: .85rem; }
@@ -221,7 +221,7 @@ body:has(dialog:modal) {
 			background: var(--start-surface);
 			color: var(--start-muted);
 			&:hover { border-color: var(--start-accent); color: var(--start-accent); }
-			&[aria-pressed="true"] { background: var(--start-accent); color: light-dark(#fff, #21132e); border-color: transparent; }
+			&[aria-pressed="true"] { background: var(--start-accent); color: var(--col-on-accent); border-color: transparent; }
 		}
 	}
 
@@ -248,7 +248,7 @@ body:has(dialog:modal) {
 		cursor: pointer;
 		font-weight: 700;
 		&::before, &::after { display: none; }
-		&:hover { background: light-dark(#f0eaf8, #30283d); }
+		&:hover { background: var(--col-accent-soft); }
 		&:focus-visible { outline: 2px solid var(--start-accent); outline-offset: 3px; }
 		.start-presets-label { grid-column: 1; }
 		.start-presets-hint { grid-column: 1; font-size: .7rem; font-weight: 500; }
@@ -294,9 +294,6 @@ body:has(dialog:modal) {
 
 		label {
 			--card-accent: var(--start-accent);
-			&[data-category="Together"] { --card-accent: light-dark(#28756f, #7cd8c2); }
-			&[data-category="Rhythm"] { --card-accent: light-dark(#a35326, #efb88f); }
-			&[data-category="Files"], &[data-category="Remixing"] { --card-accent: light-dark(#3b65b0, #a3bcff); }
 			display: grid;
 			grid-template-columns: minmax(0, 1fr) auto;
 			align-content: start;
@@ -311,7 +308,7 @@ body:has(dialog:modal) {
 			transition: border-color .15s, background .15s, box-shadow .15s;
 			&[hidden] { display: none; }
 			&:hover { border-color: var(--card-accent); box-shadow: 0 4px 14px #0001; }
-			&:has(:checked) { border-color: var(--card-accent); background: light-dark(#f1ebfb, #30273e); box-shadow: inset 0 0 0 1px var(--card-accent); }
+			&:has(:checked) { border-color: var(--card-accent); background: var(--col-accent-selected); box-shadow: inset 0 0 0 1px var(--card-accent); }
 			&:has(:focus-visible) { outline: 2px solid var(--card-accent); outline-offset: 3px; }
 			input { grid-column: 2; grid-row: 1; margin: 0; padding: 0; width: 1.1rem; height: 1.1rem; accent-color: var(--card-accent); }
 			strong, span, small { grid-column: 1 / -1; overflow-wrap: anywhere; }
@@ -347,9 +344,9 @@ body:has(dialog:modal) {
 }
 
 #opendaw-export-dialog {
-	--export-line: light-dark(#e3dfeb, #3c3749);
-	--export-muted: light-dark(#666272, #b4afc2);
-	--export-accent: light-dark(#6943ab, #c9adff);
+	--export-line: var(--col-line);
+	--export-muted: var(--col-muted);
+	--export-accent: var(--col-accent);
 	width: 52rem;
 	height: min(40rem, calc(100dvh - 2rem));
 	max-width: calc(100% - 2rem);
@@ -357,8 +354,8 @@ body:has(dialog:modal) {
 	padding: 0;
 	border: 1px solid var(--export-line);
 	border-radius: 16px;
-	background: light-dark(#faf9fc, #1c1a23);
-	color: light-dark(#282235, #f3effb);
+	background: var(--col-bg);
+	color: var(--col-fg);
 	box-shadow: 0 24px 100px #0006;
 	overflow: hidden;
 	isolation: isolate;
@@ -366,7 +363,7 @@ body:has(dialog:modal) {
 	line-height: 1.5;
 	&[open] { display: flex; flex-direction: column; }
 	&::before, &::after { display: none; }
-	&::backdrop { background: #100d1cb3; backdrop-filter: blur(8px); }
+	&::backdrop { background: var(--col-backdrop); backdrop-filter: blur(8px); }
 	*, *::before, *::after { box-sizing: border-box; }
 	form, p { margin: 0; }
 	button { min-height: 40px; padding: .6rem 1rem; border-radius: 8px; font-size: .85rem; text-transform: none; letter-spacing: normal; }
@@ -381,7 +378,7 @@ body:has(dialog:modal) {
 	.opendaw-code-panel {
 		display: flex; flex-direction: column; flex: 1; min-height: 0; margin: 0 1.5rem;
 		border: 1px solid var(--export-line); border-radius: 10px; overflow: hidden;
-		background: light-dark(#fff, #17151e);
+		background: var(--col-surface);
 	}
 	.opendaw-code-heading {
 		display: flex; justify-content: space-between; gap: 1rem; padding: .65rem 1rem;
@@ -399,7 +396,7 @@ body:has(dialog:modal) {
 		display: flex; align-items: center; gap: 1rem; padding: 1rem 1.5rem;
 		p { flex: 1; font-size: .75rem; color: var(--export-muted); }
 		a { color: var(--export-accent); font-size: .85rem; text-decoration: none; white-space: nowrap; &:hover { text-decoration: underline; } }
-		button { flex: 0 0 auto; background: var(--export-accent); color: light-dark(#fff, #21132e); border: 1px solid transparent; }
+		button { flex: 0 0 auto; background: var(--export-accent); color: var(--col-on-accent); border: 1px solid transparent; }
 		button:disabled { opacity: .65; cursor: wait; }
 	}
 	@media (max-width: 540px) {

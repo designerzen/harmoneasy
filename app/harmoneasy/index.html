@@ -118,9 +118,30 @@
 			<button id="btn-import" class="btn-import primary" type="button">Import</button>
 			<button id="btn-export" class="btn-export primary" type="button">Export</button>
 			<button id="btn-settings" class="btn-settings" type="button">Settings</button>
+			<button id="btn-command-palette" type="button" aria-haspopup="dialog" aria-controls="command-palette" aria-keyshortcuts="Control+k Meta+k" title="Find and control commands (Ctrl+K / Cmd+K)">Commands <kbd>Ctrl/Cmd+K</kbd></button>
 			<button id="btn-midi-devices" type="button" aria-haspopup="dialog" aria-controls="midi-devices-dialog" disabled>MIDI devices</button>
 			<button id="btn-kill-switch" class="btn-kill-switch btn-panic primary" type="button">Panic</button>
 		</menu>
+
+	<dialog id="command-palette" aria-labelledby="command-title" aria-describedby="command-help" data-midi-ignore>
+		<header>
+			<h2 id="command-title">Commands</h2>
+			<button type="button" data-command-close aria-label="Close command palette">Esc</button>
+		</header>
+		<label class="sr-only" for="command-search">Find a command or control</label>
+		<input id="command-search" type="search" placeholder="Search commands and controls…" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-controls="command-results" aria-expanded="true">
+		<div id="command-results" role="listbox" aria-label="Commands"></div>
+		<form id="command-editor" hidden>
+			<label id="command-value-label" for="command-value"></label>
+			<div id="command-value-host"></div>
+			<div class="command-editor-actions">
+				<button type="button" data-command-back>Back</button>
+				<button type="submit" class="primary">Apply</button>
+			</div>
+		</form>
+		<p id="command-status" role="status" aria-live="polite"></p>
+		<footer id="command-help">↑ ↓ to browse · Enter to select · Esc to close</footer>
+	</dialog>
 
             <div id="midi-transport-control" class="controls" role="group" aria-labelledby="transport-label">
                 <label class="sr-only" id="transport-label" for="transport-status">MIDI transport</label>
@@ -323,6 +344,24 @@
 			<h5 id="settings-dialog-title">Settings</h5>
 		</header>
 		<form id="settings-form">
+			<fieldset id="theme-settings">
+				<legend>Appearance</legend>
+				<label for="theme-preset">Theme<select id="theme-preset"></select></label>
+				<label for="theme-mode">Brightness
+					<select id="theme-mode">
+						<option value="system">Follow system</option>
+						<option value="light">Light</option>
+						<option value="dark">Dark</option>
+					</select>
+				</label>
+				<label for="theme-hue">Accent hue <output id="theme-hue-value" for="theme-hue">290°</output></label>
+				<input id="theme-hue" type="range" min="0" max="360" step="1" value="290" aria-describedby="theme-status">
+				<div class="theme-preview" aria-label="Theme preview">
+					<span class="theme-preview-accent">Accent</span><span>Surface</span><span class="theme-preview-muted">Secondary text</span>
+				</div>
+				<button id="theme-reset" type="button">Reset appearance</button>
+				<p id="theme-status" role="status">Theme saved in this browser only.</p>
+			</fieldset>
 			<fieldset>
 				<legend>MIDI CC Controls</legend>
 				<div id="midi-control-settings"></div>
