@@ -398,7 +398,8 @@ body > footer{
 }
 
 body:has(#onscreen-keyboard > .piano) {
-	padding-bottom: calc(min(112px, 25dvh) + 32px + env(safe-area-inset-bottom, 0px));
+	--onscreen-keyboard-height: calc(min(112px, 25dvh) + 32px + env(safe-area-inset-bottom, 0px));
+	padding-bottom: var(--onscreen-keyboard-height);
 }
 
 @media (pointer: coarse) {
@@ -406,7 +407,8 @@ body:has(#onscreen-keyboard > .piano) {
 		height: calc(min(148px, 33dvh) + 44px + env(safe-area-inset-bottom, 0px));
 	}
 	body:has(#onscreen-keyboard > .piano) {
-		padding-bottom: calc(min(148px, 33dvh) + 44px + env(safe-area-inset-bottom, 0px));
+		--onscreen-keyboard-height: calc(min(148px, 33dvh) + 44px + env(safe-area-inset-bottom, 0px));
+		padding-bottom: var(--onscreen-keyboard-height);
 	}
 }
 
@@ -909,7 +911,7 @@ song-explorer-ui{
 #chain-navigation {
     display: flex;
     align-items: flex-end;
-    gap: var(--gap,2px);
+    gap: .5rem;
     flex: 1;
     min-width: 0;
     overflow-x: auto;
@@ -920,7 +922,7 @@ song-explorer-ui{
     z-index: 1;
     margin-bottom: -2px;
     padding: 0;
-    background: var(--col-bg);
+    background: transparent;
     border-bottom: 0;
 
     a, button {
@@ -954,8 +956,10 @@ song-explorer-ui{
         &:hover { background: var(--col-accent-hover); }
     }
 
-    [role="tablist"] { display: flex; align-items: flex-end; gap: 2px; flex: none; }
+    [role="tablist"] { display: flex; align-items: flex-end; gap: 0; flex: none; }
     .chain-tab { position: relative; display: inline-flex; flex: none; }
+    .chain-tab + .chain-tab { margin-left: -2px; }
+    .chain-tab:has([aria-selected="true"]) { z-index: 1; }
     .chain-tab [role="tab"] { padding-right: 2rem; }
     .chain-tab-remove {
         position: absolute;
@@ -973,17 +977,23 @@ song-explorer-ui{
         border: 0;
         font-size: 1rem;
         line-height: 1;
+
+        &:hover { background: var(--col-red); color: var(--col-white); }
+        &:active { transform: translateY(-50%); }
     }
     [role="tab"] {
         position: relative;
         margin: 0;
         min-height: 36px;
         padding: .25rem .75rem;
-        border: 2px solid color-mix(in srgb, currentColor 25%, transparent);
+        border: 2px solid var(--col-orange);
         border-bottom: 2px solid var(--col-orange);
         border-radius: .5rem .5rem 0 0;
         background: color-mix(in srgb, var(--col-bg) 90%, currentColor);
         color: color-mix(in srgb, currentColor 70%, transparent);
+
+        &:hover { border-color: var(--col-orange); }
+        &:active { transform: none; }
 
         &[aria-selected="true"] {
             border-color: var(--col-orange);
@@ -995,20 +1005,28 @@ song-explorer-ui{
     }
 }
 
-#graph > .chains-stacked { padding: 0; gap: 0; background: var(--col-bg); }
-.chains-stacked > .chain-panel.chain-front {
+#graph > .chains-stacked { padding: 0; gap: 0; background: transparent; }
+.chains-stacked > .chain-panel.chain-front:not(.chain-solo) {
     box-sizing: border-box;
-    border: 2px solid var(--col-orange);
-    border-top: 0;
-    background: var(--col-bg);
+    border: 0;
+    background: transparent;
 }
 
 /* Chains participate in page scrolling so fragment links target the window. */
-body:has(.chains-workspace) { scroll-snap-type: none; }
+body:has(.chains-workspace) { --chain-viewport-gap: 0px; scroll-snap-type: none; }
 .chains-stacked > .chain-panel {
     grid-area: 1 / 1;
     visibility: hidden;
     pointer-events: none;
+
+    &:not(.chain-solo) {
+        box-sizing: border-box;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        height: max(12rem, calc(100dvh - var(--action-bar-height, 0px) - var(--transport-height, 52px) - var(--onscreen-keyboard-height, 0px) - 2 * var(--chain-viewport-gap)));
+
+        > .chain-graph { min-height: 0; grid-template-rows: minmax(0, 1fr); }
+    }
 }
 .chains-stacked > .chain-panel.chain-front,
 .chains-stacked > .chain-panel.chain-solo {
@@ -1017,6 +1035,7 @@ body:has(.chains-workspace) { scroll-snap-type: none; }
     z-index: 1;
 }
 .chains-stacked > .chain-panel.chain-solo { z-index: 1000; }
+.chains-stacked > .chain-panel[hidden] { display: none; }
 #chain:has(.chains-workspace) {
     position: relative;
     top: auto;
@@ -1029,7 +1048,7 @@ body:has(.chains-workspace) { scroll-snap-type: none; }
     overflow: visible;
 }
 .chain-panel, #add-iochain {
-    scroll-margin-top: calc(var(--action-bar-height, 0px) + var(--transport-height, 52px) + 8px);
+    scroll-margin-top: calc(var(--action-bar-height, 0px) + var(--transport-height, 52px) + var(--chain-viewport-gap, 8px));
 }
 
 @media (prefers-reduced-motion: reduce) {

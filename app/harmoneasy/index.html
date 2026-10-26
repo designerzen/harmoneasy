@@ -22,25 +22,14 @@
 			<img class="logo" src="/source/assets/logos/harmoneasy.svg" alt="">
 			<span>Harmoneasy</span>
 		</button>
-		<h1 id="start-title">Your next musical idea <span>starts here.</span></h1>
-		<p>Turn one note into chords, shape a bass line, or play together in time.
-			Choose a setup and make it yours.</p>
+		<div class="start-intro"><h1 id="start-title">Find your next sound</h1><p>Choose a preset to start playing.</p></div>
+		<div class="start-secondary-actions">
+			<button class="btn-continue-session" form="start-form" type="submit" name="startup" value="session">Continue Session</button>
+			<button class="btn-start-empty" form="start-form" type="submit" name="startup" value="empty">Start Empty</button>
+		</div>
 		</header>
-		<form id="start-form" method="dialog">
-		<details id="start-contexts">
-			<summary title="Show or hide preset setups"><span class="start-presets-label">Presets</span><span class="start-presets-hint">Browse ready-made setups</span><span class="start-presets-chevron" aria-hidden="true"></span></summary>
-			<div class="start-presets-content">
-			</div>
-		</details>
-			<div class="start-secondary-actions">
-				<button class="btn-continue-session" type="submit" name="startup" value="session"><span class="start-action-label">Continue Session</span><span class="start-action-hint">Pick up where you left off</span></button>
-				<button autofocus class="btn-start-empty" type="submit" name="startup" value="empty"><span class="start-action-label">Start Empty</span><span class="start-action-hint">Build your own setup</span></button>
-			</div>
-			<footer class="start-preset-actions">
-				<p id="start-context-selection" role="status">Choose a preset to get started.</p>
-				<button class="btn-start-preset primary" type="submit" name="startup" value="preset" disabled>Start Preset</button>
-			</footer>
-		</form>
+		<form id="start-form" method="dialog"></form>
+		<div class="start-presets-content"></div>
 		<p id="start-error" role="alert" hidden></p>
 	</dialog>
 

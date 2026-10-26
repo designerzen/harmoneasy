@@ -5,7 +5,7 @@ import { TransformerSettings } from "../Widgets.tsx"
 import { elementDescription, elementIcon } from '../element-icons'
 import { ElementIcon } from '../ElementIcon'
 import { NodeHeader } from '../NodeHeader'
-import { TransformerDialog } from './AddTransformerNode'
+import { TransformerDialog } from '../GraphDialogs'
 import { MinimiseButton } from '../MinimiseButton'
 
 function TransformerStatus({ element }: { element: { status: string; statusState?: string } }) {

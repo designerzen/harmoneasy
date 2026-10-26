@@ -14,7 +14,7 @@
     "test": "vitest",
     "type-check": "tsc --noEmit",
     "dev": "node scripts/update-packages-config.js && vite --config vite.config.web.js",
-    "dev:electron": "node scripts/update-packages-config.js && concurrently \"npm run dev\" \"wait-on http://localhost:5174 && electron .\"",
+    "dev:electron": "node scripts/update-packages-config.js && concurrently \"npm run dev\" \"wait-on http://localhost:1999 && electron .\"",
     "start": "pnpm run dev",
     "build": "node scripts/update-packages-config.js && vite build --config vite.config.web.js",
     "build-native": "pnpm exec node-gyp rebuild",

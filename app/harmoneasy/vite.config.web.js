@@ -53,7 +53,7 @@ export default defineConfig({
   optimizeDeps: { include: ['audiotool > @audiotool/nexus', 'audiotool > @audiotool/nexus/utils'] },
   base: process.env.NODE_ENV === 'production' ? '/harmoneasy/' : '/',
   server: {
-    port: 5174
+    port: 1999
   },
   build: {
     outDir: 'dist',

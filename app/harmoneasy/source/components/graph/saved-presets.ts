@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import { compressToBase64 } from 'lz-string'
 import type IOChain from 'audiobus/io/IO-chain'
 import type IOChainManager from 'audiobus/io/IO-chain-manager'
@@ -114,22 +113,4 @@ export function downloadLibrary(json: string, name = 'harmoneasy-presets') {
     anchor.click()
     anchor.remove()
     setTimeout(() => URL.revokeObjectURL(url), 1000)
-}
-export function usePresetLibrary() {
-    const [library, setLibrary] = useState<PresetLibrary>({ ...DEFAULT_PRESET_LIBRARY, presets: [], setups: [] })
-    const [error, setError] = useState('')
-    useEffect(() => {
-        const refresh = () => {
-            try { setLibrary(readLibrary()); setError('') }
-            catch (error) { setError(error instanceof Error ? error.message : 'Preset storage is unavailable') }
-        }
-        refresh()
-        window.addEventListener(EVENT_PRESET_LIBRARY_UPDATED, refresh)
-        window.addEventListener('storage', refresh)
-        return () => {
-            window.removeEventListener(EVENT_PRESET_LIBRARY_UPDATED, refresh)
-            window.removeEventListener('storage', refresh)
-        }
-    }, [])
-    return { library, error }
 }

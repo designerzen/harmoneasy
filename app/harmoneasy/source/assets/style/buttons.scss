@@ -162,6 +162,7 @@ dialog .btn-close{
 
 .btn-connect{
 	--col-bg:var(--col-green);
+	color: var(--col-on-accent);
 	&::before{
 		content:"+";
 		margin-right:0.2rem;
@@ -170,6 +171,7 @@ dialog .btn-close{
 
 .btn-disconnect{
 	--col-bg:var(--col-pink);
+	color: var(--col-on-accent);
 	&::before{
 		content:"-";
 		margin-right:0.2rem;
@@ -192,6 +194,7 @@ dialog .btn-close{
 
 .btn-settings{
 	--col-bg:var(--col-pink);
+	color: var(--col-on-accent);
 	&::before{
 		content:"⚙";
 		margin-right:0.2rem;

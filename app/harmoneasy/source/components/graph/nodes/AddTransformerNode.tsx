@@ -1,28 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
+import React, { useState } from 'react'
 import { Handle, Position } from '@xyflow/react'
-import { TransformerPicker } from '../Transformers'
-import type { Transformer } from 'audiobus/io/transformers/abstract-transformer'
-
-export function TransformerDialog({ onClose, replacing }: { onClose: () => void; replacing?: Transformer<any> }) {
-    const dialog = useRef<HTMLDialogElement>(null)
-    const title = replacing ? 'Swap Transformer' : 'Add New Transformer'
-    useEffect(() => {
-        dialog.current?.setAttribute('closedby', 'any')
-        dialog.current?.showModal()
-    }, [])
-
-    return createPortal(<dialog ref={dialog} className="add-transformer-dialog nodrag nopan nowheel" aria-label={title}
-        onClose={onClose} onKeyDown={event => event.stopPropagation()}>
-        <header><h5>{title}</h5></header>
-        <div className="dialog-content">
-            <TransformerPicker dialog replacing={replacing} onAdded={() => dialog.current?.close()} />
-        </div>
-        <form method="dialog">
-            <button className="btn-close" type="submit" aria-label={`Cancel ${replacing ? 'swapping' : 'adding'} transformer`} title="Cancel">×</button>
-        </form>
-    </dialog>, document.body)
-}
+import { TransformerDialog } from '../GraphDialogs'
 
 export function AddTransformerNode({ data }: { data?: { layoutMode?: string; standalone?: boolean } }) {
     const [open, setOpen] = useState(false)

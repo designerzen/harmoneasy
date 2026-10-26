@@ -1,6 +1,5 @@
 import { GraphControls } from './GraphControls'
-import { EVENT_CHAINS_UPDATED, EVENT_CHAIN_ACTIVE_CHANGED } from 'audiobus/event-constants'
-import ChainName from './ChainName'
+import { EVENT_CONFIGURATION_CHANGED } from 'audiobus/event-constants'
 import { ChainContext, useChain } from './ChainContext'
 import type IOChainManager from 'audiobus/io/IO-chain-manager'
 import '@xyflow/react/dist/style.css'
@@ -18,9 +17,6 @@ import {
 } from '@xyflow/react'
 
 import { AnimatedSVGEdge } from './AnimatedSVGEdge.tsx'
-import { ChainSidebar } from './ChainSidebar.tsx'
-import { Presets } from './Presets.tsx'
-import { IOChainManagerUI } from './IOChainManagerUI.tsx'
 import { StartNode } from './nodes/StartNode.tsx'
 import { EndNode } from './nodes/EndNode.tsx'
 import { InputNode } from './nodes/InputNode.tsx'
@@ -50,7 +46,7 @@ const edgeTypes = {
   	animatedSvg: AnimatedSVGEdge
 }
 
-function FlowComponent() {
+function FlowComponent({ isFront, focusRequest }: { isFront: boolean, focusRequest: number }) {
     const { chain, chainId } = useChain()
 	const [ nodes, setNodes] = useState(initialNodes)
 	const [ edges, setEdges] = useState(initialEdges)
@@ -58,6 +54,7 @@ function FlowComponent() {
 	const { fitView, getViewport, setViewport } = useReactFlow()
 	const savedViewport = useRef<ReturnType<typeof getViewport> | null>(null)
 	const fittedLayout = useRef<string | null>(null)
+	const fittedFocusRequest = useRef(-1)
 	const nodesInitialized = useNodesInitialized()
 	const [fullscreenNodeId, setFullscreenNodeId] = useState<string | null>(null)
     const [compactNodeIds, setCompactNodeIds] = useState<Set<string>>(() => new Set())
@@ -76,7 +73,7 @@ function FlowComponent() {
 			setEdges(structure.edges)
 		}
 
-        chain.addEventListener('configurationChanged', () => {
+        chain.addEventListener(EVENT_CONFIGURATION_CHANGED, () => {
             setLayoutMode(chain.options.graphLayout ?? DEFAULT_LAYOUT_MODE)
             onTransformersChanged()
         }, { signal: abortController.signal })
@@ -97,20 +94,21 @@ function FlowComponent() {
 
     const measuredSizes = nodes.map(node => `${node.id}:${node.measured?.width}:${node.measured?.height}`).join('|')
     useEffect(() => {
-        if (!nodesInitialized || fullscreenNodeId) return
+        if (!nodesInitialized || fullscreenNodeId || !isFront) return
         if (savedViewport.current) {
             void setViewport(savedViewport.current)
             savedViewport.current = null
             return
         }
         // Preserve the user's pan and zoom during structure and size updates.
-        if (fittedLayout.current === layoutMode) return
+        if (fittedLayout.current === layoutMode && fittedFocusRequest.current === focusRequest) return
         const frame = requestAnimationFrame(() => {
             fittedLayout.current = layoutMode
+            fittedFocusRequest.current = focusRequest
             void fitView({ padding: 0.15, duration: 150, ...DEFAULT_GRAPH_OPTIONS })
         })
         return () => cancelAnimationFrame(frame)
-    }, [nodesInitialized, layoutMode, fitView, setViewport, measuredSizes, fullscreenNodeId])
+    }, [nodesInitialized, layoutMode, fitView, setViewport, measuredSizes, fullscreenNodeId, isFront, focusRequest])
 
     const onNodesChange = useCallback((changes: NodeChange<GraphNode>[]) => {
         setNodes(snapshot => {
@@ -200,7 +198,6 @@ function FlowComponent() {
 
 	return (
 		<>
-			<ChainSidebar />
 
 			<ReactFlow
 				className={ExpandedNode ? 'node-expanded' : undefined}
@@ -246,173 +243,14 @@ function FlowComponent() {
 	)
 }
 
-export default function App({ manager }: { manager: IOChainManager }) {
-    const [, refresh] = useState(0)
-    const [frontChainId, setFrontChainId] = useState<string | null>(null)
-    const frontChain = manager.getChain(frontChainId ?? '') ? frontChainId : manager.entries[0]?.[0]
-    const [soloId, setSoloId] = useState<string | null>(null)
-    const solo = soloId && manager.getChain(soloId) ? soloId : null
-    const layoutSettings = document.getElementById('graph-layout-settings')
-    const chainNavigation = document.getElementById('chain-navigation')
-    useEffect(() => {
-        const transport = document.getElementById('midi-transport-control')
-        const actionBar = document.getElementById('action-bar')
-        if (!transport) return
-        const updateOffset = () => {
-            document.documentElement.style.setProperty('--transport-height', `${transport.getBoundingClientRect().height}px`)
-            document.documentElement.style.setProperty('--action-bar-height', `${actionBar?.getBoundingClientRect().height ?? 0}px`)
-        }
-        updateOffset()
-        const observer = new ResizeObserver(updateOffset)
-        observer.observe(transport)
-        if (actionBar) observer.observe(actionBar)
-        return () => {
-            observer.disconnect()
-            document.documentElement.style.removeProperty('--transport-height')
-            document.documentElement.style.removeProperty('--action-bar-height')
-        }
-    }, [])
-    useEffect(() => {
-        if (!solo) return
-        const previousOverflow = document.body.style.overflow
-        document.body.style.overflow = 'hidden'
-        const onKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape' && !document.querySelector('dialog[open]')) {
-                setSoloId(null)
-            }
-        }
-        document.addEventListener('keydown', onKeyDown)
-        return () => {
-            document.body.style.overflow = previousOverflow
-            document.removeEventListener('keydown', onKeyDown)
-        }
-    }, [solo])
-    useEffect(() => {
-        const update = () => refresh(value => value + 1)
-        manager.addEventListener(EVENT_CHAINS_UPDATED, update)
-        manager.addEventListener(EVENT_CHAIN_ACTIVE_CHANGED, update)
-        return () => {
-            manager.removeEventListener(EVENT_CHAINS_UPDATED, update)
-            manager.removeEventListener(EVENT_CHAIN_ACTIVE_CHANGED, update)
-        }
-    }, [manager])
-    return <div className="chains-workspace chains-stacked">
-        {chainNavigation && createPortal(<>
-            <div role="tablist" aria-label="Chains">
-            {manager.entries.map(([chainId, chain], index) => <span key={chainId} className="chain-tab" role="presentation"><button
-                type="button" role="tab" id={`chain-tab-${chainId}`}
-                aria-controls={`iochain-${chainId}`} aria-selected={frontChain === chainId}
-                tabIndex={frontChain === chainId ? 0 : -1}
-                onKeyDown={event => {
-                    const entries = manager.entries
-                    let next = index
-                    if (event.key === 'ArrowRight') next = (index + 1) % entries.length
-                    else if (event.key === 'ArrowLeft') next = (index + entries.length - 1) % entries.length
-                    else if (event.key === 'Home') next = 0
-                    else if (event.key === 'End') next = entries.length - 1
-                    else return
-                    event.preventDefault()
-                    document.getElementById(`chain-tab-${entries[next][0]}`)?.click()
-                    document.getElementById(`chain-tab-${entries[next][0]}`)?.focus()
-                }}
-                onClick={() => {
-                    setFrontChainId(chainId)
-                }}>
-                {chain.options.name ?? `Chain ${index + 1}`}
-            </button><button type="button" className="chain-tab-remove"
-                aria-label={`Remove ${chain.options.name ?? `Chain ${index + 1}`}`}
-                title="Remove chain" onClick={() => {
-                    if (!window.confirm(`Are you sure you want to remove “${chain.options.name ?? `Chain ${index + 1}`}”?`)) return
-                    const entries = manager.entries
-                    const nextId = entries[index + 1]?.[0] ?? entries[index - 1]?.[0] ?? null
-                    if (frontChain === chainId) setFrontChainId(nextId)
-                    manager.removeChain(chainId)
-                    if (nextId) document.getElementById(`chain-tab-${nextId}`)?.focus()
-                }}><span aria-hidden="true">×</span></button></span>)}
-            </div>
-            <IOChainManagerUI manager={manager} />
-        </>, chainNavigation)}
-        {layoutSettings && createPortal(<>
-            {manager.entries.map(([chainId, chain], index) => <label key={chainId} data-midi-scope={`${chainId}:layout`}>
-                {chain.options.name ?? `Chain ${index + 1}`}
-                <select value={chain.options.graphLayout ?? DEFAULT_LAYOUT_MODE}
-                    onChange={event => chain.setGraphOptions({
-                        graphLayout: event.target.value as 'horizontal' | 'vertical', positions: {}
-                    })}>
-                    <option value="vertical">Vertical</option>
-                    <option value="horizontal">Horizontal</option>
-                </select>
-            </label>)}
-            {manager.chainCount === 0 && <p>Add a chain to choose its layout.</p>}
-        </>, layoutSettings)}
-       
-        {!chainNavigation && <IOChainManagerUI manager={manager} />}
-        {manager.restoreWarnings.map(warning => <p role="status" key={warning}>{warning}</p>)}
-        {manager.entries.map(([chainId, chain], index) => <section key={chainId}
-            id={`iochain-${chainId}`} data-midi-scope={chainId} tabIndex={-1}
-            role="tabpanel"
-            aria-labelledby={`chain-tab-${chainId}`}
-            inert={!solo && frontChain !== chainId}
-            className={`chain-panel ${chain.isActive ? 'active' : 'inactive'} ${frontChain === chainId ? 'chain-front' : ''} ${solo === chainId ? 'chain-solo' : ''}`}
-            hidden={!!solo && solo !== chainId}
-            aria-label={chain.options.name ?? `Chain ${index + 1}`}>
-            <header className="chain-toolbar">
-                <div className="chain-identity">
-                    <button className="chain-power chain-icon-button" title={chain.isActive ? 'Turn chain off' : 'Turn chain on — settings are still editable while off'} aria-label={chain.isActive ? 'Turn chain off' : 'Turn chain on'} type="button" aria-pressed={chain.isActive} onClick={() => chain.setActive(!chain.isActive)}>
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v10M6 5a9 9 0 1 0 12 0" /></svg>
-                        <span>{chain.isActive ? 'On' : 'Off'}</span>
-                    </button>
-                    <ChainName chain={chain} />
-                </div>
-                <ChainContext.Provider value={{ chain, chainId, manager }}><Presets /></ChainContext.Provider>
-                <div className="chain-actions">
-                    <button type="button" className="chain-solo-toggle chain-icon-button"
-                        aria-label={solo === chainId ? 'Exit fullscreen chain' : 'Expand chain'}
-                        title={solo === chainId ? 'Exit fullscreen chain' : 'Expand chain'}
-                        aria-expanded={solo === chainId} onClick={() => {
-                            setFrontChainId(chainId)
-                            setSoloId(current => current === chainId ? null : chainId)
-                        }}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                            <path d={solo === chainId ? 'M3 9h6V3m6 0v6h6M3 15h6v6m6 0v-6h6' : 'M9 3H3v6m12-6h6v6M3 15v6h6m6 0h6v-6'} />
-                        </svg>
-                    </button>
-                    <select aria-label="Actions" value="" onChange={event => {
-                        switch (event.target.value) {
-                            case 'horizontal':
-                            case 'vertical':
-                                chain.setGraphOptions({ graphLayout: event.target.value, positions: {} })
-                                break
-                            case 'clone':
-                                void manager.cloneChain(chainId)
-                                break
-                            case 'delete':
-                                manager.removeChain(chainId)
-                                break
-                            case 'solo':
-                                setSoloId(current => current === chainId ? null : chainId)
-                                break
-                        }
-                    }}>
-                        <option value="" disabled>Actions</option>
-                        <option value="clone">Clone chain</option>
-                        <option value="solo">{solo === chainId ? 'Exit Solo' : 'Solo'}</option>
-                        <optgroup label="Graph layout">
-                            <option value="horizontal" disabled={(chain.options.graphLayout ?? DEFAULT_LAYOUT_MODE) === 'horizontal'}>Horizontal layout</option>
-                            <option value="vertical" disabled={(chain.options.graphLayout ?? DEFAULT_LAYOUT_MODE) === 'vertical'}>Vertical layout</option>
-                        </optgroup>
-                        <option value="delete">Delete chain</option>
-                    </select>
-                </div>
-            </header>
-            <div className="chain-graph">
-                <ChainContext.Provider value={{ chain, chainId, manager }}>
-                    <ReactFlowProvider><FlowComponent /></ReactFlowProvider>
-                </ChainContext.Provider>
-            </div>
-		</section>)}
-        
-		{manager.chainCount === 0 && <p>No IOChains. Add a chain to start routing inputs to outputs.</p>}
-
-    </div>
+export default function Graph({ chain, chainId, manager, isFront, focusRequest }: {
+    chain: import('audiobus/io/IO-chain').default
+    chainId: string
+    manager: IOChainManager
+    isFront: boolean
+    focusRequest: number
+}) {
+    return <ChainContext.Provider value={{ chain, chainId, manager }}>
+        <ReactFlowProvider><FlowComponent isFront={isFront} focusRequest={focusRequest} /></ReactFlowProvider>
+    </ChainContext.Provider>
 }

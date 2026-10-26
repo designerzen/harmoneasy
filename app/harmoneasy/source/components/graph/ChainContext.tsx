@@ -1,8 +1,7 @@
 import { createContext, useContext } from 'react'
-import type IOChain from 'audiobus/io/IO-chain'
-import type IOChainManager from 'audiobus/io/IO-chain-manager'
+import type { ChainUIContext } from './chain-ui-context'
 
-export const ChainContext = createContext<{ chain: IOChain; chainId: string; manager: IOChainManager } | null>(null)
+export const ChainContext = createContext<ChainUIContext | null>(null)
 
 export function useChain() {
     const value = useContext(ChainContext)

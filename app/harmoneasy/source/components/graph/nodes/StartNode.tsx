@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Handle, Position } from '@xyflow/react'
-import { DeviceDialog } from '../DeviceDialog'
+import { DeviceDialog } from '../GraphDialogs'
 
 export function StartNode({ data }: { data?: { layoutMode?: string; standalone?: boolean }; id?: string }) {
     const [open, setOpen] = useState(false)

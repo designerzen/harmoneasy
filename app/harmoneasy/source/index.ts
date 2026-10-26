@@ -594,24 +594,23 @@ if (storage) {
 
 // Keep context browsing available until the explicit audio activation gesture.
 const startDialog = document.querySelector<HTMLDialogElement>('#start-dialog')!
-const startContexts = createStartContexts(startDialog)
+createStartContexts(startDialog, setup => startApplication(startDialog.querySelector<HTMLButtonElement>('.preset-apply-button')!, setup))
 startDialog.removeAttribute('open')
 startDialog.showModal()
 startDialog.addEventListener('cancel', event => event.preventDefault())
-document.querySelector<HTMLFormElement>('#start-form')!.addEventListener('submit', async event => {
-    event.preventDefault()
-    const button = event.submitter as HTMLButtonElement | null
-    if (!button || button.disabled) return
-    const buttons = startDialog.querySelectorAll<HTMLButtonElement>('button[type="submit"]')
+async function startApplication(button: HTMLButtonElement, setup?: PresetSetup) {
+    if (startDialog.inert) return
+    startDialog.inert = true
+    const buttons = startDialog.querySelectorAll<HTMLButtonElement>('button[type="submit"], .preset-apply-button')
     buttons.forEach(button => { button.disabled = true })
     button.textContent = 'Starting…'
     const errorMessage = startDialog.querySelector<HTMLElement>('#start-error')!
     errorMessage.hidden = true
     try {
-        const setup = button.value === 'empty' ? createEmptySetup() : button.value === 'session' ? undefined : startContexts.getSetup()
         await initialiseApplication(onTick, false, setup)
         startDialog.close()
     } catch (error) {
+        startDialog.inert = false
         console.error('Failed to start application:', error)
         errorMessage.textContent = error instanceof Error ? error.message : 'Could not start the application. Please reload and try again.'
         errorMessage.hidden = false
@@ -619,4 +618,11 @@ document.querySelector<HTMLFormElement>('#start-form')!.addEventListener('submit
         button.disabled = false
         button.onclick = event => { event.preventDefault(); window.location.reload() }
     }
+}
+
+document.querySelector<HTMLFormElement>('#start-form')!.addEventListener('submit', event => {
+    event.preventDefault()
+    const button = event.submitter as HTMLButtonElement | null
+    if (!button || button.disabled) return
+    void startApplication(button, button.value === 'empty' ? createEmptySetup() : undefined)
 })

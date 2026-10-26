@@ -6,7 +6,7 @@ import { useChain } from './ChainContext'
 import { deviceIcon, elementDescription } from './element-icons'
 import { ElementIcon } from './ElementIcon'
 import { NodeHeader } from './NodeHeader'
-import { DeviceDialog } from './DeviceDialog'
+import { DeviceDialog } from './GraphDialogs'
 import { MinimiseButton } from './MinimiseButton'
 
 export function DeviceTitleBar({ device, direction, expanded, compact, onMinimise, onExpand, onRemove }: {

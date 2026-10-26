@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
-import { afterEach, expect, it } from 'vitest'
-import { act } from 'react'
-import { completePresets, presetSetup, ACTIVITY_PRESETS } from '../source/components/graph/preset-catalogue'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { runUI } from './native-ui'
+import { completePresets, presetContext, presetSetup, ACTIVITY_PRESETS } from '../source/components/graph/preset-catalogue'
 import startPage from '../index.html?raw'
 import { DEFAULT_PRESET_LIBRARY } from '../../../packages/audiobus/io/transformer-presets'
 import { parsePresetLibrary } from '../../../packages/audiobus/io/preset-library'
@@ -9,8 +9,13 @@ import { DRUM_GENRES } from '../../../packages/audiobus/io/outputs/drum-accompan
 import { DRUM_GROOVES } from '../../../packages/audiobus/timing/drum-patterns'
 import { createContextSetup, createEmptySetup, createStartContexts, START_CONTEXTS, START_SUGGESTIONS } from '../source/services/start-contexts'
 
-Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true })
-afterEach(() => document.body.replaceChildren())
+const views: ReturnType<typeof createStartContexts>[] = []
+const mountStartContexts: typeof createStartContexts = (...args) => { const view = createStartContexts(...args); views.push(view); return view }
+beforeEach(() => {
+    const storage = new Map<string, string>()
+    vi.stubGlobal('localStorage', { getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => storage.set(key, value) })
+})
+afterEach(() => { views.splice(0).forEach(view => view.destroy()); document.body.replaceChildren(); vi.unstubAllGlobals() })
 
 it('shares every activity and factory preset with the browser, including older saved libraries', () => {
     const presets = completePresets([])
@@ -28,16 +33,21 @@ it('uses the same preset browser on the splash and retains the selected sound se
     document.body.innerHTML = startPage.match(/<dialog id="start-dialog"[\s\S]*?<\/dialog>/)![0]
     const root = document.querySelector<HTMLElement>('#start-dialog')!
     let picker: ReturnType<typeof createStartContexts>
-    await act(async () => { picker = createStartContexts(root) })
-    const browser = document.querySelector<HTMLDialogElement>('.preset-browser')!
+    const onStart = vi.fn()
+    await runUI(async () => { picker = mountStartContexts(root, onStart) })
+    const browser = root.querySelector<HTMLElement>('.preset-browser-inline')!
     expect(browser).toBeTruthy()
+    expect(document.querySelector('dialog.preset-browser')).toBeNull()
+    expect(root.querySelector('.preset-browse')).toBeNull()
     const card = [...browser.querySelectorAll<HTMLButtonElement>('nav button')].find(button => button.textContent?.includes('Write drum and bass'))!
-    await act(async () => { card.click() })
+    await runUI(async () => { card.click() })
     expect(browser.querySelector('.preset-preview')!.textContent).toContain('170 BPM')
     expect(browser.querySelector('.preset-preview')!.textContent).toContain('Moog + Drum Accompaniment')
-    await act(async () => { browser.querySelector<HTMLButtonElement>('.preset-apply-button')!.click() })
+    expect(browser.querySelector<HTMLButtonElement>('.preset-apply-button')!.disabled).toBe(false)
+    await runUI(async () => { browser.querySelector<HTMLButtonElement>('.preset-apply-button')!.click() })
     expect(picker!.getSetup()?.id).toBe('drum-and-bass')
-    expect(root.querySelector<HTMLButtonElement>('.btn-start-preset')!.disabled).toBe(false)
+    expect(onStart).toHaveBeenCalledExactlyOnceWith(picker!.getSetup())
+    expect(root.querySelector('.start-preset-actions')).toBeNull()
 })
 
 it('covers the percussion genres with valid grooves and connected sound outputs', () => {
@@ -56,6 +66,56 @@ it('covers the percussion genres with valid grooves and connected sound outputs'
         covered.add(genre)
     }
     expect([...covered].sort()).toEqual(Object.keys(DRUM_GENRES).filter(genre => genre !== 'transitions').sort())
+})
+
+it('starts saved setups directly and disables the primary action while starting', async () => {
+    const setup = createContextSetup(START_CONTEXTS.find(context => context.id === 'drum-and-bass')!)
+    localStorage.setItem('harmoneasy.preset-library.v1', JSON.stringify({ ...DEFAULT_PRESET_LIBRARY, setups: [setup] }))
+    document.body.innerHTML = startPage.match(/<dialog id="start-dialog"[\s\S]*?<\/dialog>/)![0]
+    const dialog = document.querySelector<HTMLElement>('#start-dialog')!
+    let finish!: () => void
+    const onStart = vi.fn(() => new Promise<void>(resolve => { finish = resolve }))
+    await runUI(async () => { mountStartContexts(dialog, onStart) })
+    const saved = [...dialog.querySelectorAll<HTMLButtonElement>('nav section:last-child button')].find(button => button.textContent === setup.name)!
+    await runUI(async () => { saved.click() })
+    const start = dialog.querySelector<HTMLButtonElement>('.preset-apply-button')!
+    await runUI(async () => { start.click() })
+    expect(onStart).toHaveBeenCalledExactlyOnceWith(setup)
+    expect(start.disabled).toBe(true)
+    expect(start.textContent).toBe('Starting…')
+    await runUI(async () => { start.click() })
+    expect(onStart).toHaveBeenCalledOnce()
+    await runUI(async () => { finish() })
+})
+
+it('keeps all genres available with an older library and combines type, genre and search filters', async () => {
+    localStorage.setItem('harmoneasy.preset-library.v1', JSON.stringify({ ...DEFAULT_PRESET_LIBRARY, presets: [] }))
+    document.body.innerHTML = startPage.match(/<dialog id="start-dialog"[\s\S]*?<\/dialog>/)![0]
+    const dialog = document.querySelector<HTMLElement>('#start-dialog')!
+    await runUI(async () => { mountStartContexts(dialog) })
+    const [type, genre] = [...dialog.querySelectorAll<HTMLSelectElement>('.preset-filter select')]
+    const change = async (select: HTMLSelectElement, value: string) => runUI(async () => {
+        select.value = value; select.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    const names = () => [...dialog.querySelectorAll<HTMLButtonElement>('nav button')].map(button => button.querySelector('span')!.firstChild!.textContent)
+    expect(names()).toHaveLength(completePresets([]).length)
+    await change(type, 'Genres')
+    for (const context of START_CONTEXTS.filter(context => context.category === 'Genres')) {
+        expect([...genre.options].some(option => option.value === context.id)).toBe(true)
+        await change(genre, context.id)
+        expect(names()).toEqual(completePresets([]).filter(preset => presetContext(preset)?.id === context.id).map(preset => preset.name))
+        expect(names().length).toBeGreaterThan(0)
+    }
+    await change(genre, 'drum-and-bass')
+    const search = dialog.querySelector<HTMLInputElement>('.preset-search input')!
+    await runUI(async () => { search.value = '170'; search.dispatchEvent(new Event('input', { bubbles: true })) })
+    expect(names()).toEqual(['Write drum and bass'])
+    await change(type, 'Accessibility')
+    expect(dialog.querySelector('.preset-no-results')).toBeTruthy()
+    await change(type, '')
+    await change(genre, '')
+    await runUI(async () => { search.value = ''; search.dispatchEvent(new Event('input', { bubbles: true })) })
+    expect(names()).toHaveLength(completePresets([]).length)
 })
 
 it('starts each genre with its sound output and independent settings', () => {
@@ -78,40 +138,28 @@ it('starts each genre with its sound output and independent settings', () => {
     expect(createEmptySetup().devices.find(device => device.id === 'synth')!.definition).toEqual({ factory: 'polyphonic' })
 })
 
-it('keeps startup actions outside the collapsed shared browser launcher', async () => {
-    document.body.innerHTML = startPage
-        .replace(/<script\b[^>]*>[\s\S]*?<\/script>/g, '')
+it('shows the browser immediately with one primary start action and secondary session actions', async () => {
+    document.body.innerHTML = startPage.match(/<dialog id="start-dialog"[\s\S]*?<\/dialog>/)![0]
     const dialog = document.querySelector<HTMLDialogElement>('#start-dialog')!
-    const details = dialog.querySelector<HTMLDetailsElement>('#start-contexts')!
-    expect(details.open).toBe(false)
-    expect(details.querySelector('.start-presets-label')!.textContent).toBe('Presets')
-    expect(details.querySelector('summary')!.textContent).toContain('Browse ready-made setups')
-    expect(dialog.querySelectorAll('[autofocus]')).toHaveLength(1)
-    expect(dialog.querySelector('[autofocus]')).toBe(dialog.querySelector('.btn-start-empty'))
+    await runUI(async () => { mountStartContexts(dialog) })
+    expect(dialog.querySelector('#start-contexts')).toBeNull()
+    expect(dialog.querySelector('.preset-browse')).toBeNull()
+    expect(dialog.querySelector('.start-preset-actions')).toBeNull()
+    expect(dialog.querySelectorAll('.preset-apply-button')).toHaveLength(1)
+    expect(dialog.querySelector('.preset-apply-button')!.textContent).toBe('Start Preset')
+    expect(dialog.textContent).not.toContain('Choose this preset, then')
+    expect(dialog.querySelector('.preset-search input')).toBeTruthy()
+    expect(dialog.querySelectorAll('.preset-filter select')).toHaveLength(2)
     const empty = dialog.querySelector<HTMLButtonElement>('.btn-start-empty')!
-    expect(empty.querySelector('.start-action-label')!.textContent).toBe('Start Empty')
+    const session = dialog.querySelector<HTMLButtonElement>('.btn-continue-session')!
+    expect(empty.textContent).toBe('Start Empty')
     expect(empty.value).toBe('empty')
+    expect(session.textContent).toBe('Continue Session')
+    expect(session.value).toBe('session')
     expect(empty.form?.id).toBe('start-form')
-    expect(details.contains(empty)).toBe(false)
-    const continueSession = dialog.querySelector<HTMLButtonElement>('.btn-continue-session')!
-    expect(continueSession.querySelector('.start-action-label')!.textContent).toBe('Continue Session')
-    expect(continueSession.value).toBe('session')
-    expect(continueSession.form).toBe(empty.form)
-    expect(continueSession.parentElement).toBe(empty.parentElement)
-    expect(details.contains(continueSession)).toBe(false)
-    expect(details.querySelector('.start-presets-content')).toBeTruthy()
-    const actions = dialog.querySelector('.start-preset-actions')!
-    expect(details.contains(actions)).toBe(false)
-    expect(actions.querySelector<HTMLButtonElement>('.btn-start-preset')!.value).toBe('preset')
-    expect(actions.contains(document.getElementById('start-context-selection'))).toBe(true)
-    await act(async () => { createStartContexts(dialog) })
-    expect(dialog.querySelectorAll('button[value="session"]')).toHaveLength(1)
-    expect(details.querySelector('input[value=""]')).toBeNull()
-    expect(details.textContent).not.toContain('Continue your session')
-    expect(details.querySelector('button')!.textContent).toBe('Browse all presets…')
-    expect(actions.querySelector('.btn-start-preset')!.textContent).toBe('Start Preset')
+    expect(session.form).toBe(empty.form)
+    expect(dialog.querySelector('form form')).toBeNull()
     expect(createEmptySetup().chains[0].steps).toEqual([])
-    expect(createEmptySetup().chains[0].options.name).toBe('Chain 1')
 })
 
 it('provides restorable contexts with valid routing and independent transformer settings', () => {
@@ -140,17 +188,17 @@ it('searches the shared browser by activity descriptions and next actions', asyn
     document.body.innerHTML = startPage.match(/<dialog id="start-dialog"[\s\S]*?<\/dialog>/)![0]
     const root = document.querySelector<HTMLElement>('#start-dialog')!
     let picker: ReturnType<typeof createStartContexts>
-    await act(async () => { picker = createStartContexts(root) })
+    await runUI(async () => { picker = mountStartContexts(root) })
     expect(picker!.getSetup()).toBeUndefined()
     const search = document.querySelector<HTMLInputElement>('.preset-search input')!
-    await act(async () => { search.value = 'classroom'; search.dispatchEvent(new Event('input', { bubbles: true })) })
+    await runUI(async () => { search.value = 'classroom'; search.dispatchEvent(new Event('input', { bubbles: true })) })
     const cards = [...document.querySelectorAll<HTMLButtonElement>('.preset-browser nav button')]
     expect(cards.length).toBeGreaterThan(0)
     expect(cards.every(card => card.textContent!.toLowerCase().includes('classroom'))).toBe(true)
     const classroom = cards.find(card => card.textContent!.includes('Synchronise a classroom'))!
-    await act(async () => { classroom.click() })
+    await runUI(async () => { classroom.click() })
     expect(document.querySelector('.preset-preview')!.textContent).toContain('use Sync')
-    await act(async () => { document.querySelector<HTMLButtonElement>('.preset-apply-button')!.click() })
+    await runUI(async () => { document.querySelector<HTMLButtonElement>('.preset-apply-button')!.click() })
     expect(picker!.getSetup()?.id).toBe('classroom')
 })
 

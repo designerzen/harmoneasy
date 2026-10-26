@@ -75,7 +75,7 @@ function createWindow() {
 		console.log('Loading app... isProduction:', isProduction)
 
 		// Development: load from Vite dev server
-		const devServerUrl = 'http://localhost:5174'
+		const devServerUrl = 'http://localhost:1999'
 		console.log('Dev mode: loading from', devServerUrl)
 		mainWindow.loadURL(devServerUrl)
 		mainWindow.webContents.openDevTools()

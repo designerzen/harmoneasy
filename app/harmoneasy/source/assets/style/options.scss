@@ -7,6 +7,12 @@
 	--theme-hue: 290;
 	--hue-accent: var(--theme-hue);
 	--hue-background: var(--theme-hue);
+	// Rotate the established palette together, retaining the category relationships.
+	--hue-input: calc(var(--theme-hue) - 128);
+	--hue-transformer: calc(var(--theme-hue) - 10);
+	--hue-output: calc(var(--theme-hue) + 95);
+	--hue-tuning: calc(var(--theme-hue) - 71);
+	--hue-timing: var(--hue-transformer);
 
 	--col-white: oklch(98% 0.008 var(--theme-hue));
 	--col-black: oklch(17% 0.018 var(--theme-hue));
@@ -20,12 +26,12 @@
 	--col-accent: light-dark(oklch(43% 0.13 var(--theme-hue)), oklch(82% 0.10 var(--theme-hue)));
 	--col-accent-hover: color-mix(in oklch, var(--col-accent) 90%, var(--col-fg));
 	--col-on-accent: light-dark(white, black);
-	--col-orange: var(--col-accent);
-	--col-plum: var(--col-accent);
-	--col-pink: var(--col-accent-soft);
+	--col-orange: light-dark(oklch(43% 0.13 calc(var(--theme-hue) - 235)), oklch(82% 0.10 calc(var(--theme-hue) - 235)));
+	--col-plum: light-dark(oklch(43% 0.13 calc(var(--theme-hue) + 20)), oklch(82% 0.10 calc(var(--theme-hue) + 20)));
+	--col-pink: light-dark(oklch(43% 0.13 calc(var(--theme-hue) + 60)), oklch(82% 0.10 calc(var(--theme-hue) + 60)));
 	--col-purple: var(--col-accent);
-	--col-blue: var(--col-accent);
-	--col-green: var(--col-accent-soft);
+	--col-blue: light-dark(oklch(43% 0.13 calc(var(--theme-hue) - 30)), oklch(82% 0.10 calc(var(--theme-hue) - 30)));
+	--col-green: light-dark(oklch(43% 0.13 calc(var(--theme-hue) - 150)), oklch(82% 0.10 calc(var(--theme-hue) - 150)));
 	--col-surface: light-dark(oklch(100% 0 var(--theme-hue)), oklch(23% 0.02 var(--theme-hue)));
 	--col-surface-raised: color-mix(in oklch, var(--col-surface) 94%, var(--col-accent));
 	--col-muted: light-dark(oklch(43% 0.025 var(--theme-hue)), oklch(78% 0.025 var(--theme-hue)));
