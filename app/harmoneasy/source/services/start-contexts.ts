@@ -1,6 +1,4 @@
-import React from 'react'
-import { createRoot } from 'react-dom/client'
-import { PresetBrowser } from '../components/graph/PresetBrowser'
+import { createPresetBrowser } from '../components/graph/PresetBrowser'
 import { presetSetup } from '../components/graph/preset-catalogue'
 import type { PresetSetup } from 'audiobus/io/preset-library'
 export * from './start-context-catalogue'
@@ -13,11 +11,12 @@ export function createStartContexts(root: HTMLElement, onStart?: (setup: PresetS
         selected = setup
         return onStart?.(setup)
     }
-    createRoot(host).render(React.createElement(PresetBrowser, {
+    const browser = createPresetBrowser({
         createChain: true,
         startup: true,
         onChooseSetup: choose,
         onApply: preset => choose(presetSetup(preset))
-    }))
-    return { getSetup: () => selected }
+    })
+    host.append(browser.element)
+    return { getSetup: () => selected, destroy: () => browser.destroy() }
 }

@@ -22,7 +22,6 @@ import { createMidiDevicesDialog } from './services/midi-devices-dialog'
 import { createRecordingControls } from './services/recording-dialog'
 import { createClockSourceControls } from './services/clock-source-controls'
 import { isClockSource, clockMidiPorts, type ClockSourceController } from './services/clock-source'
-import { createGraph } from './components/transformers-graph.tsx'
 
 // Import Data
 import { importDawProjectFile } from 'audiobus/importers/import-dawproject'
@@ -476,6 +475,7 @@ const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: b
     ioManager.addEventListener('chainActiveChanged', persistIOState)
 
  
+    const { createGraph } = await import('./components/transformers-graph')
     createGraph('graph', ioManager)
     createMidiDevicesDialog()
     createMidiControlPanel(ioManager, state.get('midiControls') as string | undefined,
