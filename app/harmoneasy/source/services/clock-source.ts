@@ -55,6 +55,13 @@ export class ClockSourceController {
         return next
     }
     settled(): Promise<void> { return this.queue }
+    adoptRoomRole(conductor: boolean): void {
+        this.source = conductor ? 'internal' : 'shared'
+        this.initialized = true
+        this.manager.externallyControlledTransport = true
+        this.timer.bypass(true)
+        this.changed(this.source, this.midiDevice)
+    }
     setSource(source: ClockSource, notifyLink = true): Promise<void> {
         if (this.initialized && source === this.source && !this.switching) return Promise.resolve()
         if (source === 'midi' && !clockMidiPorts(this.manager).length) return Promise.reject(new Error('Connect a MIDI input before selecting MIDI clock.'))

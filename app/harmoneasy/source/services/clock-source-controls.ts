@@ -52,7 +52,7 @@ export function createClockSourceControls(timer: ConstructorParameters<typeof Cl
         }
         status.textContent = source === 'midi' ? available ? 'Waiting for MIDI transport and clock ticks.' : 'MIDI clock disconnected; transport stopped.'
             : source === 'manual' ? 'One tick per press; 24 ticks per beat.'
-            : source === 'shared' ? 'Following the room clock. Open Sync to join a room.' : ''
+            : source === 'shared' ? 'Following the host. Open Shared room to join or leave.' : ''
         if (ready) { persist(source, selectedDevice); playingChanged() }
     }
     const controller = new ClockSourceController(timer, manager, link, render, error)

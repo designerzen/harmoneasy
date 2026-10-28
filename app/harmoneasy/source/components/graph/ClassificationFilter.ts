@@ -19,7 +19,7 @@ export function createClassificationFilter({
 	select.setAttribute('aria-label', label)
 	if (!compact) host.append(element('span', '', label))
 	else
-		host.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6" /></svg>'
+		host.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h9m4 0h3M4 17h3m4 0h9" /><circle cx="15" cy="7" r="2" /><circle cx="9" cy="17" r="2" /></svg>'
 	const update = (items: ClassifiedChoice[]) => {
 		const groups = choiceFilterOptions(items)
 		const previous = select.value

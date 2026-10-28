@@ -2,14 +2,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { createNetronomeLink, createSyncUrl, readSyncBundle } from '../source/services/netronome-link'
+import { readRoomUrl } from '../source/services/room-url'
+import { EVENT_TRANSPORT_CHANGED } from '../../../packages/audiobus/event-constants'
 
-const offer = { description: { type: 'offer', sdp: 'v=0\r\na=offer' } }
-const answer = { description: { type: 'answer', sdp: 'v=0\r\na=answer' } }
+const identity = { protocol: 'harmoneasy-room/1', roomId: 'host', peerId: 'host', connectionId: 'invitation' }
+const offer = { ...identity, description: { type: 'offer', sdp: 'v=0\r\na=offer' } }
+const answer = { ...identity, peerId: 'follower', description: { type: 'answer', sdp: 'v=0\r\na=answer' } }
 const mocks = vi.hoisted(() => ({ controllers: [] as any[], qr: vi.fn(async () => 'data:image/png;base64,qr') }))
 vi.mock('qrcode', () => ({ default: { toDataURL: mocks.qr } }))
-vi.mock('netronome', () => ({
-    createWebRTCSyncController: vi.fn((_timer, options) => {
+vi.mock('../source/services/room-connection', () => ({
+    ROOM_PROTOCOL: 'harmoneasy-room/1',
+    createRoomConnection: vi.fn((_timer, options) => {
         const controller = {
+            roomId: options.roomId,
             options, destroy: vi.fn(async () => {}), createOfferBundle: vi.fn(async () => offer),
             applyOfferBundle: vi.fn(async () => {}), createAnswerBundle: vi.fn(async () => answer),
             applyAnswerBundle: vi.fn(async () => {}), startSynchronized: vi.fn(async () => {}),
@@ -33,9 +38,9 @@ describe('Netronome connection links', () => {
     it('round-trips the session bundle without including workspace state', () => {
         const url = createSyncUrl(offer, 'https://example.com/harmoneasy/?io=private&tempo=90#old')
         expect(new URL(url).search).toBe('')
-        expect(new URL(url).pathname).toBe('/harmoneasy/')
+        expect(new URL(url).pathname).toBe('/harmoneasy/room/')
         expect(readSyncBundle(url)).toEqual(offer)
-        expect(readSyncBundle(new URL(url).hash.slice('#sync-bundle='.length))).toEqual(offer)
+        expect(readSyncBundle(new URLSearchParams(new URL(url).hash.slice(1)).get('sync-bundle')!)).toEqual(offer)
         expect(() => readSyncBundle('invalid')).toThrow()
         expect(() => readSyncBundle(createSyncUrl({ description: { type: 'answer' } }, url))).toThrow()
     })
@@ -120,5 +125,75 @@ describe('Netronome connection links', () => {
         await link.initialize()
         expect(link.isFollower).toBe(true)
         expect(mocks.controllers[0].applyOfferBundle).toHaveBeenCalledWith(offer)
+    })
+    it('invites another player without destroying the current room', async () => {
+        createNetronomeLink({}, () => true)
+        await idle()
+        const controller = mocks.controllers[0]
+        controller.onStateChange({ connected: true, locked: true })
+        element<HTMLButtonElement>('netronome-regenerate').click()
+        await idle()
+        expect(mocks.controllers).toHaveLength(1)
+        expect(controller.destroy).not.toHaveBeenCalled()
+        expect(controller.createOfferBundle).toHaveBeenCalledTimes(2)
+    })
+    it('rejects legacy tempo-only invitations rather than silently omitting workspace sharing', () => {
+        expect(() => readSyncBundle(createSyncUrl({ description: offer.description }, window.location.href))).toThrow('shared room')
+    })
+    it('includes a portable setup alongside the manual pairing data in a QR URL', () => {
+        const setup = { version: 1 as const, workspace: 'workspace:snapshot', bpm: 130, swing: 0.3, divisions: 24, bars: 4 }
+        const url = createSyncUrl(offer, 'https://example.test/harmoneasy/', setup)
+        expect(readRoomUrl(url)).toEqual({ roomId: 'host', setup })
+        expect(readSyncBundle(url)).toEqual(offer)
+    })
+    it('enables conductor controls after succession without destroying the room connection', async () => {
+        const changed = vi.fn()
+        window.history.replaceState(null, '', createSyncUrl(offer, window.location.href))
+        const link = createNetronomeLink({}, () => false, { onConductorChanged: changed })
+        await idle()
+        const controller = mocks.controllers[0]
+        expect(link.isFollower).toBe(true)
+        controller.onRoleChange(true)
+        expect(changed).toHaveBeenCalledWith(true)
+        expect(link.isFollower).toBe(false)
+        expect(element<HTMLInputElement>('tempo').disabled).toBe(false)
+        expect(element<HTMLButtonElement>('netronome-regenerate').disabled).toBe(false)
+        expect(controller.destroy).not.toHaveBeenCalled()
+    })
+    it('updates transport UI from the shared clock without broadcasting another start or stop', async () => {
+        const manager = Object.assign(new EventTarget(), { chains: [], exportWorkspace: () => 'workspace:snapshot' })
+        const link = createNetronomeLink({ BPM: 120, swing: 0, divisions: 24, bars: 4 }, () => true, { manager: manager as any })
+        await idle()
+        const controller = mocks.controllers[0]
+        controller.onStateChange({ connected: true, locked: true })
+        controller.startSynchronized.mockClear()
+        manager.addEventListener(EVENT_TRANSPORT_CHANGED, () => link.transportChanged())
+        controller.onTransportChange()
+        expect(controller.startSynchronized).not.toHaveBeenCalled()
+        expect(controller.stopSynchronized).not.toHaveBeenCalled()
+        link.transportChanged()
+        expect(controller.startSynchronized).toHaveBeenCalledOnce()
+    })
+    it('keeps a usable setup URL when its workspace is too large for a QR code', async () => {
+        mocks.qr.mockRejectedValueOnce(new Error('QR capacity exceeded'))
+        createNetronomeLink({}, () => false)
+        await idle()
+        expect(element<HTMLImageElement>('netronome-qr').hidden).toBe(true)
+        expect(element('netronome-status').textContent).toContain('too large')
+        expect(readSyncBundle(element<HTMLTextAreaElement>('netronome-local-link').value)).toEqual(offer)
+    })
+    it('starts a distinct room, updates its URL, and preserves the current setup', async () => {
+        const manager = Object.assign(new EventTarget(), { chains: [], exportWorkspace: () => 'workspace:snapshot' })
+        createNetronomeLink({ BPM: 126, swing: 0.1, divisions: 24, bars: 4 }, () => false, { manager: manager as any })
+        await idle()
+        const original = readRoomUrl(window.location.href)
+        element<HTMLButtonElement>('netronome-new-room').click()
+        await vi.waitFor(() => expect(mocks.controllers).toHaveLength(2))
+        await idle()
+        const fresh = readRoomUrl(window.location.href)
+        expect(fresh.roomId).not.toBe(original.roomId)
+        expect(fresh.setup).toEqual(original.setup)
+        expect(new URLSearchParams(window.location.hash.slice(1)).has('sync-bundle')).toBe(false)
+        expect(mocks.controllers[0].destroy).toHaveBeenCalledOnce()
     })
 })

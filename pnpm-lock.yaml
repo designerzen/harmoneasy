@@ -248,6 +248,18 @@ importers:
       '@msgpack/msgpack':
         specifier: ^3.1.3
         version: 3.1.3
+      '@opendaw/lib-dom':
+        specifier: 0.0.77
+        version: 0.0.77
+      '@opendaw/lib-dsp':
+        specifier: 0.0.77
+        version: 0.0.77
+      '@opendaw/studio-adapters':
+        specifier: 0.0.99
+        version: 0.0.99
+      '@opendaw/studio-core':
+        specifier: 0.0.126
+        version: 0.0.126(@ffmpeg/ffmpeg@0.12.15)(@ffmpeg/util@0.12.2)(@types/node-fetch@2.6.13)(encoding@0.1.13)
       '@opendaw/studio-sdk':
         specifier: ^0.0.128
         version: 0.0.128(@ffmpeg/ffmpeg@0.12.15)(@ffmpeg/util@0.12.2)(@types/node-fetch@2.6.13)(encoding@0.1.13)
@@ -266,6 +278,9 @@ importers:
       butterchurn-presets:
         specifier: ^2.4.7
         version: 2.4.7
+      coi-serviceworker:
+        specifier: 0.1.7
+        version: 0.1.7
       fflate:
         specifier: ^0.8.2
         version: 0.8.2
@@ -2307,6 +2322,9 @@ packages:
 
   codec-parser@2.5.0:
     resolution: {integrity: sha512-Ru9t80fV8B0ZiixQl8xhMTLru+dzuis/KQld32/x5T/+3LwZb0/YvQdSKytX9JqCnRdiupvAvyYJINKrXieziQ==}
+
+  coi-serviceworker@0.1.7:
+    resolution: {integrity: sha512-bjSUqEngCPOkErY2vbyWsaIGCNRODYzlNycaREVw5s12/C8SM+RnRUUeX6pZbTtov6C52ZLY/+tvHK+BDxuUuA==}
 
   color-convert@2.0.1:
     resolution: {integrity: sha512-RRECPsj7iu/xb5oKYcsFHSppFNnsj/52OVTRKb4zP5onXwVF3zVmmToNcOfGC+CRDpfK/U584fMg38ZHCaElKQ==}
@@ -6791,6 +6809,8 @@ snapshots:
   clone@1.0.4: {}
 
   codec-parser@2.5.0: {}
+
+  coi-serviceworker@0.1.7: {}
 
   color-convert@2.0.1:
     dependencies:

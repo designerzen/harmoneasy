@@ -29,6 +29,10 @@
 		</div>
 		</header>
 		<form id="start-form" method="dialog"></form>
+		<div id="start-room-context" hidden>
+			<p id="start-room-description"></p>
+			<button form="start-form" type="submit" name="startup" value="room">Start shared setup</button>
+		</div>
 		<div class="start-presets-content"></div>
 		<p id="start-error" role="alert" hidden></p>
 	</dialog>
@@ -76,22 +80,32 @@
 					<output id="clock-source-status" role="status"></output>
 				</div>
 				<button type="button" id="btn-metronome" aria-pressed="false" title="Enable metronome" disabled>Metronome</button>
-				<button type="button" id="netronome-link" title="Sync with another browser" aria-haspopup="dialog" disabled>
-					<img id="netronome-qr-preview" alt="Netronome connection QR code" hidden>
-					<span>Sync</span>
+				<button type="button" id="netronome-link" title="Share tempo, notes and workspace with another device" aria-haspopup="dialog" aria-controls="netronome-dialog" disabled>
+					<img id="netronome-qr-preview" alt="Shared room invitation QR code" hidden>
+					<span>Shared room</span>
 				</button>
 			</div>
 		</div>
 
 	</header>
-	<dialog id="netronome-dialog" aria-labelledby="netronome-title">
+	<dialog id="netronome-dialog" aria-labelledby="netronome-title" data-midi-ignore>
 		<header>
-			<h2 id="netronome-title">Sync</h2>
-			<button type="button" id="netronome-close" aria-label="Close Sync dialog">Close</button>
+			<h2 id="netronome-title">Shared room</h2>
+			<button type="button" id="netronome-close" aria-label="Close shared room dialog">Close</button>
 		</header>
-		<div class="netronome-dialog-content" tabindex="0" role="region" aria-label="Sync connection details">
+		<div class="netronome-dialog-content" tabindex="0" role="region" aria-label="Shared room connection details">
+		<label for="netronome-room-name">Room name</label>
+		<input id="netronome-room-name" type="text" maxlength="64" pattern="[a-z0-9][a-z0-9._-]{0,63}" autocomplete="off" spellcheck="false">
+		<button type="button" id="netronome-new-room">Start a new room with this setup</button>
+		<label for="netronome-room-link">Room or setup link</label>
+		<textarea id="netronome-room-link" readonly rows="2" spellcheck="false"></textarea>
+		<button type="button" id="netronome-copy-room">Share room and setup</button>
+		<button type="button" id="netronome-copy-setup">Share setup for a new room</button>
+		<p>Share tempo, swing, transport, musical notes and the complete IO-chain workspace with up to 8 players. The conductor runs the transformations; every device plays the same resulting notes. The first player remains conductor until they leave, then the next player takes over.</p>
+		<p>Room links carry the setup, but devices still need an invitation and reply to find one another without a room server. Once connected, players connect directly to support conductor handover.</p>
+		<p>Joining replaces your current workspace. Instruments and hardware must be available on each device; unavailable devices pause shared playback. A small shared playback buffer keeps notes together; network delay still applies.</p>
 		<p id="netronome-instructions"></p>
-		<img id="netronome-qr" alt="Scan to connect this Netronome session" hidden>
+		<img id="netronome-qr" alt="Scan to join this shared room" hidden>
 		<p id="netronome-status" role="status">Initializing audio…</p>
 		<label for="netronome-local-link">Connection link</label>
 		<textarea id="netronome-local-link" readonly rows="2" spellcheck="false"></textarea>
@@ -99,7 +113,8 @@
 		<label for="netronome-remote-link">Link from the other browser</label>
 		<textarea id="netronome-remote-link" rows="2" spellcheck="false" placeholder="Paste the reply link here"></textarea>
 		<button type="button" id="netronome-apply">Connect</button>
-		<button type="button" id="netronome-regenerate">New connection</button>
+		<button type="button" id="netronome-regenerate">Invite another player</button>
+		<button type="button" id="netronome-leave">Leave room</button>
 		</div>
 	</dialog>
 

@@ -15,6 +15,7 @@ import { createEmptySetup, createStartContexts } from './services/start-contexts
 import { applySetup } from './components/graph/saved-presets'
 import type { PresetSetup } from 'audiobus/io/preset-library'
 import { createNetronomeLink } from './services/netronome-link'
+import { readRoomUrl } from './services/room-url'
 import { createMidiControlPanel } from './services/midi-control-panel'
 import { startKnownMidiInputs } from 'audiobus/midi/hardware/known-midi-inputs'
 import { showMidiDeviceDisconnected } from './services/midi-device-errors'
@@ -113,7 +114,7 @@ const importFile = async (file: File): Promise<{ commands: IAudioCommand[], note
  * Create the UI and front end
  * TODO: Condense and optimise
  */
-const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number = 100) => {
+const initialiseFrontEnd = async (audioBus: AudioBus, initialVolumePercent: number = 100) => {
 
     // const keyboard:SVGKeyboard = new SVGKeyboard(ALL_KEYBOARD_NOTES, onNoteOn, onNoteOff)
     const frontEnd = new UI(ALL_KEYBOARD_NOTES)
@@ -139,6 +140,7 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number 
 
     // Panic button  - kill all playing notes
     frontEnd.whenKillSwitchRequestedRun(async () => {
+        netronomeLink?.silence()
         console.info('[Kill Switch] All notes off requested')
         ioManager.chains.forEach(chain => {
             chain.allNotesOff()
@@ -207,7 +209,7 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number 
     })
 
     frontEnd.whenVolumeChangesRun((volume: number) => {
-        mixer.gain.value = (volume / 100) * 0.5
+        audioBus.volume = volume / 100
         state.set('volume', volume)
     })
 
@@ -216,7 +218,7 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number 
         const currentVolume = parseInt(volumeElement.value, 10)
         const newVolume = Math.min(100, currentVolume + 5)
         volumeElement.value = String(newVolume)
-        mixer.gain.value = (newVolume / 100) * 0.5
+        audioBus.volume = newVolume / 100
         if (frontEnd.elementVolumeOutput) frontEnd.elementVolumeOutput.textContent = String(newVolume)
         state.set('volume', newVolume)
     })
@@ -226,7 +228,7 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number 
         const currentVolume = parseInt(volumeElement.value, 10)
         const newVolume = Math.max(0, currentVolume - 5)
         volumeElement.value = String(newVolume)
-        mixer.gain.value = (newVolume / 100) * 0.5
+        audioBus.volume = newVolume / 100
         if (frontEnd.elementVolumeOutput) frontEnd.elementVolumeOutput.textContent = String(newVolume)
         state.set('volume', newVolume)
     })
@@ -357,6 +359,8 @@ const initialiseFrontEnd = async (mixer: GainNode, initialVolumePercent: number 
  * @returns 
  */
 const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: boolean = false, startupSetup?: PresetSetup) => {
+    const roomInvitation = readRoomUrl(window.location.href)
+    const hasWorkspaceBookmark = new URLSearchParams(window.location.hash.slice(1)).has('harmoneasy-state')
 
     // Get state from session and URL & update GUI
     const elementMain = document.querySelector('main')
@@ -367,6 +371,11 @@ const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: b
         // update onscreen QR code
     })
     state.loadFromLocation(DEFAULT_OPTIONS)
+    const roomSetup = hasWorkspaceBookmark && state.get('io') ? undefined : roomInvitation.setup
+    if (roomSetup) {
+        state.set('tempo', roomSetup.bpm)
+        state.set('swing', roomSetup.swing)
+    }
     state.updateLocation()
 
     // Volume initialization (needed before UI setup)
@@ -379,8 +388,12 @@ const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: b
     
     timer = new AudioTimer(bus.audioContext, bus.hasAudioWorklets)
     await timer.loaded
+    if (roomInvitation.setup) {
+        timer.divisions = roomInvitation.setup.divisions
+        timer.bars = roomInvitation.setup.bars
+    }
     
-    ui = await initialiseFrontEnd(bus.mixer, initialVolumePercent)
+    ui = await initialiseFrontEnd(bus, initialVolumePercent)
 
     // IO Chain Manager Setup -----
     ioManager = new IOChainManager({
@@ -410,7 +423,10 @@ const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: b
 
     // Check if there are saved IO configurations in state
     const savedIOState = state.get('io') as string | null
-    if (startupSetup) {
+    if (roomSetup) {
+        await ioManager.restoreWorkspace(roomSetup.workspace)
+        state.set('io', ioManager.exportWorkspace())
+    } else if (startupSetup) {
         await applySetup(ioManager, startupSetup)
         state.set('io', ioManager.exportWorkspace())
     } else if (savedIOState) {
@@ -492,8 +508,12 @@ const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: b
     const savedClockSource = state.get('clockSource')
     const savedClockDevice = state.get('clockMidiDevice')
     const incomingRoom = new URLSearchParams(window.location.hash.slice(1)).has('sync-bundle')
-    const initialClockSource = incomingRoom ? 'shared' : isClockSource(savedClockSource) ? savedClockSource : 'internal'
+    const initialClockSource = incomingRoom ? 'shared' : roomInvitation.roomId || roomInvitation.setup ? 'internal' : isClockSource(savedClockSource) ? savedClockSource : 'internal'
     netronomeLink = createNetronomeLink(timer, () => ioManager.transportRunning, {
+        manager: ioManager,
+        roomId: roomInvitation.roomId,
+        onConductorChanged: conductor => clockSource?.adoptRoomRole(conductor),
+        onLeaveRequested: () => clockSource!.setSource('internal'),
         source: initialClockSource, autoStart: false,
         onSharedRequested: () => clockSource!.setSource('shared', false)
     })
@@ -594,6 +614,19 @@ if (storage) {
 
 // Keep context browsing available until the explicit audio activation gesture.
 const startDialog = document.querySelector<HTMLDialogElement>('#start-dialog')!
+try {
+    const invitation = readRoomUrl(window.location.href)
+    if (invitation.setup) {
+        document.getElementById('start-room-context')!.hidden = false
+        document.getElementById('start-room-description')!.textContent = invitation.roomId
+            ? `This link includes the setup for room “${invitation.roomId}”. Start it, then complete QR/reply pairing to connect to other players.`
+            : 'This link includes a shared setup. Start it to create a new room with those instruments and chains.'
+    }
+} catch (error) {
+    const message = document.getElementById('start-error')!
+    message.hidden = false
+    message.textContent = error instanceof Error ? error.message : 'Invalid room setup link.'
+}
 createStartContexts(startDialog, setup => startApplication(startDialog.querySelector<HTMLButtonElement>('.preset-apply-button')!, setup))
 startDialog.removeAttribute('open')
 startDialog.showModal()

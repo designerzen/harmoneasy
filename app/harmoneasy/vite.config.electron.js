@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite'
+import { opendawFilesPlugin } from 'audiobus/instruments/openDAW/opendaw-files.js'
 import path from 'path'
 import { midiDeviceFilesPlugin } from 'audiobus/midi/hardware/device-files.js'
 import { supersonicFilesPlugin } from 'audiobus/io/outputs/supersonic-files.js'
@@ -66,7 +67,7 @@ export default defineConfig({
   resolve: {
     conditions: ['import']
   },
-  plugins: [nodeAddonPlugin, midiDeviceFilesPlugin(), supersonicFilesPlugin()],
+  plugins: [nodeAddonPlugin, midiDeviceFilesPlugin(), supersonicFilesPlugin(), opendawFilesPlugin()],
   ssr: {
     external: ['fs', 'path', 'module', 'url']
   }

@@ -113,14 +113,22 @@ input {
 
 input[type="search"] {
 	appearance: none;
+	box-sizing: border-box;
+	min-width: 0;
 	background: transparent;
 	border: none;
 	padding-left: var(--pad);
 	outline: none;
 	color: light-dark(var(--col-black), var(--col-white));
-	text-decoration: underline;
-	text-decoration-color: currentColor;
-	text-underline-offset: 2px;
+	font: inherit;
+	text-decoration: none;
+
+	&::placeholder {
+		color: var(--col-muted);
+		opacity: 1;
+	}
+
+	&::-webkit-search-cancel-button { cursor: pointer; }
 }
 
 ::placeholder {

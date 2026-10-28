@@ -28,6 +28,17 @@ function setup() {
 const tick = () => new Promise(resolve => setTimeout(resolve, 15))
 
 describe('IO workspace', () => {
+    it('processes notes after a shared-clock follower is promoted to conductor', async () => {
+        const { manager, chain, timer, sink } = setup()
+        await manager.transport('stop')
+        manager.externallyControlledTransport = true
+        timer.isRunning = true
+        chain.addCommand({ type: NOTE_ON, number: 60, velocity: 100, startAt: 0 } as any)
+        expect(manager.updateTime(1, 1)).toHaveLength(1)
+        await OutputManager.settled(sink)
+        expect(sink.noteOn).toHaveBeenCalledWith(60, 100)
+        manager.destroy()
+    })
     it('swaps a disabled input in one chain while keeping its shared instance attached elsewhere', () => {
         const { manager, chain, input, id } = setup()
         const clone = manager.getChain(manager.cloneChain(id))!
@@ -176,7 +187,7 @@ describe('IO workspace', () => {
     it('isolates shared input commands and handles shared transport once', async () => {
         const { manager, input, chain, id, timer } = setup()
         const clone = manager.getChain(manager.cloneChain(id))!
-        chain.setTransformers([{ uuid: 'mutator', type: 'test', transform: commands => {
+        chain.setTransformers([{ uuid: 'mutator', type: 'test', destroy: vi.fn(), transform: commands => {
             commands[0].number = 72
             return commands
         } }] as any)

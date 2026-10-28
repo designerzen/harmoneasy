@@ -32,7 +32,7 @@ export default class AudioBus extends EventTarget {
 	}
 
 	set volume( value:number ) {
-		this.#mixer.gain.value = value * 0.5
+		this.#output.gain.value = Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0
 	}
 
 	constructor( initialVolume:number=1 ) {
@@ -54,8 +54,18 @@ export default class AudioBus extends EventTarget {
 		setAudioDestination(context, this.#output)
 		this.volume = initialVolume
 
-		connectCLAPMixer(mixer, reverb)
-		reverb.connect(this.#output)
+		// Split after insert effects so the dry path cannot bypass the effect rack.
+		const effectsOutput = context.createGain()
+		const dry = context.createGain()
+		const wet = context.createGain()
+		dry.gain.value = 0.85
+		wet.gain.value = 0.15
+		connectCLAPMixer(mixer, effectsOutput)
+		effectsOutput.connect(dry)
+		dry.connect(this.#output)
+		effectsOutput.connect(reverb)
+		reverb.connect(wet)
+		wet.connect(this.#output)
 		this.#output.connect(context.destination)
 
 		// Resume if suspended (required by browser autoplay policy)

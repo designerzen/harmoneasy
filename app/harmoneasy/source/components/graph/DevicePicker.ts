@@ -59,7 +59,7 @@ export function createDevicePicker(
 	const search = element('input', dialog ? 'filter-input-global' : '')
 	search.type = 'search'
 	search.autofocus = dialog
-	search.placeholder = `Filter ${direction}s...`
+	search.placeholder = `Search ${direction}s…`
 	search.setAttribute('aria-label', `Search ${direction}s`)
 	label.innerHTML =
 		'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10" cy="10" r="6" /><path d="m15 15 5 5" /></svg>'
