@@ -1,6 +1,6 @@
 import type IOChain from 'audiobus/io/IO-chain'
 import type IOChainManager from 'audiobus/io/IO-chain-manager'
-import { applyPreset, savePreset } from './saved-presets'
+import { applyPreset, readPresets, savePreset } from './saved-presets'
 import { createPresetBrowser } from './PresetBrowser'
 import { element, button } from './dom'
 
@@ -21,49 +21,81 @@ export function createPresets(chain: IOChain, manager: IOChainManager) {
 			showStatus(`${preset.name} applied`)
 		},
 	})
+	const dialog = element('dialog', 'save-preset-dialog')
+	const title = element('h2', '', 'Save as a Preset')
+	title.id = `save-preset-${crypto.randomUUID()}`
+	dialog.setAttribute('aria-labelledby', title.id)
 	const form = element('form', 'save-preset')
-	form.hidden = true
 	const name = element('input')
 	name.required = true
 	name.maxLength = 80
-	const label = element('label', '', 'Preset name ')
+	name.autofocus = true
+	const label = element('label', '', 'Preset name')
 	label.append(name)
-	const save = element('button', '', 'Save')
+	const message = element('p')
+	message.setAttribute('role', 'status')
+	message.hidden = true
+	const save = element('button', 'primary', 'Save')
 	save.type = 'submit'
-	const trigger = button(
-		'',
-		() => {
-			name.value = chain.options.name ?? ''
-			form.hidden = false
-			trigger.setAttribute('aria-expanded', 'true')
-			showStatus('')
-			name.focus()
-		},
-		'chain-icon-button',
-	)
-	trigger.title = 'Save as preset'
-	trigger.setAttribute('aria-expanded', 'false')
-	trigger.innerHTML =
-		'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 3h12l4 4v14H3V3h2Z M7 3v6h10V3 M7 21v-8h10v8" /></svg><span class="sr-only">Save as preset</span>'
-	const close = () => {
-		form.hidden = true
-		trigger.setAttribute('aria-expanded', 'false')
-	}
-	form.append(label, save, button('Cancel', close))
+	let overwriteId: string | undefined
+	const close = () => dialog.close()
+	const rename = button('Rename', () => {
+		overwriteId = undefined
+		message.hidden = true
+		save.textContent = 'Save'
+		rename.hidden = true
+		name.readOnly = false
+		name.focus()
+		name.select()
+	})
+	rename.hidden = true
+	const actions = element('div', 'save-preset-actions')
+	actions.append(save, rename, button('Cancel', close))
+	form.append(label, message, actions)
 	form.onsubmit = (event) => {
 		event.preventDefault()
 		try {
-			savePreset(chain, name.value)
+			if (!overwriteId) {
+				const duplicate = readPresets().find(item => item.name.toLowerCase() === name.value.trim().toLowerCase())
+				if (duplicate) {
+					overwriteId = duplicate.id
+					message.textContent = `A preset named “${duplicate.name}” already exists. Overwrite it with this chain, or rename your new preset.`
+					message.hidden = false
+					save.textContent = 'Overwrite'
+					rename.hidden = false
+					name.readOnly = true
+					rename.focus()
+					return
+				}
+			}
+			savePreset(chain, name.value, overwriteId)
 			close()
 			showStatus('Preset saved')
 		} catch (error) {
-			showStatus(error instanceof Error ? error.message : String(error))
+			message.textContent = error instanceof Error ? error.message : String(error)
+			message.hidden = false
 		}
 	}
-	host.append(browser.element, trigger, form, status)
+	dialog.append(title, form)
+	document.body.append(dialog)
+	host.append(browser.element, status)
 	return {
 		element: host,
+		openSave() {
+			name.value = chain.options.name ?? ''
+			name.readOnly = false
+			overwriteId = undefined
+			message.hidden = true
+			rename.hidden = true
+			save.textContent = 'Save'
+			showStatus('')
+			dialog.showModal()
+			name.focus()
+			name.select()
+		},
 		destroy() {
+			dialog.close()
+			dialog.remove()
 			browser.destroy()
 			host.remove()
 		},

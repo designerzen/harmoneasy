@@ -40,14 +40,18 @@ export function deleteLibraryItem(kind: 'presets' | 'setups', id: string) {
     else library.setups = library.setups.filter(item => item.id !== id)
     writeLibrary(library)
 }
-export function savePreset(chain: IOChain, name: string): TransformerPreset {
+export function savePreset(chain: IOChain, name: string, overwriteId?: string): TransformerPreset {
     const trimmed = name.trim().slice(0, 80)
     if (!trimmed) throw new Error('Enter a preset name')
+    const existing = overwriteId ? readPresets().find(item => item.id === overwriteId) : undefined
+    if (overwriteId && (!existing || existing.name.toLowerCase() !== trimmed.toLowerCase()))
+        throw new Error('The preset changed. Choose a name and try again.')
     const { options, transformers } = chain.exportConfiguration()
     delete options.name
     delete options.active
     const preset: TransformerPreset = { id: crypto.randomUUID(), name: trimmed, category: 'Saved presets',
         description: 'Your saved chain settings and layout.', useCase: 'Recall a previously saved performance chain.',
+        ...existing,
         steps: configurationSteps(transformers), options }
     updatePreset(preset)
     return preset

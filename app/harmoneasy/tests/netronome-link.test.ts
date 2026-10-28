@@ -35,6 +35,43 @@ beforeEach(() => {
 })
 
 describe('Netronome connection links', () => {
+    it('starts with two choices and guides the host from invitation to connected', async () => {
+        createNetronomeLink({}, () => false)
+        await idle()
+        expect(element('netronome-choice').hidden).toBe(false)
+        expect(element('netronome-flow').hidden).toBe(true)
+        expect(element<HTMLDetailsElement>('netronome-options').open).toBe(false)
+        element<HTMLButtonElement>('netronome-start').click()
+        expect(element('netronome-choice').hidden).toBe(true)
+        expect(element('netronome-outgoing').hidden).toBe(false)
+        expect(element('netronome-incoming').hidden).toBe(false)
+        expect(element('netronome-copy').textContent).toBe('Copy invitation')
+        expect(element('netronome-apply').textContent).toBe('Connect player')
+        mocks.controllers[0].onStateChange({ connected: true, locked: true })
+        expect(element('netronome-step').textContent).toBe('You’re connected')
+        expect(element('netronome-outgoing').hidden).toBe(true)
+        expect(element('netronome-incoming').hidden).toBe(true)
+        expect(element('netronome-regenerate').hidden).toBe(false)
+        expect(element('netronome-leave').hidden).toBe(false)
+    })
+
+    it('shows only the invitation input when joining, then only the reply to send back', async () => {
+        createNetronomeLink({}, () => false)
+        await idle()
+        element<HTMLButtonElement>('netronome-join').click()
+        expect(element('netronome-outgoing').hidden).toBe(true)
+        expect(element('netronome-incoming').hidden).toBe(false)
+        expect(element('netronome-apply').textContent).toBe('Join room')
+        element<HTMLTextAreaElement>('netronome-remote-link').value = createSyncUrl(offer, window.location.href)
+        element<HTMLButtonElement>('netronome-apply').click()
+        await idle()
+        expect(element('netronome-step').textContent).toBe('Send your reply')
+        expect(element('netronome-copy').textContent).toBe('Copy reply')
+        expect(element('netronome-outgoing').hidden).toBe(false)
+        expect(element('netronome-incoming').hidden).toBe(true)
+        expect(element('netronome-regenerate').hidden).toBe(true)
+    })
+
     it('round-trips the session bundle without including workspace state', () => {
         const url = createSyncUrl(offer, 'https://example.com/harmoneasy/?io=private&tempo=90#old')
         expect(new URL(url).search).toBe('')

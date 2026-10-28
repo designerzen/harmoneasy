@@ -49,6 +49,7 @@ export function createNetronomeLink(timer: any, isPlaying: () => boolean, option
     const status = document.getElementById('netronome-status')!
     const instructions = document.getElementById('netronome-instructions')!
     const apply = document.getElementById('netronome-apply') as HTMLButtonElement
+    const copy = document.getElementById('netronome-copy') as HTMLButtonElement
     const regenerate = document.getElementById('netronome-regenerate') as HTMLButtonElement
     const room = document.getElementById('netronome-room-name') as HTMLInputElement
     const roomLink = document.getElementById('netronome-room-link') as HTMLTextAreaElement
@@ -64,6 +65,35 @@ export function createNetronomeLink(timer: any, isPlaying: () => boolean, option
     let source: ClockSource = options.source ?? 'internal'
     let queue: Promise<void> = Promise.resolve()
     let pending = 0
+    type Step = 'choose' | 'join' | 'invite' | 'reply' | 'connected'
+    let step: Step = source === 'shared' ? 'join' : 'choose'
+    const showStep = (next: Step) => {
+        step = next
+        const joining = next === 'join'
+        const inviting = next === 'invite'
+        const replying = next === 'reply'
+        document.getElementById('netronome-choice')!.hidden = next !== 'choose'
+        document.getElementById('netronome-flow')!.hidden = next === 'choose'
+        document.getElementById('netronome-outgoing')!.hidden = !inviting && !replying
+        document.getElementById('netronome-incoming')!.hidden = !joining && !inviting
+        document.getElementById('netronome-back')!.hidden = next === 'choose' || next === 'connected'
+        regenerate.hidden = next !== 'connected' || follower
+        document.getElementById('netronome-leave')!.hidden = !linked && !replying
+        status.hidden = next === 'choose'
+        document.getElementById('netronome-step')!.textContent = {
+            choose: '', join: 'Join a room', invite: 'Invite a player', reply: 'Send your reply', connected: 'You’re connected'
+        }[next]
+        instructions.textContent = {
+            choose: '', join: 'Paste an invitation from the person starting the room. Joining uses their sounds and setup.',
+            invite: '1. Send this invitation, or have the other player scan it.\n2. Paste the reply they send back below.',
+            reply: 'Send this reply back to the person who invited you. Keep this page open.',
+            connected: 'Play together. Notes, tempo and setup are shared.'
+        }[next]
+        document.getElementById('netronome-copy')!.textContent = replying ? 'Copy reply' : 'Copy invitation'
+        document.getElementById('netronome-remote-label')!.textContent = inviting ? '2. Reply from the other player' : 'Invitation link'
+        remote.placeholder = inviting ? 'Paste reply link' : 'Paste invitation link'
+        apply.textContent = inviting ? 'Connect player' : 'Join room'
+    }
 
     const hideQR = () => { qr.hidden = preview.hidden = true }
     const updateSourceUI = () => {
@@ -74,6 +104,7 @@ export function createNetronomeLink(timer: any, isPlaying: () => boolean, option
 
     const showError = (error: unknown) => {
         roomStatus = error instanceof Error ? error.message : String(error)
+        status.hidden = false
         status.textContent = roomStatus
     }
     const captureSetup = (): RoomSetup | undefined => options.manager ? {
@@ -121,9 +152,15 @@ export function createNetronomeLink(timer: any, isPlaying: () => boolean, option
         pending++
         busy = true
         apply.disabled = regenerate.disabled = true
+        copy.disabled = true
         const next = queue.then(async () => {
             try { await operation() } catch (error) { showError(error) }
-            finally { busy = --pending > 0; apply.disabled = busy; updateSourceUI() }
+            finally {
+                busy = --pending > 0
+                apply.disabled = busy
+                copy.disabled = busy || !local.value
+                updateSourceUI()
+            }
         })
         queue = next
         return next
@@ -162,6 +199,7 @@ export function createNetronomeLink(timer: any, isPlaying: () => boolean, option
             hideQR()
             local.value = ''
             updateSourceUI()
+            showStep(linked ? 'connected' : step)
         }
         if (options.manager) workspace = new RoomWorkspace(current, options.manager, () => timer.now, message => {
             roomStatus = message
@@ -174,6 +212,8 @@ export function createNetronomeLink(timer: any, isPlaying: () => boolean, option
                 : (roomStatus || 'Waiting for the other browser')
             if (state.connected && !linked) {
                 linked = true
+                remote.value = ''
+                showStep('connected')
                 if (source === 'internal' && !follower && isPlaying()) void current.startSynchronized().catch(showError)
             }
         }
@@ -183,7 +223,6 @@ export function createNetronomeLink(timer: any, isPlaying: () => boolean, option
         if (source !== 'internal') return
         qr.hidden = preview.hidden = true
         local.value = ''
-        instructions.textContent = 'This QR includes the room name and setup. Scan it on another device, then paste its reply below to connect. The first player is conductor until they leave; the next connected player then takes over. No room server is used.'
         status.textContent = 'Preparing connection QR…'
         const current = controller && !follower ? controller : await create('leader')
         rememberRoom(current)
@@ -200,8 +239,9 @@ export function createNetronomeLink(timer: any, isPlaying: () => boolean, option
             await current.applyOfferBundle(bundle)
             rememberRoom(current)
             await render(await current.createAnswerBundle())
-            instructions.textContent = 'Copy this reply to the host to finish joining. Your instruments and chains will be replaced with the room setup once connected.'
-            status.textContent = 'Reply ready — return it to the original browser'
+            remote.value = ''
+            showStep('reply')
+            status.textContent = 'Waiting for the other player to connect…'
         } else {
             if (!controller || follower) throw new Error('Open the original browser and paste the reply there.')
             await controller.applyAnswerBundle(bundle)
@@ -219,12 +259,22 @@ export function createNetronomeLink(timer: any, isPlaying: () => boolean, option
     button.disabled = false
     button.addEventListener(EVENT_CLICK, () => dialog.showModal())
     document.getElementById('netronome-close')!.addEventListener(EVENT_CLICK, () => dialog.close())
+    document.getElementById('netronome-start')!.addEventListener(EVENT_CLICK, () => {
+        showStep('invite')
+        if (!controller || follower || !local.value) void run(host)
+    })
+    document.getElementById('netronome-join')!.addEventListener(EVENT_CLICK, () => {
+        showStep('join')
+        status.textContent = ''
+        remote.focus()
+    })
+    document.getElementById('netronome-back')!.addEventListener(EVENT_CLICK, () => showStep(linked ? 'connected' : 'choose'))
     apply.addEventListener(EVENT_CLICK, () => void connect(remote.value))
-    regenerate.addEventListener(EVENT_CLICK, () => void run(host))
+    regenerate.addEventListener(EVENT_CLICK, () => { remote.value = ''; showStep('invite'); void run(host) })
     document.getElementById('netronome-copy')!.addEventListener(EVENT_CLICK, async () => {
         try {
             await navigator.clipboard.writeText(local.value)
-            status.textContent = 'Connection link copied'
+            status.textContent = step === 'reply' ? 'Reply copied — send it back to the person who invited you.' : 'Invitation copied — send it to the other player.'
         } catch {
             local.select()
             status.textContent = 'Select and copy the connection link above.'
@@ -234,13 +284,17 @@ export function createNetronomeLink(timer: any, isPlaying: () => boolean, option
         try {
             const url = setupUrl(includeRoom)
             roomLink.value = url
-            const drawn = await drawQR(url)
             try {
                 await navigator.clipboard.writeText(url)
-                status.textContent = (includeRoom ? 'Room and setup link copied. Connect using an invitation and reply.' : 'Setup link copied. It starts a fresh room.')
-                    + (drawn === false ? ' This setup is too large for a QR code; use the copied link.' : '')
+                status.hidden = false
+                status.textContent = includeRoom ? 'Setup copied. Use “Start a room” to invite someone to play.' : 'Setup copied — opening it starts a fresh room.'
             }
-            catch { roomLink.select(); status.textContent = 'Select and copy the setup link.' }
+            catch {
+                roomLink.hidden = false
+                roomLink.select()
+                status.hidden = false
+                status.textContent = 'Select and copy the setup link.'
+            }
         } catch (error) { showError(error) }
     }
     document.getElementById('netronome-copy-room')!.addEventListener(EVENT_CLICK, () => void share(true))
@@ -251,6 +305,7 @@ export function createNetronomeLink(timer: any, isPlaying: () => boolean, option
             if (room.value === controller?.roomId) room.value = crypto.randomUUID()
             if (follower && options.onLeaveRequested) await options.onLeaveRequested()
             await controls.setSource('internal')
+            showStep('invite')
         })().catch(showError)
     })
     // Capture the scanned invitation before persisting clock settings changes the URL.
@@ -260,6 +315,7 @@ export function createNetronomeLink(timer: any, isPlaying: () => boolean, option
         else if (!controller && source === 'internal') await run(host)
     }
     updateSourceUI()
+    showStep(step)
     if (options.autoStart !== false) void initialize()
     window.addEventListener(EVENT_PAGE_HIDE, () => { void workspace?.destroy(); void controller?.destroy() }, { once: true })
     const controls = {
@@ -278,10 +334,10 @@ export function createNetronomeLink(timer: any, isPlaying: () => boolean, option
                 await old?.destroy()
                 local.value = ''
                 setFollowerControls(source !== 'internal')
-                if (source === 'internal') await host()
+                if (source === 'internal') { await host(); showStep('choose') }
                 else {
-                    status.textContent = 'Paste a connection link from the room leader.'
-                    instructions.textContent = 'Join the host’s room to share its tempo, notes and workspace. Paste an invitation here, then return the reply to the host.'
+                    showStep('join')
+                    status.textContent = ''
                     if (source === 'midi' || source === 'manual') dialog.close()
                 }
             })

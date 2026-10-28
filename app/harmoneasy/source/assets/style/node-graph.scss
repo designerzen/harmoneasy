@@ -1429,9 +1429,7 @@ dialog.add-output-dialog {
     }
 }
 
-.save-preset { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
 .chain-toolbar .presets button { padding: .375rem .5rem; font: inherit; }
-.save-preset input { max-width: 16rem; font: inherit; }
 
 .preset-details {
     text-align: left;
@@ -1570,7 +1568,7 @@ html:has(.preset-browser[open]), body:has(.preset-browser[open]) { overflow: hid
 /* Compact chain toolbar, independent of the preset drawer styling. */
 .chain-toolbar {
     display: grid;
-    grid-template-columns: minmax(5rem, 1fr) minmax(10rem, 20rem) max-content 44px;
+    grid-template-columns: minmax(5rem, 1fr) auto max-content 44px;
     grid-template-areas: "name presets actions fullscreen";
     gap: .75rem;
     padding: .375rem .625rem;
@@ -1581,7 +1579,7 @@ html:has(.preset-browser[open]), body:has(.preset-browser[open]) { overflow: hid
         grid-area: presets;
         &::before { content: none; display: none; }
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 44px;
+        grid-template-columns: minmax(0, 1fr);
         align-items: center;
         gap: .375rem;
         min-width: 0;
@@ -1642,10 +1640,7 @@ html:has(.preset-browser[open]), body:has(.preset-browser[open]) { overflow: hid
         &:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
     }
     .chain-delete:hover { color: var(--col-red, #e97777); }
-    .save-preset, .presets > [role="status"] { grid-column: 1 / -1; }
-    .save-preset { padding-block: .5rem; }
-    .save-preset label { display: grid; gap: .25rem; min-width: 0; flex: 1; }
-    .save-preset input { width: 100%; box-sizing: border-box; }
+    .presets > [role="status"] { grid-column: 1 / -1; }
 }
 @container chain-panel (max-width: 40rem) {
     .chain-toolbar {
@@ -2360,4 +2355,44 @@ dialog.add-input-dialog, dialog.add-output-dialog {
         padding-inline: 1rem;
         .expanded-node-emblem { flex-basis: auto; width: 64px; height: 64px; }
     }
+}
+
+@supports (appearance: base-select) {
+    .chain-action-picker {
+        &, &::picker(select) { appearance: base-select; }
+        &::picker(select) {
+            min-width: 15rem;
+            padding: .375rem;
+            margin-block: .375rem;
+            border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+            border-radius: 8px;
+            color: var(--col-fg);
+            background: var(--col-bg);
+            box-shadow: 0 .5rem 1.5rem #0004;
+        }
+        option {
+            display: flex;
+            align-items: center;
+            gap: .625rem;
+            padding: .625rem .75rem;
+            border-radius: 4px;
+            font: inherit;
+            cursor: pointer;
+            &::checkmark { display: none; }
+            &:hover, &:focus { background: color-mix(in srgb, currentColor 12%, transparent); }
+            &:disabled { opacity: .45; cursor: default; }
+            &[value="delete"] { color: var(--col-red, #e97777); }
+        }
+        optgroup { padding-block-start: .375rem; }
+    }
+}
+
+.save-preset-dialog {
+    width: min(30rem, calc(100vw - 2rem));
+    h2 { margin: 0 0 1rem; font-size: 1.25rem; }
+    .save-preset { display: grid; gap: 1rem; }
+    label { display: grid; gap: .5rem; }
+    input { width: 100%; box-sizing: border-box; font: inherit; }
+    p { margin: 0; line-height: 1.5; }
+    .save-preset-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: .5rem; }
 }

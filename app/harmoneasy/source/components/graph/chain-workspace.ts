@@ -72,21 +72,29 @@ export function createChainWorkspace(
 		const presets = createPresets(chain, manager)
 		const actions = element('div', 'chain-actions')
 		const action = element('select')
+		action.className = 'chain-action-picker'
 		action.setAttribute('aria-label', 'Actions')
+		const actionOption = (text: string, value: string, path: string) => {
+			const item = option('', value)
+			item.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${path}" /></svg>`
+			item.append(element('span', '', text))
+			return item
+		}
 		const placeholder = option('Actions', '')
 		placeholder.disabled = true
-		const soloOption = option('Solo', 'solo')
+		const soloOption = actionOption('Solo', 'solo', 'M9 3H3v6m12-6h6v6M3 15v6h6m6 0h6v-6')
 		const layoutGroup = element('optgroup')
 		layoutGroup.label = 'Graph layout'
-		const horizontal = option('Horizontal layout', 'horizontal'),
-			vertical = option('Vertical layout', 'vertical')
+		const horizontal = actionOption('Horizontal layout', 'horizontal', 'M3 4h6v16H3zM15 4h6v16h-6zM9 12h6'),
+			vertical = actionOption('Vertical layout', 'vertical', 'M4 3h16v6H4zM4 15h16v6H4zM12 9v6')
 		layoutGroup.append(horizontal, vertical)
 		action.append(
 			placeholder,
-			option('Clone chain', 'clone'),
+			actionOption('Save as a Preset', 'save-preset', 'M5 3h12l4 4v14H3V3h2ZM7 3v6h10V3M7 21v-8h10v8'),
+			actionOption('Clone chain', 'clone', 'M9 9h12v12H9zM15 9V3H3v12h6'),
 			soloOption,
 			layoutGroup,
-			option('Delete chain', 'delete'),
+			actionOption('Delete chain', 'delete', 'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7'),
 		)
 		action.value = ''
 		action.onchange = () => {
@@ -97,6 +105,7 @@ export function createChainWorkspace(
 			else if (value === 'clone') void manager.cloneChain(chainId)
 			else if (value === 'delete') manager.removeChain(chainId)
 			else if (value === 'solo') toggleSolo(chainId)
+			else if (value === 'save-preset') presets.openSave()
 		}
 		actions.append(action)
 		const expand = button('', () => toggleSolo(chainId), 'chain-solo-toggle chain-icon-button')
@@ -136,7 +145,7 @@ export function createChainWorkspace(
 				power.setAttribute('aria-pressed', String(chain.isActive))
 				powerText.textContent = chain.isActive ? 'On' : 'Off'
 				name.update()
-				soloOption.textContent = isSolo ? 'Exit Solo' : 'Solo'
+				soloOption.querySelector('span')!.textContent = isSolo ? 'Exit Solo' : 'Solo'
 				const mode = chain.options.graphLayout ?? DEFAULT_LAYOUT_MODE
 				horizontal.disabled = mode === 'horizontal'
 				vertical.disabled = mode === 'vertical'

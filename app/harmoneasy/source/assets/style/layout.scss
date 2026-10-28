@@ -135,6 +135,21 @@
 		border-radius: 5px;
 		background: var(--col-bg);
 	}
+	.clock-source-control {
+		position: relative;
+		display: inline-flex;
+		max-width: 100%;
+		min-width: 0;
+		span {
+			position: absolute;
+			inset-inline-start: .625rem;
+			top: 50%;
+			transform: translateY(-50%);
+			pointer-events: none;
+		}
+		select { padding-inline-start: 4rem; cursor: pointer; }
+		&:has(select:disabled) span { opacity: .5; }
+	}
 	#clock-midi-label { flex-wrap: wrap; min-width: 0; }
 	#clock-source-status { flex: 1 1 12rem; font-size: .75rem; overflow-wrap: anywhere; }
 	#clock-source-status:empty { display: none; }
@@ -159,7 +174,7 @@
 
 #netronome-dialog {
 	width: min(36rem, calc(100vw - 2rem));
-	height: min(48rem, calc(100dvh - 2rem));
+	height: auto;
 	max-width: calc(100vw - 2rem);
 	max-height: calc(100dvh - 2rem);
 	inset: 0;
@@ -196,10 +211,27 @@
 	}
 	textarea { display: block; width: 100%; box-sizing: border-box; margin: .5rem 0; }
 	label { display: block; margin-top: 1rem; }
+	[hidden] { display: none !important; }
+	h2 { font-size: 1.25rem; }
+	h3 { margin: 0 0 .75rem; font-size: 1.2rem; }
+	p { margin: 0 0 1rem; line-height: 1.5; }
+	button { margin: 0; }
+	.room-choices { display: grid; gap: .75rem; }
+	.room-choices button { width: 100%; padding: .85rem 1rem; }
+	.room-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+	#netronome-instructions { white-space: pre-line; }
+	#netronome-outgoing { display: grid; justify-items: start; gap: .75rem; }
+	#netronome-outgoing details { width: 100%; }
+	#netronome-local-link { font-size: .8rem; }
+	#netronome-status { margin: 1rem 0 0; font-size: .9rem; }
+	#netronome-options { margin-top: 1rem; border-top: 1px solid; padding-top: 1rem; }
+	details summary { cursor: pointer; }
+	details[open] summary { margin-bottom: .75rem; }
+	#netronome-options button { margin-top: .5rem; }
 }
 
 #netronome-qr {
-	width: min(100%, 512px);
+	width: min(100%, 208px);
 	height: auto;
 	margin: auto;
 }
