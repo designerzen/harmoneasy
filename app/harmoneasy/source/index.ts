@@ -22,6 +22,7 @@ import { showMidiDeviceDisconnected } from './services/midi-device-errors'
 import { createMidiDevicesDialog } from './services/midi-devices-dialog'
 import { createRecordingControls } from './services/recording-dialog'
 import { createClockSourceControls } from './services/clock-source-controls'
+import { createMediaImporter } from './services/media-import'
 import { isClockSource, clockMidiPorts, type ClockSourceController } from './services/clock-source'
 
 // Import Data
@@ -265,46 +266,27 @@ const initialiseFrontEnd = async (audioBus: AudioBus, initialVolumePercent: numb
     })
 
 
-    // Import file from device and interpret
-    frontEnd.whenFileImportRequestedRun(async (file: File) => {
-        try {
-            const fileType = file.name.split('.').pop()?.toUpperCase() || 'file'
-            frontEnd.showExportOverlay(`Loading ${fileType} file...`)
-            console.info(`Loading ${fileType} file from import:`, file.name)
-            const { commands, noteCount } = await importFile(file)
-            const activeChain = ioManager.activeChain
-            if (activeChain) {
-                activeChain.addCommandToFuture(commands, timer, true)
-            }
-            console.info(`${fileType} file loaded successfully:`, file.name, { commands, noteCount })
-            // FIXME: This needs to alter depending on the type of file imported
-            frontEnd.showInfoDialog("File Loaded", `Successfully loaded ${file.name} with ${noteCount} notes`)
-        } catch (error) {
-            console.error("Error loading file from import:", error)
-            frontEnd.showError("Failed to load file", error instanceof Error ? error.message : String(error))
-        } finally {
-            frontEnd.hideExportOverlay()
-        }
-    })
-
-    frontEnd.whenMIDIFileDroppedRun(async (file: File) => {
-        try {
-            const fileType = file.name.split('.').pop()?.toUpperCase() || 'file'
-            frontEnd.showExportOverlay(`Found ${fileType} File`)
-            console.info(`Loading ${fileType} file from drop:`, file.name)
-            const { commands, noteCount } = await importFile(file)
-            const activeChain = ioManager.activeChain
-            if (activeChain) {
-                activeChain.addCommandToFuture(commands, timer, true)
-            }
-
-        } catch (error) {
-            console.error("Error loading file from drop:", error)
-            frontEnd.showError("Failed to load file", error instanceof Error ? error.message : String(error))
-        } finally {
-            frontEnd.hideExportOverlay()
-        }
-    })
+    const importScore = async (file: File) => {
+        const { commands } = await importFile(file)
+        const chain = ioManager.activeChain ?? ioManager.getChain(ioManager.createEmptyChain())!
+        chain.addCommandToFuture(commands, timer, true)
+    }
+    let importMedia: ReturnType<typeof createMediaImporter> | undefined
+    let importQueue = Promise.resolve()
+    const loadMedia = (media: File | string) => {
+        importQueue = importQueue.then(async () => {
+            try {
+                frontEnd.showExportOverlay(`Loading ${typeof media === 'string' ? 'WAM plugin' : media.name}…`)
+                if (!ioManager) throw new Error('Audio is still starting. Try dropping the file again in a moment.')
+                importMedia ??= createMediaImporter(ioManager, importScore)
+                await importMedia(media)
+            } catch (error) {
+                frontEnd.showError('Failed to load media', error instanceof Error ? error.message : String(error))
+            } finally { frontEnd.hideExportOverlay() }
+        })
+    }
+    frontEnd.whenFileImportRequestedRun(loadMedia)
+    frontEnd.whenMediaDroppedRun(loadMedia)
 
     // Exports --------------------------------------------------
     frontEnd.whenExportMenuRequestedRun(() => {

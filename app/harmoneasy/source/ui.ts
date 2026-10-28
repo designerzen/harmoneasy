@@ -4,6 +4,7 @@ import NoteTimelineVisualiser from 'audiobus/ui/note-timeline-visualiser'
 import SVGKeyboard from 'audiobus/ui/keyboard-svg.ts'
 import { createOpenDAWExportDialog } from './services/opendaw-export-dialog'
 import { EVENT_CLICK } from 'audiobus/event-constants'
+import { installMediaDrop } from './services/media-drop'
 
 import type NoteModel from "audiobus/note-model.ts"
 import type { IAudioOutput } from "audiobus/io/outputs/output-interface.ts"
@@ -207,65 +208,20 @@ export default class UI implements IAudioOutput {
 		}, { signal: this.abortController.signal })
 	}
 
-	/**
-	 * Setup drag and drop file handling for MIDI files
-	 */
-	private setupDragAndDrop(): void {
-		const dropZone = document.body
+    private onMediaDropped?: (media: File | string) => void
 
-		// Prevent default drag behaviors
-		dropZone.addEventListener('dragover', (e) => {
-			e.preventDefault()
-			e.stopPropagation()
-			dropZone.classList.add('drag-over')
-		}, { signal: this.abortController.signal })
+    private setupDragAndDrop(): void {
+        installMediaDrop(document, media => this.onMediaDropped?.(media), this.abortController.signal)
+    }
 
-		dropZone.addEventListener('dragleave', (e) => {
-			e.preventDefault()
-			e.stopPropagation()
-			dropZone.classList.remove('drag-over')
-		}, { signal: this.abortController.signal })
+    whenMediaDroppedRun(callback: (media: File | string) => void): void {
+        this.onMediaDropped = callback
+    }
 
-		dropZone.addEventListener('drop', (e) => {
-			e.preventDefault()
-			e.stopPropagation()
-			dropZone.classList.remove('drag-over')
+    whenMIDIFileDroppedRun(callback: (file: File) => void): void {
+        this.onMediaDropped = media => { if (typeof media !== 'string') callback(media) }
+    }
 
-			const files = e.dataTransfer?.files
-			if (files && files.length > 0) {
-				this.handleMIDIFileDrop(files[0])
-			}
-		}, { signal: this.abortController.signal })
-	}
-
-	/**
-	  * Handle dropped file (MIDI, MusicXML, or .dawProject)
-	  */
-	private handleMIDIFileDrop(file: File): void {
-		const fileName = file.name.toLowerCase()
-		const isValidType =
-			file.type.includes('audio') ||
-			file.type.includes('xml') ||
-			fileName.endsWith('.mid') ||
-			fileName.endsWith('.midi') ||
-			fileName.endsWith('.musicxml') ||
-			fileName.endsWith('.xml') ||
-			fileName.endsWith('.dawproject')
-
-		if (!isValidType) {
-			this.showError('Invalid file type', 'Please drop a supported file: MIDI (.mid, .midi), MusicXML (.musicxml, .xml), or .dawProject')
-			return
-		}
-
-		window.onMIDIFileDropped?.(file)
-	}
-
-	/**
-	 * Register callback for when MIDI file is dropped
-	 */
-	whenMIDIFileDroppedRun(callback: (file: File) => void): void {
-		window.onMIDIFileDropped = callback
-	}
 
 
 
@@ -461,7 +417,7 @@ export default class UI implements IAudioOutput {
 		const fileInput = document.createElement('input')
 		fileInput.type = 'file'
 		// Supported formats: MIDI, MusicXML, DawProject, and Tracker formats
-		fileInput.accept = '.mid,.midi,audio/midi,.musicxml,.xml,.dawproject,.mod,.xm,.it,.s3m,.669,.far,.stm,.ult,.mtm,.dmf,.ptm,.okt,.mptm,.nst'
+		fileInput.accept = '.mid,.midi,audio/midi,.zip,.wam,.wam2,.musicxml,.xml,.dawproject,.mod,.xm,.it,.s3m,.669,.far,.stm,.ult,.mtm,.dmf,.ptm,.okt,.mptm,.nst'
 		fileInput.style.display = 'none'
 		document.body.appendChild(fileInput)
 
