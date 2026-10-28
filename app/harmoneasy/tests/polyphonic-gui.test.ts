@@ -23,6 +23,7 @@ function setup(options = {}) {
     const audio = {
         currentTime: 0,
         createGain: () => ({ gain: param(1), connect: vi.fn() }),
+        createWaveShaper: () => ({ curve: null, connect: vi.fn() }),
         createOscillator: () => ({ frequency: param(), connect: vi.fn(), start: vi.fn() }),
     } as unknown as AudioContext
     const synth = defineDevice(new PolySynth(audio, { class: SynthOscillator, maxPolyphony: 3, ...options }), { factory: 'polyphonic' })
@@ -80,12 +81,12 @@ describe('PolySynth controls', () => {
     it('keeps volume independent of polyphony headroom and rejects invalid settings', async () => {
         const { synth } = setup()
         synth.configure({ volume: 0.25, attack: -10, sustain: 4, release: NaN, shape: 'invalid' as any })
-        expect((synth.output as GainNode).gain.value).toBeCloseTo(0.25 / Math.sqrt(3))
+        expect((synth.output as GainNode).gain.value).toBeCloseTo(0.25)
         expect(synth.options).toMatchObject({ volume: 0.25, attack: 0, sustain: 1, release: 0.3, shape: 'sine' })
         await Promise.resolve()
         await synth.noteOn(60)
         synth.allNotesOff()
-        expect((synth.output as GainNode).gain.value).toBeCloseTo(0.25 / Math.sqrt(3))
+        expect((synth.output as GainNode).gain.value).toBeCloseTo(0.25)
     })
 
     it('connects labeled controls to sound settings and retains settings when reopened', async () => {

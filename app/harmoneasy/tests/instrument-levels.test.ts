@@ -36,6 +36,7 @@ function context() {
     return {
         currentTime: 0,
         createGain: () => ({ gain: param(1), connect: vi.fn() }),
+        createWaveShaper: () => ({ curve: null, connect: vi.fn() }),
         createOscillator: () => ({ frequency: param(), connect: vi.fn(), start: vi.fn() }),
         createPeriodicWave: vi.fn(() => ({}))
     } as any
@@ -77,7 +78,10 @@ describe('instrument output levels', () => {
             expect(peak).toBeCloseTo(0.2)
             totalPeak += peak * gain
         }
-        expect(totalPeak).toBeLessThan(1)
+        // The voice sum can exceed unity; the real audio regression checks the
+        // saturator bounds it without reducing single-note gain.
+        expect(totalPeak).toBeGreaterThan(1)
+        expect(gain).toBe(1)
         for (let note = 48; note < 72; note++) manager.noteOff(note)
         await OutputManager.settled(synth as any)
         expect((synth.output as any).gain.value).toBe(gain)
@@ -106,7 +110,8 @@ describe('instrument output levels', () => {
         await instrument.noteOn(60, 127)
         expect(instrument.output).toBe(output)
         expect(tone.voices[0].connect).toHaveBeenCalledWith(output)
-        expect(instrument.output.gain.value).toBeCloseTo(0.2)
+        const defaultGain = Instrument === ToneFMSynth ? 0.8 : Instrument === TonePluck ? 0.5 : Instrument === ToneSynth ? 0.3 : 0.2
+        expect(instrument.output.gain.value).toBeCloseTo(defaultGain)
         instrument.gain = 0.1
         expect(instrument.output.gain.value).toBeCloseTo(0.1)
         expect(tone.voices[0].volume.value).toBe(0)

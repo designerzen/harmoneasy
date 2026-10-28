@@ -18,15 +18,23 @@ app.whenReady().then(async () => {
     window.webContents.setAudioMuted(true)
     await window.loadFile(path.join(directory, 'index.html'))
     const results = await Promise.race([
-        window.webContents.executeJavaScript('AudioSmoke.measureOutputs()'),
+        window.webContents.executeJavaScript('(async () => ({ outputs: await AudioSmoke.measureOutputs(), polyphony: await AudioSmoke.measurePolyphony() }))()'),
         new Promise((_, reject) => setTimeout(() => reject(new Error('Audio smoke test timed out')), 60000)),
     ])
     console.log(JSON.stringify(results, null, 2))
-    for (const output of results) {
-        assert.ok(output.rms > 0.01, `${output.name} is too quiet: ${output.rms}`)
+    for (const output of results.outputs) {
+        // Brief clicks/hits include silence in this half-second window. Their
+        // peak and energy matter, rather than a sustained synth's average.
+        const transient = ['Metronome', 'Drum kick', 'Drum snare'].includes(output.name)
+        assert.ok(output.rms > (transient ? 0.003 : 0.01), `${output.name} is too quiet: ${output.rms}`)
+        assert.ok(output.peak > 0.03, `${output.name} has no audible attack`)
         assert.ok(output.peak < 1, `${output.name} clips: ${output.peak}`)
     }
-    const levels = results.map(output => output.rms)
+    for (const output of results.polyphony) {
+        assert.ok(output.peak < 0.95, `PolySynth clips with ${output.voices} voices`)
+        assert.ok(output.rms > 0.05, `PolySynth is too quiet with ${output.voices} voices`)
+    }
+    const levels = results.outputs.filter(output => !['Metronome', 'Drum kick', 'Drum snare'].includes(output.name)).map(output => output.rms)
     assert.ok(Math.max(...levels) / Math.min(...levels) < 4, 'Built-in output levels differ by more than 12 dB')
     window.destroy()
     app.exit(0)
