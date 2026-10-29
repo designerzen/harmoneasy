@@ -1,0 +1,30 @@
+{
+  "name": "sion",
+  "version": "0.1.0",
+  "description": "SiON synthesis engine and Web Audio host",
+  "type": "module",
+  "main": "./SiON.js",
+  "types": "./SiON.d.ts",
+  "exports": {
+    ".": {
+      "types": "./SiON.d.ts",
+      "import": "./SiON.js"
+    },
+    "./sion": {
+      "types": "./sion/index.d.ts",
+      "import": "./sion/index.js"
+    },
+    "./audio-host": {
+      "types": "./SiONAudioHost.d.ts",
+      "import": "./SiONAudioHost.js"
+    }
+  },
+  "files": [
+    "SiON.js",
+    "SiON.d.ts",
+    "SiONAudioHost.js",
+    "SiONAudioHost.d.ts",
+    "sion-stream-processor.js",
+    "sion"
+  ]
+}
