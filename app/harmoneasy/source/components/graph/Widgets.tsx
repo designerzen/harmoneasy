@@ -9,9 +9,13 @@ export const ConfigField = memo(function ConfigField({ config, element }: { conf
 	const { chain } = useChain()
     const helpId = useId()
     const [error, setError] = useState('')
-	const handleChange = useCallback((v: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
+	const applyValue = useCallback((value: string) => {
         try {
-            element.setConfig(config.name, v.target.value)
+            const result = element.setConfig(config.name, value)
+            if (result instanceof Promise) {
+                result.then(() => chain.dispatchEvent(new Event(EVENT_CONFIGURATION_CHANGED)))
+                    .catch(error => setError(error instanceof Error ? error.message : String(error)))
+            }
             setError('')
         } catch (error) {
             setError(error instanceof Error ? error.message : String(error))
@@ -19,6 +23,7 @@ export const ConfigField = memo(function ConfigField({ config, element }: { conf
         }
         chain.dispatchEvent(new Event(EVENT_CONFIGURATION_CHANGED))
 	}, [config.name, element, chain])
+	const handleChange = useCallback((v: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => applyValue(v.target.value), [applyValue])
 
 	return <label data-midi-ignore="" className={config.help ? 'config-field has-help' : 'config-field'}>
         {config.name === 'enabled' ? <span className="config-enabled-label">
@@ -28,7 +33,8 @@ export const ConfigField = memo(function ConfigField({ config, element }: { conf
             {config.label ?? 'Enabled'}
         </span> : config.label ?? config.name}
 		{ config.type === 'select' ? <SelectField values={config.values} defaultValue={config.default} onChange={handleChange} describedBy={config.help ? helpId : undefined} />
-            : config.type === 'text' ? <input className="nodrag nopan" type="text" defaultValue={config.default ?? ''} placeholder={config.placeholder} aria-describedby={config.help ? helpId : undefined} onBlur={handleChange} /> : 'unknown' }
+            : config.type === 'text' ? <input className="nodrag nopan" type="text" defaultValue={config.default ?? ''} placeholder={config.placeholder} aria-describedby={config.help ? helpId : undefined} onBlur={handleChange} />
+            : config.type === 'button' ? <button className="nodrag nopan" type="button" aria-describedby={config.help ? helpId : undefined} onClick={() => applyValue('1')}>{config.label ?? config.name}</button> : 'unknown' }
         {config.help && <small id={helpId} className="config-field-help">{config.help}</small>}
         {error && <small role="alert" className="config-field-help">{error}</small>}
 	</label>

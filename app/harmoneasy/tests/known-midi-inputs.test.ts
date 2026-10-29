@@ -64,6 +64,45 @@ afterEach(async () => {
 })
 
 describe('known MIDI instrument profiles', () => {
+    it('keeps a profile in virtual mode when its former physical port is unplugged', async () => {
+        midi.inputs = [port('tb3-usb-input', 'TB-3')]
+        const { manager, chain } = workspace()
+        await start(manager)
+        const input = chain.inputs[0] as InputProfiledMidiDevice
+        await input.disconnect()
+        input.options.virtualInput = true
+        await input.connect()
+        midi.inputs = []
+        await refresh()
+        expect(chain.inputs).toContain(input)
+        expect(input.isConnected).toBe(true)
+    })
+    it('discovers the original TB-3 port name, forwards channel 2 performance and saves its hardware identity', async () => {
+        const device = port('tb3-usb-input', '3- TB-3')
+        midi.inputs = [device]
+        const { manager, chain } = workspace()
+        await start(manager)
+        expect(chain.inputs).toHaveLength(1)
+        const input = chain.inputs[0] as InputProfiledMidiDevice
+        expect(input.name).toBe('Roland TB-3')
+        expect(input.isConnected).toBe(true)
+        const events: any[] = []
+        input.addEventListener(INPUT_EVENT, event => events.push((event as any).command))
+        const gui = await input.createGui()
+        device.send([0x91, 48, 127])
+        device.send([0xb1, 74, 89])
+        device.send([0x81, 48, 64])
+        expect(events).toEqual([
+            expect.objectContaining({ type: NOTE_ON, number: 48, velocity: 127, channel: 2, from: 'tb3-usb-input' }),
+            expect.objectContaining({ type: CONTROL_CHANGE, number: 74, value: 89, channel: 2, from: 'tb3-usb-input' }),
+            expect.objectContaining({ type: NOTE_OFF, number: 48, channel: 2, from: 'tb3-usb-input' }),
+        ])
+        expect(gui.querySelector<HTMLInputElement>('[data-midi-control="cutoff"]')!.value).toBe('89')
+        expect(deviceDefinition(input)).toMatchObject({ factory: 'input', type: 'roland-tb-3',
+            options: { profileId: 'roland-tb-3', deviceId: 'tb3-usb-input', transport: 'webmidi' } })
+        await input.disconnect()
+        expect(isMidiProfilePortClaimed('webmidi', 'tb3-usb-input')).toBe(false)
+    })
     it('matches constant IDs before exact name aliases without claiming unrelated ports', () => {
         expect(matchMidiDeviceProfile({ id: 'arcana-strum', name: 'CMPSR' })).toBe('arcana-strum')
         expect(matchMidiDeviceProfile({ id: 'digit-cmpsr' })).toBe('digit-cmpsr')
@@ -152,12 +191,13 @@ describe('known MIDI instrument profiles', () => {
         expect(slider.value).toBe('89')
         expect(events).toHaveLength(1)
         expect(domMidiTargets(document).some(target => target.label.includes('Up-right'))).toBe(false)
-        const selects = gui.querySelectorAll('select')
-        selects[0].value = '3'; selects[0].dispatchEvent(new Event(EVENT_CHANGE))
+        const channel = gui.querySelector<HTMLSelectElement>('[data-midi-control="channel"]')!
+        channel.value = '3'; channel.dispatchEvent(new Event(EVENT_CHANGE))
         await input.connect()
         slider.value = '123'; slider.dispatchEvent(new Event(EVENT_INPUT))
         expect(events.at(-1)).toMatchObject({ type: CONTROL_CHANGE, number: 112, value: 123, channel: 3, from: 'digit-cmpsr' })
-        selects[1].value = 'green'; selects[1].dispatchEvent(new Event(EVENT_CHANGE))
+        const mode = gui.querySelector<HTMLSelectElement>('[data-midi-control="display-mode"]')!
+        mode.value = 'green'; mode.dispatchEvent(new Event(EVENT_CHANGE))
         expect(slider.closest('label')!.hidden).toBe(true)
         expect(gui.querySelector<HTMLInputElement>('[data-midi-control="up"]')!.closest('label')!.hidden).toBe(false)
     })

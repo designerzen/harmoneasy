@@ -308,6 +308,9 @@ importers:
       pitfalls:
         specifier: workspace:^
         version: link:../pitfalls
+      sion:
+        specifier: workspace:^
+        version: link:../sion
       standardized-audio-context:
         specifier: ^25.3.77
         version: 25.3.77
@@ -426,6 +429,28 @@ importers:
         specifier: ~5.9.3
         version: 5.9.3
 
+  packages/photosynth:
+    dependencies:
+      '@mediapipe/tasks-vision':
+        specifier: 1.2.0
+        version: 1.2.0
+    devDependencies:
+      '@webgpu/types':
+        specifier: 0.1.74
+        version: 0.1.74
+      happy-dom:
+        specifier: 20.14.5
+        version: 20.14.5
+      typescript:
+        specifier: ~5.9.3
+        version: 5.9.3
+      vite:
+        specifier: 8.0.1
+        version: 8.0.1(@types/node@22.19.11)(esbuild@0.27.3)(jiti@2.6.1)(sass-embedded@1.98.0)(sass@1.98.0)(terser@5.51.2)
+      vitest:
+        specifier: 4.1.0
+        version: 4.1.0(@types/node@22.19.11)(happy-dom@20.14.5)(vite@8.0.1(@types/node@22.19.11)(esbuild@0.27.3)(jiti@2.6.1)(sass-embedded@1.98.0)(sass@1.98.0)(terser@5.51.2))
+
   packages/pink-trombone:
     dependencies:
       '@harmoneasy/shared-config':
@@ -454,6 +479,8 @@ importers:
       typescript:
         specifier: ~5.9.3
         version: 5.9.3
+
+  packages/sion: {}
 
 packages:
 
@@ -2019,6 +2046,9 @@ packages:
 
   '@webgpu/types@0.1.16':
     resolution: {integrity: sha512-9E61voMP4+Rze02jlTXud++Htpjyyk8vw5Hyw9FGRrmhHQg2GqbuOfwf5Klrb8vTxc2XWI3EfO7RUHMpxTj26A==}
+
+  '@webgpu/types@0.1.74':
+    resolution: {integrity: sha512-lgiI4hbuLcI9unnm2cL/tvCaQU45dp0xcLWJh5uB/9MBGvIA4F8XIk7nSiBeg+K4xWGYwgZKn80LmERI5CxoTA==}
 
   '@xmldom/xmldom@0.8.11':
     resolution: {integrity: sha512-cQzWCtO6C8TQiYl1ruKNn2U6Ao4o4WBBcbL61yJl84x+j5sOWWFU9X7DpND8XZG3daDppSsigMdfAIl2upQBRw==}
@@ -6400,6 +6430,8 @@ snapshots:
       '@wasm-audio-decoders/common': 9.0.7
 
   '@webgpu/types@0.1.16': {}
+
+  '@webgpu/types@0.1.74': {}
 
   '@xmldom/xmldom@0.8.11': {}
 

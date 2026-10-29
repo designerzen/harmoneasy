@@ -11,8 +11,14 @@ import { CLAP_PATCHES } from '../../../packages/audiobus/instruments/clap/clap-c
 import { OUTPUT_DEFINITIONS } from '../../../packages/audiobus/io/output-definitions'
 import { webclapOutputId } from '../../../packages/audiobus/io/outputs/output-types'
 import { choiceMatches } from '../source/components/graph/device-filters'
+import { MIDI_DEVICE_DIRECTORY } from 'audiobus/midi/hardware/device-files.js'
 
-const assetExists = (src: string) => existsSync(resolve('public', src.replace(/^\//, '')))
+const assetExists = (src: string) => {
+    const pathname = new URL(src, 'http://localhost').pathname
+    return pathname.startsWith('/midi-devices/')
+        ? existsSync(resolve(MIDI_DEVICE_DIRECTORY, pathname.slice('/midi-devices/'.length)))
+        : existsSync(resolve('public', pathname.replace(/^\//, '')))
+}
 
 it('shows WebCLAP metadata and makes authors and licenses searchable', () => {
     for (const patch of CLAP_PATCHES.filter(patch => patch.features?.includes('instrument'))) {

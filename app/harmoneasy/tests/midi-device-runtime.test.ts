@@ -47,6 +47,7 @@ describe('runtime device folders', () => {
         expect(await built.list()).toEqual(await createMidiDeviceStore(() => [bundledMidiDevices]).list())
         expect((await built.read('digit-cmpsr/panel.svg'))?.type).toBe('image/svg+xml')
         expect((await built.read('profile.schema.json'))?.type).toBe('application/json')
+        expect(JSON.parse((await built.read('index.json'))!.bytes.toString())).toContain('roland-tb-3')
         plugin.configurePreviewServer({ middlewares: { use } })
         response.end.mockClear()
         await use.mock.calls[1][0]({ url: '/test/midi-devices/digit-cmpsr/digit-cmpsr.json', method: 'GET' }, response, next)
@@ -78,6 +79,18 @@ describe('runtime device folders', () => {
         await loadMidiProfilesForPorts([{ id: 'static-runtime' }])
         expect(MIDI_DEVICE_PROFILES['static-runtime'].icon).toBe('https://static.example/midi-devices/static-runtime/icon.svg')
         expect(fetcher).toHaveBeenCalledWith('https://static.example/midi-devices/static-runtime/static-runtime.json', { cache: 'no-store' })
+    })
+    it('discovers the complete registry from the static index even when MIDI port IDs are opaque', async () => {
+        const id = 'static-known-controller'
+        const fetcher = vi.fn(async (url: string) => {
+            if (url.endsWith('/index.json')) return new Response(JSON.stringify([id]))
+            if (url.endsWith(`/${id}/${id}.json`)) return new Response(JSON.stringify({ ...definition(id), portNames: ['Known Controller'] }))
+            return new Response(null, { status: 404 })
+        })
+        setMidiDeviceProfileSource('https://static.example/midi-devices/', fetcher as typeof fetch)
+        await loadMidiProfilesForPorts([{ id: 'opaque-os-port', name: 'Known Controller' }])
+        expect(MIDI_DEVICE_PROFILES[id].portNames).toEqual(['Known Controller'])
+        expect(INPUT_FACTORIES.some(factory => factory.id === id)).toBe(true)
     })
     it('requires each folder JSON to use its ID as the filename', async () => {
         const folder = await root(); await add(folder, 'wrong-name', 'profile.json')

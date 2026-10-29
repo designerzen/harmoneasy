@@ -12,6 +12,7 @@ const devices = [
     ['novation-launchkey-mini-mk3', 'Launchkey Mini MK3'],
     ['korg-minilogue', 'minilogue'],
     ['roland-a-49', 'A-49'],
+    ['roland-tb-3', 'TB-3'],
     ['yamaha-reface-cs', 'reface CS']
 ] as const
 
@@ -37,8 +38,13 @@ describe('documented instrument registry folders', () => {
         expect(number('yamaha-reface-cs', 'cutoff')).toBe(74)
         expect(number('yamaha-reface-cs', 'resonance')).toBe(71)
         expect(number('roland-a-49', 'cutoff')).toBe(74)
+        expect(number('roland-tb-3', 'cutoff')).toBe(74)
+        expect(number('roland-tb-3', 'resonance')).toBe(71)
+        expect(number('roland-tb-3', 'accent')).toBe(16)
+        expect(number('roland-tb-3', 'effect')).toBe(17)
+        expect(matchMidiDeviceProfile({ id: 'opaque', name: '3- TB-3' })).toBe('roland-tb-3')
         expect(MIDI_DEVICE_PROFILES['akai-mpk-mini-mk3'].controls.every(control => control.cc === undefined)).toBe(true)
-        for (const name of ['minilogue xd', 'reface DX', 'MiniLab mkII', 'Launchkey Mini MK4', 'Launchkey Mini MK3 DAW']) {
+        for (const name of ['minilogue xd', 'reface DX', 'MiniLab mkII', 'Launchkey Mini MK4', 'Launchkey Mini MK3 DAW', 'TB-303', 'TB-03', 'TB-3 virtual copy']) {
             expect(matchMidiDeviceProfile({ id: 'opaque', name })).toBeUndefined()
         }
     })

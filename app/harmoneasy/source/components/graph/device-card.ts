@@ -4,6 +4,7 @@ import { elementDescription, elementIcon } from './element-icons'
 import { classificationLabel, type ClassifiedChoice } from './device-filters'
 import { OUTPUT_DEFINITIONS } from 'audiobus/io/output-definitions'
 import { INPUT_DEFINITIONS } from 'audiobus/io/input-definitions'
+import { AI_MODELS, type AIInputId } from 'audiobus/io/inputs/ai-model-catalogue'
 import { EVENT_ERROR } from 'audiobus/event-constants'
 import { MIDI_DEVICE_PROFILES, onMidiDeviceProfilesChanged } from 'audiobus/midi/hardware/device-profiles'
 
@@ -20,6 +21,10 @@ export const INPUT_GUIDANCE: Record<InputId, Guidance> = {
         guide('Input', definition.description, `Playing ${definition.name} through a transformation chain.`,
             definition.type === 'midi' ? 'MIDI data or a connected compatible device.' : 'A supported browser and the controls shown by the input.')
     ])),
+    ...Object.fromEntries(Object.values(AI_MODELS).map(model => [model.id,
+        guide('AI', model.description, `Generating music with ${model.name} by ${model.attribution.author}.`,
+            `Downloads about ${model.sizeMB} MB on first generation. Generate a phrase, then use transport Play. Source and license links are in the input controls.`)
+    ])) as Record<AIInputId, Guidance>,
     'step-sequencer': guide('Seq', 'Edit a repeating sixteen-step note pattern.', 'Writing melodies and drum sequences without a controller.', 'Start the shared transport to play; clear steps for rests.'),
     pads: guide('Pads', 'Play chords or drums from eight large pads.', 'Touchscreen performance and accessible keyboard activation.', 'A pointer, touchscreen, or keyboard; focus a pad and hold Space or Enter.'),
     'microphone-trigger': guide('Mic', 'Turn claps and taps into drum notes.', 'Rhythmic performance from acoustic sounds.', mic + ' Connect the input and set a threshold above room noise.'),
@@ -29,7 +34,7 @@ export const INPUT_GUIDANCE: Record<InputId, Guidance> = {
     osc: guide('OSC', 'Receive notes and controllers from an OSC bridge.', 'Playing from external software and custom controllers.', 'A binary OSC WebSocket bridge with matching prefix and message mappings.'),
     ...Object.fromEntries(Object.entries(MIDI_DEVICE_PROFILES).map(([id, profile]) => [id,
         guide('MIDI', profile.description, profile.abilities.join(', '),
-            `A connected ${profile.name}, MIDI permission, and Web MIDI or native desktop MIDI support.`)
+            `Enable virtual input to play on screen, or connect ${profile.name} with Web MIDI or native desktop MIDI permission.`)
     ])),
     keyboard: guide('⌨', 'Play notes with computer keys.', 'Trying a chain without a MIDI controller.', 'A physical keyboard and focus on the app.'),
     gamepad: guide('🎮', 'Turn controller buttons and axes into musical input.', 'Playing with a game controller.', 'A connected gamepad and browser Gamepad API support.'),
@@ -51,10 +56,12 @@ export const INPUT_GUIDANCE: Record<InputId, Guidance> = {
 
 onMidiDeviceProfilesChanged(() => {
     for (const [id, profile] of Object.entries(MIDI_DEVICE_PROFILES)) INPUT_GUIDANCE[id] = guide('MIDI', profile.description,
-        profile.abilities.join(', ') || `Playing ${profile.name}.`, `A connected ${profile.name} and MIDI access.`)
+        profile.abilities.join(', ') || `Playing ${profile.name}.`, `Enable virtual input to play on screen, or connect ${profile.name} with MIDI access.`)
 })
 
 export const OUTPUT_GUIDANCE: Record<OutputId, Guidance> = {
+    'audiobus-303': guide('303', 'Play the original AudioBus wavetable bass synth.', 'Bass lines with slide, accent, foldback distortion and delay.', audio + ' AudioWorklet support. Overlap notes for slide; velocity 100–127 adds accent.'),
+	'drum-kit': guide('Dr', 'Play a synthesized drum kit from MIDI notes or touch pads.', 'Finger drumming, percussion sequences and microphone-triggered rhythms.', audio + ' Use drum notes 35–87; channel 0 accepts every MIDI channel.'),
     performance: guide('Perf', 'Record IOChain load and app responsiveness.', 'Compare event rate, processing delay, FPS and Netronome timing; red graph markers identify lag.', 'A visible browser tab. Run the transport for timing metrics. Main-thread blocking requires Long Tasks API support.'),
     ...Object.fromEntries(Object.values(OUTPUT_DEFINITIONS).map(definition => [definition.id,
         guide('Plugin', definition.description,

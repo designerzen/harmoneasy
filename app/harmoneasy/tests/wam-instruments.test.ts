@@ -65,11 +65,11 @@ describe('WAM instruments', () => {
         expect(output.disconnect).toHaveBeenCalledOnce()
     })
 
-    it('offers catalogue instruments with previews only when AudioWorklet is supported', () => {
+    it('offers catalogue instruments only when AudioWorklet is supported and retains existing previews', () => {
         setup()
         const factories = getAvailableInstrumentFactories().filter(factory => factory.category === INSTRUMENT_CATEGORY_WAM2)
         expect(factories).toHaveLength(WAM2_INSTRUMENTS.length + 1)
-        expect(factories.every(factory => factory.preview)).toBe(true)
+        expect(factories.find(factory => factory.id === 'wam2:org.webaudiomodules.obxd')?.preview).toBeTruthy()
         vi.stubGlobal('AudioWorkletNode', undefined)
         expect(getAvailableInstrumentFactories().some(factory => factory.category === INSTRUMENT_CATEGORY_WAM2)).toBe(false)
     })

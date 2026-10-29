@@ -135,3 +135,19 @@ it('tunes the kick to the specified MIDI note without altering its scheduled tim
 	)
 	synth.destroy()
 })
+
+it('restores the branch’s six-oscillator 808 hat and dual-oscillator cowbell', () => {
+	const { synth, sources } = setup()
+	synth.trigger({ part: 'hatClosed', velocity: 1, triggerAt: 11 })
+	expect(sources).toHaveLength(6)
+	for (const [i, ratio] of [2, 3, 4.16, 5.43, 6.79, 8.21].entries()) {
+		expect(sources[i].type).toBe('square')
+		expect(sources[i].frequency.setValueAtTime).toHaveBeenCalledWith(40 * ratio, 11)
+	}
+	synth.trigger({ part: 'cowbell', velocity: 1, triggerAt: 12 })
+	expect(sources).toHaveLength(8)
+	expect(sources[6].frequency.setValueAtTime).toHaveBeenCalledWith(800, 12)
+	expect(sources[7].frequency.setValueAtTime).toHaveBeenCalledWith(540, 12)
+	synth.destroy()
+	expect(sources.every(source => source.disconnect.mock.calls.length > 0)).toBe(true)
+})
