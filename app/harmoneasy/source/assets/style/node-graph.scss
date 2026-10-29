@@ -3126,6 +3126,27 @@ dialog.add-output-dialog {
 	}
 	> .device-node-header {
 		padding: 0;
+		// Keep the title level with the gadgets; wrapped text sets the row height.
+		@media (min-width: 601px) {
+			display: grid;
+			grid-template-columns: auto minmax(0, 1fr) auto;
+			align-items: center;
+			gap: 11px;
+
+			> .device-title-controls {
+				display: contents;
+				> .node-actions-left {
+					grid-area: 1 / 1;
+				}
+				> .node-actions-right {
+					grid-area: 1 / 3;
+				}
+			}
+			> h6 {
+				grid-area: 1 / 2;
+				padding: 0.5rem 0;
+			}
+		}
 	}
 	> .device-node-header > h6 {
 		font-size: clamp(1rem, 2vw, 1.5rem);
@@ -3140,6 +3161,12 @@ dialog.add-output-dialog {
 		font-size: 0.875rem;
 	}
 }
+
+// The shadow-root controller can adapt to the editor without changing graph cards.
+.node-viewport-editor > .graph-node.is-fullscreen > .nodrag.nowheel:has(> circular-controller) {
+	container: circular-controller-editor / inline-size;
+}
+
 @media (max-width: 600px) {
 	.node-viewport-editor > .graph-node.is-fullscreen > .expanded-node-heading {
 		align-items: flex-start;
