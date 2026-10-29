@@ -3,6 +3,7 @@ import type { EmojiState } from "./emoji.js"
 import { GPU_UNCAPTURED_ERROR } from "./events.js"
 import { containedVideoRect, faceEmojiPlacement } from "./overlay-layout.js"
 import type { FacePrediction } from "./types.js"
+import { loadEmojiFont } from "./emoji-font.js"
 
 const CELL = 128,
 	COLUMNS = 6,
@@ -44,14 +45,15 @@ struct VertexOutput {
     return textureSampleLevel(atlas, atlasSampler, input.uv, 0.0);
 }`
 
-/** Rasterize platform emoji glyphs once as an SVG image; all frame drawing happens in WebGPU. */
+/** Rasterize the bundled Noto glyphs once; all frame drawing happens in WebGPU. */
 async function loadEmojiAtlas(): Promise<ImageBitmap> {
+	const font = await loadEmojiFont()
 	const rows = Math.ceil(GLYPHS.length / COLUMNS)
 	const texts = GLYPHS.map(
 		(glyph, index) =>
 			`<text x="${(index % COLUMNS) * CELL + CELL / 2}" y="${Math.floor(index / COLUMNS) * CELL + 104}" text-anchor="middle">${glyph}</text>`
 	).join("")
-	const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${COLUMNS * CELL}" height="${rows * CELL}"><g font-family="Segoe UI Emoji,Apple Color Emoji,Noto Color Emoji,sans-serif" font-size="100">${texts}</g></svg>`
+	const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${COLUMNS * CELL}" height="${rows * CELL}"><style>@font-face{font-family:'${font.family}';src:url('${font.dataUrl}') format('truetype');font-weight:400}</style><g font-family="${font.family}" font-size="100" fill="#f2f5fa">${texts}</g></svg>`
 	const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }))
 	try {
 		const image = new Image()

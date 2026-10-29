@@ -11,6 +11,7 @@ import {
 import { EmojiDetector } from "./emoji.js"
 import type { EmojiState } from "./emoji.js"
 import { WebGPUFaceOverlay } from "./webgpu-overlay.js"
+import { EMOJI_FONT_FAMILY, loadEmojiFont } from "./emoji-font.js"
 import { containedVideoRect, faceEmojiPlacement } from "./overlay-layout.js"
 import { PhotosynthMusic } from "./music.js"
 import type { MusicOptions } from "./music.js"
@@ -24,7 +25,7 @@ header,.toolbar{display:flex;align-items:center;justify-content:space-between;ga
 video,canvas{position:absolute;width:100%;height:100%;object-fit:contain}video{transform:scaleX(-1)}.placeholder{position:absolute;inset:0;display:grid;place-content:center;text-align:center;color:#a9b7c6;padding:24px;pointer-events:none}
 .controls,.meters{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:16px;margin:20px 0}label{display:grid;gap:6px;color:#d1dce8}select,button,input{font:inherit}select,button{border:1px solid #526171;border-radius:8px;padding:9px 12px;background:#202c39;color:inherit;min-height:44px}button{cursor:pointer}button.primary{background:var(--accent);color:#142007;border-color:transparent;font-weight:700}button:disabled{opacity:.5;cursor:default}:focus-visible{outline:3px solid var(--accent);outline-offset:3px}input[type=range]{width:100%;accent-color:var(--accent)}output{font-variant-numeric:tabular-nums}meter{display:block;width:100%;height:14px;accent-color:var(--accent)}.meter-label{display:flex;justify-content:space-between;gap:8px}.status{min-height:1.5em;margin:12px 0 0;color:#d1dce8}.note{font-size:1.4rem;font-weight:700;color:var(--accent)}small{display:block;color:#a9b7c6} [hidden]{display:none!important}
 `
-const OVERLAY_STYLE = `.stage canvas{pointer-events:none}.emoji-fallback{position:absolute;pointer-events:none;line-height:1;text-align:center;transform-origin:center;font-family:"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif}.expression{display:block;margin:8px 0;font-weight:600}.renderer-status{margin:8px 0}.overlay-options{display:flex;align-items:center;gap:8px}.overlay-options input{width:20px;height:20px;accent-color:var(--accent)}`
+const OVERLAY_STYLE = `.stage canvas{pointer-events:none}.emoji-fallback{position:absolute;pointer-events:none;line-height:1;text-align:center;transform-origin:center;font-family:"${EMOJI_FONT_FAMILY}",sans-serif}.expression{display:block;margin:8px 0;font-weight:600;font-family:"${EMOJI_FONT_FAMILY}",system-ui,sans-serif}.renderer-status{margin:8px 0}.overlay-options{display:flex;align-items:center;gap:8px}.overlay-options input{width:20px;height:20px;accent-color:var(--accent)}`
 const METERS = [
 	"happiness",
 	"sadness",
@@ -184,6 +185,8 @@ ${(["noteController", "octaveController"] as const).map((id) => `<label>${id ===
 			{ signal }
 		)
 		void this.loadCameras()
+		// Also load the bundled face when WebGPU is unavailable and the DOM emoji is used.
+		void loadEmojiFont().catch(() => {})
 		this.resizeObserver = new ResizeObserver(() => this.renderOverlay())
 		this.resizeObserver.observe(this.query(".stage"))
 		void this.initializeOverlay()
