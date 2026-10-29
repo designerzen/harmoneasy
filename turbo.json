@@ -1,112 +1,76 @@
 {
-  "$schema": "https://turbo.build/schema.json",
-  "ui": "tui",
-  "globalDependencies": [
-    "package.json",
-    ".nvmrc",
-    "pnpm-workspace.yaml"
-  ],
-  "globalEnv": [
-    "NODE_ENV"
-  ],
-  "globalPassThroughEnv": [
-    "PATHEXT",
-    "pnpm_config_verify_deps_before_run"
-  ],
-  "tasks": {
-    "type-check": {
-      "cache": true,
-      "inputs": [
-        "**/*.ts",
-        "tsconfig.json"
-      ]
-    },
-    "dev": {
-      "cache": false,
-      "interactive": true,
-      "persistent": true,
-      "dependsOn": [
-        "^type-check"
-      ],
-      "env": [
-        "PORT",
-        "HOSTNAME"
-      ]
-    },
-    "dev#harmoneasy": {
-      "cache": false,
-      "interactive": true,
-      "persistent": true,
-      "env": [
-        "PORT",
-        "HOSTNAME"
-      ]
-    },
-    "build": {
-      "outputs": [
-        "dist/**",
-        "build/**"
-      ],
-      "inputs": [
-        "source/**",
-        "packages/**",
-        "public/**",
-        "vite.config.web.js",
-        "tsconfig.json",
-        "package.json"
-      ],
-      "dependsOn": [
-        "^build"
-      ],
-      "env": [
-        "NODE_ENV"
-      ]
-    },
-    "build:electron": {
-      "outputs": [
-        "dist/**",
-        "build/**"
-      ],
-      "dependsOn": [
-        "build-native",
-        "build-vite-electron"
-      ]
-    },
-    "build-native": {
-      "cache": false,
-      "outputs": [
-        "build/Release/**"
-      ]
-    },
-    "test": {
-      "cache": false,
-      "interactive": true,
-      "inputs": [
-        "**/*.ts",
-        "**/*.test.ts"
-      ]
-    },
-    "preview": {
-      "cache": false,
-      "interactive": true,
-      "persistent": true
-    },
-    "upgrader": {
-      "cache": false,
-      "interactive": true
-    },
-    "lint": {
-      "cache": true,
-      "inputs": [
-        "**/*.ts",
-        "**/*.js",
-        "**/*.tsx",
-        "**/*.jsx",
-        "oxlint.config.ts"
-      ]
-    },
-    "lint:fix": {
-      "cache": false
-    }
-  }
+	"$schema": "https://turbo.build/schema.json",
+	"ui": "tui",
+	"globalDependencies": ["package.json", ".nvmrc", "pnpm-workspace.yaml"],
+	"globalEnv": ["NODE_ENV"],
+	"globalPassThroughEnv": ["PATHEXT", "pnpm_config_verify_deps_before_run"],
+	"tasks": {
+		"type-check": {
+			"cache": true,
+			"inputs": ["**/*.ts", "tsconfig.json"]
+		},
+		"dev": {
+			"cache": false,
+			"interactive": true,
+			"persistent": true,
+			"dependsOn": ["^type-check"],
+			"env": ["PORT", "HOSTNAME"]
+		},
+		"dev#harmoneasy": {
+			"cache": false,
+			"interactive": true,
+			"persistent": true,
+			"env": ["PORT", "HOSTNAME"]
+		},
+		"build": {
+			"outputs": ["dist/**", "build/**"],
+			"inputs": [
+				"source/**",
+				"packages/**",
+				"public/**",
+				"vite.config.web.js",
+				"tsconfig.json",
+				"package.json"
+			],
+			"dependsOn": ["^build"],
+			"env": ["NODE_ENV"]
+		},
+		"build:electron": {
+			"outputs": ["dist/**", "build/**"],
+			"dependsOn": ["build-native", "build-vite-electron"]
+		},
+		"build-native": {
+			"cache": false,
+			"outputs": ["build/Release/**"]
+		},
+		"test": {
+			"cache": false,
+			"interactive": true,
+			"inputs": ["**/*.ts", "**/*.test.ts"]
+		},
+		"preview": {
+			"cache": false,
+			"interactive": true,
+			"persistent": true
+		},
+		"upgrader": {
+			"cache": false,
+			"interactive": true
+		},
+		"lint": {
+			"cache": true,
+			"inputs": [
+				"**/*.ts",
+				"**/*.js",
+				"**/*.tsx",
+				"**/*.jsx",
+				"oxlint.config.ts",
+				"$TURBO_ROOT$/oxlint.config.ts",
+				"$TURBO_ROOT$/packages/shared-config/oxlint.config.ts"
+			]
+		},
+		"lint:fix": {
+			"cache": false
+		}
+	}
 }

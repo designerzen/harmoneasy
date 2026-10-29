@@ -1,0 +1,31 @@
+{
+	"$schema": "./node_modules/oxfmt/configuration_schema.json",
+	"useTabs": true,
+	"tabWidth": 4,
+	"semi": false,
+	"singleQuote": false,
+	"trailingComma": "none",
+	"endOfLine": "crlf",
+	"insertFinalNewline": false,
+	"sortPackageJson": false,
+	"ignorePatterns": [
+		"**/node_modules/**",
+		"**/dist*/**",
+		"**/build/**",
+		"**/release/**",
+		"**/out/**",
+		"**/coverage/**",
+		"**/.turbo/**",
+		"**/public/**",
+		"packages/netronome/**",
+		"packages/audiobus/wam/yoshimi/**",
+		"packages/sion/sion/**",
+		"**/*.min.js",
+		"**/*.md",
+		"**/*.mdx",
+		"**/pnpm-lock.yaml",
+		"**/package-lock.json",
+		"**/yarn.lock",
+		"patches/**"
+	]
+}
