@@ -20,6 +20,7 @@ const INPUT_ICONS: Partial<Record<InputId, string>> = {
 }
 
 const OUTPUT_ICONS: Record<OutputId, string> = {
+    performance: 'spectrum',
     moog: 'synth',
     tb303: 'synth',
     describe: 'describe', console: 'console', 'pink-trombone': 'speech', notation: 'notation',

@@ -522,6 +522,7 @@ const initialiseApplication = async (onEveryTimingTick: Function, autoConnect: b
  * @param values 
  */
 const onTick = (values: Record<string, any>) => {
+    ioManager.recordTimerPerformance({ drift: values.drift, lag: values.lag, timePassed: values.timePassed, expected: values.expected })
 
     const {
         divisionsElapsed, barsElapsed, timePassed,

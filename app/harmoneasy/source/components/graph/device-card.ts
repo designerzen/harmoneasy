@@ -43,6 +43,7 @@ onMidiDeviceProfilesChanged(() => {
 })
 
 export const OUTPUT_GUIDANCE: Record<OutputId, Guidance> = {
+    performance: guide('Perf', 'Record IOChain load and app responsiveness.', 'Compare event rate, processing delay, FPS and Netronome timing; red graph markers identify lag.', 'A visible browser tab. Run the transport for timing metrics. Main-thread blocking requires Long Tasks API support.'),
     ...Object.fromEntries(Object.values(OUTPUT_DEFINITIONS).map(definition => [definition.id,
         guide('Plugin', definition.description,
             definition.type === 'engine' ? `Playing ${definition.name} from incoming MIDI notes.`
