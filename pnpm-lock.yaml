@@ -233,6 +233,9 @@ importers:
       wait-on:
         specifier: ^9.0.4
         version: 9.0.4(debug@4.4.3(supports-color@8.1.1))
+      ws:
+        specifier: ^8.22.0
+        version: 8.22.0
 
   packages/audiobus:
     dependencies:
@@ -245,6 +248,9 @@ importers:
       '@magenta/music':
         specifier: ^1.23.1
         version: 1.23.1(@tensorflow/tfjs-core@2.8.6(encoding@0.1.13))(encoding@0.1.13)
+      '@mediapipe/tasks-vision':
+        specifier: 1.2.0
+        version: 1.2.0
       '@msgpack/msgpack':
         specifier: ^3.1.3
         version: 3.1.3
@@ -1154,6 +1160,9 @@ packages:
   '@malept/flatpak-bundler@0.4.0':
     resolution: {integrity: sha512-9QOtNffcOF/c1seMCDnjckb3R9WHcG34tky+FHpNKKCW0wc/scYLwMtO+ptyGUfMW0/b/n4qRiALlaFHc9Oj7Q==}
     engines: {node: '>= 10.0.0'}
+
+  '@mediapipe/tasks-vision@1.2.0':
+    resolution: {integrity: sha512-7+dr9GbGyTtcuLh11wE5TOn4dNFRncIT9oAWs72620WX99KW5FfzF6rFJ/ChTgXG9vJ6dCiE9FrEEY4CnwPWKQ==}
 
   '@msgpack/msgpack@3.1.3':
     resolution: {integrity: sha512-47XIizs9XZXvuJgoaJUIE2lFoID8ugvc0jzSHP+Ptfk8nTbnR8g788wv48N03Kx0UkAv559HWRQ3yzOgzlRNUA==}
@@ -5555,6 +5564,8 @@ snapshots:
       tmp-promise: 3.0.3
     transitivePeerDependencies:
       - supports-color
+
+  '@mediapipe/tasks-vision@1.2.0': {}
 
   '@msgpack/msgpack@3.1.3': {}
 

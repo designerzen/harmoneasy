@@ -3,6 +3,7 @@ import type { OutputId } from 'audiobus/io/outputs/output-types'
 import { elementDescription, elementIcon } from './element-icons'
 import { classificationLabel, type ClassifiedChoice } from './device-filters'
 import { OUTPUT_DEFINITIONS } from 'audiobus/io/output-definitions'
+import { INPUT_DEFINITIONS } from 'audiobus/io/input-definitions'
 import { EVENT_ERROR } from 'audiobus/event-constants'
 import { MIDI_DEVICE_PROFILES, onMidiDeviceProfilesChanged } from 'audiobus/midi/hardware/device-profiles'
 
@@ -15,6 +16,17 @@ const bluetooth = 'A BLE MIDI device, Bluetooth enabled, and a browser with Web 
 const mic = 'A microphone or audio input and microphone permission.'
 
 export const INPUT_GUIDANCE: Record<InputId, Guidance> = {
+    ...Object.fromEntries(Object.values(INPUT_DEFINITIONS).map(definition => [definition.id,
+        guide('Input', definition.description, `Playing ${definition.name} through a transformation chain.`,
+            definition.type === 'midi' ? 'MIDI data or a connected compatible device.' : 'A supported browser and the controls shown by the input.')
+    ])),
+    'step-sequencer': guide('Seq', 'Edit a repeating sixteen-step note pattern.', 'Writing melodies and drum sequences without a controller.', 'Start the shared transport to play; clear steps for rests.'),
+    pads: guide('Pads', 'Play chords or drums from eight large pads.', 'Touchscreen performance and accessible keyboard activation.', 'A pointer, touchscreen, or keyboard; focus a pad and hold Space or Enter.'),
+    'microphone-trigger': guide('Mic', 'Turn claps and taps into drum notes.', 'Rhythmic performance from acoustic sounds.', mic + ' Connect the input and set a threshold above room noise.'),
+    'camera-gestures': guide('Cam', 'Pinch to play and move your hand to choose pitch.', 'Touch-free playing without specialist hand-tracking hardware.', 'Camera permission, a supported browser, and internet access for the tracking model.'),
+    'event-loop': guide('Loop', 'Replay captured musical commands through a chain.', 'Looping notes and controllers with different transformations or sounds.', 'Load JSON from an Event Recorder / Looper output, then restart the transport.'),
+    'midi-file': guide('MIDI', 'Play notes from a Standard MIDI File.', 'Transforming or remixing an imported performance.', 'Load a MIDI file, then restart the transport to play.'),
+    osc: guide('OSC', 'Receive notes and controllers from an OSC bridge.', 'Playing from external software and custom controllers.', 'A binary OSC WebSocket bridge with matching prefix and message mappings.'),
     ...Object.fromEntries(Object.entries(MIDI_DEVICE_PROFILES).map(([id, profile]) => [id,
         guide('MIDI', profile.description, profile.abilities.join(', '),
             `A connected ${profile.name}, MIDI permission, and Web MIDI or native desktop MIDI support.`)
@@ -52,6 +64,11 @@ export const OUTPUT_GUIDANCE: Record<OutputId, Guidance> = {
                 : audio + ' The plugin engine and any samples must be available.')
     ])),
     'drum-accompaniment': guide('Dr', 'Add a steady drum break alongside your instrument.', 'Choose a groove and tuning note, then start the global transport. Busy playing adds subtle variations.', audio),
+    'note-monitor': guide('Notes', 'Display transformed pitches, channels and durations.', 'Checking harmony, routing and held notes.', 'Musical notes from an input or transformer.'),
+    'sample-player': guide('Sample', 'Play your own audio sample across MIDI notes.', 'Custom instruments, found sounds and pitched samples.', audio + ' Load an audio file up to 4 MB; set its original MIDI pitch.'),
+    'event-recorder': guide('Loop', 'Capture this chain’s musical commands as a replayable loop.', 'Reusing a performance with different transformations or instruments.', 'Record notes, download the event-loop JSON and load it in an Event Loop input.'),
+    osc: guide('OSC', 'Send notes and controllers to an OSC bridge.', 'Controlling external musical or multimedia software.', 'A binary OSC WebSocket bridge with matching prefix and message mappings.'),
+    recorder: guide('Rec', 'Record the master audio and download WAV.', 'Saving a rendered performance.', audio + ' All Recorder outputs share the same recording session.'),
     moog: guide('M', 'Play the Photosynth Moog ladder synthesizer.', 'Shaping basses, leads and chords with cutoff, resonance and envelopes.', audio + ' Internet access to load the WAM SDK.'),
     tb303: guide('303', 'Play a monophonic TB-303 bass synthesizer.', 'Acid bass with live filter controls. Overlap notes for slide; velocity 100–127 adds accent.', audio + ' AudioWorklet support and internet access to load the WAM SDK.'),
     describe: guide('Aa', 'Describe active notes and chords in musical language.', 'Identifying extended chords, added tones, and inversions while playing.', 'Notes from a connected input or transformer.'),

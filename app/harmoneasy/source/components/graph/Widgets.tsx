@@ -1,5 +1,5 @@
 import { useChain } from './ChainContext'
-import React, { memo, useCallback, useId } from "react"
+import React, { memo, useCallback, useId, useState } from "react"
 import { EVENT_CONFIGURATION_CHANGED } from 'audiobus/event-constants'
  
 /**
@@ -8,8 +8,15 @@ import { EVENT_CONFIGURATION_CHANGED } from 'audiobus/event-constants'
 export const ConfigField = memo(function ConfigField({ config, element }: { config: any; element: any }) {
 	const { chain } = useChain()
     const helpId = useId()
+    const [error, setError] = useState('')
 	const handleChange = useCallback((v: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
-		element.setConfig(config.name, v.target.value)
+        try {
+            element.setConfig(config.name, v.target.value)
+            setError('')
+        } catch (error) {
+            setError(error instanceof Error ? error.message : String(error))
+            return
+        }
         chain.dispatchEvent(new Event(EVENT_CONFIGURATION_CHANGED))
 	}, [config.name, element, chain])
 
@@ -23,6 +30,7 @@ export const ConfigField = memo(function ConfigField({ config, element }: { conf
 		{ config.type === 'select' ? <SelectField values={config.values} defaultValue={config.default} onChange={handleChange} describedBy={config.help ? helpId : undefined} />
             : config.type === 'text' ? <input className="nodrag nopan" type="text" defaultValue={config.default ?? ''} placeholder={config.placeholder} aria-describedby={config.help ? helpId : undefined} onBlur={handleChange} /> : 'unknown' }
         {config.help && <small id={helpId} className="config-field-help">{config.help}</small>}
+        {error && <small role="alert" className="config-field-help">{error}</small>}
 	</label>
 	
 }, (prevProps, nextProps) => {

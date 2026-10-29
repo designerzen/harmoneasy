@@ -12,6 +12,7 @@
     "setup": "pnpm install --allow-build=electron",
     "install:electron": "pnpm approve-builds && npm run build-native",
     "test": "vitest",
+    "osc:bridge": "node scripts/osc-bridge.cjs",
     "type-check": "tsc --noEmit",
     "dev": "node scripts/update-packages-config.js && vite --config vite.config.web.js",
     "dev:electron": "node scripts/update-packages-config.js && concurrently \"npm run dev\" \"wait-on http://localhost:1999 && electron .\"",
@@ -48,7 +49,8 @@
     "update-electron-app": "^3.1.2",
     "vite": "^8.0.1",
     "vitest": "^4.1.0",
-    "wait-on": "^9.0.4"
+    "wait-on": "^9.0.4",
+    "ws": "^8.22.0"
   },
   "dependencies": {
     "@harmoneasy/shared-config": "workspace:^",

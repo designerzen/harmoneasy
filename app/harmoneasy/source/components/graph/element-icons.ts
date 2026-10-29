@@ -12,6 +12,7 @@ export function elementDescription(kind: ElementKind, id: string, name: string, 
 }
 
 const INPUT_ICONS: Partial<Record<InputId, string>> = {
+    'step-sequencer': 'clock', pads: 'drums', 'microphone-trigger': 'microphone', 'camera-gestures': 'hand', 'event-loop': 'clock', osc: 'midi',
     keyboard: 'keyboard', gamepad: 'gamepad', 'gamepad-music': 'gamepad',
     webmidi: 'midi', 'native-midi': 'midi', 'midi2-native': 'midi', 'ble-midi': 'bluetooth',
     'microphone-formant': 'microphone', 'leap-motion': 'hand', 'onscreen-keyboard': 'piano',
@@ -20,6 +21,7 @@ const INPUT_ICONS: Partial<Record<InputId, string>> = {
 }
 
 const OUTPUT_ICONS: Record<OutputId, string> = {
+    'note-monitor': 'piano', 'sample-player': 'synth', 'event-recorder': 'clock', osc: 'midi', recorder: 'clock',
     performance: 'spectrum',
     moog: 'synth',
     tb303: 'synth',

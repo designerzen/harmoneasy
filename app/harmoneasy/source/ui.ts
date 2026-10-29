@@ -3,7 +3,7 @@ import NoteVisualiser from 'audiobus/ui/note-visualiser.js'
 import NoteTimelineVisualiser from 'audiobus/ui/note-timeline-visualiser'
 import SVGKeyboard from 'audiobus/ui/keyboard-svg.ts'
 import { createOpenDAWExportDialog } from './services/opendaw-export-dialog'
-import { EVENT_CLICK } from 'audiobus/event-constants'
+import { EVENT_CLICK, EVENT_CHANGE, EVENT_ABORT } from 'audiobus/event-constants'
 import { installMediaDrop } from './services/media-drop'
 
 import type NoteModel from "audiobus/note-model.ts"
@@ -410,28 +410,28 @@ export default class UI implements IAudioOutput {
 
 
 	/**
-	  * Register callback for when import button is clicked (supports MIDI, MusicXML, .dawProject, and tracker files)
+	  * Upload files through the same importer used for dropped media.
 	  */
 	whenFileImportRequestedRun(callback: (file: File) => void): void {
 		if (!this.elementMidiImportButton) return
 		const fileInput = document.createElement('input')
 		fileInput.type = 'file'
-		// Supported formats: MIDI, MusicXML, DawProject, and Tracker formats
+		fileInput.multiple = true
+		fileInput.setAttribute('aria-label', 'Upload music files or WAM2 plugin bundles')
 		fileInput.accept = '.mid,.midi,audio/midi,.zip,.wam,.wam2,.musicxml,.xml,.dawproject,.mod,.xm,.it,.s3m,.669,.far,.stm,.ult,.mtm,.dmf,.ptm,.okt,.mptm,.nst'
 		fileInput.style.display = 'none'
 		document.body.appendChild(fileInput)
+		this.abortController.signal.addEventListener(EVENT_ABORT, () => fileInput.remove(), { once: true })
 
 		// When button is clicked, trigger the file input
-		this.elementMidiImportButton.addEventListener('click', () => {
+		this.elementMidiImportButton.addEventListener(EVENT_CLICK, () => {
 			fileInput.click()
 		}, { signal: this.abortController.signal })
 
 		// When file is selected, call the callback
-		fileInput.addEventListener('change', (e) => {
+		fileInput.addEventListener(EVENT_CHANGE, (e) => {
 			const files = (e.target as HTMLInputElement).files
-			if (files && files.length > 0) {
-				callback && callback(files[0])
-			}
+			for (const file of Array.from(files ?? [])) callback(file)
 			// Reset the input so the same file can be selected again
 			fileInput.value = ''
 		}, { signal: this.abortController.signal })
