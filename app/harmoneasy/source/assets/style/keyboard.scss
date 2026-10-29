@@ -1,72 +1,73 @@
-.piano-key{
-	transition: 
-        opacity var(--time-quick, 90ms) linear,
-        fill 4ms linear;
+.piano-key {
+	transition:
+		opacity var(--time-quick, 90ms) linear,
+		fill 4ms linear;
 
-    border-radius: 10%;
+	border-radius: 10%;
 
-	fill:var(--fill, white);
+	fill: var(--fill, white);
 
-	.piano-key-name{
+	.piano-key-name {
 		visibility: hidden;
 	}
 
 	@media (hover: hover) and (pointer: fine) {
-		&:hover{
+		&:hover {
 			fill: var(--col-green);
-			.piano-key-name{
+			.piano-key-name {
 				visibility: visible;
 			}
 		}
 	}
 
-    &.active, &.pressed{
+	&.active,
+	&.pressed {
 		fill: var(--col-accent, var(--col-orange, orange));
 		// opacity: 0;
 	}
-    @media (hover: hover) and (pointer: fine) {
-		&.active:hover, &.pressed:hover{
+	@media (hover: hover) and (pointer: fine) {
+		&.active:hover,
+		&.pressed:hover {
 			fill: color-mix(in oklch, var(--col-accent) 50%, var(--fill));
 		}
 	}
 
-	&:focus{
+	&:focus {
 		outline: none;
 	}
 
-	&:focus-visible{
+	&:focus-visible {
 		outline: none;
-		stroke-width:4px;
+		stroke-width: 4px;
 		stroke: var(--col-orange);
-	} 
+	}
 }
 
-.piano-key-white{
+.piano-key-white {
 	--fill: var(--col-white, white);
 }
 
-.piano-key-black{
+.piano-key-black {
 	--fill: var(--col-black, black);
-	&:focus-visible{
-		stroke-width:4px;
+	&:focus-visible {
+		stroke-width: 4px;
 		stroke: var(--col-orange);
 	}
 }
 
-.piano-key-indicators{
+.piano-key-indicators {
 	pointer-events: none;
 }
 
-.piano-note-indicator{
+.piano-note-indicator {
 	transition: opacity var(--time-quick, 90ms) linear;
 	stroke: var(--col-white);
-	stroke-width:0.3;
+	stroke-width: 0.3;
 	fill: var(--col-orange);
 	opacity: 0;
 }
 
-
-.piano{
+.piano {
 	--piano-key-width: 23px;
 	min-height: 180px;
 	max-width: 100%;
@@ -79,13 +80,13 @@
 	-webkit-user-select: none;
 	-webkit-touch-callout: none;
 
-	.piano-viewport{
+	.piano-viewport {
 		flex: 1;
 		min-height: 0;
 		overflow: hidden;
 	}
 
-	.piano-keys{
+	.piano-keys {
 		display: block;
 		width: 100%;
 		min-width: calc(var(--piano-white-keys, 75) * var(--piano-key-width));
@@ -94,7 +95,7 @@
 		touch-action: none;
 	}
 
-	.piano-range{
+	.piano-range {
 		flex: 0 0 32px;
 		box-sizing: border-box;
 		width: 100%;
@@ -107,26 +108,28 @@
 	}
 }
 
-@media (pointer: coarse){
-	.piano{
+@media (pointer: coarse) {
+	.piano {
 		--piano-key-width: 44px;
-		.piano-range{ flex-basis: 44px; }
+		.piano-range {
+			flex-basis: 44px;
+		}
 	}
 }
 
 /* Accessible checkbox styles: larger hit area (>=48px) and clearer visuals */
-input[type="checkbox"]{
+input[type="checkbox"] {
 	--visual-size: 20px;
 	-webkit-appearance: none;
 	appearance: none;
-	
+
 	width: var(--visual-size);
 	height: var(--visual-size);
 	margin: 0;
-	
+
 	padding: calc((48px - var(--visual-size)) / 2);
 	box-sizing: content-box;
-	
+
 	position: relative;
 	cursor: pointer;
 	vertical-align: middle;
@@ -134,47 +137,57 @@ input[type="checkbox"]{
 }
 
 /* draw the visible box using ::after so the padded area remains clickable but visually compact */
-input[type="checkbox"]::after{
-	content: '';
+input[type="checkbox"]::after {
+	content: "";
 	position: absolute;
-	left: calc((100% - var(--visual-size)) / 2 - ( (48px - var(--visual-size)) / 2 ));
-	top: calc((100% - var(--visual-size)) / 2 - ( (48px - var(--visual-size)) / 2 ));
+	left: calc((100% - var(--visual-size)) / 2 - ((48px - var(--visual-size)) / 2));
+	top: calc((100% - var(--visual-size)) / 2 - ((48px - var(--visual-size)) / 2));
 	width: var(--visual-size);
 	height: var(--visual-size);
 	border-radius: 4px;
-	background: light-dark(var(--col-white), color-mix(in oklch, var(--col-white) 90%, var(--col-black)));
-	border: 2px solid light-dark(
-		color-mix(in oklch, var(--col-black) 20%, var(--col-white)),
-		color-mix(in oklch, var(--col-white) 20%, var(--col-black))
+	background: light-dark(
+		var(--col-white),
+		color-mix(in oklch, var(--col-white) 90%, var(--col-black))
 	);
-	box-shadow: 0 1px 0 rgba(0,0,0,0.03) inset;
-	transition: background .12s ease, border-color .12s ease, box-shadow .12s ease;
+	border: 2px solid
+		light-dark(
+			color-mix(in oklch, var(--col-black) 20%, var(--col-white)),
+			color-mix(in oklch, var(--col-white) 20%, var(--col-black))
+		);
+	box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03) inset;
+	transition:
+		background 0.12s ease,
+		border-color 0.12s ease,
+		box-shadow 0.12s ease;
 }
 
-input[type="checkbox"]:checked::after{
+input[type="checkbox"]:checked::after {
 	background: var(--col-blue);
 	border-color: var(--col-blue);
 	box-shadow: inset 0 0 0 3px var(--col-white);
 }
 
-input[type="checkbox"]:focus-visible{
+input[type="checkbox"]:focus-visible {
 	outline: none;
 }
 
-input[type="checkbox"]:focus-visible::after{
-	box-shadow: 0 0 0 4px light-dark(
-		color-mix(in oklch, var(--col-blue) 14%, transparent),
-		color-mix(in oklch, var(--col-blue) 14%, transparent)
-	), inset 0 1px 0 rgba(0,0,0,0.03);
+input[type="checkbox"]:focus-visible::after {
+	box-shadow:
+		0 0 0 4px
+			light-dark(
+				color-mix(in oklch, var(--col-blue) 14%, transparent),
+				color-mix(in oklch, var(--col-blue) 14%, transparent)
+			),
+		inset 0 1px 0 rgba(0, 0, 0, 0.03);
 }
 
 /* increase hit area for labels that wrap checkboxes as well */
-label > input[type="checkbox"]{
+label > input[type="checkbox"] {
 	display: inline-block;
 }
 
 /* When the checkbox is disabled, show a muted style */
-input[type="checkbox"][disabled]::after{
+input[type="checkbox"][disabled]::after {
 	background: light-dark(
 		color-mix(in oklch, var(--col-white) 95%, var(--col-black)),
 		color-mix(in oklch, var(--col-white) 20%, var(--col-black))
@@ -198,7 +211,7 @@ input[type="checkbox"][disabled]::after{
 
 	pointer-events: all;
 	user-select: none;
-	
+
 	box-sizing: border-box;
 	min-width: 0;
 	overflow: hidden;
@@ -218,7 +231,9 @@ input[type="checkbox"][disabled]::after{
 	.qwerty-key {
 		cursor: pointer;
 		user-select: none;
-		transition: fill 50ms linear, filter 50ms linear;
+		transition:
+			fill 50ms linear,
+			filter 50ms linear;
 		filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 
 		&:hover {
@@ -253,4 +268,3 @@ input[type="checkbox"][disabled]::after{
 .node-viewport-editor .qwerty-keyboard .qwerty-keys {
 	max-height: calc(100dvh - 14rem);
 }
-

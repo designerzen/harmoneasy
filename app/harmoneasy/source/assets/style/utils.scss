@@ -13,12 +13,12 @@
 .selectable {
 	user-select: all;
 }
-.float-left{
+.float-left {
 	float: left;
 }
 
-[data-error] { 
- 	color: light-dark(#a32020, #ffaaaa); 
+[data-error] {
+	color: light-dark(#a32020, #ffaaaa);
 }
 
 [hidden] {

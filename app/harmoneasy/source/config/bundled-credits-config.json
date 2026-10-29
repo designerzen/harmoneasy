@@ -1,14 +1,14 @@
 [
-  "webclap/plinken-wclap-LICENSE.txt",
-  "webclap/plugins/clack-LICENSE-APACHE.txt",
-  "webclap/plugins/clack-LICENSE-MIT.txt",
-  "webclap/plugins/open-webclap-obxf-LICENSE.txt",
-  "webclap/plugins/open-webclap-odin2-LICENSE.txt",
-  "webclap/plugins/open-webclap-ripplerx-LICENSE.txt",
-  "webclap/plugins/open-webclap-sc-dark-LICENSE.txt",
-  "webclap/plugins/open-webclap-six-sines-LICENSE.txt",
-  "webclap/plugins/open-webclap-surge-xt-LICENSE.txt",
-  "webclap/plugins/signalsmith-basics-LICENSE.txt",
-  "webclap/plugins/signalsmith-clap-cpp-LICENSE.txt",
-  "webclap/wasi.wasm-LICENSE.txt"
+	"webclap/plinken-wclap-LICENSE.txt",
+	"webclap/plugins/clack-LICENSE-APACHE.txt",
+	"webclap/plugins/clack-LICENSE-MIT.txt",
+	"webclap/plugins/open-webclap-obxf-LICENSE.txt",
+	"webclap/plugins/open-webclap-odin2-LICENSE.txt",
+	"webclap/plugins/open-webclap-ripplerx-LICENSE.txt",
+	"webclap/plugins/open-webclap-sc-dark-LICENSE.txt",
+	"webclap/plugins/open-webclap-six-sines-LICENSE.txt",
+	"webclap/plugins/open-webclap-surge-xt-LICENSE.txt",
+	"webclap/plugins/signalsmith-basics-LICENSE.txt",
+	"webclap/plugins/signalsmith-clap-cpp-LICENSE.txt",
+	"webclap/wasi.wasm-LICENSE.txt"
 ]

@@ -1,27 +1,26 @@
 {
-  "name": "pink-trombone",
-  "version": "0.3.0",
-  "description": "Pink Trombone speech synthesis integration for HarmonEasy",
-  "type": "module",
-  "main": "index.ts",
-  "exports": {
-    ".": "./index.ts"
-  },
-  "scripts": {
-    "dev": "echo 'No dev server for this package'",
-    "lint": "oxlint .",
-    "lint:fix": "oxlint --fix ."
-  },
-  "files": [
-    "*.ts",
-    "*.wasm"
-  ],
-  "dependencies": {
-    "@harmoneasy/shared-config": "workspace:^",
-    "audiobus": "workspace:^"
-  },
-  "devDependencies": {
-    "typescript": "~5.9.3"
-  }
+	"name": "pink-trombone",
+	"version": "0.3.0",
+	"description": "Pink Trombone speech synthesis integration for HarmonEasy",
+	"type": "module",
+	"main": "index.ts",
+	"exports": {
+		".": "./index.ts"
+	},
+	"scripts": {
+		"dev": "echo 'No dev server for this package'",
+		"lint": "oxlint .",
+		"lint:fix": "oxlint --fix ."
+	},
+	"files": [
+		"*.ts",
+		"*.wasm"
+	],
+	"dependencies": {
+		"@harmoneasy/shared-config": "workspace:^",
+		"audiobus": "workspace:^"
+	},
+	"devDependencies": {
+		"typescript": "~5.9.3"
+	}
 }
-

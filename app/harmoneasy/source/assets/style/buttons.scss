@@ -1,82 +1,80 @@
-
 button {
-    border-radius: 8px;
-    border:var(--border);
-	border-color:transparent;
-    padding: calc(var(--pad)/2) calc(var(--pad));
-    // ios a11y guidelines
-    min-width: 44px;
-    min-height: 44px;
-    font-size: 1em;
-    font-weight: 700;
-    font-family: inherit;
-    background-color:var(--col-bg);
-    color:var(--col-fg);
-    cursor: pointer;
-    box-sizing: border-box;
+	border-radius: 8px;
+	border: var(--border);
+	border-color: transparent;
+	padding: calc(var(--pad) / 2) calc(var(--pad));
+	// ios a11y guidelines
+	min-width: 44px;
+	min-height: 44px;
+	font-size: 1em;
+	font-weight: 700;
+	font-family: inherit;
+	background-color: var(--col-bg);
+	color: var(--col-fg);
+	cursor: pointer;
+	box-sizing: border-box;
 
-    transition: 
-        background 0.2s ease,
-        border-color 0.25s;
+	transition:
+		background 0.2s ease,
+		border-color 0.25s;
 
-    &.primary, &[autofocus], dialog[open] &[autofocus]{
-        background-color: var(--col-accent);
-        color: var(--col-on-accent);
+	&.primary,
+	&[autofocus],
+	dialog[open] &[autofocus] {
+		background-color: var(--col-accent);
+		color: var(--col-on-accent);
 
-        &:hover {
-            background-color: var(--col-accent-hover);
-        }
-    }
+		&:hover {
+			background-color: var(--col-accent-hover);
+		}
+	}
 
-    &.secondary{
-        // secondary button styles
-    }
+	&.secondary {
+		// secondary button styles
+	}
 }
 
 button:hover {
-    border-color: light-dark(color-mix(in oklch, var(--col-plum) 60%, #fff), var(--col-plum));
+	border-color: light-dark(color-mix(in oklch, var(--col-plum) 60%, #fff), var(--col-plum));
 }
 
-button:active{
+button:active {
 	transform: scale(0.96);
 }
 
 #btn-metronome[aria-pressed="true"] {
-    background-color: var(--col-plum);
-    color: var(--col-on-accent);
-    border-color: currentColor;
+	background-color: var(--col-plum);
+	color: var(--col-on-accent);
+	border-color: currentColor;
 }
 
-button:focus{
+button:focus {
 	outline: none;
 }
 button:focus-visible {
-    outline: 4px auto var(--col-orange);
+	outline: 4px auto var(--col-orange);
 }
 
-
-.btn-close{
-
+.btn-close {
 	font-size: 0;
 
-	&::before{
-		content:'x';
+	&::before {
+		content: "x";
 		font-size: 1rem;
 		font-weight: 900;
 		margin: auto;
-
 	}
 
-	& dialog{
+	& dialog {
 		// dialog styles
 	}
 }
 
-dialog .btn-close{
+dialog .btn-close {
 	position: absolute;
-    top: var(--pad);
-    right: calc(var(--pad));
-    z-index: 999;
+	top: var(--pad);
+	right: calc(var(--pad));
+	z-index: 999;
 }
 
 .logo-inline {
@@ -86,18 +84,21 @@ dialog .btn-close{
 	width: auto;
 	margin-right: 0.5em;
 	vertical-align: middle;
-	filter:invert(100%);
+	filter: invert(100%);
 }
 
 .btn-remove {
-	background: light-dark(color-mix(in oklch, var(--col-red) 30%, #fff), color-mix(in oklch, var(--col-red) 90%, #000));
+	background: light-dark(
+		color-mix(in oklch, var(--col-red) 30%, #fff),
+		color-mix(in oklch, var(--col-red) 90%, #000)
+	);
 	color: light-dark(var(--col-red), #fff);
 	border: none;
 	border-radius: 4px;
 	cursor: pointer;
 	transition: background 0.2s;
 	font-size: 0;
-	
+
 	position: absolute;
 	right: var(--pad);
 	top: var(--pad);
@@ -107,8 +108,7 @@ dialog .btn-close{
 	}
 }
 
-
-.btn-reset{
+.btn-reset {
 	text-decoration: underline;
 	text-decoration-style: dotted;
 	text-underline-offset: 4px;
@@ -118,124 +118,129 @@ dialog .btn-close{
 	}
 }
 
-.btn-remove, 
-.btn-remove-chain, 
+.btn-remove,
+.btn-remove-chain,
 .btn-reset {
-    &::before {
-        content: '';
-        display: inline-block;
-        width: 20px;
-        height: 20px;
-        flex: none;
-        vertical-align: middle;
-        background-color: currentColor;
-        mask: url('../icons/trash.svg') center / contain no-repeat;
-    	margin-right: .375rem; 
-    }
+	&::before {
+		content: "";
+		display: inline-block;
+		width: 20px;
+		height: 20px;
+		flex: none;
+		vertical-align: middle;
+		background-color: currentColor;
+		mask: url("../icons/trash.svg") center / contain no-repeat;
+		margin-right: 0.375rem;
+	}
 }
 
 .btn-remove {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 }
 
-.btn-kill-switch{
-	--col-bg:var(--col-red, red);
+.btn-kill-switch {
+	--col-bg: var(--col-red, red);
 	color: white;
 	text-transform: uppercase;
 }
 
-.btn-bluetooth{
-	&::before{
-		content:"📡";
-		margin-right: .375rem; 
+.btn-bluetooth {
+	&::before {
+		content: "📡";
+		margin-right: 0.375rem;
 	}
 }
 
-.btn-midi{
-	&::before{
-		content:"🎛";
-		margin-right: .375rem; 
+.btn-midi {
+	&::before {
+		content: "🎛";
+		margin-right: 0.375rem;
 	}
 }
 
-.btn-connect{
-	--col-bg:var(--col-green);
+.btn-connect {
+	--col-bg: var(--col-green);
 	color: var(--col-on-accent);
-	&::before{
-		content:"+";
-		margin-right:0.2rem;
+	&::before {
+		content: "+";
+		margin-right: 0.2rem;
 	}
 }
 
-.btn-disconnect{
-	--col-bg:var(--col-pink);
+.btn-disconnect {
+	--col-bg: var(--col-pink);
 	color: var(--col-on-accent);
-	&::before{
-		content:"-";
-		margin-right:0.2rem;
+	&::before {
+		content: "-";
+		margin-right: 0.2rem;
 	}
 }
 
-.btn-import{
-	&::before{
-		content:"↑";
-		margin-right:0.2rem;
+.btn-import {
+	&::before {
+		content: "↑";
+		margin-right: 0.2rem;
 	}
 }
 
-.btn-export{
-	&::before{
-		content:"↓";
-		margin-right:0.2rem;
+.btn-export {
+	&::before {
+		content: "↓";
+		margin-right: 0.2rem;
 	}
 }
 
-.btn-settings{
-	--col-bg:var(--col-pink);
+.btn-settings {
+	--col-bg: var(--col-pink);
 	color: var(--col-on-accent);
-	&::before{
-		content:"⚙";
-		margin-right:0.2rem;
+	&::before {
+		content: "⚙";
+		margin-right: 0.2rem;
 	}
 }
-.btn-add{
-	&::before{
-		content:"+";
-		margin-right:0.2rem;
+.btn-add {
+	&::before {
+		content: "+";
+		margin-right: 0.2rem;
 	}
 }
 
-.btn-zoom{
-	
+.btn-zoom {
 }
 
 .btn-zoom-in,
 .btn-zoom-out {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: .375em;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.375em;
 
-    &::before {
-        content: '';
-        display: inline-block;
-        width: var(--zoom-icon-size, 1.25em);
-        height: var(--zoom-icon-size, 1.25em);
-        flex: none;
-        background-color: currentColor;
-        mask: var(--zoom-icon) center / contain no-repeat;
-    }
+	&::before {
+		content: "";
+		display: inline-block;
+		width: var(--zoom-icon-size, 1.25em);
+		height: var(--zoom-icon-size, 1.25em);
+		flex: none;
+		background-color: currentColor;
+		mask: var(--zoom-icon) center / contain no-repeat;
+	}
 }
-.btn-zoom-in { --zoom-icon: url('../icons/zoom-in.svg'); }
-.btn-zoom-out { --zoom-icon: url('../icons/zoom-out.svg'); }
+.btn-zoom-in {
+	--zoom-icon: url("../icons/zoom-in.svg");
+}
+.btn-zoom-out {
+	--zoom-icon: url("../icons/zoom-out.svg");
+}
 .graph-view-controls {
-    .btn-zoom-in, .btn-zoom-out { --zoom-icon-size: 22px; }
+	.btn-zoom-in,
+	.btn-zoom-out {
+		--zoom-icon-size: 22px;
+	}
 }
 
-.btn-follow{
-	
+.btn-follow {
 }
 
 .file-menu > button,
@@ -260,22 +265,19 @@ dialog .btn-close{
 	}
 }
 
-
-
-
-.transformer-drawer{
-	--col-bg:rgba(0,0,0,0.5);
+.transformer-drawer {
+	--col-bg: rgba(0, 0, 0, 0.5);
 }
 .btn-transport {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--gap);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--gap);
 
-    svg {
-        width: 1em;
-        height: 1em;
-        flex: none;
-        fill: currentColor;
-    }
+	svg {
+		width: 1em;
+		height: 1em;
+		flex: none;
+		fill: currentColor;
+	}
 }

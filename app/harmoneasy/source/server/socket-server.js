@@ -4,12 +4,12 @@
  * Uses uWebSockets.js for high performance
  */
 
-import uWS from 'uWebSockets.js'
+import uWS from "uWebSockets.js"
 
 class SocketServer {
 	constructor(options = {}) {
 		this.port = options.port || 3000
-		this.host = options.host || 'localhost'
+		this.host = options.host || "localhost"
 		this.app = null
 		this.listenSocket = null
 		this.clients = new Set()
@@ -22,7 +22,7 @@ class SocketServer {
 	start() {
 		this.app = uWS
 			.App()
-			.ws('/*', {
+			.ws("/*", {
 				/* Options */
 				compression: uWS.SHARED_COMPRESSOR,
 				maxPayloadLength: 16 * 1024 * 1024, // 16MB
@@ -31,7 +31,7 @@ class SocketServer {
 
 				/* Handlers */
 				open: (ws) => {
-					console.log('[SocketServer] Client connected')
+					console.log("[SocketServer] Client connected")
 					this.clients.add(ws)
 
 					// Attach client metadata
@@ -45,11 +45,11 @@ class SocketServer {
 
 				drain: (ws) => {
 					// Called when backpressure is released
-					console.log('[SocketServer] Drain:', ws.getBufferedAmount())
+					console.log("[SocketServer] Drain:", ws.getBufferedAmount())
 				},
 
-				close: (ws, code, message) => {
-					console.log('[SocketServer] Client disconnected')
+				close: (ws, _code, _message) => {
+					console.log("[SocketServer] Client disconnected")
 					this.clients.delete(ws)
 				}
 			})
@@ -72,13 +72,13 @@ class SocketServer {
 			uWS.us_listen_socket_close(this.listenSocket)
 		}
 		this.clients.clear()
-		console.log('[SocketServer] Server stopped')
+		console.log("[SocketServer] Server stopped")
 	}
 
 	/**
 	 * Handle incoming messages from clients
 	 */
-	handleMessage(ws, rawData, isBinary) {
+	handleMessage(ws, rawData, _isBinary) {
 		try {
 			const message = JSON.parse(Buffer.from(rawData).toString())
 			const { type, payload, id } = message
@@ -93,7 +93,7 @@ class SocketServer {
 				console.warn(`[SocketServer] No handler for message type: ${type}`)
 			}
 		} catch (error) {
-			console.error('[SocketServer] Message parsing error:', error.message)
+			console.error("[SocketServer] Message parsing error:", error.message)
 		}
 	}
 
@@ -108,7 +108,7 @@ class SocketServer {
 	 * Broadcast message to all connected clients
 	 */
 	broadcast(type, payload) {
-		const message = JSON.stringify({ type, payload })
+		const _message = JSON.stringify({ type, payload })
 		this.clients.forEach((client) => {
 			this.send(client, type, payload)
 		})
@@ -124,12 +124,12 @@ class SocketServer {
 
 			// sendStatus: 1 = success, 2 = dropped due to backpressure, 0 = backpressure
 			if (sendStatus === 2) {
-				console.warn('[SocketServer] Message dropped due to backpressure limit')
+				console.warn("[SocketServer] Message dropped due to backpressure limit")
 			} else if (sendStatus === 0) {
-				console.log('[SocketServer] Message queued due to backpressure')
+				console.log("[SocketServer] Message queued due to backpressure")
 			}
 		} catch (error) {
-			console.error('[SocketServer] Send error:', error.message)
+			console.error("[SocketServer] Send error:", error.message)
 		}
 	}
 
@@ -138,18 +138,18 @@ class SocketServer {
 	 */
 	setupDefaultHandlers() {
 		// Ping/Pong for connection health
-		this.on('ping', (ws, payload, id) => {
-			this.send(ws, 'pong', { timestamp: Date.now() })
+		this.on("ping", (ws, _payload, _id) => {
+			this.send(ws, "pong", { timestamp: Date.now() })
 		})
 
 		// Echo message for testing
-		this.on('echo', (ws, payload, id) => {
-			this.send(ws, 'echo-response', payload)
+		this.on("echo", (ws, payload, _id) => {
+			this.send(ws, "echo-response", payload)
 		})
 
 		// Get client info
-		this.on('get-client-info', (ws, payload, id) => {
-			this.send(ws, 'client-info', {
+		this.on("get-client-info", (ws, payload, id) => {
+			this.send(ws, "client-info", {
 				id,
 				connectedClients: this.clients.size,
 				uptime: process.uptime()
@@ -157,8 +157,8 @@ class SocketServer {
 		})
 
 		// Server info request
-		this.on('get-server-info', (ws, payload, id) => {
-			this.send(ws, 'server-info', {
+		this.on("get-server-info", (ws, _payload, _id) => {
+			this.send(ws, "server-info", {
 				host: this.host,
 				port: this.port,
 				clients: this.clients.size,

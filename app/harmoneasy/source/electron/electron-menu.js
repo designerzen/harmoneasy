@@ -1,12 +1,11 @@
-
 // Menu
-export const createMenuTemplate = app => ([
+export const createMenuTemplate = (app) => [
 	{
-		label: 'File',
+		label: "File",
 		submenu: [
 			{
-				label: 'Exit',
-				accelerator: 'CmdOrCtrl+Q',
+				label: "Exit",
+				accelerator: "CmdOrCtrl+Q",
 				click: () => {
 					app.quit()
 				}
@@ -14,39 +13,39 @@ export const createMenuTemplate = app => ([
 		]
 	},
 	{
-		label: 'Edit',
+		label: "Edit",
 		submenu: [
-			{ role: 'undo' },
-			{ role: 'redo' },
-			{ type: 'separator' },
-			{ role: 'cut' },
-			{ role: 'copy' },
-			{ role: 'paste' }
+			{ role: "undo" },
+			{ role: "redo" },
+			{ type: "separator" },
+			{ role: "cut" },
+			{ role: "copy" },
+			{ role: "paste" }
 		]
 	},
 	{
-		label: 'View',
+		label: "View",
 		submenu: [
-			{ role: 'reload' },
-			{ role: 'forceReload' },
-			{ role: 'toggleDevTools' },
-			{ type: 'separator' },
-			{ role: 'resetZoom' },
-			{ role: 'zoomIn' },
-			{ role: 'zoomOut' },
-			{ type: 'separator' },
-			{ role: 'togglefullscreen' }
+			{ role: "reload" },
+			{ role: "forceReload" },
+			{ role: "toggleDevTools" },
+			{ type: "separator" },
+			{ role: "resetZoom" },
+			{ role: "zoomIn" },
+			{ role: "zoomOut" },
+			{ type: "separator" },
+			{ role: "togglefullscreen" }
 		]
 	},
 	{
-		label: 'Help',
+		label: "Help",
 		submenu: [
 			{
-				label: 'About',
+				label: "About",
 				click: () => {
 					// TODO: Show about dialog
 				}
 			}
 		]
 	}
-])
+]

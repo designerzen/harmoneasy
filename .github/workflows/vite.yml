@@ -1,83 +1,83 @@
 name: Build and deploy GitHub Pages
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-  workflow_dispatch:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+    workflow_dispatch:
 
 permissions:
-  contents: read
+    contents: read
 
 concurrency:
-  group: pages-${{ github.ref }}
-  cancel-in-progress: false
+    group: pages-${{ github.ref }}
+    cancel-in-progress: false
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    env:
-      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
-      NODE_OPTIONS: --max-old-space-size=8192
-
-    steps:
-      - name: Check out repository and pinned submodules
-        uses: actions/checkout@v7.0.1
-        with:
-          submodules: recursive
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6.1.0
-        with:
-          run_install: false
-
-      - name: Install Node.js
-        uses: actions/setup-node@v7.0.0
-        with:
-          node-version: '24'
-          cache: pnpm
-
-      # Skip native Electron builds and the root postinstall, which updates submodules.
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
-        timeout-minutes: 40
-
-      - name: Build Netronome library and workers
-        run: pnpm --filter netronome run build:lib
-
-      - name: Build web application
-        working-directory: app/harmoneasy
-        run: pnpm run build
-        timeout-minutes: 20
+    build:
+        runs-on: ubuntu-latest
+        timeout-minutes: 60
         env:
-          NODE_ENV: production
+            ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+            NODE_OPTIONS: --max-old-space-size=8192
 
-      - name: Verify Pages entry point
-        run: test -s app/harmoneasy/dist/index.html
+        steps:
+            - name: Check out repository and pinned submodules
+              uses: actions/checkout@v7.0.1
+              with:
+                  submodules: recursive
 
-      - name: Upload Pages artifact
+            - name: Install pnpm
+              uses: pnpm/action-setup@v6.1.0
+              with:
+                  run_install: false
+
+            - name: Install Node.js
+              uses: actions/setup-node@v7.0.0
+              with:
+                  node-version: "24"
+                  cache: pnpm
+
+            # Skip native Electron builds and the root postinstall, which updates submodules.
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
+              timeout-minutes: 40
+
+            - name: Build Netronome library and workers
+              run: pnpm --filter netronome run build:lib
+
+            - name: Build web application
+              working-directory: app/harmoneasy
+              run: pnpm run build
+              timeout-minutes: 20
+              env:
+                  NODE_ENV: production
+
+            - name: Verify Pages entry point
+              run: test -s app/harmoneasy/dist/index.html
+
+            - name: Upload Pages artifact
+              if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+              uses: actions/upload-pages-artifact@v4
+              with:
+                  path: app/harmoneasy/dist
+
+    deploy:
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-        uses: actions/upload-pages-artifact@v4
-        with:
-          path: app/harmoneasy/dist
+        needs: build
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        permissions:
+            pages: write
+            id-token: write
+        environment:
+            name: github-pages
+            url: ${{ steps.deployment.outputs.page_url }}
+        steps:
+            - name: Configure Pages
+              uses: actions/configure-pages@v5
 
-  deploy:
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+            - name: Deploy to GitHub Pages
+              id: deployment
+              uses: actions/deploy-pages@v4

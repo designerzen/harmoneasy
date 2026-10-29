@@ -5,124 +5,118 @@ Copyright (C) 2025 Rob McKinnon and Strudel contributors
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details. You should have received a copy of the GNU Affero General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import type EdoScale from './edo-scale.ts'
-import ratiointervals from './ratios.ts'
-import { getRatio } from './utils.ts'
+import type EdoScale from "./edo-scale.ts"
+import ratiointervals from "./ratios.ts"
+import { getRatio } from "./utils.ts"
 
-const BLANK = '';
+const BLANK = ""
 
 export default class Intervals {
+	#scale: EdoScale
 
-    #scale: EdoScale
+	intLabels: string[] = []
+	intNoms: number[] = []
+	intRatios: string[] = []
+	uniqLabels: string[] = []
+	intErrors: number[] = []
 
-    intLabels: string[] = []
-    intNoms: number[] = []
-    intRatios: string[] = []
-    uniqLabels: string[] = []
-    intErrors: number[] = []
+	#ratios: number[] = []
 
-    #ratios: number[] = []
+	get scale(): EdoScale {
+		return this.#scale
+	}
 
-    get scale():EdoScale{
-        return this.#scale
-    }
+	constructor(scale: EdoScale) {
+		this.#scale = scale
 
-    constructor(scale: EdoScale) {
+		const labToErr: Record<string, number> = {}
+		const labToInd: Record<string, number> = {}
 
-        this.#scale = scale
-    
-        const labToErr: Record<string, number> = {}
-        const labToInd: Record<string, number> = {}
+		let division = 0
 
-        let division = 0
+		// set first ratio to 1
+		this.#ratios[0] = 1
 
-        // set first ratio to 1
-        this.#ratios[0] = 1
+		// loop through scale
+		for (let i = 0; i < scale.length; i++) {
+			division += scale.getStepValue(i)
 
-        // loop through scale
-        for (let i = 0; i < scale.length; i++) {
+			this.#ratios[i + 1] = getRatio(division, scale.edivisions)
 
-            division += scale.getStepValue(i)
+			const nearest = ratiointervals.getNearestInterval(this.#ratios[i + 1])
+			const closeness: number | null = nearest[0]
+			const ratio: number | null = nearest[1]
 
-            this.#ratios[i + 1] = getRatio(division, scale.edivisions)
+			if (nearest === null || closeness == null || ratio === null) {
+				throw Error("Intervals failed to find nearest interval")
+			}
 
-            const nearest = ratiointervals.getNearestInterval(this.#ratios[i + 1])
-            const closeness: number | null = nearest[0]
-            const ratio: number | null = nearest[1]
+			const intLabel = ratiointervals.getKey(ratio)
 
-            if ( nearest === null || closeness == null || ratio === null )
-            {
-                throw Error("Intervals failed to find nearest interval")
-            }
+			this.intLabels[i + 1] = intLabel
+			this.intErrors[i + 1] = closeness
+			this.intNoms[i + 1] = ratiointervals.nom(ratio)
+			this.intRatios[i + 1] = ratio
+				? `${ratiointervals.nom(ratio)}/${ratiointervals.denom(ratio)}`
+				: ""
 
-            const intLabel = ratiointervals.getKey(ratio)
+			this.uniqLabels[i + 1] = BLANK
 
-            this.intLabels[i + 1] = intLabel
-            this.intErrors[i + 1] = closeness
-            this.intNoms[i + 1] = ratiointervals.nom(ratio)
-            this.intRatios[i + 1] = ratio ? `${ratiointervals.nom(ratio)}/${ratiointervals.denom(ratio)}` : ''
-            
-            this.uniqLabels[i + 1] = BLANK
+			if (intLabel && intLabel !== "P1" && intLabel !== "P8") {
+				if (!labToErr[intLabel]) {
+					this.uniqLabels[i + 1] = intLabel
+					labToInd[intLabel] = i + 1
+					labToErr[intLabel] = closeness
+				} else if (closeness < labToErr[intLabel]) {
+					this.uniqLabels[labToInd[intLabel]] = BLANK
+					this.uniqLabels[i + 1] = intLabel
+					labToInd[intLabel] = i + 1
+					labToErr[intLabel] = closeness
+				}
+			}
+		}
+	}
 
-            if (intLabel && intLabel !== 'P1' && intLabel !== 'P8') {
-                if (!labToErr[intLabel]) {
-                    
-                    this.uniqLabels[i + 1] = intLabel
-                    labToInd[intLabel] = i + 1
-                    labToErr[intLabel] = closeness
+	getRatioAtIndex(i: number): number {
+		return this.#ratios[i]
+	}
 
-                } else if (closeness < labToErr[intLabel]) {
+	intervalLabel(i: number): string {
+		return this.intLabels[i]
+	}
 
-                    this.uniqLabels[labToInd[intLabel]] = BLANK
-                    this.uniqLabels[i + 1] = intLabel
-                    labToInd[intLabel] = i + 1
-                    labToErr[intLabel] = closeness
+	intervalNominator(i: number): number {
+		return this.intNoms[i]
+	}
 
-                }
-            }
-        }
-    }
+	intervalRatio(i: number): string {
+		return this.intRatios[i]
+	}
 
-  getRatioAtIndex(i: number): number {
-    return this.#ratios[i]
-  }
+	uniqIntervalLabel(i: number): string {
+		return this.uniqLabels[i]
+	}
 
-  intervalLabel(i: number): string {
-    return this.intLabels[i]
-  }
+	intervalError(i: number): number {
+		return this.intErrors[i]
+	}
 
-  intervalNominator(i: number): number {
-    return this.intNoms[i]
-  }
+	getNearestDegreeTo(r: number, threshold?: number): number | null {
+		let min: number = 1
+		let degree: number | null = null
 
-  intervalRatio(i: number): string {
-    return this.intRatios[i]
-  }
+		for (const [i, v] of Object.entries(this.#ratios)) {
+			const diff: number = Math.abs((r - v) / r)
+			if (diff < min) {
+				min = diff
+				degree = parseInt(i, 10)
+			}
+		}
 
-  uniqIntervalLabel(i: number): string {
-    return this.uniqLabels[i]
-  }
-
-  intervalError(i: number): number {
-    return this.intErrors[i]
-  }
-
-  getNearestDegreeTo(r: number, threshold?: number): number | null {
-    let min: number = 1
-    let degree: number | null = null
-
-    for (const [i, v] of Object.entries(this.#ratios)) {
-      const diff: number = Math.abs((r - v) / r)
-      if (diff < min) {
-        min = diff
-        degree = parseInt(i, 10)
-      }
-    }
-
-    if (threshold == null) {
-      return degree
-    } else {
-      return min < threshold ? degree : 1
-    }
-  }
+		if (threshold == null) {
+			return degree
+		} else {
+			return min < threshold ? degree : 1
+		}
+	}
 }

@@ -1,13 +1,16 @@
-import LZString from 'lz-string'
+import LZString from "lz-string"
 
-const STATE_FRAGMENT_KEY = 'harmoneasy-state'
+const STATE_FRAGMENT_KEY = "harmoneasy-state"
 
-export const createStateURL = (options, location = window.location.href) => {
+export const createStateURL = (options: unknown, location = window.location.href) => {
 	const url = new URL(location)
 	const fragment = new URLSearchParams(url.hash.slice(1))
-	fragment.set(STATE_FRAGMENT_KEY, LZString.compressToEncodedURIComponent(JSON.stringify(options)))
+	fragment.set(
+		STATE_FRAGMENT_KEY,
+		LZString.compressToEncodedURIComponent(JSON.stringify(options))
+	)
 	// Fragments survive sharing and reloads without being sent to the server.
-	url.search = ''
+	url.search = ""
 	url.hash = fragment.toString()
 	return url
 }
@@ -16,34 +19,29 @@ export const createStateURL = (options, location = window.location.href) => {
  * Convert a URL query value into a JS data type by inferring the type
  * @param {Any} JavaScript data type (eg. String, Number, Boolean, Array, Object)
  */
-const guessType = value => {
-
-	if (typeof value === "string")
-	{
+const guessType = (value: unknown) => {
+	if (typeof value === "string") {
 		const lower = value.toLowerCase()
 
 		// check to see if it is a number masquerading as a string
-		if (!isNaN(parseFloat(value))){
+		if (!isNaN(parseFloat(value))) {
 			return parseFloat(value)
 		}
 
 		// check for bool and such
-		if ( lower === "true" || lower === "yes" ) {
+		if (lower === "true" || lower === "yes") {
 			return true
-		} else if (lower === "false" || lower === "no" ) {
+		} else if (lower === "false" || lower === "no") {
 			return false
 		}
 
 		return value
-
-	}else if (Array.isArray(value)){
+	} else if (Array.isArray(value)) {
 		// Array convert the array to a string?
 		// convert booleans from 1 / 0 ?
 		return value.toString()
-
-    } else {
-
-		return data
+	} else {
+		return value
 	}
 }
 
@@ -51,39 +49,36 @@ const guessType = value => {
  *  Convert a string into a JS data type by inferring the type
  * @param {Any} JavaScript data type (eg. String, Number, Boolean, Array, Object)
  */
-export const parseType = value => {
-
+export const parseType = (value: unknown): unknown => {
 	// check to see if the string is also an array...
-	if (typeof value === "string")
-	{
+	if (typeof value === "string") {
 		if (!isNaN(parseFloat(value))) {
 			return parseFloat(value)
 		} else if (value.toLowerCase() === "true") {
 			return true
 		} else if (value === "false") {
 			return false
-		}else if (value.indexOf(',') >= 0){
+		} else if (value.indexOf(",") >= 0) {
 			// this is a comma seperated list array...
-			return convertIntegerArrayToBooleans( value.split(",") )
+			return value.split(",").map((entry) => parseType(entry))
 		} else {
 			return value
 		}
-
-	}else if (Array.isArray(value)){
+	} else if (Array.isArray(value)) {
 		// Array convert the array to a string?
 		// convert booleans from 1 / 0 ?
 		return value.toString()
-    } else {
+	} else {
 		// God only knows
-        return value
-    }
+		return value
+	}
 }
 
 /**
  *  Fetch the current URL query as an object
  * @returns {URLSearchParams} URL States
  */
- const fetchStateFromURL = () => {
+const fetchStateFromURL = () => {
 	return new URLSearchParams(window.location.search)
 }
 
@@ -91,38 +86,41 @@ export const parseType = value => {
  * This takes a snapshot of the url and takes and queries
  * then it will take apart and create an object
  * and return a merged subset
- * @returns {Object} URL State Object 
+ * @returns {Object} URL State Object
  */
-export const getLocationSettings = (defaultOptions) => {{
-	const urlParams = fetchStateFromURL()
-	const locationOptions = Object.assign( {}, defaultOptions )
-	for (const [key, value] of urlParams) 
+export const getLocationSettings = (defaultOptions: Record<string, unknown> | null) => {
 	{
-		// NB. ensure we data type these
-		locationOptions[key] = guessType(value)	
-		// console.log(`${key}:${value}`)
-	}
-	const payload = new URLSearchParams(window.location.hash.slice(1)).get(STATE_FRAGMENT_KEY)
-	if (payload) {
-		try {
-			const decoded = LZString.decompressFromEncodedURIComponent(payload)
-			const saved = decoded && JSON.parse(decoded)
-			if (saved && typeof saved === 'object' && !Array.isArray(saved)) {
-				Object.assign(locationOptions, saved)
-			}
-		} catch {
-			// Invalid bookmarks must not prevent startup with defaults.
+		const urlParams = fetchStateFromURL()
+		const locationOptions: Record<string, unknown> = Object.assign({}, defaultOptions)
+		for (const [key, value] of urlParams) {
+			// NB. ensure we data type these
+			locationOptions[key] = guessType(value)
+			// console.log(`${key}:${value}`)
 		}
+		const payload = new URLSearchParams(window.location.hash.slice(1)).get(STATE_FRAGMENT_KEY)
+		if (payload) {
+			try {
+				const decoded = LZString.decompressFromEncodedURIComponent(payload)
+				const saved = decoded && JSON.parse(decoded)
+				if (saved && typeof saved === "object" && !Array.isArray(saved)) {
+					Object.assign(locationOptions, saved)
+				}
+			} catch {
+				// Invalid bookmarks must not prevent startup with defaults.
+			}
+		}
+		//console.log(`query:${locationOptions}`)
+		return locationOptions
 	}
-	//console.log(`query:${locationOptions}`)
-	return locationOptions
-}}
+}
 
 /**
  * This takes a state and creates a URL query string
  * @returns {String} Query String with current state
  */
-export const createQueryString = options => {
+export const createQueryString = (
+	options: string | string[][] | Record<string, string> | URLSearchParams | undefined
+) => {
 	return new URLSearchParams(options).toString()
 }
 
@@ -132,7 +130,7 @@ export const createQueryString = options => {
  * and return a merged subset
  * @returns {String} URL with current state
  */
- export const getShareLink = (options) => {
+export const getShareLink = (options: any) => {
 	return createStateURL(options).href
 }
 
@@ -145,7 +143,7 @@ export const createQueryString = options => {
 export const getReferer = () => {
 	const ref = document.referrer
 	// check against our list
-	return ref || document.location || 'interface.place'
+	return ref || document.location || "interface.place"
 }
 
 /**
@@ -153,19 +151,19 @@ export const getReferer = () => {
  * @returns {String} Refering hostname
  */
 export const getRefererHostname = () => {
-	const referrer = new URL( getReferer() )
+	const referrer = new URL(String(getReferer()))
 	// now strip out everything but the location
 	// check against our list
 	return referrer.hostname
 }
 
 /**
- * 
+ *
  * @returns {Array<String>} location path
  */
 export const getEditionFromURL = () => {
-	const domain = new URL( document.location )
-	return domain.pathname.replace("/","").split("/")
+	const domain = new URL(document.location.href)
+	return domain.pathname.replace("/", "").split("/")
 }
 
 /**
@@ -173,8 +171,8 @@ export const getEditionFromURL = () => {
  * optionally a new state to be merged
  * @param {Object} options New state to set on reload
  */
-export const refresh = options => {
-	if (options){
+export const refresh = (options: any) => {
+	if (options) {
 		addToHistory(options)
 	}
 	window.location.reload()
@@ -183,10 +181,9 @@ export const refresh = options => {
 /**
  * Reloads current page in secure mode (as cameras need a certificate)
  */
- export const forceSecure = (debug=false) => {
-	if (!debug && location.hostname !== "localhost" && location.protocol !== 'https:')
-	{
-		location.protocol = 'https:'
+export const forceSecure = (debug = false) => {
+	if (!debug && location.hostname !== "localhost" && location.protocol !== "https:") {
+		location.protocol = "https:"
 	}
 	return false
 }
@@ -196,7 +193,7 @@ export const refresh = options => {
  * @param {Object} options New state to set on location
  * @param {String} title Optional history title
  */
-export const addToHistory = (options, title="") => {
+export const addToHistory = (options: Record<string, unknown>, title = "") => {
 	const saved = { ...getLocationSettings({}), ...options }
 	const url = createStateURL(saved)
 	window.history.pushState(saved, title, url)

@@ -1,26 +1,25 @@
 {
-  "name": "opendaw",
-  "version": "0.8.0",
-  "description": "OpenDAW project file format support and .dawProject integration",
-  "type": "module",
-  "main": "index.ts",
-  "exports": {
-    ".": "./index.ts"
-  },
-  "scripts": {
-    "dev": "echo 'No dev server for this package'",
-    "lint": "oxlint .",
-    "lint:fix": "oxlint --fix ."
-  },
-  "files": [
-    "*.ts"
-  ],
-  "dependencies": {
-    "@harmoneasy/shared-config": "workspace:^",
-    "audiobus": "workspace:^"
-  },
-  "devDependencies": {
-    "typescript": "~5.9.3"
-  }
+	"name": "opendaw",
+	"version": "0.8.0",
+	"description": "OpenDAW project file format support and .dawProject integration",
+	"type": "module",
+	"main": "index.ts",
+	"exports": {
+		".": "./index.ts"
+	},
+	"scripts": {
+		"dev": "echo 'No dev server for this package'",
+		"lint": "oxlint .",
+		"lint:fix": "oxlint --fix ."
+	},
+	"files": [
+		"*.ts"
+	],
+	"dependencies": {
+		"@harmoneasy/shared-config": "workspace:^",
+		"audiobus": "workspace:^"
+	},
+	"devDependencies": {
+		"typescript": "~5.9.3"
+	}
 }
-

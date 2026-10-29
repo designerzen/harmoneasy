@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react'
-import { useChain } from './ChainContext'
-import { createDeviceDialog, createTransformerDialog } from './DeviceDialog'
+import { useEffect, useRef } from "react"
+import { useChain } from "./ChainContext"
+import { createDeviceDialog, createTransformerDialog } from "./DeviceDialog"
 
 // Graph nodes launch native dialogs; React never renders their contents.
 export function DeviceDialog(props: Parameters<typeof createDeviceDialog>[1]) {
@@ -18,7 +18,10 @@ export function TransformerDialog(props: Parameters<typeof createTransformerDial
 	const onClose = useRef(props.onClose)
 	onClose.current = props.onClose
 	useEffect(() => {
-		const view = createTransformerDialog(context, { ...props, onClose: () => onClose.current() })
+		const view = createTransformerDialog(context, {
+			...props,
+			onClose: () => onClose.current()
+		})
 		return () => view.destroy()
 	}, [context.chain, context.manager, props.replacing])
 	return null

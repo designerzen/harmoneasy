@@ -1,25 +1,24 @@
 import { createReverbImpulseResponse } from "audiobus/effects/reverb"
-import { connectCLAPMixer } from 'audiobus/instruments/clap/clap-mixer'
-import { setAudioDestination } from 'audiobus/audio-destination'
+import { connectCLAPMixer } from "audiobus/instruments/clap/clap-mixer"
+import { setAudioDestination } from "audiobus/audio-destination"
 
 export default class AudioBus extends EventTarget {
-	
-	#audioContext:AudioContext
-	#mixer:GainNode
-	#reverb:ConvolverNode
-	#output:GainNode
-	
-	loaded:Promise<void>
+	#audioContext: AudioContext
+	#mixer: GainNode
+	#reverb: ConvolverNode
+	#output: GainNode
 
-	get audioContext():AudioContext {
+	loaded: Promise<void>
+
+	get audioContext(): AudioContext {
 		return this.#audioContext
 	}
 
-	get mixer():GainNode {
+	get mixer(): GainNode {
 		return this.#mixer
 	}
 
-	get reverb():ConvolverNode {
+	get reverb(): ConvolverNode {
 		return this.#reverb
 	}
 
@@ -27,24 +26,24 @@ export default class AudioBus extends EventTarget {
 		return this.#output
 	}
 
-	get hasAudioWorklets(){
+	get hasAudioWorklets() {
 		return !!this.#audioContext.audioWorklet
 	}
 
-	set volume( value:number ) {
+	set volume(value: number) {
 		this.#output.gain.value = Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0
 	}
 
-	constructor( initialVolume:number=1 ) {
+	constructor(initialVolume: number = 1) {
 		super()
 
 		// Create AudioContext - only called after user interaction
 		const context = new (window.AudioContext || (window as any).webkitAudioContext)()
-		
+
 		const mixer: GainNode = context.createGain()
-		
+
 		const reverb = context.createConvolver()
-		reverb.buffer = createReverbImpulseResponse( context, 1, 7 )
+		reverb.buffer = createReverbImpulseResponse(context, 1, 7)
 
 		// save for later use
 		this.#audioContext = context
@@ -74,12 +73,12 @@ export default class AudioBus extends EventTarget {
 	}
 
 	private async resumeContext(): Promise<void> {
-		if (this.#audioContext.state === 'suspended') {
+		if (this.#audioContext.state === "suspended") {
 			try {
 				await this.#audioContext.resume()
-				console.info('AudioContext resumed')
+				console.info("AudioContext resumed")
 			} catch (err) {
-				console.warn('Failed to resume AudioContext:', err)
+				console.warn("Failed to resume AudioContext:", err)
 			}
 		}
 	}

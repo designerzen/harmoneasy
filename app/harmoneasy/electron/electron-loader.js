@@ -6,12 +6,12 @@
 
 export async function loadElectronModule(moduleName) {
 	const paths = [
-		`./${moduleName}.js`,                    // Packaged app (root)
-		`./electron/${moduleName}.js`,           // Development
+		`./${moduleName}.js`, // Packaged app (root)
+		`./electron/${moduleName}.js` // Development
 	]
-	
+
 	let lastError = null
-	
+
 	for (const modulePath of paths) {
 		try {
 			const module = await import(modulePath)
@@ -22,6 +22,8 @@ export async function loadElectronModule(moduleName) {
 			continue
 		}
 	}
-	
-	throw new Error(`Could not load electron module '${moduleName}' from any path. Last error: ${lastError?.message}`)
+
+	throw new Error(
+		`Could not load electron module '${moduleName}' from any path. Last error: ${lastError?.message}`
+	)
 }

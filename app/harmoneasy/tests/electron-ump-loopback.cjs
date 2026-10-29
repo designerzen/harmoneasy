@@ -1,39 +1,73 @@
 // pnpm exec electron tests/electron-ump-loopback.cjs
 // Uses OS loopback endpoints, never an attached instrument or third-party driver.
-const { app, BrowserWindow, ipcMain } = require('electron')
-const { spawn, spawnSync } = require('node:child_process')
-const { mkdtempSync, rmSync } = require('node:fs')
-const { tmpdir } = require('node:os')
-const path = require('node:path')
-const assert = require('node:assert/strict')
+const { app, BrowserWindow, ipcMain } = require("electron")
+const { spawn, spawnSync } = require("node:child_process")
+const { mkdtempSync, rmSync } = require("node:fs")
+const { tmpdir } = require("node:os")
+const path = require("node:path")
+const assert = require("node:assert/strict")
 
 let helper, temporary
 const testName = `Harmoneasy UMP test ${process.pid}`
 async function startMacLoopback() {
-    temporary = mkdtempSync(path.join(tmpdir(), 'harmoneasy-ump-'))
-    const executable = path.join(temporary, 'loopback')
-    const build = spawnSync('xcrun', ['clang++', '-std=c++17', '-fblocks', '-mmacosx-version-min=11.0',
-        path.join(__dirname, 'native-coremidi-loopback.cc'), '-framework', 'CoreMIDI', '-framework', 'CoreFoundation', '-o', executable], { encoding: 'utf8' })
-    if (build.error || build.status) throw new Error(build.error?.message ?? build.stderr)
-    helper = spawn(executable, [testName], { stdio: ['pipe', 'pipe', 'inherit'] })
-    await new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => reject(new Error('CoreMIDI helper did not start')), 10000)
-        helper.stdout.once('data', () => { clearTimeout(timeout); resolve() })
-        helper.once('error', error => { clearTimeout(timeout); reject(error) })
-        helper.once('exit', code => { clearTimeout(timeout); reject(new Error(`CoreMIDI helper exited: ${code}`)) })
-    })
+	temporary = mkdtempSync(path.join(tmpdir(), "harmoneasy-ump-"))
+	const executable = path.join(temporary, "loopback")
+	const build = spawnSync(
+		"xcrun",
+		[
+			"clang++",
+			"-std=c++17",
+			"-fblocks",
+			"-mmacosx-version-min=11.0",
+			path.join(__dirname, "native-coremidi-loopback.cc"),
+			"-framework",
+			"CoreMIDI",
+			"-framework",
+			"CoreFoundation",
+			"-o",
+			executable
+		],
+		{ encoding: "utf8" }
+	)
+	if (build.error || build.status) {
+		throw new Error(build.error?.message ?? build.stderr)
+	}
+	helper = spawn(executable, [testName], { stdio: ["pipe", "pipe", "inherit"] })
+	await new Promise((resolve, reject) => {
+		const timeout = setTimeout(() => reject(new Error("CoreMIDI helper did not start")), 10000)
+		helper.stdout.once("data", () => {
+			clearTimeout(timeout)
+			resolve()
+		})
+		helper.once("error", (error) => {
+			clearTimeout(timeout)
+			reject(error)
+		})
+		helper.once("exit", (code) => {
+			clearTimeout(timeout)
+			reject(new Error(`CoreMIDI helper exited: ${code}`))
+		})
+	})
 }
 
-app.whenReady().then(async () => {
-    if (process.platform === 'darwin') await startMacLoopback()
-    const { registerMidi2IPC } = await import('../electron/midi2-ipc.js')
-    registerMidi2IPC(ipcMain, () => require('../build/Release/midi2-native.node'))
-    const window = new BrowserWindow({ show: false, webPreferences: {
-        preload: path.resolve(__dirname, '../electron/electron-preload.cjs'),
-        sandbox: true, contextIsolation: true, nodeIntegration: false
-    } })
-    await window.loadURL('data:text/html,<title>Native UMP loopback</title>')
-    const result = await window.webContents.executeJavaScript(`(async () => {
+app.whenReady()
+	.then(async () => {
+		if (process.platform === "darwin") {
+			await startMacLoopback()
+		}
+		const { registerMidi2IPC } = await import("../electron/midi2-ipc.js")
+		registerMidi2IPC(ipcMain, () => require("../build/Release/midi2-native.node"))
+		const window = new BrowserWindow({
+			show: false,
+			webPreferences: {
+				preload: path.resolve(__dirname, "../electron/electron-preload.cjs"),
+				sandbox: true,
+				contextIsolation: true,
+				nodeIntegration: false
+			}
+		})
+		await window.loadURL("data:text/html,<title>Native UMP loopback</title>")
+		const result = await window.webContents.executeJavaScript(`(async () => {
         const midi = window.electronAPI.midi2
         const capabilities = await midi.getCapabilities()
         if (!capabilities.umpSupport) throw new Error('Native UMP transport unavailable')
@@ -86,14 +120,29 @@ app.whenReady().then(async () => {
             await midi.closeUmpOutput(output.index)
         }
     })()`)
-    assert.equal(result.packets, 7)
-    console.log('Native MIDI 2.0 Electron loopback passed:', JSON.stringify(result))
-    window.destroy()
-}).then(() => finish(0)).catch(error => { console.error(error); finish(1) })
+		assert.equal(result.packets, 7)
+		console.log("Native MIDI 2.0 Electron loopback passed:", JSON.stringify(result))
+		window.destroy()
+	})
+	.then(() => finish(0))
+	.catch((error) => {
+		console.error(error)
+		finish(1)
+	})
 
 function finish(code) {
-    if (helper && helper.exitCode === null) {
-        helper.once('exit', () => { if (temporary) rmSync(temporary, { recursive: true, force: true }); app.exit(code) })
-        helper.stdin.end('\n')
-    } else { if (temporary) rmSync(temporary, { recursive: true, force: true }); app.exit(code) }
+	if (helper && helper.exitCode === null) {
+		helper.once("exit", () => {
+			if (temporary) {
+				rmSync(temporary, { recursive: true, force: true })
+			}
+			app.exit(code)
+		})
+		helper.stdin.end("\n")
+	} else {
+		if (temporary) {
+			rmSync(temporary, { recursive: true, force: true })
+		}
+		app.exit(code)
+	}
 }

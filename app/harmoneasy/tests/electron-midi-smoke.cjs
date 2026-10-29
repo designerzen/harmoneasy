@@ -1,17 +1,23 @@
 // Run with: pnpm exec electron tests/electron-midi-smoke.cjs
-const { app, BrowserWindow, ipcMain } = require('electron')
-const path = require('node:path')
-const assert = require('node:assert/strict')
+const { app, BrowserWindow, ipcMain } = require("electron")
+const path = require("node:path")
+const assert = require("node:assert/strict")
 
-app.whenReady().then(async () => {
-    const { registerMidi2IPC } = await import('../electron/midi2-ipc.js')
-    registerMidi2IPC(ipcMain, () => require('../build/Release/midi2-native.node'))
-    const window = new BrowserWindow({ show: false, webPreferences: {
-        preload: path.resolve(__dirname, '../electron/electron-preload.cjs'),
-        sandbox: true, contextIsolation: true, nodeIntegration: false
-    } })
-    await window.loadURL('data:text/html,<title>MIDI bridge smoke test</title>')
-    const result = await window.webContents.executeJavaScript(`(async () => {
+app.whenReady()
+	.then(async () => {
+		const { registerMidi2IPC } = await import("../electron/midi2-ipc.js")
+		registerMidi2IPC(ipcMain, () => require("../build/Release/midi2-native.node"))
+		const window = new BrowserWindow({
+			show: false,
+			webPreferences: {
+				preload: path.resolve(__dirname, "../electron/electron-preload.cjs"),
+				sandbox: true,
+				contextIsolation: true,
+				nodeIntegration: false
+			}
+		})
+		await window.loadURL("data:text/html,<title>MIDI bridge smoke test</title>")
+		const result = await window.webContents.executeJavaScript(`(async () => {
         const midi = window.electronAPI.midi2
         const capabilities = await midi.getCapabilities()
         const inputs = await midi.getUmpInputs()
@@ -33,8 +39,12 @@ app.whenReady().then(async () => {
         }
         return { capabilities, inputs, outputs }
     })()`)
-    assert.equal(result.capabilities.nativeOSSupport, true)
-    console.log('Electron MIDI smoke test passed:', JSON.stringify(result))
-    window.destroy()
-    app.quit()
-}).catch(error => { console.error(error); app.exit(1) })
+		assert.equal(result.capabilities.nativeOSSupport, true)
+		console.log("Electron MIDI smoke test passed:", JSON.stringify(result))
+		window.destroy()
+		app.quit()
+	})
+	.catch((error) => {
+		console.error(error)
+		app.exit(1)
+	})

@@ -1,0 +1,7 @@
+export const PHOTOSYNTH_FRAME = "photosynth-frame"
+export const PHOTOSYNTH_STATE = "photosynth-state"
+export const PHOTOSYNTH_ERROR = "photosynth-error"
+export const PHOTOSYNTH_MUSIC = "photosynth-music"
+export const PHOTOSYNTH_EMOJI = "photosynth-emoji"
+export const PHOTOSYNTH_OVERLAY_ERROR = "photosynth-overlay-error"
+export const GPU_UNCAPTURED_ERROR = "uncapturederror"

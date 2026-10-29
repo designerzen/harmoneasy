@@ -1,28 +1,80 @@
 #settings-dialog {
-    width: min(44rem, calc(100vw - 2rem));
-    border: 1px solid var(--col-line);
-    border-radius: var(--curve);
+	width: min(44rem, calc(100vw - 2rem));
+	border: 1px solid var(--col-line);
+	border-radius: var(--curve);
 
-    #settings-form { display: grid; gap: 1rem; }
-    fieldset { margin: 0; border: 1px solid var(--col-line); border-radius: 8px; }
+	#settings-form {
+		display: grid;
+		gap: 1rem;
+	}
+	fieldset {
+		margin: 0;
+		border: 1px solid var(--col-line);
+		border-radius: 8px;
+	}
 }
 
 #theme-settings {
-    display: grid;
-    gap: .75rem;
-    background: var(--col-surface-raised);
-    label { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
-    select { flex: 1; width: 100%; max-width: 18rem; min-height: 44px; background: var(--col-surface); }
-    input[type="range"] { width: 100%; min-width: 0; min-height: 44px; padding: 0; margin: 0; }
-    output { font-variant-numeric: tabular-nums; }
-    #theme-status { margin: 0; color: var(--col-muted); font-size: .8rem; max-width: none; }
-    #theme-reset { justify-self: start; border: 1px solid var(--col-line); }
-    .theme-preview {
-        display: flex; flex-wrap: wrap; align-items: center; gap: .75rem;
-        padding: .75rem; border: 1px solid var(--col-line); border-radius: 8px;
-        background: var(--col-surface); color: var(--col-fg); font-size: .875rem;
-    }
-    .theme-preview-accent { padding: .5rem .75rem; border-radius: 6px; background: var(--col-accent); color: var(--col-on-accent); }
-    .theme-preview-muted { color: var(--col-muted); }
-    :focus-visible { outline: 2px solid var(--col-accent); outline-offset: 3px; }
+	display: grid;
+	gap: 0.75rem;
+	background: var(--col-surface-raised);
+	label {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+	}
+	select {
+		flex: 1;
+		width: 100%;
+		max-width: 18rem;
+		min-height: 44px;
+		background: var(--col-surface);
+	}
+	input[type="range"] {
+		width: 100%;
+		min-width: 0;
+		min-height: 44px;
+		padding: 0;
+		margin: 0;
+	}
+	output {
+		font-variant-numeric: tabular-nums;
+	}
+	#theme-status {
+		margin: 0;
+		color: var(--col-muted);
+		font-size: 0.8rem;
+		max-width: none;
+	}
+	#theme-reset {
+		justify-self: start;
+		border: 1px solid var(--col-line);
+	}
+	.theme-preview {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.75rem;
+		border: 1px solid var(--col-line);
+		border-radius: 8px;
+		background: var(--col-surface);
+		color: var(--col-fg);
+		font-size: 0.875rem;
+	}
+	.theme-preview-accent {
+		padding: 0.5rem 0.75rem;
+		border-radius: 6px;
+		background: var(--col-accent);
+		color: var(--col-on-accent);
+	}
+	.theme-preview-muted {
+		color: var(--col-muted);
+	}
+	:focus-visible {
+		outline: 2px solid var(--col-accent);
+		outline-offset: 3px;
+	}
 }

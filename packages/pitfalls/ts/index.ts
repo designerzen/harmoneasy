@@ -5,10 +5,10 @@ This program is free software: you can redistribute it and/or modify it under th
 */
 
 // import { register, pure, noteToMidi, isNote, tokenizeNote } from '@strudel/core';
-import EdoScale from './edo-scale.ts'
-import Intervals from './intervals.ts'
-import Pitches from './pitches.ts'
-import KEY_MAPPING from './key-mappings.ts'
+import EdoScale from "./edo-scale.ts"
+import Intervals from "./intervals.ts"
+import Pitches from "./pitches.ts"
+import KEY_MAPPING from "./key-mappings.ts"
 
 /**
  * Turns numbers into notes in the given EDO scale (zero indexed).
@@ -49,7 +49,7 @@ const pitchesCache = new Map<string, Pitches>()
 
 /**
  * Parse EDO scale and return micro-tuning octave mappings
- * 
+ *
  * @param baseNoteMidi - MIDI note number for base note
  * @param rootOctave - Root octave number
  * @param sequence - Ls notation sequence (e.g., "LLsLLLs")
@@ -59,30 +59,36 @@ const pitchesCache = new Map<string, Pitches>()
  * @returns Pitches object with micro-tuning data
  */
 export const parseEdoScaleMicroTuningOctave = (
-  baseNoteMidi: number,
-  rootOctave: number,
-  sequence: string,
-  large: number,
-  small: number,
-  rootFrequency: number = 440
+	baseNoteMidi: number,
+	rootOctave: number,
+	sequence: string,
+	large: number,
+	small: number,
+	rootFrequency: number = 440
 ): Pitches => {
+	// cache key (unique to these arguments)
+	const key = `${baseNoteMidi}:${rootOctave}:${sequence}:${large}:${small}`
 
-  // cache key (unique to these arguments)
-  const key = `${baseNoteMidi}:${rootOctave}:${sequence}:${large}:${small}`
+	if (pitchesCache.has(key)) {
+		return pitchesCache.get(key)!
+	}
 
-  if (pitchesCache.has(key)) {
-    return pitchesCache.get(key)!
-  }
+	// create the necessary interval and pitch components
+	const scale = new EdoScale(large, small, sequence)
+	const intervals = new Intervals(scale)
+	const pitches = new Pitches(
+		scale,
+		intervals,
+		rootFrequency,
+		baseNoteMidi,
+		rootOctave,
+		KEY_MAPPING
+	)
 
-  // create the necessary interval and pitch components
-  const scale = new EdoScale(large, small, sequence)
-  const intervals = new Intervals(scale)
-  const pitches = new Pitches(scale, intervals, rootFrequency, baseNoteMidi, rootOctave, KEY_MAPPING)
+	console.info("parseEdoScaleMicroTuningOctave", { scale, intervals, pitches })
 
-  console.info("parseEdoScaleMicroTuningOctave", {scale, intervals, pitches} )
+	// cache for next time
+	pitchesCache.set(key, pitches)
 
-  // cache for next time
-  pitchesCache.set(key, pitches)
-
-  return pitches
+	return pitches
 }

@@ -4,18 +4,18 @@
 @use "./base.scss";
 @use "./buttons.scss";
 @use "./keyboard.scss";
-@use './node-graph.scss';
-@use './dialog.scss';
-@use './command-palette.scss';
-@use './layout.scss';
-@use './typography.scss';
-@use './keyframes.scss';
-@use './notes.scss';
-@use './utils.scss';
-@use './prompt-ai.scss';
-@use './audiotool.scss';
-@use './recording.scss';
-@use './theme.scss';
+@use "./node-graph.scss";
+@use "./dialog.scss";
+@use "./command-palette.scss";
+@use "./layout.scss";
+@use "./typography.scss";
+@use "./keyframes.scss";
+@use "./notes.scss";
+@use "./utils.scss";
+@use "./prompt-ai.scss";
+@use "./audiotool.scss";
+@use "./recording.scss";
+@use "./theme.scss";
 
 #app {
 	display: none;
@@ -37,6 +37,8 @@
 }
 
 .read-the-docs {
-	color: light-dark(color-mix(in oklch, var(--col-black) 50%, var(--col-white)),
-			color-mix(in oklch, var(--col-white) 50%, var(--col-black)));
+	color: light-dark(
+		color-mix(in oklch, var(--col-black) 50%, var(--col-white)),
+		color-mix(in oklch, var(--col-white) 50%, var(--col-black))
+	);
 }

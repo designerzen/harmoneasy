@@ -5,11 +5,10 @@ This program is free software: you can redistribute it and/or modify it under th
 */
 
 // import { register, pure, noteToMidi, isNote, tokenizeNote } from '@strudel/core';
-import { EdoScale } from './edoscale.mjs';
-import { Intervals } from './intervals.mjs';
-import { Pitches } from './pitches.mjs';
-import { keyMappings } from './keyMappings.mjs';
-
+import { EdoScale } from "./edoscale.mjs"
+import { Intervals } from "./intervals.mjs"
+import { Pitches } from "./pitches.mjs"
+import { keyMappings } from "./keyMappings.mjs"
 
 /**
  * Turns numbers into notes in the given EDO scale (zero indexed).
@@ -49,58 +48,63 @@ import { keyMappings } from './keyMappings.mjs';
  * edoScaleMicroTuningOctave(60, 2, "LLsLLL", 3, 1)
  */
 const pitchesCache = new Map()
-export const edoScaleMicroTuningOctave = function (baseNoteMidi, rootOctave, sequence, large, small) {
+export const edoScaleMicroTuningOctave = function (
+	baseNoteMidi,
+	rootOctave,
+	sequence,
+	large,
+	small
+) {
+	const key = [baseNoteMidi, rootOctave, sequence, large, small].join(":")
+	if (pitchesCache.has(key)) {
+		return pitchesCache.get(key)
+	}
+	// console.log({ key });
+	// const root_octave = tokenizeNote(base_note)[2] || 3;
+	// console.log({ root_octave });
+	const scale = new EdoScale(large, small, sequence)
+	const intervals = new Intervals(scale)
+	const pitches = new Pitches(scale, intervals, 440, baseNoteMidi, rootOctave, keyMappings)
+	pitchesCache.set(key, pitches)
 
-  const key = [baseNoteMidi, rootOctave, sequence, large, small].join(':')
-  if (pitchesCache.has(key)) {
-    return pitchesCache.get(key)
-  }
-  // console.log({ key });
-  // const root_octave = tokenizeNote(base_note)[2] || 3;
-  // console.log({ root_octave });
-  const scale = new EdoScale(large, small, sequence)
-  const intervals = new Intervals(scale)
-  const pitches = new Pitches(scale, intervals, 440, baseNoteMidi, rootOctave, keyMappings)
-  pitchesCache.set(key, pitches)
+	// console.log({ base_note: noteToMidi(base_note) });
+	// console.log({ sequence });
+	// console.log({ edivisions: scale.edivisions });
+	// console.log({ intervals });
+	// console.log({ pat });
+	// console.log({ pitches: pitches });
+	return pitches
 
-  // console.log({ base_note: noteToMidi(base_note) });
-  // console.log({ sequence });
-  // console.log({ edivisions: scale.edivisions });
-  // console.log({ intervals });
-  // console.log({ pat });
-  // console.log({ pitches: pitches });
-  return pitches
+	//   return pat
+	//     .fmap((value) => {
+	//       const isObject = typeof value === 'object';
+	//       const n = isObject ? value.n : value;
+	//       if (isObject) {
+	//         delete value.n; // remove n so it won't cause trouble
+	//       }
+	//       if (isNote(n)) {
+	//         // legacy..
+	//         return pure(n);
+	//       }
+	//       const deg = (typeof n === 'string' ? parseInt(n, 10) : Number.isInteger(n) ? n : Math.round(n)) + 1;
 
-  //   return pat
-  //     .fmap((value) => {
-  //       const isObject = typeof value === 'object';
-  //       const n = isObject ? value.n : value;
-  //       if (isObject) {
-  //         delete value.n; // remove n so it won't cause trouble
-  //       }
-  //       if (isNote(n)) {
-  //         // legacy..
-  //         return pure(n);
-  //       }
-  //       const deg = (typeof n === 'string' ? parseInt(n, 10) : Number.isInteger(n) ? n : Math.round(n)) + 1;
-
-  //       const [oct, degree] = pitches.octdeg(deg);
-  //       const freq = pitches.octdegfreq(oct, degree);
-  //       const note = pitches.octdegmidi(oct, degree);
-  //       const edo = pitches.scale.edivisions;
-  //       const root = pitches.base_freq;
-  //       const degreeIndexes = pitches.scale.divisions;
-  //       const intLabels = pitches.intervals.intLabels;
-  //       // const color = 'red';
-  //       value = pure(isObject ? { ...value, degree, degreeIndexes, intLabels, root, freq, edo } : note);
-  //       // value = pure(isObject ? { ...value, key } : note);
-  //       // value = pure(isObject ? { ...value, edo } : note);
-  //       // console.log({ value });
-  //       return value;
-  //     })
-  //     .outerJoin()
-  //     .withHap((hap) => hap.setContext({ ...hap.context, scaleDefinition }));
-  // },
-  // true,
-  // true, // preserve tactus
+	//       const [oct, degree] = pitches.octdeg(deg);
+	//       const freq = pitches.octdegfreq(oct, degree);
+	//       const note = pitches.octdegmidi(oct, degree);
+	//       const edo = pitches.scale.edivisions;
+	//       const root = pitches.base_freq;
+	//       const degreeIndexes = pitches.scale.divisions;
+	//       const intLabels = pitches.intervals.intLabels;
+	//       // const color = 'red';
+	//       value = pure(isObject ? { ...value, degree, degreeIndexes, intLabels, root, freq, edo } : note);
+	//       // value = pure(isObject ? { ...value, key } : note);
+	//       // value = pure(isObject ? { ...value, edo } : note);
+	//       // console.log({ value });
+	//       return value;
+	//     })
+	//     .outerJoin()
+	//     .withHap((hap) => hap.setContext({ ...hap.context, scaleDefinition }));
+	// },
+	// true,
+	// true, // preserve tactus
 }

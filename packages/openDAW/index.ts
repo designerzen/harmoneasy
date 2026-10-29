@@ -3,9 +3,7 @@
  * OpenDAW project file format support and .dawProject integration
  */
 
-export {
-  createOpenDAWProjectFromAudioEventRecording,
-} from './adapter-opendaw-audio-events-recording.ts'
+export { createOpenDAWProjectFromAudioEventRecording } from "./adapter-opendaw-audio-events-recording.ts"
 
 // TODO: Implement missing openDAW modules
 // export {

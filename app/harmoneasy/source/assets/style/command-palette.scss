@@ -1,50 +1,164 @@
 #command-palette {
-    --command-line: var(--col-line);
-    --command-muted: var(--col-muted);
-    --command-accent: var(--col-accent);
-    width: 38rem;
-    max-height: min(40rem, calc(100dvh - 2rem));
-    padding: 0;
-    border: 1px solid var(--command-line);
-    border-radius: 14px;
-    background: var(--col-bg);
-    color: var(--col-fg);
-    box-shadow: 0 24px 100px #0006;
-    overflow: hidden;
-    font-size: 1rem;
-    &[open] { display: flex; flex-direction: column; }
-    [hidden] { display: none !important; }
-    &::backdrop { background: var(--col-backdrop); backdrop-filter: blur(6px); }
-    > header { display: flex; align-items: center; justify-content: space-between; padding: .75rem 1rem; }
-    h2 { margin: 0; font-size: 1rem; text-transform: none; letter-spacing: normal; }
-    button { padding: .5rem .75rem; min-height: 36px; font-size: .8rem; text-transform: none; letter-spacing: normal; }
-    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--command-accent); outline-offset: -2px; }
-    [data-command-close] { background: transparent; color: var(--command-muted); border-color: var(--command-line); }
-    #command-search, #command-value {
-        display: block; width: 100%; margin: 0; padding: .9rem 1rem;
-        border: 1px solid var(--command-line); border-radius: 0;
-        background: var(--col-surface); color: inherit; font: inherit;
-        text-transform: none; text-decoration: none; letter-spacing: normal;
-    }
-    #command-results { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: .4rem; }
-    [role="option"] {
-        display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-        min-height: 52px; padding: .6rem .75rem; border-radius: 8px; cursor: pointer;
-        > span:first-child { min-width: 0; }
-        strong, small { display: block; overflow-wrap: anywhere; }
-        strong { font-size: .875rem; font-weight: 600; }
-        small { margin-top: .15rem; font-size: .7rem; color: var(--command-muted); }
-        &:hover { background: var(--col-accent-soft); }
-        &[aria-selected="true"] { background: var(--col-accent-selected); box-shadow: inset 3px 0 var(--command-accent); }
-    }
-    .command-current-value { max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .75rem; color: var(--command-muted); }
-    #command-editor { margin: 0; padding: 1rem; min-height: 0; overflow: auto; }
-    #command-value-label { display: block; margin-bottom: .75rem; font-size: .9rem; }
-    #command-value { border-radius: 8px; }
-    textarea#command-value { min-height: 6rem; resize: vertical; }
-    .command-editor-actions { display: flex; justify-content: space-between; gap: .75rem; margin-top: 1rem; }
-    #command-status { flex-shrink: 0; margin: 0; padding: .65rem 1rem; max-width: none; font-size: .75rem; color: var(--command-muted); }
-    > footer { border-top: 1px solid var(--command-line); padding: .65rem 1rem; color: var(--command-muted); font-size: .7rem; }
+	--command-line: var(--col-line);
+	--command-muted: var(--col-muted);
+	--command-accent: var(--col-accent);
+	width: 38rem;
+	max-height: min(40rem, calc(100dvh - 2rem));
+	padding: 0;
+	border: 1px solid var(--command-line);
+	border-radius: 14px;
+	background: var(--col-bg);
+	color: var(--col-fg);
+	box-shadow: 0 24px 100px #0006;
+	overflow: hidden;
+	font-size: 1rem;
+	&[open] {
+		display: flex;
+		flex-direction: column;
+	}
+	[hidden] {
+		display: none !important;
+	}
+	&::backdrop {
+		background: var(--col-backdrop);
+		backdrop-filter: blur(6px);
+	}
+	> header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.75rem 1rem;
+	}
+	h2 {
+		margin: 0;
+		font-size: 1rem;
+		text-transform: none;
+		letter-spacing: normal;
+	}
+	button {
+		padding: 0.5rem 0.75rem;
+		min-height: 36px;
+		font-size: 0.8rem;
+		text-transform: none;
+		letter-spacing: normal;
+	}
+	button:focus-visible,
+	input:focus-visible,
+	select:focus-visible,
+	textarea:focus-visible {
+		outline: 2px solid var(--command-accent);
+		outline-offset: -2px;
+	}
+	[data-command-close] {
+		background: transparent;
+		color: var(--command-muted);
+		border-color: var(--command-line);
+	}
+	#command-search,
+	#command-value {
+		display: block;
+		width: 100%;
+		margin: 0;
+		padding: 0.9rem 1rem;
+		border: 1px solid var(--command-line);
+		border-radius: 0;
+		background: var(--col-surface);
+		color: inherit;
+		font: inherit;
+		text-transform: none;
+		text-decoration: none;
+		letter-spacing: normal;
+	}
+	#command-results {
+		min-height: 0;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		padding: 0.4rem;
+	}
+	[role="option"] {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		min-height: 52px;
+		padding: 0.6rem 0.75rem;
+		border-radius: 8px;
+		cursor: pointer;
+		> span:first-child {
+			min-width: 0;
+		}
+		strong,
+		small {
+			display: block;
+			overflow-wrap: anywhere;
+		}
+		strong {
+			font-size: 0.875rem;
+			font-weight: 600;
+		}
+		small {
+			margin-top: 0.15rem;
+			font-size: 0.7rem;
+			color: var(--command-muted);
+		}
+		&:hover {
+			background: var(--col-accent-soft);
+		}
+		&[aria-selected="true"] {
+			background: var(--col-accent-selected);
+			box-shadow: inset 3px 0 var(--command-accent);
+		}
+	}
+	.command-current-value {
+		max-width: 40%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-size: 0.75rem;
+		color: var(--command-muted);
+	}
+	#command-editor {
+		margin: 0;
+		padding: 1rem;
+		min-height: 0;
+		overflow: auto;
+	}
+	#command-value-label {
+		display: block;
+		margin-bottom: 0.75rem;
+		font-size: 0.9rem;
+	}
+	#command-value {
+		border-radius: 8px;
+	}
+	textarea#command-value {
+		min-height: 6rem;
+		resize: vertical;
+	}
+	.command-editor-actions {
+		display: flex;
+		justify-content: space-between;
+		gap: 0.75rem;
+		margin-top: 1rem;
+	}
+	#command-status {
+		flex-shrink: 0;
+		margin: 0;
+		padding: 0.65rem 1rem;
+		max-width: none;
+		font-size: 0.75rem;
+		color: var(--command-muted);
+	}
+	> footer {
+		border-top: 1px solid var(--command-line);
+		padding: 0.65rem 1rem;
+		color: var(--command-muted);
+		font-size: 0.7rem;
+	}
 }
 
-#btn-command-palette kbd { margin-left: .4rem; font-size: .65rem; opacity: .7; }
+#btn-command-palette kbd {
+	margin-left: 0.4rem;
+	font-size: 0.65rem;
+	opacity: 0.7;
+}

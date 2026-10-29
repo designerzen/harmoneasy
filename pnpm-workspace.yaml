@@ -1,25 +1,25 @@
 packages:
-  - "app/*"
-  - "packages/*"
+    - "app/*"
+    - "packages/*"
 
 allowBuilds:
-  '@parcel/watcher': set this to true or false
-  core-js: set this to true or false
-  electron: set this to true or false
-  electron-winstaller: set this to true or false
-  esbuild: set this to true or false
-  leveldown: set this to true or false
-  onnxruntime-node: set this to true or false
-  protobufjs: set this to true or false
-  sharp: set this to true or false
-  workerd: set this to true or false
+    "@parcel/watcher": set this to true or false
+    core-js: set this to true or false
+    electron: set this to true or false
+    electron-winstaller: set this to true or false
+    esbuild: set this to true or false
+    leveldown: set this to true or false
+    onnxruntime-node: set this to true or false
+    protobufjs: set this to true or false
+    sharp: set this to true or false
+    workerd: set this to true or false
 
 ignoredBuiltDependencies:
-  - esbuild
-  - workerd
+    - esbuild
+    - workerd
 
 onlyBuiltDependencies:
-  - electron
+    - electron
 
 patchedDependencies:
-  app-builder-lib@26.8.1: patches/app-builder-lib@26.8.1.patch
+    app-builder-lib@26.8.1: patches/app-builder-lib@26.8.1.patch

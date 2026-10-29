@@ -18,7 +18,11 @@ export default defineConfig({
 		"no-unexpected-multiline": "error",
 		"use-isnan": "error",
 		curly: ["error", "all"],
-		eqeqeq: ["warn", "always"],
+		eqeqeq: ["warn", "always", { null: "ignore" }],
+		"typescript/no-this-alias": [
+			"warn",
+			{ allowedNames: ["vis", "head", "tail", "worker", "node"] }
+		],
 		"no-var": "error",
 		"prefer-const": ["warn", { destructuring: "any" }],
 		"prefer-arrow-callback": "warn"

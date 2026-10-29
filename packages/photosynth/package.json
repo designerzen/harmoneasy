@@ -1,0 +1,40 @@
+{
+	"name": "photosynth",
+	"version": "0.1.0",
+	"description": "Camera and MediaPipe expression controls with an accessible musical web component",
+	"type": "module",
+	"license": "AGPL-3.0-or-later",
+	"author": "designerzen",
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		},
+		"./element": {
+			"types": "./dist/element.d.ts",
+			"import": "./dist/element.js"
+		}
+	},
+	"files": [
+		"dist",
+		"LICENSE"
+	],
+	"scripts": {
+		"dev": "vite example --host 127.0.0.1",
+		"build": "tsc -p tsconfig.json",
+		"type-check": "tsc -p tsconfig.json --noEmit",
+		"test": "vitest run"
+	},
+	"dependencies": {
+		"@mediapipe/tasks-vision": "1.2.0"
+	},
+	"devDependencies": {
+		"@webgpu/types": "0.1.74",
+		"typescript": "~5.9.3",
+		"vite": "8.0.1",
+		"vitest": "4.1.0",
+		"happy-dom": "20.14.5"
+	}
+}

@@ -45,7 +45,7 @@
 		},
 		"test": {
 			"cache": false,
-			"interactive": true,
+			"interactive": false,
 			"inputs": ["**/*.ts", "**/*.test.ts"]
 		},
 		"preview": {

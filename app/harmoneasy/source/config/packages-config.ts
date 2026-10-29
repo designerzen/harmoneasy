@@ -12,52 +12,52 @@ export interface PackageInfo {
 }
 
 export const PACKAGES: PackageInfo[] = [
-  {
-    "name": "netronome",
-    "version": "2.9.0",
-    "description": "Rock solid JavaScript timing library with sub-millisecond accuracy",
-    "repo": "https://github.com/designerzen/netronome.git"
-  },
-  {
-    "name": "audiobus",
-    "version": "3.2.1",
-    "description": "Core audio engine with MIDI processing, synthesis, and audio routing",
-    "repo": "https://github.com/designerzen/harmoneasy"
-  },
-  {
-    "name": "audiotool",
-    "version": "0.0.11",
-    "description": "AudioTool SDK integration for HarmonEasy",
-    "repo": "https://github.com/designerzen/harmoneasy"
-  },
-  {
-    "name": "flodjs",
-    "version": "1.9.1",
-    "description": "Flod.ts music composition library integration",
-    "repo": "https://github.com/designerzen/harmoneasy"
-  },
-  {
-    "name": "midi-ble",
-    "version": "0.15.1",
-    "description": "Bluetooth MIDI (BLE) implementation for HarmonEasy",
-    "repo": "https://github.com/designerzen/harmoneasy"
-  },
-  {
-    "name": "opendaw",
-    "version": "0.8.0",
-    "description": "OpenDAW project file format support and .dawProject integration",
-    "repo": "https://github.com/designerzen/harmoneasy"
-  },
-  {
-    "name": "pink-trombone",
-    "version": "0.3.0",
-    "description": "Pink Trombone speech synthesis integration for HarmonEasy",
-    "repo": "https://github.com/designerzen/harmoneasy"
-  },
-  {
-    "name": "pitfalls",
-    "version": "0.1.1",
-    "description": "Music theory utilities - scales, intervals, chords, and microtonality (EDO)",
-    "repo": "https://github.com/designerzen/harmoneasy"
-  }
+	{
+		name: "netronome",
+		version: "2.9.0",
+		description: "Rock solid JavaScript timing library with sub-millisecond accuracy",
+		repo: "https://github.com/designerzen/netronome.git"
+	},
+	{
+		name: "audiobus",
+		version: "3.2.1",
+		description: "Core audio engine with MIDI processing, synthesis, and audio routing",
+		repo: "https://github.com/designerzen/harmoneasy"
+	},
+	{
+		name: "audiotool",
+		version: "0.0.11",
+		description: "AudioTool SDK integration for HarmonEasy",
+		repo: "https://github.com/designerzen/harmoneasy"
+	},
+	{
+		name: "flodjs",
+		version: "1.9.1",
+		description: "Flod.ts music composition library integration",
+		repo: "https://github.com/designerzen/harmoneasy"
+	},
+	{
+		name: "midi-ble",
+		version: "0.15.1",
+		description: "Bluetooth MIDI (BLE) implementation for HarmonEasy",
+		repo: "https://github.com/designerzen/harmoneasy"
+	},
+	{
+		name: "opendaw",
+		version: "0.8.0",
+		description: "OpenDAW project file format support and .dawProject integration",
+		repo: "https://github.com/designerzen/harmoneasy"
+	},
+	{
+		name: "pink-trombone",
+		version: "0.3.0",
+		description: "Pink Trombone speech synthesis integration for HarmonEasy",
+		repo: "https://github.com/designerzen/harmoneasy"
+	},
+	{
+		name: "pitfalls",
+		version: "0.1.1",
+		description: "Music theory utilities - scales, intervals, chords, and microtonality (EDO)",
+		repo: "https://github.com/designerzen/harmoneasy"
+	}
 ]

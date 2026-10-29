@@ -1,26 +1,26 @@
 {
-  "name": "audiotool",
-  "version": "0.0.11",
-  "description": "AudioTool SDK integration for HarmonEasy",
-  "type": "module",
-  "main": "index.ts",
-  "exports": {
-    ".": "./index.ts"
-  },
-  "scripts": {
-    "dev": "echo 'No dev server for this package'",
-    "lint": "oxlint .",
-    "lint:fix": "oxlint --fix ."
-  },
-  "files": [
-    "*.ts"
-  ],
-  "dependencies": {
-    "@audiotool/nexus": "^0.0.19",
-    "@harmoneasy/shared-config": "workspace:^",
-    "audiobus": "workspace:^"
-  },
-  "devDependencies": {
-    "typescript": "~5.9.3"
-  }
+	"name": "audiotool",
+	"version": "0.0.11",
+	"description": "AudioTool SDK integration for HarmonEasy",
+	"type": "module",
+	"main": "index.ts",
+	"exports": {
+		".": "./index.ts"
+	},
+	"scripts": {
+		"dev": "echo 'No dev server for this package'",
+		"lint": "oxlint .",
+		"lint:fix": "oxlint --fix ."
+	},
+	"files": [
+		"*.ts"
+	],
+	"dependencies": {
+		"@audiotool/nexus": "^0.0.19",
+		"@harmoneasy/shared-config": "workspace:^",
+		"audiobus": "workspace:^"
+	},
+	"devDependencies": {
+		"typescript": "~5.9.3"
+	}
 }

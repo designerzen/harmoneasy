@@ -1,6 +1,6 @@
 export function roomFallbackHtml(roomPath) {
-    const target = JSON.stringify(roomPath).replace(/</g, '\\u003c')
-    return `<!doctype html>
+	const target = JSON.stringify(roomPath).replace(/</g, "\\u003c")
+	return `<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -25,16 +25,24 @@ export function roomFallbackHtml(roomPath) {
 
 /** Publish real static entry points so room links work on GitHub Pages. */
 export function roomPagesPlugin() {
-    let base = '/'
-    return {
-        name: 'harmoneasy-room-pages',
-        enforce: 'post',
-        configResolved(config) { base = config.base },
-        generateBundle(_options, bundle) {
-            const entry = bundle['index.html']
-            if (!entry || entry.type !== 'asset') throw new Error('Missing Harmoneasy HTML entry point')
-            this.emitFile({ type: 'asset', fileName: 'room/index.html', source: entry.source })
-            this.emitFile({ type: 'asset', fileName: '404.html', source: roomFallbackHtml(`${base}room/`) })
-        }
-    }
+	let base = "/"
+	return {
+		name: "harmoneasy-room-pages",
+		enforce: "post",
+		configResolved(config) {
+			base = config.base
+		},
+		generateBundle(_options, bundle) {
+			const entry = bundle["index.html"]
+			if (!entry || entry.type !== "asset") {
+				throw new Error("Missing Harmoneasy HTML entry point")
+			}
+			this.emitFile({ type: "asset", fileName: "room/index.html", source: entry.source })
+			this.emitFile({
+				type: "asset",
+				fileName: "404.html",
+				source: roomFallbackHtml(`${base}room/`)
+			})
+		}
+	}
 }

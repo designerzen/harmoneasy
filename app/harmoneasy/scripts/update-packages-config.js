@@ -3,33 +3,34 @@
 /**
  * Script to update packages-config.ts with current versions from workspace packages
  * Run this before building to ensure versions are always accurate
- * 
+ *
  * Usage: node scripts/update-packages-config.js
  */
 
-import fs from 'fs'
-import path from 'path'
-import { fileURLToPath } from 'url'
+import fs from "fs"
+import { format } from "oxfmt"
+import path from "path"
+import { fileURLToPath } from "url"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const appDir = path.resolve(__dirname, '..')
-const rootDir = path.resolve(__dirname, '../../..')
+const appDir = path.resolve(__dirname, "..")
+const rootDir = path.resolve(__dirname, "../../..")
 
 const PACKAGES = [
-	{ name: 'netronome', dir: 'netronome' },
-	{ name: 'audiobus', dir: 'audiobus' },
-	{ name: 'audiotool', dir: 'audiotool' },
-	{ name: 'flodjs', dir: 'flodjs' },
-	{ name: 'midi-ble', dir: 'midi-ble' },
-	{ name: 'opendaw', dir: 'openDAW' },
-	{ name: 'pink-trombone', dir: 'pink-trombone' },
-	{ name: 'pitfalls', dir: 'pitfalls' }
+	{ name: "netronome", dir: "netronome" },
+	{ name: "audiobus", dir: "audiobus" },
+	{ name: "audiotool", dir: "audiotool" },
+	{ name: "flodjs", dir: "flodjs" },
+	{ name: "midi-ble", dir: "midi-ble" },
+	{ name: "opendaw", dir: "openDAW" },
+	{ name: "pink-trombone", dir: "pink-trombone" },
+	{ name: "pitfalls", dir: "pitfalls" }
 ]
 
 function readPackageJson(dir) {
-	const packagePath = path.join(rootDir, 'packages', dir, 'package.json')
+	const packagePath = path.join(rootDir, "packages", dir, "package.json")
 	try {
-		const content = fs.readFileSync(packagePath, 'utf-8')
+		const content = fs.readFileSync(packagePath, "utf-8")
 		return JSON.parse(content)
 	} catch (error) {
 		console.error(`Failed to read ${packagePath}:`, error.message)
@@ -37,16 +38,17 @@ function readPackageJson(dir) {
 	}
 }
 
-function generateConfigFile() {
+async function generateConfigFile() {
 	const packages = PACKAGES.map(({ name, dir }) => {
 		const pkg = readPackageJson(dir)
 		return {
 			name,
 			version: pkg.version,
 			description: pkg.description,
-			repo: name === 'netronome' 
-				? (pkg.repository?.url || 'https://github.com/designerzen/netronome')
-				: 'https://github.com/designerzen/harmoneasy'
+			repo:
+				name === "netronome"
+					? pkg.repository?.url || "https://github.com/designerzen/netronome"
+					: "https://github.com/designerzen/harmoneasy"
 		}
 	})
 
@@ -66,44 +68,90 @@ export interface PackageInfo {
 export const PACKAGES: PackageInfo[] = ${JSON.stringify(packages, null, 2)}
 `
 
-	const configPath = path.join(appDir, 'source', 'config', 'packages-config.ts')
-	
+	const configPath = path.join(appDir, "source", "config", "packages-config.ts")
+
 	try {
-		fs.writeFileSync(configPath, configContent, 'utf-8')
+		const generated = new Map([[configPath, configContent]])
 		const seen = new Set()
 		const credits = []
 		function collect(packagePath) {
 			const realPath = fs.realpathSync(packagePath)
-			if (seen.has(realPath)) return
+			if (seen.has(realPath)) {
+				return
+			}
 			seen.add(realPath)
-			const pkg = JSON.parse(fs.readFileSync(realPath, 'utf-8'))
-			const person = value => typeof value === 'string' ? value.replace(/\s*<[^>]*>/g, '') : value?.name || ''
-			if (pkg.name && !pkg.private && !pkg.name.startsWith('@harmoneasy/')) {
-				const authors = [...new Set([pkg.author, ...(pkg.contributors || [])].map(person).filter(Boolean))]
-				credits.push({ name: pkg.name, version: pkg.version || '', authors, license: typeof pkg.license === 'string' ? pkg.license : pkg.license?.type || '',
-					url: pkg.homepage || (typeof pkg.repository === 'string' ? pkg.repository : pkg.repository?.url) || '' })
+			const pkg = JSON.parse(fs.readFileSync(realPath, "utf-8"))
+			const person = (value) =>
+				typeof value === "string" ? value.replace(/\s*<[^>]*>/g, "") : value?.name || ""
+			if (pkg.name && !pkg.private && !pkg.name.startsWith("@harmoneasy/")) {
+				const authors = [
+					...new Set(
+						[pkg.author, ...(pkg.contributors || [])].map(person).filter(Boolean)
+					)
+				]
+				credits.push({
+					name: pkg.name,
+					version: pkg.version || "",
+					authors,
+					license:
+						typeof pkg.license === "string" ? pkg.license : pkg.license?.type || "",
+					url:
+						pkg.homepage ||
+						(typeof pkg.repository === "string"
+							? pkg.repository
+							: pkg.repository?.url) ||
+						""
+				})
 			}
 			for (const name of Object.keys({ ...pkg.dependencies, ...pkg.optionalDependencies })) {
 				let dir = path.dirname(realPath)
 				while (true) {
-					const candidate = path.join(dir, 'node_modules', name, 'package.json')
-					if (fs.existsSync(candidate)) { collect(candidate); break }
+					const candidate = path.join(dir, "node_modules", name, "package.json")
+					if (fs.existsSync(candidate)) {
+						collect(candidate)
+						break
+					}
 					const parent = path.dirname(dir)
-					if (parent === dir) break
+					if (parent === dir) {
+						break
+					}
 					dir = parent
 				}
 			}
 		}
-		collect(path.join(appDir, 'package.json'))
+		collect(path.join(appDir, "package.json"))
 		credits.sort((a, b) => a.name.localeCompare(b.name) || a.version.localeCompare(b.version))
-		fs.writeFileSync(path.join(appDir, 'source/config/credits-config.json'), JSON.stringify(credits, null, 2) + '\n')
-		const bundled = fs.readdirSync(path.join(appDir, 'public/webclap'), { recursive: true })
-			.filter(file => /LICENSE.*\.txt$/i.test(file))
-			.map(file => `webclap/${file.replaceAll(path.sep, '/')}`).sort()
-		fs.writeFileSync(path.join(appDir, 'source/config/bundled-credits-config.json'), JSON.stringify(bundled, null, 2) + '\n')
+		generated.set(
+			path.join(appDir, "source/config/credits-config.json"),
+			JSON.stringify(credits, null, 2) + "\n"
+		)
+		const bundled = fs
+			.readdirSync(path.join(appDir, "public/webclap"), { recursive: true })
+			.filter((file) => /LICENSE.*\.txt$/i.test(file))
+			.map((file) => `webclap/${file.replaceAll(path.sep, "/")}`)
+			.sort()
+		generated.set(
+			path.join(appDir, "source/config/bundled-credits-config.json"),
+			JSON.stringify(bundled, null, 2) + "\n"
+		)
+
+		const formatterOptions = JSON.parse(
+			fs.readFileSync(path.join(rootDir, ".oxfmtrc.json"), "utf8")
+		)
+		delete formatterOptions.$schema
+		delete formatterOptions.ignorePatterns
+		for (const [file, source] of generated) {
+			const result = await format(file, source, formatterOptions)
+			if (result.errors.length) {
+				throw new Error(result.errors.map((error) => error.message).join("\n"))
+			}
+			if (!fs.existsSync(file) || fs.readFileSync(file, "utf8") !== result.code) {
+				fs.writeFileSync(file, result.code, "utf8")
+			}
+		}
 		console.log(`✓ Updated ${configPath}`)
 		console.log(`✓ Synced ${packages.length} packages`)
-		packages.forEach(pkg => {
+		packages.forEach((pkg) => {
 			console.log(`  - ${pkg.name} v${pkg.version}`)
 		})
 	} catch (error) {
@@ -113,9 +161,9 @@ export const PACKAGES: PackageInfo[] = ${JSON.stringify(packages, null, 2)}
 }
 
 try {
-	generateConfigFile()
+	await generateConfigFile()
 	process.exit(0)
 } catch (error) {
-	console.error('Error updating packages config:', error)
+	console.error("Error updating packages config:", error)
 	process.exit(1)
 }
