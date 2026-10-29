@@ -60,7 +60,7 @@ onMidiDeviceProfilesChanged(() => {
 })
 
 export const OUTPUT_GUIDANCE: Record<OutputId, Guidance> = {
-    'audiobus-303': guide('303', 'Play the original AudioBus wavetable bass synth.', 'Bass lines with slide, accent, foldback distortion and delay.', audio + ' AudioWorklet support. Overlap notes for slide; velocity 100–127 adds accent.'),
+    '303': guide('303', 'Play the original AudioBus wavetable bass synth.', 'Bass lines with slide, accent, foldback distortion and delay.', audio + ' AudioWorklet support. Overlap notes for slide; velocity 100–127 adds accent.'),
 	'drum-kit': guide('Dr', 'Play a synthesized drum kit from MIDI notes or touch pads.', 'Finger drumming, percussion sequences and microphone-triggered rhythms.', audio + ' Use drum notes 35–87; channel 0 accepts every MIDI channel.'),
     performance: guide('Perf', 'Record IOChain load and app responsiveness.', 'Compare event rate, processing delay, FPS and Netronome timing; red graph markers identify lag.', 'A visible browser tab. Run the transport for timing metrics. Main-thread blocking requires Long Tasks API support.'),
     ...Object.fromEntries(Object.values(OUTPUT_DEFINITIONS).map(definition => [definition.id,

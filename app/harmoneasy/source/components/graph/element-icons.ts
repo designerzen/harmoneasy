@@ -21,7 +21,7 @@ const INPUT_ICONS: Partial<Record<InputId, string>> = {
 }
 
 const OUTPUT_ICONS: Record<OutputId, string> = {
-    'audiobus-303': 'synth',
+    '303': 'synth',
 	'drum-kit': 'drums',
     'note-monitor': 'piano', 'sample-player': 'synth', 'event-recorder': 'clock', osc: 'midi', recorder: 'clock',
     performance: 'spectrum',
