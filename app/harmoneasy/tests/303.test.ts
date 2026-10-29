@@ -130,8 +130,32 @@ it("registers a separate output, saves controls, and cancels notes waiting on lo
 		options: { shape: 0.8, delaySend: 0.5, volume: 0.4 }
 	})
 	const gui = await output.createGui()
-	expect(gui.querySelector('[name="threshold"]')).not.toBeNull()
-	expect(gui.querySelector('[name="delayTime"]')).not.toBeNull()
+	expect(gui.shadowRoot!.querySelector('[name="threshold"]')).not.toBeNull()
+	expect(gui.shadowRoot!.querySelector('[name="delayTime"]')).not.toBeNull()
+	const root = gui.shadowRoot!
+	expect(root.querySelectorAll('input[type="range"]')).toHaveLength(13)
+	expect(root.querySelectorAll('input[type="number"]')).toHaveLength(0)
+	const cutoff = root.querySelector<HTMLInputElement>('[name="cutoff"]')!
+	cutoff.value = "0.5"
+	cutoff.dispatchEvent(new Event("input"))
+	expect(output.options.cutoff).toBe(2000)
+	expect(cutoff.getAttribute("aria-valuetext")).toBe("2000 Hz")
+	const resonance = root.querySelector<HTMLInputElement>('[name="resonance"]')!
+	resonance.value = "0.75"
+	resonance.dispatchEvent(new Event("input"))
+	expect(output.options.resonance).toBe(0.75)
+	output.configure({ resonance: 0.2, waveform: 1 })
+	expect(resonance.value).toBe("0.2")
+	expect(root.querySelector('[name="waveform"]')!.getAttribute("aria-valuetext")).toBe("Square")
+	await output.destroyGui()
+	resonance.value = "0.9"
+	resonance.dispatchEvent(new Event("input"))
+	expect(output.options.resonance).toBe(0.2)
+	const reopened = await output.createGui()
+	expect(reopened).not.toBe(gui)
+	expect(reopened.shadowRoot!.querySelector<HTMLInputElement>('[name="resonance"]')!.value).toBe(
+		"0.2"
+	)
 	output.destroy()
 	expect(disconnect).toHaveBeenCalled()
 })
