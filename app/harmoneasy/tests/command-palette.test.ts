@@ -66,6 +66,23 @@ afterEach(() => {
 })
 
 describe("command palette", () => {
+	it("ranks fuzzy results and runs the selected command with Enter", () => {
+		document.body.insertAdjacentHTML("beforeend", '<button id="tempo-up">Tempo up</button>')
+		const play = vi.fn()
+		document.getElementById("play")!.addEventListener(EVENT_CLICK, play)
+		createCommandPalette(document, lifetime.signal)()
+		find("temop")
+		expect(rows()[0].querySelector("strong")!.textContent).toBe("Tempo")
+		expect(rows()).toHaveLength(2)
+		key("ArrowDown")
+		find("sp")
+		expect(rows()[0].getAttribute("aria-selected")).toBe("true")
+		expect(search().getAttribute("aria-activedescendant")).toBe(rows()[0].id)
+		key("Enter")
+		expect(play).toHaveBeenCalledTimes(1)
+		expect(palette().open).toBe(false)
+	})
+
 	it("opens with Ctrl+K, Cmd+K and the button, filters and navigates results, and restores focus", () => {
 		const trigger = document.getElementById("btn-command-palette")!
 		trigger.focus()

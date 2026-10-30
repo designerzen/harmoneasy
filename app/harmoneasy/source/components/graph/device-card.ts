@@ -26,6 +26,12 @@ const bluetooth =
 const mic = "A microphone or audio input and microphone permission."
 
 export const INPUT_GUIDANCE: Record<InputId, Guidance> = {
+	"scale-explorer": guide(
+		"Scale",
+		"Explore any twelve-tone pitch set and its modes on a musical torus.",
+		"Auditioning unfamiliar scales and discovering chromatic and fourths relationships.",
+		"Connect an output. Use transport Play for a repeating scale, Audition chord, or click torus notes."
+	),
 	...Object.fromEntries(
 		Object.values(INPUT_DEFINITIONS).map((definition) => [
 			definition.id,

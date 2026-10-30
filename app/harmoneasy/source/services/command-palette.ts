@@ -10,9 +10,19 @@ import {
 	EVENT_KEY_UP,
 	EVENT_SUBMIT
 } from "audiobus/event-constants"
+import {
+	commandSearchField,
+	commandSearchScore,
+	normalizeCommandSearch
+} from "../libs/command-search"
 
 type ValueControl = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-type Command = { element: HTMLElement; label: string; context: string; search: string }
+type Command = {
+	element: HTMLElement
+	label: string
+	context: string
+	fields: ReturnType<typeof commandSearchField>[]
+}
 const CONTROL_SELECTOR = "button, summary, input, select, textarea"
 const TEXT_TYPES = new Set([
 	"text",
@@ -196,7 +206,9 @@ export function createCommandPalette(root: Document, signal?: AbortSignal) {
 					element,
 					label,
 					context,
-					search: `${label} ${context} ${element.title} ${element.id} ${choices}`.toLowerCase()
+					fields: [label, context, `${element.title} ${element.id} ${choices}`].map(
+						commandSearchField
+					)
 				}
 			})
 			.filter((command) => command.label)
@@ -225,10 +237,12 @@ export function createCommandPalette(root: Document, signal?: AbortSignal) {
 	}
 
 	const render = () => {
-		const tokens = search.value.toLowerCase().trim().split(/\s+/).filter(Boolean)
-		matches = commands.filter((command) =>
-			tokens.every((token) => command.search.includes(token))
-		)
+		const query = normalizeCommandSearch(search.value)
+		matches = commands
+			.map((command) => ({ command, score: commandSearchScore(query, command.fields) }))
+			.filter(({ score }) => Number.isFinite(score))
+			.sort((a, b) => a.score - b.score)
+			.map(({ command }) => command)
 		active = 0
 		results.replaceChildren(
 			...matches.map((command, index) => {

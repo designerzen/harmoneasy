@@ -1,0 +1,70 @@
+.music-tools-dialog {
+	width: min(58rem, 94vw);
+	max-height: 88dvh;
+	overflow: auto;
+	padding: 1.25rem;
+	> details {
+		border-block-start: 1px solid currentColor;
+		padding-block: 0.7rem;
+	}
+	summary {
+		cursor: pointer;
+		font-weight: bold;
+		padding: 0.4rem;
+	}
+	.music-tools-section,
+	fieldset,
+	.performance-macro {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: start;
+		gap: 0.75rem;
+		padding: 0.75rem;
+	}
+	.music-tools-section > p,
+	.music-tools-section > div,
+	.music-tools-section > h3 {
+		flex-basis: 100%;
+	}
+	label {
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+		max-width: 100%;
+	}
+	input,
+	select {
+		max-width: 100%;
+		min-height: 2.75rem;
+	}
+	button {
+		min-height: 2.75rem;
+		padding: 0.5rem 0.8rem;
+	}
+	.performance-controls {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+		gap: 1rem;
+	}
+	.performance-macro {
+		border: 1px solid currentColor;
+		border-radius: 0.5rem;
+		flex-direction: column;
+	}
+	.performance-macro > label,
+	.performance-macro input[type="range"] {
+		width: 100%;
+	}
+	.performance-macro > label {
+		font-size: 1.4rem;
+	}
+	.performance-macro > details {
+		width: 100%;
+	}
+	.performance-macro details label {
+		margin-block: 0.5rem;
+	}
+	audio {
+		max-width: 100%;
+	}
+}

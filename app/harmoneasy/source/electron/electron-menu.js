@@ -26,6 +26,18 @@ export const createMenuTemplate = (app) => [
 	{
 		label: "View",
 		submenu: [
+			{
+				label: "Command Palette…",
+				accelerator: "CmdOrCtrl+K",
+				click: (_item, window) => {
+					window?.webContents
+						.executeJavaScript(
+							'document.getElementById("btn-command-palette")?.click()'
+						)
+						.catch((error) => console.error("Could not open command palette:", error))
+				}
+			},
+			{ type: "separator" },
 			{ role: "reload" },
 			{ role: "forceReload" },
 			{ role: "toggleDevTools" },

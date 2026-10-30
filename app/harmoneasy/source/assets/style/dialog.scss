@@ -18,53 +18,159 @@
 }
 
 #about-dialog {
-	width: min(48rem, calc(100vw - 2rem));
-	height: min(42rem, calc(100dvh - 2rem));
+	width: min(42rem, calc(100vw - 2rem));
+	height: auto;
 	padding: 0;
+	border: 1px solid var(--col-line);
+	border-radius: 20px;
+	background: var(--col-surface);
+	box-shadow: 0 24px 80px rgb(0 0 0 / 0.25);
 	overflow: hidden;
 	&[open] {
 		display: flex;
 		flex-direction: column;
+	}
+	> header,
+	> footer {
+		padding: 0.75rem clamp(1.25rem, 4vw, 2rem);
 	}
 	> header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		gap: 1rem;
-		padding: 0.75rem 1rem;
-		border-bottom: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+		border-bottom: 1px solid var(--col-line);
 	}
-	h2 {
+	.about-label {
+		font-size: 0.75rem;
+		font-weight: 700;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--col-muted);
+	}
+	h2,
+	h3,
+	h6,
+	summary {
 		margin: 0;
-		font-size: 1.25rem;
+		text-transform: none;
+		letter-spacing: normal;
 	}
 	form {
 		margin: 0;
+	}
+	> header button {
+		padding: 0.5rem 0.75rem;
+		font-size: 0.8125rem;
+		background: transparent;
+		color: var(--col-fg);
+		border: 1px solid var(--col-line);
+		&:hover {
+			background: var(--col-accent-soft);
+		}
 	}
 	.about-content {
 		min-height: 0;
 		overflow: auto;
 		overscroll-behavior: contain;
 		scrollbar-gutter: stable;
-		padding: 1rem;
+		padding: 0 clamp(1.25rem, 4vw, 2rem) 0.75rem;
 	}
 	p {
 		margin: 0 0 0.75rem;
-		max-width: none;
+		max-width: 60ch;
 		line-height: 1.6;
 	}
+	.about-intro {
+		padding: 1.75rem 0;
+	}
+	.about-identity {
+		display: flex;
+		align-items: center;
+		gap: 0.875rem;
+		margin-bottom: 1.5rem;
+		img {
+			flex: 0 0 56px;
+		}
+		h2 {
+			font-size: clamp(1.5rem, 5vw, 2rem);
+			font-weight: 700;
+			line-height: 1.2;
+			letter-spacing: -0.04em;
+		}
+	}
+	#about-version {
+		margin: 0.25rem 0 0;
+		font-size: 0.75rem;
+		color: var(--col-muted);
+		font-variant-numeric: tabular-nums;
+	}
+	.about-tagline {
+		margin-bottom: 0.625rem;
+		font-size: clamp(1.5rem, 5vw, 2rem);
+		font-weight: 600;
+		line-height: 1.25;
+		letter-spacing: -0.035em;
+	}
+	.about-description {
+		color: var(--col-muted);
+		font-size: 0.9375rem;
+	}
+	.about-links {
+		display: flex;
+		flex-wrap: wrap;
+		column-gap: 1.5rem;
+		margin-top: 1rem;
+		a {
+			display: inline-flex;
+			align-items: center;
+			gap: 0.375rem;
+			min-height: 44px;
+			font-size: 0.8125rem;
+			font-weight: 700;
+		}
+	}
+	a:hover {
+		text-decoration: underline;
+		text-underline-offset: 0.2em;
+	}
+	:where(a, summary, .about-content):focus-visible {
+		outline: 2px solid var(--col-accent);
+		outline-offset: 3px;
+		border-radius: 3px;
+	}
+	.about-community {
+		padding: 1.25rem;
+		margin-bottom: 1rem;
+		border-radius: 12px;
+		background: var(--col-surface-raised);
+		p {
+			margin: 0.5rem 0 0;
+			font-size: 0.8125rem;
+			color: var(--col-muted);
+		}
+	}
 	h3 {
-		margin: 1rem 0 0.5rem;
+		font-size: 0.9375rem;
+		font-weight: 700;
 	}
 	details {
 		display: block;
-		border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+		border-top: 1px solid var(--col-line);
+		> p {
+			font-size: 0.8125rem;
+			color: var(--col-muted);
+		}
 	}
 	summary {
 		justify-items: start;
-		padding: 0.75rem 0;
-		font-size: 0.875rem;
-		font-weight: 700;
+		min-height: 48px;
+		padding: 0.875rem 0;
+		font-size: 0.8125rem;
+		font-weight: 600;
+		&:hover {
+			color: var(--col-accent);
+		}
 	}
 	summary::after {
 		transform: rotate(-90deg);
@@ -74,15 +180,19 @@
 	}
 	ul {
 		margin: 0 0 1rem;
-		padding-left: 1.25rem;
+		padding: 0;
+		list-style: none;
 	}
 	li {
-		margin-bottom: 0.625rem;
+		padding: 0.75rem 0;
+		font-size: 0.875rem;
+		border-bottom: 1px solid var(--col-line);
 	}
 	#about-credits span {
 		display: block;
-		font-size: 0.8125rem;
-		opacity: 0.8;
+		margin-top: 0.25rem;
+		font-size: 0.75rem;
+		color: var(--col-muted);
 	}
 	#about-packages {
 		display: grid;
@@ -90,12 +200,32 @@
 		padding-bottom: 1rem;
 	}
 	.package-item {
-		padding: 0.75rem;
+		padding: 1rem;
+		border-radius: 8px;
+		background: var(--col-surface-raised);
 		h6 {
 			margin: 0 0 0.25rem;
+			font-size: 0.875rem;
+		}
+		.version {
+			color: var(--col-muted);
+			font-weight: 400;
 		}
 		p {
-			font-size: 0.875rem;
+			font-size: 0.8125rem;
+			color: var(--col-muted);
+		}
+		a {
+			font-size: 0.8125rem;
+		}
+	}
+	> footer {
+		border-top: 1px solid var(--col-line);
+		background: var(--col-surface-raised);
+		p {
+			margin: 0;
+			color: var(--col-muted);
+			font-size: 0.75rem;
 		}
 	}
 }

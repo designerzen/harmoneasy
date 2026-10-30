@@ -351,7 +351,7 @@
 			<input
 				id="command-search"
 				type="search"
-				placeholder="Search commands and controls…"
+				placeholder="Search commands, abbreviations or control names…"
 				autocomplete="off"
 				spellcheck="false"
 				role="combobox"
@@ -369,7 +369,9 @@
 				</div>
 			</form>
 			<p id="command-status" role="status" aria-live="polite"></p>
-			<footer id="command-help">↑ ↓ to browse · Enter to select · Esc to close</footer>
+			<footer id="command-help">
+				Small typos welcome · ↑ ↓ to browse · Enter to select · Esc to close
+			</footer>
 		</dialog>
 
 		<div
@@ -685,7 +687,7 @@
 
 		<dialog id="about-dialog" closedby="any" aria-labelledby="about-title">
 			<header>
-				<h2 id="about-title">About Harmoneasy</h2>
+				<span class="about-label">About</span>
 				<form method="dialog"><button type="submit" autofocus>Close</button></form>
 			</header>
 			<div
@@ -694,30 +696,69 @@
 				role="region"
 				aria-label="About and credits"
 			>
-				<p id="about-version"></p>
-				<p id="about-copyright"></p>
-				<h3>With thanks</h3>
-				<p>
-					Harmoneasy is made possible by the people who build and share open source
-					software, instruments, presets, samples, research, and musical tools. Thank you
-					to their authors, maintainers, contributors, sound designers, and communities.
-				</p>
-				<p>
-					Special thanks to the creators and contributors of Pink Trombone, Flod, Yoshimi
-					and ZynAddSubFX, SuperCollider and SuperSonic, Web Audio Modules, Faust,
-					Magenta, Basic Pitch, Kokoro, Butterchurn and MilkDrop, Tone.js, WebMidi.js,
-					JZZ, OpenDAW, AudioTool, React, and React Flow.
-				</p>
-				<p>
-					Flod is based on the original FlodJS by Christian Corti. Instrument and preset
-					authors retain credit for their own work.
-				</p>
+				<section class="about-intro" aria-labelledby="about-title">
+					<div class="about-identity">
+						<img
+							src="/source/assets/logos/harmoneasy.svg"
+							alt=""
+							width="56"
+							height="56"
+						/>
+						<div>
+							<h2 id="about-title">Harmoneasy</h2>
+							<p id="about-version"></p>
+						</div>
+					</div>
+					<p class="about-tagline">More ways to make music.</p>
+					<p class="about-description">
+						Turn a melody into chords, find a new rhythm, or play together. Connect your
+						instruments and explore what your notes can become.
+					</p>
+					<nav class="about-links" aria-label="Harmoneasy project">
+						<a
+							href="https://github.com/designerzen/harmoneasy#readme"
+							target="_blank"
+							rel="noopener noreferrer"
+							>Read the guide <span aria-hidden="true">↗</span></a
+						>
+						<a
+							href="https://github.com/designerzen/harmoneasy/issues"
+							target="_blank"
+							rel="noopener noreferrer"
+							>Report an issue <span aria-hidden="true">↗</span></a
+						>
+						<a
+							href="https://github.com/designerzen/harmoneasy"
+							target="_blank"
+							rel="noopener noreferrer"
+							>Source code <span aria-hidden="true">↗</span></a
+						>
+					</nav>
+				</section>
+				<section class="about-community" aria-labelledby="about-community-title">
+					<h3 id="about-community-title">Made possible by a community</h3>
+					<p>
+						Behind every sound is someone who made it possible. Thank you to the
+						developers, musicians and researchers who share their code, instruments,
+						presets and ideas.
+					</p>
+				</section>
 				<details>
 					<summary>Bundled instruments and licences</summary>
+					<p>
+						Special thanks to Pink Trombone, Flod, Yoshimi and ZynAddSubFX,
+						SuperCollider and SuperSonic, Web Audio Modules, Faust, Magenta, Basic
+						Pitch, Kokoro, Butterchurn and MilkDrop, Tone.js, WebMidi.js, JZZ, OpenDAW,
+						AudioTool, React, and React Flow.
+					</p>
 					<p>
 						Thanks also to the teams behind Surge XT, Six Sines, Shortcircuit XT,
 						RipplerX, Odin 2, OB-Xf, Signalsmith, Clack, and the WebCLAP ports and
 						runtime.
+					</p>
+					<p>
+						Flod is based on the original FlodJS by Christian Corti. Instrument and
+						preset authors retain credit for their own work.
 					</p>
 					<ul id="about-asset-credits"></ul>
 				</details>
@@ -732,6 +773,7 @@
 					</ul>
 				</details>
 			</div>
+			<footer><p id="about-copyright"></p></footer>
 		</dialog>
 
 		<dialog id="midi-devices-dialog" closedby="any" aria-labelledby="midi-devices-title">

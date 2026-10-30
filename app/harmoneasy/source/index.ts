@@ -21,6 +21,7 @@ import { startKnownMidiInputs } from "audiobus/midi/hardware/known-midi-inputs"
 import { showMidiDeviceDisconnected } from "./services/midi-device-errors"
 import { createMidiDevicesDialog } from "./services/midi-devices-dialog"
 import { createRecordingControls } from "./services/recording-dialog"
+import { createMusicTools } from "./services/music-tools-panel"
 import { createClockSourceControls } from "./services/clock-source-controls"
 import { createMediaImporter } from "./services/media-import"
 import { isClockSource, clockMidiPorts, type ClockSourceController } from "./services/clock-source"
@@ -97,6 +98,7 @@ let metronome: OutputMetronome | null = null
 let metronomeEnabled = false
 let netronomeLink: ReturnType<typeof createNetronomeLink> | undefined
 let clockSource: ClockSourceController | undefined
+let musicTools: ReturnType<typeof createMusicTools> | undefined
 
 /**
  * Universal import handler - routes to appropriate importer based on file type
@@ -463,7 +465,12 @@ const initialiseApplication = async (
 		autoConnect,
 		externalDevices: { ui }
 	})
-	createRecordingControls(bus.audioContext, bus.output, document, ioManager)
+	const audioRecording = createRecordingControls(
+		bus.audioContext,
+		bus.output,
+		document,
+		ioManager
+	)
 
 	const transportError = (error: unknown) => {
 		console.error("Shared MIDI transport failed", error)
@@ -561,7 +568,7 @@ const initialiseApplication = async (
 	const { createGraph } = await import("./components/transformers-graph")
 	createGraph("graph", ioManager)
 	createMidiDevicesDialog()
-	createMidiControlPanel(
+	const midiControls = createMidiControlPanel(
 		ioManager,
 		state.get("midiControls") as string | undefined,
 		(serialized) => state.set("midiControls", serialized)
@@ -619,6 +626,31 @@ const initialiseApplication = async (
 	)
 	await netronomeLink.initialize()
 	ui.setPlaying(ioManager.transportRunning)
+	musicTools = createMusicTools({
+		manager: ioManager,
+		context: bus.audioContext,
+		master: bus.output,
+		recorder,
+		recording: audioRecording,
+		midi: midiControls,
+		getBpm: () => timer.BPM,
+		getSwing: () => timer.swing,
+		getNow: () => timer.now,
+		beatsPerBar: () => timer.syncOptions.beatsPerBar ?? 4,
+		canFollow: () => clockSource?.source === "internal" && !netronomeLink?.isFollower,
+		setTempo: (bpm, swing) => {
+			timer.BPM = bpm
+			ui.setTempo(bpm)
+			state.set("tempo", bpm)
+			if (swing !== undefined) {
+				timer.swing = swing
+				ui.setSwing(swing)
+				state.set("swing", swing)
+			}
+			netronomeLink?.tempoChanged()
+		},
+		persistMidi: (value) => state.set("midiControls", value)
+	})
 
 	// Update UI - this will check all the inputs according to our state
 	state.updateFrontEnd()
@@ -664,7 +696,11 @@ const onTick = (values: Record<string, any>) => {
 			values.scheduledContextTimeSeconds
 		)
 	}
-	ioManager.updateTime(now, divisionsElapsed, options)
+	musicTools?.tick(barsElapsed * bars + bar + divisionsElapsed / timer.divisions)
+	const capturedEvents = ioManager.updateTime(now, divisionsElapsed, options)
+	if (capturedEvents.length) {
+		recorder.addEvents(capturedEvents)
+	}
 	const ticksPerStep = timer.divisions / 4
 	if (divisionsElapsed % ticksPerStep === 0) {
 		ioManager.updateClock({
