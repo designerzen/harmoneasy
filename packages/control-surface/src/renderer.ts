@@ -4,14 +4,27 @@ import { formatValue, normalize, sameValue } from "./model"
 import type { ControlDescriptor, ControlValue, WidgetType } from "./types"
 
 export interface WidgetVisual {
-	key: string; x: number; y: number; width: number; height: number
-	descriptor: ControlDescriptor; value: ControlValue | undefined; widget: WidgetType
-	sourceLabel: string; active?: boolean; unavailable?: boolean
+	key: string
+	x: number
+	y: number
+	width: number
+	height: number
+	descriptor: ControlDescriptor
+	value: ControlValue | undefined
+	widget: WidgetType
+	sourceLabel: string
+	active?: boolean
+	unavailable?: boolean
 }
 export type SurfaceTheme = "neon" | "amber" | "ice"
-const COLORS: Record<SurfaceTheme, number[]> = { neon: [0.18, 1, 0.7], amber: [1, 0.62, 0.12], ice: [0.3, 0.72, 1] }
+const COLORS: Record<SurfaceTheme, number[]> = {
+	neon: [0.18, 1, 0.7],
+	amber: [1, 0.62, 0.12],
+	ice: [0.3, 0.72, 1]
+}
 const STRIDE = 20
-const DEFAULT_EFFECT = "fn surfaceEffect(color: vec4f, uv: vec2f, time: f32) -> vec4f { return color; }"
+const DEFAULT_EFFECT =
+	"fn surfaceEffect(color: vec4f, uv: vec2f, time: f32) -> vec4f { return color; }"
 const POST_SHADER = `
 @group(0) @binding(0) var surfaceTexture: texture_2d<f32>;
 @group(0) @binding(1) var surfaceSampler: sampler;
@@ -131,130 +144,444 @@ export class GpuSurfaceRenderer {
 	format: GPUTextureFormat
 	private effect = DEFAULT_EFFECT
 	private postEffect = DEFAULT_POST_EFFECT
-	private constructor(readonly canvas: HTMLCanvasElement, readonly device: GPUDevice, private context: GPUCanvasContext, private onError: (error: Error) => void) {
+	private constructor(
+		readonly canvas: HTMLCanvasElement,
+		readonly device: GPUDevice,
+		private context: GPUCanvasContext,
+		private onError: (error: Error) => void
+	) {
 		this.format = navigator.gpu.getPreferredCanvasFormat()
 		this.context.configure({ device, format: this.format, alphaMode: "premultiplied" })
-		this.buffer = device.createBuffer({ size: this.capacity * STRIDE * 4, usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST })
-		this.uniform = device.createBuffer({ size: 80, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST })
-		this.postUniform = device.createBuffer({size:16,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST})
-		const atlas = document.createElement("canvas"); atlas.width = 512; atlas.height = 192
+		this.buffer = device.createBuffer({
+			size: this.capacity * STRIDE * 4,
+			usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+		})
+		this.uniform = device.createBuffer({
+			size: 80,
+			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+		})
+		this.postUniform = device.createBuffer({
+			size: 16,
+			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+		})
+		const atlas = document.createElement("canvas")
+		atlas.width = 512
+		atlas.height = 192
 		const ctx = atlas.getContext("2d")!
-		ctx.font = "18px monospace"; ctx.fillStyle = "white"; ctx.textBaseline = "top"
-		for (let code = 32; code < 128; code++) { const n=code-32; ctx.fillText(String.fromCharCode(code),n%16*32+2,Math.floor(n/16)*32+4) }
-		this.atlas = device.createTexture({ size: [atlas.width, atlas.height], format: "rgba8unorm", usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT })
-		device.queue.copyExternalImageToTexture({ source: atlas }, { texture: this.atlas }, [atlas.width, atlas.height])
-		device.lost.then(info => { if (!this.disposed) this.onError(new Error(`GPU device lost: ${info.message}`)) })
-		device.addEventListener(EVENT_GPU_ERROR, (event: GPUUncapturedErrorEvent) => { if (!this.disposed) this.onError(new Error(event.error.message)) })
+		ctx.font = "18px monospace"
+		ctx.fillStyle = "white"
+		ctx.textBaseline = "top"
+		for (let code = 32; code < 128; code++) {
+			const n = code - 32
+			ctx.fillText(String.fromCharCode(code), (n % 16) * 32 + 2, Math.floor(n / 16) * 32 + 4)
+		}
+		this.atlas = device.createTexture({
+			size: [atlas.width, atlas.height],
+			format: "rgba8unorm",
+			usage:
+				GPUTextureUsage.TEXTURE_BINDING |
+				GPUTextureUsage.COPY_DST |
+				GPUTextureUsage.RENDER_ATTACHMENT
+		})
+		device.queue.copyExternalImageToTexture({ source: atlas }, { texture: this.atlas }, [
+			atlas.width,
+			atlas.height
+		])
+		device.lost.then((info) => {
+			if (!this.disposed) {
+				this.onError(new Error(`GPU device lost: ${info.message}`))
+			}
+		})
+		device.addEventListener(EVENT_GPU_ERROR, (event: GPUUncapturedErrorEvent) => {
+			if (!this.disposed) {
+				this.onError(new Error(event.error.message))
+			}
+		})
 	}
-	static async create(canvas: HTMLCanvasElement, onError: (error: Error) => void): Promise<GpuSurfaceRenderer> {
-		if (!navigator.gpu) throw new Error("WebGPU is unavailable. Use a WebGPU-capable browser or graphics device.")
-		const adapter = await navigator.gpu.requestAdapter({ xrCompatible: true } as GPURequestAdapterOptions)
-			?? await navigator.gpu.requestAdapter()
-		if (!adapter) throw new Error("No WebGPU adapter is available")
-		const device = await adapter.requestDevice(), context = canvas.getContext("webgpu")
-		if (!context) { device.destroy(); throw new Error("Cannot create WebGPU canvas") }
+	static async create(
+		canvas: HTMLCanvasElement,
+		onError: (error: Error) => void
+	): Promise<GpuSurfaceRenderer> {
+		if (!navigator.gpu) {
+			throw new Error(
+				"WebGPU is unavailable. Use a WebGPU-capable browser or graphics device."
+			)
+		}
+		const adapter =
+			(await navigator.gpu.requestAdapter({
+				xrCompatible: true
+			} as GPURequestAdapterOptions)) ?? (await navigator.gpu.requestAdapter())
+		if (!adapter) {
+			throw new Error("No WebGPU adapter is available")
+		}
+		const device = await adapter.requestDevice(),
+			context = canvas.getContext("webgpu")
+		if (!context) {
+			device.destroy()
+			throw new Error("Cannot create WebGPU canvas")
+		}
 		const renderer = new GpuSurfaceRenderer(canvas, device, context, onError)
-		try { await renderer.setEffect(DEFAULT_EFFECT); await renderer.setPostEffect(DEFAULT_POST_EFFECT); return renderer }
-		catch(error) { renderer.destroy(); throw error }
+		try {
+			await renderer.setEffect(DEFAULT_EFFECT)
+			await renderer.setPostEffect(DEFAULT_POST_EFFECT)
+			return renderer
+		} catch (error) {
+			renderer.destroy()
+			throw error
+		}
 	}
 	/** Supply a WGSL surfaceEffect(color, uv, time) function; a failed shader preserves the old pipeline. */
 	async setEffect(effect: string): Promise<void> {
-		const module = this.device.createShaderModule({ code: SHADER.replace("/* EFFECT */", effect) })
+		const module = this.device.createShaderModule({
+			code: SHADER.replace("/* EFFECT */", effect)
+		})
 		const info = await module.getCompilationInfo()
-		const errors = info.messages.filter(m => m.type === "error")
-		if (errors.length) throw new Error(errors.map(e => e.message).join("\n"))
+		const errors = info.messages.filter((m) => m.type === "error")
+		if (errors.length) {
+			throw new Error(errors.map((e) => e.message).join("\n"))
+		}
 		const pipeline = await this.device.createRenderPipelineAsync({
-			layout: "auto", vertex: { module, entryPoint: "vertexMain", buffers: [{ arrayStride: STRIDE*4, stepMode: "instance", attributes: Array.from({ length: 5 }, (_, i) => ({ shaderLocation: i, offset: i*16, format: "float32x4" as GPUVertexFormat })) }] },
-			fragment: { module, entryPoint: "fragmentMain", targets: [{ format: this.format, blend: { color: { srcFactor: "src-alpha", dstFactor: "one-minus-src-alpha" }, alpha: { srcFactor: "one", dstFactor: "one-minus-src-alpha" } } }] },
+			layout: "auto",
+			vertex: {
+				module,
+				entryPoint: "vertexMain",
+				buffers: [
+					{
+						arrayStride: STRIDE * 4,
+						stepMode: "instance",
+						attributes: Array.from({ length: 5 }, (_, i) => ({
+							shaderLocation: i,
+							offset: i * 16,
+							format: "float32x4" as GPUVertexFormat
+						}))
+					}
+				]
+			},
+			fragment: {
+				module,
+				entryPoint: "fragmentMain",
+				targets: [
+					{
+						format: this.format,
+						blend: {
+							color: { srcFactor: "src-alpha", dstFactor: "one-minus-src-alpha" },
+							alpha: { srcFactor: "one", dstFactor: "one-minus-src-alpha" }
+						}
+					}
+				]
+			},
 			primitive: { topology: "triangle-list" }
 		})
-		if (this.disposed) return
+		if (this.disposed) {
+			return
+		}
 		this.effect = effect
 		this.pipeline = pipeline
-		this.binding = this.device.createBindGroup({ layout: pipeline.getBindGroupLayout(0), entries: [
-			{ binding: 0, resource: { buffer: this.uniform } }, { binding: 1, resource: this.atlas.createView() },
-			{ binding: 2, resource: this.device.createSampler({ magFilter: "linear", minFilter: "linear" }) }
-		] })
+		this.binding = this.device.createBindGroup({
+			layout: pipeline.getBindGroupLayout(0),
+			entries: [
+				{ binding: 0, resource: { buffer: this.uniform } },
+				{ binding: 1, resource: this.atlas.createView() },
+				{
+					binding: 2,
+					resource: this.device.createSampler({
+						magFilter: "linear",
+						minFilter: "linear"
+					})
+				}
+			]
+		})
 	}
 	async setFormat(format: GPUTextureFormat): Promise<void> {
-		if (format === this.format) return
+		if (format === this.format) {
+			return
+		}
 		this.format = format
 		await this.setEffect(this.effect)
 		await this.setPostEffect(this.postEffect)
-		this.context.configure({device:this.device,format,alphaMode:"premultiplied"})
+		this.sceneTexture?.destroy()
+		this.sceneTexture = undefined
+		this.context.configure({ device: this.device, format, alphaMode: "premultiplied" })
 	}
 	/** A shared full-surface filter pass. The hook can sample surfaceTexture/surfaceSampler. */
-	async setPostEffect(effect:string):Promise<void> {
-		const module=this.device.createShaderModule({code:POST_SHADER.replace("/* POST_EFFECT */",effect)})
-		const errors=(await module.getCompilationInfo()).messages.filter(m=>m.type==="error")
-		if(errors.length)throw new Error(errors.map(e=>e.message).join("\n"))
-		const pipeline=await this.device.createRenderPipelineAsync({layout:"auto",vertex:{module,entryPoint:"postVertex"},fragment:{module,entryPoint:"postFragment",targets:[{format:this.format}]},primitive:{topology:"triangle-list"}})
-		if(this.disposed)return
-		this.postPipeline=pipeline;this.postEffect=effect;this.postBinding=undefined
+	async setPostEffect(effect: string): Promise<void> {
+		const module = this.device.createShaderModule({
+			code: POST_SHADER.replace("/* POST_EFFECT */", effect)
+		})
+		const errors = (await module.getCompilationInfo()).messages.filter(
+			(m) => m.type === "error"
+		)
+		if (errors.length) {
+			throw new Error(errors.map((e) => e.message).join("\n"))
+		}
+		const pipeline = await this.device.createRenderPipelineAsync({
+			layout: "auto",
+			vertex: { module, entryPoint: "postVertex" },
+			fragment: { module, entryPoint: "postFragment", targets: [{ format: this.format }] },
+			primitive: { topology: "triangle-list" }
+		})
+		if (this.disposed) {
+			return
+		}
+		this.postPipeline = pipeline
+		this.postEffect = effect
+		this.postBinding = undefined
 	}
-	setTheme(theme: SurfaceTheme): void { this.color = COLORS[theme] }
-	private quad(x: number, y: number, w: number, h: number, kind: number, a = 0, b = -1, active = 0, extra = 0, alpha = 1, uv = [0, 0, 0, 0]): void {
-		this.instances.push(x,y,w,h,kind,a,b,active,...this.color,alpha,extra,0,0,0,...uv)
+	setTheme(theme: SurfaceTheme): void {
+		this.color = COLORS[theme]
+	}
+	private quad(
+		x: number,
+		y: number,
+		w: number,
+		h: number,
+		kind: number,
+		a = 0,
+		b = -1,
+		active = 0,
+		extra = 0,
+		alpha = 1,
+		uv = [0, 0, 0, 0]
+	): void {
+		this.instances.push(
+			x,
+			y,
+			w,
+			h,
+			kind,
+			a,
+			b,
+			active,
+			...this.color,
+			alpha,
+			extra,
+			0,
+			0,
+			0,
+			...uv
+		)
 	}
 	private text(text: string, x: number, y: number, width: number, alpha = 1): void {
-		const size = 24, advance = 9
-		for (const [i, char] of [...text.slice(0, Math.floor(width/advance))].entries()) {
-			const code = char.charCodeAt(0), n = (code >= 32 && code < 128 ? code : 63)-32
-			this.quad(x+i*advance,y,size,size,9,0,0,0,0,alpha,[(n%16)*32/512,Math.floor(n/16)*32/192,32/512,32/192])
+		const size = 24,
+			advance = 9
+		for (const [i, char] of Array.from(text.slice(0, Math.floor(width / advance))).entries()) {
+			const code = char.charCodeAt(0),
+				n = (code >= 32 && code < 128 ? code : 63) - 32
+			this.quad(x + i * advance, y, size, size, 9, 0, 0, 0, 0, alpha, [
+				((n % 16) * 32) / 512,
+				(Math.floor(n / 16) * 32) / 192,
+				32 / 512,
+				32 / 192
+			])
 		}
 	}
-	prepare(widgets: WidgetVisual[], motion: boolean, cursors: {x:number;y:number}[] = []): void {
+	prepare(
+		widgets: WidgetVisual[],
+		motion: boolean,
+		cursors: { x: number; y: number }[] = []
+	): void {
 		this.instances = []
 		const alive = new Set<string>()
 		for (const w of widgets) {
 			alive.add(w.key)
-			const d=w.descriptor, v=w.value, active=w.active ? 1 : 0, alpha=w.unavailable || d.disabled ? 0.3 : 1
-			const choice = d.choices?.findIndex(c => sameValue(c.value,v)) ?? 0
-			const target = Array.isArray(v) ? v.map(n => normalize(d,n)) : [typeof v === "boolean" ? Number(v) : normalize(d,Number(v))]
+			const d = w.descriptor,
+				v = w.value,
+				active = w.active ? 1 : 0,
+				alpha = w.unavailable || d.disabled ? 0.3 : 1
+			const choice = d.choices?.findIndex((c) => sameValue(c.value, v)) ?? 0
+			const target = Array.isArray(v)
+				? v.map((n) => normalize(d, n))
+				: [typeof v === "boolean" ? Number(v) : normalize(d, Number(v))]
 			const old = this.smoothed.get(w.key) ?? target
-			const eased = target.map((n,i) => motion ? (old[i] ?? n)+(n-(old[i] ?? n))*0.32 : n)
-			this.smoothed.set(w.key,eased)
-			this.quad(w.x,w.y,w.width,w.height,0,0,0,active,0,alpha)
-			this.text(w.sourceLabel,w.x+12,w.y+9,w.width-24,0.5*alpha)
-			this.text(d.label,w.x+12,w.y+27,w.width-24,alpha)
-			const x=w.x+8,y=w.y+48,width=w.width-16,height=w.height-76
-			const kind = ({ dial:1,slider:2,range:2,toggle:3,xy:4,button:5,radio:6,meter:7,select:8,number:8,text:8,color:8,display:8 })[w.widget]
-			this.quad(x,y,width,height,kind,w.widget==="radio" ? choice : eased[0],w.widget==="xy"||w.widget==="range" ? eased[1] : -1,active,d.choices?.length ?? 0,alpha)
-			if(w.widget==="radio"&&d.choices?.length) {
-				const segment=width/d.choices.length
-				for(const [index,option]of d.choices.entries()) this.text(option.label,x+index*segment+4,y+height/2+12,segment-8,alpha)
+			const eased = target.map((n, i) =>
+				motion ? (old[i] ?? n) + (n - (old[i] ?? n)) * 0.32 : n
+			)
+			this.smoothed.set(w.key, eased)
+			this.quad(w.x, w.y, w.width, w.height, 0, 0, 0, active, 0, alpha)
+			this.text(w.sourceLabel, w.x + 12, w.y + 9, w.width - 24, 0.5 * alpha)
+			this.text(d.label, w.x + 12, w.y + 27, w.width - 24, alpha)
+			const x = w.x + 8,
+				y = w.y + 48,
+				width = w.width - 16,
+				height = w.height - 76
+			const kind = {
+				dial: 1,
+				slider: 2,
+				range: 2,
+				toggle: 3,
+				xy: 4,
+				button: 5,
+				radio: 6,
+				meter: 7,
+				select: 8,
+				number: 8,
+				text: 8,
+				color: 8,
+				display: 8
+			}[w.widget]
+			this.quad(
+				x,
+				y,
+				width,
+				height,
+				kind,
+				w.widget === "radio" ? choice : eased[0],
+				w.widget === "xy" || w.widget === "range" ? eased[1] : -1,
+				active,
+				d.choices?.length ?? 0,
+				alpha
+			)
+			if (w.widget === "radio" && d.choices?.length) {
+				const segment = width / d.choices.length
+				for (const [index, option] of d.choices.entries()) {
+					this.text(
+						option.label,
+						x + index * segment + 4,
+						y + height / 2 + 12,
+						segment - 8,
+						alpha
+					)
+				}
 			}
-			this.text(w.unavailable ? "Unavailable" : formatValue(d,v),w.x+12,w.y+w.height-24,w.width-24,alpha)
+			this.text(
+				w.unavailable ? "Unavailable" : formatValue(d, v),
+				w.x + 12,
+				w.y + w.height - 24,
+				w.width - 24,
+				alpha
+			)
 		}
-		for (const key of this.smoothed.keys()) if (!alive.has(key)) this.smoothed.delete(key)
-		for(const cursor of cursors)this.quad(cursor.x-12,cursor.y-12,24,24,1,1,-1,1)
-		const count=this.instances.length/STRIDE
-		if (count>this.capacity) { this.buffer.destroy(); this.capacity=2**Math.ceil(Math.log2(count)); this.buffer=this.device.createBuffer({size:this.capacity*STRIDE*4,usage:GPUBufferUsage.VERTEX|GPUBufferUsage.COPY_DST}) }
-		if (count) this.device.queue.writeBuffer(this.buffer,0,new Float32Array(this.instances))
+		for (const key of this.smoothed.keys()) {
+			if (!alive.has(key)) {
+				this.smoothed.delete(key)
+			}
+		}
+		for (const cursor of cursors) {
+			this.quad(cursor.x - 12, cursor.y - 12, 24, 24, 1, 1, -1, 1)
+		}
+		const count = this.instances.length / STRIDE
+		if (count > this.capacity) {
+			this.buffer.destroy()
+			this.capacity = 2 ** Math.ceil(Math.log2(count))
+			this.buffer = this.device.createBuffer({
+				size: this.capacity * STRIDE * 4,
+				usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+			})
+		}
+		if (count) {
+			this.device.queue.writeBuffer(this.buffer, 0, new Float32Array(this.instances))
+		}
 	}
 	render(width: number, height: number, time: number, motion: boolean): void {
-		if (this.disposed) return
-		const ratio=Math.min(devicePixelRatio || 1,2), w=Math.max(1,Math.round(width*ratio)),h=Math.max(1,Math.round(height*ratio))
-		if (this.canvas.width!==w || this.canvas.height!==h) { this.canvas.width=w; this.canvas.height=h }
-		this.draw(this.context.getCurrentTexture().createView(),new Float32Array([2/width,0,0,0,0,-2/height,0,0,0,0,1,0,-1,1,0,1]),width,height,time,motion)
+		if (this.disposed) {
+			return
+		}
+		const ratio = Math.min(devicePixelRatio || 1, 2),
+			w = Math.max(1, Math.round(width * ratio)),
+			h = Math.max(1, Math.round(height * ratio))
+		if (this.canvas.width !== w || this.canvas.height !== h) {
+			this.canvas.width = w
+			this.canvas.height = h
+		}
+		this.draw(
+			this.context.getCurrentTexture().createView(),
+			new Float32Array([2 / width, 0, 0, 0, 0, -2 / height, 0, 0, 0, 0, 1, 0, -1, 1, 0, 1]),
+			width,
+			height,
+			time,
+			motion
+		)
 	}
 	/** External target and view projection permit the same widgets to live on an XR plane. */
-	draw(view: GPUTextureView, projection: Float32Array, width: number, height: number, time: number, motion: boolean, viewport?: { x: number; y: number; width: number; height: number }, targetSize?: {width:number;height:number}): void {
-		const frame=new Float32Array(20); frame.set(projection); frame.set([width,height,time,motion?1:0],16)
-		this.device.queue.writeBuffer(this.uniform,0,frame)
-		const targetWidth=targetSize?.width??(viewport?viewport.x+viewport.width:this.canvas.width),targetHeight=targetSize?.height??(viewport?viewport.y+viewport.height:this.canvas.height)
-		if(!this.sceneTexture||this.sceneTexture.width!==targetWidth||this.sceneTexture.height!==targetHeight){this.sceneTexture?.destroy();this.sceneTexture=this.device.createTexture({size:[targetWidth,targetHeight],format:this.format,usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.TEXTURE_BINDING});this.postBinding=undefined}
-		if(!this.postBinding)this.postBinding=this.device.createBindGroup({layout:this.postPipeline.getBindGroupLayout(0),entries:[{binding:0,resource:this.sceneTexture.createView()},{binding:1,resource:this.device.createSampler({magFilter:"linear",minFilter:"linear"})},{binding:2,resource:{buffer:this.postUniform}}]})
-		this.device.queue.writeBuffer(this.postUniform,0,new Float32Array([time,0,0,0]))
-		const encoder=this.device.createCommandEncoder(), pass=encoder.beginRenderPass({ colorAttachments:[{view:this.sceneTexture.createView(),loadOp:"clear",storeOp:"store",clearValue:{r:0,g:0,b:0,a:0}}] })
-		if(viewport) pass.setViewport(viewport.x,viewport.y,viewport.width,viewport.height,0,1)
-		pass.setPipeline(this.pipeline); pass.setBindGroup(0,this.binding); pass.setVertexBuffer(0,this.buffer); pass.draw(6,this.instances.length/STRIDE); pass.end()
-		const post=encoder.beginRenderPass({colorAttachments:[{view,loadOp:"clear",storeOp:"store",clearValue:{r:0,g:0,b:0,a:0}}]})
-		post.setPipeline(this.postPipeline);post.setBindGroup(0,this.postBinding);post.draw(3);post.end()
+	draw(
+		view: GPUTextureView,
+		projection: Float32Array,
+		width: number,
+		height: number,
+		time: number,
+		motion: boolean,
+		viewport?: { x: number; y: number; width: number; height: number },
+		targetSize?: { width: number; height: number }
+	): void {
+		const frame = new Float32Array(20)
+		frame.set(projection)
+		frame.set([width, height, time, motion ? 1 : 0], 16)
+		this.device.queue.writeBuffer(this.uniform, 0, frame)
+		const targetWidth =
+				targetSize?.width ?? (viewport ? viewport.x + viewport.width : this.canvas.width),
+			targetHeight =
+				targetSize?.height ?? (viewport ? viewport.y + viewport.height : this.canvas.height)
+		if (
+			!this.sceneTexture ||
+			this.sceneTexture.width !== targetWidth ||
+			this.sceneTexture.height !== targetHeight
+		) {
+			this.sceneTexture?.destroy()
+			this.sceneTexture = this.device.createTexture({
+				size: [targetWidth, targetHeight],
+				format: this.format,
+				usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
+			})
+			this.postBinding = undefined
+		}
+		if (!this.postBinding) {
+			this.postBinding = this.device.createBindGroup({
+				layout: this.postPipeline.getBindGroupLayout(0),
+				entries: [
+					{ binding: 0, resource: this.sceneTexture.createView() },
+					{
+						binding: 1,
+						resource: this.device.createSampler({
+							magFilter: "linear",
+							minFilter: "linear"
+						})
+					},
+					{ binding: 2, resource: { buffer: this.postUniform } }
+				]
+			})
+		}
+		this.device.queue.writeBuffer(this.postUniform, 0, new Float32Array([time, 0, 0, 0]))
+		const encoder = this.device.createCommandEncoder(),
+			pass = encoder.beginRenderPass({
+				colorAttachments: [
+					{
+						view: this.sceneTexture.createView(),
+						loadOp: "clear",
+						storeOp: "store",
+						clearValue: { r: 0, g: 0, b: 0, a: 0 }
+					}
+				]
+			})
+		if (viewport) {
+			pass.setViewport(viewport.x, viewport.y, viewport.width, viewport.height, 0, 1)
+		}
+		pass.setPipeline(this.pipeline)
+		pass.setBindGroup(0, this.binding)
+		pass.setVertexBuffer(0, this.buffer)
+		pass.draw(6, this.instances.length / STRIDE)
+		pass.end()
+		const post = encoder.beginRenderPass({
+			colorAttachments: [
+				{ view, loadOp: "clear", storeOp: "store", clearValue: { r: 0, g: 0, b: 0, a: 0 } }
+			]
+		})
+		post.setPipeline(this.postPipeline)
+		post.setBindGroup(0, this.postBinding)
+		post.draw(3)
+		post.end()
 		this.device.queue.submit([encoder.finish()])
 	}
 	destroy(): void {
-		if (this.disposed) return
-		this.disposed=true; this.buffer.destroy(); this.uniform.destroy(); this.postUniform.destroy();this.sceneTexture?.destroy(); this.atlas.destroy(); this.context.unconfigure(); this.device.destroy()
+		if (this.disposed) {
+			return
+		}
+		this.disposed = true
+		this.buffer.destroy()
+		this.uniform.destroy()
+		this.postUniform.destroy()
+		this.sceneTexture?.destroy()
+		this.atlas.destroy()
+		this.context.unconfigure()
+		this.device.destroy()
 	}
 }

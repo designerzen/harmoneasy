@@ -1,6 +1,22 @@
 export type ControlValue = string | number | boolean | number[]
-export type WidgetType = "dial" | "slider" | "toggle" | "radio" | "select" | "xy" | "range" | "button" | "number" | "text" | "meter" | "display" | "color"
-export interface ControlChoice { label: string; value: ControlValue }
+export type WidgetType =
+	| "dial"
+	| "slider"
+	| "toggle"
+	| "radio"
+	| "select"
+	| "xy"
+	| "range"
+	| "button"
+	| "number"
+	| "text"
+	| "meter"
+	| "display"
+	| "color"
+export interface ControlChoice {
+	label: string
+	value: ControlValue
+}
 /** Serializable description; no DOM, engine resources, or callbacks. */
 export interface ControlDescriptor {
 	id: string
@@ -19,7 +35,10 @@ export interface ControlDescriptor {
 	disabled?: boolean
 	hidden?: boolean
 }
-export interface UiDescriptor { controls: ControlDescriptor[]; title?: string }
+export interface UiDescriptor {
+	controls: ControlDescriptor[]
+	title?: string
+}
 export interface ComponentUi {
 	getUiDescriptor?(): UiDescriptor | Promise<UiDescriptor>
 	getControlValue?(id: string): ControlValue | undefined | Promise<ControlValue | undefined>
