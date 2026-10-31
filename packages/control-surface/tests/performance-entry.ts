@@ -182,6 +182,7 @@ async function run(widget: WidgetType, count = 1, animateAll = false, iterations
 		toggle: 3,
 		xy: 4,
 		button: 5,
+		pad: 10,
 		radio: 6,
 		meter: 7
 	}
@@ -222,6 +223,8 @@ async function run(widget: WidgetType, count = 1, animateAll = false, iterations
 					bubbles: true
 				})
 			)
+		} else if (widget === "pad") {
+			surface.pointerMove(1, 90, 90, false, n)
 		} else if (widget === "toggle" || widget === "button") {
 			surface.pointerDown(2, 90, 90)
 			surface.pointerUp(2)
@@ -243,6 +246,9 @@ async function run(widget: WidgetType, count = 1, animateAll = false, iterations
 	}
 	if (["dial", "slider", "xy", "range", "radio", "number"].includes(widget)) {
 		surface.pointerDown(1, 100, 100)
+	}
+	if (widget === "pad") {
+		surface.pointerDown(1, 90, 90)
 	}
 	reads = 0
 	writes = 0

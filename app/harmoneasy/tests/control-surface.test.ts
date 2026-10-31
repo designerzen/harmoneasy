@@ -2,6 +2,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { ControlSurface } from "control-surface"
 import { createDomGui } from "control-surface/dom"
+import { contactPressure } from "../../../packages/control-surface/src/pressure"
+import {
+	EVENT_BLUR,
+	EVENT_KEY_DOWN,
+	EVENT_KEY_UP
+} from "../../../packages/control-surface/src/events"
 import {
 	bindingKey,
 	denormalize,
@@ -179,6 +185,105 @@ describe("shared component controls", () => {
 })
 
 describe("surface interaction and bindings", () => {
+	it("uses real pressure, ignores the unsupported-pressure sentinel, and clamps contact values", () => {
+		expect(contactPressure(0.5, "mouse")).toBeUndefined()
+		expect(contactPressure(0.5, "touch")).toBeUndefined()
+		expect(contactPressure(0.25, "touch")).toBe(0.25)
+		expect(contactPressure(0.5, "touch", true)).toBe(0.5)
+		expect(contactPressure(0.5, "pen")).toBe(0.5)
+		expect(contactPressure(2, "pen")).toBe(1)
+	})
+	it("tracks pad pressure independently and releases the final finger without leaving a held value", async () => {
+		const a = bind("kick", { widget: "pad" }, 0),
+			b = bind("snare", { widget: "pad" }, 0),
+			saved = state()
+		saved.widgets = [a, b].map((binding) => ({ key: binding.key }))
+		const surface = new ControlSurface({ state: saved, bindings: [a, b], change: vi.fn() })
+		views.push(surface)
+		await settle()
+		surface.pointerDown(1, 90, 90, false, 0.25)
+		surface.pointerDown(2, 330, 90, false, 0.8)
+		await settle()
+		expect(a.value).toBe(0.25)
+		expect(b.value).toBe(0.8)
+		surface.pointerMove(1, 90, 90, false, 0.6)
+		surface.pointerDown(3, 90, 90, false, 0.9)
+		await settle()
+		surface.pointerUp(3)
+		await settle()
+		expect(a.value).toBe(0.6)
+		surface.pointerUp(1)
+		await settle()
+		expect(a.value).toBe(0)
+		expect(b.value).toBe(0.8)
+		window.dispatchEvent(new Event(EVENT_BLUR))
+		await settle()
+		expect(b.value).toBe(0)
+	})
+	it("preserves quick pad hits and their releases while an asynchronous write is pending", async () => {
+		const pad = bind("hit", { widget: "pad" }, 0),
+			saved = state()
+		let complete!: () => void
+		pad.write.mockImplementationOnce(
+			() =>
+				new Promise<void>((resolve) => {
+					complete = resolve
+				})
+		)
+		saved.widgets = [{ key: pad.key }]
+		const surface = new ControlSurface({ state: saved, bindings: [pad], change: vi.fn() })
+		views.push(surface)
+		await settle()
+		surface.pointerDown(1, 90, 90, false, 0.3)
+		surface.pointerMove(1, 90, 90, false, 0.7)
+		surface.pointerUp(1)
+		surface.pointerDown(2, 90, 90, false, 0.8)
+		surface.pointerUp(2)
+		complete()
+		await settle()
+		expect(pad.write.mock.calls.map(([value]) => value)).toEqual([0.3, 0, 0.8, 0])
+	})
+	it("supports momentary pad keys, ignores key repeat, and releases on focus loss", async () => {
+		const pad = bind("hit", { widget: "pad" }, 0),
+			saved = state()
+		saved.widgets = [{ key: pad.key }]
+		const surface = new ControlSurface({ state: saved, bindings: [pad], change: vi.fn() })
+		views.push(surface)
+		document.body.append(surface.element)
+		await settle()
+		const button = surface.element.querySelector<HTMLButtonElement>(".cs-pad button")!
+		button.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: " " }))
+		button.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: " ", repeat: true }))
+		await settle()
+		expect(pad.value).toBe(1)
+		expect(pad.write).toHaveBeenCalledTimes(1)
+		button.dispatchEvent(new KeyboardEvent(EVENT_KEY_UP, { key: " " }))
+		await settle()
+		expect(pad.value).toBe(0)
+		button.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: "Enter" }))
+		button.dispatchEvent(new Event(EVENT_BLUR))
+		await settle()
+		expect(pad.value).toBe(0)
+	})
+	it("sends pad release after an in-flight write when the surface is destroyed", async () => {
+		const pad = bind("hit", { widget: "pad" }, 0),
+			saved = state()
+		let complete!: () => void
+		pad.write.mockImplementationOnce(
+			() =>
+				new Promise<void>((resolve) => {
+					complete = resolve
+				})
+		)
+		saved.widgets = [{ key: pad.key }]
+		const surface = new ControlSurface({ state: saved, bindings: [pad], change: vi.fn() })
+		await settle()
+		surface.pointerDown(1, 90, 90, false, 0.5)
+		surface.destroy()
+		complete()
+		await settle()
+		expect(pad.write.mock.calls.map(([value]) => value)).toEqual([0.5, 0])
+	})
 	it("does not lose repeated trigger actions while an earlier write is pending", async () => {
 		const trigger = bind("fill", { widget: "button" }, 0),
 			saved = state()

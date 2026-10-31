@@ -1,15 +1,30 @@
-import { EVENT_CHANGE, EVENT_CLICK, EVENT_INPUT } from "./events"
-import { bounds, formatValue, sameValue, validateValue } from "./model"
+import {
+	EVENT_BLUR,
+	EVENT_VISIBILITY_CHANGE,
+	EVENT_CHANGE,
+	EVENT_CLICK,
+	EVENT_INPUT,
+	EVENT_KEY_DOWN,
+	EVENT_KEY_UP,
+	EVENT_POINTER_DOWN,
+	EVENT_POINTER_MOVE,
+	EVENT_POINTER_UP,
+	EVENT_POINTER_CANCEL,
+	EVENT_LOST_POINTER_CAPTURE
+} from "./events"
+import { bounds, denormalize, formatValue, normalize, sameValue, validateValue } from "./model"
+import { contactPressure } from "./pressure"
 import type { ControlBinding, ControlValue } from "./types"
 
 export interface DomControl {
 	element: HTMLElement
 	update(value: ControlValue | undefined): void
+	release?(): void
 }
 /** Native semantic controls are also the accessible companions to GPU widgets. */
 export function createDomControl(
 	binding: ControlBinding,
-	apply: (value: ControlValue) => void
+	apply: (value: ControlValue, edge?: boolean) => void
 ): DomControl {
 	const d = binding.descriptor,
 		label = document.createElement("label"),
@@ -18,6 +33,7 @@ export function createDomControl(
 	label.title = d.help ?? ""
 	label.append(caption)
 	const updates: ((value: ControlValue | undefined) => void)[] = []
+	let release: (() => void) | undefined
 	const [min, max] = bounds(d)
 	const input = (type: string, suffix = "") => {
 		const el = document.createElement("input")
@@ -33,7 +49,101 @@ export function createDomControl(
 		label.append(el)
 		return el
 	}
-	if (d.widget === "button") {
+	if (d.widget === "pad") {
+		const button = document.createElement("button")
+		button.type = "button"
+		button.textContent = d.label
+		button.setAttribute("aria-label", d.label)
+		button.disabled = !!(d.disabled || d.readOnly)
+		button.dataset.midiControl = binding.key
+		button.setAttribute("aria-pressed", "false")
+		const contacts = new Map<number, { value: number; analogue: boolean }>()
+		let keyboard = false
+		let pressed = false
+		const updatePress = () => {
+			let pressure = keyboard ? 1 : 0
+			for (const contact of contacts.values()) {
+				pressure = Math.max(pressure, contact.value)
+			}
+			button.setAttribute("aria-pressed", String(pressure > 0))
+			const edge = pressed !== pressure > 0
+			pressed = pressure > 0
+			apply(denormalize(d, pressure), edge)
+		}
+		release = () => {
+			if (keyboard || contacts.size) {
+				keyboard = false
+				contacts.clear()
+				updatePress()
+			}
+		}
+		const contact = (event: PointerEvent) => {
+			const value = contactPressure(
+				event.pressure,
+				event.pointerType,
+				contacts.get(event.pointerId)?.analogue
+			)
+			contacts.set(event.pointerId, { value: value ?? 1, analogue: value !== undefined })
+			updatePress()
+		}
+		button.addEventListener(EVENT_POINTER_DOWN, (event) => {
+			if (button.disabled || (event.pointerType === "mouse" && event.button !== 0)) {
+				return
+			}
+			event.preventDefault()
+			button.focus()
+			button.setPointerCapture(event.pointerId)
+			contact(event)
+		})
+		button.addEventListener(EVENT_POINTER_MOVE, (event) => {
+			if (contacts.has(event.pointerId)) {
+				contact(event)
+			}
+		})
+		for (const type of [EVENT_POINTER_UP, EVENT_POINTER_CANCEL, EVENT_LOST_POINTER_CAPTURE]) {
+			button.addEventListener(type, (event) => {
+				if (contacts.delete((event as PointerEvent).pointerId)) {
+					updatePress()
+				}
+			})
+		}
+		button.addEventListener(EVENT_KEY_DOWN, (event) => {
+			if (event.key === " " || event.key === "Enter") {
+				event.preventDefault()
+				if (!keyboard && !button.disabled) {
+					keyboard = true
+					updatePress()
+				}
+			}
+		})
+		button.addEventListener(EVENT_KEY_UP, (event) => {
+			if (event.key === " " || event.key === "Enter") {
+				event.preventDefault()
+				if (keyboard) {
+					keyboard = false
+					updatePress()
+				}
+			}
+		})
+		button.addEventListener(EVENT_BLUR, () => {
+			if (keyboard) {
+				keyboard = false
+				updatePress()
+			}
+		})
+		button.addEventListener(EVENT_CLICK, (event) => {
+			// Assistive technology can activate a button without pointer/key events.
+			if (event.detail === 0 && !keyboard && !contacts.size && !button.disabled) {
+				apply(denormalize(d, 1), true)
+				apply(denormalize(d, 0), true)
+			}
+		})
+		updates.push((value) =>
+			button.setAttribute("aria-pressed", String(normalize(d, Number(value)) > 0))
+		)
+		caption.remove()
+		label.append(button)
+	} else if (d.widget === "button") {
 		const button = document.createElement("button")
 		button.type = "button"
 		button.textContent = d.label
@@ -124,6 +234,7 @@ export function createDomControl(
 	}
 	return {
 		element: label,
+		release,
 		update(value) {
 			for (const update of updates) {
 				update(value)
@@ -145,6 +256,19 @@ export function createDomGui(bindings: ControlBinding[]): {
 	error.setAttribute("role", "alert")
 	const groups = new Map<string, HTMLElement>()
 	let disposed = false
+	const releases: (() => void)[] = []
+	const releasePads = () => releases.forEach((release) => release())
+	const visibilityChanged = () => {
+		if (document.hidden) {
+			releasePads()
+		}
+	}
+	window.addEventListener(EVENT_BLUR, releasePads)
+	document.addEventListener(EVENT_VISIBILITY_CHANGE, visibilityChanged)
+	cleanup.push(
+		() => window.removeEventListener(EVENT_BLUR, releasePads),
+		() => document.removeEventListener(EVENT_VISIBILITY_CHANGE, visibilityChanged)
+	)
 	for (const binding of bindings) {
 		let generation = 0
 		const control = createDomControl(binding, (value) => {
@@ -169,6 +293,9 @@ export function createDomGui(bindings: ControlBinding[]): {
 				}
 			}
 		}
+		if (control.release) {
+			releases.push(control.release)
+		}
 		const group = binding.descriptor.group ?? "Controls"
 		if (!groups.has(group)) {
 			const fieldset = document.createElement("fieldset"),
@@ -186,6 +313,7 @@ export function createDomGui(bindings: ControlBinding[]): {
 	return {
 		element,
 		destroy() {
+			releasePads()
 			disposed = true
 			cleanup.forEach((fn) => fn())
 			element.remove()

@@ -91,7 +91,7 @@ fn box(p: vec2f, b: vec2f, r: f32) -> f32 { let q=abs(p)-b+vec2f(r); return min(
 @fragment fn fragmentMain(i: VertexOutput) -> @location(0) vec4f {
  let kind=i.params.x; let value=i.params.y; let second=i.params.z; let engaged=i.params.w;
  let size=i.rect.zw; let p=(i.uv-0.5)*size; var light=0.0; var fill=0.0;
- if (kind>8.5) {
+ if (kind>8.5&&kind<9.5) {
   let alpha=textureSampleLevel(atlas,atlasSampler,i.textureRect.xy+i.uv*i.textureRect.zw,0.0).a;
   return vec4f(i.color.rgb,alpha*i.color.a);
  }
@@ -133,6 +133,11 @@ fn box(p: vec2f, b: vec2f, r: f32) -> f32 { let q=abs(p)-b+vec2f(r); return min(
   let d=length(vec2f((i.uv.x-center)*size.x,p.y))-7.0;
   light=line(d,1.0)*select(0.2,1.0,abs(segment-value)<0.1);
   fill=(1.0-smoothstep(-1.0,0.0,d))*select(0.0,0.4,abs(segment-value)<0.1);
+ } else if (kind>9.5) {
+  let d=box(p,size*0.4,10);
+  let pressure=clamp(value*engaged,0.0,1.0);
+  light=line(d,1.8)*(0.14+pressure*1.6);
+  fill=(1.0-smoothstep(-1.0,0.0,d))*(0.015+pressure*0.8);
  } else {
   let d=box(p,size*0.43,4); light=line(d,0.6)*0.35;
  }
@@ -472,6 +477,7 @@ export class GpuSurfaceRenderer {
 					toggle: 3,
 					xy: 4,
 					button: 5,
+					pad: 10,
 					radio: 6,
 					meter: 7,
 					select: 8,

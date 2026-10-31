@@ -9,6 +9,7 @@ export const WIDGET_TYPES: WidgetType[] = [
 	"xy",
 	"range",
 	"button",
+	"pad",
 	"number",
 	"text",
 	"meter",
@@ -94,8 +95,8 @@ export function widgetChoices(d: ControlDescriptor): WidgetType[] {
 	if (d.choices?.length) {
 		return ["radio", "select"]
 	}
-	if (["dial", "slider", "number"].includes(d.widget)) {
-		return ["dial", "slider", "number"]
+	if (["dial", "slider", "number", "pad"].includes(d.widget)) {
+		return ["dial", "slider", "number", "pad"]
 	}
 	return [d.widget]
 }

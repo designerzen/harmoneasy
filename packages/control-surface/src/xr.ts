@@ -4,7 +4,7 @@ import type { GpuSurfaceRenderer, WidgetVisual } from "./renderer"
 // Structural types isolate the experimental WebGPU binding from the standard DOM library.
 interface XRInput {
 	targetRaySpace: object
-	gamepad?: { buttons: { pressed: boolean }[] }
+	gamepad?: { buttons: { pressed: boolean; value?: number }[] }
 }
 interface XRView {
 	projectionMatrix: Float32Array
@@ -34,8 +34,8 @@ interface XRBinding {
 	}
 }
 interface PointerTarget {
-	pointerDown(id: number, x: number, y: number): boolean
-	pointerMove(id: number, x: number, y: number): void
+	pointerDown(id: number, x: number, y: number, fine?: boolean, pressure?: number): boolean
+	pointerMove(id: number, x: number, y: number, fine?: boolean, pressure?: number): void
 	pointerUp(id: number): void
 }
 
@@ -156,10 +156,22 @@ export async function startSurfaceXR(
 					const down = !!source.gamepad?.buttons[0]?.pressed || selected.has(source)
 					if (hit) {
 						if (down && !state.down) {
-							pointer.pointerDown(state.id, hit.x, hit.y)
+							pointer.pointerDown(
+								state.id,
+								hit.x,
+								hit.y,
+								false,
+								source.gamepad?.buttons[0]?.value ?? 1
+							)
 						}
 						if (down) {
-							pointer.pointerMove(state.id, hit.x, hit.y)
+							pointer.pointerMove(
+								state.id,
+								hit.x,
+								hit.y,
+								false,
+								source.gamepad?.buttons[0]?.value ?? 1
+							)
 						}
 					}
 					if (!down || !hit) {

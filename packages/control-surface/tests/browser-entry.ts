@@ -15,7 +15,8 @@ const values: Record<string, ControlValue> = {
 	meter: 0.75,
 	color: "#33ffb8",
 	display: "Ready",
-	preset: 0
+	preset: 0,
+	strike: 0
 }
 const descriptors: ControlDescriptor[] = [
 	{
@@ -55,7 +56,8 @@ const descriptors: ControlDescriptor[] = [
 			{ label: "Acid", value: 0 },
 			{ label: "Cloud", value: 1 }
 		]
-	}
+	},
+	{ id: "strike", label: "Velocity pad", widget: "pad", min: 0, max: 1 }
 ]
 const bindings: ControlBinding[] = descriptors.map((descriptor) => ({
 	key: descriptor.id,

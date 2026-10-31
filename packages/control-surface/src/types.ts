@@ -8,6 +8,7 @@ export type WidgetType =
 	| "xy"
 	| "range"
 	| "button"
+	| "pad"
 	| "number"
 	| "text"
 	| "meter"

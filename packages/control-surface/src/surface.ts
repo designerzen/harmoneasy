@@ -1,4 +1,5 @@
 import { createDomControl } from "./dom"
+import { contactPressure } from "./pressure"
 import {
 	EVENT_ABORT,
 	EVENT_BLUR,
@@ -43,12 +44,14 @@ interface Entry {
 	reading: boolean
 	dirty: boolean
 	semanticDirty: boolean
+	release?(): void
 }
 interface Gesture {
 	entry: Entry
 	startY: number
 	startValue: number
 	axis: number
+	pressure: number
 }
 export interface SurfaceOptions {
 	state: SurfaceState
@@ -68,6 +71,7 @@ export class ControlSurface {
 	private entries: Entry[] = []
 	private unsubscribers: (() => void)[] = []
 	private gestures = new Map<number, Gesture>()
+	private pressurePointers = new Set<number>()
 	private resize: ResizeObserver
 	private intersection: IntersectionObserver
 	private visible = true
@@ -167,7 +171,8 @@ export class ControlSurface {
 					e.pointerId,
 					((e.clientX - rect.left) * this.stage.clientWidth) / rect.width,
 					((e.clientY - rect.top) * this.height) / rect.height,
-					e.shiftKey
+					e.shiftKey,
+					this.pressure(e)
 				)
 			) {
 				e.preventDefault()
@@ -184,7 +189,8 @@ export class ControlSurface {
 				e.pointerId,
 				((e.clientX - rect.left) * this.stage.clientWidth) / rect.width,
 				((e.clientY - rect.top) * this.height) / rect.height,
-				e.shiftKey
+				e.shiftKey,
+				this.pressure(e)
 			)
 		})
 		for (const type of [EVENT_POINTER_UP, EVENT_POINTER_CANCEL, EVENT_LOST_POINTER_CAPTURE]) {
@@ -248,6 +254,17 @@ export class ControlSurface {
 		button.textContent = label
 		button.addEventListener(EVENT_CLICK, run, { signal: this.abort.signal })
 		return button
+	}
+	private pressure(event: PointerEvent): number {
+		const value = contactPressure(
+			event.pressure,
+			event.pointerType,
+			this.pressurePointers.has(event.pointerId)
+		)
+		if (value !== undefined) {
+			this.pressurePointers.add(event.pointerId)
+		}
+		return value ?? 1
 	}
 	private save() {
 		const used = new Set(
@@ -446,9 +463,10 @@ export class ControlSurface {
 						disabled: unavailable || binding.descriptor.disabled
 					}
 				},
-				(value) => void this.write(entry, value)
+				(value, edge) => void this.write(entry, value, edge)
 			)
 			control.element.className = `cs-semantic cs-${widget}`
+			entry.release = control.release
 			const inputs = control.element.querySelectorAll<
 				HTMLInputElement | HTMLSelectElement | HTMLButtonElement
 			>("input,select,button")
@@ -614,7 +632,7 @@ export class ControlSurface {
 			}
 		}
 	}
-	private async write(entry: Entry, value: ControlValue): Promise<void> {
+	private async write(entry: Entry, value: ControlValue, edge = false): Promise<void> {
 		if (entry.visual.unavailable) {
 			return
 		}
@@ -627,9 +645,20 @@ export class ControlSurface {
 			this.status.textContent = String(error)
 			return
 		}
+		const padEdge =
+			entry.visual.widget === "pad" &&
+			(edge ||
+				normalize(entry.binding.descriptor, Number(entry.visual.value)) > 0 !==
+					normalize(entry.binding.descriptor, Number(value)) > 0)
 		entry.visual.value = value
+		if (entry.visual.widget === "pad") {
+			entry.visual.active = normalize(entry.binding.descriptor, Number(value)) > 0
+		}
 		entry.semanticDirty = true
-		if (entry.visual.widget === "button") {
+		if (entry.visual.widget === "button" || padEdge) {
+			if (padEdge) {
+				entry.pending = undefined
+			}
 			entry.actions.push(value)
 		} else {
 			entry.pending = value
@@ -640,7 +669,10 @@ export class ControlSurface {
 		}
 		entry.busy = true
 		try {
-			while ((entry.pending !== undefined || entry.actions.length) && !this.disposed) {
+			while (
+				(entry.pending !== undefined || entry.actions.length) &&
+				(!this.disposed || entry.visual.widget === "pad")
+			) {
 				const next = entry.actions.length ? entry.actions.shift()! : entry.pending!
 				entry.pending = undefined
 				const result = entry.binding.write(next)
@@ -659,7 +691,7 @@ export class ControlSurface {
 		}
 	}
 	/** Local surface coordinates also accept projected XR rays/hand positions. */
-	pointerDown(id: number, x: number, y: number, fine = false): boolean {
+	pointerDown(id: number, x: number, y: number, fine = false, pressure = 1): boolean {
 		const entry = this.entries.find(
 			(e) =>
 				x >= e.visual.x &&
@@ -695,10 +727,13 @@ export class ControlSurface {
 			entry,
 			startY: y,
 			startValue: normalize(entry.binding.descriptor, Number(value)),
-			axis
+			axis,
+			pressure: clamp(pressure)
 		})
 		entry.visual.active = true
-		if (entry.visual.widget === "button") {
+		if (entry.visual.widget === "pad") {
+			this.updatePad(entry, true)
+		} else if (entry.visual.widget === "button") {
 			void this.write(entry, entry.binding.descriptor.defaultValue ?? 1)
 		} else if (entry.visual.widget === "toggle") {
 			void this.write(entry, !value)
@@ -711,9 +746,14 @@ export class ControlSurface {
 		}
 		return true
 	}
-	pointerMove(id: number, x: number, y: number, fine = false): void {
+	pointerMove(id: number, x: number, y: number, fine = false, pressure = 1): void {
 		const gesture = this.gestures.get(id)
 		if (!gesture) {
+			return
+		}
+		if (gesture.entry.visual.widget === "pad") {
+			gesture.pressure = clamp(pressure)
+			this.updatePad(gesture.entry)
 			return
 		}
 		const { entry } = gesture,
@@ -751,15 +791,39 @@ export class ControlSurface {
 	pointerUp(id: number): void {
 		const gesture = this.gestures.get(id)
 		this.gestures.delete(id)
+		this.pressurePointers.delete(id)
 		if (gesture) {
+			if (gesture.entry.visual.widget === "pad") {
+				this.updatePad(
+					gesture.entry,
+					![...this.gestures.values()].some((g) => g.entry === gesture.entry)
+				)
+				return
+			}
 			gesture.entry.visual.active = [...this.gestures.values()].some(
 				(g) => g.entry === gesture.entry
 			)
 		}
 	}
+	private updatePad(entry: Entry, edge = false): void {
+		let pressure = 0
+		for (const gesture of this.gestures.values()) {
+			if (gesture.entry === entry) {
+				pressure = Math.max(pressure, gesture.pressure)
+			}
+		}
+		const value = denormalize(entry.binding.descriptor, pressure)
+		if (edge || !sameValue(value, entry.visual.value)) {
+			void this.write(entry, value, edge)
+		}
+		entry.visual.active = pressure > 0
+	}
 	private releasePointers(): void {
 		for (const id of this.gestures.keys()) {
 			this.pointerUp(id)
+		}
+		for (const entry of this.entries) {
+			entry.release?.()
 		}
 	}
 	private addXY(): void {
@@ -873,9 +937,15 @@ export class ControlSurface {
 		if (this.disposed) {
 			return
 		}
+		for (const entry of this.entries) {
+			if (entry.visual.widget === "pad") {
+				entry.pending = undefined
+				entry.actions = []
+			}
+		}
+		this.releasePointers()
 		this.disposed = true
 		this.abort.abort()
-		this.releasePointers()
 		this.unsubscribers.forEach((fn) => fn())
 		this.resize.disconnect()
 		this.intersection.disconnect()

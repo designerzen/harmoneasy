@@ -62,7 +62,7 @@ try {
 		"",
 		"GPU initialization must compile shaders and create a working render pipeline"
 	)
-	assert.equal(await page.locator(".cs-widget").count(), 13)
+	assert.equal(await page.locator(".cs-widget").count(), 14)
 	await page.evaluate(async () => {
 		const { surface } = window.surfaceSmoke
 		const renderer = surface.renderer
@@ -136,6 +136,44 @@ try {
 	await page.waitForFunction(() => window.surfaceSmoke.values.number === 140)
 	await page.getByRole("combobox", { name: "Preset", exact: true }).selectOption("1")
 	await page.waitForFunction(() => window.surfaceSmoke.values.preset === 1)
+	const padWidget = page.locator(".cs-widget").last()
+	await padWidget.scrollIntoViewIfNeeded()
+	const padRect = await padWidget.boundingBox(),
+		cdp = await page.context().newCDPSession(page)
+	const point = { x: padRect.x + padRect.width / 2, y: padRect.y + 90, id: 1, force: 0.25 }
+	await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [point] })
+	await page.waitForFunction(() => window.surfaceSmoke.values.strike === 0.25)
+	await cdp.send("Input.dispatchTouchEvent", {
+		type: "touchMove",
+		touchPoints: [{ ...point, x: point.x + 24, force: 0.75 }]
+	})
+	await page.waitForFunction(() => window.surfaceSmoke.values.strike === 0.75)
+	await page.evaluate(() => {
+		const { surface } = window.surfaceSmoke
+		surface.renderer.prepare(
+			surface.entries.map((entry) => entry.visual),
+			true
+		)
+		const data = surface.renderer.instances
+		for (let offset = 0; offset < data.length; offset += 20) {
+			if (data[offset + 4] === 10) {
+				if (data[offset + 5] !== 0.75 || data[offset + 7] !== 1) {
+					throw new Error("Pad light must follow pressure in the first frame")
+				}
+				return
+			}
+		}
+		throw new Error("Pad GPU geometry is missing")
+	})
+	await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] })
+	await page.waitForFunction(() => window.surfaceSmoke.values.strike === 0)
+	await cdp.detach()
+	await page.locator(".cs-pad button").focus()
+	assert.equal(await page.getByRole("button", { name: "Velocity pad", exact: true }).count(), 1)
+	await page.keyboard.down("Space")
+	await page.waitForFunction(() => window.surfaceSmoke.values.strike === 1)
+	await page.keyboard.up("Space")
+	await page.waitForFunction(() => window.surfaceSmoke.values.strike === 0)
 	await page.evaluate(async () => {
 		await window.surfaceSmoke.surface.setEffect(
 			"fn surfaceEffect(color:vec4f,uv:vec2f,time:f32)->vec4f{return vec4f(color.rgb*(0.95+0.05*sin(time+uv.y*10.0)),color.a);}"
@@ -163,7 +201,8 @@ try {
 	console.log(
 		JSON.stringify({
 			passed: true,
-			widgets: 13,
+			widgets: 14,
+			pressurePad: true,
 			shaderEffects: true,
 			pointerAndKeyboard: true,
 			screenshot: image

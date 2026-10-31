@@ -83,6 +83,7 @@ try {
 		"xy",
 		"range",
 		"button",
+		"pad",
 		"number",
 		"text",
 		"meter",
