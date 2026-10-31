@@ -124,11 +124,19 @@ describe("P2P room workspace", () => {
 			guest = machine("guest", "follower", false, "harmony")
 		guest.manager.cloneChain("shared-chain")
 		const chain = guest.manager.activeChain
+		const tools = guest.manager.musicTools
+		tools.sections = [
+			{ ...tools.harmony, id: "local", name: "Local section", beats: 4, x: 0.5, y: 0.5 }
+		]
+		tools.playSections = true
+		guest.manager.setMusicTools(tools)
 		pair(host, guest)
 		host.manager.setHarmony({ root: 2, scale: 2774, chord: 580 })
 		await vi.waitFor(() => expect(guest.manager.harmony).toEqual(host.manager.harmony))
 		expect(guest.manager.chainCount).toBe(2)
 		expect(guest.manager.activeChain).toBe(chain)
+		guest.manager.updateMusicalBeat(0)
+		expect(guest.manager.harmony).toEqual(host.manager.harmony)
 		guest.manager.activeChain!.onInputEvent(new InputAudioEvent(note()))
 		await vi.waitFor(() => {
 			guest.manager.updateTime(1, 1)

@@ -38,14 +38,14 @@ server.on(EVENT_CONNECTION, (socket) => {
 				console.error(error.message)
 			}
 		})
-		if (mirrorPort) udp.send(data, mirrorPort, "127.0.0.1")
+		if (mirrorPort) {udp.send(data, mirrorPort, "127.0.0.1")}
 	})
 })
 udp.on(EVENT_MESSAGE, (data) => {
 	if (data.length < 4 || data.length > 65536 || data.length % 4) {
 		return
 	}
-	if (mirrorPort) udp.send(data, mirrorPort, "127.0.0.1")
+	if (mirrorPort) {udp.send(data, mirrorPort, "127.0.0.1")}
 	for (const socket of server.clients) {
 		if (socket.readyState === WebSocket.OPEN && socket.bufferedAmount < 262144) {
 			socket.send(data)

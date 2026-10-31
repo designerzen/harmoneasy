@@ -16,6 +16,8 @@
 		"build:netronome": "pnpm --filter netronome run build",
 		"build": "pnpm -r --no-bail --if-present run build",
 		"build:electron": "pnpm --filter ./app/harmoneasy run build:electron",
+		"build:harmony-plugin": "cmake -S native/harmony-plugin -B native/harmony-plugin/build && cmake --build native/harmony-plugin/build --config Release --parallel 4",
+		"test:harmony-plugin": "ctest --test-dir native/harmony-plugin/build -C Release --output-on-failure",
 		"test": "pnpm -r --no-bail --if-present run test --run --maxWorkers 4",
 		"type-check": "pnpm -r --if-present run type-check",
 		"upgrader": "pnpm run upgrade:git && pnpm run upgrade:turbo",
