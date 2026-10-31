@@ -1,6 +1,7 @@
 import { useChain } from "../ChainContext"
 import { Handle, Position } from "@xyflow/react"
-import React, { useCallback, useEffect, useState } from "react"
+import React, { useCallback, useEffect, useState, useSyncExternalStore } from "react"
+import { EVENT_CONFIGURATION_CHANGED } from "audiobus/event-constants"
 import { elementDescription, elementIcon } from "../element-icons"
 import { ElementIcon } from "../ElementIcon"
 import { NodeHeader } from "../NodeHeader"
@@ -45,6 +46,16 @@ function TransformerStatus({ element }: { element: { status: string; statusState
 export function TransformerNode(props: any) {
 	const { chain, chainId } = useChain()
 	const [swapping, setSwapping] = useState(false)
+	const element = props.data.element
+	const enabled = useSyncExternalStore(
+		useCallback((callback) => element.subscribeControls(callback), [element]),
+		() => Boolean(element.options.enabled)
+	)
+	const toggle = () => {
+		const value = typeof element.options.enabled === "boolean" ? !enabled : Number(!enabled)
+		element.setConfig("enabled", value)
+		chain.dispatchEvent(new Event(EVENT_CONFIGURATION_CHANGED))
+	}
 	const icon = elementIcon("transformer", props.data.element.type ?? props.data.element.id)
 	const description = elementDescription(
 		"transformer",
@@ -85,6 +96,8 @@ export function TransformerNode(props: any) {
 			className={`node-transformer graph-node can-remove category-${props.data.element.category.toLowerCase()} ${isFullscreen ? "is-fullscreen" : ""} ${isCompact ? "is-compact" : ""}`}
 		>
 			<NodeHeader
+				enabled={enabled}
+				description={props.data.description || description}
 				removeLabel="Delete transformer"
 				onRemove={removeNode}
 				swap={
@@ -171,35 +184,25 @@ export function TransformerNode(props: any) {
 						/>
 					</svg>
 				</button>
+				<button
+					type="button"
+					className="device-toggle"
+					aria-pressed={enabled}
+					onClick={toggle}
+					title={`${enabled ? "Disable" : "Enable"} transformer in this chain`}
+					aria-label={`${enabled ? "Disable" : "Enable"} transformer`}
+				>
+					<svg viewBox="0 0 24 24" aria-hidden="true">
+						<path d="M12 3v9m-5-7a8 8 0 1 0 10 0" />
+					</svg>
+					<span>{enabled ? "On" : "Off"}</span>
+				</button>
 			</NodeHeader>
 			{swapping && (
 				<TransformerDialog
 					replacing={props.data.element}
 					onClose={() => setSwapping(false)}
 				/>
-			)}
-			{isFullscreen ? (
-				<header className="expanded-node-heading">
-					<div className="expanded-node-emblem">
-						<ElementIcon src={icon} title={description} />
-					</div>
-					<div>
-						<span className="expanded-node-category">
-							{props.data.element.category} / Transformer
-						</span>
-						<h2>{props.data.label}</h2>
-						<p>{props.data.description}</p>
-					</div>
-				</header>
-			) : (
-				<>
-					<details>
-						<summary className="summary-info" title={props.data.description}>
-							Info
-						</summary>
-						<p>{props.data.description}</p>
-					</details>
-				</>
 			)}
 
 			{typeof props.data.element.status === "string" && (

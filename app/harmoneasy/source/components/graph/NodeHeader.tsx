@@ -6,7 +6,8 @@ export function NodeHeader({
 	onRemove,
 	swap,
 	children,
-	enabled
+	enabled,
+	description
 }: {
 	title: React.ReactNode
 	removeLabel: string
@@ -14,6 +15,7 @@ export function NodeHeader({
 	swap: React.ReactNode
 	children: React.ReactNode
 	enabled?: boolean
+	description?: string
 }) {
 	return (
 		<header className="device-node-header node-actions" data-enabled={enabled}>
@@ -34,7 +36,16 @@ export function NodeHeader({
 				</div>
 				<div className="node-actions-right">{children}</div>
 			</div>
-			<h6>{title}</h6>
+			{description ? (
+				<details className="node-title-details nodrag nopan">
+					<summary>
+						<h6>{title}</h6>
+					</summary>
+					<p>{description}</p>
+				</details>
+			) : (
+				<h6>{title}</h6>
+			)}
 		</header>
 	)
 }
