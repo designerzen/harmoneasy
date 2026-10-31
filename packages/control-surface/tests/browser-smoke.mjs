@@ -123,6 +123,62 @@ try {
 		surface.pointerUp(77)
 		entry.binding.read = originalRead
 	})
+	await page.evaluate(async () => {
+		const { surface } = window.surfaceSmoke,
+			entry = surface.entries[0],
+			renderer = surface.renderer
+		const original = entry.binding.write
+		let writes = 0
+		entry.binding.write = (value) => {
+			writes++
+			const normalized = Math.log(value / 60) / Math.log(5000 / 60)
+			const data = renderer.instances
+			for (let offset = 0; offset < data.length; offset += 20) {
+				if (data[offset + 4] === 1) {
+					if (Math.abs(data[offset + 5] - normalized) > 0.0001) {
+						throw new Error(
+							"Engine work ran before the latest dial position was submitted"
+						)
+					}
+					break
+				}
+			}
+			return original(value)
+		}
+		surface.pointerDown(78, 90, 100)
+		for (let i = 0; i < 100; i++) {
+			surface.pointerMove(78, 90, 100 - i / 2)
+		}
+		if (writes !== 0) {
+			throw new Error("Pointer bursts must not invoke the engine per event")
+		}
+		await new Promise(requestAnimationFrame)
+		if (writes !== 1) {
+			throw new Error("Pointer burst must commit its latest value once per frame")
+		}
+		surface.pointerUp(78)
+		entry.binding.write = original
+		const visuals = surface.entries.map((item) => item.visual),
+			width = surface.stage.clientWidth,
+			height = surface.height
+		renderer.prepare(visuals, false)
+		renderer.render(width, height, 0, false)
+		const queue = renderer.device.queue,
+			submit = queue.submit.bind(queue)
+		let submissions = 0
+		queue.submit = (...args) => {
+			submissions++
+			return submit(...args)
+		}
+		try {
+			renderer.render(width, height, 1, false)
+			if (submissions !== 0) {
+				throw new Error("An idle surface must not continually submit GPU frames")
+			}
+		} finally {
+			queue.submit = submit
+		}
+	})
 	const canvas = page.locator("canvas"),
 		rect = await canvas.boundingBox()
 	// Dial and slider use real pointer input; native controls remain available to keyboard input.

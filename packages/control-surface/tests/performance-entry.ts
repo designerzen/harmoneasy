@@ -2,6 +2,8 @@ import { ControlSurface } from "../src/surface"
 import { GpuSurfaceRenderer } from "../src/renderer"
 import type { ControlBinding, ControlDescriptor, ControlValue, WidgetType } from "../src/types"
 import "../src/style.css"
+import { componentBindings } from "../../audiobus/io/component-ui"
+import { EVENT_CONFIGURATION_CHANGED } from "../../audiobus/event-constants"
 
 const frame = () => new Promise<number>((resolve) => requestAnimationFrame(resolve))
 const percentile = (values: number[], p: number) => {
@@ -97,7 +99,14 @@ function value(widget: WidgetType, n: number): ControlValue {
 	}
 	return n
 }
-async function run(widget: WidgetType, count = 1, animateAll = false, iterations = 80) {
+async function run(
+	widget: WidgetType,
+	count = 1,
+	animateAll = false,
+	iterations = 180,
+	eventsPerFrame = 1,
+	bindingCostMs = 0
+) {
 	const audio = new AudioContext({ latencyHint: "interactive" })
 	const worklet = `class Probe extends AudioWorkletProcessor {static get parameterDescriptors(){return [{name:'sequence',defaultValue:0,minValue:0,maxValue:1000000,automationRate:'a-rate'}]}; last=0;process(inputs,outputs,params){for(let i=0;i<params.sequence.length;i++){const seq=params.sequence[i];if(seq!==this.last){this.last=seq;this.port.postMessage({seq,at:currentTime+i/sampleRate})}}return true}}registerProcessor('probe',Probe)`
 	const url = URL.createObjectURL(new Blob([worklet], { type: "text/javascript" }))
@@ -136,6 +145,10 @@ async function run(widget: WidgetType, count = 1, animateAll = false, iterations
 				return values.get(d.id)
 			},
 			write(v) {
+				const end = performance.now() + bindingCostMs
+				while (performance.now() < end) {
+					/* Simulate synchronous engine/GUI work. */
+				}
 				writes++
 				inputToWrite.push(performance.now() - inputAt)
 				values.set(d.id, v)
@@ -152,6 +165,29 @@ async function run(widget: WidgetType, count = 1, animateAll = false, iterations
 			}
 		}
 	})
+	// Exercise the application's component adapter and configuration events,
+	// rather than a direct, lightweight binding that bypasses integration work.
+	const original = new Map(
+		bindings.map((binding) => [
+			binding.descriptor.id,
+			{ read: binding.read, write: binding.write }
+		])
+	)
+	const component = Object.assign(new EventTarget(), {
+		name: "Profile engine",
+		getUiDescriptor: () => ({ controls: bindings.map((binding) => binding.descriptor) }),
+		getControlValue: (id: string) => original.get(id)!.read(),
+		setControlValue(id: string, next: ControlValue) {
+			original.get(id)!.write(next)
+			this.dispatchEvent(new Event(EVENT_CONFIGURATION_CHANGED))
+		}
+	})
+	const connected = await componentBindings(component, "profile")
+	for (let i = 0; i < bindings.length; i++) {
+		bindings[i].read = connected[i].read
+		bindings[i].write = connected[i].write
+		bindings[i].subscribe = connected[i].subscribe
+	}
 	const surface = new ControlSurface({
 		state: {
 			id: "profile",
@@ -259,7 +295,10 @@ async function run(widget: WidgetType, count = 1, animateAll = false, iterations
 		const now = await frame()
 		intervals.push(now - previous)
 		previous = now
-		move(0.5 + Math.sin(n * 0.3) * 0.35)
+		for (let event = 0; event < eventsPerFrame; event++) {
+			move(0.5 + Math.sin((n + event / eventsPerFrame) * 0.3) * 0.35)
+			await Promise.resolve()
+		}
 	}
 	stats.stepAt = performance.now()
 	move(0.85)
@@ -271,9 +310,14 @@ async function run(widget: WidgetType, count = 1, animateAll = false, iterations
 		widget,
 		count,
 		animateAll,
+		eventsPerFrame,
+		bindingCostMs,
 		frames: intervals.length,
 		fps: 1000 / (intervals.reduce((a, b) => a + b, 0) / intervals.length),
 		frameP95: percentile(intervals, 0.95),
+		frameP99: percentile(intervals, 0.99),
+		longestFrame: Math.max(...intervals),
+		droppedFrames: intervals.filter((interval) => interval > 25).length,
 		prepareP95: percentile(stats.prepare, 0.95),
 		renderSubmitP95: percentile(stats.render, 0.95),
 		inputToWriteP95: percentile(inputToWrite, 0.95),

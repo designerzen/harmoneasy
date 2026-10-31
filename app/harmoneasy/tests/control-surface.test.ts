@@ -61,6 +61,9 @@ afterEach(() => {
 })
 const settle = async () => {
 	for (let i = 0; i < 12; i++) {
+		for (const view of views) {
+			;(view as unknown as { flushWrites?(): void }).flushWrites?.()
+		}
 		await Promise.resolve()
 	}
 }
@@ -86,6 +89,25 @@ function bind(
 }
 
 describe("shared component controls", () => {
+	it("keeps synchronous component writes synchronous and notifies only the changed control", async () => {
+		const component = installComponentUi({
+			getUiDescriptor: () => ({
+				controls: ["a", "b"].map((id) => ({ id, label: id, widget: "dial" as const }))
+			}),
+			getControlValue: () => 0,
+			setControlValue: vi.fn()
+		})
+		const [a, b] = await componentBindings(component, "engine"),
+			changedA = vi.fn(),
+			changedB = vi.fn()
+		const unsubscribeA = a.subscribe!(changedA),
+			unsubscribeB = b.subscribe!(changedB)
+		expect(a.write(0.5)).toBeUndefined()
+		expect(changedA).toHaveBeenCalledTimes(1)
+		expect(changedB).not.toHaveBeenCalled()
+		unsubscribeA()
+		unsubscribeB()
+	})
 	it("generates live Transformer controls without GUI introspection and preserves numeric choices", async () => {
 		const transformer = new TransformerQuantise(),
 			bindings = await componentBindings(transformer, "quantise"),
@@ -185,6 +207,25 @@ describe("shared component controls", () => {
 })
 
 describe("surface interaction and bindings", () => {
+	it("draws the latest dial value while coalescing a high-rate pointer burst into one engine write", async () => {
+		const dial = bind("cutoff"),
+			saved = state()
+		saved.widgets = [{ key: dial.key }]
+		const surface = new ControlSurface({ state: saved, bindings: [dial], change: vi.fn() })
+		views.push(surface)
+		await settle()
+		surface.pointerDown(1, 90, 100)
+		for (let i = 0; i < 100; i++) {
+			surface.pointerMove(1, 90, 100 - i / 2)
+		}
+		expect(dial.write).not.toHaveBeenCalled()
+		const entry = (surface as unknown as { entries: { visual: { value: number } }[] })
+			.entries[0]
+		expect(entry.visual.value).toBeGreaterThan(0.8)
+		await settle()
+		expect(dial.write).toHaveBeenCalledTimes(1)
+		expect(dial.value).toBe(entry.visual.value)
+	})
 	it("uses real pressure, ignores the unsupported-pressure sentinel, and clamps contact values", () => {
 		expect(contactPressure(0.5, "mouse")).toBeUndefined()
 		expect(contactPressure(0.5, "touch")).toBeUndefined()

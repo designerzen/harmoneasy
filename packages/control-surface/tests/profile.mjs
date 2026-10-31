@@ -2,7 +2,8 @@ import { createRequire } from "node:module"
 import { chromium } from "playwright"
 import { mkdtemp, writeFile, readFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
-import { join, resolve } from "node:path"
+import { join, resolve, relative } from "node:path"
+import { execFileSync } from "node:child_process"
 import { fileURLToPath, pathToFileURL } from "node:url"
 
 const root = fileURLToPath(new URL("../", import.meta.url)),
@@ -16,6 +17,34 @@ const { build } = await import(
 )
 await build({
 	root,
+	plugins: process.env.SURFACE_PROFILE_REVISION
+		? [
+				{
+					name: "profile-revision",
+					enforce: "pre",
+					transform(code, id) {
+						const repository = resolve(root, "../..")
+						const path = relative(repository, id.split("?")[0]).replaceAll("\\", "/")
+						if (
+							[
+								"packages/control-surface/src/surface.ts",
+								"packages/control-surface/src/renderer.ts",
+								"packages/audiobus/io/component-ui.ts"
+							].includes(path)
+						) {
+							return {
+								code: execFileSync(
+									"git",
+									["show", `${process.env.SURFACE_PROFILE_REVISION}:${path}`],
+									{ cwd: repository, encoding: "utf8" }
+								),
+								map: null
+							}
+						}
+					}
+				}
+			]
+		: [],
 	configFile: false,
 	logLevel: "error",
 	build: {
@@ -93,12 +122,22 @@ try {
 	const results = []
 	for (const widget of widgets) {
 		const result = await page.evaluate(
-			async ({ widget, count, animateAll }) =>
-				window.profileSurface(widget, count, animateAll),
+			async ({ widget, count, animateAll, iterations, eventsPerFrame, bindingCostMs }) =>
+				window.profileSurface(
+					widget,
+					count,
+					animateAll,
+					iterations,
+					eventsPerFrame,
+					bindingCostMs
+				),
 			{
 				widget,
 				count: Number(process.env.SURFACE_PROFILE_COUNT ?? 1),
-				animateAll: process.env.SURFACE_PROFILE_ANIMATE_ALL === "1"
+				animateAll: process.env.SURFACE_PROFILE_ANIMATE_ALL === "1",
+				iterations: Number(process.env.SURFACE_PROFILE_FRAMES ?? 180),
+				eventsPerFrame: Number(process.env.SURFACE_PROFILE_EVENTS_PER_FRAME ?? 1),
+				bindingCostMs: Number(process.env.SURFACE_PROFILE_BINDING_COST_MS ?? 0)
 			}
 		)
 		results.push(result)

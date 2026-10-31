@@ -168,6 +168,9 @@ export class GpuSurfaceRenderer {
 	private postData = new Float32Array(4)
 	private projection = new Float32Array(16)
 	private disposed = false
+	private dirty = true
+	private active = false
+	private screenSignature = ""
 	private color = COLORS.neon
 	format: GPUTextureFormat
 	private effect = DEFAULT_EFFECT
@@ -304,6 +307,7 @@ export class GpuSurfaceRenderer {
 			return
 		}
 		this.effect = effect
+		this.dirty = true
 		this.pipeline = pipeline
 		this.binding = this.device.createBindGroup({
 			layout: pipeline.getBindGroupLayout(0),
@@ -353,6 +357,7 @@ export class GpuSurfaceRenderer {
 		}
 		this.postPipeline = pipeline
 		this.postEffect = effect
+		this.dirty = true
 		this.postBinding = undefined
 	}
 	setTheme(theme: SurfaceTheme): void {
@@ -423,6 +428,7 @@ export class GpuSurfaceRenderer {
 			dirtyEnd = 0,
 			grown = false
 		const epoch = ++this.epoch
+		this.active = widgets.some((widget) => !!widget.active)
 		const reserve = (required: number) => {
 			if (required <= this.instances.length) {
 				return
@@ -565,6 +571,9 @@ export class GpuSurfaceRenderer {
 			offset += this.building.length
 			dirtyEnd = offset
 		}
+		if (this.instanceCount !== offset / STRIDE || dirtyStart < dirtyEnd) {
+			this.dirty = true
+		}
 		this.instanceCount = offset / STRIDE
 		if (grown) {
 			dirtyStart = 0
@@ -593,6 +602,26 @@ export class GpuSurfaceRenderer {
 		const ratio = Math.min((devicePixelRatio || 1) * (visible?.scale ?? 1), 2),
 			w = Math.max(1, Math.round(width * ratio)),
 			h = Math.max(1, Math.round(height * ratio))
+		const signature = [
+			w,
+			h,
+			width,
+			height,
+			visible?.x,
+			visible?.y,
+			visible?.width,
+			visible?.height
+		].join(":")
+		if (
+			!this.dirty &&
+			signature === this.screenSignature &&
+			!(motion && this.active) &&
+			this.effect === DEFAULT_EFFECT &&
+			this.postEffect === DEFAULT_POST_EFFECT
+		) {
+			return
+		}
+		this.screenSignature = signature
 		if (this.canvas.width !== w || this.canvas.height !== h) {
 			this.canvas.width = w
 			this.canvas.height = h
@@ -616,6 +645,7 @@ export class GpuSurfaceRenderer {
 					}
 				: undefined
 		)
+		this.dirty = false
 	}
 	/** External target and view projection permit the same widgets to live on an XR plane. */
 	draw(

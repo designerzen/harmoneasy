@@ -80,6 +80,8 @@ export class ControlSurface {
 	private frame = 0
 	private poll = 0
 	private height = 120
+	private stageWidth = 640
+	private pointerRect?: DOMRect
 	private motion = matchMedia("(prefers-reduced-motion: reduce)")
 	private recovering = false
 	private xr?: { end(): Promise<void> }
@@ -166,10 +168,12 @@ export class ControlSurface {
 				return
 			}
 			const rect = this.stage.getBoundingClientRect()
+			this.pointerRect = rect
+			this.stageWidth = this.stage.clientWidth || 640
 			if (
 				this.pointerDown(
 					e.pointerId,
-					((e.clientX - rect.left) * this.stage.clientWidth) / rect.width,
+					((e.clientX - rect.left) * this.stageWidth) / rect.width,
 					((e.clientY - rect.top) * this.height) / rect.height,
 					e.shiftKey,
 					this.pressure(e)
@@ -184,10 +188,10 @@ export class ControlSurface {
 				return
 			}
 			const e = event as PointerEvent,
-				rect = this.stage.getBoundingClientRect()
+				rect = this.pointerRect ?? this.stage.getBoundingClientRect()
 			this.pointerMove(
 				e.pointerId,
-				((e.clientX - rect.left) * this.stage.clientWidth) / rect.width,
+				((e.clientX - rect.left) * this.stageWidth) / rect.width,
 				((e.clientY - rect.top) * this.height) / rect.height,
 				e.shiftKey,
 				this.pressure(e)
@@ -215,13 +219,12 @@ export class ControlSurface {
 			if (this.disposed) {
 				return
 			}
-			if (this.visible && !document.hidden && !this.xr) {
-				this.updateFeedback()
-			}
 			if (this.renderer && this.visible && !document.hidden && !this.xr && !this.enteringXR) {
 				try {
 					const rect = this.stage.getBoundingClientRect()
 					const width = this.stage.clientWidth || 640
+					this.pointerRect = rect
+					this.stageWidth = width
 					const scale = rect.width / width || 1
 					this.renderer.prepare(
 						this.entries.map((e) => e.visual),
@@ -243,6 +246,11 @@ export class ControlSurface {
 				} catch (error) {
 					void this.gpuError(error instanceof Error ? error : new Error(String(error)))
 				}
+			}
+			// Submit the newest pointer position before invoking engine or DOM work.
+			this.flushWrites()
+			if (this.visible && !document.hidden && !this.xr) {
+				this.updateFeedback()
 			}
 			this.frame = requestAnimationFrame(loop)
 		}
@@ -547,6 +555,7 @@ export class ControlSurface {
 		void this.refresh()
 	}
 	private layout(): void {
+		this.pointerRect = undefined
 		const layout = layoutWidgets(
 			this.entries.map((e) => e.config),
 			this.stage.clientWidth || 640
@@ -577,6 +586,8 @@ export class ControlSurface {
 				(!entry.dirty && entry.visual.widget !== "meter") ||
 				entry.reading ||
 				entry.busy ||
+				entry.pending !== undefined ||
+				entry.actions.length > 0 ||
 				entry.visual.active ||
 				entry.missing
 			) {
@@ -590,6 +601,7 @@ export class ControlSurface {
 					this.disposed ||
 					version !== entry.version ||
 					entry.busy ||
+					entry.pending !== undefined ||
 					entry.visual.active
 				) {
 					return
@@ -609,6 +621,7 @@ export class ControlSurface {
 					this.disposed ||
 					version !== entry.version ||
 					entry.busy ||
+					entry.pending !== undefined ||
 					entry.visual.active
 				) {
 					return
@@ -632,7 +645,7 @@ export class ControlSurface {
 			}
 		}
 	}
-	private async write(entry: Entry, value: ControlValue, edge = false): Promise<void> {
+	private write(entry: Entry, value: ControlValue, edge = false): void {
 		if (entry.visual.unavailable) {
 			return
 		}
@@ -664,22 +677,38 @@ export class ControlSurface {
 			entry.pending = value
 		}
 		entry.version++
+		if (
+			entry.visual.widget === "button" ||
+			padEdge ||
+			!["dial", "slider", "number", "xy", "range", "pad"].includes(entry.visual.widget)
+		) {
+			void this.flushEntry(entry)
+		}
+	}
+	private flushWrites(): void {
+		for (const entry of this.entries) {
+			if (entry.pending !== undefined || entry.actions.length) {
+				void this.flushEntry(entry)
+			}
+		}
+	}
+	private async flushEntry(entry: Entry): Promise<void> {
 		if (entry.busy) {
 			return
 		}
 		entry.busy = true
 		try {
-			while (
-				(entry.pending !== undefined || entry.actions.length) &&
-				(!this.disposed || entry.visual.widget === "pad")
-			) {
-				const next = entry.actions.length ? entry.actions.shift()! : entry.pending!
-				entry.pending = undefined
+			do {
+				const action = entry.actions.length > 0
+				const next = action ? entry.actions.shift()! : entry.pending!
+				if (!action) {
+					entry.pending = undefined
+				}
 				const result = entry.binding.write(next)
 				if (result) {
 					await result
 				}
-			}
+			} while (entry.actions.length && (!this.disposed || entry.visual.widget === "pad"))
 			this.status.textContent = ""
 			this.options.configurationChanged?.()
 		} catch (error) {
@@ -803,6 +832,10 @@ export class ControlSurface {
 			gesture.entry.visual.active = [...this.gestures.values()].some(
 				(g) => g.entry === gesture.entry
 			)
+			// Commit the final value even when a drag ends between animation frames.
+			if (gesture.entry.pending !== undefined) {
+				void this.flushEntry(gesture.entry)
+			}
 		}
 	}
 	private updatePad(entry: Entry, edge = false): void {
@@ -892,6 +925,7 @@ export class ControlSurface {
 			this.xr = await startSurfaceXR(
 				this.renderer,
 				() => {
+					this.flushWrites()
 					this.updateFeedback()
 					return {
 						widgets: this.entries.map((e) => e.visual),
