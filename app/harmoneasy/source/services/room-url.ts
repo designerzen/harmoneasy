@@ -83,7 +83,7 @@ export function createRoomUrl(location: string, invitation: RoomInvitation): str
 	const url = new URL(location)
 	if (url.protocol === "http:" || url.protocol === "https:") {
 		const directory = url.pathname
-			.split("/preset/")[0]
+			.split(/\/(?:preset|presets|hardware)\//)[0]
 			.replace(/\/index\.html$/, "/")
 			.replace(/\/$/, "")
 		url.pathname = directory.endsWith("/room") ? `${directory}/` : `${directory}/room/`

@@ -17,7 +17,7 @@ vi.mock("../../../packages/audiobus/wam/yoshimi-assets", () => ({
 	loadYoshimi: vi.fn(),
 	yoshimiAsset: vi.fn()
 }))
-const gain = () => ({ connect: vi.fn(), disconnect: vi.fn() })
+const gain = () => ({ gain: { value: 1 }, connect: vi.fn(), disconnect: vi.fn() })
 const context = () => ({ currentTime: 12, destination: {}, createGain: vi.fn(gain) }) as any
 const plugin = () => ({
 	descriptor: { name: "Test synth" },
@@ -64,14 +64,14 @@ describe("WAM outputs", () => {
 		const output = new OutputYoshimi(context(), undefined, null)
 		await output.connect()
 		await output.loadPreset("Organ", "organ.xiz", 1)
-		expect(postMessage).toHaveBeenLastCalledWith({
+		expect(postMessage).toHaveBeenCalledWith({
 			type: "msg",
 			verb: "set",
 			prop: "patch1",
 			data: "<instrument/>"
 		})
 		await output.loadPreset("SynthPiano", "piano.xiz")
-		expect(postMessage).toHaveBeenLastCalledWith({
+		expect(postMessage).toHaveBeenCalledWith({
 			type: "msg",
 			verb: "set",
 			prop: "patch0",

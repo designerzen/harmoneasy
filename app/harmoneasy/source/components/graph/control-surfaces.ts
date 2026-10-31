@@ -54,6 +54,7 @@ export function updateSurface(chain: IOChain, state: SurfaceState): void {
 }
 export function removeSurface(chain: IOChain, id: string): void {
 	chain.setGraphOptions({
+		...(chain.options.mainSurfaceId === id ? { mainSurfaceId: undefined } : {}),
 		controlSurfaces: (chain.options.controlSurfaces ?? []).filter((s) => s.id !== id)
 	})
 }
@@ -219,6 +220,7 @@ export function mountControlSurface(
 		generation = 0,
 		signature = ""
 	let saveTimer: ReturnType<typeof setTimeout> | undefined
+	let panelViews: { element: HTMLElement; destroy(): void }[] = []
 	let schemaAbort = new AbortController()
 	const abort = new AbortController()
 	const refresh = async () => {
@@ -266,6 +268,11 @@ export function mountControlSurface(
 			return
 		}
 		surface?.destroy()
+		panelViews.forEach((view) => view.destroy())
+		panelViews = (state.panels ?? []).flatMap((id) => {
+			const view = components.get(id)?.createSurfaceView?.()
+			return view ? [view] : []
+		})
 		surface = new ControlSurface({
 			state: structuredClone(state),
 			bindings,
@@ -281,7 +288,7 @@ export function mountControlSurface(
 				)
 			}
 		})
-		host.replaceChildren(surface.element)
+		host.replaceChildren(...panelViews.map((view) => view.element), surface.element)
 	}
 	for (const [target, event] of [
 		[chain, EVENT_CONFIGURATION_CHANGED],
@@ -300,6 +307,7 @@ export function mountControlSurface(
 			abort.abort()
 			schemaAbort.abort()
 			surface?.destroy()
+			panelViews.forEach((view) => view.destroy())
 		}
 	}
 }

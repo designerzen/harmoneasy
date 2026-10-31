@@ -6,7 +6,8 @@ export function createClockSourceControls(
 	manager: IOChainManager,
 	link: ConstructorParameters<typeof ClockSourceController>[2],
 	persist: (source: ClockSource, device: string) => void,
-	playingChanged: () => void
+	playingChanged: () => void,
+	followMicrophone: (enabled: boolean) => Promise<void> = async () => {}
 ) {
 	const select = document.getElementById("clock-source") as HTMLSelectElement
 	const device = document.getElementById("clock-midi-device") as HTMLSelectElement
@@ -14,6 +15,7 @@ export function createClockSourceControls(
 	const tick = document.getElementById("btn-clock-tick") as HTMLButtonElement
 	const status = document.getElementById("clock-source-status")!
 	let ready = false
+	let microphone = false
 	const error = (value: unknown) => {
 		status.textContent = value instanceof Error ? value.message : String(value)
 	}
@@ -37,7 +39,11 @@ export function createClockSourceControls(
 			midi.disabled = false
 			midi.textContent = "MIDI transport / clock"
 		}
-		select.value = source
+		if (source !== "internal" && microphone) {
+			microphone = false
+			void followMicrophone(false).catch(error)
+		}
+		select.value = microphone ? "microphone" : source
 		device.replaceChildren(
 			...ports.map((port) => {
 				const option = document.createElement("option")
@@ -62,6 +68,8 @@ export function createClockSourceControls(
 			"swing",
 			"btn-tempo-up",
 			"btn-tempo-down",
+			"btn-swing-up",
+			"btn-swing-down",
 			"timer-type-select"
 		]) {
 			const control = document.getElementById(id) as
@@ -97,10 +105,19 @@ export function createClockSourceControls(
 	ready = true
 	select.disabled = false
 	select.addEventListener("change", async () => {
-		const source = select.value as ClockSource
+		const requestedMicrophone = select.value === "microphone"
+		const source = requestedMicrophone ? "internal" : (select.value as ClockSource)
 		select.disabled = true
 		try {
+			microphone = false
+			await followMicrophone(false)
 			await controller.setSource(source)
+			await followMicrophone(requestedMicrophone)
+			microphone = requestedMicrophone && controller.source === "internal"
+			if (requestedMicrophone && !microphone) {
+				await followMicrophone(false)
+			}
+			render(controller.source, controller.midiDevice)
 		} catch (value) {
 			render(controller.source, controller.midiDevice)
 			error(value)

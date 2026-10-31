@@ -1,3 +1,4 @@
+import { PERFORMANCE_PRESETS } from "../source/services/performance-presets"
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
 import { runUI } from "./native-ui"
@@ -41,7 +42,9 @@ afterEach(() => {
 
 it("shares every activity and factory preset with the browser, including older saved libraries", () => {
 	const presets = completePresets([])
-	expect(presets).toHaveLength(DEFAULT_PRESET_LIBRARY.presets.length + START_CONTEXTS.length)
+	expect(presets).toHaveLength(
+		DEFAULT_PRESET_LIBRARY.presets.length + START_CONTEXTS.length + PERFORMANCE_PRESETS.length
+	)
 	for (const context of START_CONTEXTS) {
 		const preset = presets.find((item) => item.id === `activity:${context.id}`)!
 		expect(preset.description).toBe(context.description)

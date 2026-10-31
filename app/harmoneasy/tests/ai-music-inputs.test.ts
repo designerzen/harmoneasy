@@ -53,6 +53,15 @@ const capture = (device: InputAIMusic) => {
 }
 
 describe("AI music input catalogue", () => {
+	it("repairs legacy saved phrases affected by the protobuf velocity bug without changing newly saved quiet notes", () => {
+		const notes = [{ pitch: 60, start: 0, end: 4, velocity: 1, channel: 1 }]
+		expect(input({ notes }).options.notes[0].velocity).toBe(100)
+		expect(input({ notes, velocityVersion: 1 }).options.notes[0].velocity).toBe(1)
+		expect(
+			input({ notes: [...notes, { ...notes[0], pitch: 64, velocity: 80 }] }).options.notes[0]
+				.velocity
+		).toBe(1)
+	})
 	it("registers all five models, preserves model identity and serializes generated phrases", async () => {
 		for (const model of Object.values(AI_MODELS)) {
 			expect(INPUT_DEFINITIONS[model.id]).toMatchObject({
@@ -123,6 +132,46 @@ describe("AI music input catalogue", () => {
 })
 
 describe("AI music generation lifecycle and transport", () => {
+	it("keeps generation and transport alive when only the controls are unmounted", async () => {
+		const device = input(),
+			receive = capture(device)
+		await device.createGui()
+		device.startClock()
+		device.generate()
+		await device.destroyGui()
+		expect(workers[0].terminate).not.toHaveBeenCalled()
+		workers[0].result()
+		device.updateTime(0)
+		expect(receive).toHaveBeenLastCalledWith(
+			expect.objectContaining({ type: NOTE_ON, number: 60 })
+		)
+		device.destroy()
+		expect(workers[0].terminate).toHaveBeenCalled()
+		expect(receive).toHaveBeenLastCalledWith(
+			expect.objectContaining({ type: NOTE_OFF, number: 60 })
+		)
+	})
+	it("reuses its worker and keeps playing when a regenerated phrase arrives during transport", () => {
+		const device = input(),
+			receive = capture(device)
+		device.startClock()
+		device.generate()
+		workers[0].result()
+		device.updateTime(0)
+		expect(receive).toHaveBeenLastCalledWith(
+			expect.objectContaining({ type: NOTE_ON, number: 60 })
+		)
+		device.generate()
+		expect(workers).toHaveLength(1)
+		workers[0].result([{ pitch: 64, start: 0, end: 4, velocity: 100, channel: 1 }])
+		expect(receive).toHaveBeenLastCalledWith(
+			expect.objectContaining({ type: NOTE_OFF, number: 60 })
+		)
+		device.updateTime(0.5)
+		expect(receive).toHaveBeenLastCalledWith(
+			expect.objectContaining({ type: NOTE_ON, number: 64 })
+		)
+	})
 	it("passes chord and drum primers to the worker and persists generation changes", () => {
 		const device = input({ chords: "Dm, G C", temperature: 0.5 }),
 			changed = vi.fn()
@@ -137,7 +186,7 @@ describe("AI music generation lifecycle and transport", () => {
 		)
 		workers[0].result()
 		expect(changed).toHaveBeenCalledOnce()
-		expect(workers[0].terminate).toHaveBeenCalled()
+		expect(workers[0].terminate).not.toHaveBeenCalled()
 		const drums = input({ modelId: AI_DRUMS })
 		drums.generate()
 		expect(workers[1].postMessage.mock.lastCall![0].seed).toEqual([36, 42, 38, 42])
@@ -166,21 +215,21 @@ describe("AI music generation lifecycle and transport", () => {
 		workers[0].result()
 		const saved = device.options.notes
 		device.generate()
-		workers[1].onmessage!({
+		workers[0].onmessage!({
 			data: {
 				kind: AI_MUSIC_ERROR,
-				id: workers[1].postMessage.mock.lastCall![0].id,
+				id: workers[0].postMessage.mock.lastCall![0].id,
 				error: "Download blocked"
 			}
 		})
 		expect(device.status).toContain("Download blocked")
 		expect(device.options.notes).toBe(saved)
 		device.generate()
-		workers[2].result([{ pitch: 128, start: 0, end: 4, velocity: 100, channel: 1 }])
+		workers[1].result([{ pitch: 128, start: 0, end: 4, velocity: 100, channel: 1 }])
 		expect(device.status).toContain("invalid")
 		expect(device.options.notes).toBe(saved)
 		device.generate()
-		workers[3].onerror!()
+		workers[1].onerror!()
 		expect(device.status).toContain("failed to load")
 	})
 	it("plays on transport, follows tempo changes, loops and releases on stop", () => {

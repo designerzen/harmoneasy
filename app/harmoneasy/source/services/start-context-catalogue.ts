@@ -1,4 +1,5 @@
-import { DEFAULT_PRESET_LIBRARY } from "audiobus/io/transformer-presets"
+import { DEFAULT_PRESET_LIBRARY, GENRE_BPM } from "./factory-preset-data"
+import { presetVoice, setupSurfaces } from "./preset-instruments"
 import type { PresetSetup } from "audiobus/io/preset-library"
 import type { DeviceDefinition } from "audiobus/io/device-definition"
 import {
@@ -10,7 +11,7 @@ import {
 	MOOG,
 	TB303,
 	webclapOutputId
-} from "audiobus/io/outputs/output-types"
+} from "../../../../packages/audiobus/io/outputs/output-types"
 
 interface StartContext {
 	id: string
@@ -917,18 +918,32 @@ export function createContextSetup(context: StartContext): PresetSetup {
 		}
 		return structuredClone(preset.steps)
 	})
-	const outputs = (context.outputs ?? [{ factory: "polyphonic" } satisfies DeviceDefinition]).map(
-		(definition, index) => ({
-			id: index === 0 ? "synth" : `output-${index}`,
-			direction: "output" as const,
-			definition: structuredClone(definition)
-		})
-	)
-	return {
+	const outputs = (
+		context.outputs ?? [
+			context.id === "blank"
+				? ({ factory: "polyphonic" } satisfies DeviceDefinition)
+				: presetVoice(steps)
+		]
+	).map((definition, index) => ({
+		id: index === 0 ? "synth" : `output-${index}`,
+		direction: "output" as const,
+		definition: structuredClone(definition)
+	}))
+	return setupSurfaces({
 		id: context.id,
 		name: context.name,
 		description: context.description,
 		activeChainId: "context-chain",
+		...(context.category === "Genres"
+			? {
+					clock: {
+						bpm: GENRE_BPM[context.id] ?? 110,
+						swing: context.id === "uk-garage" ? 0.16 : 0,
+						divisions: 24,
+						bars: 4
+					}
+				}
+			: {}),
 		devices: [
 			{
 				id: "computer-keyboard",
@@ -948,7 +963,7 @@ export function createContextSetup(context: StartContext): PresetSetup {
 				outputs: [...outputs.map((output) => output.id), "ui"]
 			}
 		]
-	}
+	})
 }
 
 export function createEmptySetup() {

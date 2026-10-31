@@ -26,7 +26,7 @@ import { AcousticTempoFollower } from "./acoustic-tempo"
 import { mountPerformanceControls, mountDiagnostics } from "./performance-tools"
 import { mountChordEditor, mountRouteFinder, mountGrooveTools } from "./composition-tools"
 import { mountProjectTools } from "./project-tools"
-import { element, action, numberField, onChange } from "./music-tools-dom"
+import { element, numberField, onChange } from "./music-tools-dom"
 import { TransformerChordTrack } from "audiobus/io/transformers/transformer-chord-track"
 import InputEventLoop from "audiobus/io/inputs/input-event-loop"
 import InputScaleExplorer from "audiobus/io/inputs/input-scale-explorer"
@@ -276,9 +276,11 @@ export function createMusicalFeatureControls(options: MusicalFeatureOptions) {
 	}
 	manager.addEventListener(EVENT_CHAINS_UPDATED, bindNodes, { signal: abort.signal })
 	bindNodes()
-	const acousticHost =
-		group(document.getElementById("clock-controls"), "Follow microphone tempo") ??
-		element("div")
+	const acousticHost = element("div")
+	acousticHost.className = "context-controls"
+	acousticHost.hidden = true
+	document.getElementById("clock-controls")?.append(acousticHost)
+	mounts.push(acousticHost)
 	const acousticStatus = element("p")
 	acousticStatus.setAttribute("role", "status")
 	const follower = new AcousticTempoFollower(
@@ -297,19 +299,10 @@ export function createMusicalFeatureControls(options: MusicalFeatureOptions) {
 		}
 	})
 	acousticHost.append(
-		action("Start acoustic following", () => follower.start(), acousticStatus),
-		action(
-			"Stop acoustic following",
-			() => {
-				follower.stop()
-				acousticStatus.textContent = "Stopped; keeping the last tempo"
-			},
-			acousticStatus
-		),
 		acousticStatus,
 		element(
 			"p",
-			"Use Internal clock. Establish the pulse with the existing tap control, then play clear claps or percussion. The follower adjusts tempo gradually and holds it during silence. Use headphones to avoid following the app’s own sound."
+			"Establish the pulse with the existing tap control, then play clear claps or percussion. The follower adjusts tempo gradually and holds it during silence. Use headphones to avoid following the app’s own sound."
 		)
 	)
 	const projectHost =
@@ -405,6 +398,18 @@ export function createMusicalFeatureControls(options: MusicalFeatureOptions) {
 	}
 	window.addEventListener(EVENT_PAGE_HIDE, destroy, { once: true, signal: abort.signal })
 	return {
+		async followMicrophone(enabled: boolean) {
+			follower.stop()
+			acousticHost.hidden = !enabled
+			if (enabled) {
+				try {
+					await follower.start()
+				} catch (error) {
+					acousticHost.hidden = true
+					throw error
+				}
+			}
+		},
 		tick(beat: number) {
 			currentBeat = beat
 			manager.updateMusicalBeat(beat)

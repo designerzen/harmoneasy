@@ -284,6 +284,49 @@ describe("Main clock source", () => {
 })
 
 describe("Clock source controls", () => {
+	it("starts microphone following from the select and returns to Internal on failure", async () => {
+		document.body.innerHTML = readFileSync("index.html", "utf8").replace(
+			/<script\b[^>]*>[\s\S]*?<\/script>/gi,
+			""
+		)
+		const { timer, manager } = setup(false)
+		const follow = vi.fn(async (_enabled: boolean) => {})
+		const clock = createClockSourceControls(
+			timer,
+			manager,
+			{ setSource: vi.fn(async () => {}) },
+			vi.fn(),
+			vi.fn(),
+			follow
+		)
+		dispose.push(() => clock.destroy())
+		const select = document.getElementById("clock-source") as HTMLSelectElement
+		const choose = async (value: string) => {
+			select.value = value
+			select.dispatchEvent(new Event("change"))
+			await vi.waitFor(() => expect(select.disabled).toBe(false))
+		}
+		await choose("microphone")
+		expect(follow).toHaveBeenLastCalledWith(true)
+		expect(select.value).toBe("microphone")
+		expect(clock.source).toBe("internal")
+		expect(timer.bypassed).toBe(false)
+		await choose("manual")
+		expect(follow).toHaveBeenLastCalledWith(false)
+		expect((document.getElementById("btn-swing-up") as HTMLButtonElement).disabled).toBe(true)
+		follow.mockImplementation(async (enabled) => {
+			if (enabled) {
+				throw new Error("Microphone denied")
+			}
+		})
+		await choose("microphone")
+		expect(select.value).toBe("internal")
+		expect(document.getElementById("clock-source-status")!.textContent).toBe(
+			"Microphone denied"
+		)
+		window.dispatchEvent(new Event("pagehide"))
+	})
+
 	it("adds the MIDI option on connection, hides QR controls for external clocks, and ticks via Space without typing interference", async () => {
 		document.body.innerHTML = readFileSync("index.html", "utf8").replace(
 			/<script\b[^>]*>[\s\S]*?<\/script>/gi,

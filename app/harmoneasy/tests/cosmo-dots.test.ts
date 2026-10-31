@@ -39,6 +39,34 @@ const key = (value: string, options = {}) =>
 	)
 
 describe("Cosmo Dots input", () => {
+	it("keeps SVG pads in every view in sync with the configured count and note activity", async () => {
+		const { input, receive } = setup({
+			dots: [{ trigger: "a", duration: 300, command: { number: 67 } }, { trigger: "s" }]
+		})
+		const panel = await input.createGui()
+		const surface = input.createSurfaceView()
+		document.body.append(panel, surface.element)
+		expect(panel.querySelectorAll("button svg")).toHaveLength(2)
+		expect(surface.element.querySelectorAll("button svg")).toHaveLength(2)
+		key("a")
+		expect(surface.element.querySelector('button[data-active="true"]')).not.toBeNull()
+		expect(panel.querySelector('button[data-active="true"]')).not.toBeNull()
+		vi.advanceTimersByTime(300)
+		expect(surface.element.querySelector('button[data-active="true"]')).toBeNull()
+		surface.element.querySelector<HTMLButtonElement>("button")!.click()
+		expect(receive).toHaveBeenLastCalledWith(
+			expect.objectContaining({ type: NOTE_ON, number: 67 })
+		)
+		input.setDotCount(1)
+		expect(receive).toHaveBeenLastCalledWith(
+			expect.objectContaining({ type: NOTE_OFF, number: 67 })
+		)
+		expect(surface.element.querySelectorAll("button svg")).toHaveLength(1)
+		input.setDotCount(3)
+		expect(panel.querySelectorAll("button svg")).toHaveLength(3)
+		expect(input.options.dotCount).toBe(3)
+		surface.destroy()
+	})
 	it("sends configured command fields for reassigned number keys", () => {
 		const { input, receive } = setup()
 		const dot = input.configuration[0]

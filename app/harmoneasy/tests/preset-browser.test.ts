@@ -1,3 +1,4 @@
+import { PERFORMANCE_PRESETS } from "../source/services/performance-presets"
 // @vitest-environment happy-dom
 import { runUI } from "./native-ui"
 import { afterEach, expect, it, vi } from "vitest"
@@ -11,6 +12,7 @@ import type IOChainManager from "audiobus/io/IO-chain-manager"
 import { DEFAULT_PRESET_LIBRARY } from "../../../packages/audiobus/io/transformer-presets"
 import { completePresets, ACTIVITY_PRESETS } from "../source/components/graph/preset-catalogue"
 import { writeLibrary } from "../source/components/graph/saved-presets"
+import { defineDevice } from "../../../packages/audiobus/io/device-definition"
 
 let root: { element: HTMLElement; destroy(): void }
 let host: HTMLElement
@@ -100,10 +102,12 @@ it("illustrates every preset, filters by intent and keeps Apply outside the scro
 	root = createPresetBrowser({ onApply })
 	host.append(root.element)
 	expect(document.querySelectorAll("nav button svg")).toHaveLength(
-		DEFAULT_PRESET_LIBRARY.presets.length + ACTIVITY_PRESETS.length
+		DEFAULT_PRESET_LIBRARY.presets.length + ACTIVITY_PRESETS.length + PERFORMANCE_PRESETS.length
 	)
 	const icons = [...document.querySelectorAll("nav .preset-artwork-icon")]
-	expect(icons).toHaveLength(DEFAULT_PRESET_LIBRARY.presets.length + ACTIVITY_PRESETS.length)
+	expect(icons).toHaveLength(
+		DEFAULT_PRESET_LIBRARY.presets.length + ACTIVITY_PRESETS.length + PERFORMANCE_PRESETS.length
+	)
 	expect(icons.every((icon) => icon.getAttribute("href")?.includes("/icons/"))).toBe(true)
 	const scores = [...document.querySelectorAll("nav svg")].map((svg) =>
 		[...svg.querySelectorAll("rect:not(:first-child)")]
@@ -152,6 +156,7 @@ it("describes every new-chain option before selection and adds only when confirm
 	host = document.createElement("div")
 	document.body.append(host)
 	const chain = {
+		outputs: [defineDevice({}, { factory: "polyphonic" }, "new-synth")],
 		options: {},
 		isActive: true,
 		clearNoteCommands: vi.fn(),
@@ -160,6 +165,7 @@ it("describes every new-chain option before selection and adds only when confirm
 		setName: vi.fn()
 	}
 	const manager = {
+		createChainWithSounds: vi.fn().mockResolvedValue("new-chain"),
 		createDefaultChain: vi.fn().mockResolvedValue("new-chain"),
 		getChain: vi.fn(() => chain),
 		setActiveChain: vi.fn()
@@ -174,7 +180,7 @@ it("describes every new-chain option before selection and adds only when confirm
 	runUI(() => document.querySelector<HTMLButtonElement>(".preset-browse")!.click())
 	expect(dialog.hasAttribute("open")).toBe(true)
 	expect(document.querySelectorAll("nav button")).toHaveLength(
-		DEFAULT_PRESET_LIBRARY.presets.length + ACTIVITY_PRESETS.length
+		DEFAULT_PRESET_LIBRARY.presets.length + ACTIVITY_PRESETS.length + PERFORMANCE_PRESETS.length
 	)
 	const preset = DEFAULT_PRESET_LIBRARY.presets.find((item) => item.name === "Ratchet Fill")!
 	runUI(() =>
@@ -190,7 +196,16 @@ it("describes every new-chain option before selection and adds only when confirm
 		document.querySelector<HTMLButtonElement>(".preset-apply-button")!.click()
 	)
 	expect(dialog.hasAttribute("open")).toBe(false)
-	expect(manager.createDefaultChain).toHaveBeenCalledOnce()
+	expect(manager.createChainWithSounds).toHaveBeenCalledOnce()
+	expect(chain.setGraphOptions).toHaveBeenCalledWith(
+		expect.objectContaining({
+			controlSurfaces: [
+				expect.objectContaining({
+					connections: [expect.objectContaining({ componentId: "new-synth" })]
+				})
+			]
+		})
+	)
 	expect(chain.setName).toHaveBeenCalledWith(preset.name)
 	expect(manager.setActiveChain).toHaveBeenCalledWith("new-chain")
 })
@@ -256,6 +271,10 @@ it.each([
 	host = document.createElement("div")
 	document.body.append(host)
 	const chain = {
+		outputs: [
+			defineDevice({}, { factory: "output", type: instrument }, "test-instrument"),
+			defineDevice({}, { factory: "output", type: "drum-accompaniment" }, "test-drums")
+		],
 		options: {},
 		isActive: true,
 		clearNoteCommands: vi.fn(),
