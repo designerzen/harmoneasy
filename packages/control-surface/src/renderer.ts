@@ -87,10 +87,14 @@ struct VertexOutput {
 }
 fn line(distance: f32, thickness: f32) -> f32 { return 1.0-smoothstep(thickness, thickness+1.0, abs(distance))+0.12*exp(-abs(distance)*0.32); }
 fn box(p: vec2f, b: vec2f, r: f32) -> f32 { let q=abs(p)-b+vec2f(r); return min(max(q.x,q.y),0.0)+length(max(q,vec2f(0)))-r; }
+fn settingColor(value:f32)->vec3f {
+ let level=clamp(value,0.0,1.0);
+ return vec3f(min(level*2.0,1.0),min((1.0-level)*2.0,1.0),0.08);
+}
 /* EFFECT */
 @fragment fn fragmentMain(i: VertexOutput) -> @location(0) vec4f {
  let kind=i.params.x; let value=i.params.y; let second=i.params.z; let engaged=i.params.w;
- let size=i.rect.zw; let p=(i.uv-0.5)*size; var light=0.0; var fill=0.0;
+ let size=i.rect.zw; let p=(i.uv-0.5)*size; var light=0.0; var fill=0.0; var color=i.color.rgb;
  if (kind>8.5&&kind<9.5) {
   let alpha=textureSampleLevel(atlas,atlasSampler,i.textureRect.xy+i.uv*i.textureRect.zw,0.0).a;
   return vec4f(i.color.rgb,alpha*i.color.a);
@@ -102,6 +106,7 @@ fn box(p: vec2f, b: vec2f, r: f32) -> f32 { let q=abs(p)-b+vec2f(r); return min(
   let rgb=mix(vec3f(0.022,0.031,0.048),i.color.rgb,grid*0.018)+i.color.rgb*line(edge,0.6)*(0.15+engaged*0.55);
   return surfaceEffect(vec4f(rgb,a),i.uv,frame.time);
  } else if (kind<1.5) {
+  color=settingColor(value);
   let radius=min(size.x,size.y)*0.34; let dist=length(p)-radius;
   let angle=atan2(p.x,-p.y); let t=(angle+2.35619449)/4.71238898;
   let inArc=select(0.0,1.0,t>=0.0&&t<=1.0);
@@ -114,8 +119,17 @@ fn box(p: vec2f, b: vec2f, r: f32) -> f32 { let q=abs(p)-b+vec2f(r); return min(
  } else if (kind<2.5 || (kind>6.5&&kind<7.5)) {
   let w=size.x*0.42; let x=-w+value*w*2.0;
   light=line(p.y,2.0)*step(abs(p.x),w)*select(0.1,0.8,p.x<=x);
-  light=max(light,line(length(p-vec2f(x,0)),5.0));
-  if (second>=0.0) { light=max(light,line(length(p-vec2f(-w+second*w*2.0,0)),5.0)); }
+  if (kind<2.5) {
+   color=settingColor(value);
+   let knob=length(p-vec2f(x,0));
+   light=max(light,line(knob-10.0,1.8));
+   fill=max(fill,(1.0-smoothstep(8.0,10.0,knob))*0.5);
+   if (second>=0.0) {
+    let upper=length(p-vec2f(-w+second*w*2.0,0));
+    light=max(light,line(upper-10.0,1.8));
+    fill=max(fill,(1.0-smoothstep(8.0,10.0,upper))*0.5);
+   }
+  } else { light=max(light,line(length(p-vec2f(x,0)),5.0)); }
  } else if (kind<3.5) {
   let w=min(size.x*0.25,36.0); let d=box(p,vec2f(w,14),14);
   light=line(d,1.0)*0.45+line(length(p-vec2f(mix(-w+15.0,w-15.0,value),0))-9.0,2.5);
@@ -143,7 +157,7 @@ fn box(p: vec2f, b: vec2f, r: f32) -> f32 { let q=abs(p)-b+vec2f(r); return min(
  }
  let pulse=1.0+sin(frame.time*3.0)*engaged*0.12*frame.motion;
  let intensity=(light+fill)*pulse;
- let rgb=i.color.rgb*intensity;
+ let rgb=color*intensity;
  return surfaceEffect(vec4f(rgb,clamp(intensity,0.0,1.0)*i.color.a),i.uv,frame.time);
 }`
 

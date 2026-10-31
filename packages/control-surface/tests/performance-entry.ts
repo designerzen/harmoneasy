@@ -4,6 +4,9 @@ import type { ControlBinding, ControlDescriptor, ControlValue, WidgetType } from
 import "../src/style.css"
 import { componentBindings } from "../../audiobus/io/component-ui"
 import { EVENT_CONFIGURATION_CHANGED } from "../../audiobus/event-constants"
+import PolySynth from "../../audiobus/instruments/polyphonic"
+import SynthOscillator from "../../audiobus/instruments/oscillators/synth-oscillator"
+import { normalize } from "../src/model"
 
 const frame = () => new Promise<number>((resolve) => requestAnimationFrame(resolve))
 const percentile = (values: number[], p: number) => {
@@ -336,3 +339,124 @@ async function run(
 	return result
 }
 Object.assign(window, { profileSurface: run })
+
+async function profilePolySynth(zoom = 1, iterations = 300) {
+	const audio = new AudioContext({ latencyHint: "interactive" })
+	const synth = new PolySynth(audio, { class: SynthOscillator })
+	const mute = audio.createGain()
+	mute.gain.value = 0
+	synth.output.connect(mute).connect(audio.destination)
+	await audio.resume()
+	await Promise.resolve()
+	for (let note = 48; note < 56; note++) {
+		await synth.noteOn(note, 100)
+	}
+	const bindings = (await componentBindings(synth, "polysynth")).filter((binding) =>
+		["dial", "slider", "number"].includes(binding.descriptor.widget)
+	)
+	bindings.sort(
+		(a, b) => Number(b.descriptor.id === "attack") - Number(a.descriptor.id === "attack")
+	)
+	let writes = 0
+	for (const binding of bindings) {
+		const write = binding.write
+		binding.write = (value) => {
+			writes++
+			return write(value)
+		}
+	}
+	const surface = new ControlSurface({
+		state: {
+			id: "poly",
+			name: "PolySynth",
+			connections: [],
+			widgets: bindings.map((binding) => ({ key: binding.key, widget: "dial" })),
+			theme: "ice"
+		},
+		bindings,
+		change: () => {}
+	})
+	const nativeGui = await synth.createGui()
+	surface.element.style.transform = `scale(${zoom})`
+	surface.element.style.transformOrigin = "top left"
+	document.body.replaceChildren(surface.element, nativeGui)
+	while (!surface.element.classList.contains("cs-gpu-ready")) {
+		await frame()
+	}
+	const entries = (surface as any).entries,
+		renderer = (surface as any).renderer
+	for (let i = 0; i < entries.length; i++) {
+		const visual = entries[i].visual
+		surface.pointerDown(100 + i, visual.x + 90, visual.y + 100)
+	}
+	const stats = {
+		prepare: [] as number[],
+		render: [] as number[],
+		stepAt: 0,
+		target: 0.85,
+		kind: 1,
+		gpuQueue: [] as number[]
+	}
+	measure = stats
+	const intervals: number[] = []
+	let previous = await frame(),
+		trackingError = 0
+	const stage = surface.element.querySelector<HTMLElement>(".cs-stage")!
+	for (let n = 0; n < iterations; n++) {
+		const now = await frame()
+		intervals.push(now - previous)
+		previous = now
+		for (let i = 0; i < entries.length; i++) {
+			const visual = entries[i].visual,
+				batch = renderer.cache.get(visual).data
+			for (let offset = 0; offset < batch.length; offset += 20) {
+				if (batch[offset + 4] === 1) {
+					trackingError = Math.max(
+						trackingError,
+						Math.abs(batch[offset + 5] - normalize(visual.descriptor, visual.value))
+					)
+					break
+				}
+			}
+			const gesture = (surface as any).gestures.get(100 + i)
+			const position = 0.5 + Math.sin(n * 0.15 + i) * 0.35
+			const rect = stage.getBoundingClientRect()
+			const y = visual.y + 100 - (position - gesture.startValue) * 160
+			stage.dispatchEvent(
+				new PointerEvent("pointermove", {
+					pointerId: 100 + i,
+					clientX: rect.left + (visual.x + 90) * zoom,
+					clientY: rect.top + y * zoom,
+					bubbles: true
+				})
+			)
+		}
+	}
+	for (let i = 0; i < entries.length; i++) {
+		surface.pointerUp(100 + i)
+	}
+	const result = {
+		engine: "PolySynth",
+		zoom,
+		dials: entries.length,
+		activeVoices: synth.activeVoices,
+		nativeGuiOpen: true,
+		frames: iterations,
+		fps: 1000 / (intervals.reduce((a, b) => a + b, 0) / intervals.length),
+		frameP99: percentile(intervals, 0.99),
+		longestFrame: Math.max(...intervals),
+		droppedFrames: intervals.filter((interval) => interval > 25).length,
+		prepareP95: percentile(stats.prepare, 0.95),
+		trackingError,
+		writes
+	}
+	measure = undefined
+	surface.destroy()
+	synth.allNotesOff()
+	await synth.destroyGui()
+	synth.output.disconnect()
+	mute.disconnect()
+	await audio.close()
+	return result
+}
+Object.assign(window, { profilePolySynth })

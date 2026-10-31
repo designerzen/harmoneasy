@@ -121,25 +121,43 @@ try {
 	]
 	const results = []
 	for (const widget of widgets) {
-		const result = await page.evaluate(
-			async ({ widget, count, animateAll, iterations, eventsPerFrame, bindingCostMs }) =>
-				window.profileSurface(
-					widget,
-					count,
-					animateAll,
-					iterations,
-					eventsPerFrame,
-					bindingCostMs
-				),
-			{
-				widget,
-				count: Number(process.env.SURFACE_PROFILE_COUNT ?? 1),
-				animateAll: process.env.SURFACE_PROFILE_ANIMATE_ALL === "1",
-				iterations: Number(process.env.SURFACE_PROFILE_FRAMES ?? 180),
-				eventsPerFrame: Number(process.env.SURFACE_PROFILE_EVENTS_PER_FRAME ?? 1),
-				bindingCostMs: Number(process.env.SURFACE_PROFILE_BINDING_COST_MS ?? 0)
-			}
-		)
+		const result =
+			widget === "polysynth"
+				? await page.evaluate(
+						async ({ zoom, iterations }) => window.profilePolySynth(zoom, iterations),
+						{
+							zoom: Number(process.env.SURFACE_PROFILE_ZOOM ?? 1),
+							iterations: Number(process.env.SURFACE_PROFILE_FRAMES ?? 300)
+						}
+					)
+				: await page.evaluate(
+						async ({
+							widget,
+							count,
+							animateAll,
+							iterations,
+							eventsPerFrame,
+							bindingCostMs
+						}) =>
+							window.profileSurface(
+								widget,
+								count,
+								animateAll,
+								iterations,
+								eventsPerFrame,
+								bindingCostMs
+							),
+						{
+							widget,
+							count: Number(process.env.SURFACE_PROFILE_COUNT ?? 1),
+							animateAll: process.env.SURFACE_PROFILE_ANIMATE_ALL === "1",
+							iterations: Number(process.env.SURFACE_PROFILE_FRAMES ?? 180),
+							eventsPerFrame: Number(
+								process.env.SURFACE_PROFILE_EVENTS_PER_FRAME ?? 1
+							),
+							bindingCostMs: Number(process.env.SURFACE_PROFILE_BINDING_COST_MS ?? 0)
+						}
+					)
 		results.push(result)
 		console.log(JSON.stringify(result))
 	}

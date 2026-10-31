@@ -1,5 +1,6 @@
 import { GraphControls } from "./GraphControls"
 import { EVENT_CONFIGURATION_CHANGED } from "audiobus/event-constants"
+import { isConfigurationUpdate } from "audiobus/io/configuration-events"
 import { ChainContext, useChain } from "./ChainContext"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
 import "@xyflow/react/dist/style.css"
@@ -90,7 +91,10 @@ function FlowComponent({ isFront, focusRequest }: { isFront: boolean; focusReque
 		const abortController = new AbortController()
 
 		// an event has bubbled from the Chain
-		const onTransformersChanged = () => {
+		const onTransformersChanged = (event?: Event) => {
+			if (isConfigurationUpdate(event)) {
+				return
+			}
 			// const detail = event ? event.detail : null
 			const structure = getStructure(chain, true, true, layoutMode, chainId)
 			setNodes((previous) => {

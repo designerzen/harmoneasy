@@ -207,6 +207,34 @@ describe("shared component controls", () => {
 })
 
 describe("surface interaction and bindings", () => {
+	it("starts dial gestures throughout the whole panel and keeps dragging outside its bounds", async () => {
+		const dial = bind("cutoff"),
+			saved = state()
+		saved.widgets = [{ key: dial.key }]
+		const surface = new ControlSurface({ state: saved, bindings: [dial], change: vi.fn() })
+		views.push(surface)
+		await settle()
+		const { x, y, width, height } = (
+			surface as unknown as {
+				entries: { visual: { x: number; y: number; width: number; height: number } }[]
+			}
+		).entries[0].visual
+		const corners = [
+			[x + 2, y + 2],
+			[x + width - 2, y + 2],
+			[x + 2, y + height - 2],
+			[x + width - 2, y + height - 2]
+		]
+		for (const [index, [px, py]] of corners.entries()) {
+			expect(surface.pointerDown(index, px, py)).toBe(true)
+			surface.pointerMove(index, px, py - 16)
+			surface.pointerUp(index)
+			await settle()
+			expect(dial.value).toBeCloseTo(0.5 + (index + 1) * 0.1)
+		}
+		expect(surface.pointerDown(10, x - 1, y + 10)).toBe(false)
+		expect(surface.pointerDown(11, x + width + 3, y + 10)).toBe(false)
+	})
 	it("draws the latest dial value while coalescing a high-rate pointer burst into one engine write", async () => {
 		const dial = bind("cutoff"),
 			saved = state()

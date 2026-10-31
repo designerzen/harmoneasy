@@ -181,12 +181,13 @@ try {
 	})
 	const canvas = page.locator("canvas"),
 		rect = await canvas.boundingBox()
-	// Dial and slider use real pointer input; native controls remain available to keyboard input.
-	await page.mouse.move(rect.x + 90, rect.y + 90)
+	// Start in the panel's title area, well outside the drawn dial.
+	const beforePanelDrag = await page.evaluate(() => window.surfaceSmoke.values.cutoff)
+	await page.mouse.move(rect.x + 3, rect.y + 14)
 	await page.mouse.down()
-	await page.mouse.move(rect.x + 90, rect.y + 55)
+	await page.mouse.move(rect.x + 3, rect.y + 49)
 	await page.mouse.up()
-	await page.waitForFunction(() => window.surfaceSmoke.values.cutoff > 650)
+	await page.waitForFunction((previous) => window.surfaceSmoke.values.cutoff < previous, beforePanelDrag)
 	await page.getByRole("spinbutton", { name: "Tempo" }).fill("140")
 	await page.getByRole("spinbutton", { name: "Tempo" }).press("Tab")
 	await page.waitForFunction(() => window.surfaceSmoke.values.number === 140)

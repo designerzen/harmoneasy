@@ -725,8 +725,8 @@ export class ControlSurface {
 			(e) =>
 				x >= e.visual.x &&
 				x <= e.visual.x + e.visual.width &&
-				y >= e.visual.y + 46 &&
-				y <= e.visual.y + e.visual.height - 26
+				y >= e.visual.y &&
+				y <= e.visual.y + e.visual.height
 		)
 		if (
 			!entry ||

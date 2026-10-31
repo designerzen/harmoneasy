@@ -10,6 +10,8 @@ import {
 } from "../../../packages/audiobus/event-constants.ts"
 import { defineDevice, deviceDefinition } from "../../../packages/audiobus/io/device-definition.ts"
 import OutputManager from "../../../packages/audiobus/io/output-manager.ts"
+import { componentBindings } from "../../../packages/audiobus/io/component-ui"
+import { isConfigurationUpdate } from "../../../packages/audiobus/io/configuration-events"
 
 function param(value = 0) {
 	return {
@@ -53,6 +55,29 @@ afterEach(() => {
 })
 
 describe("PolySynth controls", () => {
+	it("binds surface dials directly without constructing or dispatching into the legacy GUI", async () => {
+		const { synth } = setup()
+		const gui = vi.spyOn(synth, "createGui")
+		const bindings = await componentBindings(synth, "poly")
+		const attack = bindings.find((binding) => binding.descriptor.id === "attack")!
+		expect(attack.descriptor.widget).toBe("dial")
+		expect(attack.write(0.75)).toBeUndefined()
+		expect(synth.options.attack).toBe(0.75)
+		expect(attack.read()).toBe(0.75)
+		expect(gui).not.toHaveBeenCalled()
+	})
+	it("marks continuous sound edits as configuration updates while additions remain structural", () => {
+		const { synth } = setup(),
+			manager = new OutputManager(),
+			events: Event[] = []
+		manager.addEventListener(EVENT_OUTPUTS_UPDATED, (event) => events.push(event))
+		manager.add(synth)
+		synth.configure({ attack: 0.75 })
+		expect(isConfigurationUpdate(events[0])).toBe(false)
+		expect(isConfigurationUpdate(events[1])).toBe(true)
+		manager.remove(synth)
+		expect(isConfigurationUpdate(events[2])).toBe(false)
+	})
 	it("notifies session saving about sound edits and removes the subscription with the output", () => {
 		const { synth } = setup()
 		const manager = new OutputManager()

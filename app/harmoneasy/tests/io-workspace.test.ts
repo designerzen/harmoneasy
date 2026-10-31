@@ -15,6 +15,14 @@ import {
 	PLAYBACK_TOGGLE
 } from "../../../packages/audiobus/commands"
 import { getStructure } from "../source/components/graph/layout"
+import {
+	configurationUpdate,
+	isConfigurationUpdate
+} from "../../../packages/audiobus/io/configuration-events"
+import {
+	EVENT_CHAINS_UPDATED,
+	EVENT_OUTPUTS_UPDATED
+} from "../../../packages/audiobus/event-constants"
 
 class Input extends AbstractInput {
 	destroy = vi.fn()
@@ -58,6 +66,34 @@ function setup() {
 const tick = () => new Promise((resolve) => setTimeout(resolve, 15))
 
 describe("IO workspace", () => {
+	it("coalesces continuous parameter edits without reconstructing device ownership or harmony", () => {
+		vi.useFakeTimers()
+		const { manager, chain } = setup()
+		try {
+			const updated = vi.fn(),
+				forwarded = vi.fn()
+			const internal = manager as unknown as { syncDevices(): void; applyHarmony(): void }
+			const devices = vi.spyOn(internal, "syncDevices"),
+				harmony = vi.spyOn(internal, "applyHarmony")
+			manager.addEventListener(EVENT_CHAINS_UPDATED, updated)
+			chain.addEventListener(EVENT_OUTPUTS_UPDATED, forwarded)
+			for (let i = 0; i < 100; i++) {
+				chain.outputManager.dispatchEvent(configurationUpdate(EVENT_OUTPUTS_UPDATED))
+			}
+			expect(isConfigurationUpdate(forwarded.mock.calls[0][0])).toBe(true)
+			expect(devices).not.toHaveBeenCalled()
+			expect(harmony).not.toHaveBeenCalled()
+			expect(updated).not.toHaveBeenCalled()
+			vi.advanceTimersByTime(160)
+			expect(updated).toHaveBeenCalledTimes(1)
+			chain.outputManager.dispatchEvent(new Event(EVENT_OUTPUTS_UPDATED))
+			expect(devices).toHaveBeenCalledOnce()
+			expect(harmony).toHaveBeenCalledOnce()
+		} finally {
+			manager.destroy()
+			vi.useRealTimers()
+		}
+	})
 	it("restores control surfaces and their stable device/transformer bindings with a workspace", async () => {
 		const { manager, chain, sink } = setup()
 		const componentId = deviceId(sink)
