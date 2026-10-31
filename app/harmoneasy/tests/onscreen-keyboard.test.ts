@@ -203,17 +203,28 @@ describe("onscreen keyboard interaction", () => {
 		expect(higher.disabled).toBe(true)
 	})
 
-	it("retracts and restores the keyboard without leaving input notes held", () => {
+	it("cycles full, top third, hidden, and full without leaving input notes held", () => {
 		const { keyboard, keys, off } = setup()
 		const retract = keyboard.asElement.querySelector<HTMLButtonElement>(".piano-retract")!
 		const viewport = keyboard.asElement.querySelector<HTMLElement>(".piano-viewport")!
 		pointer(keys[0], "pointerdown", 3)
 		retract.click()
 		expect(off).toHaveBeenCalledExactlyOnceWith(60, 1, 3)
+		expect(keyboard.asElement.classList.contains("piano-peeking")).toBe(true)
+		expect(keyboard.asElement.classList.contains("piano-retracted")).toBe(false)
+		expect(viewport.inert).toBe(false)
+		expect(retract.getAttribute("aria-expanded")).toBe("true")
+		expect(retract.getAttribute("aria-label")).toBe("Hide keyboard")
+		pointer(keys[1], "pointerdown", 4)
+		retract.click()
+		expect(off).toHaveBeenLastCalledWith(61, 1, 4)
+		expect(keyboard.asElement.classList.contains("piano-peeking")).toBe(false)
 		expect(keyboard.asElement.classList.contains("piano-retracted")).toBe(true)
 		expect(viewport.inert).toBe(true)
 		expect(retract.getAttribute("aria-expanded")).toBe("false")
 		retract.click()
+		expect(keyboard.asElement.classList.contains("piano-peeking")).toBe(false)
+		expect(keyboard.asElement.classList.contains("piano-retracted")).toBe(false)
 		expect(viewport.inert).toBe(false)
 		expect(retract.getAttribute("aria-expanded")).toBe("true")
 	})

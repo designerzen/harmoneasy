@@ -116,6 +116,12 @@
 		min-height: 32px;
 	}
 
+	&.piano-peeking .piano-octave {
+		align-self: flex-start;
+		height: calc(100% / 3);
+		min-height: 0;
+	}
+
 	&.piano-retracted .piano-viewport {
 		visibility: hidden;
 	}

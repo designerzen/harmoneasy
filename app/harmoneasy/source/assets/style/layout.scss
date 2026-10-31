@@ -575,6 +575,10 @@ body > footer {
 		min-height: 0;
 	}
 
+	&:has(> .piano-peeking) {
+		transform: translateY(calc(100% * 2 / 3 - var(--keyboard-overhang)));
+	}
+
 	&:has(> .piano-retracted) {
 		transform: translateY(calc(100% - var(--keyboard-overhang)));
 	}
@@ -583,6 +587,10 @@ body > footer {
 body:has(#onscreen-keyboard > .piano) {
 	--onscreen-keyboard-height: calc(min(148px, 33dvh) - 20px);
 	padding-bottom: var(--onscreen-keyboard-height);
+}
+
+body:has(#onscreen-keyboard > .piano-peeking) {
+	--onscreen-keyboard-height: calc(min(148px, 33dvh) / 3);
 }
 
 body:has(#onscreen-keyboard > .piano-retracted) {
