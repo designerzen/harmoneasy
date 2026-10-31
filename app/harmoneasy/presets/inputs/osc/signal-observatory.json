@@ -1,0 +1,358 @@
+{
+	"format": "harmoneasy-preset",
+	"version": 1,
+	"name": "OSC Signal Observatory",
+	"description": "Incoming OSC notes split into an interlocking reed motif, low pluck and high echo constellation. Configure and connect the OSC bridge in the input panel. Send notes from your OSC controller; an onscreen keyboard also lets you audition the routing before connecting.",
+	"clock": {
+		"bpm": 118,
+		"swing": 0,
+		"divisions": 24,
+		"bars": 16
+	},
+	"midiControls": {
+		"enabled": true,
+		"bindings": []
+	},
+	"workspace": {
+		"version": 2,
+		"activeChainId": "layer-0",
+		"devices": [
+			{
+				"id": "performance-input",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "osc"
+				}
+			},
+			{
+				"id": "keyboard",
+				"direction": "input",
+				"definition": {
+					"factory": "keyboard-input"
+				}
+			},
+			{
+				"id": "voice-0",
+				"direction": "output",
+				"definition": {
+					"factory": "polyphonic",
+					"options": {
+						"shape": "square",
+						"volume": 0.22,
+						"attack": 0.04,
+						"decay": 0.2,
+						"sustain": 0.45,
+						"release": 0.18,
+						"filterCutOff": 1700
+					}
+				}
+			},
+			{
+				"id": "voice-1",
+				"direction": "output",
+				"definition": {
+					"factory": "polyphonic",
+					"options": {
+						"shape": "sawtooth",
+						"volume": 0.3,
+						"attack": 0.005,
+						"decay": 0.15,
+						"sustain": 0.35,
+						"release": 0.08,
+						"filterCutOff": 650,
+						"filterResonance": 2
+					}
+				}
+			},
+			{
+				"id": "voice-2",
+				"direction": "output",
+				"definition": {
+					"factory": "polyphonic",
+					"options": {
+						"shape": "sine",
+						"volume": 0.35,
+						"attack": 0.002,
+						"decay": 0.8,
+						"sustain": 0.05,
+						"release": 1.4,
+						"filterCutOff": 6500
+					}
+				}
+			}
+		],
+		"chains": [
+			{
+				"id": "layer-0",
+				"options": {
+					"name": "Signal weave",
+					"active": true,
+					"controlSurfaces": [
+						{
+							"id": "layer-0-performance",
+							"name": "Signal weave controls",
+							"theme": "ice",
+							"connections": [
+								{
+									"componentId": "voice-0",
+									"controlIds": [
+										"volume",
+										"shape",
+										"attack",
+										"release",
+										"filterCutOff",
+										"filterResonance"
+									]
+								},
+								{
+									"componentId": "transformer:layer-0-step-0",
+									"controlIds": ["root", "mode"]
+								},
+								{
+									"componentId": "transformer:layer-0-step-1",
+									"controlIds": ["cycleA", "cycleB"]
+								},
+								{
+									"componentId": "transformer:layer-0-step-2",
+									"controlIds": ["lower", "upper", "stride"]
+								}
+							],
+							"widgets": [
+								{
+									"key": "[\"voice-0\",\"volume\"]",
+									"widget": "slider"
+								},
+								{
+									"key": "[\"voice-0\",\"shape\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"voice-0\",\"attack\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-0\",\"release\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-0\",\"filterCutOff\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-0\",\"filterResonance\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-0-step-0\",\"root\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-0-step-0\",\"mode\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-0-step-1\",\"cycleA\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-0-step-1\",\"cycleB\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-0-step-2\",\"lower\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-0-step-2\",\"upper\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-0-step-2\",\"stride\"]",
+									"widget": "dial"
+								}
+							]
+						}
+					],
+					"mainSurfaceId": "layer-0-performance"
+				},
+				"inputs": ["performance-input", "keyboard"],
+				"outputs": ["voice-0"],
+				"transformers": "[\"{\\\"root\\\":2,\\\"mode\\\":[0,2,3,5,7,9,10],\\\"midiControlId\\\":\\\"layer-0-step-0\\\",\\\"type\\\":\\\"Harmoniser\\\"}\",\"{\\\"cycleA\\\":2,\\\"cycleB\\\":3,\\\"mode\\\":\\\"union\\\",\\\"accent\\\":120,\\\"level\\\":85,\\\"collect\\\":25,\\\"midiControlId\\\":\\\"layer-0-step-1\\\",\\\"type\\\":\\\"Rhythm-Weave\\\"}\",\"{\\\"lower\\\":48,\\\"upper\\\":84,\\\"stride\\\":5,\\\"collect\\\":25,\\\"midiControlId\\\":\\\"layer-0-step-2\\\",\\\"type\\\":\\\"Register-Orbit\\\"}\",\"{\\\"rising\\\":120,\\\"falling\\\":80,\\\"repeated\\\":95,\\\"leap\\\":10,\\\"gap\\\":4,\\\"type\\\":\\\"Contour-Dynamics\\\"}\"]",
+				"disabledInputs": [],
+				"disabledOutputs": []
+			},
+			{
+				"id": "layer-1",
+				"options": {
+					"name": "Low beacon",
+					"active": true,
+					"controlSurfaces": [
+						{
+							"id": "layer-1-performance",
+							"name": "Low beacon controls",
+							"theme": "ice",
+							"connections": [
+								{
+									"componentId": "voice-1",
+									"controlIds": [
+										"volume",
+										"shape",
+										"attack",
+										"release",
+										"filterCutOff",
+										"filterResonance"
+									]
+								},
+								{
+									"componentId": "transformer:layer-1-step-0",
+									"controlIds": ["root", "mode"]
+								}
+							],
+							"widgets": [
+								{
+									"key": "[\"voice-1\",\"volume\"]",
+									"widget": "slider"
+								},
+								{
+									"key": "[\"voice-1\",\"shape\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"voice-1\",\"attack\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-1\",\"release\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-1\",\"filterCutOff\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-1\",\"filterResonance\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-1-step-0\",\"root\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-1-step-0\",\"mode\"]",
+									"widget": "select"
+								}
+							]
+						}
+					],
+					"mainSurfaceId": "layer-1-performance"
+				},
+				"inputs": ["performance-input", "keyboard"],
+				"outputs": ["voice-1"],
+				"transformers": "[\"{\\\"root\\\":2,\\\"mode\\\":[0,2,3,5,7,9,10],\\\"midiControlId\\\":\\\"layer-1-step-0\\\",\\\"type\\\":\\\"Harmoniser\\\"}\",\"{\\\"distance\\\":-12,\\\"type\\\":\\\"Transposer\\\"}\",\"{\\\"duration\\\":\\\"1/8\\\",\\\"type\\\":\\\"Note-Shortener\\\"}\"]",
+				"disabledInputs": [],
+				"disabledOutputs": []
+			},
+			{
+				"id": "layer-2",
+				"options": {
+					"name": "Distant reflections",
+					"active": true,
+					"controlSurfaces": [
+						{
+							"id": "layer-2-performance",
+							"name": "Distant reflections controls",
+							"theme": "ice",
+							"connections": [
+								{
+									"componentId": "voice-2",
+									"controlIds": [
+										"volume",
+										"shape",
+										"attack",
+										"release",
+										"filterCutOff",
+										"filterResonance"
+									]
+								},
+								{
+									"componentId": "transformer:layer-2-step-0",
+									"controlIds": ["root", "mode"]
+								},
+								{
+									"componentId": "transformer:layer-2-step-4",
+									"controlIds": ["repeats", "delay", "decay"]
+								}
+							],
+							"widgets": [
+								{
+									"key": "[\"voice-2\",\"volume\"]",
+									"widget": "slider"
+								},
+								{
+									"key": "[\"voice-2\",\"shape\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"voice-2\",\"attack\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-2\",\"release\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-2\",\"filterCutOff\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-2\",\"filterResonance\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-2-step-0\",\"root\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-2-step-0\",\"mode\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-2-step-4\",\"repeats\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-2-step-4\",\"delay\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-2-step-4\",\"decay\"]",
+									"widget": "select"
+								}
+							]
+						}
+					],
+					"mainSurfaceId": "layer-2-performance"
+				},
+				"inputs": ["performance-input", "keyboard"],
+				"outputs": ["voice-2"],
+				"transformers": "[\"{\\\"root\\\":2,\\\"mode\\\":[0,2,3,5,7,9,10],\\\"midiControlId\\\":\\\"layer-2-step-0\\\",\\\"type\\\":\\\"Harmoniser\\\"}\",\"{\\\"distance\\\":12,\\\"type\\\":\\\"Transposer\\\"}\",\"{\\\"duration\\\":\\\"1/8\\\",\\\"type\\\":\\\"Note-Shortener\\\"}\",\"{\\\"lag\\\":2,\\\"transpose\\\":-12,\\\"level\\\":70,\\\"dry\\\":1,\\\"type\\\":\\\"Melody-Shadow\\\"}\",\"{\\\"repeats\\\":4,\\\"delay\\\":250,\\\"decay\\\":0.6,\\\"midiControlId\\\":\\\"layer-2-step-4\\\",\\\"type\\\":\\\"Note-Reverb\\\"}\"]",
+				"disabledInputs": [],
+				"disabledOutputs": []
+			}
+		]
+	},
+	"catalogue": {
+		"id": "performance:osc/signal-observatory",
+		"category": "Performance instruments",
+		"useCase": "Configure and connect the OSC bridge in the input panel. Send notes from your OSC controller; an onscreen keyboard also lets you audition the routing before connecting.",
+		"order": 181,
+		"kind": "workspace",
+		"stepSummaries": [
+			"Harmoniser — fits pitches to D Dorian, including its characteristic B natural.",
+			"Rhythm Weave — keep either the two-gesture or three-gesture strand.",
+			"Register Orbit — move surviving pitch classes through notes 48–84.",
+			"Scale velocity from melodic direction and interval size."
+		]
+	}
+}

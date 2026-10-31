@@ -3,6 +3,7 @@ import type IOChain from "audiobus/io/IO-chain"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
 import { EVENT_PRESET_LIBRARY_UPDATED } from "audiobus/event-constants"
 import { DEFAULT_PRESET_LIBRARY } from "audiobus/io/transformer-presets"
+import { parsePresetPage, presetPageSetup } from "../../services/preset-page"
 import {
 	configurationSteps,
 	parsePresetLibrary,
@@ -138,7 +139,15 @@ export function saveSetup(manager: IOChainManager, name: string): PresetSetup {
 export async function applySetup(manager: IOChainManager, setup: PresetSetup) {
 	const library = { ...structuredClone(DEFAULT_PRESET_LIBRARY), presets: [], setups: [setup] }
 	const checked = parsePresetLibrary(JSON.stringify(library)).setups[0]
+	const {
+		id: _id,
+		name: _name,
+		description: _description,
+		clock: _clock,
+		...configuration
+	} = checked
 	const workspace = {
+		...configuration,
 		version: 2,
 		activeChainId: checked.activeChainId,
 		devices: checked.devices,
@@ -150,7 +159,11 @@ export async function applySetup(manager: IOChainManager, setup: PresetSetup) {
 	await manager.restoreWorkspace("workspace:" + compressToBase64(JSON.stringify(workspace)))
 }
 export function importLibrary(json: string) {
-	const imported = parsePresetLibrary(json)
+	const data = JSON.parse(json)
+	const imported =
+		data?.format === "harmoneasy-preset"
+			? { presets: [], setups: [presetPageSetup(parsePresetPage(json), crypto.randomUUID())] }
+			: parsePresetLibrary(json)
 	const library = readLibrary()
 	// Import is additive: conflicting IDs are forked, never silently overwritten.
 	for (const kind of ["presets", "setups"] as const) {

@@ -1,4 +1,4 @@
-import { PERFORMANCE_PRESETS } from "../source/services/performance-presets"
+import { PUBLISHED_PRESETS } from "../source/services/preset-files"
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
 import { runUI } from "./native-ui"
@@ -42,14 +42,12 @@ afterEach(() => {
 
 it("shares every activity and factory preset with the browser, including older saved libraries", () => {
 	const presets = completePresets([])
-	expect(presets).toHaveLength(
-		DEFAULT_PRESET_LIBRARY.presets.length + START_CONTEXTS.length + PERFORMANCE_PRESETS.length
-	)
+	expect(presets).toHaveLength(PUBLISHED_PRESETS.length)
 	for (const context of START_CONTEXTS) {
 		const preset = presets.find((item) => item.id === `activity:${context.id}`)!
 		expect(preset.description).toBe(context.description)
 		expect(preset.useCase).toBe(context.next)
-		expect(presetSetup(preset)).toEqual(createContextSetup(context))
+		expect(presetSetup(preset)).toMatchObject(createContextSetup(context))
 	}
 	expect(
 		ACTIVITY_PRESETS.find((item) => item.id === "activity:drum-and-bass")!.useCase

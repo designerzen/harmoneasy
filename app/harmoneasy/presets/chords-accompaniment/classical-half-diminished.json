@@ -1,0 +1,130 @@
+{
+	"format": "harmoneasy-preset",
+	"version": 1,
+	"name": "Half-diminished leading-tone seventh",
+	"description": "Use the diatonic leading-tone seventh of a major destination.",
+	"clock": {
+		"bpm": 110,
+		"swing": 0,
+		"divisions": 24,
+		"bars": 4
+	},
+	"midiControls": {
+		"enabled": true,
+		"bindings": []
+	},
+	"workspace": {
+		"version": 2,
+		"activeChainId": "context-chain",
+		"devices": [
+			{
+				"id": "computer-keyboard",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "keyboard"
+				}
+			},
+			{
+				"id": "keyboard",
+				"direction": "input",
+				"definition": {
+					"factory": "keyboard-input"
+				}
+			},
+			{
+				"id": "synth",
+				"direction": "output",
+				"definition": {
+					"factory": "polyphonic",
+					"options": {
+						"shape": "square",
+						"volume": 0.22,
+						"attack": 0.04,
+						"decay": 0.2,
+						"sustain": 0.45,
+						"release": 0.18,
+						"filterCutOff": 1700
+					}
+				}
+			},
+			{
+				"id": "ui",
+				"direction": "output",
+				"definition": {
+					"factory": "external",
+					"type": "ui"
+				}
+			}
+		],
+		"chains": [
+			{
+				"id": "context-chain",
+				"options": {
+					"name": "Half-diminished leading-tone seventh",
+					"active": true,
+					"controlSurfaces": [
+						{
+							"id": "context-chain-performance",
+							"name": "Half-diminished leading-tone seventh controls",
+							"theme": "ice",
+							"connections": [
+								{
+									"componentId": "synth",
+									"controlIds": [
+										"volume",
+										"shape",
+										"attack",
+										"release",
+										"filterCutOff",
+										"filterResonance"
+									]
+								}
+							],
+							"widgets": [
+								{
+									"key": "[\"synth\",\"volume\"]",
+									"widget": "slider"
+								},
+								{
+									"key": "[\"synth\",\"shape\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"synth\",\"attack\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"synth\",\"release\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"synth\",\"filterCutOff\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"synth\",\"filterResonance\"]",
+									"widget": "dial"
+								}
+							]
+						}
+					],
+					"mainSurfaceId": "context-chain-performance"
+				},
+				"inputs": ["computer-keyboard", "keyboard"],
+				"outputs": ["synth", "ui"],
+				"transformers": "[\"{\\\"single\\\":\\\"chord-root\\\",\\\"step\\\":0.5,\\\"finalBeats\\\":2,\\\"hold\\\":\\\"phrase\\\",\\\"mode\\\":\\\"major\\\",\\\"concept\\\":\\\"half-diminished\\\",\\\"type\\\":\\\"Harmonic-Bridge\\\"}\"]",
+				"disabledInputs": [],
+				"disabledOutputs": []
+			}
+		]
+	},
+	"catalogue": {
+		"id": "classical-half-diminished",
+		"category": "Chords & accompaniment",
+		"useCase": "Play a starting chord, then the root or chord you want to reach. Cadence presets prepare even the first gesture.",
+		"order": 67,
+		"kind": "chain",
+		"stepSummaries": ["Use the diatonic leading-tone seventh of a major destination."]
+	}
+}

@@ -4,6 +4,7 @@ import { configurationSteps, parsePresetLibrary } from "audiobus/io/preset-libra
 import { parseMusicTools } from "audiobus/io/music-tools"
 import { isRoomSetup } from "./room-url"
 import { validBinding, type MidiBinding } from "./midi-controls"
+import type { PresetSetup } from "audiobus/io/preset-library"
 
 export interface PresetPage {
 	format: "harmoneasy-preset"
@@ -13,10 +14,41 @@ export interface PresetPage {
 	workspace: Record<string, any>
 	clock: { bpm: number; swing: number; divisions: number; bars: number }
 	midiControls: { enabled: boolean; bindings: MidiBinding[] }
+	catalogue?: {
+		id?: string
+		category?: string
+		useCase?: string
+		kind?: "chain" | "workspace"
+		order?: number
+		stepSummaries?: string[]
+		options?: Record<string, any>
+	}
 }
 
 export function presetWorkspace(preset: PresetPage): string {
 	return "workspace:" + compressToBase64(JSON.stringify(preset.workspace))
+}
+
+export function presetPageSetup(page: PresetPage, id: string): PresetSetup {
+	const workspace = structuredClone(page.workspace)
+	return {
+		...workspace,
+		id,
+		name: page.name,
+		description: page.description,
+		clock: structuredClone(page.clock),
+		chains: workspace.chains.map(
+			({ transformers, ...chain }: Record<string, any>, chainIndex: number) => ({
+				...chain,
+				steps: configurationSteps(transformers).map((step, index) => ({
+					...step,
+					summary:
+						(chainIndex === 0 ? page.catalogue?.stepSummaries?.[index] : undefined) ??
+						step.summary
+				}))
+			})
+		)
+	} as PresetSetup
 }
 
 export function parsePresetPage(json: string): PresetPage {
@@ -35,11 +67,47 @@ export function parsePresetPage(json: string): PresetPage {
 	}
 	// Reuse setup validation while retaining the complete workspace, including
 	// music tools, disabled endpoints, graph positions and control surfaces.
+	if (data.catalogue !== undefined) {
+		const catalogue = data.catalogue
+		if (
+			!catalogue ||
+			typeof catalogue !== "object" ||
+			Array.isArray(catalogue) ||
+			["id", "category", "useCase"].some(
+				(key) =>
+					catalogue[key] !== undefined &&
+					(typeof catalogue[key] !== "string" || !catalogue[key].trim())
+			) ||
+			(catalogue.kind !== undefined && !["chain", "workspace"].includes(catalogue.kind)) ||
+			(catalogue.order !== undefined &&
+				(!Number.isInteger(catalogue.order) || catalogue.order < 0)) ||
+			(catalogue.stepSummaries !== undefined &&
+				(!Array.isArray(catalogue.stepSummaries) ||
+					!catalogue.stepSummaries.every(
+						(summary: unknown) => typeof summary === "string"
+					)))
+		) {
+			throw new Error("Invalid preset catalogue metadata")
+		}
+	}
 	parsePresetLibrary(
 		JSON.stringify({
 			format: "harmoneasy-preset-library",
 			version: 1,
-			presets: [],
+			presets:
+				data.catalogue?.options === undefined
+					? []
+					: [
+							{
+								id: "catalogue",
+								name: data.name,
+								description: "",
+								category: "Published",
+								useCase: "",
+								steps: [],
+								options: data.catalogue.options
+							}
+						],
 			setups: [
 				{
 					id: "page",

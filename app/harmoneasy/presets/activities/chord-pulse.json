@@ -1,0 +1,134 @@
+{
+	"format": "harmoneasy-preset",
+	"version": 1,
+	"name": "Turn a note into a chord pulse",
+	"description": "Make one root note trigger four evenly spaced C major chord strikes.",
+	"clock": {
+		"bpm": 110,
+		"swing": 0,
+		"divisions": 24,
+		"bars": 4
+	},
+	"midiControls": {
+		"enabled": true,
+		"bindings": []
+	},
+	"workspace": {
+		"version": 2,
+		"activeChainId": "context-chain",
+		"devices": [
+			{
+				"id": "computer-keyboard",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "keyboard"
+				}
+			},
+			{
+				"id": "keyboard",
+				"direction": "input",
+				"definition": {
+					"factory": "keyboard-input"
+				}
+			},
+			{
+				"id": "synth",
+				"direction": "output",
+				"definition": {
+					"factory": "polyphonic",
+					"options": {
+						"shape": "triangle",
+						"volume": 0.4,
+						"attack": 0.003,
+						"decay": 0.25,
+						"sustain": 0.12,
+						"release": 0.2,
+						"filterCutOff": 4200
+					}
+				}
+			},
+			{
+				"id": "ui",
+				"direction": "output",
+				"definition": {
+					"factory": "external",
+					"type": "ui"
+				}
+			}
+		],
+		"chains": [
+			{
+				"id": "context-chain",
+				"options": {
+					"name": "Turn a note into a chord pulse",
+					"active": true,
+					"controlSurfaces": [
+						{
+							"id": "context-chain-performance",
+							"name": "Turn a note into a chord pulse controls",
+							"theme": "ice",
+							"connections": [
+								{
+									"componentId": "synth",
+									"controlIds": [
+										"volume",
+										"shape",
+										"attack",
+										"release",
+										"filterCutOff",
+										"filterResonance"
+									]
+								}
+							],
+							"widgets": [
+								{
+									"key": "[\"synth\",\"volume\"]",
+									"widget": "slider"
+								},
+								{
+									"key": "[\"synth\",\"shape\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"synth\",\"attack\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"synth\",\"release\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"synth\",\"filterCutOff\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"synth\",\"filterResonance\"]",
+									"widget": "dial"
+								}
+							]
+						}
+					],
+					"mainSurfaceId": "context-chain-performance"
+				},
+				"inputs": ["computer-keyboard", "keyboard"],
+				"outputs": ["synth", "ui"],
+				"transformers": "[\"{\\\"root\\\":0,\\\"mode\\\":[0,2,4,5,7,9,11],\\\"type\\\":\\\"Harmoniser\\\"}\",\"{\\\"mode\\\":\\\"ionian\\\",\\\"root\\\":3,\\\"simultaneous\\\":3,\\\"type\\\":\\\"Chordifier\\\"}\",\"{\\\"repeats\\\":4,\\\"delay\\\":250,\\\"noteDuration\\\":100,\\\"type\\\":\\\"Note-Repeater\\\"}\"]",
+				"disabledInputs": [],
+				"disabledOutputs": []
+			}
+		]
+	},
+	"catalogue": {
+		"id": "activity:chord-pulse",
+		"category": "Activities · Rhythm",
+		"useCase": "Start at 120 BPM: the 250 ms repeats fit eighth notes. Play one note and leave room for its repeats.",
+		"order": 150,
+		"kind": "chain",
+		"stepSummaries": [
+			"Harmoniser — moves notes to the nearest pitch in C major.",
+			"Chordifier — builds 3-note major-key chords from each note.",
+			"Note Repeater — plays 4 strikes per note, 250 ms apart, each lasting 100 ms. Spacing stays fixed when tempo changes."
+		]
+	}
+}

@@ -1,22 +1,17 @@
 import { DEFAULT_PRESET_LIBRARY } from "../../services/factory-preset-data"
 import type { TransformerPreset } from "audiobus/io/preset-library"
 import { START_CONTEXTS, createContextSetup } from "../../services/start-context-catalogue"
-import { PERFORMANCE_PRESETS, performancePresetSetup } from "../../services/performance-presets"
 import { presetVoice, setupSurfaces } from "../../services/preset-instruments"
 import { OUTPUT_DEFINITIONS } from "../../../../../packages/audiobus/io/output-definitions"
-import { SONG_PRESETS, songPresetSetup } from "../../services/song-presets"
+import { PUBLISHED_PRESETS, publishedPresetSetup } from "../../services/preset-files"
 
-export const ACTIVITY_PRESETS: TransformerPreset[] = START_CONTEXTS.map((context) => ({
-	id: `activity:${context.id}`,
-	name: context.name,
-	category:
-		context.category === "Accessibility"
-			? context.category
-			: `Activities · ${context.category}`,
-	description: context.description,
-	useCase: context.next,
-	steps: createContextSetup(context).chains[0].steps
-}))
+export const ACTIVITY_PRESETS: TransformerPreset[] = PUBLISHED_PRESETS.filter((entry) =>
+	entry.preset.id.startsWith("activity:")
+).map((entry) => entry.preset)
+
+const factorySignatures = new Map(
+	DEFAULT_PRESET_LIBRARY.presets.map((preset) => [preset.id, JSON.stringify(preset)])
+)
 
 export function presetContext(preset: Pick<TransformerPreset, "id">) {
 	const activity = START_CONTEXTS.find((context) => preset.id === `activity:${context.id}`)
@@ -33,13 +28,13 @@ export function presetContext(preset: Pick<TransformerPreset, "id">) {
 }
 
 export function presetSetup(preset: TransformerPreset) {
-	const song = songPresetSetup(preset.id)
-	if (song) {
-		return song
-	}
-	const performance = performancePresetSetup(preset)
-	if (performance) {
-		return performance
+	const published = publishedPresetSetup(preset.id)
+	if (published) {
+		if (published.chains.length === 1) {
+			published.chains[0].steps = structuredClone(preset.steps)
+			published.chains[0].options = { ...published.chains[0].options, ...preset.options }
+		}
+		return published
 	}
 	const context = presetContext(preset)
 	const setup = createContextSetup(
@@ -82,13 +77,13 @@ export function presetSound(preset: TransformerPreset) {
 }
 
 export function completePresets(saved: TransformerPreset[]) {
+	const custom = saved.filter(
+		(preset) => factorySignatures.get(preset.id) !== JSON.stringify(preset)
+	)
 	return [
-		...DEFAULT_PRESET_LIBRARY.presets.filter(
-			(preset) => !saved.some((item) => item.id === preset.id)
+		...PUBLISHED_PRESETS.map((entry) => entry.preset).filter(
+			(preset) => !custom.some((item) => item.id === preset.id)
 		),
-		...saved,
-		...ACTIVITY_PRESETS,
-		...PERFORMANCE_PRESETS,
-		...SONG_PRESETS
+		...custom
 	]
 }

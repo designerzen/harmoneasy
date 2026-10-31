@@ -475,6 +475,12 @@
 .node-transformer {
 	min-height: var(--size, 150px);
 
+	> .nodrag.nowheel:has(> .component-controls) {
+		display: block;
+		width: 100%;
+		min-width: 0;
+	}
+
 	> * {
 		display: flex;
 		align-items: center;
@@ -3068,6 +3074,21 @@ dialog.add-output-dialog {
 			text-transform: none;
 			letter-spacing: normal;
 			justify-items: stretch;
+
+			&::before,
+			&::after {
+				display: none;
+			}
+
+			.node-info-icon {
+				grid-area: icon;
+				width: 1.1rem;
+				height: 1.1rem;
+				fill: none;
+				stroke: currentColor;
+				stroke-width: 1.75;
+				stroke-linecap: round;
+			}
 
 			h6 {
 				display: flex;

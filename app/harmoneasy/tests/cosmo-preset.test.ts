@@ -22,7 +22,7 @@ vi.mock("../../../packages/control-surface/src/renderer", () => ({
 		}
 	}
 }))
-const json = await readFile("public/preset/hardware/cosmo/dots/preset.json", "utf8")
+const json = await readFile("presets/hardware/cosmo/dots.json", "utf8")
 const banks = await readFile("../../packages/audiobus/wam/yoshimi/banks/root.json", "utf8")
 let manager: IOChainManager
 let workspace: ReturnType<typeof createChainWorkspace> | undefined

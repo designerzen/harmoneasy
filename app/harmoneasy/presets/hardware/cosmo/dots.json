@@ -1,0 +1,248 @@
+{
+	"format": "harmoneasy-preset",
+	"version": 1,
+	"name": "Cosmo Dots Strings",
+	"description": "Play the Cosmo Dots or press their paired keyboard keys. Notes pass through Quantiser, Harmoniser and Chordifier into Yoshimi Strings. Change the instrument, sound and transformer settings on the control surface; use Edit chain to change routing. Pair physical Dots in keyboard (Switch) mode using Cosmo Dot Setup.",
+	"clock": {
+		"bpm": 100,
+		"swing": 0,
+		"divisions": 24,
+		"bars": 4
+	},
+	"midiControls": {
+		"enabled": true,
+		"bindings": []
+	},
+	"workspace": {
+		"version": 2,
+		"activeChainId": "cosmo-strings",
+		"devices": [
+			{
+				"id": "cosmo-input",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "cosmo-dots",
+					"options": {
+						"dotCount": 8,
+						"dots": [
+							{
+								"trigger": "0",
+								"duration": 650,
+								"command": {
+									"type": "noteOn",
+									"number": 60,
+									"channel": 1,
+									"velocity": 100
+								}
+							},
+							{
+								"trigger": "1",
+								"duration": 650,
+								"command": {
+									"type": "noteOn",
+									"number": 62,
+									"channel": 1,
+									"velocity": 100
+								}
+							},
+							{
+								"trigger": "2",
+								"duration": 650,
+								"command": {
+									"type": "noteOn",
+									"number": 64,
+									"channel": 1,
+									"velocity": 100
+								}
+							},
+							{
+								"trigger": "3",
+								"duration": 650,
+								"command": {
+									"type": "noteOn",
+									"number": 65,
+									"channel": 1,
+									"velocity": 100
+								}
+							},
+							{
+								"trigger": "4",
+								"duration": 650,
+								"command": {
+									"type": "noteOn",
+									"number": 67,
+									"channel": 1,
+									"velocity": 100
+								}
+							},
+							{
+								"trigger": "5",
+								"duration": 650,
+								"command": {
+									"type": "noteOn",
+									"number": 69,
+									"channel": 1,
+									"velocity": 100
+								}
+							},
+							{
+								"trigger": "6",
+								"duration": 650,
+								"command": {
+									"type": "noteOn",
+									"number": 71,
+									"channel": 1,
+									"velocity": 100
+								}
+							},
+							{
+								"trigger": "7",
+								"duration": 650,
+								"command": {
+									"type": "noteOn",
+									"number": 72,
+									"channel": 1,
+									"velocity": 100
+								}
+							}
+						]
+					}
+				}
+			},
+			{
+				"id": "cosmo-yoshimi",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "yoshimi",
+					"options": {
+						"bank": "Strings",
+						"preset": "0033-Strings1.xiz",
+						"volume": 0.7,
+						"cutoff": 64,
+						"resonance": 64,
+						"modulation": 0,
+						"pan": 64
+					}
+				}
+			}
+		],
+		"chains": [
+			{
+				"id": "cosmo-strings",
+				"options": {
+					"name": "Cosmo Dots Strings",
+					"active": true,
+					"graphLayout": "horizontal",
+					"mainSurfaceId": "cosmo-performance",
+					"controlSurfaces": [
+						{
+							"id": "cosmo-performance",
+							"name": "Cosmo Dots Strings",
+							"theme": "ice",
+							"panels": ["cosmo-input"],
+							"connections": [
+								{
+									"componentId": "cosmo-input",
+									"controlIds": ["dotCount"]
+								},
+								{
+									"componentId": "cosmo-yoshimi",
+									"controlIds": [
+										"instrument",
+										"volume",
+										"cutoff",
+										"resonance",
+										"modulation",
+										"pan"
+									]
+								},
+								{
+									"componentId": "transformer:cosmo-quantiser",
+									"controlIds": ["enabled", "step"]
+								},
+								{
+									"componentId": "transformer:cosmo-harmoniser",
+									"controlIds": ["enabled", "root", "mode"]
+								},
+								{
+									"componentId": "transformer:cosmo-chordifier",
+									"controlIds": ["simultaneous", "enabled", "root", "mode"]
+								}
+							],
+							"widgets": [
+								{
+									"key": "[\"cosmo-input\",\"dotCount\"]"
+								},
+								{
+									"key": "[\"cosmo-yoshimi\",\"instrument\"]",
+									"span": 3
+								},
+								{
+									"key": "[\"cosmo-yoshimi\",\"volume\"]"
+								},
+								{
+									"key": "[\"cosmo-yoshimi\",\"cutoff\"]"
+								},
+								{
+									"key": "[\"cosmo-yoshimi\",\"resonance\"]"
+								},
+								{
+									"key": "[\"cosmo-yoshimi\",\"modulation\"]"
+								},
+								{
+									"key": "[\"cosmo-yoshimi\",\"pan\"]"
+								},
+								{
+									"key": "[\"transformer:cosmo-quantiser\",\"enabled\"]"
+								},
+								{
+									"key": "[\"transformer:cosmo-quantiser\",\"step\"]"
+								},
+								{
+									"key": "[\"transformer:cosmo-harmoniser\",\"enabled\"]"
+								},
+								{
+									"key": "[\"transformer:cosmo-harmoniser\",\"root\"]"
+								},
+								{
+									"key": "[\"transformer:cosmo-harmoniser\",\"mode\"]"
+								},
+								{
+									"key": "[\"transformer:cosmo-chordifier\",\"enabled\"]"
+								},
+								{
+									"key": "[\"transformer:cosmo-chordifier\",\"simultaneous\"]"
+								},
+								{
+									"key": "[\"transformer:cosmo-chordifier\",\"root\"]"
+								},
+								{
+									"key": "[\"transformer:cosmo-chordifier\",\"mode\"]"
+								}
+							]
+						}
+					]
+				},
+				"transformers": "[\"{\\\"type\\\":\\\"Quantiser\\\",\\\"midiControlId\\\":\\\"cosmo-quantiser\\\",\\\"enabled\\\":true,\\\"step\\\":4}\",\"{\\\"type\\\":\\\"Harmoniser\\\",\\\"midiControlId\\\":\\\"cosmo-harmoniser\\\",\\\"enabled\\\":true,\\\"root\\\":0,\\\"mode\\\":[0,2,4,5,7,9,11]}\",\"{\\\"type\\\":\\\"Chordifier\\\",\\\"midiControlId\\\":\\\"cosmo-chordifier\\\",\\\"enabled\\\":true,\\\"root\\\":0,\\\"mode\\\":\\\"ionian\\\",\\\"simultaneous\\\":3}\"]",
+				"inputs": ["cosmo-input"],
+				"outputs": ["cosmo-yoshimi"],
+				"disabledInputs": [],
+				"disabledOutputs": []
+			}
+		]
+	},
+	"catalogue": {
+		"id": "performance:hardware/cosmo/dots",
+		"category": "Hardware",
+		"useCase": "Connect the controller in its input panel, then play. The complete setup includes the controller routing and control surfaces.",
+		"order": 184,
+		"kind": "workspace",
+		"stepSummaries": [
+			"Quantiser — hardware performance settings.",
+			"Harmoniser — hardware performance settings.",
+			"Chordifier — hardware performance settings."
+		]
+	}
+}

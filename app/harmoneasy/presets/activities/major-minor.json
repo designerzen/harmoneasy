@@ -1,0 +1,133 @@
+{
+	"format": "harmoneasy-preset",
+	"version": 1,
+	"name": "Hear what makes minor sound different",
+	"description": "Explore A minor chords and compare their mood with the major chord starting points.",
+	"clock": {
+		"bpm": 110,
+		"swing": 0,
+		"divisions": 24,
+		"bars": 4
+	},
+	"midiControls": {
+		"enabled": true,
+		"bindings": []
+	},
+	"workspace": {
+		"version": 2,
+		"activeChainId": "context-chain",
+		"devices": [
+			{
+				"id": "computer-keyboard",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "keyboard"
+				}
+			},
+			{
+				"id": "keyboard",
+				"direction": "input",
+				"definition": {
+					"factory": "keyboard-input"
+				}
+			},
+			{
+				"id": "synth",
+				"direction": "output",
+				"definition": {
+					"factory": "polyphonic",
+					"options": {
+						"shape": "triangle",
+						"volume": 0.4,
+						"attack": 0.003,
+						"decay": 0.25,
+						"sustain": 0.12,
+						"release": 0.2,
+						"filterCutOff": 4200
+					}
+				}
+			},
+			{
+				"id": "ui",
+				"direction": "output",
+				"definition": {
+					"factory": "external",
+					"type": "ui"
+				}
+			}
+		],
+		"chains": [
+			{
+				"id": "context-chain",
+				"options": {
+					"name": "Hear what makes minor sound different",
+					"active": true,
+					"controlSurfaces": [
+						{
+							"id": "context-chain-performance",
+							"name": "Hear what makes minor sound different controls",
+							"theme": "ice",
+							"connections": [
+								{
+									"componentId": "synth",
+									"controlIds": [
+										"volume",
+										"shape",
+										"attack",
+										"release",
+										"filterCutOff",
+										"filterResonance"
+									]
+								}
+							],
+							"widgets": [
+								{
+									"key": "[\"synth\",\"volume\"]",
+									"widget": "slider"
+								},
+								{
+									"key": "[\"synth\",\"shape\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"synth\",\"attack\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"synth\",\"release\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"synth\",\"filterCutOff\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"synth\",\"filterResonance\"]",
+									"widget": "dial"
+								}
+							]
+						}
+					],
+					"mainSurfaceId": "context-chain-performance"
+				},
+				"inputs": ["computer-keyboard", "keyboard"],
+				"outputs": ["synth", "ui"],
+				"transformers": "[\"{\\\"root\\\":9,\\\"mode\\\":[0,2,3,5,7,8,10],\\\"type\\\":\\\"Harmoniser\\\"}\",\"{\\\"mode\\\":\\\"aeolian\\\",\\\"root\\\":0,\\\"simultaneous\\\":3,\\\"type\\\":\\\"Chordifier\\\"}\"]",
+				"disabledInputs": [],
+				"disabledOutputs": []
+			}
+		]
+	},
+	"catalogue": {
+		"id": "activity:major-minor",
+		"category": "Activities · Learning",
+		"useCase": "Play a short sequence of single notes. Listen to the minor chords each note creates.",
+		"order": 135,
+		"kind": "chain",
+		"stepSummaries": [
+			"Harmoniser — moves notes into A natural minor.",
+			"Chordifier — builds 3-note minor-key chords from each note."
+		]
+	}
+}

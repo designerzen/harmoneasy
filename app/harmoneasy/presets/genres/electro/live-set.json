@@ -1,0 +1,393 @@
+{
+	"format": "harmoneasy-preset",
+	"version": 1,
+	"name": "Electro Switchyard Live Set",
+	"description": "A sixteen-bar electro performance rig with clipped saw bass, syncopated square-wave chords and a wandering high bell counterline. Start transport for the electro drums. Play roots in the middle register, bring up the offbeat chords for the second eight bars, then introduce the bell line. Shape each filter and layer level on its own control surface.",
+	"clock": {
+		"bpm": 125,
+		"swing": 0,
+		"divisions": 24,
+		"bars": 16
+	},
+	"midiControls": {
+		"enabled": true,
+		"bindings": []
+	},
+	"workspace": {
+		"version": 2,
+		"activeChainId": "layer-0",
+		"devices": [
+			{
+				"id": "performance-input",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "keyboard"
+				}
+			},
+			{
+				"id": "keyboard",
+				"direction": "input",
+				"definition": {
+					"factory": "keyboard-input"
+				}
+			},
+			{
+				"id": "voice-0",
+				"direction": "output",
+				"definition": {
+					"factory": "polyphonic",
+					"options": {
+						"shape": "sawtooth",
+						"volume": 0.3,
+						"attack": 0.005,
+						"decay": 0.15,
+						"sustain": 0.35,
+						"release": 0.08,
+						"filterCutOff": 650,
+						"filterResonance": 2
+					}
+				}
+			},
+			{
+				"id": "voice-1",
+				"direction": "output",
+				"definition": {
+					"factory": "polyphonic",
+					"options": {
+						"shape": "square",
+						"volume": 0.22,
+						"attack": 0.04,
+						"decay": 0.2,
+						"sustain": 0.45,
+						"release": 0.18,
+						"filterCutOff": 1700
+					}
+				}
+			},
+			{
+				"id": "voice-2",
+				"direction": "output",
+				"definition": {
+					"factory": "polyphonic",
+					"options": {
+						"shape": "sine",
+						"volume": 0.35,
+						"attack": 0.002,
+						"decay": 0.8,
+						"sustain": 0.05,
+						"release": 1.4,
+						"filterCutOff": 6500
+					}
+				}
+			},
+			{
+				"id": "drums",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "drum-accompaniment",
+					"options": {
+						"genre": "electronic",
+						"groove": "electro",
+						"volume": 0.35,
+						"density": 0.6,
+						"energy": 0.65
+					}
+				}
+			}
+		],
+		"chains": [
+			{
+				"id": "layer-0",
+				"options": {
+					"name": "Switchyard bass",
+					"active": true,
+					"controlSurfaces": [
+						{
+							"id": "layer-0-performance",
+							"name": "Switchyard bass controls",
+							"theme": "ice",
+							"connections": [
+								{
+									"componentId": "voice-0",
+									"controlIds": [
+										"volume",
+										"shape",
+										"attack",
+										"release",
+										"filterCutOff",
+										"filterResonance"
+									]
+								},
+								{
+									"componentId": "drums",
+									"controlIds": ["volume", "groove", "energy", "density"]
+								},
+								{
+									"componentId": "transformer:layer-0-step-0",
+									"controlIds": ["root", "mode"]
+								}
+							],
+							"widgets": [
+								{
+									"key": "[\"voice-0\",\"volume\"]",
+									"widget": "slider"
+								},
+								{
+									"key": "[\"voice-0\",\"shape\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"voice-0\",\"attack\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-0\",\"release\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-0\",\"filterCutOff\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-0\",\"filterResonance\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"drums\",\"volume\"]",
+									"widget": "slider"
+								},
+								{
+									"key": "[\"drums\",\"groove\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"drums\",\"energy\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"drums\",\"density\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-0-step-0\",\"root\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-0-step-0\",\"mode\"]",
+									"widget": "select"
+								}
+							]
+						}
+					],
+					"mainSurfaceId": "layer-0-performance"
+				},
+				"inputs": ["performance-input", "keyboard"],
+				"outputs": ["voice-0", "drums"],
+				"transformers": "[\"{\\\"root\\\":9,\\\"mode\\\":[0,2,3,5,7,8,10],\\\"midiControlId\\\":\\\"layer-0-step-0\\\",\\\"type\\\":\\\"Harmoniser\\\"}\",\"{\\\"distance\\\":-12,\\\"type\\\":\\\"Transposer\\\"}\",\"{\\\"duration\\\":\\\"1/8\\\",\\\"type\\\":\\\"Note-Shortener\\\"}\",\"{\\\"rising\\\":120,\\\"falling\\\":80,\\\"repeated\\\":95,\\\"leap\\\":10,\\\"gap\\\":4,\\\"type\\\":\\\"Contour-Dynamics\\\"}\"]",
+				"disabledInputs": [],
+				"disabledOutputs": []
+			},
+			{
+				"id": "layer-1",
+				"options": {
+					"name": "Offbeat circuits",
+					"active": true,
+					"controlSurfaces": [
+						{
+							"id": "layer-1-performance",
+							"name": "Offbeat circuits controls",
+							"theme": "ice",
+							"connections": [
+								{
+									"componentId": "voice-1",
+									"controlIds": [
+										"volume",
+										"shape",
+										"attack",
+										"release",
+										"filterCutOff",
+										"filterResonance"
+									]
+								},
+								{
+									"componentId": "transformer:layer-1-step-0",
+									"controlIds": ["root", "mode"]
+								}
+							],
+							"widgets": [
+								{
+									"key": "[\"voice-1\",\"volume\"]",
+									"widget": "slider"
+								},
+								{
+									"key": "[\"voice-1\",\"shape\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"voice-1\",\"attack\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-1\",\"release\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-1\",\"filterCutOff\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-1\",\"filterResonance\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-1-step-0\",\"root\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-1-step-0\",\"mode\"]",
+									"widget": "select"
+								}
+							]
+						}
+					],
+					"mainSurfaceId": "layer-1-performance"
+				},
+				"inputs": ["performance-input", "keyboard"],
+				"outputs": ["voice-1"],
+				"transformers": "[\"{\\\"root\\\":9,\\\"mode\\\":[0,2,3,5,7,8,10],\\\"midiControlId\\\":\\\"layer-1-step-0\\\",\\\"type\\\":\\\"Harmoniser\\\"}\",\"{\\\"mode\\\":\\\"aeolian\\\",\\\"root\\\":0,\\\"simultaneous\\\":3,\\\"type\\\":\\\"Chordifier\\\"}\",\"{\\\"useTimeDivision\\\":true,\\\"timeDivision\\\":\\\"1/8\\\",\\\"accumulate\\\":false,\\\"type\\\":\\\"Note-Delay\\\"}\",\"{\\\"duration\\\":\\\"1/16\\\",\\\"type\\\":\\\"Note-Shortener\\\"}\",\"{\\\"lower\\\":48,\\\"upper\\\":84,\\\"collect\\\":30,\\\"type\\\":\\\"Voice-Leader\\\"}\",\"{\\\"rising\\\":120,\\\"falling\\\":80,\\\"repeated\\\":95,\\\"leap\\\":10,\\\"gap\\\":4,\\\"type\\\":\\\"Contour-Dynamics\\\"}\"]",
+				"disabledInputs": [],
+				"disabledOutputs": []
+			},
+			{
+				"id": "layer-2",
+				"options": {
+					"name": "Signal reflections",
+					"active": true,
+					"controlSurfaces": [
+						{
+							"id": "layer-2-performance",
+							"name": "Signal reflections controls",
+							"theme": "ice",
+							"connections": [
+								{
+									"componentId": "voice-2",
+									"controlIds": [
+										"volume",
+										"shape",
+										"attack",
+										"release",
+										"filterCutOff",
+										"filterResonance"
+									]
+								},
+								{
+									"componentId": "transformer:layer-2-step-0",
+									"controlIds": ["root", "mode"]
+								},
+								{
+									"componentId": "transformer:layer-2-step-1",
+									"controlIds": ["cycleA", "cycleB"]
+								},
+								{
+									"componentId": "transformer:layer-2-step-2",
+									"controlIds": ["lower", "upper", "stride"]
+								},
+								{
+									"componentId": "transformer:layer-2-step-5",
+									"controlIds": ["repeats", "delay", "decay"]
+								}
+							],
+							"widgets": [
+								{
+									"key": "[\"voice-2\",\"volume\"]",
+									"widget": "slider"
+								},
+								{
+									"key": "[\"voice-2\",\"shape\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"voice-2\",\"attack\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-2\",\"release\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-2\",\"filterCutOff\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-2\",\"filterResonance\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-2-step-0\",\"root\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-2-step-0\",\"mode\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-2-step-1\",\"cycleA\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-2-step-1\",\"cycleB\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-2-step-2\",\"lower\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-2-step-2\",\"upper\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-2-step-2\",\"stride\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-2-step-5\",\"repeats\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-2-step-5\",\"delay\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-2-step-5\",\"decay\"]",
+									"widget": "select"
+								}
+							]
+						}
+					],
+					"mainSurfaceId": "layer-2-performance"
+				},
+				"inputs": ["performance-input", "keyboard"],
+				"outputs": ["voice-2"],
+				"transformers": "[\"{\\\"root\\\":9,\\\"mode\\\":[0,2,3,5,7,8,10],\\\"midiControlId\\\":\\\"layer-2-step-0\\\",\\\"type\\\":\\\"Harmoniser\\\"}\",\"{\\\"cycleA\\\":3,\\\"cycleB\\\":5,\\\"mode\\\":\\\"union\\\",\\\"accent\\\":120,\\\"level\\\":80,\\\"midiControlId\\\":\\\"layer-2-step-1\\\",\\\"type\\\":\\\"Rhythm-Weave\\\"}\",\"{\\\"lower\\\":48,\\\"upper\\\":84,\\\"stride\\\":7,\\\"collect\\\":25,\\\"midiControlId\\\":\\\"layer-2-step-2\\\",\\\"type\\\":\\\"Register-Orbit\\\"}\",\"{\\\"distance\\\":12,\\\"type\\\":\\\"Transposer\\\"}\",\"{\\\"duration\\\":\\\"1/8\\\",\\\"type\\\":\\\"Note-Shortener\\\"}\",\"{\\\"repeats\\\":4,\\\"delay\\\":250,\\\"decay\\\":0.6,\\\"midiControlId\\\":\\\"layer-2-step-5\\\",\\\"type\\\":\\\"Note-Reverb\\\"}\"]",
+				"disabledInputs": [],
+				"disabledOutputs": []
+			}
+		]
+	},
+	"catalogue": {
+		"id": "performance:genres/electro/live-set",
+		"category": "Performance instruments",
+		"useCase": "Start transport for the electro drums. Play roots in the middle register, bring up the offbeat chords for the second eight bars, then introduce the bell line. Shape each filter and layer level on its own control surface.",
+		"order": 169,
+		"kind": "workspace",
+		"stepSummaries": [
+			"Harmoniser — moves notes into A natural minor.",
+			"Transposer — shifts every note down 12 semitones.",
+			"Note Shortener — gives each note a 1/8 gate, synced to tempo.",
+			"Scale velocity from melodic direction and interval size."
+		]
+	}
+}

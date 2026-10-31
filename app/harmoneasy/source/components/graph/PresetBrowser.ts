@@ -5,6 +5,9 @@ import { createPresetDetails } from "./PresetDetails"
 import { createPresetArtwork } from "./PresetArtwork"
 import { completePresets, presetContext, presetSetup } from "./preset-catalogue"
 import { builtinPresetRoute } from "../../services/builtin-preset-pages"
+import { isWorkspacePreset } from "../../services/preset-files"
+import { exportPublishedPreset } from "../../services/preset-export"
+import { getState } from "../../libs/state"
 import { START_CONTEXTS } from "../../services/start-context-catalogue"
 import { TRANSFORMER_DEFINITIONS } from "audiobus/io/transformer-definitions"
 import { discoveryMatches } from "./discovery-search"
@@ -264,6 +267,68 @@ export function createPresetBrowser({
 			})
 		)
 	}
+	const publishForm = element("form", "preset-setup-save")
+	publishForm.hidden = true
+	const publishField = (labelText: string, initial: string) => {
+		const label = element("label", "", labelText)
+		const input = element("input")
+		input.value = initial
+		input.required = true
+		label.append(input)
+		publishForm.append(label)
+		return input
+	}
+	const publishName = publishField("Preset name ", "My performance")
+	const publishDescription = publishField("Description and playing instructions ", "")
+	const publishPath = publishField("Repository path inside presets/ ", "community/my-performance")
+	const publishHint = element("p", "preset-library-note")
+	const updatePublishHint = () => {
+		publishHint.textContent = `Add the downloaded file as app/harmoneasy/presets/${publishPath.value.replace(/\.json$/, "")}.json in your pull request.`
+	}
+	publishPath.oninput = updatePublishHint
+	updatePublishHint()
+	const publishSubmit = element("button", "", "Download preset JSON")
+	publishSubmit.type = "submit"
+	publishForm.append(
+		publishHint,
+		publishSubmit,
+		button("Cancel", () => {
+			publishForm.hidden = true
+		})
+	)
+	publishForm.onsubmit = (event) => {
+		event.preventDefault()
+		if (!manager) {
+			return
+		}
+		run(() => {
+			const timer = manager.chains[0]?.timer
+			const midi = getState("midiControls")
+			const exported = exportPublishedPreset(
+				manager,
+				publishPath.value,
+				publishName.value,
+				publishDescription.value,
+				{
+					bpm: Number(timer?.BPM ?? getState("tempo") ?? 110),
+					swing: Number(getState("swing") ?? 0),
+					divisions: Number(timer?.divisions ?? 24),
+					bars: Number(timer?.bars ?? 4)
+				},
+				typeof midi === "string" ? JSON.parse(midi) : undefined
+			)
+			downloadLibrary(exported.json, exported.filename.slice(0, -5))
+			message = `Downloaded. Add the file at ${exported.repositoryPath} in your pull request.`
+		})
+	}
+	if (manager) {
+		toolActions.append(
+			button("Export preset for publishing", () => {
+				publishForm.hidden = false
+				publishName.focus()
+			})
+		)
+	}
 	const undoButton = button("Undo delete", () =>
 		run(() => {
 			if (undo) {
@@ -280,6 +345,7 @@ export function createPresetBrowser({
 	toolsBody.append(
 		toolActions,
 		saveForm,
+		publishForm,
 		libraryStatus,
 		element(
 			"p",
@@ -344,8 +410,7 @@ export function createPresetBrowser({
 			: (presets.find((item) => `preset:${item.id}` === selection) ?? presets[0])
 		return {
 			presets,
-			setup:
-				setup ?? (preset?.id.startsWith("performance:") ? presetSetup(preset) : undefined),
+			setup: setup ?? (preset && isWorkspacePreset(preset) ? presetSetup(preset) : undefined),
 			preset
 		}
 	}
@@ -605,7 +670,7 @@ export function createPresetBrowser({
 			if (
 				item &&
 				!preset?.id.startsWith("activity:") &&
-				!preset?.id.startsWith("performance:")
+				(!preset || !isWorkspacePreset(preset))
 			) {
 				const kind = setup ? "setups" : "presets"
 				const details = element("details", "preset-item-tools")

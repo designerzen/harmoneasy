@@ -13,7 +13,7 @@ import { componentBindings } from "../../../packages/audiobus/io/component-ui"
 import { defaultMusicTools } from "../../../packages/audiobus/io/music-tools"
 import { createRoomUrl } from "../source/services/room-url"
 
-const json = await readFile("public/preset/hardware/arcana/strum/preset.json", "utf8")
+const json = await readFile("presets/hardware/arcana/strum.json", "utf8")
 afterEach(() => vi.unstubAllGlobals())
 
 describe("folder preset pages", () => {

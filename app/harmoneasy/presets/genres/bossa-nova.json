@@ -1,0 +1,122 @@
+{
+	"format": "harmoneasy-preset",
+	"version": 1,
+	"name": "Write bossa nova",
+	"description": "Sketch piano seventh chords over a bossa nova groove.",
+	"clock": {
+		"bpm": 80,
+		"swing": 0,
+		"divisions": 24,
+		"bars": 4
+	},
+	"midiControls": {
+		"enabled": true,
+		"bindings": []
+	},
+	"workspace": {
+		"version": 2,
+		"activeChainId": "context-chain",
+		"devices": [
+			{
+				"id": "computer-keyboard",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "keyboard"
+				}
+			},
+			{
+				"id": "keyboard",
+				"direction": "input",
+				"definition": {
+					"factory": "keyboard-input"
+				}
+			},
+			{
+				"id": "synth",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "webclap:com.plinken.piano"
+				}
+			},
+			{
+				"id": "output-1",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "drum-accompaniment",
+					"options": {
+						"genre": "latin",
+						"groove": "bossa-nova"
+					}
+				}
+			},
+			{
+				"id": "ui",
+				"direction": "output",
+				"definition": {
+					"factory": "external",
+					"type": "ui"
+				}
+			}
+		],
+		"chains": [
+			{
+				"id": "context-chain",
+				"options": {
+					"name": "Write bossa nova",
+					"active": true,
+					"controlSurfaces": [
+						{
+							"id": "context-chain-performance",
+							"name": "Write bossa nova controls",
+							"theme": "ice",
+							"connections": [
+								{
+									"componentId": "output-1",
+									"controlIds": ["volume", "groove", "energy", "density"]
+								}
+							],
+							"widgets": [
+								{
+									"key": "[\"output-1\",\"volume\"]",
+									"widget": "slider"
+								},
+								{
+									"key": "[\"output-1\",\"groove\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"output-1\",\"energy\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"output-1\",\"density\"]",
+									"widget": "dial"
+								}
+							]
+						}
+					],
+					"mainSurfaceId": "context-chain-performance"
+				},
+				"inputs": ["computer-keyboard", "keyboard"],
+				"outputs": ["synth", "output-1", "ui"],
+				"transformers": "[\"{\\\"root\\\":0,\\\"mode\\\":[0,2,4,5,7,9,11],\\\"type\\\":\\\"Harmoniser\\\"}\",\"{\\\"mode\\\":\\\"ionian\\\",\\\"root\\\":3,\\\"simultaneous\\\":4,\\\"type\\\":\\\"Chordifier\\\"}\"]",
+				"disabledInputs": [],
+				"disabledOutputs": []
+			}
+		]
+	},
+	"catalogue": {
+		"id": "activity:bossa-nova",
+		"category": "Activities · Genres",
+		"useCase": "Try 80 BPM and play a gentle, syncopated chord progression.",
+		"order": 124,
+		"kind": "chain",
+		"stepSummaries": [
+			"Harmoniser — moves notes to the nearest pitch in C major.",
+			"Chordifier — builds 4-note major-key chords from each note."
+		]
+	}
+}

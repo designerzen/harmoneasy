@@ -32,6 +32,7 @@ function pointer(target: EventTarget, type: string, id: number, init: PointerEve
 	)
 }
 afterEach(() => {
+	SVGKeyboard.clearPlayedNotes()
 	keyboards.splice(0).forEach((keyboard) => keyboard.destroy())
 	vi.restoreAllMocks()
 	document.body.replaceChildren()
@@ -174,19 +175,64 @@ describe("onscreen keyboard interaction", () => {
 		expect(keyboard.asElement.isConnected).toBe(false)
 	})
 
-	it("moves the visible range and releases held notes before repositioning", () => {
-		const { keyboard, keys, off } = setup()
+	it("jumps by an octave, clamps at either end, and releases held notes", () => {
+		const { keyboard, keys, off } = setup(Array.from({ length: 128 }, (_, i) => i))
 		const viewport = keyboard.asElement.querySelector(".piano-viewport")!
 		Object.defineProperties(viewport, {
-			scrollWidth: { value: 1000 },
+			scrollWidth: { value: 1725 },
 			clientWidth: { value: 400 }
 		})
-		const range = keyboard.asElement.querySelector("input")!
+		const lower = keyboard.asElement.querySelector<HTMLButtonElement>(
+			'[aria-label="Down one octave"]'
+		)!
+		const higher = keyboard.asElement.querySelector<HTMLButtonElement>(
+			'[aria-label="Up one octave"]'
+		)!
+		expect(keyboard.asElement.querySelector('input[type="range"]')).toBeNull()
 		pointer(keys[0], "pointerdown", 2)
-		range.value = "75"
-		range.dispatchEvent(new Event("input"))
-		expect(viewport.scrollLeft).toBe(450)
-		expect(off).toHaveBeenCalledExactlyOnceWith(60, 1, 2)
+		higher.click()
+		expect(viewport.scrollLeft).toBe(161)
+		expect(off).toHaveBeenCalledExactlyOnceWith(0, 1, 2)
+		lower.click()
+		expect(viewport.scrollLeft).toBe(0)
+		expect(lower.disabled).toBe(true)
+		for (let i = 0; i < 20; i++) {
+			higher.click()
+		}
+		expect(viewport.scrollLeft).toBe(1325)
+		expect(higher.disabled).toBe(true)
+	})
+
+	it("retracts and restores the keyboard without leaving input notes held", () => {
+		const { keyboard, keys, off } = setup()
+		const retract = keyboard.asElement.querySelector<HTMLButtonElement>(".piano-retract")!
+		const viewport = keyboard.asElement.querySelector<HTMLElement>(".piano-viewport")!
+		pointer(keys[0], "pointerdown", 3)
+		retract.click()
+		expect(off).toHaveBeenCalledExactlyOnceWith(60, 1, 3)
+		expect(keyboard.asElement.classList.contains("piano-retracted")).toBe(true)
+		expect(viewport.inert).toBe(true)
+		expect(retract.getAttribute("aria-expanded")).toBe("false")
+		retract.click()
+		expect(viewport.inert).toBe(false)
+		expect(retract.getAttribute("aria-expanded")).toBe("true")
+	})
+
+	it("shows played notes on every piano independently of direct input", () => {
+		const first = setup()
+		const second = setup()
+		SVGKeyboard.setPlayedNote(60, true, "red")
+		pointer(first.keys[0], "pointerdown", 4)
+		expect(first.keys[0].classList.contains("playing")).toBe(true)
+		expect(second.keys[0].classList.contains("playing")).toBe(true)
+		SVGKeyboard.setPlayedNote(60, false)
+		expect(first.keys[0].classList.contains("playing")).toBe(false)
+		expect(first.keys[0].classList.contains("pressed")).toBe(true)
+		SVGKeyboard.setPlayedNote(61, true)
+		const third = setup()
+		expect(third.keys[1].classList.contains("playing")).toBe(true)
+		SVGKeyboard.clearPlayedNotes()
+		expect(third.keys[1].classList.contains("playing")).toBe(false)
 	})
 
 	it("can detach and remount the input GUI, then dispose it", async () => {

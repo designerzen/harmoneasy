@@ -1,0 +1,369 @@
+{
+	"format": "harmoneasy-preset",
+	"version": 1,
+	"name": "Scale Explorer Modal Lanterns",
+	"description": "Explore Dorian colour through interwoven reed and high bell lines with a slow sustained foundation. Choose notes in Scale Explorer, repeat a short motif and listen to the octaves evolve. Mix the three voices independently as you explore.",
+	"clock": {
+		"bpm": 88,
+		"swing": 0,
+		"divisions": 24,
+		"bars": 8
+	},
+	"midiControls": {
+		"enabled": true,
+		"bindings": []
+	},
+	"workspace": {
+		"version": 2,
+		"activeChainId": "layer-0",
+		"devices": [
+			{
+				"id": "performance-input",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "scale-explorer"
+				}
+			},
+			{
+				"id": "keyboard",
+				"direction": "input",
+				"definition": {
+					"factory": "keyboard-input"
+				}
+			},
+			{
+				"id": "voice-0",
+				"direction": "output",
+				"definition": {
+					"factory": "polyphonic",
+					"options": {
+						"shape": "square",
+						"volume": 0.22,
+						"attack": 0.04,
+						"decay": 0.2,
+						"sustain": 0.45,
+						"release": 0.18,
+						"filterCutOff": 1700
+					}
+				}
+			},
+			{
+				"id": "voice-1",
+				"direction": "output",
+				"definition": {
+					"factory": "polyphonic",
+					"options": {
+						"shape": "sine",
+						"volume": 0.35,
+						"attack": 0.002,
+						"decay": 0.8,
+						"sustain": 0.05,
+						"release": 1.4,
+						"filterCutOff": 6500
+					}
+				}
+			},
+			{
+				"id": "voice-2",
+				"direction": "output",
+				"definition": {
+					"factory": "polyphonic",
+					"options": {
+						"shape": "triangle",
+						"volume": 0.25,
+						"attack": 0.8,
+						"decay": 1.2,
+						"sustain": 0.65,
+						"release": 3,
+						"filterCutOff": 1100
+					}
+				}
+			}
+		],
+		"chains": [
+			{
+				"id": "layer-0",
+				"options": {
+					"name": "Modal reeds",
+					"active": true,
+					"controlSurfaces": [
+						{
+							"id": "layer-0-performance",
+							"name": "Modal reeds controls",
+							"theme": "ice",
+							"connections": [
+								{
+									"componentId": "voice-0",
+									"controlIds": [
+										"volume",
+										"shape",
+										"attack",
+										"release",
+										"filterCutOff",
+										"filterResonance"
+									]
+								},
+								{
+									"componentId": "transformer:layer-0-step-0",
+									"controlIds": ["root", "mode"]
+								},
+								{
+									"componentId": "transformer:layer-0-step-2",
+									"controlIds": ["cycleA", "cycleB"]
+								},
+								{
+									"componentId": "transformer:layer-0-step-3",
+									"controlIds": ["lower", "upper", "stride"]
+								}
+							],
+							"widgets": [
+								{
+									"key": "[\"voice-0\",\"volume\"]",
+									"widget": "slider"
+								},
+								{
+									"key": "[\"voice-0\",\"shape\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"voice-0\",\"attack\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-0\",\"release\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-0\",\"filterCutOff\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-0\",\"filterResonance\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-0-step-0\",\"root\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-0-step-0\",\"mode\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-0-step-2\",\"cycleA\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-0-step-2\",\"cycleB\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-0-step-3\",\"lower\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-0-step-3\",\"upper\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-0-step-3\",\"stride\"]",
+									"widget": "dial"
+								}
+							]
+						}
+					],
+					"mainSurfaceId": "layer-0-performance"
+				},
+				"inputs": ["performance-input", "keyboard"],
+				"outputs": ["voice-0"],
+				"transformers": "[\"{\\\"root\\\":2,\\\"mode\\\":[0,2,3,5,7,9,10],\\\"midiControlId\\\":\\\"layer-0-step-0\\\",\\\"type\\\":\\\"Harmoniser\\\"}\",\"{\\\"rising\\\":120,\\\"falling\\\":80,\\\"repeated\\\":95,\\\"leap\\\":10,\\\"gap\\\":4,\\\"type\\\":\\\"Contour-Dynamics\\\"}\",\"{\\\"cycleA\\\":2,\\\"cycleB\\\":3,\\\"mode\\\":\\\"union\\\",\\\"accent\\\":120,\\\"level\\\":85,\\\"collect\\\":25,\\\"midiControlId\\\":\\\"layer-0-step-2\\\",\\\"type\\\":\\\"Rhythm-Weave\\\"}\",\"{\\\"lower\\\":48,\\\"upper\\\":84,\\\"stride\\\":5,\\\"collect\\\":25,\\\"midiControlId\\\":\\\"layer-0-step-3\\\",\\\"type\\\":\\\"Register-Orbit\\\"}\"]",
+				"disabledInputs": [],
+				"disabledOutputs": []
+			},
+			{
+				"id": "layer-1",
+				"options": {
+					"name": "Lantern light",
+					"active": true,
+					"controlSurfaces": [
+						{
+							"id": "layer-1-performance",
+							"name": "Lantern light controls",
+							"theme": "ice",
+							"connections": [
+								{
+									"componentId": "voice-1",
+									"controlIds": [
+										"volume",
+										"shape",
+										"attack",
+										"release",
+										"filterCutOff",
+										"filterResonance"
+									]
+								},
+								{
+									"componentId": "transformer:layer-1-step-0",
+									"controlIds": ["root", "mode"]
+								},
+								{
+									"componentId": "transformer:layer-1-step-3",
+									"controlIds": ["repeats", "delay", "decay"]
+								}
+							],
+							"widgets": [
+								{
+									"key": "[\"voice-1\",\"volume\"]",
+									"widget": "slider"
+								},
+								{
+									"key": "[\"voice-1\",\"shape\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"voice-1\",\"attack\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-1\",\"release\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-1\",\"filterCutOff\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-1\",\"filterResonance\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-1-step-0\",\"root\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-1-step-0\",\"mode\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-1-step-3\",\"repeats\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-1-step-3\",\"delay\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-1-step-3\",\"decay\"]",
+									"widget": "select"
+								}
+							]
+						}
+					],
+					"mainSurfaceId": "layer-1-performance"
+				},
+				"inputs": ["performance-input", "keyboard"],
+				"outputs": ["voice-1"],
+				"transformers": "[\"{\\\"root\\\":2,\\\"mode\\\":[0,2,3,5,7,9,10],\\\"midiControlId\\\":\\\"layer-1-step-0\\\",\\\"type\\\":\\\"Harmoniser\\\"}\",\"{\\\"distance\\\":12,\\\"type\\\":\\\"Transposer\\\"}\",\"{\\\"duration\\\":\\\"1/8\\\",\\\"type\\\":\\\"Note-Shortener\\\"}\",\"{\\\"repeats\\\":4,\\\"delay\\\":250,\\\"decay\\\":0.6,\\\"midiControlId\\\":\\\"layer-1-step-3\\\",\\\"type\\\":\\\"Note-Reverb\\\"}\"]",
+				"disabledInputs": [],
+				"disabledOutputs": []
+			},
+			{
+				"id": "layer-2",
+				"options": {
+					"name": "Dorian foundation",
+					"active": true,
+					"controlSurfaces": [
+						{
+							"id": "layer-2-performance",
+							"name": "Dorian foundation controls",
+							"theme": "ice",
+							"connections": [
+								{
+									"componentId": "voice-2",
+									"controlIds": [
+										"volume",
+										"shape",
+										"attack",
+										"release",
+										"filterCutOff",
+										"filterResonance"
+									]
+								},
+								{
+									"componentId": "transformer:layer-2-step-0",
+									"controlIds": ["root", "mode"]
+								},
+								{
+									"componentId": "transformer:layer-2-step-1",
+									"controlIds": ["step", "falloff"]
+								}
+							],
+							"widgets": [
+								{
+									"key": "[\"voice-2\",\"volume\"]",
+									"widget": "slider"
+								},
+								{
+									"key": "[\"voice-2\",\"shape\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"voice-2\",\"attack\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-2\",\"release\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-2\",\"filterCutOff\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-2\",\"filterResonance\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-2-step-0\",\"root\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-2-step-0\",\"mode\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-2-step-1\",\"step\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-2-step-1\",\"falloff\"]",
+									"widget": "dial"
+								}
+							]
+						}
+					],
+					"mainSurfaceId": "layer-2-performance"
+				},
+				"inputs": ["performance-input", "keyboard"],
+				"outputs": ["voice-2"],
+				"transformers": "[\"{\\\"root\\\":2,\\\"mode\\\":[0,2,3,5,7,9,10],\\\"midiControlId\\\":\\\"layer-2-step-0\\\",\\\"type\\\":\\\"Harmoniser\\\"}\",\"{\\\"intervals\\\":\\\"0, 7, 12, 19\\\",\\\"step\\\":1,\\\"falloff\\\":20,\\\"midiControlId\\\":\\\"layer-2-step-1\\\",\\\"type\\\":\\\"Chord-Bloom\\\"}\"]",
+				"disabledInputs": [],
+				"disabledOutputs": []
+			}
+		]
+	},
+	"catalogue": {
+		"id": "performance:scale-explorer/modal-lanterns",
+		"category": "Performance instruments",
+		"useCase": "Choose notes in Scale Explorer, repeat a short motif and listen to the octaves evolve. Mix the three voices independently as you explore.",
+		"order": 173,
+		"kind": "workspace",
+		"stepSummaries": [
+			"Harmoniser — fits pitches to D Dorian, including its characteristic B natural.",
+			"Scale velocity from melodic direction and interval size.",
+			"Rhythm Weave — keep either the two-gesture or three-gesture strand.",
+			"Register Orbit — move surviving pitch classes through notes 48–84."
+		]
+	}
+}

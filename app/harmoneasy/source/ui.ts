@@ -1051,6 +1051,7 @@ export default class UI implements IAudioOutput {
 	 */
 	noteOn(noteNumber: number, velocity: number) {
 		const colour = convertNoteNumberToColour(noteNumber)
+		SVGKeyboard.setPlayedNote(noteNumber, true, colour)
 		this.noteVisualiser.noteOn(noteNumber, velocity, colour)
 		this.noteTimeline.noteOn(noteNumber, velocity, colour)
 		// console.info("UI::NoteOn", {noteNumber, velocity, colour})
@@ -1061,6 +1062,7 @@ export default class UI implements IAudioOutput {
 	 * @param {Number} note
 	 */
 	noteOff(noteNumber: number) {
+		SVGKeyboard.setPlayedNote(noteNumber, false)
 		this.noteVisualiser.noteOff(noteNumber)
 		this.noteTimeline.noteOff(noteNumber)
 		// console.info("UI::NoteOff", noteNumber )
@@ -1070,6 +1072,7 @@ export default class UI implements IAudioOutput {
 	 * Brute force!
 	 */
 	allNotesOff() {
+		SVGKeyboard.clearPlayedNotes()
 		this.noteVisualiser.allNotesOff()
 		this.noteTimeline.allNotesOff()
 	}

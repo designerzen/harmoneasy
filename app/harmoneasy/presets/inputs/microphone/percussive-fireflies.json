@@ -1,0 +1,294 @@
+{
+	"format": "harmoneasy-preset",
+	"version": 1,
+	"name": "Microphone Percussive Fireflies",
+	"description": "Claps or taps trigger short octave sparks and soft delayed bass answers over an electro rhythm. Enable the microphone trigger and adjust its threshold in the input panel. Use headphones, clap or tap near the microphone, and start transport for the drum layer.",
+	"clock": {
+		"bpm": 122,
+		"swing": 0,
+		"divisions": 24,
+		"bars": 8
+	},
+	"midiControls": {
+		"enabled": true,
+		"bindings": []
+	},
+	"workspace": {
+		"version": 2,
+		"activeChainId": "layer-0",
+		"devices": [
+			{
+				"id": "performance-input",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "microphone-trigger"
+				}
+			},
+			{
+				"id": "keyboard",
+				"direction": "input",
+				"definition": {
+					"factory": "keyboard-input"
+				}
+			},
+			{
+				"id": "voice-0",
+				"direction": "output",
+				"definition": {
+					"factory": "polyphonic",
+					"options": {
+						"shape": "sine",
+						"volume": 0.35,
+						"attack": 0.002,
+						"decay": 0.8,
+						"sustain": 0.05,
+						"release": 1.4,
+						"filterCutOff": 6500
+					}
+				}
+			},
+			{
+				"id": "voice-1",
+				"direction": "output",
+				"definition": {
+					"factory": "polyphonic",
+					"options": {
+						"shape": "sawtooth",
+						"volume": 0.3,
+						"attack": 0.005,
+						"decay": 0.15,
+						"sustain": 0.35,
+						"release": 0.08,
+						"filterCutOff": 650,
+						"filterResonance": 2
+					}
+				}
+			},
+			{
+				"id": "drums",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "drum-accompaniment",
+					"options": {
+						"genre": "electronic",
+						"groove": "electro",
+						"volume": 0.35,
+						"density": 0.6,
+						"energy": 0.65
+					}
+				}
+			}
+		],
+		"chains": [
+			{
+				"id": "layer-0",
+				"options": {
+					"name": "Firefly sparks",
+					"active": true,
+					"controlSurfaces": [
+						{
+							"id": "layer-0-performance",
+							"name": "Firefly sparks controls",
+							"theme": "ice",
+							"connections": [
+								{
+									"componentId": "voice-0",
+									"controlIds": [
+										"volume",
+										"shape",
+										"attack",
+										"release",
+										"filterCutOff",
+										"filterResonance"
+									]
+								},
+								{
+									"componentId": "drums",
+									"controlIds": ["volume", "groove", "energy", "density"]
+								},
+								{
+									"componentId": "transformer:layer-0-step-0",
+									"controlIds": ["root", "mode"]
+								},
+								{
+									"componentId": "transformer:layer-0-step-1",
+									"controlIds": ["lower", "upper", "stride"]
+								},
+								{
+									"componentId": "transformer:layer-0-step-3",
+									"controlIds": ["repeats", "delay", "decay"]
+								}
+							],
+							"widgets": [
+								{
+									"key": "[\"voice-0\",\"volume\"]",
+									"widget": "slider"
+								},
+								{
+									"key": "[\"voice-0\",\"shape\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"voice-0\",\"attack\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-0\",\"release\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-0\",\"filterCutOff\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-0\",\"filterResonance\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"drums\",\"volume\"]",
+									"widget": "slider"
+								},
+								{
+									"key": "[\"drums\",\"groove\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"drums\",\"energy\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"drums\",\"density\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-0-step-0\",\"root\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-0-step-0\",\"mode\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-0-step-1\",\"lower\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-0-step-1\",\"upper\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-0-step-1\",\"stride\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-0-step-3\",\"repeats\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-0-step-3\",\"delay\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-0-step-3\",\"decay\"]",
+									"widget": "select"
+								}
+							]
+						}
+					],
+					"mainSurfaceId": "layer-0-performance"
+				},
+				"inputs": ["performance-input", "keyboard"],
+				"outputs": ["voice-0", "drums"],
+				"transformers": "[\"{\\\"root\\\":0,\\\"mode\\\":[0,2,4,5,7,9,11],\\\"midiControlId\\\":\\\"layer-0-step-0\\\",\\\"type\\\":\\\"Harmoniser\\\"}\",\"{\\\"lower\\\":48,\\\"upper\\\":84,\\\"stride\\\":7,\\\"collect\\\":25,\\\"midiControlId\\\":\\\"layer-0-step-1\\\",\\\"type\\\":\\\"Register-Orbit\\\"}\",\"{\\\"rising\\\":120,\\\"falling\\\":80,\\\"repeated\\\":95,\\\"leap\\\":10,\\\"gap\\\":4,\\\"type\\\":\\\"Contour-Dynamics\\\"}\",\"{\\\"repeats\\\":4,\\\"delay\\\":250,\\\"decay\\\":0.6,\\\"midiControlId\\\":\\\"layer-0-step-3\\\",\\\"type\\\":\\\"Note-Reverb\\\"}\"]",
+				"disabledInputs": [],
+				"disabledOutputs": []
+			},
+			{
+				"id": "layer-1",
+				"options": {
+					"name": "Tap responses",
+					"active": true,
+					"controlSurfaces": [
+						{
+							"id": "layer-1-performance",
+							"name": "Tap responses controls",
+							"theme": "ice",
+							"connections": [
+								{
+									"componentId": "voice-1",
+									"controlIds": [
+										"volume",
+										"shape",
+										"attack",
+										"release",
+										"filterCutOff",
+										"filterResonance"
+									]
+								},
+								{
+									"componentId": "transformer:layer-1-step-0",
+									"controlIds": ["root", "mode"]
+								}
+							],
+							"widgets": [
+								{
+									"key": "[\"voice-1\",\"volume\"]",
+									"widget": "slider"
+								},
+								{
+									"key": "[\"voice-1\",\"shape\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"voice-1\",\"attack\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-1\",\"release\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-1\",\"filterCutOff\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-1\",\"filterResonance\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-1-step-0\",\"root\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-1-step-0\",\"mode\"]",
+									"widget": "select"
+								}
+							]
+						}
+					],
+					"mainSurfaceId": "layer-1-performance"
+				},
+				"inputs": ["performance-input", "keyboard"],
+				"outputs": ["voice-1"],
+				"transformers": "[\"{\\\"root\\\":0,\\\"mode\\\":[0,2,4,5,7,9,11],\\\"midiControlId\\\":\\\"layer-1-step-0\\\",\\\"type\\\":\\\"Harmoniser\\\"}\",\"{\\\"distance\\\":-12,\\\"type\\\":\\\"Transposer\\\"}\",\"{\\\"duration\\\":\\\"1/8\\\",\\\"type\\\":\\\"Note-Shortener\\\"}\",\"{\\\"lag\\\":2,\\\"transpose\\\":-12,\\\"level\\\":70,\\\"dry\\\":1,\\\"type\\\":\\\"Melody-Shadow\\\"}\"]",
+				"disabledInputs": [],
+				"disabledOutputs": []
+			}
+		]
+	},
+	"catalogue": {
+		"id": "performance:microphone/percussive-fireflies",
+		"category": "Performance instruments",
+		"useCase": "Enable the microphone trigger and adjust its threshold in the input panel. Use headphones, clap or tap near the microphone, and start transport for the drum layer.",
+		"order": 171,
+		"kind": "workspace",
+		"stepSummaries": [
+			"Harmoniser — moves notes to the nearest pitch in C major.",
+			"Move the octave target by seven semitones per gesture, wrapping within the register.",
+			"Scale velocity from melodic direction and interval size.",
+			"Note Reverb — repeat each note four times, retaining 60% velocity per echo."
+		]
+	}
+}

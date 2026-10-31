@@ -3,6 +3,7 @@ import { elementDescription, elementIcon } from "./element-icons"
 import { createPresetArtwork } from "./PresetArtwork"
 import { presetContext, presetSound } from "./preset-catalogue"
 import type { TransformerPreset } from "audiobus/io/transformer-presets"
+import { isWorkspacePreset } from "../../services/preset-files"
 
 export function createPresetDetails(preset: TransformerPreset) {
 	const article = element("article", "preset-details")
@@ -51,7 +52,7 @@ export function createPresetDetails(preset: TransformerPreset) {
 		element(
 			"p",
 			"preset-hint",
-			(preset.id.startsWith("performance:")
+			(isWorkspacePreset(preset)
 				? "Loads the complete instrument, including every layer, its inputs and control surfaces. Loading replaces the current workspace."
 				: presetContext(preset)
 					? "A new chain includes only the outputs listed above. Applying to an existing chain keeps its current inputs and outputs."

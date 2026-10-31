@@ -1,0 +1,362 @@
+{
+	"format": "harmoneasy-preset",
+	"version": 1,
+	"name": "Midnight Atlas",
+	"description": "A long-form three-voice instrument: voice-led minor chords, a remembered bass melody and slowly orbiting high echoes. Play a sparse progression over sixteen bars. Begin with the pad, bring in bass on its surface, then raise the bell layer for a denser second half. Each layer has independent timbre controls.",
+	"clock": {
+		"bpm": 72,
+		"swing": 0,
+		"divisions": 24,
+		"bars": 16
+	},
+	"midiControls": {
+		"enabled": true,
+		"bindings": []
+	},
+	"workspace": {
+		"version": 2,
+		"activeChainId": "layer-0",
+		"devices": [
+			{
+				"id": "performance-input",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "keyboard"
+				}
+			},
+			{
+				"id": "keyboard",
+				"direction": "input",
+				"definition": {
+					"factory": "keyboard-input"
+				}
+			},
+			{
+				"id": "voice-0",
+				"direction": "output",
+				"definition": {
+					"factory": "polyphonic",
+					"options": {
+						"shape": "triangle",
+						"volume": 0.25,
+						"attack": 0.8,
+						"decay": 1.2,
+						"sustain": 0.65,
+						"release": 3,
+						"filterCutOff": 1100
+					}
+				}
+			},
+			{
+				"id": "voice-1",
+				"direction": "output",
+				"definition": {
+					"factory": "polyphonic",
+					"options": {
+						"shape": "sawtooth",
+						"volume": 0.3,
+						"attack": 0.005,
+						"decay": 0.15,
+						"sustain": 0.35,
+						"release": 0.08,
+						"filterCutOff": 650,
+						"filterResonance": 2
+					}
+				}
+			},
+			{
+				"id": "voice-2",
+				"direction": "output",
+				"definition": {
+					"factory": "polyphonic",
+					"options": {
+						"shape": "sine",
+						"volume": 0.35,
+						"attack": 0.002,
+						"decay": 0.8,
+						"sustain": 0.05,
+						"release": 1.4,
+						"filterCutOff": 6500
+					}
+				}
+			}
+		],
+		"chains": [
+			{
+				"id": "layer-0",
+				"options": {
+					"name": "Midnight harmony",
+					"active": true,
+					"controlSurfaces": [
+						{
+							"id": "layer-0-performance",
+							"name": "Midnight harmony controls",
+							"theme": "ice",
+							"connections": [
+								{
+									"componentId": "voice-0",
+									"controlIds": [
+										"volume",
+										"shape",
+										"attack",
+										"release",
+										"filterCutOff",
+										"filterResonance"
+									]
+								},
+								{
+									"componentId": "transformer:layer-0-step-0",
+									"controlIds": ["root", "mode"]
+								}
+							],
+							"widgets": [
+								{
+									"key": "[\"voice-0\",\"volume\"]",
+									"widget": "slider"
+								},
+								{
+									"key": "[\"voice-0\",\"shape\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"voice-0\",\"attack\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-0\",\"release\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-0\",\"filterCutOff\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-0\",\"filterResonance\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-0-step-0\",\"root\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-0-step-0\",\"mode\"]",
+									"widget": "select"
+								}
+							]
+						}
+					],
+					"mainSurfaceId": "layer-0-performance"
+				},
+				"inputs": ["performance-input", "keyboard"],
+				"outputs": ["voice-0"],
+				"transformers": "[\"{\\\"root\\\":9,\\\"mode\\\":[0,2,3,5,7,8,10],\\\"midiControlId\\\":\\\"layer-0-step-0\\\",\\\"type\\\":\\\"Harmoniser\\\"}\",\"{\\\"root\\\":3,\\\"mode\\\":\\\"ionian\\\",\\\"simultaneous\\\":3,\\\"type\\\":\\\"Chordifier\\\"}\",\"{\\\"lower\\\":48,\\\"upper\\\":84,\\\"collect\\\":30,\\\"type\\\":\\\"Voice-Leader\\\"}\",\"{\\\"rising\\\":120,\\\"falling\\\":80,\\\"repeated\\\":95,\\\"leap\\\":10,\\\"gap\\\":4,\\\"type\\\":\\\"Contour-Dynamics\\\"}\"]",
+				"disabledInputs": [],
+				"disabledOutputs": []
+			},
+			{
+				"id": "layer-1",
+				"options": {
+					"name": "Remembered bass",
+					"active": true,
+					"controlSurfaces": [
+						{
+							"id": "layer-1-performance",
+							"name": "Remembered bass controls",
+							"theme": "ice",
+							"connections": [
+								{
+									"componentId": "voice-1",
+									"controlIds": [
+										"volume",
+										"shape",
+										"attack",
+										"release",
+										"filterCutOff",
+										"filterResonance"
+									]
+								},
+								{
+									"componentId": "transformer:layer-1-step-0",
+									"controlIds": ["root", "mode"]
+								}
+							],
+							"widgets": [
+								{
+									"key": "[\"voice-1\",\"volume\"]",
+									"widget": "slider"
+								},
+								{
+									"key": "[\"voice-1\",\"shape\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"voice-1\",\"attack\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-1\",\"release\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-1\",\"filterCutOff\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-1\",\"filterResonance\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-1-step-0\",\"root\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-1-step-0\",\"mode\"]",
+									"widget": "select"
+								}
+							]
+						}
+					],
+					"mainSurfaceId": "layer-1-performance"
+				},
+				"inputs": ["performance-input", "keyboard"],
+				"outputs": ["voice-1"],
+				"transformers": "[\"{\\\"root\\\":9,\\\"mode\\\":[0,2,3,5,7,8,10],\\\"midiControlId\\\":\\\"layer-1-step-0\\\",\\\"type\\\":\\\"Harmoniser\\\"}\",\"{\\\"lag\\\":2,\\\"transpose\\\":-12,\\\"level\\\":70,\\\"dry\\\":1,\\\"type\\\":\\\"Melody-Shadow\\\"}\",\"{\\\"distance\\\":-12,\\\"type\\\":\\\"Transposer\\\"}\",\"{\\\"duration\\\":\\\"1/8\\\",\\\"type\\\":\\\"Note-Shortener\\\"}\"]",
+				"disabledInputs": [],
+				"disabledOutputs": []
+			},
+			{
+				"id": "layer-2",
+				"options": {
+					"name": "Atlas echoes",
+					"active": true,
+					"controlSurfaces": [
+						{
+							"id": "layer-2-performance",
+							"name": "Atlas echoes controls",
+							"theme": "ice",
+							"connections": [
+								{
+									"componentId": "voice-2",
+									"controlIds": [
+										"volume",
+										"shape",
+										"attack",
+										"release",
+										"filterCutOff",
+										"filterResonance"
+									]
+								},
+								{
+									"componentId": "transformer:layer-2-step-0",
+									"controlIds": ["root", "mode"]
+								},
+								{
+									"componentId": "transformer:layer-2-step-2",
+									"controlIds": ["pattern", "rate", "octaves"]
+								},
+								{
+									"componentId": "transformer:layer-2-step-3",
+									"controlIds": ["lower", "upper", "stride"]
+								},
+								{
+									"componentId": "transformer:layer-2-step-5",
+									"controlIds": ["repeats", "delay", "decay"]
+								}
+							],
+							"widgets": [
+								{
+									"key": "[\"voice-2\",\"volume\"]",
+									"widget": "slider"
+								},
+								{
+									"key": "[\"voice-2\",\"shape\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"voice-2\",\"attack\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-2\",\"release\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-2\",\"filterCutOff\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"voice-2\",\"filterResonance\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-2-step-0\",\"root\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-2-step-0\",\"mode\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-2-step-2\",\"pattern\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-2-step-2\",\"rate\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-2-step-2\",\"octaves\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-2-step-3\",\"lower\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-2-step-3\",\"upper\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-2-step-3\",\"stride\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"transformer:layer-2-step-5\",\"repeats\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-2-step-5\",\"delay\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"transformer:layer-2-step-5\",\"decay\"]",
+									"widget": "select"
+								}
+							]
+						}
+					],
+					"mainSurfaceId": "layer-2-performance"
+				},
+				"inputs": ["performance-input", "keyboard"],
+				"outputs": ["voice-2"],
+				"transformers": "[\"{\\\"root\\\":9,\\\"mode\\\":[0,2,3,5,7,8,10],\\\"midiControlId\\\":\\\"layer-2-step-0\\\",\\\"type\\\":\\\"Harmoniser\\\"}\",\"{\\\"mode\\\":\\\"aeolian\\\",\\\"root\\\":0,\\\"simultaneous\\\":3,\\\"type\\\":\\\"Chordifier\\\"}\",\"{\\\"pattern\\\":\\\"down\\\",\\\"rate\\\":\\\"1/8\\\",\\\"octaves\\\":1,\\\"midiControlId\\\":\\\"layer-2-step-2\\\",\\\"type\\\":\\\"Arpeggiator\\\"}\",\"{\\\"lower\\\":48,\\\"upper\\\":84,\\\"stride\\\":7,\\\"collect\\\":25,\\\"midiControlId\\\":\\\"layer-2-step-3\\\",\\\"type\\\":\\\"Register-Orbit\\\"}\",\"{\\\"rising\\\":120,\\\"falling\\\":80,\\\"repeated\\\":95,\\\"leap\\\":10,\\\"gap\\\":4,\\\"type\\\":\\\"Contour-Dynamics\\\"}\",\"{\\\"repeats\\\":4,\\\"delay\\\":250,\\\"decay\\\":0.6,\\\"midiControlId\\\":\\\"layer-2-step-5\\\",\\\"type\\\":\\\"Note-Reverb\\\"}\"]",
+				"disabledInputs": [],
+				"disabledOutputs": []
+			}
+		]
+	},
+	"catalogue": {
+		"id": "performance:keyboard/midnight-atlas",
+		"category": "Performance instruments",
+		"useCase": "Play a sparse progression over sixteen bars. Begin with the pad, bring in bass on its surface, then raise the bell layer for a denser second half. Each layer has independent timbre controls.",
+		"order": 182,
+		"kind": "workspace",
+		"stepSummaries": [
+			"Harmoniser — moves notes into A natural minor.",
+			"Generate chords in C major.",
+			"Choose nearby chord voicings.",
+			"Scale velocity from melodic direction and interval size."
+		]
+	}
+}

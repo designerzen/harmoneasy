@@ -1,0 +1,132 @@
+{
+	"format": "harmoneasy-preset",
+	"version": 1,
+	"name": "Soft Echo Trail",
+	"description": "Add four fading note echoes at fixed 250 ms intervals.",
+	"clock": {
+		"bpm": 110,
+		"swing": 0,
+		"divisions": 24,
+		"bars": 4
+	},
+	"midiControls": {
+		"enabled": true,
+		"bindings": []
+	},
+	"workspace": {
+		"version": 2,
+		"activeChainId": "context-chain",
+		"devices": [
+			{
+				"id": "computer-keyboard",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "keyboard"
+				}
+			},
+			{
+				"id": "keyboard",
+				"direction": "input",
+				"definition": {
+					"factory": "keyboard-input"
+				}
+			},
+			{
+				"id": "synth",
+				"direction": "output",
+				"definition": {
+					"factory": "polyphonic",
+					"options": {
+						"shape": "sine",
+						"volume": 0.35,
+						"attack": 0.002,
+						"decay": 0.8,
+						"sustain": 0.05,
+						"release": 1.4,
+						"filterCutOff": 6500
+					}
+				}
+			},
+			{
+				"id": "ui",
+				"direction": "output",
+				"definition": {
+					"factory": "external",
+					"type": "ui"
+				}
+			}
+		],
+		"chains": [
+			{
+				"id": "context-chain",
+				"options": {
+					"name": "Soft Echo Trail",
+					"active": true,
+					"controlSurfaces": [
+						{
+							"id": "context-chain-performance",
+							"name": "Soft Echo Trail controls",
+							"theme": "ice",
+							"connections": [
+								{
+									"componentId": "synth",
+									"controlIds": [
+										"volume",
+										"shape",
+										"attack",
+										"release",
+										"filterCutOff",
+										"filterResonance"
+									]
+								}
+							],
+							"widgets": [
+								{
+									"key": "[\"synth\",\"volume\"]",
+									"widget": "slider"
+								},
+								{
+									"key": "[\"synth\",\"shape\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"synth\",\"attack\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"synth\",\"release\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"synth\",\"filterCutOff\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"synth\",\"filterResonance\"]",
+									"widget": "dial"
+								}
+							]
+						}
+					],
+					"mainSurfaceId": "context-chain-performance"
+				},
+				"inputs": ["computer-keyboard", "keyboard"],
+				"outputs": ["synth", "ui"],
+				"transformers": "[\"{\\\"repeats\\\":4,\\\"delay\\\":250,\\\"decay\\\":0.6,\\\"type\\\":\\\"Note-Reverb\\\"}\"]",
+				"disabledInputs": [],
+				"disabledOutputs": []
+			}
+		]
+	},
+	"catalogue": {
+		"id": "soft-echo-trail",
+		"category": "Rhythm & repeats",
+		"useCase": "Play short, sparse notes through a synth or MIDI output. Echo timing stays fixed when tempo changes.",
+		"order": 49,
+		"kind": "chain",
+		"stepSummaries": [
+			"Note Reverb — repeat each note four times, retaining 60% velocity per echo."
+		]
+	}
+}

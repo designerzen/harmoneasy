@@ -47,6 +47,10 @@ jobs:
             - name: Build Netronome library and workers
               run: pnpm --filter netronome run build:lib
 
+            - name: Validate contributed presets
+              working-directory: app/harmoneasy
+              run: pnpm run presets:validate --maxWorkers 2
+
             - name: Build web application
               working-directory: app/harmoneasy
               run: pnpm run build

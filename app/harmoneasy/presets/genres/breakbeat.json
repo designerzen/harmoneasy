@@ -1,0 +1,123 @@
+{
+	"format": "harmoneasy-preset",
+	"version": 1,
+	"name": "Write breakbeat",
+	"description": "Play low minor Moog bass over an Apache break.",
+	"clock": {
+		"bpm": 130,
+		"swing": 0,
+		"divisions": 24,
+		"bars": 4
+	},
+	"midiControls": {
+		"enabled": true,
+		"bindings": []
+	},
+	"workspace": {
+		"version": 2,
+		"activeChainId": "context-chain",
+		"devices": [
+			{
+				"id": "computer-keyboard",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "keyboard"
+				}
+			},
+			{
+				"id": "keyboard",
+				"direction": "input",
+				"definition": {
+					"factory": "keyboard-input"
+				}
+			},
+			{
+				"id": "synth",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "moog"
+				}
+			},
+			{
+				"id": "output-1",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "drum-accompaniment",
+					"options": {
+						"genre": "breaks",
+						"groove": "apache-break"
+					}
+				}
+			},
+			{
+				"id": "ui",
+				"direction": "output",
+				"definition": {
+					"factory": "external",
+					"type": "ui"
+				}
+			}
+		],
+		"chains": [
+			{
+				"id": "context-chain",
+				"options": {
+					"name": "Write breakbeat",
+					"active": true,
+					"controlSurfaces": [
+						{
+							"id": "context-chain-performance",
+							"name": "Write breakbeat controls",
+							"theme": "ice",
+							"connections": [
+								{
+									"componentId": "output-1",
+									"controlIds": ["volume", "groove", "energy", "density"]
+								}
+							],
+							"widgets": [
+								{
+									"key": "[\"output-1\",\"volume\"]",
+									"widget": "slider"
+								},
+								{
+									"key": "[\"output-1\",\"groove\"]",
+									"widget": "select"
+								},
+								{
+									"key": "[\"output-1\",\"energy\"]",
+									"widget": "dial"
+								},
+								{
+									"key": "[\"output-1\",\"density\"]",
+									"widget": "dial"
+								}
+							]
+						}
+					],
+					"mainSurfaceId": "context-chain-performance"
+				},
+				"inputs": ["computer-keyboard", "keyboard"],
+				"outputs": ["synth", "output-1", "ui"],
+				"transformers": "[\"{\\\"root\\\":9,\\\"mode\\\":[0,2,3,5,7,8,10],\\\"type\\\":\\\"Harmoniser\\\"}\",\"{\\\"distance\\\":-12,\\\"type\\\":\\\"Transposer\\\"}\",\"{\\\"duration\\\":\\\"1/8\\\",\\\"type\\\":\\\"Note-Shortener\\\"}\"]",
+				"disabledInputs": [],
+				"disabledOutputs": []
+			}
+		]
+	},
+	"catalogue": {
+		"id": "activity:breakbeat",
+		"category": "Activities · Genres",
+		"useCase": "Try 130 BPM and place short bass phrases around the syncopated kick and snare.",
+		"order": 117,
+		"kind": "chain",
+		"stepSummaries": [
+			"Harmoniser — moves notes into A natural minor.",
+			"Transposer — shifts every note down 12 semitones.",
+			"Note Shortener — gives each note a 1/8 gate, synced to tempo."
+		]
+	}
+}

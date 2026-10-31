@@ -136,19 +136,42 @@
 .cs-editing .cs-widget {
 	outline: 1px dashed #296254;
 }
+.component-controls {
+	display: grid;
+	gap: 10px;
+	width: 100%;
+	min-width: 0;
+	align-content: start;
+	text-transform: none;
+	letter-spacing: normal;
+}
 .component-controls fieldset {
 	display: grid;
 	gap: 10px;
 	min-width: 0;
+	margin: 0;
+	padding: 0;
+	border: 0;
 }
 .component-controls label {
 	display: grid;
 	gap: 4px;
+	min-width: 0;
 }
 .component-controls input,
 .component-controls select {
+	box-sizing: border-box;
+	width: 100%;
 	max-width: 100%;
 	min-width: 0;
+	margin: 0;
+}
+.component-controls input[type="checkbox"] {
+	width: auto;
+	justify-self: start;
+}
+.component-controls > [role="alert"]:empty {
+	display: none;
 }
 .control-selection-dialog {
 	max-width: min(640px, 95vw);

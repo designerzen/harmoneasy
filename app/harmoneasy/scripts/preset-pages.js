@@ -1,6 +1,6 @@
 import { readdir, readFile } from "node:fs/promises"
 import { join } from "node:path"
-import { builtinPresetPages } from "../source/services/builtin-preset-pages.ts"
+import { readPresetFiles } from "./preset-files.js"
 import { presetDirectoryEntries, presetDirectoryHtml } from "./preset-directory.js"
 
 async function staticPresetPages(publicDir) {
@@ -34,11 +34,12 @@ async function staticPresetPages(publicDir) {
 	return pages
 }
 
-/** Each preset.json under public/preset gets an actual static HTML entry point. */
-export function presetPagesPlugin() {
+/** Publish repository JSON presets as static pages, data endpoints and directory entries. */
+export function presetPagesPlugin({ presetsDir } = {}) {
 	let publicDir
 	let base
-	const pages = builtinPresetPages()
+	let pages
+	let sourceDir
 	const directoryAssets = async (staticPages) => {
 		const entries = presetDirectoryEntries(
 			pages,
@@ -59,10 +60,22 @@ export function presetPagesPlugin() {
 		configResolved(config) {
 			publicDir = config.publicDir
 			base = config.base ?? "/"
+			sourceDir = presetsDir ?? join(publicDir, "..", "presets")
+			pages = readPresetFiles(sourceDir)
 		},
 		configureServer(server) {
 			server.middlewares.use((request, response, next) => {
 				const pathname = new URL(request.url, "http://localhost").pathname
+				if (
+					pathname.startsWith(base) &&
+					/^(presets|preset|hardware)(?:\/|$)/.test(pathname.slice(base.length))
+				) {
+					try {
+						pages = readPresetFiles(sourceDir)
+					} catch (error) {
+						return next(error)
+					}
+				}
 				const directoryPath = `${base}presets`
 				if (
 					[

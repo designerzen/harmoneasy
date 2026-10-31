@@ -14,7 +14,7 @@ const { Midi } = createRequire(new URL("../../../packages/audiobus/package.json"
 )
 const bytes = await readFile("public/midi/102635.mid")
 const page = parsePresetPage(
-	await readFile("public/preset/songs/only-way-is-up/preset.json", "utf8")
+	await readFile("presets/songs/only-way-is-up.json", "utf8")
 )
 const config = JSON.parse(JSON.parse(page.workspace.chains[0].transformers)[0])
 afterEach(() => {

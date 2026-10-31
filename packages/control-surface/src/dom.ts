@@ -228,9 +228,10 @@ export function createDomControl(
 		})
 	}
 	if (d.help) {
-		const help = document.createElement("small")
-		help.textContent = d.help
-		label.append(help)
+		for (const control of label.querySelectorAll("input, select, button, output")) {
+			control.setAttribute("title", d.help)
+			control.setAttribute("aria-description", d.help)
+		}
 	}
 	return {
 		element: label,
@@ -252,7 +253,6 @@ export function createDomGui(bindings: ControlBinding[]): {
 		error = document.createElement("p"),
 		cleanup: (() => void)[] = []
 	element.className = "component-controls nodrag nopan nowheel"
-	element.style.cssText = "display:grid;gap:12px;min-width:220px"
 	error.setAttribute("role", "alert")
 	const groups = new Map<string, HTMLElement>()
 	let disposed = false
@@ -296,16 +296,20 @@ export function createDomGui(bindings: ControlBinding[]): {
 		if (control.release) {
 			releases.push(control.release)
 		}
-		const group = binding.descriptor.group ?? "Controls"
-		if (!groups.has(group)) {
-			const fieldset = document.createElement("fieldset"),
-				legend = document.createElement("legend")
-			legend.textContent = group
-			fieldset.append(legend)
-			groups.set(group, fieldset)
-			element.append(fieldset)
+		const group = binding.descriptor.group
+		if (!group) {
+			element.append(control.element)
+		} else {
+			if (!groups.has(group)) {
+				const fieldset = document.createElement("fieldset"),
+					legend = document.createElement("legend")
+				legend.textContent = group
+				fieldset.append(legend)
+				groups.set(group, fieldset)
+				element.append(fieldset)
+			}
+			groups.get(group)!.append(control.element)
 		}
-		groups.get(group)!.append(control.element)
 		cleanup.push(binding.subscribe?.(() => void refresh()) ?? (() => {}))
 		void refresh()
 	}
