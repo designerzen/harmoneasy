@@ -6,12 +6,14 @@ import {
 	readProjectBundle,
 	bundleWorkspace,
 	MAX_BUNDLE_BYTES,
+	portableData,
 	type ProjectBundle
 } from "audiobus/io/project-bundle"
 import type { EventClip } from "audiobus/io/event-clip"
 import { validBinding, type MidiControls } from "./midi-controls"
 import type { AudioRecording } from "./audio-recording"
 import { element, action, field, onChange, download } from "./music-tools-dom"
+import { parsePresetPage } from "./preset-page"
 
 export function mountProjectTools(
 	host: HTMLElement,
@@ -23,6 +25,7 @@ export function mountProjectTools(
 		getClip(): EventClip
 		getBpm(): number
 		getSwing(): number
+		getClock(): { divisions: number; bars: number }
 		setTempo(bpm: number, swing: number): void
 		persistMidi(value: string): void
 	},
@@ -113,6 +116,30 @@ export function mountProjectTools(
 		})().catch((error) => (status.textContent = String(error)))
 	})
 	host.append(
+		action(
+			"Download preset JSON",
+			() => {
+				const preset = parsePresetPage(
+					JSON.stringify({
+						format: "harmoneasy-preset",
+						version: 1,
+						name: name.value,
+						description: "",
+						workspace: portableData(manager.exportWorkspaceData()),
+						clock: {
+							bpm: options.getBpm(),
+							swing: options.getSwing(),
+							...options.getClock()
+						},
+						midiControls: { enabled: midi.enabled, bindings: midi.bindings }
+					})
+				)
+				download(JSON.stringify(preset, null, 2) + "\n", "preset.json", "application/json")
+				status.textContent =
+					"Preset exported for publishing as a preset page. Hardware ports and external assets must be available on the destination."
+			},
+			status
+		),
 		action(
 			"Download project bundle",
 			async () => {

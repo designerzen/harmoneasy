@@ -17,6 +17,7 @@ import { applySetup } from "./components/graph/saved-presets"
 import type { PresetSetup } from "audiobus/io/preset-library"
 import { createNetronomeLink } from "./services/netronome-link"
 import { readRoomUrl } from "./services/room-url"
+import { loadPresetPage, presetWorkspace } from "./services/preset-page"
 import { createMidiControlPanel } from "./services/midi-control-panel"
 import { startKnownMidiInputs } from "audiobus/midi/hardware/known-midi-inputs"
 import { showMidiDeviceDisconnected } from "./services/midi-device-errors"
@@ -436,6 +437,20 @@ const initialiseApplication = async (
 	})
 	state.loadFromLocation(DEFAULT_OPTIONS)
 	const roomSetup = hasWorkspaceBookmark && state.get("io") ? undefined : roomInvitation.setup
+	const hasSavedWorkspace = hasWorkspaceBookmark && Boolean(state.get("io"))
+	const pageResult = await presetPageResult
+	if (pageResult.error && !startupSetup && !roomSetup && !hasSavedWorkspace) {
+		throw pageResult.error
+	}
+	const pageSetup =
+		!startupSetup && !roomSetup && !hasSavedWorkspace ? pageResult.preset : undefined
+	if (pageSetup) {
+		state.set("tempo", pageSetup.clock.bpm)
+		state.set("swing", pageSetup.clock.swing)
+		state.set("divisions", pageSetup.clock.divisions)
+		state.set("bars", pageSetup.clock.bars)
+		state.set("midiControls", JSON.stringify(pageSetup.midiControls))
+	}
 	if (roomSetup) {
 		state.set("tempo", roomSetup.bpm)
 		state.set("swing", roomSetup.swing)
@@ -452,9 +467,12 @@ const initialiseApplication = async (
 
 	timer = new AudioTimer(bus.audioContext, bus.hasAudioWorklets)
 	await timer.loaded
-	if (roomInvitation.setup) {
-		timer.divisions = roomInvitation.setup.divisions
-		timer.bars = roomInvitation.setup.bars
+	if (roomSetup) {
+		timer.divisions = roomSetup.divisions
+		timer.bars = roomSetup.bars
+	} else {
+		timer.divisions = Number(state.get("divisions") ?? timer.divisions)
+		timer.bars = Number(state.get("bars") ?? timer.bars)
 	}
 
 	ui = await initialiseFrontEnd(bus, initialVolumePercent)
@@ -504,6 +522,9 @@ const initialiseApplication = async (
 		state.set("io", ioManager.exportWorkspace())
 	} else if (startupSetup) {
 		await applySetup(ioManager, startupSetup)
+		state.set("io", ioManager.exportWorkspace())
+	} else if (pageSetup) {
+		await ioManager.restoreWorkspace(presetWorkspace(pageSetup))
 		state.set("io", ioManager.exportWorkspace())
 	} else if (savedIOState) {
 		try {
@@ -638,6 +659,7 @@ const initialiseApplication = async (
 		midi: midiControls,
 		getBpm: () => timer.BPM,
 		getSwing: () => timer.swing,
+		getClock: () => ({ divisions: timer.divisions, bars: timer.bars }),
 		getNow: () => timer.now,
 		beatsPerBar: () => timer.syncOptions.beatsPerBar ?? 4,
 		canFollow: () => clockSource?.source === "internal" && !netronomeLink?.isFollower,
@@ -763,6 +785,24 @@ if (storage) {
 
 // Keep context browsing available until the explicit audio activation gesture.
 const startDialog = document.querySelector<HTMLDialogElement>("#start-dialog")!
+// Fetch before the audio activation gesture, and retain failures for the start dialog.
+const presetPageResult = loadPresetPage(window.location.href, import.meta.env.BASE_URL)
+	.then((preset) => {
+		if (preset) {
+			document.getElementById("start-room-context")!.hidden = false
+			startDialog.querySelector<HTMLButtonElement>('[value="room"]')!.textContent =
+				`Start ${preset.name}`
+			document.getElementById("start-room-description")!.textContent =
+				`${preset.name}: ${preset.description}`
+		}
+		return { preset, error: undefined }
+	})
+	.catch((error: unknown) => {
+		const message = document.getElementById("start-error")!
+		message.hidden = false
+		message.textContent = error instanceof Error ? error.message : "Could not load preset."
+		return { preset: undefined, error }
+	})
 try {
 	const invitation = readRoomUrl(window.location.href)
 	if (invitation.setup) {

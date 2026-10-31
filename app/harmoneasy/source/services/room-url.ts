@@ -82,7 +82,10 @@ export function readRoomUrl(location: string): RoomInvitation {
 export function createRoomUrl(location: string, invitation: RoomInvitation): string {
 	const url = new URL(location)
 	if (url.protocol === "http:" || url.protocol === "https:") {
-		const directory = url.pathname.replace(/\/index\.html$/, "/").replace(/\/$/, "")
+		const directory = url.pathname
+			.split("/preset/")[0]
+			.replace(/\/index\.html$/, "/")
+			.replace(/\/$/, "")
 		url.pathname = directory.endsWith("/room") ? `${directory}/` : `${directory}/room/`
 	}
 	url.search = ""

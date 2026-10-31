@@ -41,6 +41,7 @@ export interface MusicalFeatureOptions {
 	midi: MidiControls
 	getBpm(): number
 	getSwing(): number
+	getClock(): { divisions: number; bars: number }
 	getNow(): number
 	beatsPerBar(): number
 	setTempo(bpm: number, swing?: number): void
