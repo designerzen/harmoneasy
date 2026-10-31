@@ -17,6 +17,23 @@ export interface WidgetVisual {
 	unavailable?: boolean
 }
 export type SurfaceTheme = "neon" | "amber" | "ice"
+interface CachedWidget {
+	data: Float32Array
+	offset: number
+	x: number
+	y: number
+	width: number
+	height: number
+	descriptor: ControlDescriptor
+	widget: WidgetType
+	sourceLabel: string
+	value: ControlValue | undefined
+	active: boolean | undefined
+	unavailable: boolean | undefined
+	disabled: boolean | undefined
+	color: number[]
+	epoch: number
+}
 const COLORS: Record<SurfaceTheme, number[]> = {
 	neon: [0.18, 1, 0.7],
 	amber: [1, 0.62, 0.12],
@@ -137,10 +154,16 @@ export class GpuSurfaceRenderer {
 	private postUniform: GPUBuffer
 	private sceneTexture?: GPUTexture
 	private capacity = 4096
-	private instances: number[] = []
+	private instances = new Float32Array(this.capacity * STRIDE)
+	private instanceCount = 0
+	private building: number[] = []
+	private cache = new Map<WidgetVisual, CachedWidget>()
+	private epoch = 0
+	private frameData = new Float32Array(20)
+	private postData = new Float32Array(4)
+	private projection = new Float32Array(16)
 	private disposed = false
 	private color = COLORS.neon
-	private smoothed = new Map<string, number[]>()
 	format: GPUTextureFormat
 	private effect = DEFAULT_EFFECT
 	private postEffect = DEFAULT_POST_EFFECT
@@ -343,7 +366,7 @@ export class GpuSurfaceRenderer {
 		alpha = 1,
 		uv = [0, 0, 0, 0]
 	): void {
-		this.instances.push(
+		this.building.push(
 			x,
 			y,
 			w,
@@ -361,13 +384,23 @@ export class GpuSurfaceRenderer {
 			...uv
 		)
 	}
-	private text(text: string, x: number, y: number, width: number, alpha = 1): void {
+	private text(
+		text: string,
+		x: number,
+		y: number,
+		width: number,
+		alpha = 1,
+		reserve = false
+	): void {
 		const size = 24,
 			advance = 9
-		for (const [i, char] of Array.from(text.slice(0, Math.floor(width / advance))).entries()) {
+		const length = Math.max(0, Math.floor(width / advance)),
+			count = reserve ? length : Math.min(text.length, length)
+		for (let i = 0; i < count; i++) {
+			const char = text[i] ?? " "
 			const code = char.charCodeAt(0),
 				n = (code >= 32 && code < 128 ? code : 63) - 32
-			this.quad(x + i * advance, y, size, size, 9, 0, 0, 0, 0, alpha, [
+			this.quad(x + i * advance, y, size, size, 9, 0, 0, 0, 0, i < text.length ? alpha : 0, [
 				((n % 16) * 32) / 512,
 				(Math.floor(n / 16) * 32) / 192,
 				32 / 512,
@@ -377,119 +410,205 @@ export class GpuSurfaceRenderer {
 	}
 	prepare(
 		widgets: WidgetVisual[],
-		motion: boolean,
+		_motion: boolean,
 		cursors: { x: number; y: number }[] = []
 	): void {
-		this.instances = []
-		const alive = new Set<string>()
+		let offset = 0,
+			dirtyStart = Infinity,
+			dirtyEnd = 0,
+			grown = false
+		const epoch = ++this.epoch
+		const reserve = (required: number) => {
+			if (required <= this.instances.length) {
+				return
+			}
+			const next = new Float32Array(2 ** Math.ceil(Math.log2(required)))
+			next.set(this.instances)
+			this.instances = next
+			this.buffer.destroy()
+			this.buffer = this.device.createBuffer({
+				size: next.byteLength,
+				usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+			})
+			grown = true
+		}
 		for (const w of widgets) {
-			alive.add(w.key)
-			const d = w.descriptor,
-				v = w.value,
-				active = w.active ? 1 : 0,
-				alpha = w.unavailable || d.disabled ? 0.3 : 1
-			const choice = d.choices?.findIndex((c) => sameValue(c.value, v)) ?? 0
-			const target = Array.isArray(v)
-				? v.map((n) => normalize(d, n))
-				: [typeof v === "boolean" ? Number(v) : normalize(d, Number(v))]
-			const old = this.smoothed.get(w.key) ?? target
-			const eased = target.map((n, i) =>
-				motion ? (old[i] ?? n) + (n - (old[i] ?? n)) * 0.32 : n
-			)
-			this.smoothed.set(w.key, eased)
-			this.quad(w.x, w.y, w.width, w.height, 0, 0, 0, active, 0, alpha)
-			this.text(w.sourceLabel, w.x + 12, w.y + 9, w.width - 24, 0.5 * alpha)
-			this.text(d.label, w.x + 12, w.y + 27, w.width - 24, alpha)
-			const x = w.x + 8,
-				y = w.y + 48,
-				width = w.width - 16,
-				height = w.height - 76
-			const kind = {
-				dial: 1,
-				slider: 2,
-				range: 2,
-				toggle: 3,
-				xy: 4,
-				button: 5,
-				radio: 6,
-				meter: 7,
-				select: 8,
-				number: 8,
-				text: 8,
-				color: 8,
-				display: 8
-			}[w.widget]
-			this.quad(
-				x,
-				y,
-				width,
-				height,
-				kind,
-				w.widget === "radio" ? choice : eased[0],
-				w.widget === "xy" || w.widget === "range" ? eased[1] : -1,
-				active,
-				d.choices?.length ?? 0,
-				alpha
-			)
-			if (w.widget === "radio" && d.choices?.length) {
-				const segment = width / d.choices.length
-				for (const [index, option] of d.choices.entries()) {
-					this.text(
-						option.label,
-						x + index * segment + 4,
-						y + height / 2 + 12,
-						segment - 8,
-						alpha
-					)
+			let cached = this.cache.get(w)
+			const changed =
+				!cached ||
+				cached.x !== w.x ||
+				cached.y !== w.y ||
+				cached.width !== w.width ||
+				cached.height !== w.height ||
+				cached.descriptor !== w.descriptor ||
+				cached.widget !== w.widget ||
+				cached.sourceLabel !== w.sourceLabel ||
+				cached.active !== w.active ||
+				cached.unavailable !== w.unavailable ||
+				cached.disabled !== w.descriptor.disabled ||
+				cached.color !== this.color ||
+				!sameValue(cached.value, w.value)
+			if (changed) {
+				this.building = []
+				const d = w.descriptor,
+					v = w.value,
+					active = w.active ? 1 : 0,
+					alpha = w.unavailable || d.disabled ? 0.3 : 1
+				const choice = d.choices?.findIndex((c) => sameValue(c.value, v)) ?? 0
+				const target = Array.isArray(v)
+					? v.map((n) => normalize(d, n))
+					: [typeof v === "boolean" ? Number(v) : normalize(d, Number(v))]
+				this.quad(w.x, w.y, w.width, w.height, 0, 0, 0, active, 0, alpha)
+				this.text(w.sourceLabel, w.x + 12, w.y + 9, w.width - 24, 0.5 * alpha)
+				this.text(d.label, w.x + 12, w.y + 27, w.width - 24, alpha)
+				const x = w.x + 8,
+					y = w.y + 48,
+					width = w.width - 16,
+					height = w.height - 76
+				const kind = {
+					dial: 1,
+					slider: 2,
+					range: 2,
+					toggle: 3,
+					xy: 4,
+					button: 5,
+					radio: 6,
+					meter: 7,
+					select: 8,
+					number: 8,
+					text: 8,
+					color: 8,
+					display: 8
+				}[w.widget]
+				this.quad(
+					x,
+					y,
+					width,
+					height,
+					kind,
+					w.widget === "radio" ? choice : target[0],
+					w.widget === "xy" || w.widget === "range" ? target[1] : -1,
+					active,
+					d.choices?.length ?? 0,
+					alpha
+				)
+				if (w.widget === "radio" && d.choices?.length) {
+					const segment = width / d.choices.length
+					for (const [index, option] of d.choices.entries()) {
+						this.text(
+							option.label,
+							x + index * segment + 4,
+							y + height / 2 + 12,
+							segment - 8,
+							alpha
+						)
+					}
+				}
+				this.text(
+					w.unavailable ? "Unavailable" : formatValue(d, v),
+					w.x + 12,
+					w.y + w.height - 24,
+					w.width - 24,
+					alpha,
+					true
+				)
+				cached = {
+					data: new Float32Array(this.building),
+					offset: -1,
+					x: w.x,
+					y: w.y,
+					width: w.width,
+					height: w.height,
+					descriptor: d,
+					widget: w.widget,
+					sourceLabel: w.sourceLabel,
+					value: Array.isArray(v) ? [...v] : v,
+					active: w.active,
+					unavailable: w.unavailable,
+					disabled: d.disabled,
+					color: this.color,
+					epoch
+				}
+				this.cache.set(w, cached)
+			}
+			cached!.epoch = epoch
+			reserve(offset + cached!.data.length)
+			if (changed || cached!.offset !== offset) {
+				this.instances.set(cached!.data, offset)
+				cached!.offset = offset
+				dirtyStart = Math.min(dirtyStart, offset)
+				dirtyEnd = offset + cached!.data.length
+			}
+			offset += cached!.data.length
+		}
+		if (this.cache.size !== widgets.length) {
+			for (const [widget, cached] of this.cache) {
+				if (cached.epoch !== epoch) {
+					this.cache.delete(widget)
 				}
 			}
-			this.text(
-				w.unavailable ? "Unavailable" : formatValue(d, v),
-				w.x + 12,
-				w.y + w.height - 24,
-				w.width - 24,
-				alpha
-			)
 		}
-		for (const key of this.smoothed.keys()) {
-			if (!alive.has(key)) {
-				this.smoothed.delete(key)
-			}
-		}
+		this.building = []
 		for (const cursor of cursors) {
 			this.quad(cursor.x - 12, cursor.y - 12, 24, 24, 1, 1, -1, 1)
 		}
-		const count = this.instances.length / STRIDE
-		if (count > this.capacity) {
-			this.buffer.destroy()
-			this.capacity = 2 ** Math.ceil(Math.log2(count))
-			this.buffer = this.device.createBuffer({
-				size: this.capacity * STRIDE * 4,
-				usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
-			})
+		if (this.building.length) {
+			reserve(offset + this.building.length)
+			this.instances.set(this.building, offset)
+			dirtyStart = Math.min(dirtyStart, offset)
+			offset += this.building.length
+			dirtyEnd = offset
 		}
-		if (count) {
-			this.device.queue.writeBuffer(this.buffer, 0, new Float32Array(this.instances))
+		this.instanceCount = offset / STRIDE
+		if (grown) {
+			dirtyStart = 0
+			dirtyEnd = offset
+		}
+		if (dirtyStart < dirtyEnd) {
+			this.device.queue.writeBuffer(
+				this.buffer,
+				dirtyStart * 4,
+				this.instances.buffer,
+				dirtyStart * 4,
+				(dirtyEnd - dirtyStart) * 4
+			)
 		}
 	}
-	render(width: number, height: number, time: number, motion: boolean): void {
+	render(
+		width: number,
+		height: number,
+		time: number,
+		motion: boolean,
+		visible?: { x: number; y: number; width: number; height: number; scale: number }
+	): void {
 		if (this.disposed) {
 			return
 		}
-		const ratio = Math.min(devicePixelRatio || 1, 2),
+		const ratio = Math.min((devicePixelRatio || 1) * (visible?.scale ?? 1), 2),
 			w = Math.max(1, Math.round(width * ratio)),
 			h = Math.max(1, Math.round(height * ratio))
 		if (this.canvas.width !== w || this.canvas.height !== h) {
 			this.canvas.width = w
 			this.canvas.height = h
 		}
+		this.projection.set([2 / width, 0, 0, 0, 0, -2 / height, 0, 0, 0, 0, 1, 0, -1, 1, 0, 1])
 		this.draw(
 			this.context.getCurrentTexture().createView(),
-			new Float32Array([2 / width, 0, 0, 0, 0, -2 / height, 0, 0, 0, 0, 1, 0, -1, 1, 0, 1]),
+			this.projection,
 			width,
 			height,
 			time,
-			motion
+			motion,
+			undefined,
+			undefined,
+			visible
+				? {
+						x: Math.max(0, Math.floor(visible.x * ratio)),
+						y: Math.max(0, Math.floor(visible.y * ratio)),
+						width: Math.min(w, Math.ceil((visible.x + visible.width) * ratio)),
+						height: Math.min(h, Math.ceil((visible.y + visible.height) * ratio))
+					}
+				: undefined
 		)
 	}
 	/** External target and view projection permit the same widgets to live on an XR plane. */
@@ -501,9 +620,13 @@ export class GpuSurfaceRenderer {
 		time: number,
 		motion: boolean,
 		viewport?: { x: number; y: number; width: number; height: number },
-		targetSize?: { width: number; height: number }
+		targetSize?: { width: number; height: number },
+		clip?: { x: number; y: number; width: number; height: number }
 	): void {
-		const frame = new Float32Array(20)
+		if (clip && (clip.width <= clip.x || clip.height <= clip.y)) {
+			return
+		}
+		const frame = this.frameData
 		frame.set(projection)
 		frame.set([width, height, time, motion ? 1 : 0], 16)
 		this.device.queue.writeBuffer(this.uniform, 0, frame)
@@ -540,7 +663,8 @@ export class GpuSurfaceRenderer {
 				]
 			})
 		}
-		this.device.queue.writeBuffer(this.postUniform, 0, new Float32Array([time, 0, 0, 0]))
+		this.postData[0] = time
+		this.device.queue.writeBuffer(this.postUniform, 0, this.postData)
 		const encoder = this.device.createCommandEncoder(),
 			pass = encoder.beginRenderPass({
 				colorAttachments: [
@@ -555,10 +679,21 @@ export class GpuSurfaceRenderer {
 		if (viewport) {
 			pass.setViewport(viewport.x, viewport.y, viewport.width, viewport.height, 0, 1)
 		}
+		if (clip && this.postEffect === DEFAULT_POST_EFFECT) {
+			// Include the bloom kernel's neighbouring texels in the scene pass.
+			const x = Math.max(0, clip.x - 3),
+				y = Math.max(0, clip.y - 3)
+			pass.setScissorRect(
+				x,
+				y,
+				Math.min(targetWidth, clip.width + 3) - x,
+				Math.min(targetHeight, clip.height + 3) - y
+			)
+		}
 		pass.setPipeline(this.pipeline)
 		pass.setBindGroup(0, this.binding)
 		pass.setVertexBuffer(0, this.buffer)
-		pass.draw(6, this.instances.length / STRIDE)
+		pass.draw(6, this.instanceCount)
 		pass.end()
 		const post = encoder.beginRenderPass({
 			colorAttachments: [
@@ -566,6 +701,9 @@ export class GpuSurfaceRenderer {
 			]
 		})
 		post.setPipeline(this.postPipeline)
+		if (clip) {
+			post.setScissorRect(clip.x, clip.y, clip.width - clip.x, clip.height - clip.y)
+		}
 		post.setBindGroup(0, this.postBinding)
 		post.draw(3)
 		post.end()

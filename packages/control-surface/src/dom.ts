@@ -100,18 +100,15 @@ export function createDomControl(
 							? "number"
 							: "range"
 		const el = input(type)
-		el.addEventListener(
-			type === "text" || type === "number" ? EVENT_CHANGE : EVENT_INPUT,
-			() => {
-				apply(
-					type === "checkbox"
-						? el.checked
-						: type === "range" || type === "number"
-							? el.valueAsNumber
-							: el.value
-				)
-			}
-		)
+		el.addEventListener(type === "text" ? EVENT_CHANGE : EVENT_INPUT, () => {
+			apply(
+				type === "checkbox"
+					? el.checked
+					: type === "range" || type === "number"
+						? el.valueAsNumber
+						: el.value
+			)
+		})
 		updates.push((v) => {
 			if (type === "checkbox") {
 				el.checked = !!v

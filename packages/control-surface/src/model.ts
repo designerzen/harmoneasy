@@ -16,7 +16,12 @@ export const WIDGET_TYPES: WidgetType[] = [
 	"color"
 ]
 export const clamp = (v: number, min = 0, max = 1) => Math.max(min, Math.min(max, v))
-export const sameValue = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
+export const sameValue = (a: unknown, b: unknown) =>
+	Object.is(a, b) ||
+	(Array.isArray(a) &&
+		Array.isArray(b) &&
+		a.length === b.length &&
+		a.every((value, index) => Object.is(value, b[index])))
 export function bounds(d: ControlDescriptor): [number, number] {
 	const min = d.min ?? 0,
 		max = d.max ?? 1
@@ -132,6 +137,10 @@ export function validSurfaces(value: unknown): value is SurfaceState[] {
 		}
 		ids.add(s.id)
 		return (
+			(s.panels === undefined ||
+				(Array.isArray(s.panels) &&
+					s.panels.length <= 32 &&
+					s.panels.every((id: unknown) => typeof id === "string"))) &&
 			(!s.theme || ["neon", "amber", "ice"].includes(s.theme)) &&
 			Array.isArray(s.connections) &&
 			s.connections.length <= 256 &&

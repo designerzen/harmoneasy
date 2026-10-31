@@ -40,6 +40,9 @@ interface Entry {
 	pending?: ControlValue
 	actions: ControlValue[]
 	missing: boolean
+	reading: boolean
+	dirty: boolean
+	semanticDirty: boolean
 }
 interface Gesture {
 	entry: Entry
@@ -72,7 +75,6 @@ export class ControlSurface {
 	private editing = false
 	private frame = 0
 	private poll = 0
-	private reading = false
 	private height = 120
 	private motion = matchMedia("(prefers-reduced-motion: reduce)")
 	private recovering = false
@@ -173,6 +175,9 @@ export class ControlSurface {
 			}
 		})
 		listen(EVENT_POINTER_MOVE, (event) => {
+			if (!this.gestures.has((event as PointerEvent).pointerId)) {
+				return
+			}
 			const e = event as PointerEvent,
 				rect = this.stage.getBoundingClientRect()
 			this.pointerMove(
@@ -204,18 +209,31 @@ export class ControlSurface {
 			if (this.disposed) {
 				return
 			}
+			if (this.visible && !document.hidden && !this.xr) {
+				this.updateFeedback()
+			}
 			if (this.renderer && this.visible && !document.hidden && !this.xr && !this.enteringXR) {
 				try {
+					const rect = this.stage.getBoundingClientRect()
+					const width = this.stage.clientWidth || 640
+					const scale = rect.width / width || 1
 					this.renderer.prepare(
 						this.entries.map((e) => e.visual),
 						!this.motion.matches
 					)
-					this.renderer.render(
-						this.stage.clientWidth || 640,
-						this.height,
-						time / 1000,
-						!this.motion.matches
-					)
+					this.renderer.render(width, this.height, time / 1000, !this.motion.matches, {
+						x: Math.max(0, -rect.left / scale),
+						y: Math.max(0, -rect.top / scale),
+						width: Math.max(
+							0,
+							(Math.min(innerWidth, rect.right) - Math.max(0, rect.left)) / scale
+						),
+						height: Math.max(
+							0,
+							(Math.min(innerHeight, rect.bottom) - Math.max(0, rect.top)) / scale
+						),
+						scale
+					})
 				} catch (error) {
 					void this.gpuError(error instanceof Error ? error : new Error(String(error)))
 				}
@@ -308,10 +326,13 @@ export class ControlSurface {
 							normalize(y.descriptor, Number(await y.read()))
 						]
 					},
-					async write(value) {
+					write(value) {
 						const v = value as number[]
-						await x.write(denormalize(x.descriptor, v[0]))
-						await y.write(denormalize(y.descriptor, v[1]))
+						const a = x.write(denormalize(x.descriptor, v[0]))
+						const b = y.write(denormalize(y.descriptor, v[1]))
+						if (a || b) {
+							return Promise.all([a, b]).then(() => {})
+						}
 					},
 					subscribe(listener) {
 						const a = x.subscribe?.(listener),
@@ -411,7 +432,10 @@ export class ControlSurface {
 				version: 0,
 				busy: false,
 				actions: [],
-				missing: unavailable
+				missing: unavailable,
+				reading: false,
+				dirty: true,
+				semanticDirty: true
 			}
 			const control = createDomControl(
 				{
@@ -425,11 +449,12 @@ export class ControlSurface {
 				(value) => void this.write(entry, value)
 			)
 			control.element.className = `cs-semantic cs-${widget}`
+			const inputs = control.element.querySelectorAll<
+				HTMLInputElement | HTMLSelectElement | HTMLButtonElement
+			>("input,select,button")
 			entry.update = (value) => {
 				control.update(value)
-				for (const input of control.element.querySelectorAll<
-					HTMLInputElement | HTMLSelectElement | HTMLButtonElement
-				>("input,select,button")) {
+				for (const input of inputs) {
 					input.disabled = !!(
 						entry.visual.unavailable ||
 						entry.binding.descriptor.disabled ||
@@ -490,7 +515,11 @@ export class ControlSurface {
 			}
 			this.entries.push(entry)
 			this.stage.append(element)
-			this.unsubscribers.push(binding.subscribe?.(() => void this.refresh()) ?? (() => {}))
+			this.unsubscribers.push(
+				binding.subscribe?.(() => {
+					entry.dirty = true
+				}) ?? (() => {})
+			)
 		}
 		this.element.classList.toggle("cs-editing", this.editing)
 		this.status.textContent = this.entries.length
@@ -512,39 +541,77 @@ export class ControlSurface {
 			entry.element.style.cssText = `left:${r.x}px;top:${r.y}px;width:${r.width}px;height:${r.height}px`
 		}
 	}
-	private async refresh(): Promise<void> {
-		if (this.disposed || this.reading) {
-			return
+	private refresh(): void {
+		for (const entry of this.entries) {
+			entry.dirty = true
 		}
-		this.reading = true
-		try {
-			await Promise.all(
-				this.entries.map(async (entry) => {
-					if (entry.busy || entry.missing) {
-						return
-					}
-					const version = entry.version
-					try {
-						const value = await entry.binding.read()
-						if (this.disposed || version !== entry.version || entry.busy) {
-							return
-						}
-						entry.visual.unavailable =
-							value === undefined && entry.visual.widget !== "button"
-						if (!sameValue(value, entry.visual.value)) {
-							entry.visual.value = value
-							entry.update(value)
-						} else {
-							entry.update(value)
-						}
-					} catch {
-						entry.visual.unavailable = true
-						entry.update(undefined)
-					}
-				})
-			)
-		} finally {
-			this.reading = false
+		if (this.visible && !document.hidden) {
+			this.updateFeedback()
+		}
+	}
+	private updateFeedback(): void {
+		for (const entry of this.entries) {
+			if (entry.semanticDirty) {
+				entry.update(entry.visual.value)
+				entry.semanticDirty = false
+			}
+			if (
+				(!entry.dirty && entry.visual.widget !== "meter") ||
+				entry.reading ||
+				entry.busy ||
+				entry.visual.active ||
+				entry.missing
+			) {
+				continue
+			}
+			entry.dirty = false
+			entry.reading = true
+			const version = entry.version
+			const accept = (value: ControlValue | undefined) => {
+				if (
+					this.disposed ||
+					version !== entry.version ||
+					entry.busy ||
+					entry.visual.active
+				) {
+					return
+				}
+				const unavailable = value === undefined && entry.visual.widget !== "button"
+				if (
+					!sameValue(value, entry.visual.value) ||
+					unavailable !== entry.visual.unavailable
+				) {
+					entry.visual.value = value
+					entry.visual.unavailable = unavailable
+					entry.semanticDirty = true
+				}
+			}
+			const failed = () => {
+				if (
+					this.disposed ||
+					version !== entry.version ||
+					entry.busy ||
+					entry.visual.active
+				) {
+					return
+				}
+				entry.visual.unavailable = true
+				entry.semanticDirty = true
+			}
+			try {
+				const value = entry.binding.read()
+				if (value instanceof Promise) {
+					void value.then(accept, failed).finally(() => {
+						entry.reading = false
+					})
+				} else {
+					accept(value)
+					entry.reading = false
+				}
+			} catch {
+				failed()
+				entry.reading = false
+			}
 		}
 	}
 	private async write(entry: Entry, value: ControlValue): Promise<void> {
@@ -561,7 +628,7 @@ export class ControlSurface {
 			return
 		}
 		entry.visual.value = value
-		entry.update(value)
+		entry.semanticDirty = true
 		if (entry.visual.widget === "button") {
 			entry.actions.push(value)
 		} else {
@@ -576,7 +643,10 @@ export class ControlSurface {
 			while ((entry.pending !== undefined || entry.actions.length) && !this.disposed) {
 				const next = entry.actions.length ? entry.actions.shift()! : entry.pending!
 				entry.pending = undefined
-				await entry.binding.write(next)
+				const result = entry.binding.write(next)
+				if (result) {
+					await result
+				}
 			}
 			this.status.textContent = ""
 			this.options.configurationChanged?.()
@@ -586,7 +656,6 @@ export class ControlSurface {
 			entry.actions = []
 		} finally {
 			entry.busy = false
-			void this.refresh()
 		}
 	}
 	/** Local surface coordinates also accept projected XR rays/hand positions. */
@@ -758,11 +827,14 @@ export class ControlSurface {
 			const { startSurfaceXR } = await import("./xr")
 			this.xr = await startSurfaceXR(
 				this.renderer,
-				() => ({
-					widgets: this.entries.map((e) => e.visual),
-					width: this.stage.clientWidth,
-					height: this.height
-				}),
+				() => {
+					this.updateFeedback()
+					return {
+						widgets: this.entries.map((e) => e.visual),
+						width: this.stage.clientWidth,
+						height: this.height
+					}
+				},
 				this,
 				() => {
 					this.xr = undefined

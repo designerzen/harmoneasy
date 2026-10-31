@@ -63,6 +63,66 @@ try {
 		"GPU initialization must compile shaders and create a working render pipeline"
 	)
 	assert.equal(await page.locator(".cs-widget").count(), 13)
+	await page.evaluate(async () => {
+		const { surface } = window.surfaceSmoke
+		const renderer = surface.renderer
+		const visuals = surface.entries.map((entry) => entry.visual)
+		renderer.prepare(visuals, true)
+		const queue = renderer.device.queue
+		const original = queue.writeBuffer.bind(queue)
+		let uploads = 0
+		queue.writeBuffer = (...args) => {
+			uploads++
+			return original(...args)
+		}
+		try {
+			renderer.prepare(visuals, true)
+			if (uploads !== 0) {
+				throw new Error("Idle widgets must reuse their GPU geometry")
+			}
+			const dial = visuals[0],
+				previous = dial.value
+			dial.value = dial.descriptor.max
+			renderer.prepare(visuals, true)
+			const data = renderer.instances
+			let found = false
+			for (let offset = 0; offset < data.length; offset += 20) {
+				if (data[offset + 4] === 1) {
+					if (data[offset + 5] !== 1) {
+						throw new Error("Dial must reach its target in the first frame")
+					}
+					found = true
+					break
+				}
+			}
+			if (!found || uploads !== 1) {
+				throw new Error("Changed widget must upload its new geometry once")
+			}
+			dial.value = previous
+		} finally {
+			queue.writeBuffer = original
+		}
+		// An in-flight engine read must never overwrite a newer pointer write.
+		const entry = surface.entries[0],
+			originalRead = entry.binding.read
+		let complete
+		entry.binding.read = () =>
+			new Promise((resolve) => {
+				complete = resolve
+			})
+		entry.dirty = true
+		surface.updateFeedback()
+		surface.pointerDown(77, 90, 90)
+		surface.pointerMove(77, 90, 55)
+		const requested = entry.visual.value
+		complete(60)
+		await Promise.resolve()
+		if (entry.visual.value !== requested) {
+			throw new Error("Stale read overwrote live input")
+		}
+		surface.pointerUp(77)
+		entry.binding.read = originalRead
+	})
 	const canvas = page.locator("canvas"),
 		rect = await canvas.boundingBox()
 	// Dial and slider use real pointer input; native controls remain available to keyboard input.

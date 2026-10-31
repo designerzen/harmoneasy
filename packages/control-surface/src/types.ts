@@ -40,6 +40,7 @@ export interface UiDescriptor {
 	title?: string
 }
 export interface ComponentUi {
+	createSurfaceView?(): { element: HTMLElement; destroy(): void }
 	getUiDescriptor?(): UiDescriptor | Promise<UiDescriptor>
 	getControlValue?(id: string): ControlValue | undefined | Promise<ControlValue | undefined>
 	setControlValue?(id: string, value: ControlValue): void | Promise<void>
@@ -66,6 +67,7 @@ export interface SurfaceConnection {
 	controlIds: string[]
 }
 export interface SurfaceState {
+	panels?: string[]
 	id: string
 	name: string
 	connections: SurfaceConnection[]
