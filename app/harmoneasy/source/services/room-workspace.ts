@@ -113,6 +113,7 @@ export class RoomWorkspace {
 	private readyPeers = new Set<string>()
 	private harmonyPeers = new Set<string>()
 	private applyingHarmony = false
+	private previousHarmonyControl: boolean
 	private edits?: ReturnType<typeof setTimeout>
 	private queue: Promise<void> = Promise.resolve()
 	private scheduled = new Set<ReturnType<typeof setTimeout>>()
@@ -126,15 +127,23 @@ export class RoomWorkspace {
 		private report: (status: string) => void = () => {},
 		private mode: "workspace" | "harmony" = "workspace"
 	) {
+		this.previousHarmonyControl = manager.externallyControlledHarmony
+		if (mode === "harmony") {
+			manager.externallyControlledHarmony = connection.role === "follower"
+		}
 		this.previousInput = manager.sessionInputHandler
 		this.previousOutput = manager.sessionOutputHandler
 		manager.sessionInputHandler = this.input
 		manager.sessionOutputHandler = this.output
-		manager.addEventListener(EVENT_HARMONY_CHANGED, () => {
-			if (!this.applyingHarmony && connection.role === "leader") {
-				connection.broadcastData({ type: "harmony", state: manager.harmony })
-			}
-		}, { signal: this.abort.signal })
+		manager.addEventListener(
+			EVENT_HARMONY_CHANGED,
+			() => {
+				if (!this.applyingHarmony && connection.role === "leader") {
+					connection.broadcastData({ type: "harmony", state: manager.harmony })
+				}
+			},
+			{ signal: this.abort.signal }
+		)
 		for (const event of [EVENT_CHAINS_UPDATED, EVENT_CHAIN_ACTIVE_CHANGED]) {
 			manager.addEventListener(event, this.changed, { signal: this.abort.signal })
 		}
@@ -149,8 +158,9 @@ export class RoomWorkspace {
 		)
 		connection.onPeerOpen = (id) => {
 			if (this.mode === "harmony") {
-				if (connection.role === "leader") this.send(id, { type: "harmony", state: manager.harmony })
-				else {
+				if (connection.role === "leader") {
+					this.send(id, { type: "harmony", state: manager.harmony })
+				} else {
 					this.leader = id
 					this.send(id, { type: "request-harmony" })
 				}
@@ -173,9 +183,13 @@ export class RoomWorkspace {
 		connection.onClockChange = () => this.finishJoining()
 		connection.onConductorChange = (id, conductor) => {
 			if (this.mode === "harmony") {
+				manager.externallyControlledHarmony = !conductor
 				this.leader = id
-				if (conductor) connection.broadcastData({ type: "harmony", state: manager.harmony })
-				else this.send(id, { type: "request-harmony" })
+				if (conductor) {
+					connection.broadcastData({ type: "harmony", state: manager.harmony })
+				} else {
+					this.send(id, { type: "request-harmony" })
+				}
 				return
 			}
 			this.leader = id
@@ -295,7 +309,9 @@ export class RoomWorkspace {
 		if (this.previousInput?.(chainId, command)) {
 			return true
 		}
-		if (this.mode === "harmony") return false
+		if (this.mode === "harmony") {
+			return false
+		}
 		if (this.applying || this.dirty) {
 			return true
 		}
@@ -318,7 +334,9 @@ export class RoomWorkspace {
 		if (this.previousOutput?.(chainId, commands)) {
 			return true
 		}
-		if (this.mode === "harmony") return false
+		if (this.mode === "harmony") {
+			return false
+		}
 		if (this.applying || this.dirty) {
 			return true
 		}
@@ -354,7 +372,9 @@ export class RoomWorkspace {
 	}
 
 	private changed = () => {
-		if (this.mode === "harmony") return
+		if (this.mode === "harmony") {
+			return
+		}
 		if (this.applying || this.closed) {
 			return
 		}
@@ -444,11 +464,19 @@ export class RoomWorkspace {
 			this.leader = id
 			const state = parseHarmony(message.state)
 			this.applyingHarmony = true
-			try { this.manager.setHarmony(state) } finally { this.applyingHarmony = false }
-			if (this.mode === "harmony") this.report("Following room harmony; your instruments and chains stay local.")
+			try {
+				this.manager.setHarmony(state)
+			} finally {
+				this.applyingHarmony = false
+			}
+			if (this.mode === "harmony") {
+				this.report("Following room harmony; your instruments and chains stay local.")
+			}
 			return
 		}
-		if (this.mode === "harmony" || this.harmonyPeers.has(id)) return
+		if (this.mode === "harmony" || this.harmonyPeers.has(id)) {
+			return
+		}
 		if (message.type === "request-workspace" && host) {
 			if (!this.publish()) {
 				this.send(id, { type: "workspace", revision: this.revision, encoded: this.encoded })
@@ -571,6 +599,9 @@ export class RoomWorkspace {
 	}
 
 	async destroy() {
+		if (this.mode === "harmony") {
+			this.manager.externallyControlledHarmony = this.previousHarmonyControl
+		}
 		this.closed = true
 		clearTimeout(this.edits)
 		this.abort.abort()

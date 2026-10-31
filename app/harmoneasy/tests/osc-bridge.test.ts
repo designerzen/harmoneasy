@@ -30,6 +30,11 @@ it("bridges binary OSC between a permitted WebSocket origin and loopback UDP in 
 	receiver.bind(0, "127.0.0.1")
 	await once(receiver, "listening")
 	const sendPort = (receiver.address() as any).port
+	const mirror = createSocket("udp4")
+	sockets.push(mirror)
+	mirror.bind(0, "127.0.0.1")
+	await once(mirror, "listening")
+	const mirrorPort = (mirror.address() as any).port
 	const reserveUDP = createSocket("udp4")
 	reserveUDP.bind(0, "127.0.0.1")
 	await once(reserveUDP, "listening")
@@ -49,6 +54,7 @@ it("bridges binary OSC between a permitted WebSocket origin and loopback UDP in 
 				OSC_WS_PORT: String(wsPort),
 				OSC_RECEIVE_PORT: String(receivePort),
 				OSC_SEND_PORT: String(sendPort),
+				OSC_MIRROR_PORT: String(mirrorPort),
 				OSC_ALLOWED_ORIGIN: "http://localhost:1999"
 			},
 			windowsHide: true,
@@ -69,11 +75,15 @@ it("bridges binary OSC between a permitted WebSocket origin and loopback UDP in 
 	await once(client, "open")
 	const packet = encodeOSC({ address: "/harmoneasy/note/on", args: [60, 100, 1] })
 	const receivedUDP = once(receiver, "message")
+	const mirroredBrowser = once(mirror, "message")
 	client.send(packet)
 	expect(new Uint8Array((await receivedUDP)[0])).toEqual(packet)
+	expect(new Uint8Array((await mirroredBrowser)[0])).toEqual(packet)
 	const sender = createSocket("udp4")
 	sockets.push(sender)
 	const receivedWS = once(client, "message")
+	const mirroredPlugin = once(mirror, "message")
 	sender.send(packet, receivePort, "127.0.0.1")
 	expect(new Uint8Array((await receivedWS)[0])).toEqual(packet)
+	expect(new Uint8Array((await mirroredPlugin)[0])).toEqual(packet)
 }, 15000)

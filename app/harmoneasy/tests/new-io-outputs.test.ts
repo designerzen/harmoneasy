@@ -1,6 +1,9 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from "vitest"
 import OutputSamplePlayer from "../../../packages/audiobus/io/outputs/output-sample-player"
+import OutputHarmonySampler, {
+	samplerTimeline
+} from "../../../packages/audiobus/io/outputs/output-harmony-sampler"
 import OutputEventRecorder from "../../../packages/audiobus/io/outputs/output-event-recorder"
 import OutputNoteMonitor from "../../../packages/audiobus/io/outputs/output-note-monitor"
 import OutputOnscreenKeyboard from "../../../packages/audiobus/io/outputs/output-onscreen-keyboard"
@@ -47,6 +50,23 @@ function audioContext() {
 }
 
 describe("sample player output", () => {
+	it("does not start a released note when sample decoding finishes late", async () => {
+		const context = audioContext()
+		let decode!: (buffer: any) => void
+		context.decodeAudioData.mockImplementationOnce(
+			() =>
+				new Promise((resolve) => {
+					decode = resolve
+				})
+		)
+		const output = new OutputSamplePlayer({ audioContext: context, sample: "AQID" })
+		outputs.push(output)
+		const pending = output.sendCommand(command(NOTE_ON))
+		await output.sendCommand(command(NOTE_OFF))
+		decode({ duration: 1, length: 44100 })
+		await pending
+		expect(context.createBufferSource).not.toHaveBeenCalled()
+	})
 	it("persists sample data and plays transposed, velocity-scaled voices per channel", async () => {
 		const context = audioContext()
 		const output = defineDevice(new OutputSamplePlayer({ audioContext: context, root: 60 }), {
@@ -118,6 +138,75 @@ describe("sample player output", () => {
 		expect(output.isConnected).toBe(false)
 		await output.connect()
 		expect(output.isConnected).toBe(true)
+	})
+})
+
+describe("harmony sampler", () => {
+	async function sampler(options: Record<string, unknown> = {}) {
+		const context = audioContext()
+		context.decodeAudioData.mockResolvedValue({
+			duration: 1,
+			length: 44100,
+			sampleRate: 44100
+		} as any)
+		const output = new OutputHarmonySampler({ audioContext: context, ...options })
+		outputs.push(output)
+		await output.loadSample(new Uint8Array([1]).buffer, "sample.wav")
+		return { context, output }
+	}
+	it("retunes held loops to independent scale/chord choices and silences empty harmony", async () => {
+		const { context, output } = await sampler({ follow: "chord", loop: true })
+		await output.sendCommand(command(NOTE_ON, 62))
+		const source = context.createBufferSource.mock.results[0].value
+		expect(source.loop).toBe(true)
+		expect(source.playbackRate.value).toBe(1)
+		output.setHarmony({ root: 2, scale: 580, chord: 580 })
+		expect(source.playbackRate.setTargetAtTime).toHaveBeenLastCalledWith(
+			2 ** (2 / 12),
+			10,
+			0.02
+		)
+		output.setHarmony({ root: 2, scale: 580, chord: 0 })
+		expect(
+			context.createGain.mock.results[1].value.gain.setTargetAtTime
+		).toHaveBeenLastCalledWith(0, 10, 0.02)
+	})
+	it("emits eight grains, schedules timeline positions once, and cancels all scheduled audio on stop", async () => {
+		const { context, output } = await sampler({
+			mode: "granular",
+			emitters: Array.from({ length: 8 }, (_, i) => ({ position: i / 8, level: 0.1 })),
+			timelineEnabled: true,
+			timeline: [{ beat: 0.125, duration: 1, note: 60 }]
+		})
+		await output.sendCommand(command(NOTE_ON))
+		expect(context.createBufferSource).toHaveBeenCalledTimes(8)
+		await output.sendCommand(command(NOTE_OFF))
+		const tick = { step: 0, bpm: 120, triggerAt: 10, stepDuration: 0.125 }
+		output.onClockTick(tick)
+		output.onClockTick(tick)
+		await Promise.resolve()
+		await Promise.resolve()
+		expect(context.createBufferSource).toHaveBeenCalledTimes(16)
+		expect(context.createBufferSource.mock.results[8].value.start).toHaveBeenCalledWith(
+			10.0625,
+			0
+		)
+		output.stopClock()
+		for (const source of context.createBufferSource.mock.results)
+			{expect(source.value.stop).toHaveBeenCalled()}
+		context.createBufferSource.mockClear()
+		output.options.timelineEnabled = false
+		output.onClockTick({ ...tick, step: 1 })
+		await Promise.resolve()
+		await Promise.resolve()
+		expect(context.createBufferSource).not.toHaveBeenCalled()
+	})
+	it("validates persisted sample timelines and bounds emitter values", async () => {
+		expect(() => samplerTimeline([{ beat: -1, duration: 1, note: 60 }])).toThrow()
+		expect(() => samplerTimeline(Array(129).fill({ beat: 0, duration: 1, note: 60 }))).toThrow()
+		const { output } = await sampler({ emitters: [{ position: 9, transpose: -100, level: 8 }] })
+		expect(output.options.emitters[0]).toEqual({ position: 1, transpose: -24, level: 1 })
+		expect(output.options.emitters).toHaveLength(8)
 	})
 })
 

@@ -77,7 +77,13 @@ export function createNetronomeLink(
 	const initialInvitation = readRoomUrl(window.location.href)
 	const initialBundle = new URLSearchParams(window.location.hash.slice(1)).get("sync-bundle")
 	if (initialBundle) {
-		try { if (readSyncBundle(initialBundle).harmonyOnly === true) sharing.value = "harmony" } catch { /* Existing invitation validation reports malformed links. */ }
+		try {
+			if (readSyncBundle(initialBundle).harmonyOnly === true) {
+				sharing.value = "harmony"
+			}
+		} catch {
+			/* Existing invitation validation reports malformed links. */
+		}
 	}
 	room.value = options.roomId ?? initialInvitation.roomId ?? crypto.randomUUID()
 	let controller: ReturnType<typeof createRoomConnection> | undefined
@@ -198,10 +204,11 @@ export function createNetronomeLink(
 		}
 	}
 	const render = async (bundle: unknown, current = controller) => {
-		const offer =
-			(bundle as { description?: RTCSessionDescriptionInit })?.description?.type === "offer"
-		const tagged = { ...(bundle as object), harmonyOnly: sharing.value === "harmony" }
-		const url = createSyncUrl(tagged, window.location.href, offer ? captureSetup() : undefined)
+		const tagged =
+			sharing.value === "harmony" ? { ...(bundle as object), harmonyOnly: true } : bundle
+		// The data channel sends the workspace after pairing. Keeping it out of the
+		// invitation lets a joining player choose harmony-only before any restore.
+		const url = createSyncUrl(tagged, window.location.href)
 		local.value = url
 		if (controller?.roomId) {
 			room.value = controller.roomId
@@ -367,6 +374,9 @@ export function createNetronomeLink(
 		try {
 			const bundle = readSyncBundle(value)
 			if (bundle.description.type === "offer") {
+				if (bundle.harmonyOnly === true) {
+					sharing.value = "harmony"
+				}
 				await options.onSharedRequested?.()
 			}
 			await run(() => accept(value))

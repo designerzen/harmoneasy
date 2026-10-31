@@ -96,9 +96,18 @@ export function mountChordEditor(host: HTMLElement, manager: IOChainManager, sta
 				commit()
 			})
 			const beats = numberField(row, "Beats", step.beats, 0.25, 64, 0.25)
-			const scale = numberField(row, "Scale pitch-set ID (absolute; C = bit 0)", step.scale ?? 2741, 0, 4095)
+			const scale = numberField(
+				row,
+				"Scale pitch-set ID (absolute; C = bit 0)",
+				step.scale ?? 2741,
+				0,
+				4095
+			)
 			onChange(scale, () => {
-				if (scale.checkValidity()) { step.scale = scale.valueAsNumber; commit() }
+				if (scale.checkValidity()) {
+					step.scale = scale.valueAsNumber
+					commit()
+				}
 			})
 			onChange(beats, () => {
 				if (beats.checkValidity()) {

@@ -90,7 +90,12 @@ function finishClip(commands: IAudioCommand[], duration: number): EventClip {
 export function createMusicalFeatureControls(options: MusicalFeatureOptions) {
 	const { manager, context, master } = options
 	const abort = new AbortController()
-	const harmonyWorkspace = mountHarmonyWorkspace(manager, context, options.getBpm, options.setTempo)
+	const harmonyWorkspace = mountHarmonyWorkspace(
+		manager,
+		context,
+		options.getBpm,
+		options.setTempo
+	)
 	const status = element("p")
 	status.setAttribute("role", "status")
 	const mounts: HTMLElement[] = []

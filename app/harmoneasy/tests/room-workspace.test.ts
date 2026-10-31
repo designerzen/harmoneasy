@@ -22,7 +22,12 @@ afterEach(() => {
 	vi.useRealTimers()
 })
 
-function machine(id: string, role: "leader" | "follower", missingOutput = false) {
+function machine(
+	id: string,
+	role: "leader" | "follower",
+	missingOutput = false,
+	mode: "workspace" | "harmony" = "workspace"
+) {
 	const sink = {
 		uuid: id,
 		name: "synth",
@@ -77,7 +82,7 @@ function machine(id: string, role: "leader" | "follower", missingOutput = false)
 		}
 	}
 	const report = vi.fn()
-	const workspace = new RoomWorkspace(connection as any, manager, () => timer.now, report)
+	const workspace = new RoomWorkspace(connection as any, manager, () => timer.now, report, mode)
 	cleanup.push(() => {
 		workspace.destroy()
 		manager.destroy()
@@ -114,6 +119,26 @@ const note = (type = NOTE_ON) =>
 	}) as any
 
 describe("P2P room workspace", () => {
+	it("follows harmony without replacing a player's chains or routing notes through the host", async () => {
+		const host = machine("host", "leader"),
+			guest = machine("guest", "follower", false, "harmony")
+		guest.manager.cloneChain("shared-chain")
+		const chain = guest.manager.activeChain
+		pair(host, guest)
+		host.manager.setHarmony({ root: 2, scale: 2774, chord: 580 })
+		await vi.waitFor(() => expect(guest.manager.harmony).toEqual(host.manager.harmony))
+		expect(guest.manager.chainCount).toBe(2)
+		expect(guest.manager.activeChain).toBe(chain)
+		guest.manager.activeChain!.onInputEvent(new InputAudioEvent(note()))
+		await vi.waitFor(() => {
+			guest.manager.updateTime(1, 1)
+			expect(guest.sink.noteOn).toHaveBeenCalled()
+		})
+		expect(host.sink.noteOn).not.toHaveBeenCalled()
+		expect(
+			guest.connection.sendData.mock.calls.some(([, data]) => (data as any).type === "edit")
+		).toBe(false)
+	})
 	it("loads the host workspace including disabled endpoints and active-chain selection", async () => {
 		const host = machine("host", "leader"),
 			guest = machine("guest", "follower")
