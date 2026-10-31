@@ -26,12 +26,6 @@ const bluetooth =
 const mic = "A microphone or audio input and microphone permission."
 
 export const INPUT_GUIDANCE: Record<InputId, Guidance> = {
-	"cosmo-dots": guide(
-		"Pads",
-		"Play notes from eight configurable keyboard and onscreen triggers.",
-		"Performing with Cosmo Dots or a computer keyboard.",
-		"Connect an output, then use the onscreen triggers or their assigned keys."
-	),
 	"scale-explorer": guide(
 		"Scale",
 		"Explore any twelve-tone pitch set and its modes on a musical torus.",

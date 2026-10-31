@@ -5,6 +5,7 @@ import { resolve, sep } from "node:path"
 import { midiDeviceFilesPlugin } from "audiobus/midi/hardware/device-files.js"
 import { supersonicFilesPlugin } from "audiobus/io/outputs/supersonic-files.js"
 import { roomPagesPlugin } from "./scripts/room-pages.js"
+import { presetPagesPlugin } from "./scripts/preset-pages.js"
 
 // Vite's static middleware emits an empty MIME type for .tar.gz bundles.
 // Serve WCLAP archives explicitly so browser fetch does not treat them as downloads.
@@ -63,7 +64,8 @@ export default defineConfig({
 		midiDeviceFilesPlugin(),
 		supersonicFilesPlugin(),
 		opendawFilesPlugin(),
-		roomPagesPlugin()
+		roomPagesPlugin(),
+		presetPagesPlugin()
 	],
 	worker: { format: "es" },
 	// Resolve through the workspace package and bundle Nexus's CommonJS dependencies
