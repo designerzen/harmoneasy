@@ -4,11 +4,11 @@ html {
 	-moz-osx-font-smoothing: grayscale;
 }
 
-// https://nerdy.dev/adjust-perceived-typepace-weight-for-dark-mode-without-layout-shift
 body {
-	--GRAD: 0;
+	--font-family:
+		"IBM Plex Sans Condensed", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 	font-family:
-		"Raleway",
+		"IBM Plex Sans Condensed",
 		-apple-system,
 		BlinkMacSystemFont,
 		"Segoe UI",
@@ -17,47 +17,26 @@ body {
 		Ubuntu,
 		Cantarell,
 		sans-serif;
-	line-height: 1.6;
+	font-size: 0.875rem;
+	line-height: 1.35;
 	font-weight: 400;
-
-	font-variation-settings: "GRAD" var(--GRAD);
 }
 
 .font-mono,
 time,
-input,
+input[type="number"],
 output {
 	font-family: "Courier New", monospace;
 }
 
-@media (prefers-contrast: more) {
-	body {
-		--GRAD: 700;
-	}
-}
-
-@media (prefers-contrast: less) {
-	body {
-		--GRAD: -50;
-	}
-}
-
-@media (prefers-color-scheme: dark) {
-	body {
-		--GRAD: -50;
-	}
-}
-
-@media (prefers-color-scheme: dark) and (prefers-contrast: more) {
-	body {
-		--GRAD: 150;
-	}
-}
-
-@media (prefers-color-scheme: dark) and (prefers-contrast: less) {
-	body {
-		--GRAD: -150;
-	}
+input,
+select,
+textarea,
+label {
+	font-family: inherit;
+	font-size: 0.875rem;
+	font-weight: 400;
+	line-height: 1.35;
 }
 
 h1,
@@ -68,7 +47,7 @@ h5,
 h6,
 summary {
 	text-transform: uppercase;
-	letter-spacing: 1px;
+	letter-spacing: normal;
 	margin: 0;
 }
 
@@ -96,7 +75,7 @@ h3 {
 }
 
 [aria-summary] {
-	font-weight: 800;
+	font-weight: 600;
 }
 
 .h4 {
@@ -112,7 +91,7 @@ p {
 }
 
 summary {
-	font-weight: 900;
+	font-weight: 600;
 }
 
 legend {

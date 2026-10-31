@@ -1,17 +1,27 @@
-@font-face {
-	font-family: "Raleway";
-	src: url("../fonts/Raleway-VariableFont_wght.ttf") format("truetype-variations");
-	font-weight: 100 900;
-	font-style: normal;
-	font-display: swap;
-}
+@each $weight, $variant,
+	$italic-variant
+		in (
+			(400, "Regular", "Italic"),
+			(500, "Medium", "MediumItalic"),
+			(600, "SemiBold", "SemiBoldItalic"),
+			(700, "Bold", "BoldItalic")
+		)
+{
+	@font-face {
+		font-family: "IBM Plex Sans Condensed";
+		src: url("../fonts/ibm-plex-sans-condensed/IBMPlexSansCondensed-#{$variant}.ttf")
+			format("truetype");
+		font-weight: $weight;
+		font-style: normal;
+		font-display: swap;
+	}
 
-@font-face {
-	font-family: "Raleway";
-	src: url("../fonts/Raleway-Italic-VariableFont_wght.ttf") format("truetype-variations");
-	font-weight: 100 900;
-	font-style: italic;
-	font-display: swap;
+	@font-face {
+		font-family: "IBM Plex Sans Condensed";
+		src: url("../fonts/ibm-plex-sans-condensed/IBMPlexSansCondensed-#{$italic-variant}.ttf")
+			format("truetype");
+		font-weight: $weight;
+		font-style: italic;
+		font-display: swap;
+	}
 }
-
-$font-family-raleway: "Raleway", sans-serif;
