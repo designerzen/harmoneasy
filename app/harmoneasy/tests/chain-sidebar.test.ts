@@ -419,7 +419,8 @@ it("filters transformer groups in both the sidebar and dialog", async () => {
 	await selectFilter(document, "subtype:pitch")
 	expect(document.querySelectorAll(".choice-group")).toHaveLength(1)
 	const button = document.querySelector<HTMLButtonElement>(".grid-item")!
-	expect(button.textContent).toBe("Transposer")
+	expect(button.querySelector("span:last-of-type")?.textContent).toBe("Transposer")
+	expect(button.querySelector(".item-description")?.textContent).toContain("Shifts notes")
 	await runUI(async () => button.click())
 	expect(mocks.appendTransformer).toHaveBeenCalledWith({ type: "Transposer" })
 })
@@ -614,4 +615,30 @@ it("disposes a device that finishes loading after its picker is closed", async (
 	})
 	expect(destroy).toHaveBeenCalledOnce()
 	expect(mocks.addDevice).not.toHaveBeenCalled()
+})
+
+it("discovers input categories from registry metadata and clears combined fuzzy filters", async () => {
+	await runUI(async () =>
+		mount(createDeviceDialog(context, { direction: "input", onClose: vi.fn() }))
+	)
+	const dialog = document.querySelector("dialog")!
+	const category = [...dialog.querySelectorAll<HTMLOptionElement>("option")].find(
+		(item) => item.value === "category:device"
+	)
+	expect(category).toBeDefined()
+	await selectFilter(dialog, "category:device")
+	const search = dialog.querySelector<HTMLInputElement>('input[type="search"]')!
+	await runUI(() => {
+		search.value = "keybaord"
+		search.dispatchEvent(new Event("input"))
+	})
+	expect(dialog.querySelectorAll(".choice-group li")).toHaveLength(1)
+	expect(dialog.querySelector(".item-name")?.textContent).toBe("Keyboard")
+	await runUI(() =>
+		[...dialog.querySelectorAll<HTMLButtonElement>("button")]
+			.find((item) => item.textContent === "Clear filters")!
+			.click()
+	)
+	expect(search.value).toBe("")
+	expect(dialog.querySelectorAll(".choice-group li")).toHaveLength(2)
 })

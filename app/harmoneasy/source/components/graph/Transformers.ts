@@ -48,7 +48,15 @@ export function createTransformerPicker(
 			render()
 		}
 	})
-	row.append(searchLabel, filter.element)
+	row.append(
+		searchLabel,
+		filter.element,
+		button("Clear filters", () => {
+			search.value = ""
+			filter.clear()
+			search.focus()
+		})
+	)
 	const results = element("div")
 	host.append(error, row, results)
 	const onAdd = (transformerType: string) => () => {
@@ -83,6 +91,9 @@ export function createTransformerPicker(
 		const filtered = choices.filter((choice) =>
 			choiceMatches(choice, search.value, classification)
 		)
+		const count = element("p", "", `${filtered.length} matching transformers`)
+		count.setAttribute("role", "status")
+		results.append(count)
 		for (const group of groupChoices(filtered)) {
 			const section = element("section", "choice-group")
 			section.setAttribute("aria-label", group.label)
@@ -106,6 +117,9 @@ export function createTransformerPicker(
 					icon(elementIcon("transformer", choice.id), node.title),
 					element("span", "", choice.name)
 				)
+				if (dialog) {
+					node.append(element("small", "item-description", choice.description))
+				}
 				item.append(node)
 				list.append(item)
 			}

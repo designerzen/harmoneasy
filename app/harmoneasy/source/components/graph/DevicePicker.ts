@@ -6,7 +6,9 @@ import {
 
 import { createClassificationFilter } from "./ClassificationFilter"
 import { choiceMatches, groupChoices, type ClassifiedChoice } from "./device-filters"
-import { fillDeviceCard } from "./device-card"
+import { fillDeviceCard, INPUT_GUIDANCE, OUTPUT_GUIDANCE } from "./device-card"
+import { INPUT_DEFINITIONS } from "audiobus/io/input-definitions"
+import { OUTPUT_DEFINITIONS } from "audiobus/io/output-definitions"
 import {
 	loadMidiProfilesForPorts,
 	matchMidiDeviceProfile,
@@ -81,7 +83,15 @@ export function createDevicePicker(
 			render()
 		}
 	})
-	row.append(label, filter.element)
+	row.append(
+		label,
+		filter.element,
+		button("Clear filters", () => {
+			search.value = ""
+			filter.clear()
+			search.focus()
+		})
+	)
 	;(filterHeader ?? host).append(row)
 	const results = element("div")
 	host.append(results)
@@ -280,6 +290,9 @@ export function createDevicePicker(
 			status(`Loading ${direction}s…`)
 			return
 		}
+		if (filtered.length) {
+			status(`${filtered.length} matching ${direction}s`)
+		}
 		for (const group of groupChoices(filtered)) {
 			const section = element("section", "choice-group")
 			section.setAttribute("aria-label", group.label)
@@ -348,7 +361,14 @@ export function createDevicePicker(
 				if (destroyed || current !== revision) {
 					return
 				}
-				choices = inputs.map((factory) => ({ ...factory, kind: "input" }))
+				choices = inputs.map((factory) => ({
+					...INPUT_DEFINITIONS[factory.id],
+					...factory,
+					keywords: Object.values(
+						INPUT_GUIDANCE[factory.id as keyof typeof INPUT_GUIDANCE] ?? {}
+					).join(" "),
+					kind: "input"
+				}))
 			} else {
 				const [outputs, instruments] = await Promise.allSettled([
 					Promise.resolve().then(() => chain.outputManager.getAvailableFactories()),
@@ -365,7 +385,15 @@ export function createDevicePicker(
 					.join(" ")
 				choices = [
 					...(outputs.status === "fulfilled"
-						? outputs.value.map((factory) => ({ ...factory, kind: "output" as const }))
+						? outputs.value.map((factory) => ({
+								...OUTPUT_DEFINITIONS[factory.id],
+								...factory,
+								keywords: Object.values(
+									OUTPUT_GUIDANCE[factory.id as keyof typeof OUTPUT_GUIDANCE] ??
+										{}
+								).join(" "),
+								kind: "output" as const
+							}))
 						: []),
 					...(instruments.status === "fulfilled"
 						? instruments.value.map((factory) => ({

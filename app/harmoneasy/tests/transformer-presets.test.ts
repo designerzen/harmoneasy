@@ -55,3 +55,14 @@ it("creates tempo-synced acid bass figures with short gates", () => {
 	expect(on.map((note) => note.startAt)).toEqual([1, 1.125, 1.25])
 	expect(off.map((note) => note.startAt)).toEqual([1.0625, 1.1875, 1.3125])
 })
+
+it("adds a fading echo trail without changing the played pitch", () => {
+	const notes = play("Soft Echo Trail", 60).filter((note) => note.type === NOTE_ON)
+	expect(notes.map((note) => note.number)).toEqual([60, 60, 60, 60, 60])
+	expect(notes.map((note) => note.startAt)).toEqual([1, 1.25, 1.5, 1.75, 2])
+	for (let index = 1; index < notes.length; index++) {
+		expect(notes[index].velocity).toBe(
+			Math.max(1, Math.floor(notes[0].velocity * 0.6 ** index))
+		)
+	}
+})

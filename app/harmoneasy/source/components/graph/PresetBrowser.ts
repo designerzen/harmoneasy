@@ -5,6 +5,8 @@ import { createPresetDetails } from "./PresetDetails"
 import { createPresetArtwork } from "./PresetArtwork"
 import { completePresets, presetContext } from "./preset-catalogue"
 import { START_CONTEXTS } from "../../services/start-context-catalogue"
+import { TRANSFORMER_DEFINITIONS } from "audiobus/io/transformer-definitions"
+import { discoveryMatches } from "./discovery-search"
 import {
 	applySetup,
 	deleteLibraryItem,
@@ -144,10 +146,20 @@ export function createPresetBrowser({
 	toolbar.append(searchLabel)
 	const category = makeFilter("Preset type", "All preset types")
 	const genre = makeFilter("Genre", "All genres")
+	const transformer = makeFilter("Transformer", "All transformers")
 	for (const context of START_CONTEXTS.filter((item) => item.category === "Genres")) {
 		genre.append(option(context.name.replace(/^Write /, ""), context.id))
 	}
 	search.oninput = () => render()
+	toolbar.append(
+		button("Clear filters", () => {
+			search.value = category.value = genre.value = transformer.value = ""
+			render()
+			search.focus()
+		})
+	)
+	const resultCount = element("p", "preset-library-note")
+	resultCount.setAttribute("role", "status")
 	const tools = element("details", "preset-library-tools")
 	tools.append(element("summary", "", "Library options"))
 	const toolActions = element("div", "preset-library-actions")
@@ -260,7 +272,7 @@ export function createPresetBrowser({
 	nav.setAttribute("aria-label", "Preset sections")
 	const preview = element("div", "preset-preview")
 	content.append(nav, preview)
-	scroll.append(toolbar, saveForm, status, content)
+	scroll.append(toolbar, saveForm, status, resultCount, content)
 	const footer = element("footer", "preset-apply-bar")
 	const applyText = element("p")
 	const apply = button(
@@ -327,21 +339,53 @@ export function createPresetBrowser({
 			)
 			category.value = previous
 		}
-		const words = search.value.trim().toLowerCase().split(/\s+/)
+		const types = [
+			...new Set([
+				...presets.flatMap((item) => item.steps.map((step) => step.type)),
+				...library.setups.flatMap((item) =>
+					item.chains.flatMap((chain) => chain.steps.map((step) => step.type))
+				)
+			])
+		].sort((a, b) =>
+			(TRANSFORMER_DEFINITIONS[a]?.name ?? a).localeCompare(
+				TRANSFORMER_DEFINITIONS[b]?.name ?? b
+			)
+		)
+		if (
+			JSON.stringify([...transformer.options].slice(1).map((item) => item.value)) !==
+			JSON.stringify(types)
+		) {
+			const previous = transformer.value
+			transformer.replaceChildren(
+				option("All transformers", ""),
+				...types.map((type) => option(TRANSFORMER_DEFINITIONS[type]?.name ?? type, type))
+			)
+			transformer.value = previous
+		}
 		const matches = (item: {
 			name: string
 			description: string
 			category?: string
 			useCase?: string
+			steps?: TransformerPreset["steps"]
 		}) =>
-			words.every((word) =>
-				`${item.name} ${item.description} ${item.category ?? ""} ${item.useCase ?? ""}`
-					.toLowerCase()
-					.includes(word)
+			discoveryMatches(
+				search.value,
+				item.name,
+				item.description,
+				item.category,
+				item.useCase,
+				...(item.steps?.flatMap((step) => [
+					step.type,
+					step.summary,
+					TRANSFORMER_DEFINITIONS[step.type]?.name
+				]) ?? [])
 			)
 		const filtered = presets.filter(
 			(item) =>
 				matches(item) &&
+				(!transformer.value ||
+					item.steps.some((step) => step.type === transformer.value)) &&
 				(!category.value ||
 					item.category.replace(/^Activities · /, "") === category.value) &&
 				(!genre.value || presetContext(item)?.id === genre.value)
@@ -351,7 +395,15 @@ export function createPresetBrowser({
 			genre.value ||
 			(category.value && category.value !== "Setups")
 				? []
-				: library.setups.filter(matches)
+				: library.setups.filter((item) => {
+						const steps = item.chains.flatMap((chain) => chain.steps)
+						return (
+							matches({ ...item, steps }) &&
+							(!transformer.value ||
+								steps.some((step) => step.type === transformer.value))
+						)
+					})
+		resultCount.textContent = `${filtered.length} presets · ${setups.length} setups`
 		nav.replaceChildren()
 		const choose = (id: string) => {
 			selection = id

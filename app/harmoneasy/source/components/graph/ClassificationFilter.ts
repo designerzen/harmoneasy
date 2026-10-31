@@ -42,11 +42,19 @@ export function createClassificationFilter({
 	}
 	update(choices)
 	select.value = value
-	select.onchange = () => {
+	const changed = () => {
 		host.dataset.active = String(Boolean(select.value))
 		host.title = `${label}: ${select.selectedOptions[0]?.textContent}`
 		onChange(select.value)
 	}
+	select.onchange = changed
 	host.append(select)
-	return { element: host, update }
+	return {
+		element: host,
+		update,
+		clear() {
+			select.value = ""
+			changed()
+		}
+	}
 }

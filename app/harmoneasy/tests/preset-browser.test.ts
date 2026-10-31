@@ -170,7 +170,7 @@ it("describes every new-chain option before selection and adds only when confirm
 	dialog.showModal = vi.fn(() => dialog.setAttribute("open", ""))
 	dialog.close = vi.fn(() => dialog.removeAttribute("open"))
 	expect(host.querySelector("select")).toBeNull()
-	expect(dialog.querySelectorAll(".preset-filter select")).toHaveLength(2)
+	expect(dialog.querySelectorAll(".preset-filter select")).toHaveLength(3)
 	runUI(() => document.querySelector<HTMLButtonElement>(".preset-browse")!.click())
 	expect(dialog.hasAttribute("open")).toBe(true)
 	expect(document.querySelectorAll("nav button")).toHaveLength(
@@ -286,4 +286,29 @@ it.each([
 	expect(manager.createDefaultChain).not.toHaveBeenCalled()
 	expect(chain.setName).toHaveBeenCalledWith(name)
 	expect(manager.setActiveChain).toHaveBeenCalledWith("activity-chain")
+})
+
+it("finds presets by misspelled transformer names and combines transformer and category filters", () => {
+	vi.stubGlobal("localStorage", { getItem: () => null })
+	root = createPresetBrowser({ onApply: vi.fn(), startup: true })
+	document.body.append(root.element)
+	const search = document.querySelector<HTMLInputElement>(".preset-search input")!
+	search.value = "revrb"
+	search.dispatchEvent(new Event("input"))
+	expect(document.querySelector("nav")!.textContent).toContain("Soft Echo Trail")
+	const selects = [...document.querySelectorAll<HTMLSelectElement>(".preset-filter select")]
+	const transformer = selects[2]
+	search.value = ""
+	transformer.value = "Melody-Shadow"
+	transformer.dispatchEvent(new Event("change"))
+	expect(document.querySelector("nav")!.textContent).toContain("Pentatonic Shadow")
+	expect(document.querySelector("nav")!.textContent).not.toContain("Soft Echo Trail")
+	selects[0].value = "Play in key"
+	selects[0].dispatchEvent(new Event("change"))
+	expect(document.querySelectorAll("nav button")).toHaveLength(1)
+	expect(document.querySelector("nav")!.textContent).toContain("Pentatonic Shadow")
+	;[...document.querySelectorAll<HTMLButtonElement>("button")]
+		.find((node) => node.textContent === "Clear filters")!
+		.click()
+	expect(document.querySelectorAll("nav button")).toHaveLength(completePresets([]).length)
 })

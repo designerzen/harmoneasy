@@ -5,6 +5,7 @@ import { INPUT_DEFINITIONS } from "audiobus/io/input-definitions"
 import { OUTPUT_DEFINITIONS } from "audiobus/io/output-definitions"
 import { INSTRUMENTS } from "audiobus/instruments/instrument-types"
 import { choiceMatches } from "./device-filters"
+import { discoveryMatches } from "./discovery-search"
 import { element, button, icon } from "./dom"
 
 export function createSharedDevices(
@@ -45,12 +46,7 @@ export function createSharedDevices(
 		} catch {
 			/* External devices may not have registered metadata. */
 		}
-		return (
-			!selection &&
-			`${entry.device.name} ${entry.device.description}`
-				.toLowerCase()
-				.includes(search.trim().toLowerCase())
-		)
+		return !selection && discoveryMatches(search, entry.device.name, entry.device.description)
 	})
 	const section = element("section", "shared-device-selector nodrag nopan nowheel")
 	section.hidden = !available.length

@@ -1,4 +1,5 @@
 import type { DeviceClassification, DeviceAttribution } from "audiobus/io/device-classification"
+import { discoveryMatches } from "./discovery-search"
 
 export interface ClassifiedChoice extends DeviceClassification {
 	id: string
@@ -8,6 +9,7 @@ export interface ClassifiedChoice extends DeviceClassification {
 	title?: string
 	attribution?: DeviceAttribution
 	preview?: string
+	keywords?: string
 }
 
 const LABELS: Record<string, string> = {
@@ -42,7 +44,10 @@ export function choiceMatches(
 				: choice.subtype === value)
 	return (
 		matchesSelection &&
-		[
+		discoveryMatches(
+			search,
+			choice.id,
+			choice.keywords,
 			choice.name,
 			choice.title,
 			choice.description,
@@ -51,10 +56,7 @@ export function choiceMatches(
 			category(choice),
 			choice.attribution?.author,
 			choice.attribution?.license
-		]
-			.join(" ")
-			.toLowerCase()
-			.includes(search.trim().toLowerCase())
+		)
 	)
 }
 

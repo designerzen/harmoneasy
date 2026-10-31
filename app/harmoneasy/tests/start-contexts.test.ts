@@ -271,7 +271,7 @@ it("shows the browser immediately with one primary start action and secondary se
 	expect(dialog.querySelector(".preset-apply-button")!.textContent).toBe("Start Preset")
 	expect(dialog.textContent).not.toContain("Choose this preset, then")
 	expect(dialog.querySelector(".preset-search input")).toBeTruthy()
-	expect(dialog.querySelectorAll(".preset-filter select")).toHaveLength(2)
+	expect(dialog.querySelectorAll(".preset-filter select")).toHaveLength(3)
 	const empty = dialog.querySelector<HTMLButtonElement>(".btn-start-empty")!
 	const session = dialog.querySelector<HTMLButtonElement>(".btn-continue-session")!
 	expect(empty.textContent?.trim()).toBe("Start Empty")

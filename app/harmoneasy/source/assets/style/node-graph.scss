@@ -2783,7 +2783,8 @@ dialog.add-output-dialog {
 		grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
 		align-items: stretch;
 	}
-	.items-grid .device-choice-card {
+	.items-grid .device-choice-card,
+	.items-grid .transformer-choice {
 		align-items: stretch;
 		justify-content: flex-start;
 		text-align: left;
