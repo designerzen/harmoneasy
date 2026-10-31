@@ -32,8 +32,8 @@ it("restricts React imports to graph rendering and its node integration", () => 
 		"components/graph/nodes/InputNode.tsx",
 		"components/graph/nodes/OutputNode.tsx",
 		"components/graph/nodes/StartNode.tsx",
-		"components/graph/nodes/TransformerNode.tsx"
-		,"components/graph/nodes/ControlSurfaceNode.tsx"
+		"components/graph/nodes/TransformerNode.tsx",
+		"components/graph/nodes/ControlSurfaceNode.tsx"
 	])
 	const violations = files(source)
 		.filter((file) =>

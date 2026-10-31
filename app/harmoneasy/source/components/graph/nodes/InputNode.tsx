@@ -99,7 +99,19 @@ export function InputNode(props: any) {
 			{!isFullscreen && (
 				<Handle type="source" position={isVertical ? Position.Bottom : Position.Right} />
 			)}
-			{!isFullscreen && <><span className="control-connector-label">Controls</span><Handle type="source" id={CONTROL_HANDLE} position={isVertical ? Position.Bottom : Position.Right} style={isVertical ? {left:"80%"}:{top:"80%"}} className="control-connector" aria-label={`${input.name} controls`} /></>}
+			{!isFullscreen && (
+				<>
+					<span className="control-connector-label">Controls</span>
+					<Handle
+						type="source"
+						id={CONTROL_HANDLE}
+						position={isVertical ? Position.Bottom : Position.Right}
+						style={isVertical ? { left: "80%" } : { top: "80%" }}
+						className="control-connector"
+						aria-label={`${input.name} controls`}
+					/>
+				</>
+			)}
 		</div>
 	)
 }

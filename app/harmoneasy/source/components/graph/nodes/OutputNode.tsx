@@ -99,7 +99,18 @@ export function OutputNode(props: any) {
 			{!isFullscreen && (
 				<Handle type="target" position={isVertical ? Position.Top : Position.Left} />
 			)}
-			{!isFullscreen && <><span className="control-connector-label">Controls</span><Handle type="source" id={CONTROL_HANDLE} position={isVertical ? Position.Bottom : Position.Right} className="control-connector" aria-label={`${output.name} controls`} /></>}
+			{!isFullscreen && (
+				<>
+					<span className="control-connector-label">Controls</span>
+					<Handle
+						type="source"
+						id={CONTROL_HANDLE}
+						position={isVertical ? Position.Bottom : Position.Right}
+						className="control-connector"
+						aria-label={`${output.name} controls`}
+					/>
+				</>
+			)}
 		</div>
 	)
 }

@@ -211,7 +211,19 @@ export function TransformerNode(props: any) {
 			{!isFullscreen && (
 				<Handle type="source" position={isVertical ? Position.Bottom : Position.Right} />
 			)}
-			{!isFullscreen && <><span className="control-connector-label">Controls</span><Handle type="source" id={CONTROL_HANDLE} position={isVertical ? Position.Bottom : Position.Right} style={isVertical ? {left:"80%"}:{top:"80%"}} className="control-connector" aria-label={`${props.data.element.name} controls`} /></>}
+			{!isFullscreen && (
+				<>
+					<span className="control-connector-label">Controls</span>
+					<Handle
+						type="source"
+						id={CONTROL_HANDLE}
+						position={isVertical ? Position.Bottom : Position.Right}
+						style={isVertical ? { left: "80%" } : { top: "80%" }}
+						className="control-connector"
+						aria-label={`${props.data.element.name} controls`}
+					/>
+				</>
+			)}
 			{!isFullscreen && (
 				<Handle type="target" position={isVertical ? Position.Top : Position.Left} />
 			)}

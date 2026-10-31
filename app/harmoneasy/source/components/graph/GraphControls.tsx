@@ -5,7 +5,7 @@ import { useChain } from "./ChainContext"
 import { createSurface } from "./control-surfaces"
 
 export function GraphControls({ layoutMode }: { layoutMode: string }) {
-	const {chain}=useChain()
+	const { chain } = useChain()
 	const { zoomIn, zoomOut, fitView } = useReactFlow()
 	const { zoom } = useViewport()
 	return (
@@ -15,7 +15,13 @@ export function GraphControls({ layoutMode }: { layoutMode: string }) {
 			showFitView={false}
 			orientation={layoutMode === "vertical" ? "horizontal" : "vertical"}
 		>
-			<ControlButton title="Add Control Surface" aria-label="Add Control Surface" onClick={()=>createSurface(chain)}><span aria-hidden="true">▦</span></ControlButton>
+			<ControlButton
+				title="Add Control Surface"
+				aria-label="Add Control Surface"
+				onClick={() => createSurface(chain)}
+			>
+				<span aria-hidden="true">▦</span>
+			</ControlButton>
 			<ControlButton
 				className="graph-zoom-in btn-zoom-in"
 				title="Zoom in"

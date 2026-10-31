@@ -26,6 +26,12 @@ const bluetooth =
 const mic = "A microphone or audio input and microphone permission."
 
 export const INPUT_GUIDANCE: Record<InputId, Guidance> = {
+	"cosmo-dots": guide(
+		"Pads",
+		"Play notes from eight configurable keyboard and onscreen triggers.",
+		"Performing with Cosmo Dots or a computer keyboard.",
+		"Connect an output, then use the onscreen triggers or their assigned keys."
+	),
 	"scale-explorer": guide(
 		"Scale",
 		"Explore any twelve-tone pitch set and its modes on a musical torus.",
@@ -67,6 +73,12 @@ export const INPUT_GUIDANCE: Record<InputId, Guidance> = {
 		"Play chords or drums from eight large pads.",
 		"Touchscreen performance and accessible keyboard activation.",
 		"A pointer, touchscreen, or keyboard; focus a pad and hold Space or Enter."
+	),
+	"cosmo-dots": guide(
+		"Dots",
+		"Send configurable musical commands from eight Cosmo Dots or onscreen buttons.",
+		"Accessible music making with individual key and command mappings.",
+		"Pair Dots in Switch mode using Cosmo Dot Setup. Defaults use keys 0–7; enable Edit dots and click a dot to change its trigger and command."
 	),
 	"microphone-trigger": guide(
 		"Mic",
