@@ -1,0 +1,18 @@
+.harmony-workspace {
+	width: min(960px, 95vw);
+	max-height: 90dvh;
+	overflow: auto;
+	padding: 1.25rem;
+	.music-tools-section { display: grid; gap: .75rem; padding: .75rem 0; }
+	fieldset { padding: .5rem; }
+	button[aria-pressed="true"] { outline: 2px solid currentColor; font-weight: bold; }
+	.harmony-network, .harmony-sketch {
+		position: relative; height: 400px; overflow: hidden;
+		border: 1px solid currentColor; border-radius: .5rem;
+		button { position: absolute; transform: translate(-50%, -50%); max-width: 110px; font-size: .75rem; }
+	}
+	.harmony-network svg { position: absolute; width: 100%; height: 100%; pointer-events: none; }
+	.harmony-network line { stroke: currentColor; stroke-width: .15; opacity: .35; }
+	.harmony-sketch { height: 260px; button { touch-action: none; } }
+	.harmony-fretboard { overflow-x: auto; table { width: 100%; text-align: center; } }
+}
