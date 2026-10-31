@@ -1,0 +1,137 @@
+#setup-wizard {
+	box-sizing: border-box;
+	width: min(44rem, calc(100vw - 1rem));
+	max-height: calc(100dvh - 1rem);
+	padding: 0;
+	border: 1px solid var(--col-line);
+	border-radius: 16px;
+	background: var(--col-bg);
+	color: var(--col-fg);
+	text-transform: none;
+	letter-spacing: normal;
+	&[open] {
+		display: flex;
+		flex-direction: column;
+	}
+	&::before,
+	&::after {
+		content: none;
+	}
+	header,
+	footer {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		padding: 1rem;
+		flex-shrink: 0;
+	}
+	header {
+		border-bottom: 1px solid var(--col-line);
+	}
+	footer {
+		border-top: 1px solid var(--col-line);
+	}
+	h2,
+	h3,
+	h4,
+	p,
+	button,
+	label,
+	summary {
+		text-transform: none;
+		letter-spacing: normal;
+	}
+	header p {
+		margin: 0 0 0.25rem;
+		color: var(--col-muted);
+	}
+	h2 {
+		margin: 0;
+		font-size: 1.3rem;
+	}
+	h3 {
+		font-size: 1.15rem;
+	}
+	.wizard-body {
+		overflow-y: auto;
+		min-height: 0;
+		padding: 0 1.25rem;
+	}
+	.wizard-progress {
+		color: var(--col-muted);
+	}
+	fieldset {
+		display: grid;
+		gap: 0.6rem;
+		border: 0;
+		margin: 0;
+		padding: 0;
+	}
+	legend {
+		font-size: 0.85rem;
+		margin-bottom: 0.6rem;
+	}
+	fieldset label {
+		display: flex;
+		gap: 0.8rem;
+		align-items: flex-start;
+		padding: 0.8rem;
+		border: 1px solid var(--col-line);
+		border-radius: 8px;
+		cursor: pointer;
+	}
+	fieldset label:has(input:checked),
+	fieldset label:focus-within {
+		border-color: var(--col-accent);
+	}
+	input[type="radio"] {
+		flex-shrink: 0;
+		margin-top: 0.25rem;
+		accent-color: var(--col-accent);
+	}
+	small {
+		display: block;
+		margin-top: 0.3rem;
+		color: var(--col-muted);
+		font-size: 0.85rem;
+	}
+	details {
+		padding-block: 1rem;
+	}
+	details label {
+		display: grid;
+		gap: 0.5rem;
+	}
+	textarea {
+		box-sizing: border-box;
+		width: 100%;
+		padding: 0.6rem;
+		font: inherit;
+	}
+	details button {
+		margin-top: 0.75rem;
+	}
+	button {
+		min-height: 44px;
+	}
+	li {
+		margin-block: 0.6rem;
+	}
+	[hidden] {
+		display: none;
+	}
+	@media (max-width: 480px) {
+		header,
+		footer {
+			padding: 0.75rem;
+		}
+		.wizard-body {
+			padding-inline: 0.75rem;
+		}
+	}
+}
+
+#start-dialog .start-secondary-actions {
+	flex-wrap: wrap;
+}
