@@ -1,9 +1,21 @@
+import {
+	EVENT_INPUT,
+	EVENT_CHANGE,
+	EVENT_CLOSE,
+	EVENT_TOGGLE,
+	EVENT_CLICK,
+	EVENT_CHAINS_UPDATED,
+	EVENT_WORKSPACE_RESTORED,
+	EVENT_CONFIGURATION_CHANGED
+} from "audiobus/event-constants"
+import { element, field } from "./music-tools-dom"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
 import type { Transformer } from "audiobus/io/transformers/abstract-transformer"
 import {
 	MidiControls,
 	DEFAULT_MIDI_BINDINGS,
 	scaleMidiValue,
+	type MidiBinding,
 	type MidiTarget
 } from "./midi-controls"
 
@@ -25,12 +37,13 @@ function controlName(element: Control): string {
 				.trim()
 		: ""
 	return (
-		element.getAttribute("data-midi-control") ||
-		element.getAttribute("name") ||
 		labelText ||
 		element.getAttribute("aria-label") ||
+		element.getAttribute("data-midi-control") ||
+		element.getAttribute("name") ||
 		element.title ||
 		element.textContent?.trim() ||
+		element.id ||
 		element.className ||
 		element.tagName
 	)
@@ -126,8 +139,8 @@ export function domMidiTargets(root: Document): MidiTarget[] {
 						next
 					)
 				}
-				element.dispatchEvent(new Event("input", { bubbles: true }))
-				element.dispatchEvent(new Event("change", { bubbles: true }))
+				element.dispatchEvent(new Event(EVENT_INPUT, { bubbles: true }))
+				element.dispatchEvent(new Event(EVENT_CHANGE, { bubbles: true }))
 			}
 		})
 	}
@@ -160,7 +173,7 @@ export function createMidiControlPanel(
 					}
 					result.push({
 						id: `${chainId}:transformer:${transformer.midiControlId}:${field.name}`,
-						label: `${chain.options.name} / ${transformer.name} / ${field.name}`,
+						label: `${chain.options.name} / ${transformer.name} / ${field.label ?? field.name}`,
 						kind: "value",
 						apply(value) {
 							const choice =
@@ -171,7 +184,7 @@ export function createMidiControlPanel(
 									? choice.value
 									: choice
 							)
-							chain.dispatchEvent(new Event("configurationChanged"))
+							chain.dispatchEvent(new Event(EVENT_CONFIGURATION_CHANGED))
 						}
 					})
 				}
@@ -186,56 +199,137 @@ export function createMidiControlPanel(
 	controls.enabled = settings.enabled !== false
 	manager.controlChangeHandler = controls.handle
 	host.dataset.midiIgnore = ""
-	host.innerHTML = `<label><input type="checkbox" data-role="enabled"> Enable MIDI control</label>
-        <p>Defaults use channel 16: CC 7 volume, 20 tempo, 21 metronome, 22 play, 23 stop, 24 rewind, 123 panic.
-        Mapped CCs are consumed; other messages continue to instruments. Buttons fire at 64–127 after release below 64.</p>
-        <p>Choose a control, then Learn and move a MIDI knob or press a button. Connect a MIDI input to a chain first.
-        Menus and devices added later appear when you refresh. Text entry and file/device permission dialogs require the keyboard or mouse.</p>
+	host.innerHTML = `<label><input type="checkbox" data-role="enabled"> Enable control via MIDI</label>
+        <p>Choose what to control, select Learn MIDI CC, then move a hardware knob or slider. Learning records its CC, channel and input device without moving the target. You can also assign a CC manually.</p>
+        <p>Assigned CCs are used by these controls and do not reach instruments. Unassigned messages continue to instruments. Buttons trigger once when a CC crosses 64.</p>
+        <label>Find a control <input type="search" data-role="search" placeholder="Volume, tempo, chain or parameter"></label>
         <label>Control <select data-role="target"></select></label>
         <button type="button" data-role="refresh">Refresh controls</button>
-        <button type="button" data-role="learn">Learn</button>
+        <button type="button" data-role="learn">Learn MIDI CC</button>
         <button type="button" data-role="cancel">Cancel learn</button>
+        <details><summary>Assign a CC manually</summary>
         <label>CC <input data-role="cc" type="number" min="0" max="127" value="20"></label>
         <label>Channel <select data-role="channel"><option value="0">All</option>${Array.from({ length: 16 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join("")}</select></label>
-        <button type="button" data-role="assign">Assign (any device)</button>
-        <p role="status" data-role="status"></p><ul data-role="bindings"></ul>`
+        <button type="button" data-role="assign">Assign from any device</button></details>
+        <p role="status" data-role="status" aria-live="polite"></p>
+        <h3>CC assignments</h3><p>Edit the control beside a CC to change what it controls. Each row can be relearned or removed. One CC may control several targets.</p>
+        <ul data-role="bindings"></ul>`
 	const get = <T extends HTMLElement>(role: string) =>
 		host.querySelector<T>(`[data-role="${role}"]`)!
 	const targetSelect = get<HTMLSelectElement>("target")
 	const status = get("status")
-	const refresh = () => {
-		const selected = targetSelect.value
-		targetSelect.replaceChildren(
-			...targets().map((target) => {
-				const option = document.createElement("option")
-				option.textContent = target.label
-				option.value = target.id
-				return option
-			})
-		)
-		if ([...targetSelect.options].some((o) => o.value === selected)) {
-			targetSelect.value = selected
+	const label = (target: MidiTarget) => target.label.replace(/^app \/ /, "Global / ")
+	const populateTargets = (select: HTMLSelectElement, selected: string, query = "") => {
+		const groups = new Map<string, HTMLOptGroupElement>()
+		select.replaceChildren()
+		for (const target of targets()) {
+			const name = label(target)
+			if (query && !name.toLowerCase().includes(query.toLowerCase())) {
+				continue
+			}
+			const scope = name.split(" / ")[0]
+			let group = groups.get(scope)
+			if (!group) {
+				group = element("optgroup")
+				group.label = scope
+				groups.set(scope, group)
+				select.append(group)
+			}
+			const option = element("option", name)
+			option.value = target.id
+			group.append(option)
 		}
+		if (
+			selected &&
+			![...select.options].some((option) => option.value === selected) &&
+			!query
+		) {
+			const missing = element("option", `${selected} (unavailable)`)
+			missing.value = selected
+			select.append(missing)
+		}
+		if ([...select.options].some((option) => option.value === selected)) {
+			select.value = selected
+		}
+	}
+	const refresh = () => {
+		populateTargets(targetSelect, targetSelect.value, get<HTMLInputElement>("search").value)
+		get<HTMLButtonElement>("learn").disabled = !targetSelect.value
+		get<HTMLButtonElement>("assign").disabled = !targetSelect.value
+		renderBindings()
+	}
+	const learn = (target: string) => {
+		controls.learning = target || null
 		renderBindings()
 	}
 	function renderBindings() {
-		const available = targets()
 		get("bindings").replaceChildren(
 			...controls.bindings.map((binding) => {
-				const item = document.createElement("li")
-				const target = available.find((t) => t.id === binding.target)
-				item.append(
-					`${target?.label ?? binding.target + " (unavailable)"} — CC ${binding.cc}, channel ${binding.channel || "All"}, ${binding.source || "any device"} `
-				)
-				const remove = document.createElement("button")
+				const item = element("li")
+				const target = field(item, "Control", element("select"))
+				target.dataset.role = "binding-target"
+				populateTargets(target, binding.target)
+				const cc = field(item, "CC", element("input"))
+				cc.type = "number"
+				cc.min = "0"
+				cc.max = "127"
+				cc.value = String(binding.cc)
+				const channel = field(item, "Channel", element("select"))
+				for (let i = 0; i <= 16; i++) {
+					const option = element("option", i ? String(i) : "All channels")
+					option.value = String(i)
+					channel.append(option)
+				}
+				channel.value = String(binding.channel)
+				const source = field(item, "Input device", element("select"))
+				const sources = new Set(["", ...controls.bindings.map((b) => b.source)])
+				for (const id of sources) {
+					const device = manager.devices.find(({ device }) => device.uuid === id)
+					const option = element(
+						"option",
+						id ? (device?.device.name ?? id) : "Any device"
+					)
+					option.value = id
+					source.append(option)
+				}
+				source.value = binding.source
+				const save = element("button", "Save assignment")
+				save.type = "button"
+				save.dataset.role = "binding-save"
+				save.onclick = () => {
+					if (!cc.reportValidity()) {
+						return
+					}
+					try {
+						const next: MidiBinding = {
+							target: target.value,
+							cc: cc.valueAsNumber,
+							channel: Number(channel.value),
+							source: source.value
+						}
+						controls.replace(binding.target, next)
+					} catch (error) {
+						status.textContent = String(error)
+					}
+				}
+				const relearn = element("button", "Learn new MIDI CC")
+				relearn.type = "button"
+				relearn.onclick = () => learn(binding.target)
+				const remove = element("button", "Remove")
 				remove.type = "button"
-				remove.textContent = "Remove"
-				remove.onclick = () => controls.remove(binding.target)
-				item.append(remove)
+				remove.onclick = () => {
+					controls.learning = null
+					controls.remove(binding.target)
+				}
+				item.append(save, relearn, remove)
 				return item
 			})
 		)
-		status.textContent = controls.learning ? "Waiting for a MIDI CC…" : ""
+		const learningTarget = targets().find((target) => target.id === controls.learning)
+		status.textContent = controls.learning
+			? `Learning ${learningTarget ? label(learningTarget) : controls.learning}: move a MIDI knob or slider. The next CC will be assigned.`
+			: "Assignments saved. Choose a control to learn or edit an assignment below."
+		get<HTMLButtonElement>("cancel").disabled = !controls.learning
 	}
 	const enabled = get<HTMLInputElement>("enabled")
 	enabled.checked = controls.enabled
@@ -246,14 +340,9 @@ export function createMidiControlPanel(
 		renderBindings()
 	}
 	get("refresh").onclick = refresh
-	get("learn").onclick = () => {
-		controls.learning = targetSelect.value || null
-		renderBindings()
-	}
-	get("cancel").onclick = () => {
-		controls.learning = null
-		renderBindings()
-	}
+	get("search").addEventListener(EVENT_INPUT, refresh)
+	get("learn").onclick = () => learn(targetSelect.value)
+	get("cancel").onclick = () => learn("")
 	get("assign").onclick = () => {
 		try {
 			controls.assign({
@@ -266,13 +355,25 @@ export function createMidiControlPanel(
 			status.textContent = String(error)
 		}
 	}
-	document.getElementById("settings-dialog")?.addEventListener("toggle", (event) => {
-		if ((event as ToggleEvent).newState === "closed") {
-			controls.learning = null
-		}
+	const dialog = document.getElementById("midi-dialog") as HTMLDialogElement | null
+	document.getElementById("btn-midi")?.addEventListener(EVENT_CLICK, () => {
 		refresh()
+		dialog?.showModal()
 	})
-	manager.addEventListener("chainsUpdated", refresh)
+	const cancelLearning = () => {
+		controls.learning = null
+		renderBindings()
+	}
+	dialog?.addEventListener(EVENT_CLOSE, cancelLearning)
+	dialog?.addEventListener(EVENT_TOGGLE, (event) => {
+		if ((event as ToggleEvent).newState === "closed") {
+			cancelLearning()
+		} else {
+			refresh()
+		}
+	})
+	manager.addEventListener(EVENT_CHAINS_UPDATED, refresh)
+	manager.addEventListener(EVENT_WORKSPACE_RESTORED, refresh)
 	refresh()
 	return controls
 }

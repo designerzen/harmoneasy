@@ -54,10 +54,19 @@ export class MidiControls {
 			: []
 	}
 	assign(binding: MidiBinding): void {
+		this.replace(binding.target, binding)
+	}
+	replace(target: string, binding: MidiBinding): void {
 		if (!validBinding(binding)) {
 			throw new Error("Choose CC 0–127 and channel 1–16 (or All).")
 		}
-		this.bindings = this.bindings.filter((b) => b.target !== binding.target)
+		if (target !== binding.target && this.bindings.some((b) => b.target === binding.target)) {
+			throw new Error(
+				"That control already has an assignment. Edit or remove its assignment first."
+			)
+		}
+		this.learning = null
+		this.bindings = this.bindings.filter((b) => b.target !== target)
 		this.bindings.push({ ...binding })
 		this.previous.clear()
 		this.changed()

@@ -321,14 +321,8 @@
 			>
 				Commands <kbd>Ctrl/Cmd+K</kbd>
 			</button>
-			<button
-				id="btn-midi-devices"
-				type="button"
-				aria-haspopup="dialog"
-				aria-controls="midi-devices-dialog"
-				disabled
-			>
-				MIDI devices
+			<button id="btn-midi" type="button" aria-haspopup="dialog" aria-controls="midi-dialog">
+				MIDI
 			</button>
 			<button id="btn-kill-switch" class="btn-kill-switch btn-panic primary" type="button">
 				Panic
@@ -776,6 +770,28 @@
 			<footer><p id="about-copyright"></p></footer>
 		</dialog>
 
+		<dialog id="midi-dialog" closedby="any" aria-labelledby="midi-title">
+			<header><h5 id="midi-title">MIDI</h5></header>
+			<button
+				id="btn-midi-devices"
+				type="button"
+				aria-haspopup="dialog"
+				aria-controls="midi-devices-dialog"
+				disabled
+			>
+				MIDI devices
+			</button>
+			<h2>Control via MIDI</h2>
+			<p>
+				These assignments belong to the whole workspace. Global controls affect the app;
+				chain controls affect only the named chain. Connect a MIDI input to any chain to
+				receive controls.
+			</p>
+			<div id="midi-control-settings"></div>
+			<div id="midi-macro-controls"></div>
+			<form method="dialog"><button class="btn-close" type="submit">Close</button></form>
+		</dialog>
+
 		<dialog id="midi-devices-dialog" closedby="any" aria-labelledby="midi-devices-title">
 			<header><h5 id="midi-devices-title">MIDI devices</h5></header>
 			<p id="midi-devices-status" role="status"></p>
@@ -842,10 +858,6 @@
 					</div>
 					<button id="theme-reset" type="button">Reset appearance</button>
 					<p id="theme-status" role="status">Theme saved in this browser only.</p>
-				</fieldset>
-				<fieldset>
-					<legend>MIDI CC Controls</legend>
-					<div id="midi-control-settings"></div>
 				</fieldset>
 				<fieldset>
 					<legend>Graph layout</legend>

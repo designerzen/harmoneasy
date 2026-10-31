@@ -1,7 +1,4 @@
 import type IOChainManager from "audiobus/io/IO-chain-manager"
-import type IOChain from "audiobus/io/IO-chain"
-import { TransformerChordTrack } from "audiobus/io/transformers/transformer-chord-track"
-import { TransformerImprovPartner } from "audiobus/io/transformers/transformer-improv-partner"
 import {
 	DEFAULT_CHORDS,
 	parseProgression,
@@ -10,11 +7,11 @@ import {
 	applyGroove
 } from "audiobus/io/music-tools"
 import { parseEventClip, type EventClip } from "audiobus/io/event-clip"
-import InputEventLoop from "audiobus/io/inputs/input-event-loop"
-import { defineDevice } from "audiobus/io/device-definition"
-import { pitchClasses } from "audiobus/tuning/pitch-class-set"
+import type InputScaleExplorer from "audiobus/io/inputs/input-scale-explorer"
+import type InputEventLoop from "audiobus/io/inputs/input-event-loop"
+import { allPitchSetClasses, pitchClasses } from "audiobus/tuning/pitch-class-set"
 import { effectiveScaleSet } from "audiobus/io/scale-explorer-controls"
-import { EVENT_CONFIGURATION_CHANGED } from "audiobus/event-constants"
+import { EVENT_CHAINS_UPDATED } from "audiobus/event-constants"
 import {
 	element,
 	action,
@@ -25,11 +22,38 @@ import {
 	download
 } from "./music-tools-dom"
 
+const NOTE_NAMES = ["C", "C♯", "D", "E♭", "E", "F", "F♯", "G", "A♭", "A", "B♭", "B"]
+const CHORD_QUALITIES = [
+	{ name: "Major", value: "145" },
+	{ name: "Minor", value: "137" },
+	{ name: "Dominant seventh", value: "1169" },
+	{ name: "Major seventh", value: "2193" },
+	{ name: "Minor seventh", value: "1161" },
+	{ name: "Diminished", value: "73" },
+	{ name: "Suspended fourth", value: "161" },
+	{ name: "Custom notes", value: "custom" }
+]
+const transposeMask = (mask: number, semitones: number) =>
+	pitchClasses(mask).reduce((result, pitch) => result | (1 << ((pitch + semitones + 12) % 12)), 0)
+
 export function mountChordEditor(host: HTMLElement, manager: IOChainManager, status: HTMLElement) {
 	let steps = manager.musicTools.progression
-	const editor = element("div"),
-		followers = element("div")
+	let saved = JSON.stringify(steps)
+	const abort = new AbortController()
+	const editor = element("div")
+	editor.className = "chord-progression-editor"
+	const commit = () => {
+		const state = manager.musicTools
+		state.progression = parseProgression(steps)
+		saved = JSON.stringify(state.progression)
+		manager.setMusicTools(state)
+		status.textContent = "Progression applied to every Shared Chord Track transformer"
+		renderRows()
+	}
 	const renderRows = () => {
+		const expanded = [...editor.querySelectorAll<HTMLDetailsElement>(":scope > details")].map(
+			(chord) => chord.open
+		)
 		editor.replaceChildren()
 		steps.forEach((step, index) => {
 			const row = element("fieldset")
@@ -37,81 +61,97 @@ export function mountChordEditor(host: HTMLElement, manager: IOChainManager, sta
 			const name = field(row, "Name", element("input"))
 			name.value = step.name
 			name.maxLength = 80
-			onChange(name, () => (step.name = name.value))
-			const mask = numberField(row, "Pitch-set ID", step.mask, 0, 4095),
-				beats = numberField(row, "Beats", step.beats, 0.25, 64, 0.25),
-				root = numberField(row, "Root pitch class (C=0)", step.root, 0, 11)
-			for (const control of [mask, beats, root]) {
-				onChange(control, () => {
-					step.mask = mask.valueAsNumber
-					step.beats = beats.valueAsNumber
-					step.root = root.valueAsNumber
-				})
-			}
-			row.append(
-				element("p", `Pitch classes: ${pitchClasses(step.mask).join(", ") || "silence"}`)
+			onChange(name, () => {
+				step.name = name.value
+				commit()
+			})
+			const root = selectField(
+				row,
+				"Root",
+				NOTE_NAMES.map((name, value) => ({ name, value: String(value) })),
+				String(step.root)
 			)
-			row.append(
-				action(
-					"Move earlier",
+			onChange(root, () => {
+				const next = Number(root.value)
+				step.mask = transposeMask(step.mask, next - step.root)
+				step.root = next
+				step.name = NOTE_NAMES[next]
+				commit()
+			})
+			const relative = transposeMask(step.mask, -step.root)
+			const quality = selectField(
+				row,
+				"Chord",
+				CHORD_QUALITIES,
+				CHORD_QUALITIES.some((item) => item.value === String(relative))
+					? String(relative)
+					: "custom"
+			)
+			onChange(quality, () => {
+				if (quality.value === "custom") {
+					return
+				}
+				step.mask = transposeMask(Number(quality.value), step.root)
+				step.name = `${NOTE_NAMES[step.root]} ${quality.selectedOptions[0].textContent}`
+				commit()
+			})
+			const beats = numberField(row, "Beats", step.beats, 0.25, 64, 0.25)
+			onChange(beats, () => {
+				if (beats.checkValidity()) {
+					step.beats = beats.valueAsNumber
+					commit()
+				}
+			})
+			const pitches = element("div")
+			pitches.className = "chord-note-controls"
+			pitches.setAttribute("role", "group")
+			pitches.setAttribute("aria-label", `Notes in chord ${index + 1}`)
+			NOTE_NAMES.forEach((note, pitch) => {
+				const button = action(
+					note,
 					() => {
-						if (index) {
-							;[steps[index - 1], steps[index]] = [steps[index], steps[index - 1]]
-						}
-						renderRows()
-					},
-					status
-				),
-				action(
-					"Remove chord",
-					() => {
-						steps.splice(index, 1)
-						renderRows()
+						step.mask ^= 1 << pitch
+						commit()
 					},
 					status
 				)
-			)
-			editor.append(row)
-		})
-	}
-	const renderFollowers = () => {
-		followers.replaceChildren(element("h3", "Chains following this progression"))
-		for (const chain of manager.chains) {
-			const existing = chain.transformers.find(
-				(item) => item instanceof TransformerChordTrack
-			) as TransformerChordTrack | undefined
-			const role = selectField(
-				followers,
-				chain.options.name ?? "Chain",
-				["independent", "melody", "bass", "chords"].map((value) => ({
-					name: value,
-					value
-				})),
-				existing ? String(existing.options.role) : "independent"
-			)
-			onChange(role, () => {
-				chain.clearNoteCommands()
-				if (role.value === "independent") {
-					if (existing) {
-						chain.removeTransformer(existing)
-					}
-				} else {
-					const transformer = existing ?? new TransformerChordTrack()
-					transformer.setConfig("role", role.value)
-					transformer.setProgression(manager.musicTools.progression)
-					if (!existing) {
-						chain.appendTransformer(transformer)
-					}
-					chain.dispatchEvent(new Event(EVENT_CONFIGURATION_CHANGED))
-				}
-				renderFollowers()
+				button.setAttribute("aria-pressed", String(Boolean(step.mask & (1 << pitch))))
+				pitches.append(button)
 			})
-		}
+			row.append(pitches)
+			const earlier = action(
+				"Move earlier",
+				() => {
+					;[steps[index - 1], steps[index]] = [steps[index], steps[index - 1]]
+					commit()
+				},
+				status
+			)
+			earlier.disabled = index === 0
+			const remove = action(
+				"Remove chord",
+				() => {
+					steps.splice(index, 1)
+					commit()
+				},
+				status
+			)
+			remove.disabled = steps.length === 1
+			row.append(earlier, remove)
+			const chord = element("details")
+			chord.className = "chord-step"
+			chord.open = expanded[index] ?? index === 0
+			chord.append(
+				element("summary", `${index + 1}. ${step.name} · ${step.beats} beats`),
+				row
+			)
+			editor.append(chord)
+		})
 	}
 	host.append(
 		element(
 			"p",
-			"Each pitch-set ID describes absolute pitch classes (C=0). Changes follow the shared transport; independent chains keep their own harmony. Root selects the bass note."
+			"Play this chain to hear the progression. Follow as selects melody, bass or chords. Changes apply immediately and are shared by every Shared Chord Track transformer."
 		),
 		editor,
 		action(
@@ -121,58 +161,81 @@ export function mountChordEditor(host: HTMLElement, manager: IOChainManager, sta
 					throw new Error("Maximum 128 chords")
 				}
 				steps.push({ ...DEFAULT_CHORDS[0] })
-				renderRows()
+				commit()
 			},
 			status
-		),
-		action(
-			"Save progression",
-			() => {
-				const state = manager.musicTools
-				state.progression = parseProgression(steps)
-				manager.setMusicTools(state)
-				status.textContent = "Progression saved"
-			},
-			status
-		),
-		followers
+		)
 	)
-	return {
-		refresh() {
-			steps = manager.musicTools.progression
-			renderRows()
-			renderFollowers()
-		}
+	const refresh = () => {
+		steps = manager.musicTools.progression
+		saved = JSON.stringify(steps)
+		renderRows()
 	}
+	manager.addEventListener(
+		EVENT_CHAINS_UPDATED,
+		() => {
+			if (JSON.stringify(manager.musicTools.progression) !== saved) {
+				refresh()
+			}
+		},
+		{ signal: abort.signal }
+	)
+	return { refresh, destroy: () => abort.abort() }
+}
+
+function scaleChoices(current?: number) {
+	return [
+		...new Set([
+			...(current ? [current] : []),
+			...DEFAULT_CHORDS.map((step) => step.mask),
+			...allPitchSetClasses()
+		])
+	].map((mask) => ({
+		name: pitchClasses(mask)
+			.map((pitch) => NOTE_NAMES[pitch])
+			.join(", "),
+		value: String(mask)
+	}))
 }
 
 export function mountRouteFinder(
 	host: HTMLElement,
 	manager: IOChainManager,
 	audition: (mask: number) => Promise<void>,
-	status: HTMLElement
+	status: HTMLElement,
+	explorer: InputScaleExplorer
 ) {
-	const start = numberField(host, "Start pitch-set ID", 145, 1, 4095),
-		destination = numberField(host, "Destination pitch-set ID", 529, 1, 4095)
+	const start = selectField(
+			host,
+			"Start collection",
+			scaleChoices(effectiveScaleSet(explorer.options)),
+			String(effectiveScaleSet(explorer.options))
+		),
+		destination = selectField(host, "Destination collection", scaleChoices(), "529")
 	const results = element("div")
 	host.append(
 		action(
-			"Use active Scale Explorer as start",
+			"Use current collection as start",
 			() => {
-				const explorer = manager.activeChain?.inputs.find(
-					(input) => input.name === "Scale Explorer"
-				)
-				if (!explorer) {
-					throw new Error("Add a Scale Explorer input to the active chain first")
+				const mask = effectiveScaleSet(explorer.options)
+				if (![...start.options].some((option) => option.value === String(mask))) {
+					const option = element(
+						"option",
+						pitchClasses(mask)
+							.map((pitch) => NOTE_NAMES[pitch])
+							.join(", ")
+					)
+					option.value = String(mask)
+					start.append(option)
 				}
-				start.value = String(effectiveScaleSet((explorer as any).options))
+				start.value = String(mask)
 			},
 			status
 		),
 		action(
 			"Find musical routes",
 			() => {
-				const routes = harmonicRoutes(start.valueAsNumber, destination.valueAsNumber)
+				const routes = harmonicRoutes(Number(start.value), Number(destination.value))
 				results.replaceChildren()
 				for (const [index, route] of routes.entries()) {
 					const card = element("section")
@@ -180,7 +243,11 @@ export function mountRouteFinder(
 					for (const [step, mask] of route.masks.entries()) {
 						const row = element(
 							"p",
-							`${mask}: ${pitchClasses(mask).join(", ")}. ${route.explanations[step - 1] ?? "Starting collection."} `
+							`${pitchClasses(mask)
+								.map((pitch) => NOTE_NAMES[pitch])
+								.join(
+									", "
+								)}. ${route.explanations[step - 1] ?? "Starting collection."} `
 						)
 						row.append(action("Audition", () => audition(mask), status))
 						card.append(row)
@@ -191,14 +258,16 @@ export function mountRouteFinder(
 							() => {
 								const state = manager.musicTools
 								state.progression = route.masks.map((mask) => ({
-									name: `Set ${mask}`,
+									name: pitchClasses(mask)
+										.map((pitch) => NOTE_NAMES[pitch])
+										.join("–"),
 									mask,
 									root: pitchClasses(mask)[0],
 									beats: 4
 								}))
 								manager.setMusicTools(state)
 								status.textContent =
-									"Route saved to the shared chord track; reopen its editor to review"
+									"Route applied to Shared Chord Track transformers"
 							},
 							status
 						)
@@ -210,7 +279,7 @@ export function mountRouteFinder(
 		),
 		element(
 			"p",
-			"These are short heuristic routes that retain common tones or move pitch classes. They are not a claim of globally optimal voice leading; pitch-class numbers use C=0."
+			"Find a path between note collections. Audition plays through this Scale Explorer’s chain. Use as chord progression applies the route to Shared Chord Track transformers."
 		),
 		results
 	)
@@ -222,9 +291,16 @@ export function mountGrooveTools(
 	getBpm: () => number,
 	getClip: () => EventClip,
 	capture: () => Promise<EventClip>,
-	status: HTMLElement
+	status: HTMLElement,
+	loop: InputEventLoop
 ) {
-	let source: EventClip | undefined
+	const outer = host
+	const details = element("details")
+	details.append(element("summary", "Groove transfer"))
+	host = element("div")
+	host.className = "context-controls"
+	details.append(host)
+	outer.append(details)
 	const name = field(host, "Groove name", element("input"))
 	name.value = "My groove"
 	name.maxLength = 80
@@ -234,9 +310,13 @@ export function mountGrooveTools(
 		{ name: "Quarter", value: "1" }
 	])
 	const templates = selectField(host, "Saved groove", [])
+	const abort = new AbortController()
+	let savedGrooves = ""
 	const timing = numberField(host, "Timing strength (%)", 100, 0, 100),
 		dynamics = numberField(host, "Accent strength (%)", 100, 0, 100)
 	const refresh = () => {
+		const selected = templates.value
+		savedGrooves = JSON.stringify(manager.musicTools.grooves)
 		templates.replaceChildren(
 			...manager.musicTools.grooves.map((groove, index) => {
 				const option = element("option", groove.name)
@@ -244,7 +324,19 @@ export function mountGrooveTools(
 				return option
 			})
 		)
+		if ([...templates.options].some((option) => option.value === selected)) {
+			templates.value = selected
+		}
 	}
+	manager.addEventListener(
+		EVENT_CHAINS_UPDATED,
+		() => {
+			if (JSON.stringify(manager.musicTools.grooves) !== savedGrooves) {
+				refresh()
+			}
+		},
+		{ signal: abort.signal }
+	)
 	const save = (clip: EventClip) => {
 		const state = manager.musicTools
 		if (state.grooves.length >= 32) {
@@ -261,31 +353,51 @@ export function mountGrooveTools(
 			throw new Error("Capture a groove first")
 		}
 		return applyGroove(
-			source ?? getClip(),
+			parseEventClip({
+				version: 1,
+				duration: loop.options.duration,
+				commands: loop.options.commands
+			}),
 			groove,
 			getBpm(),
 			timing.valueAsNumber / 100,
 			dynamics.valueAsNumber / 100
 		)
 	}
-	const file = field(host, "Load source event loop", element("input"))
-	file.type = "file"
-	file.accept = ".json,application/json"
-	onChange(file, () => {
-		void (async () => {
-			const selected = file.files?.[0]
-			if (!selected) {
-				return
-			}
-			if (selected.size > 8 * 1024 * 1024) {
-				throw new Error("Loop exceeds 8 MB")
-			}
-			source = parseEventClip(JSON.parse(await selected.text()))
-			status.textContent = "Source loop loaded"
-		})().catch((error) => (status.textContent = String(error)))
-	})
+
+	outer.prepend(
+		action(
+			"Capture next bar into this loop",
+			async () => {
+				const clip = await capture()
+				loop.load(clip)
+				status.textContent = "Bar captured. Stop then Play transport to hear this loop."
+			},
+			status
+		),
+		action(
+			"Load recorded events into this loop",
+			() => {
+				loop.load(getClip())
+				status.textContent = "Recorded events loaded. Stop then Play transport."
+			},
+			status
+		)
+	)
 	host.append(
 		action("Capture next bar as groove", async () => save(await capture()), status),
+		action(
+			"Save this loop as groove",
+			() =>
+				save(
+					parseEventClip({
+						version: 1,
+						duration: loop.options.duration,
+						commands: loop.options.commands
+					})
+				),
+			status
+		),
 		action("Use captured events as groove", () => save(getClip()), status),
 		action(
 			"Remove saved groove",
@@ -303,20 +415,10 @@ export function mountGrooveTools(
 			status
 		),
 		action(
-			"Play transformed loop in active chain",
+			"Apply groove to this loop",
 			() => {
-				const chain = manager.activeChain
-				if (!chain) {
-					throw new Error("Choose a chain first")
-				}
-				const clip = transform()
-				const input = defineDevice(new InputEventLoop(clip), {
-					factory: "input",
-					type: "event-loop",
-					options: clip
-				})
-				manager.addDevice(chain, input, "input")
-				status.textContent = "Loop added. Stop then Play transport to hear it."
+				loop.load(transform())
+				status.textContent = "Groove applied. Stop then Play transport to hear this loop."
 			},
 			status
 		),
@@ -325,90 +427,5 @@ export function mountGrooveTools(
 			"Capture starts on the next bar while transport runs. Groove transfer shifts note releases with their attacks; zero strength leaves the source unchanged."
 		)
 	)
-	return { refresh }
-}
-
-export function mountPartner(host: HTMLElement, manager: IOChainManager, status: HTMLElement) {
-	const chains = selectField(host, "Chain", [])
-	const mode = selectField(
-		host,
-		"Mode",
-		["respond", "listen"].map((value) => ({ name: value, value }))
-	)
-	const gap = numberField(host, "Gap before reply (beats)", 2, 1, 8)
-	const variation = numberField(host, "Variation (%)", 25, 0, 100)
-	const silence = numberField(host, "Skip every Nth reply (0 = never)", 0, 0, 8)
-	const refresh = () => {
-		chains.replaceChildren(
-			...manager.entries.map(([id, chain]) => {
-				const option = element("option", chain.options.name)
-				option.value = id
-				return option
-			})
-		)
-		if (manager.activeChainId) {
-			chains.value = manager.activeChainId
-		}
-	}
-	const partner = (chain: IOChain) =>
-		chain.transformers.find((t) => t instanceof TransformerImprovPartner) as
-			| TransformerImprovPartner
-			| undefined
-	host.append(
-		action(
-			"Enable / update partner",
-			() => {
-				const chain = manager.getChain(chains.value)
-				if (!chain) {
-					throw new Error("Choose a chain")
-				}
-				for (const control of [gap, variation, silence]) {
-					if (!control.checkValidity()) {
-						throw new Error("Choose values within the displayed ranges")
-					}
-				}
-				const existing = partner(chain)
-				const transformer = existing ?? new TransformerImprovPartner()
-				transformer.setConfig("mode", mode.value)
-				transformer.setConfig("gap", gap.valueAsNumber)
-				transformer.setConfig("variation", variation.valueAsNumber)
-				transformer.setConfig("silence", silence.valueAsNumber)
-				if (!existing) {
-					chain.appendTransformer(transformer)
-				}
-				chain.dispatchEvent(new Event(EVENT_CONFIGURATION_CHANGED))
-				status.textContent =
-					"Partner enabled. Play a phrase on running transport, then leave a gap; play again to interrupt."
-			},
-			status
-		),
-		action(
-			"Forget remembered motifs",
-			() => {
-				const chain = manager.getChain(chains.value)
-				if (chain) {
-					partner(chain)?.clearMemory()
-				}
-				status.textContent = "Motif memory cleared"
-			},
-			status
-		),
-		action(
-			"Remove partner",
-			() => {
-				const chain = manager.getChain(chains.value)
-				const transformer = chain && partner(chain)
-				if (chain && transformer) {
-					chain.clearNoteCommands()
-					chain.removeTransformer(transformer)
-				}
-			},
-			status
-		),
-		element(
-			"p",
-			"The partner remembers up to eight phrases during this session and makes deterministic variations. Its replies follow the shared chord track when this chain follows it; no model download is needed."
-		)
-	)
-	return { refresh }
+	return { refresh, destroy: () => abort.abort() }
 }

@@ -155,15 +155,24 @@ export function mountPerformanceControls(
 		host.append(
 			element(
 				"p",
-				"Use the four controls while playing. Expand Configure to map each one to several parameters; reversed ranges invert the movement. Arrow keys adjust a focused slider. Instrument CC response depends on the instrument; device mappings use MIDI channel 1."
+				"Assign a MIDI CC to a grouped control, then choose the parameters it changes. Only the listed targets are affected, across the named chains or global app controls. An empty group changes nothing. Reversed ranges invert movement; instrument CC response depends on the instrument and uses channel 1."
 			)
 		)
 		const state = manager.musicTools
 		state.macros.forEach((macro, index) => {
 			const card = element("section")
 			card.className = "performance-macro"
+
 			card.dataset.midiScope = `performance-macro-${index}`
-			card.dataset.midiLabel = macro.name
+			card.dataset.midiLabel = `Global / ${macro.name}`
+			card.append(
+				element(
+					"p",
+					macro.mappings.length
+						? `${macro.mappings.length} controlled parameters`
+						: "No parameters selected; this control changes nothing yet."
+				)
+			)
 			const slider = element("input")
 			slider.type = "range"
 			slider.min = "0"
@@ -207,7 +216,7 @@ export function mountPerformanceControls(
 			)
 			const config = element("details")
 			config.dataset.midiIgnore = ""
-			config.append(element("summary", "Configure"))
+			config.append(element("summary", "Choose controlled parameters"))
 			const name = field(config, "Name", element("input"))
 			name.value = macro.name
 			name.maxLength = 80

@@ -319,6 +319,64 @@
 	}
 }
 
+.chord-progression-editor {
+	display: grid;
+	gap: 0.75rem;
+	width: 100%;
+	text-transform: none;
+	letter-spacing: normal;
+	.chord-step {
+		border: 1px solid var(--col-line);
+		border-radius: 10px;
+		background: var(--col-bg);
+		color: var(--col-fg);
+	}
+	summary {
+		padding: 0.75rem;
+		cursor: pointer;
+		font-size: 0.875rem;
+	}
+	fieldset {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.75rem;
+		min-width: 0;
+		margin: 0;
+		padding: 0.75rem;
+		border: 0;
+	}
+	label {
+		display: grid;
+		gap: 0.35rem;
+		font-size: 0.875rem;
+	}
+	input,
+	select {
+		box-sizing: border-box;
+		width: 100%;
+		min-width: 0;
+		min-height: 44px;
+		font: inherit;
+	}
+	.chord-note-controls {
+		grid-column: 1 / -1;
+		display: grid;
+		grid-template-columns: repeat(6, minmax(0, 1fr));
+		gap: 0.25rem;
+	}
+	button {
+		min-height: 44px;
+		padding: 0.35rem;
+		font-size: 0.75rem;
+	}
+	button[aria-pressed="true"] {
+		background: var(--col-accent);
+		color: var(--col-bg);
+		outline: 2px solid currentColor;
+		outline-offset: -4px;
+	}
+}
+
 .node-transformer > .transformer-status {
 	display: flex;
 	align-items: flex-start;

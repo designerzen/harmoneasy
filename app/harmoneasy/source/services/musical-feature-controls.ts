@@ -6,7 +6,10 @@ import {
 	EVENT_CLOSE,
 	EVENT_PAGE_HIDE,
 	EVENT_TRANSPORT_CHANGED,
+	EVENT_CHAINS_UPDATED,
 	EVENT_TOGGLE,
+	EVENT_CHANGE,
+	EVENT_CLICK,
 	EVENT_WORKSPACE_RESTORED,
 	EVENT_VISIBILITY_CHANGE
 } from "audiobus/event-constants"
@@ -21,17 +24,14 @@ import type { AudioRecording } from "./audio-recording"
 import type { MidiControls } from "./midi-controls"
 import { AcousticTempoFollower } from "./acoustic-tempo"
 import { mountPerformanceControls, mountDiagnostics } from "./performance-tools"
-import {
-	mountChordEditor,
-	mountRouteFinder,
-	mountGrooveTools,
-	mountPartner
-} from "./composition-tools"
+import { mountChordEditor, mountRouteFinder, mountGrooveTools } from "./composition-tools"
 import { mountProjectTools } from "./project-tools"
-import { element, action, numberField, section, onChange } from "./music-tools-dom"
-import "../assets/style/music-tools.scss"
+import { element, action, numberField, onChange } from "./music-tools-dom"
+import { TransformerChordTrack } from "audiobus/io/transformers/transformer-chord-track"
+import InputEventLoop from "audiobus/io/inputs/input-event-loop"
+import InputScaleExplorer from "audiobus/io/inputs/input-scale-explorer"
 
-export interface MusicToolsOptions {
+export interface MusicalFeatureOptions {
 	manager: IOChainManager
 	context: AudioContext
 	master: GainNode
@@ -86,91 +86,94 @@ function finishClip(commands: IAudioCommand[], duration: number): EventClip {
 	)
 	return parseEventClip({ version: 1, duration, commands: [...commands, ...releases] })
 }
-export function createMusicTools(options: MusicToolsOptions) {
+export function createMusicalFeatureControls(options: MusicalFeatureOptions) {
 	const { manager, context, master } = options
 	const abort = new AbortController()
-	const dialog = element("dialog")
-	dialog.id = "music-tools-dialog"
-	dialog.className = "music-tools-dialog"
-	dialog.setAttribute("aria-labelledby", "music-tools-title")
-	const title = element("h2", "Music tools")
-	title.id = "music-tools-title"
 	const status = element("p")
 	status.setAttribute("role", "status")
-	const close = action("Close", () => dialog.close(), status)
-	dialog.append(title, close, status)
-	const performanceDialog = element("dialog")
-	performanceDialog.className = "music-tools-dialog"
-	performanceDialog.id = "performance-dialog"
-	performanceDialog.setAttribute("aria-labelledby", "performance-title")
-	const performanceTitle = element("h2", "Performance")
-	performanceTitle.id = "performance-title"
+	const mounts: HTMLElement[] = []
+	const group = (parent: HTMLElement | null, title: string) => {
+		if (!parent) {
+			return undefined
+		}
+		const details = element("details")
+		details.append(element("summary", title))
+		const host = element("div")
+		host.className = "context-controls"
+		details.append(host)
+		parent.append(details)
+		mounts.push(details)
+		return host
+	}
+	const settings = document.getElementById("settings-form")
+	const diagnosticsHost = group(settings, "Sound diagnostics")
+	const diagnostics = diagnosticsHost
+		? mountDiagnostics(diagnosticsHost, manager, context, master, status)
+		: undefined
+	if (diagnosticsHost) {
+		diagnosticsHost.append(status)
+		diagnosticsHost.parentElement!.addEventListener(
+			EVENT_TOGGLE,
+			() => {
+				if ((diagnosticsHost.parentElement as HTMLDetailsElement).open) {
+					diagnostics?.start()
+				} else {
+					diagnostics?.stop()
+				}
+			},
+			{ signal: abort.signal }
+		)
+	}
+	const performanceHost = group(
+		document.getElementById("midi-macro-controls"),
+		"Control several parameters with one MIDI CC"
+	)
 	const performanceStatus = element("p")
 	performanceStatus.setAttribute("role", "status")
-	const performanceHost = element("div")
-	performanceHost.className = "performance-controls"
-	performanceDialog.append(
-		performanceTitle,
-		action("Close", () => performanceDialog.close(), performanceStatus),
-		performanceStatus,
-		performanceHost
-	)
-	document.body.append(dialog, performanceDialog)
-	const performance = mountPerformanceControls(
-		performanceHost,
-		manager,
-		options.midi,
-		performanceStatus
-	)
-	const diagnosticsHost = section(dialog, "Sound diagnostics")
-	const diagnostics = mountDiagnostics(diagnosticsHost, manager, context, master, status)
-	diagnosticsHost.parentElement!.addEventListener(
-		EVENT_TOGGLE,
-		() => {
-			if ((diagnosticsHost.parentElement as HTMLDetailsElement).open && dialog.open) {
-				diagnostics.start()
-			} else {
-				diagnostics.stop()
-			}
-		},
-		{ signal: abort.signal }
-	)
-	const chords = mountChordEditor(section(dialog, "Shared chord track"), manager, status)
+	const groupedControls = element("div")
+	performanceHost?.append(groupedControls, performanceStatus)
+	const performance = performanceHost
+		? mountPerformanceControls(groupedControls, manager, options.midi, performanceStatus)
+		: undefined
 	let capture:
 		| {
 				chainId: string
 				startBeat: number
 				endBeat: number
 				start?: number
+				owner: InputEventLoop
 				commands: IAudioCommand[]
+				status: HTMLElement
 				resolve(clip: EventClip): void
 				reject(error: Error): void
 		  }
 		| undefined
 	let currentBeat = 0
 	const getClip = () => capturedClip(options.recorder.events)
-	const captureBar = () =>
+	const captureBar = (chainId: string, captureStatus: HTMLElement, owner: InputEventLoop) =>
 		new Promise<EventClip>((resolve, reject) => {
 			if (capture) {
 				reject(new Error("A capture is already in progress"))
 				return
 			}
-			if (!manager.transportRunning || !manager.activeChainId) {
+			if (!manager.transportRunning || !manager.getChain(chainId)) {
 				reject(new Error("Choose a chain and start transport before capturing"))
 				return
 			}
 			const beats = options.beatsPerBar()
 			const startBeat = (Math.floor(currentBeat / beats) + 1) * beats
 			capture = {
-				chainId: manager.activeChainId,
+				chainId,
+				status: captureStatus,
+				owner,
 				startBeat,
 				endBeat: startBeat + beats,
 				commands: [],
 				resolve,
 				reject
 			}
-			status.textContent =
-				"Waiting for the next bar; play the active chain during the following bar"
+			captureStatus.textContent =
+				"Waiting for the next bar; play this chain during the following bar"
 		})
 	manager.addEventListener(
 		INPUT_EVENT,
@@ -200,68 +203,74 @@ export function createMusicTools(options: MusicToolsOptions) {
 		},
 		{ signal: abort.signal }
 	)
-	const groove = mountGrooveTools(
-		section(dialog, "Groove capture and transfer"),
-		manager,
-		options.getBpm,
-		getClip,
-		captureBar,
-		status
-	)
-	const partner = mountPartner(section(dialog, "Improvisation partner"), manager, status)
-	const auditions = new Map<ReturnType<typeof setTimeout>, () => void>()
-	const stopAuditions = () => {
-		for (const [timeout, stop] of auditions) {
-			clearTimeout(timeout)
-			stop()
-		}
-		auditions.clear()
-	}
-	const audition = async (mask: number) => {
-		const chain = manager.activeChain
-		if (!chain) {
-			throw new Error("Choose a chain with a sound output first")
-		}
-		await context.resume()
-		stopAuditions()
-		const now = options.getNow()
-		const commands = Array.from({ length: 12 }, (_, pitch) => pitch)
-			.filter((pitch) => mask & (1 << pitch))
-			.map((pitch) =>
-				musicalCommand({
-					type: NOTE_ON,
-					number: 60 + pitch,
-					velocity: 80,
-					channel: 1,
-					from: "route-audition",
-					startAt: now,
-					time: now
-				})
-			)
-		await chain.triggerAudioCommandsOnDevice(commands)
-		const stop = () => {
-			if (!chain.isDestroyed) {
-				void chain
-					.triggerAudioCommandsOnDevice(
-						commands.map((command) =>
-							musicalCommand({
-								...clipCommand(command, options.getNow()),
-								type: NOTE_OFF,
-								velocity: 0
-							})
-						)
-					)
-					.catch((error) => (status.textContent = String(error)))
+	const bindings = new Map<object, () => void>()
+	const bindNodes = () => {
+		const present = new Set<object>(
+			manager.chains.flatMap((chain) => [...chain.inputs, ...chain.transformers])
+		)
+		for (const [node, release] of bindings) {
+			if (!present.has(node)) {
+				release()
+				bindings.delete(node)
 			}
 		}
-		const timeout = setTimeout(() => {
-			auditions.delete(timeout)
-			stop()
-		}, 650)
-		auditions.set(timeout, stop)
+		for (const [, chain] of manager.entries) {
+			for (const transformer of chain.transformers) {
+				if (!(transformer instanceof TransformerChordTrack) || bindings.has(transformer)) {
+					continue
+				}
+				transformer.mountProgression = (host, message) =>
+					mountChordEditor(host, manager, message)
+				bindings.set(transformer, () => {
+					transformer.destroyGui()
+					transformer.mountProgression = undefined
+				})
+			}
+			for (const input of chain.inputs) {
+				if (bindings.has(input)) {
+					continue
+				}
+				if (input instanceof InputEventLoop) {
+					input.mountTools = (host, message) =>
+						mountGrooveTools(
+							host,
+							manager,
+							options.getBpm,
+							getClip,
+							() =>
+								captureBar(
+									manager.entries.find(([, owner]) =>
+										owner.inputs.includes(input)
+									)?.[0] ?? "",
+									message,
+									input
+								),
+							message,
+							input
+						)
+					bindings.set(input, () => {
+						void input.destroyGui()
+						input.mountTools = undefined
+					})
+				} else if (input instanceof InputScaleExplorer) {
+					input.mountRoutes = (host, audition, message) =>
+						mountRouteFinder(host, manager, audition, message, input)
+					bindings.set(input, () => {
+						input.mountRoutes = undefined
+					})
+				}
+			}
+		}
+		if (capture && (!manager.getChain(capture.chainId) || !present.has(capture.owner))) {
+			capture.reject(new Error("Capture cancelled because its input or chain was removed"))
+			capture = undefined
+		}
 	}
-	mountRouteFinder(section(dialog, "Scale Explorer route finder"), manager, audition, status)
-	const acousticHost = section(dialog, "Acoustic tempo following")
+	manager.addEventListener(EVENT_CHAINS_UPDATED, bindNodes, { signal: abort.signal })
+	bindNodes()
+	const acousticHost =
+		group(document.getElementById("clock-controls"), "Follow microphone tempo") ??
+		element("div")
 	const acousticStatus = element("p")
 	acousticStatus.setAttribute("role", "status")
 	const follower = new AcousticTempoFollower(
@@ -273,21 +282,21 @@ export function createMusicTools(options: MusicToolsOptions) {
 		},
 		options.canFollow
 	)
-	const sensitivity = numberField(acousticHost, "Onset threshold multiplier", 2.5, 1.2, 8, 0.1)
+	const sensitivity = numberField(acousticHost, "Microphone sensitivity", 2.5, 1.2, 8, 0.1)
 	onChange(sensitivity, () => {
 		if (sensitivity.checkValidity()) {
 			follower.threshold = sensitivity.valueAsNumber
 		}
 	})
 	acousticHost.append(
-		action("Start acoustic following", () => follower.start(), status),
+		action("Start acoustic following", () => follower.start(), acousticStatus),
 		action(
 			"Stop acoustic following",
 			() => {
 				follower.stop()
 				acousticStatus.textContent = "Stopped; keeping the last tempo"
 			},
-			status
+			acousticStatus
 		),
 		acousticStatus,
 		element(
@@ -295,41 +304,43 @@ export function createMusicTools(options: MusicToolsOptions) {
 			"Use Internal clock. Establish the pulse with the existing tap control, then play clear claps or percussion. The follower adjusts tempo gradually and holds it during silence. Use headphones to avoid following the app’s own sound."
 		)
 	)
+	const projectHost =
+		group(document.getElementById("export-dialog"), "Portable project") ?? element("div")
+	const projectStatus = element("p")
+	projectStatus.setAttribute("role", "status")
+	projectHost.append(projectStatus)
 	const projects = mountProjectTools(
-		section(dialog, "Portable projects"),
+		projectHost,
 		{ ...options, getClip, setTempo: (bpm, swing) => options.setTempo(bpm, swing) },
-		status
+		projectStatus
 	)
-	const toolbar = document.getElementById("btn-settings")?.parentElement ?? document.body
-	const toolsButton = action(
-		"Music tools",
+	performance?.refresh()
+	document
+		.getElementById("btn-midi")
+		?.addEventListener(EVENT_CLICK, () => performance?.refresh(), { signal: abort.signal })
+	document.getElementById("settings-dialog")?.addEventListener(
+		EVENT_CLOSE,
 		() => {
-			chords.refresh()
-			groove.refresh()
-			partner.refresh()
-			dialog.showModal()
-			if ((diagnosticsHost.parentElement as HTMLDetailsElement).open) {
-				diagnostics.start()
+			diagnostics?.stop()
+		},
+		{ signal: abort.signal }
+	)
+	document.getElementById("midi-dialog")?.addEventListener(
+		EVENT_CLOSE,
+		() => {
+			options.midi.learning = null
+		},
+		{ signal: abort.signal }
+	)
+	document.getElementById("clock-source")?.addEventListener(
+		EVENT_CHANGE,
+		() => {
+			if (!options.canFollow()) {
+				follower.stop()
 			}
 		},
-		status
+		{ signal: abort.signal }
 	)
-	toolsButton.id = "btn-music-tools"
-	toolsButton.setAttribute("aria-controls", dialog.id)
-	toolsButton.setAttribute("aria-haspopup", "dialog")
-	const performButton = action(
-		"Performance",
-		() => {
-			performance.refresh()
-			performanceDialog.showModal()
-		},
-		performanceStatus
-	)
-	performButton.id = "btn-performance"
-	performButton.setAttribute("aria-controls", performanceDialog.id)
-	performButton.setAttribute("aria-haspopup", "dialog")
-	toolbar.append(toolsButton, performButton)
-	performance.refresh()
 	manager.addEventListener(
 		EVENT_WORKSPACE_RESTORED,
 		() => {
@@ -338,13 +349,8 @@ export function createMusicTools(options: MusicToolsOptions) {
 				capture = undefined
 			}
 			follower.stop()
-			stopAuditions()
-			performance.refresh()
-			if (dialog.open) {
-				chords.refresh()
-				groove.refresh()
-				partner.refresh()
-			}
+			performance?.refresh()
+			bindNodes()
 		},
 		{ signal: abort.signal }
 	)
@@ -355,7 +361,6 @@ export function createMusicTools(options: MusicToolsOptions) {
 				return
 			}
 			follower.stop()
-			stopAuditions()
 			if (capture) {
 				capture.reject(new Error("Capture cancelled while the app is hidden"))
 				capture = undefined
@@ -371,46 +376,23 @@ export function createMusicTools(options: MusicToolsOptions) {
 					capture.reject(new Error("Capture cancelled because transport stopped"))
 					capture = undefined
 				}
-				stopAuditions()
 			}
-		},
-		{ signal: abort.signal }
-	)
-	dialog.addEventListener(
-		EVENT_CLOSE,
-		() => {
-			diagnostics.stop()
-			stopAuditions()
-			if (capture) {
-				capture.reject(new Error("Capture cancelled"))
-				capture = undefined
-			}
-			follower.stop()
-		},
-		{ signal: abort.signal }
-	)
-	performanceDialog.addEventListener(
-		EVENT_CLOSE,
-		() => {
-			options.midi.learning = null
 		},
 		{ signal: abort.signal }
 	)
 	const destroy = () => {
 		abort.abort()
-		diagnostics.stop()
-		performance.destroy()
+		diagnostics?.stop()
+		performance?.destroy()
 		projects.destroy()
 		follower.stop()
-		stopAuditions()
 		if (capture) {
 			capture.reject(new Error("Session closed"))
 		}
 		capture = undefined
-		dialog.remove()
-		performanceDialog.remove()
-		toolsButton.remove()
-		performButton.remove()
+		mounts.forEach((mount) => mount.remove())
+		bindings.forEach((release) => release())
+		bindings.clear()
 	}
 	window.addEventListener(EVENT_PAGE_HIDE, destroy, { once: true, signal: abort.signal })
 	return {
@@ -425,7 +407,7 @@ export function createMusicTools(options: MusicToolsOptions) {
 				}
 				if (beat >= capture.startBeat && capture.start === undefined) {
 					capture.start = options.getNow()
-					status.textContent = "Capturing this bar…"
+					capture.status.textContent = "Capturing this bar…"
 				}
 				if (beat >= capture.endBeat) {
 					const done = capture

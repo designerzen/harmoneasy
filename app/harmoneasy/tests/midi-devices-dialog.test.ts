@@ -63,6 +63,7 @@ beforeEach(() => {
 	const page = new DOMParser().parseFromString(markup, "text/html")
 	document.body.replaceChildren(
 		page.querySelector("#action-bar")!.cloneNode(true),
+		page.querySelector("#midi-dialog")!.cloneNode(true),
 		page.querySelector("#midi-devices-dialog")!.cloneNode(true)
 	)
 	mock.service.inputs = [port("Keys <b>")]
@@ -76,7 +77,9 @@ afterEach(() => {
 	document.body.replaceChildren()
 })
 
-it("opens from the top menu and updates connected inputs, outputs, channel and port statuses while visible", () => {
+it("opens from the global MIDI menu and updates connected inputs, outputs, channel and port statuses while visible", () => {
+	expect(document.querySelector("#action-bar #btn-midi")).not.toBeNull()
+	expect(document.querySelector("#midi-dialog #btn-midi-devices")).not.toBeNull()
 	button().click()
 	expect(dialog().open).toBe(true)
 	expect(rows().children).toHaveLength(2)

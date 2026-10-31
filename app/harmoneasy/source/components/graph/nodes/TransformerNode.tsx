@@ -7,6 +7,7 @@ import { ElementIcon } from "../ElementIcon"
 import { NodeHeader } from "../NodeHeader"
 import { TransformerDialog } from "../GraphDialogs"
 import { MinimiseButton } from "../MinimiseButton"
+import { DeviceGui } from "../DeviceGui"
 
 function TransformerStatus({ element }: { element: { status: string; statusState?: string } }) {
 	const readStatus = () => ({ text: element.status, state: element.statusState ?? "idle" })
@@ -210,6 +211,9 @@ export function TransformerNode(props: any) {
 				element={props.data.element}
 				expanded={isFullscreen}
 			/>
+			{props.data.element.createGui && (
+				<DeviceGui device={props.data.element} expanded={isFullscreen} />
+			)}
 
 			{!isFullscreen && (
 				<Handle type="source" position={isVertical ? Position.Bottom : Position.Right} />

@@ -21,7 +21,7 @@ import { startKnownMidiInputs } from "audiobus/midi/hardware/known-midi-inputs"
 import { showMidiDeviceDisconnected } from "./services/midi-device-errors"
 import { createMidiDevicesDialog } from "./services/midi-devices-dialog"
 import { createRecordingControls } from "./services/recording-dialog"
-import { createMusicTools } from "./services/music-tools-panel"
+import { createMusicalFeatureControls } from "./services/musical-feature-controls"
 import { createClockSourceControls } from "./services/clock-source-controls"
 import { createMediaImporter } from "./services/media-import"
 import { isClockSource, clockMidiPorts, type ClockSourceController } from "./services/clock-source"
@@ -98,7 +98,7 @@ let metronome: OutputMetronome | null = null
 let metronomeEnabled = false
 let netronomeLink: ReturnType<typeof createNetronomeLink> | undefined
 let clockSource: ClockSourceController | undefined
-let musicTools: ReturnType<typeof createMusicTools> | undefined
+let musicalFeatureControls: ReturnType<typeof createMusicalFeatureControls> | undefined
 
 /**
  * Universal import handler - routes to appropriate importer based on file type
@@ -566,7 +566,6 @@ const initialiseApplication = async (
 	ioManager.addEventListener("chainActiveChanged", persistIOState)
 
 	const { createGraph } = await import("./components/transformers-graph")
-	createGraph("graph", ioManager)
 	createMidiDevicesDialog()
 	const midiControls = createMidiControlPanel(
 		ioManager,
@@ -626,7 +625,7 @@ const initialiseApplication = async (
 	)
 	await netronomeLink.initialize()
 	ui.setPlaying(ioManager.transportRunning)
-	musicTools = createMusicTools({
+	musicalFeatureControls = createMusicalFeatureControls({
 		manager: ioManager,
 		context: bus.audioContext,
 		master: bus.output,
@@ -651,6 +650,8 @@ const initialiseApplication = async (
 		},
 		persistMidi: (value) => state.set("midiControls", value)
 	})
+
+	createGraph("graph", ioManager)
 
 	// Update UI - this will check all the inputs according to our state
 	state.updateFrontEnd()
@@ -696,7 +697,7 @@ const onTick = (values: Record<string, any>) => {
 			values.scheduledContextTimeSeconds
 		)
 	}
-	musicTools?.tick(barsElapsed * bars + bar + divisionsElapsed / timer.divisions)
+	musicalFeatureControls?.tick(barsElapsed * bars + bar + divisionsElapsed / timer.divisions)
 	const capturedEvents = ioManager.updateTime(now, divisionsElapsed, options)
 	if (capturedEvents.length) {
 		recorder.addEvents(capturedEvents)

@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from "vitest"
 import React, { act } from "react"
+import { EVENT_INPUT, EVENT_CLOSE } from "audiobus/event-constants"
 import { createRoot } from "react-dom/client"
 import { MidiControls, scaleMidiValue } from "../source/services/midi-controls"
 import { createMidiControlPanel, domMidiTargets } from "../source/services/midi-control-panel"
@@ -239,6 +240,72 @@ describe("MIDI control routing and persistence", () => {
 		expect(apply).toHaveBeenCalledWith("enabled", expect.anything())
 		createMidiControlPanel(manager, saved, vi.fn())
 		expect(manager.controlChangeHandler!(cc(0))).toBe(true)
+		manager.destroy()
+	})
+})
+
+describe("global MIDI assignment editor", () => {
+	function panel() {
+		const { manager } = workspace()
+		document.body.innerHTML = `<menu><button id="btn-midi">MIDI</button></menu>
+		<dialog id="midi-dialog"><div id="midi-control-settings"></div>
+		<section data-midi-scope="performance-macro-0" data-midi-label="Global / Group">
+		<label>Grouped parameters<input type="range" data-midi-control="value"></label></section></dialog>
+		<input id="volume" type="range" min="0" max="100" value="50">
+		<input id="tempo" type="range" min="20" max="300" value="120">`
+		const persist = vi.fn()
+		const controls = createMidiControlPanel(manager, JSON.stringify({ bindings: [] }), persist)
+		const get = <T extends HTMLElement>(role: string) =>
+			document.querySelector<T>(`[data-role="${role}"]`)!
+		return { manager, persist, controls, get }
+	}
+	it("retargets a learned CC without losing its device or channel, persists it, and routes only to the new control", () => {
+		const { manager, persist, controls, get } = panel()
+		get<HTMLSelectElement>("target").value = "app:volume"
+		get<HTMLButtonElement>("learn").click()
+		expect(get("status").textContent).toContain("volume")
+		controls.handle(cc(127, { channel: 3, from: "keyboard" }))
+		expect((document.getElementById("volume") as HTMLInputElement).value).toBe("50")
+		get<HTMLSelectElement>("binding-target").value = "app:tempo"
+		get<HTMLButtonElement>("binding-save").click()
+		expect(controls.bindings).toEqual([
+			{ target: "app:tempo", cc: 20, channel: 3, source: "keyboard" }
+		])
+		expect(JSON.parse(persist.mock.calls.at(-1)![0]).bindings).toEqual(controls.bindings)
+		expect(controls.handle(cc(127, { channel: 3, from: "other" }))).toBe(false)
+		controls.handle(cc(127, { channel: 3, from: "keyboard" }))
+		expect((document.getElementById("tempo") as HTMLInputElement).value).toBe("300")
+		expect((document.getElementById("volume") as HTMLInputElement).value).toBe("50")
+		manager.destroy()
+	})
+	it("searches controls, includes grouped controls, and cancels learning on MIDI menu close", () => {
+		const { manager, controls, get } = panel()
+		expect(
+			[...get<HTMLSelectElement>("target").options].some(
+				(option) => option.value === "performance-macro-0:INPUT:value"
+			)
+		).toBe(true)
+		get<HTMLInputElement>("search").value = "tempo"
+		get("search").dispatchEvent(new Event(EVENT_INPUT))
+		expect([...get<HTMLSelectElement>("target").options].map((option) => option.value)).toEqual(
+			["app:tempo"]
+		)
+		get<HTMLButtonElement>("learn").click()
+		expect(controls.learning).toBe("app:tempo")
+		document.getElementById("midi-dialog")!.dispatchEvent(new Event(EVENT_CLOSE))
+		expect(controls.learning).toBeNull()
+		expect(controls.handle(cc(127))).toBe(false)
+		manager.destroy()
+	})
+	it("rejects retargeting onto another assignment without destroying either mapping", () => {
+		const { manager, controls } = panel()
+		controls.assign({ target: "app:volume", cc: 7, channel: 1, source: "" })
+		controls.assign({ target: "app:tempo", cc: 20, channel: 2, source: "" })
+		const before = controls.bindings.map((binding) => ({ ...binding }))
+		expect(() => controls.replace("app:volume", { ...before[0], target: "app:tempo" })).toThrow(
+			"already has an assignment"
+		)
+		expect(controls.bindings).toEqual(before)
 		manager.destroy()
 	})
 })

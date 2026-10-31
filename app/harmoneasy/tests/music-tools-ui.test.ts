@@ -1,5 +1,8 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from "vitest"
+import InputEventLoop from "../../../packages/audiobus/io/inputs/input-event-loop"
+import InputScaleExplorer from "../../../packages/audiobus/io/inputs/input-scale-explorer"
+import { defineDevice } from "../../../packages/audiobus/io/device-definition"
 import IOChain from "../../../packages/audiobus/io/IO-chain"
 import IOChainManager from "../../../packages/audiobus/io/IO-chain-manager"
 import AbstractInput from "../../../packages/audiobus/io/inputs/abstract-input"
@@ -10,13 +13,15 @@ import { TransformerProbabilityGate } from "../../../packages/audiobus/io/transf
 import {
 	EVENT_INPUT,
 	EVENT_CHANGE,
-	EVENT_SIGNAL_ACTIVITY,
 	EVENT_WORKSPACE_RESTORED
 } from "../../../packages/audiobus/event-constants"
 import { EVENT_PROCESSOR_ACTIVITY } from "../../../packages/audiobus/event-constants"
 import { NOTE_ON, NOTE_OFF, INPUT_EVENT } from "../../../packages/audiobus/commands"
 import { musicalCommand } from "../../../packages/audiobus/io/event-clip"
-import { createMusicTools, capturedClip } from "../source/services/music-tools-panel"
+import {
+	createMusicalFeatureControls,
+	capturedClip
+} from "../source/services/musical-feature-controls"
 import { macroTargets, mountPerformanceControls } from "../source/services/performance-tools"
 import { MidiControls } from "../source/services/midi-controls"
 import { domMidiTargets } from "../source/services/midi-control-panel"
@@ -38,7 +43,7 @@ class Input extends AbstractInput {
 }
 function setup() {
 	document.body.innerHTML =
-		'<nav><button id="btn-settings">Settings</button></nav><input id="volume" type="range" min="0" max="100" value="50"><input id="tempo" type="range" min="20" max="303" value="120"><input id="swing" type="range" min="0" max="1" step="0.01" value="0">'
+		'<nav><button id="btn-settings">Settings</button><button id="btn-midi">MIDI</button></nav><dialog id="settings-dialog"><form id="settings-form"></form></dialog><dialog id="midi-dialog"><div id="midi-control-settings"></div><div id="midi-macro-controls"></div></dialog><div id="clock-controls"><select id="clock-source"></select></div><dialog id="export-dialog"></dialog><input id="volume" type="range" min="0" max="100" value="50"><input id="tempo" type="range" min="20" max="303" value="120"><input id="swing" type="range" min="0" max="1" step="0.01" value="0">'
 	const timer = {
 		now: 0,
 		BPM: 120,
@@ -97,7 +102,7 @@ const settle = async () => {
 	await Promise.resolve()
 }
 
-describe("music tools UI integration", () => {
+describe("contextual musical controls", () => {
 	it("identifies the processor suppressing commands and disables tracing when closed", async () => {
 		const s = setup()
 		const gate = new TransformerProbabilityGate({ chance: 0 })
@@ -119,10 +124,10 @@ describe("music tools UI integration", () => {
 		)
 		expect(trace).toHaveBeenCalledOnce()
 	})
-	it("mounts discoverable dialogs, follows chords, and tears down diagnostic subscriptions", async () => {
+	it("uses transformer controls to change audible notes without adding toolbar dialogs", async () => {
 		vi.useFakeTimers()
 		const s = setup()
-		const tools = createMusicTools({
+		const tools = createMusicalFeatureControls({
 			...s,
 			recorder: new AudioEventRecorder(),
 			recording: {} as any,
@@ -135,40 +140,47 @@ describe("music tools UI integration", () => {
 			persistMidi: vi.fn()
 		})
 		cleanups.push(tools.destroy)
-		button("Music tools").click()
-		await settle()
-		const dialog = document.getElementById("music-tools-dialog") as HTMLDialogElement
-		expect(dialog.open).toBe(true)
-		const section = [...dialog.querySelectorAll("details")].find(
-			(detail) => detail.querySelector("summary")?.textContent === "Sound diagnostics"
-		)!
-		section.open = true
-		section.dispatchEvent(new Event("toggle"))
-		await settle()
-		expect(s.chain.diagnosticsEnabled).toBe(true)
-		const control = [...dialog.querySelectorAll("label")]
-			.find((label) => label.textContent?.startsWith(s.chain.options.name!))!
+		expect(
+			document.querySelector(
+				"#btn-music-tools, #btn-performance, #music-tools-dialog, #performance-dialog"
+			)
+		).toBeNull()
+		expect(document.querySelectorAll("#midi-dialog .performance-macro")).toHaveLength(4)
+		expect(
+			domMidiTargets(document).some(
+				(target) => target.id === "performance-macro-0:INPUT:value"
+			)
+		).toBe(true)
+		const track = new TransformerChordTrack({ role: "chords" })
+		s.chain.appendTransformer(track)
+		const gui = await track.createGui()
+		document.body.append(gui)
+		const root = [...gui.querySelectorAll("label")]
+			.find((label) => label.textContent?.startsWith("Root"))!
 			.querySelector("select")!
-		control.value = "melody"
-		control.dispatchEvent(new Event(EVENT_CHANGE))
-		expect(s.chain.transformers[0]).toBeInstanceOf(TransformerChordTrack)
-		tools.tick(4)
-		expect((s.chain.transformers[0] as TransformerChordTrack).beat).toBe(4)
-		s.chain.dispatchEvent(
-			new CustomEvent(EVENT_SIGNAL_ACTIVITY, {
-				detail: { stage: "input", count: 2, at: 100, detail: "" }
-			})
+		root.value = "2"
+		root.dispatchEvent(new Event(EVENT_CHANGE))
+		expect(s.manager.musicTools.progression[0]).toMatchObject({ root: 2, mask: 580 })
+		tools.tick(0)
+		await s.chain.addCommandToQueue(
+			musicalCommand({ type: NOTE_ON, number: 60, velocity: 100, channel: 1, startAt: 0 })
 		)
-		vi.advanceTimersByTime(501)
-		expect(section.textContent).toContain("Input 2")
-		dialog.close()
-		await settle()
+		await s.chain.triggerAudioCommandsOnDevice(s.chain.updateTimeForCommandQueue(0, 0, {}))
+		expect(s.sink.sendCommand.mock.calls.map(([command]) => command.number)).toEqual([
+			62, 66, 69
+		])
+		const details = [...document.querySelectorAll("#settings-form details")].find(
+			(item) => item.querySelector("summary")?.textContent === "Sound diagnostics"
+		)! as HTMLDetailsElement
+		details.open = true
+		details.dispatchEvent(new Event("toggle"))
+		expect(s.chain.diagnosticsEnabled).toBe(true)
+		document.getElementById("settings-dialog")!.dispatchEvent(new Event("close"))
 		expect(s.chain.diagnosticsEnabled).toBe(false)
-		expect(s.master.disconnect).toHaveBeenCalled()
 	})
 	it("captures the next bar, retains releases and saves a usable groove", async () => {
 		const s = setup()
-		const tools = createMusicTools({
+		const tools = createMusicalFeatureControls({
 			...s,
 			recorder: new AudioEventRecorder(),
 			recording: {} as any,
@@ -181,8 +193,9 @@ describe("music tools UI integration", () => {
 			persistMidi: vi.fn()
 		})
 		cleanups.push(tools.destroy)
-		button("Music tools").click()
-		await settle()
+		const loop = defineDevice(new InputEventLoop(), { factory: "input", type: "event-loop" })
+		s.manager.addDevice(s.chain, loop, "input")
+		document.body.append(await loop.createGui())
 		tools.tick(0)
 		button("Capture next bar as groove").click()
 		await settle()
@@ -218,7 +231,7 @@ describe("music tools UI integration", () => {
 	})
 	it("cancels a pending capture when the workspace is replaced", async () => {
 		const s = setup()
-		const tools = createMusicTools({
+		const tools = createMusicalFeatureControls({
 			...s,
 			recorder: new AudioEventRecorder(),
 			recording: {} as any,
@@ -231,15 +244,116 @@ describe("music tools UI integration", () => {
 			persistMidi: vi.fn()
 		})
 		cleanups.push(tools.destroy)
-		button("Music tools").click()
-		await settle()
+		const loop = defineDevice(new InputEventLoop(), { factory: "input", type: "event-loop" })
+		s.manager.addDevice(s.chain, loop, "input")
+		document.body.append(await loop.createGui())
 		button("Capture next bar as groove").click()
 		await settle()
 		s.manager.dispatchEvent(new Event(EVENT_WORKSPACE_RESTORED))
 		await settle()
-		expect(document.getElementById("music-tools-dialog")!.textContent).toContain(
+		expect(document.body.textContent).toContain(
 			"Capture cancelled because the workspace changed"
 		)
+	})
+	it("applies groove timing to the Event Loop input and plays the edited notes through its output", async () => {
+		const s = setup()
+		const tools = createMusicalFeatureControls({
+			...s,
+			recorder: new AudioEventRecorder(),
+			recording: {} as any,
+			getBpm: () => 120,
+			getSwing: () => 0,
+			getNow: () => s.timer.now,
+			beatsPerBar: () => 4,
+			setTempo: vi.fn(),
+			canFollow: () => true,
+			persistMidi: vi.fn()
+		})
+		cleanups.push(tools.destroy)
+		const loop = defineDevice(
+			new InputEventLoop({
+				duration: 1,
+				commands: [
+					musicalCommand({
+						type: NOTE_ON,
+						number: 64,
+						channel: 1,
+						velocity: 100,
+						startAt: 0
+					}),
+					musicalCommand({
+						type: NOTE_OFF,
+						number: 64,
+						channel: 1,
+						velocity: 0,
+						startAt: 0.2
+					})
+				]
+			}),
+			{ factory: "input", type: "event-loop" }
+		)
+		s.manager.addDevice(s.chain, loop, "input")
+		const state = s.manager.musicTools
+		state.grooves = [
+			{ name: "Late and soft", division: 0.25, offsets: [0.1], velocities: [50] }
+		]
+		s.manager.setMusicTools(state)
+		const gui = await loop.createGui()
+		document.body.append(gui)
+		button("Apply groove to this loop", gui).click()
+		await settle()
+		expect(loop.options.commands[0]).toMatchObject({ startAt: 0.05, velocity: 50 })
+		expect(loop.options.commands[1].startAt).toBeCloseTo(0.25)
+		loop.startClock()
+		loop.updateTime(0)
+		s.timer.now = 0.05
+		loop.updateTime(0.05)
+		await settle()
+		await s.chain.triggerAudioCommandsOnDevice(s.chain.updateTimeForCommandQueue(0.05, 0, {}))
+		expect(s.sink.sendCommand).toHaveBeenCalledWith(
+			expect.objectContaining({ type: NOTE_ON, number: 64, velocity: 50 })
+		)
+	})
+	it("auditions routes through the owning Scale Explorer chain even when another chain is active", async () => {
+		const s = setup()
+		const tools = createMusicalFeatureControls({
+			...s,
+			recorder: new AudioEventRecorder(),
+			recording: {} as any,
+			getBpm: () => 120,
+			getSwing: () => 0,
+			getNow: () => s.timer.now,
+			beatsPerBar: () => 4,
+			setTempo: vi.fn(),
+			canFollow: () => true,
+			persistMidi: vi.fn()
+		})
+		cleanups.push(tools.destroy)
+		const explorer = defineDevice(
+			new InputScaleExplorer({ ...s.manager.deviceOptions, source: "custom", mask: 145 }),
+			{
+				factory: "input",
+				type: "scale-explorer"
+			}
+		)
+		s.manager.addDevice(s.chain, explorer, "input")
+		s.manager.setActiveChain(s.manager.createEmptyChain())
+		const gui = await explorer.createGui()
+		document.body.append(gui)
+		button("Find musical routes", gui).click()
+		await settle()
+		button("Audition", gui).click()
+		await settle()
+		await s.chain.triggerAudioCommandsOnDevice(s.chain.updateTimeForCommandQueue(1, 0, {}))
+		expect(
+			s.sink.sendCommand.mock.calls
+				.filter(([command]) => command.type === NOTE_ON)
+				.map(([command]) => command.number)
+		).toEqual([60, 64, 67])
+		button("Use as chord progression", gui).click()
+		await settle()
+		expect(s.manager.musicTools.progression[0].mask).toBe(145)
+		expect(s.manager.musicTools.progression.at(-1)!.mask).toBe(529)
 	})
 	it("normalizes recorded events and closes held notes at the end", () => {
 		const clip = capturedClip([
