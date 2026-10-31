@@ -18,7 +18,7 @@ import {
 	updatePreset,
 	writeLibrary
 } from "./saved-presets"
-import { element, button, option } from "./dom"
+import { element, button, option, searchReset } from "./dom"
 
 export interface PresetBrowserOptions {
 	manager?: IOChainManager
@@ -111,7 +111,7 @@ export function createPresetBrowser({
 		}
 	}
 	if (createChain && !startup) {
-		toolbar.append(
+		header.append(
 			button(
 				"Create blank chain",
 				() =>
@@ -128,11 +128,12 @@ export function createPresetBrowser({
 			)
 		)
 	}
-	const searchLabel = element("label", "preset-search")
+	const searchLabel = element("div", "preset-search")
 	const search = element("input")
 	search.type = "search"
 	search.placeholder = "Search sounds, moods or ideas…"
 	search.autofocus = startup
+	search.setAttribute("aria-label", "Search presets")
 	searchLabel.append(element("span", "sr-only", "Search presets"), search)
 	const makeFilter = (name: string, all: string) => {
 		const label = element("label", "preset-filter")
@@ -151,17 +152,32 @@ export function createPresetBrowser({
 		genre.append(option(context.name.replace(/^Write /, ""), context.id))
 	}
 	search.oninput = () => render()
-	toolbar.append(
-		button("Clear filters", () => {
-			search.value = category.value = genre.value = transformer.value = ""
-			render()
-			search.focus()
-		})
-	)
+	const updateReset = searchReset(searchLabel, search, () => {
+		search.value = category.value = genre.value = transformer.value = ""
+		render()
+	})
 	const resultCount = element("p", "preset-library-note")
 	resultCount.setAttribute("role", "status")
-	const tools = element("details", "preset-library-tools")
-	tools.append(element("summary", "", "Library options"))
+	const tools = element("dialog", "preset-library-dialog")
+	const toolsTitle = element("h2", "", "Library options")
+	toolsTitle.id = `library-title-${crypto.randomUUID()}`
+	tools.setAttribute("aria-labelledby", toolsTitle.id)
+	const toolsHeader = element("header")
+	const dismissTools = button("Close", () => tools.close())
+	dismissTools.setAttribute("aria-label", "Close library options")
+	toolsHeader.append(toolsTitle, dismissTools)
+	const openTools = button("Library options", () => tools.showModal(), "preset-library-trigger")
+	openTools.setAttribute("aria-haspopup", "dialog")
+	tools.addEventListener("close", () => {
+		if (!destroyed && openTools.isConnected) {
+			openTools.focus()
+		}
+	})
+	dialog?.addEventListener("close", () => {
+		if (tools.open) {
+			tools.close()
+		}
+	})
 	const toolActions = element("div", "preset-library-actions")
 	const fileInput = element("input", "sr-only")
 	fileInput.type = "file"
@@ -233,6 +249,7 @@ export function createPresetBrowser({
 				steps: []
 			}
 			editor = { kind: "presets", id: item.id, json: JSON.stringify(item, null, 2) }
+			tools.close()
 			message = ""
 			render()
 		})
@@ -256,15 +273,20 @@ export function createPresetBrowser({
 		})
 	)
 	toolActions.append(undoButton)
-	tools.append(
+	const libraryStatus = element("p", "preset-library-note")
+	libraryStatus.setAttribute("role", "status")
+	const toolsBody = element("div", "preset-library-body")
+	toolsBody.append(
 		toolActions,
+		saveForm,
+		libraryStatus,
 		element(
 			"p",
 			"preset-library-note",
 			"Saved in this browser. Export your library to keep a portable copy; imports are added to your existing presets."
 		)
 	)
-	toolbar.append(tools)
+	tools.append(toolsHeader, toolsBody)
 	const status = element("p", "preset-library-note")
 	status.setAttribute("role", "status")
 	const content = element("div", "preset-browser-content")
@@ -272,7 +294,9 @@ export function createPresetBrowser({
 	nav.setAttribute("aria-label", "Preset sections")
 	const preview = element("div", "preset-preview")
 	content.append(nav, preview)
-	scroll.append(toolbar, saveForm, status, resultCount, content)
+	const meta = element("div", "preset-browser-meta")
+	meta.append(resultCount, openTools)
+	scroll.append(toolbar, status, meta, content)
 	const footer = element("footer", "preset-apply-bar")
 	const applyText = element("p")
 	const apply = button(
@@ -310,6 +334,7 @@ export function createPresetBrowser({
 		}
 		document.body.append(dialog)
 	}
+	document.body.append(tools)
 	function selected() {
 		const presets = completePresets(library.presets)
 		const setup = library.setups.find((item) => `setup:${item.id}` === selection)
@@ -322,6 +347,7 @@ export function createPresetBrowser({
 		}
 	}
 	function render() {
+		updateReset(Boolean(search.value || category.value || genre.value || transformer.value))
 		const { presets, preset, setup } = selected()
 		const categories = [...new Set(presets.map((item) => item.category))]
 		const values = [
@@ -622,6 +648,8 @@ export function createPresetBrowser({
 		}
 		status.textContent = storageError || message
 		status.hidden = !status.textContent
+		libraryStatus.textContent = status.textContent
+		libraryStatus.hidden = status.hidden
 		undoButton.hidden = !undo
 		for (const node of toolActions.querySelectorAll("button")) {
 			node.disabled = busy || !!storageError
@@ -668,6 +696,7 @@ export function createPresetBrowser({
 			destroyed = true
 			window.removeEventListener(EVENT_PRESET_LIBRARY_UPDATED, refresh)
 			window.removeEventListener(EVENT_STORAGE, refresh)
+			tools.remove()
 			dialog?.remove()
 			host.remove()
 		}

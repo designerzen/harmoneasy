@@ -5,7 +5,7 @@ import { elementDescription, elementIcon } from "./element-icons"
 import type { Transformer } from "audiobus/io/transformers/abstract-transformer"
 import { tranformerFactory, TRANSFORMERS } from "audiobus/io/transformer-factory"
 import type { ChainUIContext } from "./chain-ui-context"
-import { element, button, icon } from "./dom"
+import { element, button, icon, searchReset } from "./dom"
 
 export function createTransformerPicker(
 	{ chain }: ChainUIContext,
@@ -24,10 +24,7 @@ export function createTransformerPicker(
 	error.setAttribute("role", "alert")
 	error.hidden = true
 	const row = element("div", "picker-filter-row")
-	const searchLabel = element(
-		"label",
-		dialog ? "dialog-filter" : "filter-label filter-transformer"
-	)
+	const searchLabel = element("div", dialog ? "dialog-filter" : "filter-label filter-transformer")
 	const search = element("input", dialog ? "filter-input-global" : "")
 	search.type = "search"
 	search.placeholder = "Search transformers…"
@@ -48,15 +45,11 @@ export function createTransformerPicker(
 			render()
 		}
 	})
-	row.append(
-		searchLabel,
-		filter.element,
-		button("Clear filters", () => {
-			search.value = ""
-			filter.clear()
-			search.focus()
-		})
-	)
+	const updateReset = searchReset(searchLabel, search, () => {
+		search.value = ""
+		filter.clear()
+	})
+	row.append(searchLabel, filter.element)
 	const results = element("div")
 	host.append(error, row, results)
 	const onAdd = (transformerType: string) => () => {
@@ -87,6 +80,7 @@ export function createTransformerPicker(
 	}
 
 	function render() {
+		updateReset(Boolean(search.value || classification))
 		results.replaceChildren()
 		const filtered = choices.filter((choice) =>
 			choiceMatches(choice, search.value, classification)

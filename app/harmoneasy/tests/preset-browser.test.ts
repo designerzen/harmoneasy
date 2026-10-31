@@ -117,7 +117,7 @@ it("illustrates every preset, filters by intent and keeps Apply outside the scro
 	const scroll = document.querySelector(".preset-browser-scroll")!
 	const apply = document.querySelector<HTMLButtonElement>(".preset-apply-button")!
 	expect(scroll.contains(apply)).toBe(false)
-	expect(document.querySelector<HTMLDetailsElement>(".preset-library-tools")!.open).toBe(false)
+	expect(document.querySelector<HTMLDialogElement>(".preset-library-dialog")!.open).toBe(false)
 	const search = document.querySelector<HTMLInputElement>(".preset-search input")!
 	runUI(() => {
 		search.value = "triplet"
@@ -216,13 +216,17 @@ it("persists new presets and deletions, supports undo, and downloads the selecte
 			expect(button).toBeTruthy()
 			button.click()
 		})
+	click("Apply a preset…")
+	click("Library options")
 	click("New preset")
 	runUI(() => document.querySelector<HTMLFormElement>(".preset-editor")!.requestSubmit())
 	expect(document.querySelector(".preset-details h3")?.textContent).toBe("New preset")
 	expect(document.querySelector("nav")?.textContent).toContain("My presets")
 	click("Delete preset")
 	expect(document.querySelector(".preset-details h3")?.textContent).not.toBe("New preset")
+	click("Library options")
 	click("Undo delete")
+	document.querySelector<HTMLButtonElement>('[aria-label="Close library options"]')!.click()
 	runUI(() =>
 		[...document.querySelectorAll<HTMLButtonElement>("nav button")]
 			.find(
@@ -308,7 +312,45 @@ it("finds presets by misspelled transformer names and combines transformer and c
 	expect(document.querySelectorAll("nav button")).toHaveLength(1)
 	expect(document.querySelector("nav")!.textContent).toContain("Pentatonic Shadow")
 	;[...document.querySelectorAll<HTMLButtonElement>("button")]
-		.find((node) => node.textContent === "Clear filters")!
+		.find((node) => node.getAttribute("aria-label") === "Clear filters")!
 		.click()
 	expect(document.querySelectorAll("nav button")).toHaveLength(completePresets([]).length)
+})
+
+it("keeps reset inside search and opens library management without changing the browser layout", () => {
+	vi.stubGlobal("localStorage", { getItem: () => null })
+	root = createPresetBrowser({ onApply: vi.fn(), startup: true })
+	document.body.append(root.element)
+	const toolbar = root.element.querySelector(".preset-browser-toolbar")!
+	const search = toolbar.querySelector<HTMLInputElement>('input[type="search"]')!
+	const reset = toolbar.querySelector<HTMLButtonElement>(
+		'.search-field [aria-label="Clear filters"]'
+	)!
+	expect(reset.hidden).toBe(true)
+	expect(toolbar.querySelector(":scope > button")).toBeNull()
+	expect(toolbar.children).toHaveLength(4)
+	search.value = "shadow"
+	search.dispatchEvent(new Event("input"))
+	expect(reset.hidden).toBe(false)
+	const itemsBefore = root.element.querySelector("nav")!.textContent
+	const libraryDialog = document.querySelector<HTMLDialogElement>(".preset-library-dialog")!
+	const open = root.element.querySelector<HTMLButtonElement>(".preset-library-trigger")!
+	expect(open.getAttribute("aria-haspopup")).toBe("dialog")
+	expect(root.element.contains(libraryDialog)).toBe(false)
+	open.click()
+	expect(libraryDialog.open).toBe(true)
+	expect(libraryDialog.querySelector(".preset-library-actions")?.textContent).toContain(
+		"Import JSON file"
+	)
+	expect(toolbar.children).toHaveLength(4)
+	expect(root.element.querySelector("nav")!.textContent).toBe(itemsBefore)
+	libraryDialog.querySelector<HTMLButtonElement>('[aria-label="Close library options"]')!.click()
+	expect(libraryDialog.open).toBe(false)
+	reset.click()
+	expect(search.value).toBe("")
+	expect(reset.hidden).toBe(true)
+	expect(document.activeElement).toBe(search)
+	open.click()
+	root.destroy()
+	expect(document.querySelector(".preset-library-dialog")).toBeNull()
 })

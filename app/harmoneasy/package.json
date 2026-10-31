@@ -13,6 +13,7 @@
 		"install:electron": "pnpm approve-builds && npm run build-native",
 		"test": "vitest --config vite.config.web.js",
 		"osc:bridge": "node scripts/osc-bridge.cjs",
+		"harmony:bridge": "node scripts/harmony-bridge.cjs",
 		"type-check": "tsc --noEmit",
 		"dev": "node scripts/update-packages-config.js && vite --config vite.config.web.js",
 		"dev:electron": "node scripts/update-packages-config.js && concurrently \"npm run dev\" \"wait-on http://localhost:1999 && electron .\"",

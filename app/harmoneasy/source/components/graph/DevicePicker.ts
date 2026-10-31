@@ -27,7 +27,7 @@ import type { IAudioOutput } from "audiobus/io/outputs/output-interface"
 
 import type { ChainUIContext } from "./chain-ui-context"
 import { createSharedDevices } from "./SharedDevices"
-import { element, button, icon } from "./dom"
+import { element, button, icon, searchReset } from "./dom"
 
 type Choice = ClassifiedChoice & {
 	kind: "input" | "output" | "instrument"
@@ -64,7 +64,7 @@ export function createDevicePicker(
 		revision = 0
 	const host = element("div", "device-picker")
 	const row = element("div", "picker-filter-row")
-	const label = element("label", dialog ? "dialog-filter" : "filter-label")
+	const label = element("div", dialog ? "dialog-filter" : "filter-label")
 	const search = element("input", dialog ? "filter-input-global" : "")
 	search.type = "search"
 	search.autofocus = dialog
@@ -83,15 +83,11 @@ export function createDevicePicker(
 			render()
 		}
 	})
-	row.append(
-		label,
-		filter.element,
-		button("Clear filters", () => {
-			search.value = ""
-			filter.clear()
-			search.focus()
-		})
-	)
+	const updateReset = searchReset(label, search, () => {
+		search.value = ""
+		filter.clear()
+	})
+	row.append(label, filter.element)
 	;(filterHeader ?? host).append(row)
 	const results = element("div")
 	host.append(results)
@@ -190,6 +186,7 @@ export function createDevicePicker(
 		}
 	}
 	function render() {
+		updateReset(Boolean(search.value || classification))
 		if (destroyed) {
 			return
 		}

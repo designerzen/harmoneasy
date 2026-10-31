@@ -219,6 +219,7 @@ onMidiDeviceProfilesChanged(() => {
 })
 
 export const OUTPUT_GUIDANCE: Record<OutputId, Guidance> = {
+	"harmony-sampler": guide("Smp", "Play samples and loops in the shared harmony.", "Use eight granular emitters and a transport-synced sample timeline.", audio + " Load an audio sample; start transport for granular sustain and timeline playback."),
 	sion: guide(
 		"SiON",
 		"Play the SiON synthesizer.",

@@ -2,6 +2,7 @@ import { createRoomConnection, ROOM_PROTOCOL } from "./room-connection"
 import { RoomWorkspace } from "./room-workspace"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
 import { EVENT_CLICK, EVENT_PAGE_HIDE, EVENT_TRANSPORT_CHANGED } from "audiobus/event-constants"
+import { selectField } from "./music-tools-dom"
 import QRCode from "qrcode"
 import LZString from "lz-string"
 import type { ClockSource } from "./clock-source"
@@ -69,7 +70,15 @@ export function createNetronomeLink(
 	const regenerate = document.getElementById("netronome-regenerate") as HTMLButtonElement
 	const room = document.getElementById("netronome-room-name") as HTMLInputElement
 	const roomLink = document.getElementById("netronome-room-link") as HTMLTextAreaElement
+	const sharing = selectField(dialog, "Follow the room", [
+		{ name: "Whole workspace and notes", value: "workspace" },
+		{ name: "Harmony only — keep my instruments", value: "harmony" }
+	])
 	const initialInvitation = readRoomUrl(window.location.href)
+	const initialBundle = new URLSearchParams(window.location.hash.slice(1)).get("sync-bundle")
+	if (initialBundle) {
+		try { if (readSyncBundle(initialBundle).harmonyOnly === true) sharing.value = "harmony" } catch { /* Existing invitation validation reports malformed links. */ }
+	}
 	room.value = options.roomId ?? initialInvitation.roomId ?? crypto.randomUUID()
 	let controller: ReturnType<typeof createRoomConnection> | undefined
 	let workspace: RoomWorkspace | undefined
@@ -138,7 +147,7 @@ export function createNetronomeLink(
 		status.textContent = roomStatus
 	}
 	const captureSetup = (): RoomSetup | undefined =>
-		options.manager
+		options.manager && sharing.value !== "harmony"
 			? {
 					version: 1,
 					workspace: options.manager.exportWorkspace(),
@@ -191,7 +200,8 @@ export function createNetronomeLink(
 	const render = async (bundle: unknown, current = controller) => {
 		const offer =
 			(bundle as { description?: RTCSessionDescriptionInit })?.description?.type === "offer"
-		const url = createSyncUrl(bundle, window.location.href, offer ? captureSetup() : undefined)
+		const tagged = { ...(bundle as object), harmonyOnly: sharing.value === "harmony" }
+		const url = createSyncUrl(tagged, window.location.href, offer ? captureSetup() : undefined)
 		local.value = url
 		if (controller?.roomId) {
 			room.value = controller.roomId
@@ -291,7 +301,8 @@ export function createNetronomeLink(
 				(message) => {
 					roomStatus = message
 					status.textContent = message
-				}
+				},
+				sharing.value === "harmony" ? "harmony" : "workspace"
 			)
 		}
 		current.onStateChange = (state: { connected: boolean; locked: boolean }) => {
@@ -305,6 +316,7 @@ export function createNetronomeLink(
 						: "Connected — synchronizing clock…")
 				: roomStatus || "Waiting for the other browser"
 			if (state.connected && !linked) {
+				sharing.disabled = true
 				linked = true
 				remote.value = ""
 				showStep("connected")
@@ -471,6 +483,7 @@ export function createNetronomeLink(
 				controller = undefined
 				await workspace?.destroy()
 				workspace = undefined
+				sharing.disabled = false
 				roomStatus = ""
 				linked = follower = false
 				await old?.destroy()

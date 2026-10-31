@@ -30,6 +30,7 @@ import { element, action, numberField, onChange } from "./music-tools-dom"
 import { TransformerChordTrack } from "audiobus/io/transformers/transformer-chord-track"
 import InputEventLoop from "audiobus/io/inputs/input-event-loop"
 import InputScaleExplorer from "audiobus/io/inputs/input-scale-explorer"
+import { mountHarmonyWorkspace } from "./harmony-workspace"
 
 export interface MusicalFeatureOptions {
 	manager: IOChainManager
@@ -89,6 +90,7 @@ function finishClip(commands: IAudioCommand[], duration: number): EventClip {
 export function createMusicalFeatureControls(options: MusicalFeatureOptions) {
 	const { manager, context, master } = options
 	const abort = new AbortController()
+	const harmonyWorkspace = mountHarmonyWorkspace(manager, context, options.getBpm, options.setTempo)
 	const status = element("p")
 	status.setAttribute("role", "status")
 	const mounts: HTMLElement[] = []
@@ -381,6 +383,7 @@ export function createMusicalFeatureControls(options: MusicalFeatureOptions) {
 		{ signal: abort.signal }
 	)
 	const destroy = () => {
+		harmonyWorkspace.destroy()
 		abort.abort()
 		diagnostics?.stop()
 		performance?.destroy()

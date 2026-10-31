@@ -34,3 +34,21 @@ export function option(text: string, value: string) {
 	node.value = value
 	return node
 }
+
+export function searchReset(container: HTMLElement, input: HTMLInputElement, reset: () => void) {
+	container.classList.add("search-field")
+	const clear = button(
+		"×",
+		() => {
+			reset()
+			input.focus()
+		},
+		"search-reset"
+	)
+	clear.setAttribute("aria-label", "Clear filters")
+	clear.title = "Clear search and filters"
+	container.append(clear)
+	return (active: boolean) => {
+		clear.hidden = !active
+	}
+}

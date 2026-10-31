@@ -636,7 +636,7 @@ it("discovers input categories from registry metadata and clears combined fuzzy 
 	expect(dialog.querySelector(".item-name")?.textContent).toBe("Keyboard")
 	await runUI(() =>
 		[...dialog.querySelectorAll<HTMLButtonElement>("button")]
-			.find((item) => item.textContent === "Clear filters")!
+			.find((item) => item.getAttribute("aria-label") === "Clear filters")!
 			.click()
 	)
 	expect(search.value).toBe("")

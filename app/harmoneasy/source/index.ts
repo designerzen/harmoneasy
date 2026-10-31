@@ -1,4 +1,5 @@
 import "./assets/style/index.scss"
+import "./assets/style/harmony.scss"
 
 // Polyfills : https://github.com/webrtc/adapter
 import "webrtc-adapter"
@@ -22,6 +23,7 @@ import { showMidiDeviceDisconnected } from "./services/midi-device-errors"
 import { createMidiDevicesDialog } from "./services/midi-devices-dialog"
 import { createRecordingControls } from "./services/recording-dialog"
 import { createMusicalFeatureControls } from "./services/musical-feature-controls"
+import { EVENT_HARMONY_CHANGED, EVENT_HARMONY_SETTINGS_CHANGED } from "audiobus/event-constants"
 import { createClockSourceControls } from "./services/clock-source-controls"
 import { createMediaImporter } from "./services/media-import"
 import { isClockSource, clockMidiPorts, type ClockSourceController } from "./services/clock-source"
@@ -563,6 +565,8 @@ const initialiseApplication = async (
 	}
 
 	ioManager.addEventListener("chainsUpdated", persistIOState)
+	ioManager.addEventListener(EVENT_HARMONY_CHANGED, persistIOState)
+	ioManager.addEventListener(EVENT_HARMONY_SETTINGS_CHANGED, persistIOState)
 	ioManager.addEventListener("chainActiveChanged", persistIOState)
 
 	const { createGraph } = await import("./components/transformers-graph")
