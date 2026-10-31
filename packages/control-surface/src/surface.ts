@@ -3,6 +3,8 @@ import { contactPressure } from "./pressure"
 import {
 	EVENT_ABORT,
 	EVENT_BLUR,
+	EVENT_FOCUS_IN,
+	EVENT_FOCUS_OUT,
 	EVENT_CHANGE,
 	EVENT_CLICK,
 	EVENT_CLOSE,
@@ -56,6 +58,8 @@ interface Gesture {
 export interface SurfaceOptions {
 	state: SurfaceState
 	bindings: ControlBinding[]
+	toolbarHost?: HTMLElement
+	addControls?: { label: string; action(): void }[]
 	change(state: SurfaceState): void
 	configurationChanged?(): void
 }
@@ -87,6 +91,7 @@ export class ControlSurface {
 	private xr?: { end(): Promise<void> }
 	private enteringXR = false
 	private vrButton: HTMLButtonElement
+	private toolbar = document.createElement("div")
 
 	constructor(private options: SurfaceOptions) {
 		this.element.className = "control-surface nodrag nopan nowheel"
@@ -98,13 +103,13 @@ export class ControlSurface {
 		this.stage.className = "cs-stage"
 		this.canvas.setAttribute("aria-hidden", "true")
 		this.stage.append(this.canvas)
-		const toolbar = document.createElement("div")
+		const toolbar = this.toolbar
 		toolbar.className = "cs-toolbar"
 		const name = document.createElement("input")
 		name.setAttribute("aria-label", "Surface name")
+		name.className = "cs-title"
 		name.maxLength = 100
 		name.value = options.state.name
-		name.hidden = true
 		name.addEventListener(
 			EVENT_CHANGE,
 			() => {
@@ -114,12 +119,25 @@ export class ControlSurface {
 					this.element.dataset.midiLabel = value
 					this.save()
 				}
+				name.value = options.state.name
+			},
+			{ signal: this.abort.signal }
+		)
+		name.addEventListener(
+			EVENT_KEY_DOWN,
+			(event) => {
+				if (event.key === "Enter") {
+					name.blur()
+				} else if (event.key === "Escape") {
+					event.stopPropagation()
+					name.value = options.state.name
+					name.blur()
+				}
 			},
 			{ signal: this.abort.signal }
 		)
 		const edit = this.button("Edit layout", () => {
 			this.editing = !this.editing
-			name.hidden = !this.editing
 			edit.textContent = this.editing ? "Perform" : "Edit layout"
 			edit.setAttribute("aria-pressed", String(this.editing))
 			this.rebuild()
@@ -144,16 +162,69 @@ export class ControlSurface {
 			{ signal: this.abort.signal }
 		)
 		this.vrButton = this.button("Enter VR", () => void this.enterXR())
-		toolbar.append(
-			edit,
-			name,
-			theme,
-			this.button("Add XY pad", () => this.addXY()),
-			this.vrButton
+		const settings = document.createElement("div")
+		settings.className = "cs-settings"
+		const menu = document.createElement("div")
+		menu.className = "cs-settings-menu"
+		menu.hidden = true
+		menu.id = `cs-settings-${crypto.randomUUID()}`
+		const toggle = this.button("", () => {
+			menu.hidden = !menu.hidden
+			toggle.setAttribute("aria-expanded", String(!menu.hidden))
+		})
+		toggle.title = "Surface settings"
+		toggle.setAttribute("aria-label", "Surface settings")
+		toggle.setAttribute("aria-expanded", "false")
+		toggle.setAttribute("aria-controls", menu.id)
+		toggle.innerHTML =
+			'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-1 3-3 1-2 3 2 2-1 3 3 2 3-1 2 2 3-1 1-3 3-1 1-3-2-2 1-3-3-2-3 1-2-1Z"/><circle cx="12" cy="10.5" r="3"/></svg>'
+		const closeMenu = () => {
+			menu.hidden = true
+			toggle.setAttribute("aria-expanded", "false")
+		}
+		for (const item of options.addControls ?? []) {
+			menu.append(
+				this.button(item.label, () => {
+					closeMenu()
+					item.action()
+				})
+			)
+		}
+		menu.append(
+			this.button("Add XY pad", () => {
+				closeMenu()
+				this.addXY()
+			})
 		)
+		const themeLabel = document.createElement("label")
+		themeLabel.append("Theme", theme)
+		menu.append(themeLabel)
+		settings.append(toggle, menu)
+		settings.addEventListener(
+			EVENT_KEY_DOWN,
+			(event) => {
+				if (event.key === "Escape" && !menu.hidden) {
+					event.stopPropagation()
+					closeMenu()
+					toggle.focus()
+				}
+			},
+			{ signal: this.abort.signal }
+		)
+		document.addEventListener(
+			EVENT_POINTER_DOWN,
+			(event) => {
+				if (!settings.contains(event.target as Node)) {
+					closeMenu()
+				}
+			},
+			{ signal: this.abort.signal }
+		)
+		toolbar.append(edit, name, this.vrButton, settings)
 		this.status.className = "cs-status"
 		this.status.setAttribute("role", "status")
-		this.element.append(toolbar, this.stage, this.status)
+		;(options.toolbarHost ?? this.element).append(toolbar)
+		this.element.append(this.stage, this.status)
 		this.resize = new ResizeObserver(() => this.layout())
 		this.resize.observe(this.element)
 		this.intersection = new IntersectionObserver((entries) => {
@@ -475,6 +546,16 @@ export class ControlSurface {
 			)
 			control.element.className = `cs-semantic cs-${widget}`
 			entry.release = control.release
+			if (widget === "dial") {
+				element.tabIndex = -1
+				element.addEventListener(EVENT_FOCUS_IN, () => {
+					entry.visual.focused = true
+				})
+				element.addEventListener(EVENT_FOCUS_OUT, (event) => {
+					entry.visual.focused =
+						event.relatedTarget instanceof Node && element.contains(event.relatedTarget)
+				})
+			}
 			const inputs = control.element.querySelectorAll<
 				HTMLInputElement | HTMLSelectElement | HTMLButtonElement
 			>("input,select,button")
@@ -739,6 +820,9 @@ export class ControlSurface {
 			return false
 		}
 		const value = entry.visual.value
+		if (entry.visual.widget === "dial") {
+			entry.element.focus({ preventScroll: true })
+		}
 		const axis =
 			entry.visual.widget === "range" && Array.isArray(value)
 				? Number(
@@ -987,6 +1071,7 @@ export class ControlSurface {
 		cancelAnimationFrame(this.frame)
 		void this.xr?.end().catch(() => {})
 		this.renderer?.destroy()
+		this.toolbar.remove()
 		this.element.remove()
 	}
 }

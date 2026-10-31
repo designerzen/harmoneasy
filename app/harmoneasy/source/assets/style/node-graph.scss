@@ -3219,10 +3219,51 @@ dialog.add-output-dialog {
 	}
 }
 
-.surface-viewport > .node-control-surface.is-fullscreen {
-	gap: 1rem;
+.node-viewport-editor.surface-viewport > .node-control-surface.graph-node.is-fullscreen {
+	--node-content-padding: 0px;
+	display: flex;
+	flex-direction: column;
+	gap: 0;
 	width: 100%;
+	max-width: none;
+	min-width: 0;
 	min-height: 100dvh;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	background: #080d18;
+
+	> .device-node-header {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 8px;
+		margin: 0;
+		padding: 8px;
+		flex: none;
+		border-bottom: 1px solid #296254;
+
+		> .device-title-controls {
+			display: contents;
+		}
+		.node-actions-left {
+			order: 0;
+		}
+		.surface-titlebar {
+			order: 1;
+			flex: 1;
+			min-width: min(100%, 260px);
+		}
+		.node-actions-right {
+			order: 2;
+			margin-left: 0;
+		}
+		.cs-toolbar {
+			margin: 0;
+		}
+	}
 
 	> .surface-viewport-tabs {
 		display: flex;
@@ -3251,11 +3292,16 @@ dialog.add-output-dialog {
 
 	> .surface-viewport-content {
 		min-width: 0;
+		display: flex;
+		flex-direction: column;
 		flex: 1;
 
 		> .control-surface {
 			width: 100%;
 			min-width: 0;
+			flex: 1;
+			border-radius: 0;
+			padding: 12px;
 		}
 	}
 }

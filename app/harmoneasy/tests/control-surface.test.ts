@@ -207,6 +207,70 @@ describe("shared component controls", () => {
 })
 
 describe("surface interaction and bindings", () => {
+	it("keeps a dial selected after dragging and while its keyboard control is focused", async () => {
+		const dial = bind("cutoff"),
+			saved = state()
+		saved.widgets = [{ key: dial.key }]
+		const surface = new ControlSurface({ state: saved, bindings: [dial], change: vi.fn() })
+		views.push(surface)
+		document.body.append(surface.element)
+		await settle()
+		const entry = (
+			surface as unknown as {
+				entries: { element: HTMLElement; visual: { focused?: boolean } }[]
+			}
+		).entries[0]
+		surface.pointerDown(1, 90, 90)
+		surface.pointerUp(1)
+		expect(entry.visual.focused).toBe(true)
+		entry.element.querySelector("input")!.focus()
+		expect(entry.visual.focused).toBe(true)
+		const other = document.createElement("button")
+		document.body.append(other)
+		other.focus()
+		expect(entry.visual.focused).toBe(false)
+	})
+	it("edits the title and opens control settings from the external title bar", () => {
+		const toolbarHost = document.body.appendChild(document.createElement("header"))
+		const saved = state(),
+			change = vi.fn(),
+			addControls = vi.fn()
+		const surface = new ControlSurface({
+			state: saved,
+			bindings: [],
+			change,
+			toolbarHost,
+			addControls: [{ label: "Add Synth controls…", action: addControls }]
+		})
+		views.push(surface)
+		const name = toolbarHost.querySelector<HTMLInputElement>(".cs-title")!
+		expect(name.hidden).toBe(false)
+		name.value = "  My performance  "
+		name.dispatchEvent(new Event("change"))
+		expect(saved.name).toBe("My performance")
+		expect(change).toHaveBeenCalledWith(saved)
+		name.value = "   "
+		name.dispatchEvent(new Event("change"))
+		expect(name.value).toBe("My performance")
+		const buttons = [...toolbarHost.querySelectorAll<HTMLButtonElement>("button")]
+		expect(buttons[0].textContent).toBe("Edit layout")
+		expect(buttons[1].textContent).toBe("Enter VR")
+		const settings = toolbarHost.querySelector<HTMLButtonElement>(
+			'[aria-label="Surface settings"]'
+		)!
+		const menu = toolbarHost.querySelector<HTMLElement>(".cs-settings-menu")!
+		expect(menu.hidden).toBe(true)
+		settings.click()
+		expect(menu.hidden).toBe(false)
+		menu.querySelector<HTMLButtonElement>("button")!.click()
+		expect(addControls).toHaveBeenCalledOnce()
+		expect(menu.hidden).toBe(true)
+		settings.click()
+		settings.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: "Escape", bubbles: true }))
+		expect(menu.hidden).toBe(true)
+		surface.destroy()
+		expect(toolbarHost.children).toHaveLength(0)
+	})
 	it("starts dial gestures throughout the whole panel and keeps dragging outside its bounds", async () => {
 		const dial = bind("cutoff"),
 			saved = state()

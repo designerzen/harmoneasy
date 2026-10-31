@@ -213,7 +213,8 @@ export function selectSurfaceControls(
 export function mountControlSurface(
 	host: HTMLElement,
 	chain: IOChain,
-	surfaceId: string
+	surfaceId: string,
+	toolbarHost?: HTMLElement
 ): { destroy(): void } {
 	let surface: ControlSurface | undefined,
 		disposed = false,
@@ -221,6 +222,7 @@ export function mountControlSurface(
 		signature = ""
 	let saveTimer: ReturnType<typeof setTimeout> | undefined
 	let panelViews: { element: HTMLElement; destroy(): void }[] = []
+	const controlDialogs: { destroy(): void }[] = []
 	let schemaAbort = new AbortController()
 	const abort = new AbortController()
 	const refresh = async () => {
@@ -276,6 +278,13 @@ export function mountControlSurface(
 		surface = new ControlSurface({
 			state: structuredClone(state),
 			bindings,
+			toolbarHost,
+			addControls: [...components].map(([id, component]) => ({
+				label: `Add ${component.name} controls…`,
+				action: () => {
+					controlDialogs.push(selectSurfaceControls(chain, surfaceId, id))
+				}
+			})),
 			change(changed) {
 				signature = JSON.stringify([changed, [...controlComponents(chain).keys()]])
 				updateSurface(chain, changed)
@@ -308,6 +317,7 @@ export function mountControlSurface(
 			schemaAbort.abort()
 			surface?.destroy()
 			panelViews.forEach((view) => view.destroy())
+			controlDialogs.forEach((dialog) => dialog.destroy())
 		}
 	}
 }

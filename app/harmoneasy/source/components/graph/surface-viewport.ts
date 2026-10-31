@@ -3,6 +3,7 @@ import type IOChainManager from "audiobus/io/IO-chain-manager"
 import type { SurfaceState } from "control-surface/types"
 import {
 	EVENT_CHAINS_UPDATED,
+	EVENT_CONFIGURATION_CHANGED,
 	EVENT_CONTROL_SURFACE_EXPAND,
 	EVENT_CONTROL_SURFACE_MINIMISE,
 	EVENT_KEY_DOWN
@@ -29,7 +30,7 @@ export function createSurfaceViewport(manager: IOChainManager, startExpanded = f
 	const controls = element("div", "device-title-controls nodrag nopan")
 	const left = element("div", "node-actions-left")
 	const right = element("div", "node-actions-right")
-	const title = element("h6")
+	const title = element("div", "surface-titlebar")
 	const tabs = element("div", "surface-viewport-tabs")
 	tabs.setAttribute("role", "tablist")
 	tabs.setAttribute("aria-label", "Control surfaces")
@@ -98,9 +99,8 @@ export function createSurfaceViewport(manager: IOChainManager, startExpanded = f
 		if (changed || !view) {
 			view?.destroy()
 			content.replaceChildren()
-			view = mountControlSurface(content, entry.chain, entry.surface.id)
+			view = mountControlSurface(content, entry.chain, entry.surface.id, title)
 		}
-		title.textContent = entry.surface.name
 		viewport.setAttribute("aria-label", `${entry.surface.name} controls`)
 		content.setAttribute("aria-label", entry.surface.name)
 		for (const [index, tab] of [
@@ -130,6 +130,7 @@ export function createSurfaceViewport(manager: IOChainManager, startExpanded = f
 			}
 			const abort = new AbortController()
 			subscriptions.set(chain, abort)
+			chain.addEventListener(EVENT_CONFIGURATION_CHANGED, refresh, { signal: abort.signal })
 			chain.addEventListener(
 				EVENT_CONTROL_SURFACE_EXPAND,
 				(event) => {
@@ -205,6 +206,13 @@ export function createSurfaceViewport(manager: IOChainManager, startExpanded = f
 			return
 		}
 		if (event.key === "Escape") {
+			if (
+				(event.target as HTMLElement)?.closest?.(
+					".cs-title, .cs-settings:has(.cs-settings-menu:not([hidden]))"
+				)
+			) {
+				return
+			}
 			event.stopPropagation()
 			close()
 		}

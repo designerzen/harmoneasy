@@ -14,6 +14,7 @@ export interface WidgetVisual {
 	widget: WidgetType
 	sourceLabel: string
 	active?: boolean
+	focused?: boolean
 	unavailable?: boolean
 }
 export type SurfaceTheme = "neon" | "amber" | "ice"
@@ -29,6 +30,7 @@ interface CachedWidget {
 	sourceLabel: string
 	value: ControlValue | undefined
 	active: boolean | undefined
+	focused: boolean | undefined
 	unavailable: boolean | undefined
 	disabled: boolean | undefined
 	color: number[]
@@ -91,6 +93,11 @@ fn settingColor(value:f32)->vec3f {
  let level=clamp(value,0.0,1.0);
  return vec3f(min(level*2.0,1.0),min((1.0-level)*2.0,1.0),0.08);
 }
+fn radialMark(p:vec2f,angle:f32,inner:f32,outer:f32,weight:f32)->f32 {
+ let direction=vec2f(sin(angle),-cos(angle));
+ let nearest=direction*clamp(dot(p,direction),inner,outer);
+ return line(length(p-nearest),weight);
+}
 /* EFFECT */
 @fragment fn fragmentMain(i: VertexOutput) -> @location(0) vec4f {
  let kind=i.params.x; let value=i.params.y; let second=i.params.z; let engaged=i.params.w;
@@ -111,11 +118,11 @@ fn settingColor(value:f32)->vec3f {
   let angle=atan2(p.x,-p.y); let t=(angle+2.35619449)/4.71238898;
   let inArc=select(0.0,1.0,t>=0.0&&t<=1.0);
   light=line(dist,2.2)*inArc*select(0.12,1.0,t<=value);
-  let needle=vec2f(sin(value*4.71238898-2.35619449),-cos(value*4.71238898-2.35619449));
-  light=max(light,line(length(p-needle*radius),3.5));
+  let endpoint=max(radialMark(p,-2.35619449,radius-2.0,radius+9.0,1.2),radialMark(p,2.35619449,radius-2.0,radius+9.0,1.2));
+  light=max(light,endpoint*0.55);
+  let current=radialMark(p,value*4.71238898-2.35619449,radius-5.0-engaged*4.0,radius+8.0+engaged*5.0,1.8);
+  light=max(light,current);
   fill=(1.0-smoothstep(radius-7.0,radius-5.0,length(p)))*0.055;
-  let tick=floor(t*20.0+0.5)/20.0; let tickAngle=tick*4.71238898-2.35619449;
-  light=max(light,line(length(p-vec2f(sin(tickAngle),-cos(tickAngle))*(radius+10.0)),1.0)*inArc*0.35);
  } else if (kind<2.5 || (kind>6.5&&kind<7.5)) {
   let w=size.x*0.42; let x=-w+value*w*2.0;
   light=line(p.y,2.0)*step(abs(p.x),w)*select(0.1,0.8,p.x<=x);
@@ -469,6 +476,7 @@ export class GpuSurfaceRenderer {
 				cached.widget !== w.widget ||
 				cached.sourceLabel !== w.sourceLabel ||
 				cached.active !== w.active ||
+				cached.focused !== w.focused ||
 				cached.unavailable !== w.unavailable ||
 				cached.disabled !== w.descriptor.disabled ||
 				cached.color !== this.color ||
@@ -477,7 +485,7 @@ export class GpuSurfaceRenderer {
 				this.building = []
 				const d = w.descriptor,
 					v = w.value,
-					active = w.active ? 1 : 0,
+					active = w.active || w.focused ? 1 : 0,
 					alpha = w.unavailable || d.disabled ? 0.3 : 1
 				const choice = d.choices?.findIndex((c) => sameValue(c.value, v)) ?? 0
 				const target = Array.isArray(v)
@@ -550,6 +558,7 @@ export class GpuSurfaceRenderer {
 					sourceLabel: w.sourceLabel,
 					value: Array.isArray(v) ? [...v] : v,
 					active: w.active,
+					focused: w.focused,
 					unavailable: w.unavailable,
 					disabled: d.disabled,
 					color: this.color,
