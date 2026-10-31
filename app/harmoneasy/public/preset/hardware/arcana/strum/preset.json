@@ -1,0 +1,62 @@
+{
+	"format": "harmoneasy-preset",
+	"version": 1,
+	"name": "Arcana Strum",
+	"description": "Play notes and velocity from Arcana Strum into PolySynth, with a second chain for the note monitor. The input matches the Arcana Strum MIDI port. Connect the input after granting MIDI access. The five on-screen keys use editable virtual note defaults; learn your hardware's notes and CCs in the device panel. Arcana's published guides do not specify a CC map.",
+	"clock": { "bpm": 120, "swing": 0, "divisions": 24, "bars": 4 },
+	"midiControls": { "enabled": true, "bindings": [] },
+	"workspace": {
+		"version": 2,
+		"activeChainId": "strum-performance",
+		"devices": [
+			{
+				"id": "arcana-strum-input",
+				"direction": "input",
+				"definition": { "factory": "input", "type": "arcana-strum", "options": { "profileId": "arcana-strum", "transport": "webmidi", "selectedChannel": 0 } }
+			},
+			{
+				"id": "strum-synth",
+				"direction": "output",
+				"definition": { "factory": "polyphonic", "options": { "shape": "triangle", "volume": 0.6, "attack": 0.01, "decay": 0.4, "sustain": 0.6, "release": 0.3, "maxPolyphony": 24 } }
+			},
+			{
+				"id": "strum-monitor",
+				"direction": "output",
+				"definition": { "factory": "output", "type": "note-monitor", "options": {} }
+			}
+		],
+		"chains": [
+			{
+				"id": "strum-performance",
+				"options": {
+					"name": "Arcana Strum performance", "active": true, "graphLayout": "horizontal",
+					"controlSurfaces": [{
+						"id": "strum-controls", "name": "Strum sound and channel", "theme": "amber",
+						"connections": [
+							{ "componentId": "arcana-strum-input", "controlIds": ["channel"] },
+							{ "componentId": "strum-synth", "controlIds": ["volume", "shape", "attack", "release", "filterCutOff"] }
+						],
+						"widgets": [
+							{ "key": "[\"arcana-strum-input\",\"channel\"]", "widget": "select" },
+							{ "key": "[\"strum-synth\",\"volume\"]", "widget": "slider" },
+							{ "key": "[\"strum-synth\",\"shape\"]", "widget": "select" },
+							{ "key": "[\"strum-synth\",\"attack\"]", "widget": "dial" },
+							{ "key": "[\"strum-synth\",\"release\"]", "widget": "dial" },
+							{ "key": "[\"strum-synth\",\"filterCutOff\"]", "widget": "dial" }
+						]
+					}]
+				},
+				"transformers": "[]",
+				"inputs": ["arcana-strum-input"], "outputs": ["strum-synth"],
+				"disabledInputs": [], "disabledOutputs": []
+			},
+			{
+				"id": "strum-inspector",
+				"options": { "name": "Strum notes and velocity", "active": true },
+				"transformers": "[]",
+				"inputs": ["arcana-strum-input"], "outputs": ["strum-monitor"],
+				"disabledInputs": [], "disabledOutputs": []
+			}
+		]
+	}
+}
