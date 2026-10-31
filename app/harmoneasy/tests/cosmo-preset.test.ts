@@ -8,6 +8,7 @@ import InputCosmoDots from "audiobus/io/inputs/input-cosmo-dots"
 import OutputYoshimi from "audiobus/io/outputs/output-yoshimi"
 import { componentBindings } from "audiobus/io/component-ui"
 import { controlComponents, removeSurface } from "../source/components/graph/control-surfaces"
+import { EVENT_CONTROL_SURFACE_EXPAND } from "audiobus/event-constants"
 import { createChainWorkspace } from "../source/components/graph/chain-workspace"
 
 vi.mock("../../../packages/audiobus/wam/yoshimi-assets", () => ({
@@ -131,27 +132,33 @@ describe("Cosmo Dots Strings preset", () => {
 	})
 	it("opens the control surface first and keeps playable SVG Dots available when editing routing", async () => {
 		document.body.innerHTML = '<div id="graph"></div>'
-		workspace = createChainWorkspace(document.getElementById("graph")!, manager, () => ({
-			update: vi.fn(),
-			destroy: vi.fn()
-		}))
+		workspace = createChainWorkspace(
+			document.getElementById("graph")!,
+			manager,
+			() => ({
+				update: vi.fn(),
+				destroy: vi.fn()
+			}),
+			true
+		)
 		await settle()
 		const graph = document.querySelector<HTMLElement>(".chain-graph")!
-		const surface = document.querySelector<HTMLElement>(".chain-performance-surface")!
-		expect(graph.hidden).toBe(true)
+		const surface = document.querySelector<HTMLElement>(".surface-viewport")!
+		expect(surface.isConnected).toBe(true)
 		expect(surface.hidden).toBe(false)
 		expect(surface.querySelectorAll("button[data-cosmo-dot] svg")).toHaveLength(8)
 		const input = manager.activeChain!.inputs[0] as InputCosmoDots
 		input.setDotCount(3)
 		expect(surface.querySelectorAll("button[data-cosmo-dot] svg")).toHaveLength(3)
-		const edit = [...document.querySelectorAll("button")].find(
-			(button) => button.textContent === "Edit chain"
-		)!
-		edit.click()
+		surface.querySelector<HTMLButtonElement>(".device-expand")!.click()
 		expect(graph.hidden).toBe(false)
-		expect(surface.hidden).toBe(true)
-		edit.click()
-		expect(surface.hidden).toBe(false)
+		expect(surface.isConnected).toBe(false)
+		manager.activeChain!.dispatchEvent(
+			new CustomEvent(EVENT_CONTROL_SURFACE_EXPAND, { detail: "cosmo-performance" })
+		)
+		await settle()
+		expect(surface.isConnected).toBe(true)
+		expect(surface.querySelectorAll("button[data-cosmo-dot] svg")).toHaveLength(3)
 		removeSurface(manager.activeChain!, "cosmo-performance")
 		expect(graph.hidden).toBe(false)
 		expect(manager.activeChain!.options.mainSurfaceId).toBeUndefined()

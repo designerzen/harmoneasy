@@ -3198,6 +3198,47 @@ dialog.add-output-dialog {
 	}
 }
 
+.surface-viewport > .node-control-surface.is-fullscreen {
+	gap: 1rem;
+	width: 100%;
+	min-height: 100dvh;
+
+	> .surface-viewport-tabs {
+		display: flex;
+		gap: 0.5rem;
+		overflow-x: auto;
+		padding: 0.25rem;
+		flex: none;
+
+		&[hidden] {
+			display: none;
+		}
+
+		button {
+			flex: 0 0 auto;
+			padding: 0.5rem 0.75rem;
+			font-size: 0.875rem;
+			text-transform: none;
+			letter-spacing: normal;
+
+			&[aria-selected="true"] {
+				background: var(--col-accent);
+				color: var(--col-bg);
+			}
+		}
+	}
+
+	> .surface-viewport-content {
+		min-width: 0;
+		flex: 1;
+
+		> .control-surface {
+			width: 100%;
+			min-width: 0;
+		}
+	}
+}
+
 .node-viewport-editor > .node-output.is-fullscreen:has(.webclap-gui) {
 	--node-content-padding: 0px;
 	width: 100%;

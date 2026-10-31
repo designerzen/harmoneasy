@@ -1,5 +1,8 @@
 import { GraphControls } from "./GraphControls"
-import { EVENT_CONFIGURATION_CHANGED } from "audiobus/event-constants"
+import {
+	EVENT_CONFIGURATION_CHANGED,
+	EVENT_CONTROL_SURFACE_MINIMISE
+} from "audiobus/event-constants"
 import { isConfigurationUpdate } from "audiobus/io/configuration-events"
 import { ChainContext, useChain } from "./ChainContext"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
@@ -78,6 +81,16 @@ function FlowComponent({ isFront, focusRequest }: { isFront: boolean; focusReque
 	const [fullscreenNodeId, setFullscreenNodeId] = useState<string | null>(null)
 	const [compactNodeIds, setCompactNodeIds] = useState<Set<string>>(() => new Set())
 	const controlDialogs = useRef(new Set<{ destroy(): void }>())
+	useEffect(() => {
+		const minimise = (event: Event) => {
+			const surfaceId = (event as CustomEvent<string>).detail
+			setCompactNodeIds(
+				(previous) => new Set([...previous, `${chainId}:control-surface-${surfaceId}`])
+			)
+		}
+		chain.addEventListener(EVENT_CONTROL_SURFACE_MINIMISE, minimise)
+		return () => chain.removeEventListener(EVENT_CONTROL_SURFACE_MINIMISE, minimise)
+	}, [chain, chainId])
 	useEffect(
 		() => () => {
 			for (const dialog of controlDialogs.current) {

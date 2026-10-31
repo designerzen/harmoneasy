@@ -84,7 +84,7 @@ describe("Cosmo Dots input", () => {
 			text: "Filter"
 		}
 		input.setDot(0, dot)
-		key("0")
+		key("1")
 		expect(receive).not.toHaveBeenCalled()
 		key("9")
 		expect(receive).toHaveBeenLastCalledWith(expect.objectContaining(dot.command))
@@ -99,7 +99,7 @@ describe("Cosmo Dots input", () => {
 				command.number = 90
 			}
 		})
-		key("0")
+		key("1")
 		vi.advanceTimersByTime(200)
 		expect(receive).toHaveBeenLastCalledWith(
 			expect.objectContaining({ type: NOTE_OFF, number: 60 })
@@ -109,14 +109,14 @@ describe("Cosmo Dots input", () => {
 		const input = (await createInputById("cosmo-dots")) as InputCosmoDots
 		devices.push(input)
 		expect(input.configuration.map((dot) => dot.trigger)).toEqual([
-			"0",
 			"1",
 			"2",
 			"3",
 			"4",
 			"5",
 			"6",
-			"7"
+			"7",
+			"8"
 		])
 		const dot = input.configuration[0]
 		dot.trigger = "9"
@@ -129,8 +129,8 @@ describe("Cosmo Dots input", () => {
 	})
 	it("listens without a GUI, ignores repeats and sends timed note releases", () => {
 		const { input, receive } = setup()
-		key("0")
-		key("0", { repeat: true })
+		key("1")
+		key("1", { repeat: true })
 		key("9")
 		expect(receive).toHaveBeenCalledTimes(1)
 		expect(receive).toHaveBeenLastCalledWith(
@@ -147,20 +147,20 @@ describe("Cosmo Dots input", () => {
 			expect.objectContaining({ type: NOTE_OFF, number: 60, velocity: 0 })
 		)
 		input.destroy()
-		key("0")
+		key("1")
 		expect(receive).toHaveBeenCalledTimes(2)
 	})
 	it("ignores typing, shortcuts and keys while another dialog is open", () => {
 		const { receive } = setup()
 		const field = document.createElement("input")
 		document.body.append(field)
-		field.dispatchEvent(new KeyboardEvent("keydown", { key: "0", bubbles: true }))
-		key("0", { ctrlKey: true })
-		key("0", { isComposing: true })
+		field.dispatchEvent(new KeyboardEvent("keydown", { key: "1", bubbles: true }))
+		key("1", { ctrlKey: true })
+		key("1", { isComposing: true })
 		const dialog = document.createElement("dialog")
 		document.body.append(dialog)
 		dialog.showModal()
-		key("0")
+		key("1")
 		expect(receive).not.toHaveBeenCalled()
 	})
 	it("activates onscreen dots and edits commands without playing in edit mode", async () => {
@@ -200,7 +200,7 @@ describe("Cosmo Dots input", () => {
 	it("cancels dialog edits and releases notes on blur and GUI destruction", async () => {
 		const { input, receive } = setup()
 		const panel = await input.createGui()
-		key("0")
+		key("1")
 		window.dispatchEvent(new Event("blur"))
 		expect(receive).toHaveBeenLastCalledWith(expect.objectContaining({ type: NOTE_OFF }))
 		const edit = panel.querySelector("input")!
@@ -213,9 +213,9 @@ describe("Cosmo Dots input", () => {
 			.find((button) => button.textContent === "Cancel")!
 			.click()
 		await Promise.resolve()
-		expect(input.configuration[0].trigger).toBe("0")
+		expect(input.configuration[0].trigger).toBe("1")
 		await input.destroyGui()
-		key("1")
+		key("2")
 		await input.destroyGui()
 		expect(receive).toHaveBeenLastCalledWith(
 			expect.objectContaining({ type: NOTE_OFF, number: 61 })

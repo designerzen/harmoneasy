@@ -72,7 +72,7 @@ export const INPUT_GUIDANCE: Record<InputId, Guidance> = {
 		"Dots",
 		"Send configurable musical commands from eight Cosmo Dots or onscreen buttons.",
 		"Accessible music making with individual key and command mappings.",
-		"Pair Dots in Switch mode using Cosmo Dot Setup. Defaults use keys 0–7; enable Edit dots and click a dot to change its trigger and command."
+		"Pair Dots in Switch mode using Cosmo Dot Setup. Defaults use keys 1–8; enable Edit dots and click a dot to change its trigger and command."
 	),
 	"microphone-trigger": guide(
 		"Mic",

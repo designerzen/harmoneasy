@@ -2,6 +2,7 @@ import type { TransformerPreset } from "audiobus/io/preset-library"
 import type { PresetPage } from "./preset-page"
 import { completePresets, presetContext, presetSetup } from "../components/graph/preset-catalogue"
 import { performanceHardwarePage } from "./performance-presets"
+import { songPresetPage } from "./song-presets"
 
 const slug = (value: string) =>
 	value
@@ -29,6 +30,10 @@ export function builtinPresetRoute(preset: TransformerPreset): string {
 }
 
 export function builtinPresetPage(preset: TransformerPreset): PresetPage {
+	const song = songPresetPage(preset.id)
+	if (song) {
+		return song
+	}
 	const hardware = performanceHardwarePage(preset.id)
 	if (hardware) {
 		return structuredClone(hardware) as PresetPage

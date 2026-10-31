@@ -13,6 +13,7 @@ import { createAboutDialog } from "./services/about-dialog"
 import { createCommandPalette } from "./services/command-palette"
 import { createThemeControls } from "./services/theme"
 import { createEmptySetup, createStartContexts } from "./services/start-contexts"
+import { createSetupWizard } from "./services/setup-wizard"
 import { applySetup } from "./components/graph/saved-presets"
 import type { PresetSetup } from "audiobus/io/preset-library"
 import { createNetronomeLink } from "./services/netronome-link"
@@ -683,7 +684,7 @@ const initialiseApplication = async (
 		persistMidi: (value) => state.set("midiControls", value)
 	})
 
-	createGraph("graph", ioManager)
+	createGraph("graph", ioManager, Boolean(pageSetup))
 
 	// Update UI - this will check all the inputs according to our state
 	state.updateFrontEnd()
@@ -826,6 +827,8 @@ createStartContexts(startDialog, (setup) =>
 	startApplication(startDialog.querySelector<HTMLButtonElement>(".preset-apply-button")!, setup)
 )
 startDialog.removeAttribute("open")
+const wizardButton = startDialog.querySelector<HTMLButtonElement>("#start-wizard")!
+createSetupWizard(wizardButton, (setup) => { void startApplication(wizardButton, setup) })
 startDialog.showModal()
 startDialog.addEventListener("cancel", (event) => event.preventDefault())
 async function startApplication(button: HTMLButtonElement, setup?: PresetSetup) {

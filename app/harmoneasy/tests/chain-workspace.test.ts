@@ -41,7 +41,7 @@ function mount() {
 	})
 	const changed = () => manager.dispatchEvent(new Event(EVENT_CHAINS_UPDATED))
 	for (const id of ["one", "two"]) {
-		const chain = {
+		const chain = Object.assign(new EventTarget(), {
 			options: { name: id, graphLayout: "vertical" },
 			isActive: true,
 			setName: vi.fn((name: string) => {
@@ -56,7 +56,7 @@ function mount() {
 				Object.assign(chain.options, options)
 				changed()
 			})
-		}
+		})
 		manager.entries.push([id, chain])
 	}
 	const graphs = new Map<

@@ -1,4 +1,3 @@
-import { PERFORMANCE_PRESETS } from "../source/services/performance-presets"
 // @vitest-environment happy-dom
 import { runUI } from "./native-ui"
 import { afterEach, expect, it, vi } from "vitest"
@@ -10,7 +9,7 @@ import {
 import { createIOChainManagerUI } from "../source/components/graph/IOChainManagerUI"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
 import { DEFAULT_PRESET_LIBRARY } from "../../../packages/audiobus/io/transformer-presets"
-import { completePresets, ACTIVITY_PRESETS } from "../source/components/graph/preset-catalogue"
+import { completePresets } from "../source/components/graph/preset-catalogue"
 import { writeLibrary } from "../source/components/graph/saved-presets"
 import { defineDevice } from "../../../packages/audiobus/io/device-definition"
 
@@ -101,13 +100,9 @@ it("illustrates every preset, filters by intent and keeps Apply outside the scro
 	const onApply = vi.fn()
 	root = createPresetBrowser({ onApply })
 	host.append(root.element)
-	expect(document.querySelectorAll("nav button svg")).toHaveLength(
-		DEFAULT_PRESET_LIBRARY.presets.length + ACTIVITY_PRESETS.length + PERFORMANCE_PRESETS.length
-	)
+	expect(document.querySelectorAll("nav button svg")).toHaveLength(completePresets([]).length)
 	const icons = [...document.querySelectorAll("nav .preset-artwork-icon")]
-	expect(icons).toHaveLength(
-		DEFAULT_PRESET_LIBRARY.presets.length + ACTIVITY_PRESETS.length + PERFORMANCE_PRESETS.length
-	)
+	expect(icons).toHaveLength(completePresets([]).length)
 	expect(icons.every((icon) => icon.getAttribute("href")?.includes("/icons/"))).toBe(true)
 	const scores = [...document.querySelectorAll("nav svg")].map((svg) =>
 		[...svg.querySelectorAll("rect:not(:first-child)")]
@@ -179,9 +174,7 @@ it("describes every new-chain option before selection and adds only when confirm
 	expect(dialog.querySelectorAll(".preset-filter select")).toHaveLength(3)
 	runUI(() => document.querySelector<HTMLButtonElement>(".preset-browse")!.click())
 	expect(dialog.hasAttribute("open")).toBe(true)
-	expect(document.querySelectorAll("nav button")).toHaveLength(
-		DEFAULT_PRESET_LIBRARY.presets.length + ACTIVITY_PRESETS.length + PERFORMANCE_PRESETS.length
-	)
+	expect(document.querySelectorAll("nav button")).toHaveLength(completePresets([]).length)
 	const preset = DEFAULT_PRESET_LIBRARY.presets.find((item) => item.name === "Ratchet Fill")!
 	runUI(() =>
 		[...document.querySelectorAll<HTMLButtonElement>("nav button")]

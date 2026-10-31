@@ -6,7 +6,7 @@ export function MinimiseButton({
 	onClick
 }: {
 	compact: boolean
-	direction: "input" | "output" | "transformer"
+	direction: "input" | "output" | "transformer" | "control surface"
 	onClick: () => void
 }) {
 	const label = `${compact ? "Restore" : "Minimise"} ${direction}`

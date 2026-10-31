@@ -4,6 +4,7 @@ import { START_CONTEXTS, createContextSetup } from "../../services/start-context
 import { PERFORMANCE_PRESETS, performancePresetSetup } from "../../services/performance-presets"
 import { presetVoice, setupSurfaces } from "../../services/preset-instruments"
 import { OUTPUT_DEFINITIONS } from "../../../../../packages/audiobus/io/output-definitions"
+import { SONG_PRESETS, songPresetSetup } from "../../services/song-presets"
 
 export const ACTIVITY_PRESETS: TransformerPreset[] = START_CONTEXTS.map((context) => ({
 	id: `activity:${context.id}`,
@@ -32,6 +33,10 @@ export function presetContext(preset: Pick<TransformerPreset, "id">) {
 }
 
 export function presetSetup(preset: TransformerPreset) {
+	const song = songPresetSetup(preset.id)
+	if (song) {
+		return song
+	}
 	const performance = performancePresetSetup(preset)
 	if (performance) {
 		return performance
@@ -83,6 +88,7 @@ export function completePresets(saved: TransformerPreset[]) {
 		),
 		...saved,
 		...ACTIVITY_PRESETS,
-		...PERFORMANCE_PRESETS
+		...PERFORMANCE_PRESETS,
+		...SONG_PRESETS
 	]
 }

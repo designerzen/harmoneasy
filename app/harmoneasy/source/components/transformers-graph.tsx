@@ -4,7 +4,11 @@ import Graph from "./graph/Graph"
 import { createChainWorkspace } from "./graph/chain-workspace"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
 
-export const createGraph = (elementID = "graph", ioManager: IOChainManager | null = null) => {
+export const createGraph = (
+	elementID = "graph",
+	ioManager: IOChainManager | null = null,
+	startWithSurfaces = false
+) => {
 	const container = document.getElementById(elementID)
 	if (!container) {
 		throw Error("No element found to add graph to")
@@ -12,15 +16,22 @@ export const createGraph = (elementID = "graph", ioManager: IOChainManager | nul
 	if (!ioManager) {
 		throw Error("A chain manager is required to create the graph")
 	}
-	return createChainWorkspace(container, ioManager, (host, context) => {
-		const root = createRoot(host)
-		return {
-			update(isFront, focusRequest) {
-				root.render(<Graph {...context} isFront={isFront} focusRequest={focusRequest} />)
-			},
-			destroy() {
-				root.unmount()
+	return createChainWorkspace(
+		container,
+		ioManager,
+		(host, context) => {
+			const root = createRoot(host)
+			return {
+				update(isFront, focusRequest) {
+					root.render(
+						<Graph {...context} isFront={isFront} focusRequest={focusRequest} />
+					)
+				},
+				destroy() {
+					root.unmount()
+				}
 			}
-		}
-	})
+		},
+		startWithSurfaces
+	)
 }

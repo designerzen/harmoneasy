@@ -12,7 +12,7 @@ import { createChainName } from "./ChainName"
 import { createChainSidebar } from "./ChainSidebar"
 import { element, button, option } from "./dom"
 import type { ChainUIContext } from "./chain-ui-context"
-import { mountControlSurface } from "./control-surfaces"
+import { createSurfaceViewport } from "./surface-viewport"
 
 export interface GraphView {
 	update(isFront: boolean, focusRequest: number): void
@@ -21,7 +21,8 @@ export interface GraphView {
 export function createChainWorkspace(
 	container: HTMLElement,
 	manager: IOChainManager,
-	mountGraph: (host: HTMLElement, context: ChainUIContext) => GraphView
+	mountGraph: (host: HTMLElement, context: ChainUIContext) => GraphView,
+	startWithSurfaces = false
 ) {
 	const host = element("div", "chains-workspace chains-stacked")
 	container.append(host)
@@ -155,20 +156,6 @@ export function createChainWorkspace(
 		panel.append(toolbar, graph)
 		host.append(panel)
 		const graphView = mountGraph(canvas, context)
-		const performance = element("div", "chain-performance-surface")
-		performance.style.cssText = "padding:20px;min-height:360px"
-		panel.append(performance)
-		let surfaceView: ReturnType<typeof mountControlSurface> | undefined,
-			surfaceId: string | undefined,
-			showGraph = false
-		const toggleView = button("Edit chain", () => {
-			showGraph = !showGraph
-			graph.hidden = !showGraph
-			performance.hidden = showGraph
-			toggleView.textContent = showGraph ? "Play control surface" : "Edit chain"
-			graphView.update(front === chainId && showGraph, ++focusRequest)
-		})
-		toolbar.append(toggleView)
 		const layoutLabel = element("label")
 		layoutLabel.dataset.midiScope = `${chainId}:layout`
 		const layoutName = document.createTextNode("")
@@ -185,21 +172,6 @@ export function createChainWorkspace(
 			chain,
 			layoutLabel,
 			update(index: number) {
-				const nextSurfaceId = chain.options.controlSurfaces?.find(
-					(surface) => surface.id === chain.options.mainSurfaceId
-				)?.id
-				if (nextSurfaceId !== surfaceId) {
-					surfaceView?.destroy()
-					performance.replaceChildren()
-					surfaceId = nextSurfaceId
-					showGraph = !surfaceId
-					surfaceView = surfaceId
-						? mountControlSurface(performance, chain, surfaceId)
-						: undefined
-				}
-				toggleView.hidden = !surfaceId
-				graph.hidden = Boolean(surfaceId) && !showGraph
-				performance.hidden = !surfaceId || showGraph
 				const isFront = front === chainId,
 					isSolo = solo === chainId
 				panel.className = `chain-panel ${chain.isActive ? "active" : "inactive"} ${isFront ? "chain-front" : ""} ${isSolo ? "chain-solo" : ""}`
@@ -236,7 +208,6 @@ export function createChainWorkspace(
 				graphView.update(isFront && !graph.hidden, isFront ? focusRequest : 0)
 			},
 			destroy() {
-				surfaceView?.destroy()
 				graphView.destroy()
 				sidebar.destroy()
 				presets.destroy()
@@ -388,6 +359,7 @@ export function createChainWorkspace(
 	}
 	updateOffset()
 	render()
+	const surfaceViewport = createSurfaceViewport(manager, startWithSurfaces)
 	let destroyed = false
 	return {
 		destroy() {
@@ -395,6 +367,7 @@ export function createChainWorkspace(
 				return
 			}
 			destroyed = true
+			surfaceViewport.destroy()
 			if (scrollFrame !== null) {
 				cancelAnimationFrame(scrollFrame)
 			}
