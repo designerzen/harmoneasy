@@ -92,15 +92,16 @@ export function parsePresetPage(json: string): PresetPage {
 export function presetPageUrl(location: string, base: string): URL | undefined {
 	const url = new URL(location)
 	const root = new URL(base, url)
-	const prefix = `${root.pathname.replace(/\/$/, "")}/preset/`
-	if (!url.pathname.startsWith(prefix)) {
+	const basePath = `${root.pathname.replace(/\/$/, "")}/`
+	const relative = url.pathname.slice(basePath.length)
+	if (!url.pathname.startsWith(basePath) || !/^(preset|presets|hardware)\//.test(relative)) {
 		return
 	}
-	const path = url.pathname.slice(prefix.length).replace(/\/(?:index\.html)?$/, "")
+	const path = relative.replace(/\/(?:index\.html)?$/, "")
 	if (!/^[a-z0-9][a-z0-9_-]*(?:\/[a-z0-9][a-z0-9_-]*)*$/.test(path)) {
 		throw new Error("Invalid preset path")
 	}
-	return new URL(`${prefix}${path}/preset.json`, url.origin)
+	return new URL(`${basePath}${path}/preset.json`, url.origin)
 }
 
 export async function loadPresetPage(

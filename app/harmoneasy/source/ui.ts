@@ -3,7 +3,7 @@ import NoteVisualiser from "audiobus/ui/note-visualiser.js"
 import NoteTimelineVisualiser from "audiobus/ui/note-timeline-visualiser"
 import SVGKeyboard from "audiobus/ui/keyboard-svg.ts"
 import { createOpenDAWExportDialog } from "./services/opendaw-export-dialog"
-import { EVENT_CLICK, EVENT_CHANGE, EVENT_ABORT } from "audiobus/event-constants"
+import { EVENT_CLICK, EVENT_CHANGE, EVENT_ABORT, EVENT_INPUT } from "audiobus/event-constants"
 import { installMediaDrop } from "./services/media-drop"
 
 import type NoteModel from "audiobus/note-model.ts"
@@ -837,8 +837,28 @@ export default class UI implements IAudioOutput {
 	}
 
 	whenSwingChangesRun(callback: (swing: number) => void) {
+		for (const [id, direction] of [
+			["btn-swing-down", -1],
+			["btn-swing-up", 1]
+		] as const) {
+			document.getElementById(id)?.addEventListener(
+				EVENT_CLICK,
+				() => {
+					if (!this.elementSwing || this.elementSwing.disabled) {
+						return
+					}
+					if (direction > 0) {
+						this.elementSwing.stepUp()
+					} else {
+						this.elementSwing.stepDown()
+					}
+					this.elementSwing.dispatchEvent(new Event(EVENT_INPUT, { bubbles: true }))
+				},
+				{ signal: this.abortController.signal }
+			)
+		}
 		this.elementSwing?.addEventListener(
-			"input",
+			EVENT_INPUT,
 			() => {
 				const swing = this.elementSwing!.valueAsNumber
 				this.setSwing(swing)

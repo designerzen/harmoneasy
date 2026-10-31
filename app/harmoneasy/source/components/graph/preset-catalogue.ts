@@ -1,7 +1,9 @@
-import { DEFAULT_PRESET_LIBRARY } from "audiobus/io/transformer-presets"
+import { DEFAULT_PRESET_LIBRARY } from "../../services/factory-preset-data"
 import type { TransformerPreset } from "audiobus/io/preset-library"
 import { START_CONTEXTS, createContextSetup } from "../../services/start-context-catalogue"
-import { OUTPUT_DEFINITIONS } from "audiobus/io/output-definitions"
+import { PERFORMANCE_PRESETS, performancePresetSetup } from "../../services/performance-presets"
+import { presetVoice, setupSurfaces } from "../../services/preset-instruments"
+import { OUTPUT_DEFINITIONS } from "../../../../../packages/audiobus/io/output-definitions"
 
 export const ACTIVITY_PRESETS: TransformerPreset[] = START_CONTEXTS.map((context) => ({
 	id: `activity:${context.id}`,
@@ -30,6 +32,10 @@ export function presetContext(preset: Pick<TransformerPreset, "id">) {
 }
 
 export function presetSetup(preset: TransformerPreset) {
+	const performance = performancePresetSetup(preset)
+	if (performance) {
+		return performance
+	}
 	const context = presetContext(preset)
 	const setup = createContextSetup(
 		context ?? {
@@ -43,26 +49,31 @@ export function presetSetup(preset: TransformerPreset) {
 	)
 	setup.chains[0].steps = structuredClone(preset.steps)
 	setup.chains[0].options = { ...setup.chains[0].options, ...preset.options }
+	if (!context?.outputs && !preset.id.startsWith("activity:")) {
+		setup.devices.find((device) => device.id === "synth")!.definition = presetVoice(
+			preset.steps
+		)
+	}
 	if (!preset.id.startsWith("activity:")) {
 		setup.id = preset.id
 		setup.name = preset.name
 		setup.description = preset.description
 		setup.chains[0].options.name = preset.name
 	}
-	return setup
+	return setupSurfaces(setup)
 }
 
 export function presetSound(preset: TransformerPreset) {
-	const context = presetContext(preset)
-	return context
-		? (context.outputs
-				?.map((output) =>
-					output.type
-						? (OUTPUT_DEFINITIONS[output.type]?.name ?? output.type)
-						: "PolySynth"
-				)
-				.join(" + ") ?? "PolySynth")
-		: undefined
+	return presetSetup(preset)
+		.devices.filter(
+			(device) => device.direction === "output" && device.definition.factory !== "external"
+		)
+		.map(({ definition }) =>
+			definition.factory === "polyphonic"
+				? `PolySynth (${definition.options?.shape ?? "default"})`
+				: (OUTPUT_DEFINITIONS[definition.type ?? ""]?.name ?? definition.type)
+		)
+		.join(" + ")
 }
 
 export function completePresets(saved: TransformerPreset[]) {
@@ -71,6 +82,7 @@ export function completePresets(saved: TransformerPreset[]) {
 			(preset) => !saved.some((item) => item.id === preset.id)
 		),
 		...saved,
-		...ACTIVITY_PRESETS
+		...ACTIVITY_PRESETS,
+		...PERFORMANCE_PRESETS
 	]
 }

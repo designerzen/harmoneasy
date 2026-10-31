@@ -32,6 +32,7 @@
 					<p>Choose a preset to start playing.</p>
 				</div>
 				<div class="start-secondary-actions">
+					<a href="%BASE_URL%presets/">Browse preset pages</a>
 					<button
 						class="btn-continue-session"
 						form="start-form"
@@ -116,6 +117,26 @@
 						aria-describedby="swing-output"
 					/>
 					<output id="swing-output" for="swing">0%</output>
+					<div class="control-stepper">
+						<button
+							type="button"
+							id="btn-swing-down"
+							class="btn-swing-control"
+							aria-label="Decrease swing"
+							title="Decrease swing"
+						>
+							−
+						</button>
+						<button
+							type="button"
+							id="btn-swing-up"
+							class="btn-swing-control"
+							aria-label="Increase swing"
+							title="Increase swing"
+						>
+							+
+						</button>
+					</div>
 				</div>
 				<div id="volume-control" class="controls">
 					<label for="volume">Volume</label>
@@ -161,6 +182,7 @@
 								disabled
 							>
 								<option value="internal">Internal</option>
+								<option value="microphone">Follow microphone tempo</option>
 								<option value="shared">Shared (QR / room)</option>
 								<option value="manual">Manual key press</option>
 							</select>

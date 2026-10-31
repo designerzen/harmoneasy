@@ -3,7 +3,8 @@ import type { TransformerPreset, PresetSetup, PresetLibrary } from "audiobus/io/
 import { EVENT_PRESET_LIBRARY_UPDATED, EVENT_STORAGE } from "audiobus/event-constants"
 import { createPresetDetails } from "./PresetDetails"
 import { createPresetArtwork } from "./PresetArtwork"
-import { completePresets, presetContext } from "./preset-catalogue"
+import { completePresets, presetContext, presetSetup } from "./preset-catalogue"
+import { builtinPresetRoute } from "../../services/builtin-preset-pages"
 import { START_CONTEXTS } from "../../services/start-context-catalogue"
 import { TRANSFORMER_DEFINITIONS } from "audiobus/io/transformer-definitions"
 import { discoveryMatches } from "./discovery-search"
@@ -338,12 +339,14 @@ export function createPresetBrowser({
 	function selected() {
 		const presets = completePresets(library.presets)
 		const setup = library.setups.find((item) => `setup:${item.id}` === selection)
+		const preset = setup
+			? undefined
+			: (presets.find((item) => `preset:${item.id}` === selection) ?? presets[0])
 		return {
 			presets,
-			setup,
-			preset: setup
-				? undefined
-				: (presets.find((item) => `preset:${item.id}` === selection) ?? presets[0])
+			setup:
+				setup ?? (preset?.id.startsWith("performance:") ? presetSetup(preset) : undefined),
+			preset
 		}
 	}
 	function render() {
@@ -584,6 +587,11 @@ export function createPresetBrowser({
 				)
 				preview.append(article)
 			}
+			if (preset && completePresets([]).some((item) => item.id === preset.id)) {
+				const link = element("a", "preset-library-note", "Open this preset by URL")
+				link.href = `${import.meta.env.BASE_URL}${builtinPresetRoute(preset)}/`
+				preview.append(link)
+			}
 			if (!preset && !setup) {
 				preview.append(
 					element(
@@ -594,7 +602,11 @@ export function createPresetBrowser({
 				)
 			}
 			const item = setup ?? preset
-			if (item && !preset?.id.startsWith("activity:")) {
+			if (
+				item &&
+				!preset?.id.startsWith("activity:") &&
+				!preset?.id.startsWith("performance:")
+			) {
 				const kind = setup ? "setups" : "presets"
 				const details = element("details", "preset-item-tools")
 				details.append(element("summary", "", `Manage this ${setup ? "setup" : "preset"}`))
@@ -660,10 +672,10 @@ export function createPresetBrowser({
 		footer.hidden = !!editor || (!preset && !setup)
 		applyText.textContent = startup
 			? ((preset ?? setup)?.name ?? "")
-			: createChain
-				? "Creates a new chain with this preset."
-				: setup
-					? "Replaces every chain and its routing."
+			: setup
+				? "Replaces every chain and its routing."
+				: createChain
+					? "Creates a new chain with this preset."
 					: "Replaces transformers on this chain. Your input and instrument stay connected."
 		apply.disabled = busy || !!storageError || (!!setup && !manager && !onChooseSetup)
 		apply.textContent = busy

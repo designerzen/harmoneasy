@@ -444,11 +444,14 @@ const initialiseApplication = async (
 	}
 	const pageSetup =
 		!startupSetup && !roomSetup && !hasSavedWorkspace ? pageResult.preset : undefined
+	const presetClock = startupSetup?.clock ?? pageSetup?.clock
+	if (presetClock) {
+		state.set("tempo", presetClock.bpm)
+		state.set("swing", presetClock.swing)
+		state.set("divisions", presetClock.divisions)
+		state.set("bars", presetClock.bars)
+	}
 	if (pageSetup) {
-		state.set("tempo", pageSetup.clock.bpm)
-		state.set("swing", pageSetup.clock.swing)
-		state.set("divisions", pageSetup.clock.divisions)
-		state.set("bars", pageSetup.clock.bars)
 		state.set("midiControls", JSON.stringify(pageSetup.midiControls))
 	}
 	if (roomSetup) {
@@ -638,7 +641,10 @@ const initialiseApplication = async (
 				state.set("clockMidiDevice", device)
 			}
 		},
-		() => ui.setPlaying(ioManager.transportRunning)
+		() => ui.setPlaying(ioManager.transportRunning),
+		async (enabled) => {
+			await musicalFeatureControls?.followMicrophone(enabled)
+		}
 	)
 	if (savedClockDevice != null && savedClockDevice !== "") {
 		clockSource.midiDevice = String(savedClockDevice)

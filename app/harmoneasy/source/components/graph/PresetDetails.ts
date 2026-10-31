@@ -51,9 +51,11 @@ export function createPresetDetails(preset: TransformerPreset) {
 		element(
 			"p",
 			"preset-hint",
-			(presetContext(preset)
-				? "A new chain includes only the outputs listed above. Applying to an existing chain keeps its current inputs and outputs."
-				: "Keeps the notes you play as the starting point and processes them in the order above. Uses your chain’s input and instrument.") +
+			(preset.id.startsWith("performance:")
+				? "Loads the complete instrument, including every layer, its inputs and control surfaces. Loading replaces the current workspace."
+				: presetContext(preset)
+					? "A new chain includes only the outputs listed above. Applying to an existing chain keeps its current inputs and outputs."
+					: "Keeps the notes you play as the starting point and processes them in the order above. Uses your chain’s input and instrument.") +
 				" Change the key, tempo and transformer settings to suit your piece."
 		)
 	)
