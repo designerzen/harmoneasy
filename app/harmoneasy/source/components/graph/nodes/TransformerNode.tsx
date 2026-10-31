@@ -1,13 +1,13 @@
 import { useChain } from "../ChainContext"
 import { Handle, Position } from "@xyflow/react"
 import React, { useCallback, useEffect, useState } from "react"
-import { TransformerSettings } from "../Widgets.tsx"
 import { elementDescription, elementIcon } from "../element-icons"
 import { ElementIcon } from "../ElementIcon"
 import { NodeHeader } from "../NodeHeader"
 import { TransformerDialog } from "../GraphDialogs"
 import { MinimiseButton } from "../MinimiseButton"
 import { DeviceGui } from "../DeviceGui"
+import { CONTROL_HANDLE } from "../control-surfaces"
 
 function TransformerStatus({ element }: { element: { status: string; statusState?: string } }) {
 	const readStatus = () => ({ text: element.status, state: element.statusState ?? "idle" })
@@ -206,18 +206,12 @@ export function TransformerNode(props: any) {
 				<TransformerStatus element={props.data.element} />
 			)}
 
-			<TransformerSettings
-				fields={props.data.fields}
-				element={props.data.element}
-				expanded={isFullscreen}
-			/>
-			{props.data.element.createGui && (
-				<DeviceGui device={props.data.element} expanded={isFullscreen} />
-			)}
+			<DeviceGui device={props.data.element} expanded={isFullscreen} />
 
 			{!isFullscreen && (
 				<Handle type="source" position={isVertical ? Position.Bottom : Position.Right} />
 			)}
+			{!isFullscreen && <><span className="control-connector-label">Controls</span><Handle type="source" id={CONTROL_HANDLE} position={isVertical ? Position.Bottom : Position.Right} style={isVertical ? {left:"80%"}:{top:"80%"}} className="control-connector" aria-label={`${props.data.element.name} controls`} /></>}
 			{!isFullscreen && (
 				<Handle type="target" position={isVertical ? Position.Top : Position.Left} />
 			)}

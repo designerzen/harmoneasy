@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react"
 import { deviceId } from "audiobus/io/device-definition"
+import { installComponentUi } from "audiobus/io/component-ui"
 
 // A device's createGui commonly returns one cached DOM element. Keep it mounted
 // in one graph at a time; moving/deleting a chain must not destroy another view.
@@ -10,6 +11,7 @@ const views = new WeakMap<
 export function DeviceGui({ device, expanded = false }: { device: any; expanded?: boolean }) {
 	const ref = useRef<HTMLDivElement>(null)
 	useEffect(() => {
+		installComponentUi(device)
 		if (!device.createGui || !ref.current) {
 			return
 		}

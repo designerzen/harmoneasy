@@ -58,6 +58,17 @@ function setup() {
 const tick = () => new Promise((resolve) => setTimeout(resolve, 15))
 
 describe("IO workspace", () => {
+	it("restores control surfaces and their stable device/transformer bindings with a workspace",async()=>{
+		const {manager,chain,sink}=setup()
+		const componentId=deviceId(sink)
+		chain.setGraphOptions({controlSurfaces:[{id:"surface",name:"Performance",theme:"neon",connections:[{componentId,controlIds:["gain"]}],widgets:[{key:JSON.stringify([componentId,"gain"]),widget:"dial",span:2}]}]})
+		const expected=structuredClone(chain.options.controlSurfaces),saved=manager.exportWorkspace()
+		await manager.restoreWorkspace(saved)
+		expect(manager.chains[0].options.controlSurfaces).toEqual(expected)
+		expect(deviceId(manager.chains[0].outputs[0])).toBe(componentId)
+		expect(()=>manager.chains[0].setGraphOptions({controlSurfaces:[{...expected![0],widgets:[{key:"bad",span:0}]}]})).toThrow("Invalid control surfaces")
+		manager.destroy()
+	})
 	it("processes notes after a shared-clock follower is promoted to conductor", async () => {
 		const { manager, chain, timer, sink } = setup()
 		await manager.transport("stop")

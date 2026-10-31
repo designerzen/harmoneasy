@@ -26,6 +26,8 @@ import { InputNode } from "./nodes/InputNode.tsx"
 import { OutputNode } from "./nodes/OutputNode.tsx"
 import { TransformerNode } from "./nodes/TransformerNode.tsx"
 import { AddTransformerNode } from "./nodes/AddTransformerNode.tsx"
+import { ControlSurfaceNode } from "./nodes/ControlSurfaceNode"
+import { CONTROL_HANDLE, SURFACE_HANDLE, controlComponentId, disconnectSurface, removeSurface, selectSurfaceControls } from "./control-surfaces"
 
 import { DEFAULT_GRAPH_OPTIONS, DEFAULT_VIEWPORT_OPTIONS, DEFAULT_LAYOUT_MODE } from "./options.ts"
 
@@ -47,7 +49,8 @@ const nodeTypes = {
 	input: InputNode,
 	output: OutputNode,
 	transformer: TransformerNode,
-	addTransformer: AddTransformerNode
+	addTransformer: AddTransformerNode,
+	controlSurface: ControlSurfaceNode
 }
 
 const edgeTypes = {
@@ -66,6 +69,8 @@ function FlowComponent({ isFront, focusRequest }: { isFront: boolean; focusReque
 	const nodesInitialized = useNodesInitialized()
 	const [fullscreenNodeId, setFullscreenNodeId] = useState<string | null>(null)
 	const [compactNodeIds, setCompactNodeIds] = useState<Set<string>>(() => new Set())
+	const controlDialogs=useRef(new Set<{destroy():void}>())
+	useEffect(()=>()=>{for(const dialog of controlDialogs.current)dialog.destroy()},[])
 
 	useEffect(() => {
 		const abortController = new AbortController()
@@ -171,6 +176,7 @@ function FlowComponent({ isFront, focusRequest }: { isFront: boolean; focusReque
 	}, [])
 	const detachEdges = (edges: Edge[]) => {
 		for (const edge of edges) {
+			if(edge.data?.controlSurfaceId){disconnectSurface(chain,String(edge.data.controlSurfaceId),String(edge.data.componentId));continue}
 			const source = nodes.find((node) => node.id === edge.source)
 			const target = nodes.find((node) => node.id === edge.target)
 			if (source?.data.input) {
@@ -183,6 +189,7 @@ function FlowComponent({ isFront, focusRequest }: { isFront: boolean; focusReque
 	}
 	const removeNodes = (removed: GraphNode[]) => {
 		for (const node of removed) {
+			if(node.data.surface){removeSurface(chain,node.data.surface.id);continue}
 			if (node.data.input) {
 				chain.removeInput(node.data.input)
 			}
@@ -197,6 +204,9 @@ function FlowComponent({ isFront, focusRequest }: { isFront: boolean; focusReque
 	const validConnection = (connection: Connection | Edge) => {
 		const source = nodes.find((node) => node.id === connection.source)
 		const target = nodes.find((node) => node.id === connection.target)
+		if(connection.sourceHandle===CONTROL_HANDLE || connection.targetHandle===SURFACE_HANDLE || target?.type==="controlSurface") {
+			return Boolean(connection.sourceHandle===CONTROL_HANDLE && connection.targetHandle===SURFACE_HANDLE && target?.data.surface && (source?.data.input||source?.data.output||source?.data.element))
+		}
 		return Boolean(
 			source &&
 			target &&
@@ -217,6 +227,11 @@ function FlowComponent({ isFront, focusRequest }: { isFront: boolean; focusReque
 		}
 		const source = nodes.find((node) => node.id === connection.source)
 		const target = nodes.find((node) => node.id === connection.target)
+		if(connection.sourceHandle===CONTROL_HANDLE && target?.data.surface) {
+			const component=source?.data.input??source?.data.output??source?.data.element
+			if(component)controlDialogs.current.add(selectSurfaceControls(chain,target.data.surface.id,controlComponentId(component)))
+			return
+		}
 		if (source?.data.input) {
 			chain.addInput(source.data.input)
 		}
@@ -307,6 +322,7 @@ function FlowComponent({ isFront, focusRequest }: { isFront: boolean; focusReque
 				isValidConnection={validConnection}
 				onNodesDelete={removeNodes}
 				onEdgesDelete={detachEdges}
+				onEdgeClick={(_,edge)=>{if(edge.data?.controlSurfaceId)controlDialogs.current.add(selectSurfaceControls(chain,String(edge.data.controlSurfaceId),String(edge.data.componentId)))}}
 				onNodeDragStop={(_, node) =>
 					chain.setGraphOptions({
 						positions: {

@@ -2,6 +2,7 @@ import { Position, type Node, type Edge } from "@xyflow/react"
 import { deviceId } from "audiobus/io/device-definition"
 import type IOChain from "audiobus/io/IO-chain"
 import { DEFAULT_LAYOUT_MODE } from "./options"
+import { CONTROL_HANDLE, SURFACE_HANDLE, controlComponentId } from "./control-surfaces"
 
 export const EDGE_TYPE = { animated: "animatedSvg" }
 export const NOTE_TYPE = {
@@ -116,6 +117,14 @@ export const getStructure = (
 		)
 		previous.forEach((source) => connect(source, node))
 	})
+	for (const [index, surface] of (chain.options.controlSurfaces ?? []).entries()) {
+		const node = addNode(`control-surface-${surface.id}`, "controlSurface", transformerColumn + 2, index, {label: surface.name, surface})
+		for (const connection of surface.connections) {
+			const source = nodes.find(n => {const component=n.data.input??n.data.output??n.data.element;return component && controlComponentId(component)===connection.componentId})
+			if (!source) continue
+			edges.push({id:`control:${source.id}->${node.id}`,source:source.id,target:node.id,sourceHandle:CONTROL_HANDLE,targetHandle:SURFACE_HANDLE,type:"smoothstep",label:`${connection.controlIds.length} controls`,deletable:true,style:{stroke:"#33bb91",strokeDasharray:"5 4",strokeWidth:2},data:{controlSurfaceId:surface.id,componentId:connection.componentId}})
+		}
+	}
 	return { nodes: layoutMeasuredNodes(nodes, layoutMode), edges }
 }
 

@@ -54,6 +54,7 @@
 		"ws": "^8.22.0"
 	},
 	"dependencies": {
+		"control-surface": "workspace:^",
 		"@harmoneasy/shared-config": "workspace:^",
 		"@xyflow/react": "^12.10.1",
 		"audiobus": "workspace:^",

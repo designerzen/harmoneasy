@@ -1,0 +1,31 @@
+.control-surface{width: min(760px, 88vw);min-width:280px;max-width:100%;font:14px system-ui,sans-serif;color:#d6fff2;background:#080d18;padding:12px;border-radius:12px;box-sizing:border-box;isolation:isolate}
+.control-surface *{box-sizing:border-box}
+.cs-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.cs-toolbar button,.cs-toolbar select,.cs-widget-tools button,.cs-widget-tools select{font:inherit;color:#cbfdeb;background:#101f2b;border:1px solid #296254;border-radius:5px;padding:7px;min-height:32px}
+.cs-stage{position:relative;width:100%;touch-action:none}
+.cs-stage>canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.cs-widget{position:absolute;border-radius:10px;overflow:hidden}
+.cs-semantic{display:grid;gap:6px;padding:12px;color:#d6fff2;font:inherit;min-width:0}
+.cs-semantic input,.cs-semantic select,.cs-semantic button,.cs-semantic textarea{max-width:100%;min-width:0;font:inherit}
+.cs-semantic input:not([type=range]):not([type=checkbox]),.cs-semantic select,.cs-semantic button{color:#d6fff2;background:#112438;border:1px solid #296254;border-radius:4px;padding:6px}
+.cs-gpu-ready .cs-semantic:not(.cs-text):not(.cs-number):not(.cs-select):not(.cs-color){position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);padding:0}
+.cs-gpu-ready .cs-semantic:focus-within{position:absolute!important;inset:40px 10px 24px;width:auto!important;height:auto!important;overflow:visible!important;clip-path:none!important;padding:8px!important;background:#112438;z-index:2;align-content:center}
+.cs-gpu-ready .cs-text,.cs-gpu-ready .cs-number,.cs-gpu-ready .cs-select,.cs-gpu-ready .cs-color{position:absolute;left:12px;right:12px;top:62px;padding:0}
+.cs-gpu-ready .cs-semantic>span,.cs-gpu-ready .cs-semantic>small{display:none}
+.cs-widget-tools{position:absolute;bottom:2px;left:3px;right:3px;display:flex;flex-wrap:wrap;gap:2px;z-index:3;background:#080d18}
+.cs-widget-tools button,.cs-widget-tools select{font-size:11px;padding:2px;min-height:24px}
+.cs-status{margin:6px 0 0;color:#9bbfb7;font-size:12px;max-width:100%;overflow-wrap:anywhere}
+.cs-editing .cs-widget{outline:1px dashed #296254}
+.component-controls fieldset{display:grid;gap:10px;min-width:0}
+.component-controls label{display:grid;gap:4px}
+.component-controls input,.component-controls select{max-width:100%;min-width:0}
+.control-selection-dialog{max-width:min(640px,95vw);max-height:85dvh;overflow:auto}
+.control-selection-dialog form{display:grid;gap:14px}
+.control-selection-dialog fieldset{display:grid;gap:8px}
+.control-selection-dialog label{display:flex;gap:8px;align-items:center}
+.control-selection-dialog small{display:block;opacity:.7}
+.control-connector{background:#33ffb8!important;border:2px solid #092719!important;width:13px!important;height:13px!important}
+.control-connector-label{display:block;font-size:11px;color:#33bb91;text-align:right;padding:3px 8px}
+.node-control-surface{width:700px;max-width:90vw;background:#080d18;padding:12px;border:1px solid #296254;border-radius:14px;color:#d6fff2}
+.node-control-surface>header{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-bottom:8px}
+.node-control-surface .control-surface{width:100%;padding:0}

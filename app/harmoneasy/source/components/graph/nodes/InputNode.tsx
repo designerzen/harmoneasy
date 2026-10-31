@@ -6,6 +6,7 @@ import { deviceId } from "audiobus/io/device-definition"
 import { useChain } from "../ChainContext"
 import { Handle, Position } from "@xyflow/react"
 import React, { useCallback } from "react"
+import { CONTROL_HANDLE } from "../control-surfaces"
 
 import type AbstractInput from "audiobus/io/inputs/abstract-input"
 import type { IAudioInput } from "audiobus/io/inputs/input-interface"
@@ -98,6 +99,7 @@ export function InputNode(props: any) {
 			{!isFullscreen && (
 				<Handle type="source" position={isVertical ? Position.Bottom : Position.Right} />
 			)}
+			{!isFullscreen && <><span className="control-connector-label">Controls</span><Handle type="source" id={CONTROL_HANDLE} position={isVertical ? Position.Bottom : Position.Right} style={isVertical ? {left:"80%"}:{top:"80%"}} className="control-connector" aria-label={`${input.name} controls`} /></>}
 		</div>
 	)
 }

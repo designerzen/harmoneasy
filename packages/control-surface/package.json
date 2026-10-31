@@ -1,0 +1,15 @@
+{
+	"name": "control-surface",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts",
+		"./types": "./src/types.ts",
+		"./model": "./src/model.ts",
+		"./dom": "./src/dom.ts",
+		"./style.css": "./src/style.css"
+	},
+	"scripts": { "type-check": "tsc --noEmit", "test:browser": "node tests/browser-smoke.mjs" },
+	"devDependencies": { "@webgpu/types": "0.1.74", "typescript": "~5.9.3", "playwright": "1.63.0" }
+}
