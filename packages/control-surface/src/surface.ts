@@ -81,6 +81,8 @@ interface Gesture {
 	position: number
 }
 export interface SurfaceOptions {
+	/** Continuous quarter-note position from the shared transport; undefined when stopped. */
+	beatPosition?(): number | undefined
 	visualEffects?: SurfaceVisualEffects
 	state: SurfaceState
 	bindings: ControlBinding[]
@@ -256,6 +258,23 @@ export class ControlSurface {
 		const themeLabel = document.createElement("label")
 		themeLabel.append(toggle.firstElementChild!.cloneNode(true), "Theme", theme)
 		menu.append(themeLabel)
+		if (options.beatPosition) {
+			const label = document.createElement("label"),
+				enabled = document.createElement("input")
+			label.className = "cs-beat-toggle"
+			enabled.type = "checkbox"
+			enabled.checked = options.state.beatCues !== false
+			enabled.addEventListener(
+				EVENT_CHANGE,
+				() => {
+					options.state.beatCues = enabled.checked
+					this.save()
+				},
+				{ signal: this.abort.signal }
+			)
+			label.append(enabled, "Beat cues")
+			menu.append(label)
+		}
 		settings.append(toggle, menu)
 		settings.addEventListener(
 			EVENT_KEY_DOWN,
@@ -373,6 +392,7 @@ export class ControlSurface {
 					if (this.layoutMode !== `${playing.hands}:${playing.columns}`) {
 						this.layout()
 					}
+					this.updateBeat()
 					const visible = this.viewport.getBoundingClientRect()
 					this.renderer.prepare(
 						this.entries
@@ -409,6 +429,13 @@ export class ControlSurface {
 			this.frame = requestAnimationFrame(loop)
 		}
 		this.frame = requestAnimationFrame(loop)
+	}
+	private updateBeat(): void {
+		this.renderer?.setBeatPosition(
+			!this.motion.matches && this.options.state.beatCues !== false
+				? this.options.beatPosition?.()
+				: undefined
+		)
 	}
 	private button(label: string, run: () => void): HTMLButtonElement {
 		const button = document.createElement("button")
@@ -1735,6 +1762,7 @@ export class ControlSurface {
 			this.xr = await startSurfaceXR(
 				this.renderer,
 				() => {
+					this.updateBeat()
 					this.flushWrites()
 					this.updateFeedback()
 					return {

@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { beatPulse } from "../../../packages/control-surface/src/beat"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import {
 	ControlSurface,
@@ -39,6 +40,7 @@ import type { ControlBinding, ControlDescriptor, SurfaceState } from "control-su
 import { componentBindings, installComponentUi } from "audiobus/io/component-ui"
 import { TransformerQuantise } from "audiobus/io/transformers/transformer-quantise"
 import {
+	surfaceBeat,
 	disconnectSurface,
 	selectSurfaceControls,
 	CONTROL_HANDLE,
@@ -297,6 +299,36 @@ describe("shared component controls", () => {
 })
 
 describe("surface interaction and bindings", () => {
+	it("follows transport beats and stops cues when playback stops or motion is reduced", () => {
+		const timer = {
+			isRunning: true,
+			BPM: 120,
+			barsElapsed: 0,
+			totalBars: 4,
+			bar: 2,
+			beatProgress: 0,
+			totalDivisions: 24,
+			timeElapsed: 1000,
+			clockUnitsToSecondsScale: 0.001,
+			lastRecordedTime: 1
+		}
+		expect(surfaceBeat(timer)).toBe(2)
+		expect(beatPulse(surfaceBeat(timer))).toBe(0.3)
+		timer.timeElapsed = 1010
+		expect(surfaceBeat(timer)).toBeCloseTo(2.02)
+		expect(beatPulse(surfaceBeat(timer))).toBeLessThan(0.3)
+		timer.BPM = 60
+		expect(surfaceBeat(timer)).toBeCloseTo(2.01)
+		timer.timeElapsed = 9000
+		expect(surfaceBeat(timer)).toBeCloseTo(2 + 1 / 24)
+		timer.isRunning = false
+		expect(surfaceBeat(timer)).toBeUndefined()
+		expect(beatPulse(undefined)).toBe(0)
+		expect(beatPulse(2, false)).toBe(0)
+		expect(beatPulse(NaN)).toBe(0)
+		expect(beatPulse(3)).toBe(0.3)
+		expect(beatPulse(2.5)).toBeLessThan(0.001)
+	})
 	it("keeps musical targets at least 44 pixels with 11 pixel gaps when resized or zoomed", () => {
 		for (const scale of [0.5, 1, 2, 3]) {
 			for (const width of [280, 390, 700]) {
@@ -383,12 +415,12 @@ describe("surface interaction and bindings", () => {
 				expect(a.x + a.width).toBeLessThanOrEqual(width + 0.001)
 				expect(a.y + a.height).toBeLessThanOrEqual(layout.height)
 				for (const b of layout.items.slice(i + 1))
-					expect(
+					{expect(
 						a.x < b.x + b.width &&
 							a.x + a.width > b.x &&
 							a.y < b.y + b.height &&
 							a.y + a.height > b.y
-					).toBe(false)
+					).toBe(false)}
 			}
 			expect(layoutWidgets(widgets, width)).toEqual(layout)
 		}

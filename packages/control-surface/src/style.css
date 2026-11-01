@@ -578,3 +578,7 @@
 	font-size: 18px;
 	font-weight: 600;
 }
+.cs-settings-menu .cs-beat-toggle {
+	grid-template-columns: var(--cs-target, 44px) 1fr;
+	gap: var(--cs-gap, 11px);
+}

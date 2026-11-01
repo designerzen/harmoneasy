@@ -17,6 +17,35 @@ import {
 } from "audiobus/event-constants"
 import type IOChain from "audiobus/io/IO-chain"
 
+/** Interpolate only up to the next transport tick, so delayed ticks cannot create a free-running cue. */
+export function surfaceBeat(
+	timer: Pick<
+		IOChain["timer"],
+		| "isRunning"
+		| "BPM"
+		| "barsElapsed"
+		| "totalBars"
+		| "bar"
+		| "beatProgress"
+		| "totalDivisions"
+		| "timeElapsed"
+		| "clockUnitsToSecondsScale"
+		| "lastRecordedTime"
+	>
+): number | undefined {
+	if (
+		!timer.isRunning ||
+		!Number.isFinite(timer.BPM) ||
+		timer.BPM <= 0 ||
+		timer.totalDivisions <= 0
+	) {
+		return undefined
+	}
+	const elapsed = timer.timeElapsed * timer.clockUnitsToSecondsScale - timer.lastRecordedTime
+	const fraction = Math.max(0, Math.min(1 / timer.totalDivisions, (elapsed * timer.BPM) / 60))
+	return timer.barsElapsed * timer.totalBars + timer.bar + timer.beatProgress + fraction
+}
+
 export const CONTROL_HANDLE = "component-controls"
 export const SURFACE_HANDLE = "surface-controls"
 export function controlComponentId(component: object & { midiControlId?: string }): string {
@@ -276,6 +305,7 @@ export function mountControlSurface(
 			return view ? [view] : []
 		})
 		surface = new ControlSurface({
+			beatPosition: () => surfaceBeat(chain.timer),
 			state: structuredClone(state),
 			bindings,
 			toolbarHost,

@@ -47,6 +47,10 @@ vi.mock("../source/services/room-connection", () => ({
 	})
 }))
 const element = <T extends HTMLElement>(id: string) => document.getElementById(id) as T
+const startHost = async () => {
+	element<HTMLButtonElement>("netronome-start").click()
+	await idle()
+}
 const idle = () =>
 	vi.waitFor(() => expect(element<HTMLButtonElement>("netronome-apply").disabled).toBe(false))
 
@@ -61,13 +65,37 @@ beforeEach(() => {
 })
 
 describe("Netronome connection links", () => {
+	it("validates room names with the HTML pattern's Unicode sets flag", () => {
+		const pattern = element<HTMLInputElement>("netronome-room-name").pattern
+		const expression = new RegExp(`^(?:${pattern})$`, "v")
+		for (const name of ["jam", "our-jam", "room_1.2"]) {
+			expect(expression.test(name)).toBe(true)
+		}
+		for (const name of ["", "-jam", "bad/name", "A-room", "a".repeat(65)]) {
+			expect(expression.test(name)).toBe(false)
+		}
+	})
+
+	it("does not create a peer or rewrite a preset URL during solo startup", async () => {
+		const url = "http://localhost:3000/presets/genres/ambient/"
+		window.history.replaceState(null, "", url)
+		const link = createNetronomeLink({}, () => false, { autoStart: false })
+		await link.setSource("internal")
+		await link.initialize()
+		expect(mocks.controllers).toHaveLength(0)
+		expect(mocks.qr).not.toHaveBeenCalled()
+		expect(window.location.href).toBe(url)
+		await startHost()
+		expect(mocks.controllers[0].createOfferBundle).toHaveBeenCalledOnce()
+	})
+
 	it("starts with two choices and guides the host from invitation to connected", async () => {
 		createNetronomeLink({}, () => false)
 		await idle()
 		expect(element("netronome-choice").hidden).toBe(false)
 		expect(element("netronome-flow").hidden).toBe(true)
 		expect(element<HTMLDetailsElement>("netronome-options").open).toBe(false)
-		element<HTMLButtonElement>("netronome-start").click()
+		await startHost()
 		expect(element("netronome-choice").hidden).toBe(true)
 		expect(element("netronome-outgoing").hidden).toBe(false)
 		expect(element("netronome-incoming").hidden).toBe(false)
@@ -119,6 +147,7 @@ describe("Netronome connection links", () => {
 		let playing = true
 		const link = createNetronomeLink({}, () => playing)
 		await idle()
+		await startHost()
 		expect(mocks.controllers[0].options.role).toBe("leader")
 		expect(element<HTMLImageElement>("netronome-qr-preview").hidden).toBe(false)
 		expect(readSyncBundle(element<HTMLTextAreaElement>("netronome-local-link").value)).toEqual(
@@ -159,6 +188,7 @@ describe("Netronome connection links", () => {
 	it("keeps the live offer when a malformed reply is pasted", async () => {
 		createNetronomeLink({}, () => true)
 		await idle()
+		await startHost()
 		element<HTMLTextAreaElement>("netronome-remote-link").value = "invalid"
 		element<HTMLButtonElement>("netronome-apply").click()
 		await idle()
@@ -166,9 +196,10 @@ describe("Netronome connection links", () => {
 		expect(mocks.controllers[0].destroy).not.toHaveBeenCalled()
 		expect(element("netronome-status").textContent).not.toBe("Connecting…")
 	})
-	it("hides QR codes and destroys the sharing session for every external source, then recreates it for Internal", async () => {
+	it("hides QR codes and destroys the sharing session for every external source, waits for an invitation after returning to Internal", async () => {
 		const link = createNetronomeLink({}, () => false)
 		await idle()
+		await startHost()
 		const controller = mocks.controllers[0]
 		for (const source of ["midi", "manual", "shared"] as const) {
 			await link.setSource(source)
@@ -178,6 +209,9 @@ describe("Netronome connection links", () => {
 		}
 		expect(controller.destroy).toHaveBeenCalledOnce()
 		await link.setSource("internal")
+		expect(mocks.controllers).toHaveLength(1)
+		expect(element<HTMLImageElement>("netronome-qr-preview").hidden).toBe(true)
+		await startHost()
 		expect(element<HTMLImageElement>("netronome-qr-preview").hidden).toBe(false)
 		expect(element<HTMLButtonElement>("netronome-regenerate").disabled).toBe(false)
 	})
@@ -214,6 +248,7 @@ describe("Netronome connection links", () => {
 	it("invites another player without destroying the current room", async () => {
 		createNetronomeLink({}, () => true)
 		await idle()
+		await startHost()
 		const controller = mocks.controllers[0]
 		controller.onStateChange({ connected: true, locked: true })
 		element<HTMLButtonElement>("netronome-regenerate").click()
@@ -265,6 +300,7 @@ describe("Netronome connection links", () => {
 			{ manager: manager as any }
 		)
 		await idle()
+		await startHost()
 		const controller = mocks.controllers[0]
 		controller.onStateChange({ connected: true, locked: true })
 		controller.startSynchronized.mockClear()
@@ -279,6 +315,7 @@ describe("Netronome connection links", () => {
 		mocks.qr.mockRejectedValueOnce(new Error("QR capacity exceeded"))
 		createNetronomeLink({}, () => false)
 		await idle()
+		await startHost()
 		expect(element<HTMLImageElement>("netronome-qr").hidden).toBe(true)
 		expect(element("netronome-status").textContent).toContain("too large")
 		expect(readSyncBundle(element<HTMLTextAreaElement>("netronome-local-link").value)).toEqual(
@@ -294,6 +331,7 @@ describe("Netronome connection links", () => {
 			manager: manager as any
 		})
 		await idle()
+		await startHost()
 		const original = readRoomUrl(window.location.href)
 		element<HTMLButtonElement>("netronome-new-room").click()
 		await vi.waitFor(() => expect(mocks.controllers).toHaveLength(2))

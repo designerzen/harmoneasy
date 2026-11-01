@@ -446,6 +446,7 @@ async function profilePolySynth(
 		}
 	}
 	const surface = new ControlSurface({
+		beatPosition: () => audio.currentTime * 2,
 		state: {
 			id: "poly",
 			name: "PolySynth",
@@ -523,6 +524,7 @@ async function profilePolySynth(
 	}
 	const result = {
 		engine: "PolySynth",
+		beatCues: true,
 		mode,
 		zoom,
 		dials: entries.length,

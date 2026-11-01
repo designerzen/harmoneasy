@@ -457,6 +457,7 @@ export function createNetronomeLink(
 			}
 			await controls.setSource("internal")
 			showStep("invite")
+			await run(host)
 		})().catch(showError)
 	})
 	// Capture the scanned invitation before persisting clock settings changes the URL.
@@ -465,8 +466,6 @@ export function createNetronomeLink(
 		if (incoming) {
 			dialog.showModal()
 			await connect(incoming)
-		} else if (!controller && source === "internal") {
-			await run(host)
 		}
 	}
 	updateSourceUI()
@@ -500,7 +499,6 @@ export function createNetronomeLink(
 				local.value = ""
 				setFollowerControls(source !== "internal")
 				if (source === "internal") {
-					await host()
 					showStep("choose")
 				} else {
 					showStep("join")

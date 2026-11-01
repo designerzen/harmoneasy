@@ -127,6 +127,7 @@ export interface SurfaceConnection {
 	controlIds: string[]
 }
 export interface SurfaceState {
+	beatCues?: boolean
 	panels?: string[]
 	id: string
 	name: string

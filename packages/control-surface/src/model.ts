@@ -256,6 +256,7 @@ export function validSurfaces(value: unknown): value is SurfaceState[] {
 		}
 		ids.add(s.id)
 		return (
+			(s.beatCues === undefined || typeof s.beatCues === "boolean") &&
 			(s.panels === undefined ||
 				(Array.isArray(s.panels) &&
 					s.panels.length <= 32 &&

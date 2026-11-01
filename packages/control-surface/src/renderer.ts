@@ -1,4 +1,5 @@
 /// <reference types="@webgpu/types" />
+import { beatPulse } from "./beat"
 import { EVENT_GPU_ERROR } from "./events"
 import { sourceTheme } from "./themes"
 import {
@@ -173,7 +174,7 @@ fn chassis(distance:f32,top:f32,pressed:f32)->vec4f {
   let grid=select(select(max(line((p.x)%16.0,0.25),line((p.y)%16.0,0.25)),line((p.x+p.y)%14.0,0.35),pattern>0.5),line(length(p)%18.0,0.3),pattern>1.5);
   let a=1.0-smoothstep(0.0,1.0,edge);
   let bevel=(1.0-smoothstep(0.0,2.0,abs(edge+3.0)))*top*frame.effects.x;
-  let rgb=mix(vec3f(0.022,0.031,0.048)*(0.85+top*0.3),i.color.rgb,0.018+grid*0.004)+vec3f(0.07,0.1,0.13)*bevel+i.color.rgb*(line(edge,0.6)*(0.2+engaged*0.65));
+  let rgb=mix(vec3f(0.022,0.031,0.048)*(0.85+top*0.3),i.color.rgb,0.018+grid*0.004)+vec3f(0.07,0.1,0.13)*bevel+i.color.rgb*(line(edge,0.6)*(0.2+engaged*0.65+frame.effects.y));
   return surfaceEffect(vec4f(rgb,a),i.uv,frame.time);
  } else if (kind<1.5) {
   color=settingColor(value);
@@ -265,7 +266,7 @@ fn chassis(distance:f32,top:f32,pressed:f32)->vec4f {
   material=chassis(d,1.0-top,0.0);
  }
  let pulse=1.0+sin(frame.time*3.0)*engaged*0.12*frame.motion;
- let intensity=(light+fill)*pulse;
+ let intensity=(light+fill)*pulse*(1.0+frame.effects.y*0.6);
  let rgb=color*intensity+material.rgb*(vec3f(0.75)+i.color.rgb*0.5);
  return surfaceEffect(vec4f(rgb,max(clamp(intensity,0.0,1.0),material.a)*i.color.a),i.uv,frame.time);
 }`
@@ -295,6 +296,7 @@ export class GpuSurfaceRenderer {
 	private postData = new Float32Array(4)
 	private projection = new Float32Array(16)
 	private disposed = false
+	private beatPosition?: number
 	private dirty = true
 	private active = false
 	private screenSignature = ""
@@ -1075,6 +1077,16 @@ export class GpuSurfaceRenderer {
 			)
 		}
 	}
+	setBeatPosition(position: number | undefined): void {
+		const next =
+			position !== undefined && Number.isFinite(position) && position >= 0
+				? position
+				: undefined
+		if (next !== this.beatPosition) {
+			this.beatPosition = next
+			this.dirty = true
+		}
+	}
 	render(
 		width: number,
 		height: number,
@@ -1151,7 +1163,7 @@ export class GpuSurfaceRenderer {
 		const frame = this.frameData
 		frame.set(projection)
 		frame.set([width, height, time, motion ? 1 : 0], 16)
-		frame.set([this.visualEffects.depth, 0, 0, 0], 20)
+		frame.set([this.visualEffects.depth, beatPulse(this.beatPosition, motion), 0, 0], 20)
 		this.device.queue.writeBuffer(this.uniform, 0, frame)
 		const targetWidth =
 				targetSize?.width ?? (viewport ? viewport.x + viewport.width : this.canvas.width),

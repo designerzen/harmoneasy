@@ -198,6 +198,36 @@ try {
 			queue.submit = submit
 		}
 	})
+	await page.evaluate(async () => {
+		const { surface } = window.surfaceSmoke,
+			renderer = surface.renderer
+		const settle = async () => {
+			await new Promise(requestAnimationFrame)
+			await new Promise(requestAnimationFrame)
+		}
+		const before = renderer.instanceCount
+		surface.options.beatPosition = () => 2
+		await settle()
+		if (Math.abs(renderer.frameData[21] - 0.3) > 0.00001) {
+			throw new Error("Beat cue does not reach GPU uniforms")
+		}
+		surface.options.beatPosition = () => 2.25
+		await settle()
+		if (renderer.frameData[21] >= 0.02) {
+			throw new Error("Beat cue does not fade between beats")
+		}
+		surface.options.state.beatCues = false
+		await settle()
+		if (renderer.frameData[21] !== 0) {
+			throw new Error("Beat cues cannot be disabled")
+		}
+		surface.options.state.beatCues = true
+		surface.options.beatPosition = () => undefined
+		await settle()
+		if (renderer.frameData[21] !== 0 || renderer.instanceCount !== before) {
+			throw new Error("Stopping the clock changes gadget geometry or leaves a beat cue")
+		}
+	})
 	const canvas = page.locator("canvas"),
 		rect = await canvas.boundingBox()
 	// Start in the panel's title area, well outside the drawn dial.
