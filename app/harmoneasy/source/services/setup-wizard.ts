@@ -101,7 +101,6 @@ export function createSetupWizard(
 	const status = dialog.querySelector<HTMLElement>(".wizard-status")!
 	const back = dialog.querySelector<HTMLButtonElement>("[data-back]")!
 	const next = dialog.querySelector<HTMLButtonElement>("[data-next]")!
-	trigger.classList.add("primary")
 	let answers: WizardAnswers = {
 		goal: "play",
 		contextId: "first-notes",

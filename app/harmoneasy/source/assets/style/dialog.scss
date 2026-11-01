@@ -334,7 +334,7 @@ body:has(dialog:modal) {
 	border-radius: 0;
 	background: var(--col-bg);
 	color: var(--col-fg);
-	overflow: hidden;
+	overflow: auto;
 	font-size: 1rem;
 	line-height: 1.45;
 	&[open] {
@@ -346,49 +346,124 @@ body:has(dialog:modal) {
 		display: none;
 	}
 	.start-heading {
-		display: flex;
-		align-items: center;
-		gap: 2rem;
-		padding: 1rem 1.5rem;
-		border-bottom: 1px solid var(--col-line);
+		box-sizing: border-box;
+		width: min(100%, 54rem);
+		margin: auto;
+		padding: clamp(1.5rem, 5vw, 4rem) clamp(1rem, 4vw, 3rem);
+		flex-shrink: 0;
 		.backlink {
 			display: inline-flex;
 			align-items: center;
-			gap: 0.6rem;
+			gap: 0.65rem;
 			color: var(--col-accent);
-			font-size: 1rem;
+			font-size: 1.25rem;
 			font-weight: 700;
 		}
 		.logo {
-			width: 1.5rem;
-			height: 1.5rem;
+			width: 2rem;
+			height: 2rem;
 			margin: 0;
 		}
 		h1 {
 			margin: 0;
-			font-size: 1.25rem;
-			line-height: 1.2;
+			font-size: clamp(2rem, 4.5vw, 3.5rem);
+			line-height: 1.1;
 			text-transform: none;
-			letter-spacing: -0.02em;
+			letter-spacing: -0.035em;
 		}
 		p {
-			margin: 0.25rem 0 0;
+			margin: 0;
+			max-width: none;
 			color: var(--col-muted);
-			font-size: 0.8rem;
+			font-size: 0.9rem;
+			line-height: 1.5;
+		}
+		button {
+			margin: 0;
 		}
 	}
 	.start-intro {
-		flex: 1;
+		margin-block: 2rem 2.5rem;
 	}
 	.start-secondary-actions {
+		display: grid;
+		gap: 1.25rem;
+	}
+	.start-resume {
 		display: flex;
-		gap: 0.5rem;
-		button {
-			min-height: 42px;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		padding-bottom: 1.25rem;
+		border-bottom: 1px solid var(--col-line);
+	}
+	.start-option-grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 1rem;
+	}
+	.start-option {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.75rem;
+		padding: 1.5rem;
+		border: 1px solid var(--col-line);
+		border-radius: var(--curve);
+		background: var(--col-surface);
+		h2 {
 			margin: 0;
-			padding: 0.5rem 0.85rem;
-			border-radius: 8px;
-			font-size: 0.85rem;
+			font-size: 1.15rem;
+			text-transform: none;
+			letter-spacing: normal;
+		}
+		p {
+			flex: 1;
+		}
+		button {
+			margin-top: 0.5rem;
+		}
+	}
+	.start-footer {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		font-size: 0.85rem;
+	}
+	&:has(.start-presets-content:not([hidden])) {
+		.start-heading {
+			display: flex;
+			align-items: center;
+			flex-wrap: wrap;
+			gap: 1rem 2rem;
+			width: 100%;
+			margin: 0;
+			padding: 1rem 1.5rem;
+			border-bottom: 1px solid var(--col-line);
+		}
+		.start-intro,
+		.start-resume p,
+		.start-option h2,
+		.start-option p,
+		.start-footer a {
+			display: none;
+		}
+		.start-secondary-actions {
+			display: flex;
+			flex: 1;
+			flex-wrap: wrap;
+			justify-content: flex-end;
+			gap: 0.5rem;
+		}
+		.start-resume,
+		.start-option-grid,
+		.start-option,
+		.start-footer {
+			display: contents;
+		}
+		.start-option button {
+			margin: 0;
 		}
 	}
 	#start-form {
@@ -444,7 +519,7 @@ body:has(dialog:modal) {
 	.start-presets-content:not([hidden]) {
 		display: flex;
 		flex: 1;
-		min-height: 0;
+		min-height: min(32rem, 65dvh);
 		overflow: hidden;
 	}
 	#start-error {
@@ -453,29 +528,19 @@ body:has(dialog:modal) {
 		padding: 0.75rem 1.5rem;
 		color: var(--col-fg);
 	}
-	@media (max-width: 680px) {
-		.start-heading {
+	@media (max-width: 540px) {
+		.start-option-grid {
+			grid-template-columns: minmax(0, 1fr);
+		}
+		.start-option {
+			padding: 1rem;
+		}
+		.start-resume {
+			align-items: stretch;
+			flex-direction: column;
+		}
+		.start-footer {
 			flex-wrap: wrap;
-			gap: 0.75rem 1rem;
-			padding: 0.75rem 1rem;
-			.backlink {
-				font-size: 0.85rem;
-			}
-			h1 {
-				font-size: 1rem;
-			}
-			p {
-				display: none;
-			}
-		}
-		.start-intro {
-			text-align: right;
-		}
-		.start-secondary-actions {
-			width: 100%;
-			button {
-				flex: 1;
-			}
 		}
 	}
 }

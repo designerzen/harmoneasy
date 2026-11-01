@@ -264,25 +264,3 @@
 		}
 	}
 }
-
-#start-dialog .start-secondary-actions {
-	flex-wrap: wrap;
-	#start-wizard.primary {
-		background: var(--col-accent);
-		color: var(--col-on-accent);
-		border-color: var(--col-accent);
-		&:hover {
-			background: var(--col-accent-hover);
-		}
-		&::before {
-			content: "";
-			display: inline-block;
-			width: 1.1em;
-			height: 1.1em;
-			margin-inline-end: 0.4em;
-			vertical-align: -0.15em;
-			background: currentColor;
-			mask: url("../../../public/icons/device-sparkles.svg") center / contain no-repeat;
-		}
-	}
-}

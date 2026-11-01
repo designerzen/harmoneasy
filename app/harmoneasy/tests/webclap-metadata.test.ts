@@ -2,6 +2,7 @@ import { expect, it } from "vitest"
 import { readFileSync, existsSync } from "node:fs"
 import { CLAP_PATCHES } from "../../../packages/audiobus/instruments/clap/clap-catalog"
 import { DEVICE_SUBTYPES } from "../../../packages/audiobus/io/device-classification"
+import { OUTPUT_PREVIEWS } from "../../../packages/audiobus/io/output-previews"
 
 it("ships complete, consistent metadata and reachable license files for every WebCLAP output", () => {
 	const root = new URL("../public/", import.meta.url)
@@ -9,6 +10,12 @@ it("ships complete, consistent metadata and reachable license files for every We
 		CLAP_PATCHES
 	)
 	for (const patch of CLAP_PATCHES) {
+		expect(existsSync(new URL(patch.url.slice(1), root)), patch.url).toBe(true)
+		if (patch.features?.includes("instrument")) {
+			const preview = OUTPUT_PREVIEWS[`output:webclap:${patch.id}`]
+			expect(preview, patch.id).toBeDefined()
+			expect(existsSync(new URL(preview.slice(1), root)), preview).toBe(true)
+		}
 		for (const value of [patch.title, patch.description, patch.category, patch.author]) {
 			expect(value?.trim().length, patch.id).toBeGreaterThan(0)
 		}

@@ -10,6 +10,21 @@
   "runtimeRevision": "b42ade615bef2c989f96400a7b0b2ef15cabd396",
   "pluginSources": [
     "https://github.com/WebCLAP/examples",
-    "https://plinken.org/shelf.json"
+    "https://plinken.org/shelf.json",
+    "https://github.com/andremichelle/open-webclap"
+  ],
+  "bundledPlugins": [
+    {
+      "id": "com.aquanodemusic.droplets",
+      "bundleUrl": "https://assets.opendaw.studio/wclaps/4821bbea-ca4d-4a50-95e5-8af9ad0c6b6d.wclap",
+      "sourceUrl": "https://github.com/andremichelle/open-webclap/tree/8ccc7ea42de533be9b0d6134ed79dcbc15a1586f/ports/droplets",
+      "previewSourceUrl": "https://github.com/aquanodemusic/aquanode-plugins/blob/main/synths/droplets/assets/Banner.webp"
+    },
+    {
+      "id": "com.andremichelle.radar",
+      "bundleUrl": "https://assets.opendaw.studio/wclaps/cbfa3ecb-ba3a-4117-b3a3-a56643a2f927.wclap",
+      "sourceUrl": "https://github.com/andremichelle/open-webclap/tree/65d249c0b74dde4a0f5ec76545fd1daa2f1e344b/ports/radar",
+      "previewSourceUrl": "https://github.com/andremichelle/radar/blob/main/screenshot.png"
+    }
   ]
 }

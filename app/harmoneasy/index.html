@@ -23,43 +23,34 @@
 				<button class="tertiary close-icon" id="dismiss-start-room" type="button" aria-label="Dismiss room invitation" title="Dismiss room invitation"></button>
 			</div>
 			<header class="start-heading">
-				<button
-					class="backlink"
-					type="button"
-					data-about
-					aria-label="About Harmoneasy"
-					aria-haspopup="dialog"
-					aria-controls="about-dialog"
-				>
+				<button class="backlink" type="button" data-about aria-label="About Harmoneasy" aria-haspopup="dialog" aria-controls="about-dialog">
 					<img class="logo" src="/source/assets/logos/harmoneasy.svg" alt="" />
 					<span>Harmoneasy</span>
 				</button>
 				<div class="start-intro">
-					<h1 id="start-title">Putting the unity into community</h1>
-					<p>Start a session or show presets to explore a sound.</p>
+					<h1 id="start-title">Putting the unity<br />into community</h1>
 				</div>
 				<div class="start-secondary-actions">
-					<button class="secondary" type="button" id="show-start-presets" aria-expanded="false" aria-controls="start-presets-content">Show presets</button>
-					<button class="secondary" id="start-wizard" type="button" aria-haspopup="dialog" aria-controls="setup-wizard">Setup wizard</button>
-					<a href="%BASE_URL%presets/">Browse preset pages</a>
-					<button
-						class="btn-continue-session primary"
-						form="start-form"
-						type="submit"
-						name="startup"
-						value="session"
-					>
-						Continue Session
-					</button>
-					<button
-						class="btn-start-empty secondary"
-						form="start-form"
-						type="submit"
-						name="startup"
-						value="empty"
-					>
-						Start Empty
-					</button>
+					<div class="start-resume">
+						<p>Pick up where you left off.</p>
+						<button class="btn-continue-session primary" form="start-form" type="submit" name="startup" value="session">Continue Session</button>
+					</div>
+					<div class="start-option-grid">
+						<section class="start-option" aria-labelledby="start-guided-title">
+							<h2 id="start-guided-title">Build a setup</h2>
+							<p>Choose your instruments and connect them, step by step.</p>
+							<button class="secondary" id="start-wizard" type="button" aria-haspopup="dialog" aria-controls="setup-wizard">Setup wizard</button>
+						</section>
+						<section class="start-option" aria-labelledby="start-explore-title">
+							<h2 id="start-explore-title">Explore presets</h2>
+							<p>Start with a ready-made setup and make it your own.</p>
+							<button class="secondary" type="button" id="show-start-presets" aria-expanded="false" aria-controls="start-presets-content">Show presets</button>
+						</section>
+					</div>
+					<div class="start-footer">
+						<button class="btn-start-empty tertiary" form="start-form" type="submit" name="startup" value="empty">Start Empty</button>
+						<a href="%BASE_URL%presets/">Browse preset pages</a>
+					</div>
 				</div>
 			</header>
 			<form id="start-form" method="dialog"></form>

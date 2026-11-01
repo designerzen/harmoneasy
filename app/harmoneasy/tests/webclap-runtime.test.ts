@@ -76,6 +76,25 @@ it.each(CLAP_PATCHES)(
 		let energy = 0
 		try {
 			const note = patch.id === "com.plinken.pulze" ? 36 : 60
+			if (patch.id === "com.andremichelle.radar") {
+				// Radar starts empty and in transport mode. Upload a mono sample using
+				// its editor's frame protocol, then select MIDI-triggered playback.
+				const play = params.find((param: any) => param.name === "Play")
+				expect(play).toBeDefined()
+				methods.setParam.call(processor, play.id, play.min)
+				const frames = 4800
+				const message = new ArrayBuffer(4 + 12 + frames * 2)
+				const view = new DataView(message)
+				view.setUint8(0, 65) // Radar's sample frame (64 + 1).
+				view.setUint32(4, 48000, true)
+				view.setUint32(8, frames, true)
+				view.setUint16(12, 1, true)
+				view.setUint16(14, 0, true) // Empty sample name.
+				for (let i = 0; i < frames; i++) {
+					view.setInt16(16 + i * 2, Math.round(Math.sin(i / 10) * 10000), true)
+				}
+				await processor.port.onmessage({ data: message })
+			}
 			if (patch.id === "com.plinken.pulze") {
 				// Exercise the same sample-upload protocol used by the drum-pad UI.
 				const frames = 4800,
