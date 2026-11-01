@@ -179,6 +179,80 @@
 	clip-path: inset(50%);
 	padding: 0;
 }
+.cs-gpu-ready .cs-semantic.cs-guitar-tab,
+.cs-gpu-ready .cs-semantic.cs-piano-roll,
+.cs-gpu-ready .cs-semantic.cs-guitar-tab:focus-within,
+.cs-gpu-ready .cs-semantic.cs-piano-roll:focus-within {
+	position: absolute !important;
+	inset: 32px 12px 14px 38px;
+	width: auto !important;
+	height: auto !important;
+	padding: 0 !important;
+	clip-path: none !important;
+	overflow: visible !important;
+	background: transparent;
+}
+.cs-note-grid {
+	display: grid;
+	grid-template-rows: repeat(var(--cs-rows), 1fr);
+	height: 100%;
+	min-height: 0;
+}
+.cs-note-grid > [role="row"] {
+	display: grid;
+	grid-template-columns: repeat(var(--cs-steps), minmax(0, 1fr));
+	min-height: 0;
+}
+.cs-note-grid [role="gridcell"] {
+	min-width: 0;
+	min-height: 0;
+}
+.cs-note-grid button {
+	width: 100%;
+	height: 100%;
+	min-height: 24px;
+	padding: 0;
+}
+.cs-note-grid button[data-on="true"] {
+	background: #296254;
+}
+.cs-gpu-ready .cs-note-grid button,
+.cs-gpu-ready .cs-note-grid button[data-on="true"] {
+	color: transparent;
+	background: transparent;
+	border: 0;
+	border-radius: 2px;
+	min-height: 0;
+}
+.cs-note-grid button:focus-visible {
+	outline: 2px solid white;
+	outline-offset: -2px;
+}
+.cs-source-key {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 16px;
+	list-style: none;
+	margin: 0 0 8px;
+	padding: 0;
+	font-size: 12px;
+}
+.cs-source-key li::before {
+	content: "";
+	display: inline-block;
+	width: 8px;
+	height: 8px;
+	margin-right: 6px;
+	border-radius: 2px;
+	background: var(--cs-source);
+}
+.cs-sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+}
 .cs-gpu-ready .cs-semantic:focus-within {
 	position: absolute !important;
 	inset: 40px 10px 24px;
@@ -198,7 +272,7 @@
 	position: absolute;
 	left: 12px;
 	right: 12px;
-	top: 62px;
+	top: 44px;
 	padding: 0;
 }
 .cs-gpu-ready .cs-semantic > span,
@@ -208,6 +282,8 @@
 .cs-widget-tools {
 	position: absolute;
 	bottom: 2px;
+	max-height: 100%;
+	overflow: auto;
 	left: 3px;
 	right: 3px;
 	display: flex;
@@ -220,7 +296,39 @@
 .cs-widget-tools select {
 	font-size: 11px;
 	padding: 2px;
-	min-height: 24px;
+	min-height: 28px;
+}
+.cs-layout-handle {
+	touch-action: none;
+	cursor: grab;
+}
+.cs-size-dialog {
+	color: #d6fff2;
+	background: #112438;
+	border: 1px solid #9bbfb7;
+	border-radius: 8px;
+	max-width: min(400px, 95vw);
+}
+.cs-size-dialog form,
+.cs-size-dialog label {
+	display: grid;
+	gap: 8px;
+}
+.cs-size-dialog input,
+.cs-size-dialog select,
+.cs-size-dialog button {
+	font: inherit;
+	min-height: 32px;
+}
+.cs-layout-handle:last-child {
+	cursor: nwse-resize;
+}
+.cs-drop-target {
+	outline: 2px solid white !important;
+}
+.cs-widget:focus-within {
+	outline: 2px solid white;
+	outline-offset: -2px;
 }
 .cs-status {
 	margin: 6px 0 0;
@@ -249,7 +357,8 @@
 	padding: 0;
 	border: 0;
 }
-.component-controls label {
+.component-controls label,
+.component-controls .component-control {
 	display: grid;
 	gap: 4px;
 	min-width: 0;

@@ -225,6 +225,12 @@ onMidiDeviceProfilesChanged(() => {
 })
 
 export const OUTPUT_GUIDANCE: Record<OutputId, Guidance> = {
+	"song-tree": guide(
+		"Tree",
+		"Grow a tree from incoming notes and chords.",
+		"Held notes grow curved branches; releases add leaves. Velocity controls branch and leaf size.",
+		"Open the output view. Start transport to synchronize the falling droplet with the beat."
+	),
 	"harmony-sampler": guide(
 		"Smp",
 		"Play samples and loops in the shared harmony.",

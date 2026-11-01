@@ -4,10 +4,16 @@ import {
 	ControlSurface,
 	createDialControl,
 	createPanControl,
-	createRotationControl
+	createRotationControl,
+	createGuitarTabControl,
+	createPianoRollControl,
+	createRelativeKeysControl,
+	RelativeKeys,
+	Strum,
+	createStrumControl
 } from "control-surface"
 import { sourceTheme } from "../../../packages/control-surface/src/themes"
-import { createDomGui } from "control-surface/dom"
+import { createDomGui, createDomControl } from "control-surface/dom"
 import { contactPressure } from "../../../packages/control-surface/src/pressure"
 import {
 	EVENT_BLUR,
@@ -21,7 +27,9 @@ import {
 	dialPosition,
 	normalize,
 	validSurfaces,
-	validateValue
+	validateValue,
+	layoutWidgets,
+	widgetPoint
 } from "control-surface/model"
 import type { ControlBinding, ControlDescriptor, SurfaceState } from "control-surface/types"
 import { componentBindings, installComponentUi } from "audiobus/io/component-ui"
@@ -97,6 +105,74 @@ function bind(
 }
 
 describe("shared component controls", () => {
+	it("recovers note ownership after an asynchronous output failure", async () => {
+		const component = installComponentUi({
+			getUiDescriptor: () => ({ controls: [] }),
+			noteOn: vi
+				.fn()
+				.mockRejectedValueOnce(new Error("Output unavailable"))
+				.mockResolvedValue(undefined),
+			noteOff: vi.fn()
+		})
+		const relative = (await componentBindings(component, "recover"))[0]
+		const contacts = [0.5, 0.5, 1, 60, 0.8, 0.5, 0.5]
+		await expect(relative.write(contacts)).rejects.toThrow("Output unavailable")
+		expect(component.noteOff).toHaveBeenCalledWith(60)
+		await relative.write(contacts)
+		expect(component.noteOn).toHaveBeenCalledTimes(2)
+		await relative.write([])
+	})
+	it("offers live musical controls on note-capable sources and shares held-note ownership", async () => {
+		const component = installComponentUi({
+			name: "Synth",
+			getUiDescriptor: () => ({ controls: [] }),
+			noteOn: vi.fn(),
+			noteOff: vi.fn()
+		})
+		const controls = await componentBindings(component, "synth")
+		expect(controls.map((b) => b.descriptor.widget)).toEqual([
+			"relative-keys",
+			"piano-roll",
+			"guitar-tab",
+			"strum"
+		])
+		const [relative, roll] = controls
+		await relative.write([0.5, 0.5, 1, 60, 0.5, 0.5, 0.5])
+		expect(component.noteOn).toHaveBeenLastCalledWith(60, 64)
+		const notes = Array(96).fill(0)
+		notes[88] = 0.8
+		await roll.write(notes)
+		expect(component.noteOn).toHaveBeenCalledTimes(1)
+		await relative.write([])
+		expect(component.noteOff).not.toHaveBeenCalled()
+		await roll.write(Array(96).fill(0))
+		expect(component.noteOff).toHaveBeenLastCalledWith(60)
+	})
+	it("lets strums ring, retriggers repeated plucks and releases on cleanup", async () => {
+		vi.useFakeTimers()
+		try {
+			const component = installComponentUi({
+				getUiDescriptor: () => ({ controls: [] }),
+				noteOn: vi.fn(),
+				noteOff: vi.fn()
+			})
+			const binding = (await componentBindings(component, "strings")).find(
+				(b) => b.descriptor.widget === "strum"
+			)!
+			await binding.write([1, 0, 64, 0.25])
+			expect(component.noteOn).toHaveBeenLastCalledWith(64, 32)
+			await binding.write([2, 0, 64, 0.8])
+			expect(component.noteOn).toHaveBeenCalledTimes(2)
+			await vi.advanceTimersByTimeAsync(800)
+			expect(component.noteOff).toHaveBeenLastCalledWith(64)
+			await binding.write([3, 1, 59, 1])
+			await binding.write([])
+			expect(component.noteOff).toHaveBeenLastCalledWith(59)
+			expect(vi.getTimerCount()).toBe(0)
+		} finally {
+			vi.useRealTimers()
+		}
+	})
 	it("keeps synchronous component writes synchronous and notifies only the changed control", async () => {
 		const component = installComponentUi({
 			getUiDescriptor: () => ({
@@ -217,6 +293,175 @@ describe("shared component controls", () => {
 })
 
 describe("surface interaction and bindings", () => {
+	it("strums every crossed string on fast swipes in both directions", () => {
+		const apply = vi.fn(),
+			strum = new Strum(undefined, apply)
+		strum.down(1, 0.5, 0.01, 0.25)
+		strum.move(1, 0.5, 0.99, 0.8)
+		expect(apply.mock.calls.map(([v]) => v[1])).toEqual([0, 1, 2, 3, 4, 5])
+		strum.move(1, 0.5, 0.01, 0.6)
+		expect(apply.mock.calls.slice(6).map(([v]) => v[1])).toEqual([4, 3, 2, 1, 0])
+		expect(apply.mock.lastCall![0][3]).toBe(0.6)
+		strum.up(1)
+		expect(strum.contacts.size).toBe(0)
+		strum.release()
+		expect(apply.mock.lastCall).toEqual([[], true])
+		expect(() =>
+			validateValue(createStrumControl({ id: "s", label: "Strings" }), [1, 100, 64, 0.5])
+		).toThrow()
+	})
+	it("edits musical grids with one Tab stop, announced cells and arrow navigation", () => {
+		const d = createPianoRollControl({
+			id: "notes",
+			label: "Phrase",
+			music: { steps: 4, notes: [64, 60] }
+		})
+		const apply = vi.fn(),
+			control = createDomControl(bind("notes", d, d.defaultValue), apply)
+		document.body.append(control.element)
+		const grid = control.element.querySelector('[role="grid"]')!
+		expect(grid.getAttribute("aria-rowcount")).toBe("2")
+		expect(grid.getAttribute("aria-colcount")).toBe("4")
+		const buttons = [...grid.querySelectorAll<HTMLButtonElement>("button")]
+		expect(buttons.filter((b) => b.tabIndex === 0)).toHaveLength(1)
+		buttons[0].click()
+		expect(apply.mock.lastCall![0]).toEqual([1, 0, 0, 0, 0, 0, 0, 0])
+		expect(buttons[0].getAttribute("aria-label")).toContain("E4, step 1, velocity 100 percent")
+		buttons[0].dispatchEvent(
+			new KeyboardEvent(EVENT_KEY_DOWN, { key: "ArrowDown", bubbles: true })
+		)
+		expect(document.activeElement).toBe(buttons[4])
+		buttons[4].dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: "+", bubbles: true }))
+		expect(apply.mock.lastCall![0][4]).toBeCloseTo(0.1)
+		control.update([1, 0, 0, 0, 0.5, 0, 0, 0])
+		expect(document.activeElement).toBe(buttons[4])
+		expect(buttons[4].getAttribute("aria-label")).toContain("50 percent")
+		expect(() => validateValue(d, [1])).toThrow()
+		control.element.remove()
+	})
+	it("announces guitar strings, frets and pitches, and supports rests", () => {
+		const d = createGuitarTabControl({
+				id: "tab",
+				label: "Guitar",
+				music: { steps: 2, tuning: [64, 59] }
+			}),
+			apply = vi.fn()
+		const control = createDomControl(bind("tab", d, d.defaultValue), apply)
+		const button = control.element.querySelector("button")!
+		expect(button.getAttribute("aria-label")).toContain("String 1, E4, step 1, rest")
+		button.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: "3" }))
+		expect(button.getAttribute("aria-label")).toContain("fret 3, G4")
+		button.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: "Delete" }))
+		expect(apply.mock.lastCall![0]).toEqual([-1, -1, -1, -1])
+		expect(() =>
+			createGuitarTabControl({ id: "bad", label: "Bad", music: { steps: 100000 } })
+		).toThrow()
+	})
+	it("saves independent sizes, rotation and keyboard sorting without losing focus", async () => {
+		const a = bind("a"),
+			b = bind("b"),
+			saved = state(),
+			change = vi.fn()
+		saved.widgets = [{ key: a.key }, { key: b.key }]
+		const surface = new ControlSurface({ state: saved, bindings: [a, b], change })
+		document.body.append(surface.element)
+		views.push(surface)
+		await settle()
+		const button = (name: string) =>
+			[...surface.element.querySelectorAll<HTMLButtonElement>("button")].find(
+				(b) => b.getAttribute("aria-label") === name
+			)!
+		;[...surface.element.querySelectorAll<HTMLButtonElement>("button")]
+			.find((b) => b.textContent === "Edit layout")!
+			.click()
+		button("Resize a").dispatchEvent(
+			new KeyboardEvent(EVENT_KEY_DOWN, { key: "ArrowRight", bubbles: true })
+		)
+		button("Resize a").dispatchEvent(
+			new KeyboardEvent(EVENT_KEY_DOWN, { key: "ArrowDown", bubbles: true })
+		)
+		expect(saved.widgets[0]).toMatchObject({ span: 2, height: 196 })
+		button("Rotate a").click()
+		expect(saved.widgets[0].rotation).toBe(90)
+		expect(surface.element.querySelector<HTMLElement>(".cs-widget")!.style.transform).toBe(
+			"rotate(90deg)"
+		)
+		button("Move later a").click()
+		expect(saved.widgets.map((w) => w.key)).toEqual([b.key, a.key])
+		expect(document.activeElement).toBe(button("Move later a"))
+		expect(change).toHaveBeenCalled()
+		expect(validSurfaces([saved])).toBe(true)
+		saved.widgets[1].height = Infinity
+		expect(validSurfaces([saved])).toBe(false)
+		const layout = layoutWidgets(
+			[{ height: 250 }, { height: 400 }, { height: 132 }, { height: 200 }],
+			640
+		)
+		expect(layout.items[3].y).toBe(408)
+	})
+	it("maps rotated surface hits back to gadget coordinates", async () => {
+		const slider = bind("slide", { widget: "slider" }),
+			saved = state()
+		saved.widgets = [{ key: slider.key, rotation: 90, height: 300 }]
+		const surface = new ControlSurface({ state: saved, bindings: [slider], change: vi.fn() })
+		views.push(surface)
+		await settle()
+		const v = (surface as any).entries[0].visual
+		const localX = v.x + v.width * 0.8,
+			localY = v.y + v.height / 2
+		const world = widgetPoint(localX, localY, { ...v, rotation: -90 })
+		expect(surface.pointerDown(31, world.x, world.y)).toBe(true)
+		surface.pointerUp(31)
+		await settle()
+		expect(slider.value).toBeGreaterThan(0.8)
+	})
+	it("anchors relative notes to the first touch, preserves it after lift and resets for the next gesture", () => {
+		const apply = vi.fn(),
+			keys = new RelativeKeys(undefined, apply)
+		keys.width = 480
+		keys.height = 240
+		keys.down(1, 0.3, 0.4, 0.25)
+		keys.down(2, 0.5, 0.2, 0.75)
+		expect(keys.contacts.get(1)!.note).toBe(60)
+		expect(keys.contacts.get(2)!.note).toBe(67)
+		expect(keys.contacts.get(2)!.pressure).toBe(0.75)
+		keys.up(1)
+		expect(keys.anchor).toEqual({ x: 0.3, y: 0.4 })
+		keys.move(2, 0.6, 0.2, 0.5)
+		expect(keys.contacts.get(2)!.note).toBe(68)
+		keys.release()
+		expect(apply.mock.lastCall).toEqual([[], true])
+		keys.down(3, 0.8, 0.8, 1)
+		expect(keys.contacts.get(3)!.note).toBe(60)
+		expect(keys.anchor).toEqual({ x: 0.8, y: 0.8 })
+		expect(
+			validateValue(
+				createRelativeKeysControl({ id: "r", label: "Relative" }),
+				apply.mock.lastCall![0]
+			)
+		).toEqual(apply.mock.lastCall![0])
+	})
+	it("releases relative voices on blur and preserves quick note edges through asynchronous bindings", async () => {
+		const relative = bind("r", createRelativeKeysControl({ id: "r", label: "Relative" }), []),
+			saved = state()
+		saved.widgets = [{ key: relative.key }]
+		let finish!: () => void
+		relative.write.mockImplementationOnce(
+			() =>
+				new Promise<void>((resolve) => {
+					finish = resolve
+				})
+		)
+		const surface = new ControlSurface({ state: saved, bindings: [relative], change: vi.fn() })
+		views.push(surface)
+		await settle()
+		expect(surface.pointerDown(1, 80, 80, false, 0.5)).toBe(true)
+		window.dispatchEvent(new Event(EVENT_BLUR))
+		finish()
+		await settle()
+		expect(relative.write.mock.calls.map(([value]) => value)).toHaveLength(2)
+		expect(relative.write.mock.lastCall![0]).toEqual([])
+	})
 	it("keeps source themes stable across surfaces and separates identically named components", async () => {
 		const a = { ...bind("a"), sourceId: "synth-one" },
 			b = { ...bind("b"), sourceId: "synth-one" },

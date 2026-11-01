@@ -1,6 +1,6 @@
 import { createRequire } from "node:module"
 import { chromium } from "playwright"
-import { mkdtemp, writeFile } from "node:fs/promises"
+import { mkdtemp, writeFile, readFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { resolve, join } from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
@@ -34,7 +34,7 @@ await build({
 const html = join(output, "index.html")
 await writeFile(
 	html,
-	'<!doctype html><meta charset="utf-8"><title>Surface test</title><link rel="stylesheet" href="control-surface.css"><script defer src="surface.js"></script>'
+	'<!doctype html><html lang="en"><meta charset="utf-8"><title>Surface test</title><link rel="stylesheet" href="control-surface.css"><script defer src="surface.js"></script></html>'
 )
 const browser = await chromium.launch({
 	headless: true,
@@ -62,7 +62,7 @@ try {
 		"",
 		"GPU initialization must compile shaders and create a working render pipeline"
 	)
-	assert.equal(await page.locator(".cs-widget").count(), 14)
+	assert.equal(await page.locator(".cs-widget").count(), 18)
 	await page.evaluate(() => {
 		const { surface } = window.surfaceSmoke
 		const accents = new Map()
@@ -212,7 +212,7 @@ try {
 	await page.waitForFunction(() => window.surfaceSmoke.values.number === 140)
 	await page.getByRole("combobox", { name: "Preset", exact: true }).selectOption("1")
 	await page.waitForFunction(() => window.surfaceSmoke.values.preset === 1)
-	const padWidget = page.locator(".cs-widget").last()
+	const padWidget = page.locator(".cs-widget").filter({ has: page.locator(".cs-pad") })
 	await padWidget.scrollIntoViewIfNeeded()
 	const padRect = await padWidget.boundingBox(),
 		cdp = await page.context().newCDPSession(page)
@@ -319,6 +319,199 @@ try {
 		}
 	})
 	await cdp.detach()
+	const roll = page.getByRole("grid", { name: "Piano roll", exact: true })
+	await roll.getByRole("button").first().focus()
+	await page.keyboard.press("Space")
+	await page.waitForFunction(() => window.surfaceSmoke.values.roll[0] === 1)
+	await page.keyboard.press("ArrowRight")
+	await page.keyboard.press("+")
+	await page.waitForFunction(() => Math.abs(window.surfaceSmoke.values.roll[1] - 0.1) < 0.001)
+	const tab = page.getByRole("grid", { name: "Guitar tab", exact: true })
+	await tab.getByRole("button").first().focus()
+	await page.keyboard.press("7")
+	await page.waitForFunction(() => window.surfaceSmoke.values.tab[0] === 7)
+	await page.keyboard.press("Delete")
+	await page.waitForFunction(() => window.surfaceSmoke.values.tab[0] === -1)
+	// Rotate a panel, resize it by keyboard, and preserve focus after sorting.
+	await page.getByRole("button", { name: "Edit layout", exact: true }).click()
+	await page.getByRole("button", { name: "Rotate Drum density", exact: true }).click()
+	assert.equal(
+		await page
+			.locator(".cs-widget")
+			.filter({ has: page.locator(".cs-slider") })
+			.evaluate((el) => el.style.transform),
+		"rotate(90deg)"
+	)
+	await page.getByRole("button", { name: "Resize Drum density", exact: true }).press("ArrowDown")
+	await page.getByRole("button", { name: "Move later Drum density", exact: true }).click()
+	assert.equal(
+		await page
+			.getByRole("button", { name: "Move later Drum density", exact: true })
+			.evaluate((el) => el === document.activeElement),
+		true
+	)
+	await page.getByRole("button", { name: "Move earlier Drum density", exact: true }).click()
+	const resizeHandle = page.getByRole("button", { name: "Resize Drum density", exact: true })
+	await resizeHandle.scrollIntoViewIfNeeded()
+	const handleRect = await resizeHandle.boundingBox(),
+		layoutTouch = await page.context().newCDPSession(page)
+	const resizePoint = {
+		x: handleRect.x + handleRect.width / 2,
+		y: handleRect.y + handleRect.height / 2,
+		id: 91,
+		force: 1
+	}
+	await layoutTouch.send("Input.dispatchTouchEvent", {
+		type: "touchStart",
+		touchPoints: [resizePoint]
+	})
+	await layoutTouch.send("Input.dispatchTouchEvent", {
+		type: "touchMove",
+		touchPoints: [{ ...resizePoint, y: resizePoint.y + 32 }]
+	})
+	await layoutTouch.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] })
+	await page.waitForFunction(
+		() =>
+			window.surfaceSmoke.surface.options.state.widgets.find((w) => w.key === "density")
+				.height >= 220
+	)
+	await resizeHandle.press("Enter")
+	const sizeDialog = page.getByRole("dialog", { name: "Drum density size", exact: true })
+	await sizeDialog.getByRole("spinbutton", { name: "Height in pixels", exact: true }).fill("228")
+	await sizeDialog.getByRole("button", { name: "Increase height", exact: true }).click()
+	await sizeDialog.getByRole("button", { name: "Decrease height", exact: true }).click()
+	await sizeDialog.getByRole("button", { name: "Apply size", exact: true }).click()
+	assert.equal(await resizeHandle.evaluate((el) => el === document.activeElement), true)
+	const moveHandle = page.getByRole("button", { name: "Drag Drum density", exact: true })
+	const moveRect = await moveHandle.boundingBox(),
+		targetRect = await page
+			.locator(".cs-widget")
+			.filter({ has: page.locator(".cs-radio") })
+			.boundingBox()
+	const movePoint = {
+		x: moveRect.x + moveRect.width / 2,
+		y: moveRect.y + moveRect.height / 2,
+		id: 92,
+		force: 1
+	}
+	await layoutTouch.send("Input.dispatchTouchEvent", {
+		type: "touchStart",
+		touchPoints: [movePoint]
+	})
+	await layoutTouch.send("Input.dispatchTouchEvent", {
+		type: "touchMove",
+		touchPoints: [
+			{
+				...movePoint,
+				x: targetRect.x + targetRect.width / 2,
+				y: targetRect.y + targetRect.height / 2
+			}
+		]
+	})
+	await layoutTouch.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] })
+	await page.waitForFunction(
+		() => window.surfaceSmoke.surface.options.state.widgets[3].key === "density"
+	)
+	await layoutTouch.detach()
+	await page.getByRole("button", { name: "Move earlier Drum density", exact: true }).click()
+	await page.getByRole("button", { name: "Move earlier Drum density", exact: true }).click()
+	await page.getByRole("button", { name: "Perform", exact: true }).click()
+	// Actual touch contacts share an anchor and retain it when the first finger lifts.
+	const relativeWidget = page
+		.locator(".cs-widget")
+		.filter({ has: page.locator(".cs-relative-keys") })
+	await relativeWidget.scrollIntoViewIfNeeded()
+	const relativeBox = await relativeWidget.boundingBox()
+	const touch = await page.context().newCDPSession(page)
+	const rootPoint = { x: relativeBox.x + 90, y: relativeBox.y + 100, id: 101, force: 0.3 }
+	const secondPoint = {
+		...rootPoint,
+		x: rootPoint.x + 48,
+		y: rootPoint.y - 48,
+		id: 102,
+		force: 0.8
+	}
+	await touch.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [rootPoint] })
+	await touch.send("Input.dispatchTouchEvent", {
+		type: "touchStart",
+		touchPoints: [rootPoint, secondPoint]
+	})
+	await page.waitForFunction(() => window.surfaceSmoke.values.relative.length === 12)
+	await page.evaluate(() => {
+		const entry = window.surfaceSmoke.surface.entries.find(
+			(e) => e.visual.widget === "relative-keys"
+		)
+		const contacts = [...entry.visual.relative.contacts.values()]
+		if (
+			contacts[0].note !== 60 ||
+			contacts[1].note !== 66 ||
+			Math.abs(contacts[1].pressure - 0.8) > 0.01
+		)
+			throw new Error("Relative touch notes or pressure are incorrect")
+	})
+	await touch.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [secondPoint] })
+	await page.waitForFunction(() => window.surfaceSmoke.values.relative.length === 7)
+	await touch.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] })
+	await page.waitForFunction(() => window.surfaceSmoke.values.relative.length === 0)
+	const atNote = relativeWidget.getByRole("button", { name: "Play C4", exact: true })
+	await atNote.evaluate((el) => el.click())
+	await page.waitForFunction(() => window.surfaceSmoke.values.relative.length === 7)
+	await atNote.evaluate((el) => el.click())
+	await page.waitForFunction(() => window.surfaceSmoke.values.relative.length === 0)
+	const strings = page.locator(".cs-widget").filter({ has: page.locator(".cs-strum") })
+	await strings.getByRole("button", { name: "Pluck String 1: E4", exact: true }).focus()
+	await page.keyboard.press("Space")
+	await page.waitForFunction(() => window.surfaceSmoke.values.strum[1] === 0)
+	await page.keyboard.press("ArrowDown")
+	await page.keyboard.press("Enter")
+	await page.waitForFunction(() => window.surfaceSmoke.values.strum[1] === 1)
+	await page.evaluate(() => document.activeElement.blur())
+	await strings.scrollIntoViewIfNeeded()
+	const stringBox = await strings.boundingBox(),
+		strumTouch = await page.context().newCDPSession(page)
+	const stringPoint = {
+		x: stringBox.x + stringBox.width / 2,
+		y: stringBox.y + 36,
+		id: 201,
+		force: 0.65
+	}
+	await strumTouch.send("Input.dispatchTouchEvent", {
+		type: "touchStart",
+		touchPoints: [stringPoint]
+	})
+	await strumTouch.send("Input.dispatchTouchEvent", {
+		type: "touchMove",
+		touchPoints: [{ ...stringPoint, y: stringBox.y + stringBox.height - 16 }]
+	})
+	await page.waitForFunction(() => window.surfaceSmoke.values.strum[1] === 5)
+	await strumTouch.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] })
+	await strumTouch.detach()
+	await touch.detach()
+	const keyboardNote = relativeWidget.getByRole("button", { name: "Play C4", exact: true })
+	await keyboardNote.focus()
+	await page.keyboard.down("Space")
+	await page.waitForFunction(() => window.surfaceSmoke.values.relative.length === 7)
+	await page.keyboard.up("Space")
+	await page.waitForFunction(() => window.surfaceSmoke.values.relative.length === 0)
+	if (process.env.SURFACE_AXE_PATH) {
+		await page.addScriptTag({ content: await readFile(process.env.SURFACE_AXE_PATH, "utf8") })
+		const audit = await page.evaluate(async () => {
+			const result = await axe.run(document, {
+				runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"] }
+			})
+			return {
+				violations: result.violations.map((v) => ({
+					id: v.id,
+					impact: v.impact,
+					nodes: v.nodes.map((n) => ({ target: n.target, summary: n.failureSummary }))
+				})),
+				incomplete: result.incomplete.map((v) => v.id),
+				passes: result.passes.length
+			}
+		})
+		await writeFile(join(output, "accessibility.json"), JSON.stringify(audit, null, 2))
+		assert.deepEqual(audit.violations, [], JSON.stringify(audit.violations))
+	}
 	await page.locator(".cs-pad button").focus()
 	assert.equal(await page.getByRole("button", { name: "Velocity pad", exact: true }).count(), 1)
 	await page.keyboard.down("Space")
@@ -341,6 +534,15 @@ try {
 		surface.entries[0].element.focus()
 		const pad = surface.entries.find((entry) => entry.visual.widget === "pad").visual
 		surface.pointerDown(999, pad.x + 90, pad.y + 90, false, 0.7)
+		const relative = surface.entries.find(
+			(entry) => entry.visual.widget === "relative-keys"
+		).visual
+		surface.pointerDown(1001, relative.x + 110, relative.y + 140, false, 0.3)
+		surface.pointerDown(1002, relative.x + 206, relative.y + 92, false, 0.85)
+		surface.pointerDown(1003, relative.x + 254, relative.y + 188, false, 0.55)
+		const strum = surface.entries.find((entry) => entry.visual.widget === "strum").visual
+		surface.pointerDown(1004, strum.x + 140, strum.y + 40, false, 0.7)
+		surface.pointerMove(1004, strum.x + 200, strum.y + strum.height - 20, false, 0.8)
 		await new Promise(requestAnimationFrame)
 		await new Promise(requestAnimationFrame)
 		if (
@@ -351,8 +553,32 @@ try {
 		}
 	})
 	const gameImage = join(output, "game-style.png")
+	await page.setViewportSize({
+		width: 960,
+		height: Math.ceil(await page.evaluate(() => document.documentElement.scrollHeight))
+	})
+	await page.evaluate(() => window.scrollTo(0, 0))
+	await page.evaluate(
+		() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+	)
 	await page.screenshot({ path: gameImage, fullPage: true })
-	await page.evaluate(() => window.surfaceSmoke.surface.pointerUp(999))
+	const newControls = await page
+		.locator(".cs-widget")
+		.filter({ has: page.locator(".cs-piano-roll") })
+		.boundingBox()
+	const surfaceBox = await page.locator(".control-surface").boundingBox()
+	await page.screenshot({
+		path: join(output, "new-controls.png"),
+		clip: {
+			x: surfaceBox.x,
+			y: newControls.y,
+			width: surfaceBox.width,
+			height: surfaceBox.y + surfaceBox.height - newControls.y
+		}
+	})
+	await page.evaluate(() =>
+		[999, 1001, 1002, 1003, 1004].forEach((id) => window.surfaceSmoke.surface.pointerUp(id))
+	)
 	await page.evaluate(async () => {
 		await window.surfaceSmoke.surface.setEffect(
 			"fn surfaceEffect(color:vec4f,uv:vec2f,time:f32)->vec4f{return vec4f(color.rgb*(0.95+0.05*sin(time+uv.y*10.0)),color.a);}"
@@ -380,7 +606,7 @@ try {
 	console.log(
 		JSON.stringify({
 			passed: true,
-			widgets: 14,
+			widgets: 18,
 			pressurePad: true,
 			shaderEffects: true,
 			pointerAndKeyboard: true,

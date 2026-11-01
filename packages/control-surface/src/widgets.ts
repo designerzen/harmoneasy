@@ -1,6 +1,8 @@
 import { denormalize, dialOptions, validDialOptions } from "./model"
 import type { ControlDescriptor, DialOptions } from "./types"
 import { musicOptions, musicValues } from "./music"
+import { relativeOptions } from "./relative-keys"
+import { strumOptions } from "./strum"
 
 export type DialControlOptions = Omit<
 	ControlDescriptor,
@@ -43,24 +45,45 @@ export function createPanControl(options: DialControlOptions): ControlDescriptor
 export function createRotationControl(options: DialControlOptions): ControlDescriptor {
 	const min = options.min ?? 0,
 		max = options.max ?? 360
-	return { ...createDialControl({
-		...options,
-		min,
-		max,
-		step: options.step ?? (max - min) / 360,
-		unit: options.unit ?? (max - min === 360 ? "°" : undefined),
-		defaultValue: options.defaultValue ?? min,
-		dial: { ...options.dial, mode: "rotation" }
-	}), widget: "rotation" }
+	return {
+		...createDialControl({
+			...options,
+			min,
+			max,
+			step: options.step ?? (max - min) / 360,
+			unit: options.unit ?? (max - min === 360 ? "°" : undefined),
+			defaultValue: options.defaultValue ?? min,
+			dial: { ...options.dial, mode: "rotation" }
+		}),
+		widget: "dial"
+	}
 }
 
-export function createPianoRollControl(options: Omit<ControlDescriptor, "widget">): ControlDescriptor {
+export function createPianoRollControl(
+	options: Omit<ControlDescriptor, "widget">
+): ControlDescriptor {
 	musicOptions("piano-roll", options.music)
 	const descriptor: ControlDescriptor = { ...options, widget: "piano-roll" }
 	return { ...descriptor, defaultValue: musicValues(descriptor, options.defaultValue) }
 }
-export function createGuitarTabControl(options: Omit<ControlDescriptor, "widget">): ControlDescriptor {
+export function createGuitarTabControl(
+	options: Omit<ControlDescriptor, "widget">
+): ControlDescriptor {
 	musicOptions("guitar-tab", options.music)
 	const descriptor: ControlDescriptor = { ...options, widget: "guitar-tab" }
 	return { ...descriptor, defaultValue: musicValues(descriptor, options.defaultValue) }
+}
+
+export function createRelativeKeysControl(
+	options: Omit<ControlDescriptor, "widget" | "defaultValue">
+): ControlDescriptor {
+	relativeOptions(options.relativeKeys)
+	return { ...options, widget: "relative-keys", defaultValue: [] }
+}
+
+export function createStrumControl(
+	options: Omit<ControlDescriptor, "widget" | "defaultValue">
+): ControlDescriptor {
+	strumOptions(options.strum)
+	return { ...options, widget: "strum", defaultValue: [] }
 }

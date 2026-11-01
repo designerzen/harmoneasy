@@ -1,4 +1,12 @@
-import { ControlSurface, createPanControl, createRotationControl } from "../src/index"
+import {
+	ControlSurface,
+	createPanControl,
+	createRotationControl,
+	createPianoRollControl,
+	createGuitarTabControl,
+	createRelativeKeysControl,
+	createStrumControl
+} from "../src/index"
 import "../src/style.css"
 import type { ControlBinding, ControlDescriptor, ControlValue } from "../src/types"
 
@@ -16,7 +24,11 @@ const values: Record<string, ControlValue> = {
 	color: "#33ffb8",
 	display: "Ready",
 	preset: 0,
-	strike: 0
+	strike: 0,
+	roll: Array.from({ length: 96 }, (_, i) => ([80, 65, 50, 35].includes(i) ? 0.8 : 0)),
+	tab: Array.from({ length: 48 }, (_, i) => (i % 9 === 0 ? 3 : -1)),
+	relative: [],
+	strum: []
 }
 const descriptors: ControlDescriptor[] = [
 	{
@@ -57,7 +69,11 @@ const descriptors: ControlDescriptor[] = [
 			{ label: "Cloud", value: 1 }
 		]
 	},
-	{ id: "strike", label: "Velocity pad", widget: "pad", min: 0, max: 1 }
+	{ id: "strike", label: "Velocity pad", widget: "pad", min: 0, max: 1 },
+	createPianoRollControl({ id: "roll", label: "Piano roll" }),
+	createGuitarTabControl({ id: "tab", label: "Guitar tab" }),
+	createRelativeKeysControl({ id: "relative", label: "Relative keys" }),
+	createStrumControl({ id: "strum", label: "Strum" })
 ]
 const bindings: ControlBinding[] = descriptors.map((descriptor) => ({
 	key: descriptor.id,

@@ -1,6 +1,9 @@
 /// <reference types="@webgpu/types" />
 import { EVENT_GPU_ERROR } from "./events"
 import { sourceTheme } from "./themes"
+import { isMusicGrid, musicOptions, musicRect, musicValues, noteName } from "./music"
+import { relativeRect, type RelativeKeys } from "./relative-keys"
+import type { Strum } from "./strum"
 import { dialOptions, formatValue, normalize, sameValue } from "./model"
 import type {
 	ControlDescriptor,
@@ -16,6 +19,7 @@ export interface WidgetVisual {
 	y: number
 	width: number
 	height: number
+	rotation?: number
 	descriptor: ControlDescriptor
 	value: ControlValue | undefined
 	widget: WidgetType
@@ -25,6 +29,8 @@ export interface WidgetVisual {
 	focused?: boolean
 	dial?: DialOptions
 	unavailable?: boolean
+	relative?: RelativeKeys
+	strum?: Strum
 }
 export type SurfaceTheme = "neon" | "amber" | "ice"
 interface CachedWidget {
@@ -34,6 +40,8 @@ interface CachedWidget {
 	y: number
 	width: number
 	height: number
+	rotation: number | undefined
+	strumRevision: number | undefined
 	descriptor: ControlDescriptor
 	widget: WidgetType
 	sourceLabel: string
@@ -118,7 +126,9 @@ struct VertexOutput {
  @location(3) extra: vec4f, @location(4) textureRect: vec4f) -> VertexOutput {
  let corners = array<vec2f,6>(vec2f(0,0),vec2f(1,0),vec2f(0,1),vec2f(0,1),vec2f(1,0),vec2f(1,1));
  let uv = corners[index]; var o: VertexOutput;
- o.position = frame.projection * vec4f(rect.xy + uv * rect.zw, 0, 1);
+ let point=rect.xy+uv*rect.zw;let delta=point-extra.zw;let c=cos(extra.y);let s=sin(extra.y);
+ let rotated=extra.zw+vec2f(delta.x*c-delta.y*s,delta.x*s+delta.y*c);
+ o.position = frame.projection * vec4f(rotated, 0, 1);
  o.uv=uv; o.rect=rect; o.params=params; o.color=color; o.extra=extra; o.textureRect=textureRect; return o;
 }
 fn line(distance: f32, thickness: f32) -> f32 { return 1.0-smoothstep(thickness, thickness+1.0, abs(distance))+0.12*exp(-abs(distance)*0.32); }
@@ -155,7 +165,7 @@ fn chassis(distance:f32,top:f32,pressed:f32)->vec4f {
   let a=1.0-smoothstep(0.0,1.0,edge);
   let bevel=(1.0-smoothstep(0.0,2.0,abs(edge+3.0)))*top*frame.effects.x;
   let rail=line(p.x+size.x*0.5-5.0,1.3)*step(abs(p.y),size.y*0.5-12.0);
-  let rgb=mix(vec3f(0.022,0.031,0.048)*(0.85+top*0.3),i.color.rgb,0.025+grid*0.025)+vec3f(0.07,0.1,0.13)*bevel+i.color.rgb*(line(edge,0.6)*(0.3+engaged*0.65)+rail*0.55);
+  let rgb=mix(vec3f(0.022,0.031,0.048)*(0.85+top*0.3),i.color.rgb,0.018+grid*0.004)+vec3f(0.07,0.1,0.13)*bevel+i.color.rgb*(line(edge,0.6)*(0.2+engaged*0.65)+rail*0.4);
   return surfaceEffect(vec4f(rgb,a),i.uv,frame.time);
  } else if (kind<1.5) {
   color=settingColor(value);
@@ -216,6 +226,26 @@ fn chassis(distance:f32,top:f32,pressed:f32)->vec4f {
   let d=length(vec2f((i.uv.x-center)*size.x,p.y))-7.0;
   light=line(d,1.0)*select(0.2,1.0,abs(segment-value)<0.1);
   fill=(1.0-smoothstep(-1.0,0.0,d))*select(0.0,0.4,abs(segment-value)<0.1);
+ } else if (kind>15.5) {
+  let flash=exp(-max(0.0,frame.time-second)*10.0)*frame.motion;
+  light=line(p.y,0.7+flash*1.5)*(0.2+flash*1.6);
+ } else if (kind>14.5) {
+  let a=i.textureRect.xy;let b=i.textureRect.zw;let ab=b-a;let len=max(1.0,length(ab));let direction=ab/len;
+  let q=i.uv*size-a;let along=dot(q,direction);let across=abs(q.x*direction.y-q.y*direction.x);
+  let dash=1.0-smoothstep(6.0,7.0,((along+frame.time*55.0*frame.motion)%12.0));
+  light=line(across,0.8)*dash*step(0.0,along)*step(along,len)*0.5;
+ } else if (kind>13.5) {
+  if(i.uv.x<i.textureRect.x||i.uv.y<i.textureRect.y||i.uv.x>i.textureRect.z||i.uv.y>i.textureRect.w){discard;}
+  let radius=min(size.x,size.y)*0.42;let d=length(p)-radius;
+  let age=max(0.0,frame.time-second);let flash=exp(-age*14.0)*frame.motion;
+  light=line(d,1.8)*(0.7+flash*1.5);
+  fill=(1.0-smoothstep(-1.0,0.0,d))*(0.1+value*0.35+flash*0.5);
+ } else if (kind>10.5) {
+  let d=box(p,size*0.5-vec2f(1),2);
+  material=chassis(d,top,0.0);
+  light=line(d,0.5)*(0.12+value*0.55);
+  fill=(1.0-smoothstep(-1.0,0.0,d))*(0.015+value*0.65);
+  if(kind>11.5){light=max(light,line(p.y,0.5)*0.2);}
  } else if (kind>9.5) {
   let d=box(p,size*0.4,10);
   material=chassis(d,top,engaged);
@@ -261,6 +291,8 @@ export class GpuSurfaceRenderer {
 	private screenSignature = ""
 	private color = COLORS.neon
 	private drawingColor = COLORS.neon
+	private drawingRotation = 0
+	private drawingPivot = [0, 0]
 	private visualEffects = { bloom: 0.6, bloomRadius: 6, depth: 0.9, scanlines: 0.025 }
 	format: GPUTextureFormat
 	private effect = DEFAULT_EFFECT
@@ -508,9 +540,8 @@ export class GpuSurfaceRenderer {
 			...this.drawingColor,
 			alpha,
 			extra,
-			0,
-			0,
-			0,
+			this.drawingRotation,
+			...this.drawingPivot,
 			...uv
 		)
 	}
@@ -520,10 +551,11 @@ export class GpuSurfaceRenderer {
 		y: number,
 		width: number,
 		alpha = 1,
-		reserve = false
+		reserve = false,
+		scale = 1
 	): void {
-		const size = 24,
-			advance = 9
+		const size = 24 * scale,
+			advance = 9 * scale
 		const length = Math.max(0, Math.floor(width / advance)),
 			count = reserve ? length : Math.min(text.length, length)
 		for (let i = 0; i < count; i++) {
@@ -538,6 +570,148 @@ export class GpuSurfaceRenderer {
 			])
 		}
 	}
+	private contact(
+		w: WidgetVisual,
+		x: number,
+		y: number,
+		diameter: number,
+		pressure: number,
+		triggered: number,
+		alpha: number
+	): void {
+		const left = x - diameter / 2,
+			top = y - diameter / 2
+		this.quad(left, top, diameter, diameter, 14, pressure, triggered, 1, 0, alpha, [
+			Math.max(0, (w.x - left) / diameter),
+			Math.max(0, (w.y - top) / diameter),
+			Math.min(1, (w.x + w.width - left) / diameter),
+			Math.min(1, (w.y + w.height - top) / diameter)
+		])
+	}
+	private relativeKeys(w: WidgetVisual, alpha: number): void {
+		const controller = w.relative
+		if (!controller) {
+			return
+		}
+		const rect = relativeRect(w.width, w.height),
+			size = controller.options.keySize
+		const ax = controller.anchor.x * rect.width,
+			ay = controller.anchor.y * rect.height
+		const baseX = w.x + rect.x,
+			baseY = w.y + rect.y
+		for (let row = Math.ceil((ay - rect.height) / size); row <= Math.floor(ay / size); row++) {
+			for (
+				let column = Math.ceil(-ax / size);
+				column <= Math.floor((rect.width - ax) / size);
+				column++
+			) {
+				const cx = ax + column * size,
+					cy = ay - row * size
+				const note =
+					controller.options.rootNote +
+					column * controller.options.horizontalInterval +
+					row * controller.options.verticalInterval
+				if (note < 0 || note > 127) {
+					continue
+				}
+				const left = Math.max(0, cx - size * 0.47),
+					top = Math.max(0, cy - size * 0.47)
+				const width = Math.min(rect.width, cx + size * 0.47) - left,
+					height = Math.min(rect.height, cy + size * 0.47) - top
+				this.quad(baseX + left, baseY + top, width, height, 11, 0, -1, 0, 0, alpha * 0.65)
+				if (width > 25 && height > 20) {
+					this.text(
+						noteName(note),
+						baseX + left + 4,
+						baseY + top + height / 2 - 8,
+						width - 5,
+						alpha * 0.45,
+						false,
+						0.65
+					)
+				}
+			}
+		}
+		for (const contact of controller.contacts.values()) {
+			const x = contact.x * rect.width,
+				y = contact.y * rect.height
+			if (Math.hypot(x - ax, y - ay) < 2) {
+				continue
+			}
+			const left = Math.min(ax, x) - 3,
+				top = Math.min(ay, y) - 3
+			this.quad(
+				baseX + left,
+				baseY + top,
+				Math.abs(x - ax) + 6,
+				Math.abs(y - ay) + 6,
+				15,
+				0,
+				-1,
+				0,
+				0,
+				alpha,
+				[ax - left, ay - top, x - left, y - top]
+			)
+		}
+		if (controller.contacts.size) {
+			this.contact(w, baseX + ax, baseY + ay, 18, 0, -1000, alpha * 0.5)
+		}
+		for (const contact of controller.contacts.values()) {
+			const diameter = 18 + contact.pressure * 34
+			const x = baseX + contact.x * rect.width,
+				y = baseY + contact.y * rect.height
+			this.contact(w, x, y, diameter, contact.pressure, contact.triggered, alpha)
+			this.text(noteName(contact.note), x - 14, y - 9, 35, alpha, false, 0.75)
+		}
+	}
+	private strum(w: WidgetVisual, alpha: number): void {
+		const controller = w.strum
+		if (!controller) {
+			return
+		}
+		const rect = relativeRect(w.width, w.height),
+			rows = controller.options.tuning.length,
+			height = rect.height / rows
+		controller.options.tuning.forEach((pitch, row) => {
+			const y = w.y + rect.y + row * height
+			this.quad(
+				w.x + rect.x + 36,
+				y,
+				Math.max(1, rect.width - 36),
+				height,
+				16,
+				0,
+				controller.triggered[row],
+				0,
+				0,
+				alpha * (controller.options.frets[row] < 0 ? 0.25 : 1)
+			)
+			this.text(
+				noteName(Math.min(127, pitch + Math.max(0, controller.options.frets[row]))),
+				w.x + rect.x,
+				y + height / 2 - 9,
+				34,
+				alpha * 0.8,
+				false,
+				0.75
+			)
+		})
+		for (const contact of controller.contacts.values()) {
+			const diameter = 18 + contact.pressure * 24,
+				x = w.x + rect.x + contact.x * rect.width,
+				y = w.y + rect.y + contact.y * rect.height
+			this.contact(
+				w,
+				x,
+				y,
+				diameter,
+				contact.pressure,
+				controller.triggered[contact.row],
+				alpha
+			)
+		}
+	}
 	prepare(
 		widgets: WidgetVisual[],
 		_motion: boolean,
@@ -548,7 +722,13 @@ export class GpuSurfaceRenderer {
 			dirtyEnd = 0,
 			grown = false
 		const epoch = ++this.epoch
-		this.active = widgets.some((widget) => !!widget.active)
+		this.active = widgets.some(
+			(widget) =>
+				!!widget.active ||
+				(!!widget.strum &&
+					_motion &&
+					performance.now() / 1000 - widget.strum.lastTriggered < 0.75)
+		)
 		const reserve = (required: number) => {
 			if (required <= this.instances.length) {
 				return
@@ -571,6 +751,8 @@ export class GpuSurfaceRenderer {
 				cached.y !== w.y ||
 				cached.width !== w.width ||
 				cached.height !== w.height ||
+				cached.rotation !== w.rotation ||
+				cached.strumRevision !== w.strum?.revision ||
 				cached.descriptor !== w.descriptor ||
 				cached.widget !== w.widget ||
 				cached.sourceLabel !== w.sourceLabel ||
@@ -586,6 +768,8 @@ export class GpuSurfaceRenderer {
 				this.building = []
 				const theme = sourceTheme(w.sourceId ?? w.sourceLabel)
 				this.drawingColor = theme.accent
+				this.drawingRotation = ((w.rotation ?? 0) * Math.PI) / 180
+				this.drawingPivot = [w.x + w.width / 2, w.y + w.height / 2]
 				const d = w.descriptor,
 					v = w.value,
 					active = w.active || w.focused ? 1 : 0,
@@ -595,14 +779,27 @@ export class GpuSurfaceRenderer {
 					? v.map((n) => normalize(d, n))
 					: [typeof v === "boolean" ? Number(v) : normalize(d, Number(v))]
 				this.quad(w.x, w.y, w.width, w.height, 0, 0, 0, active, theme.pattern, alpha)
-				this.text(w.sourceLabel, w.x + 12, w.y + 9, w.width - 24, 0.85 * alpha)
-				this.text(d.label, w.x + 12, w.y + 27, w.width - 24, alpha)
+				const rotary = w.widget === "dial" || w.widget === "rotation"
+				const musical = isMusicGrid(w.widget)
+				const centerY = w.y + w.height / 2 + 10
+				const labelWidth = rotary
+					? Math.min(w.width - 30, (w.height - 24) * 0.62)
+					: w.width - 24
+				const labelScale = Math.max(
+					0.65,
+					Math.min(1, labelWidth / Math.max(1, d.label.length * 9))
+				)
 				const x = w.x + 8,
-					y = w.y + 48,
+					y = w.y + 22,
 					width = w.width - 16,
-					height = w.height - 76
+					height = w.height - 24
 				const kind = {
 					dial: 1,
+					rotation: 1,
+					"guitar-tab": 12,
+					"piano-roll": 11,
+					"relative-keys": 13,
+					strum: 16,
 					slider: 2,
 					range: 2,
 					toggle: 3,
@@ -617,31 +814,108 @@ export class GpuSurfaceRenderer {
 					color: 8,
 					display: 8
 				}[w.widget]
-				const dial = dialOptions(w.dial ?? d.dial)
-				this.quad(
-					x,
-					y,
-					width,
-					height,
-					kind,
-					w.widget === "radio" ? choice : target[0],
-					w.widget === "dial"
-						? ["level", "pan", "rotation"].indexOf(dial.mode)
-						: w.widget === "xy" || w.widget === "range"
-							? target[1]
-							: -1,
-					active,
-					w.widget === "dial" ? dial.ticks : (d.choices?.length ?? 0),
-					alpha,
-					w.widget === "dial"
-						? [
-								(dial.startAngle * Math.PI) / 180,
-								(dial.sweepAngle * Math.PI) / 180,
-								Number(dial.reverse),
-								["inward", "outward", "both"].indexOf(dial.tickDirection)
-							]
-						: undefined
+				const dial = dialOptions(
+					w.widget === "rotation" ? { ...w.dial, mode: "rotation" } : (w.dial ?? d.dial)
 				)
+				if (w.widget === "strum") {
+					this.strum(w, alpha)
+				} else if (w.widget === "relative-keys") {
+					this.relativeKeys(w, alpha)
+				} else if (musical) {
+					const options = musicOptions(w.widget, d.music),
+						values = musicValues(d, v)
+					const rect = musicRect(w.width, w.height)
+					const cw = rect.width / options.steps,
+						ch = rect.height / options.pitches.length
+					for (let row = 0; row < options.pitches.length; row++) {
+						this.text(
+							noteName(options.pitches[row]),
+							w.x + 8,
+							w.y + rect.y + row * ch + ch / 2 - 8,
+							30,
+							alpha * 0.8,
+							false,
+							0.7
+						)
+						for (let col = 0; col < options.steps; col++) {
+							const value = values[row * options.steps + col],
+								tab = w.widget === "guitar-tab"
+							this.quad(
+								w.x + rect.x + col * cw,
+								w.y + rect.y + row * ch,
+								cw,
+								ch,
+								kind,
+								tab ? Number(value >= 0) * 0.4 : value,
+								-1,
+								0,
+								0,
+								alpha
+							)
+							if (tab && value >= 0) {
+								this.text(
+									String(value),
+									w.x + rect.x + col * cw + cw / 2 - 6,
+									w.y + rect.y + row * ch + ch / 2 - 10,
+									cw,
+									alpha,
+									false,
+									0.8
+								)
+							}
+						}
+					}
+				} else {
+					this.quad(
+						x,
+						y,
+						width,
+						height,
+						kind,
+						w.widget === "radio" ? choice : target[0],
+						rotary
+							? ["level", "pan", "rotation"].indexOf(dial.mode)
+							: w.widget === "xy" || w.widget === "range"
+								? target[1]
+								: -1,
+						active,
+						rotary ? dial.ticks : (d.choices?.length ?? 0),
+						alpha,
+						rotary
+							? [
+									(dial.startAngle * Math.PI) / 180,
+									(dial.sweepAngle * Math.PI) / 180,
+									Number(dial.reverse),
+									["inward", "outward", "both"].indexOf(dial.tickDirection)
+								]
+							: undefined
+					)
+				}
+				if (rotary) {
+					const words = d.label.split(" "),
+						lines: string[] = []
+					for (const word of words) {
+						const previous = lines[lines.length - 1]
+						if (previous && (previous.length + word.length + 1) * 9 <= labelWidth) {
+							lines[lines.length - 1] += ` ${word}`
+						} else {
+							lines.push(word)
+						}
+					}
+					for (const [i, line] of lines.slice(0, 2).entries()) {
+						this.text(
+							line,
+							w.x + (w.width - Math.min(labelWidth, line.length * 9)) / 2,
+							centerY - 30 + i * 16,
+							labelWidth,
+							alpha,
+							false,
+							Math.min(1, labelWidth / (line.length * 9))
+						)
+					}
+				} else {
+					this.text(d.label, w.x + 12, w.y + 8, labelWidth, alpha, false, labelScale)
+				}
 				if (w.widget === "radio" && d.choices?.length) {
 					const segment = width / d.choices.length
 					for (const [index, option] of d.choices.entries()) {
@@ -654,14 +928,30 @@ export class GpuSurfaceRenderer {
 						)
 					}
 				}
-				this.text(
-					w.unavailable ? "Unavailable" : formatValue(d, v),
-					w.x + 12,
-					w.y + w.height - 24,
-					w.width - 24,
-					alpha,
-					true
-				)
+				if (
+					!musical &&
+					![
+						"button",
+						"pad",
+						"select",
+						"number",
+						"text",
+						"color",
+						"radio",
+						"relative-keys",
+						"strum"
+					].includes(w.widget)
+				) {
+					this.text(
+						w.unavailable ? "Unavailable" : formatValue(d, v),
+						rotary ? w.x + (w.width - labelWidth) / 2 : w.x + 12,
+						rotary ? centerY + 6 : w.y + w.height - 24,
+						rotary ? labelWidth : w.width - 24,
+						alpha,
+						true,
+						rotary ? 0.85 : 1
+					)
+				}
 				cached = {
 					data: new Float32Array(this.building),
 					offset: -1,
@@ -669,6 +959,8 @@ export class GpuSurfaceRenderer {
 					y: w.y,
 					width: w.width,
 					height: w.height,
+					rotation: w.rotation,
+					strumRevision: w.strum?.revision,
 					descriptor: d,
 					widget: w.widget,
 					sourceLabel: w.sourceLabel,
@@ -703,6 +995,8 @@ export class GpuSurfaceRenderer {
 		}
 		this.building = []
 		this.drawingColor = this.color
+		this.drawingRotation = 0
+		this.drawingPivot = [0, 0]
 		for (const cursor of cursors) {
 			this.quad(cursor.x - 12, cursor.y - 12, 24, 24, 1, 1, -1, 1)
 		}

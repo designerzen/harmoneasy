@@ -6,6 +6,7 @@ import type {
 	WidgetType
 } from "./types"
 import { isMusicGrid, musicOptions, musicValues } from "./music"
+import { strumOptions } from "./strum"
 
 export function dialOptions(options: DialOptions = {}): Required<DialOptions> {
 	const mode = options.mode ?? "level"
@@ -58,8 +59,12 @@ export const WIDGET_TYPES: WidgetType[] = [
 	"text",
 	"meter",
 	"display",
-	"color"
-	,"rotation", "guitar-tab", "piano-roll"
+	"color",
+	"rotation",
+	"guitar-tab",
+	"piano-roll",
+	"relative-keys",
+	"strum"
 ]
 export const clamp = (v: number, min = 0, max = 1) => Math.max(min, Math.min(max, v))
 export const sameValue = (a: unknown, b: unknown) =>
@@ -104,10 +109,71 @@ export function validateValue(d: ControlDescriptor, value: ControlValue): Contro
 	}
 	if (isMusicGrid(d.widget)) {
 		const { steps, pitches } = musicOptions(d.widget, d.music)
-		if (!Array.isArray(value) || value.length !== steps * pitches.length || !value.every(Number.isFinite)) {
+		if (
+			!Array.isArray(value) ||
+			value.length !== steps * pitches.length ||
+			!value.every(Number.isFinite)
+		) {
 			throw new Error(`${d.label} requires ${steps * pitches.length} finite cell values`)
 		}
 		return musicValues(d, value)
+	}
+	if (d.widget === "relative-keys") {
+		if (
+			!Array.isArray(value) ||
+			!value.every(Number.isFinite) ||
+			(value.length !== 0 &&
+				(value.length < 7 || (value.length - 2) % 5 !== 0 || value.length > 82))
+		) {
+			throw new Error(`${d.label} requires relative key contacts`)
+		}
+		if (value.length) {
+			if (value[0] < 0 || value[0] > 1 || value[1] < 0 || value[1] > 1) {
+				throw new RangeError("Invalid touch anchor")
+			}
+			const ids = new Set<number>()
+			for (let i = 2; i < value.length; i += 5) {
+				if (
+					!Number.isInteger(value[i]) ||
+					ids.has(value[i]) ||
+					!Number.isInteger(value[i + 1]) ||
+					value[i + 1] < 0 ||
+					value[i + 1] > 127 ||
+					value[i + 2] < 0 ||
+					value[i + 2] > 1 ||
+					value[i + 3] < 0 ||
+					value[i + 3] > 1 ||
+					value[i + 4] < 0 ||
+					value[i + 4] > 1
+				) {
+					throw new RangeError("Invalid relative key contact")
+				}
+				ids.add(value[i])
+			}
+		}
+		return [...value]
+	}
+	if (d.widget === "strum") {
+		const { tuning } = strumOptions(d.strum)
+		if (
+			!Array.isArray(value) ||
+			!value.every(Number.isFinite) ||
+			(value.length !== 0 &&
+				(value.length !== 4 ||
+					!Number.isSafeInteger(value[0]) ||
+					value[0] < 1 ||
+					!Number.isInteger(value[1]) ||
+					value[1] < 0 ||
+					value[1] >= tuning.length ||
+					!Number.isInteger(value[2]) ||
+					value[2] < 0 ||
+					value[2] > 127 ||
+					value[3] <= 0 ||
+					value[3] > 1))
+		) {
+			throw new Error(`${d.label} requires a strum event`)
+		}
+		return [...value]
 	}
 	if (d.choices?.length) {
 		const choice = d.choices.find((c) => sameValue(c.value, value))
@@ -147,8 +213,8 @@ export function widgetChoices(d: ControlDescriptor): WidgetType[] {
 	if (d.choices?.length) {
 		return ["radio", "select"]
 	}
-	if (["dial", "rotation", "slider", "number", "pad"].includes(d.widget)) {
-		return ["dial", "rotation", "slider", "number", "pad"]
+	if (["dial", "slider", "number", "pad"].includes(d.widget)) {
+		return ["dial", "slider", "number", "pad"]
 	}
 	return [d.widget]
 }
@@ -215,7 +281,9 @@ export function validSurfaces(value: unknown): value is SurfaceState[] {
 					(w.yKey === undefined || typeof w.yKey === "string") &&
 					(!w.widget || WIDGET_TYPES.includes(w.widget)) &&
 					(w.span === undefined || [1, 2, 3].includes(w.span)) &&
-					(w.height === undefined || (Number.isInteger(w.height) && w.height >= 132 && w.height <= 720)) &&
+					(w.height === undefined ||
+						(Number.isInteger(w.height) && w.height >= 132 && w.height <= 720)) &&
+					(w.rotation === undefined || [0, 90, 180, 270].includes(w.rotation)) &&
 					(w.dial === undefined || validDialOptions(w.dial))
 			)
 		)
@@ -243,4 +311,19 @@ export function layoutWidgets(widgets: { span?: number; height?: number }[], wid
 		return rect
 	})
 	return { items, height: widgets.length ? y + rowHeight + gap : 120 }
+}
+
+/** Convert a surface/XR hit to the widget's unrotated coordinates. */
+export function widgetPoint(
+	x: number,
+	y: number,
+	rect: { x: number; y: number; width: number; height: number; rotation?: number }
+) {
+	const angle = (-(rect.rotation ?? 0) * Math.PI) / 180
+	const cx = rect.x + rect.width / 2,
+		cy = rect.y + rect.height / 2
+	return {
+		x: cx + (x - cx) * Math.cos(angle) - (y - cy) * Math.sin(angle),
+		y: cy + (x - cx) * Math.sin(angle) + (y - cy) * Math.cos(angle)
+	}
 }

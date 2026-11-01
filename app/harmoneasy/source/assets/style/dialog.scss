@@ -387,36 +387,58 @@ body:has(dialog:modal) {
 			min-height: 42px;
 			margin: 0;
 			padding: 0.5rem 0.85rem;
-			border: 1px solid var(--col-line);
 			border-radius: 8px;
-			background: var(--col-surface);
-			color: inherit;
 			font-size: 0.85rem;
-		}
-		button:hover {
-			border-color: var(--col-accent);
 		}
 	}
 	#start-form {
 		display: none;
 	}
 	#start-room-context:not([hidden]) {
-		display: flex;
-		flex-wrap: wrap;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto auto;
 		align-items: center;
 		flex-shrink: 0;
 		gap: 0.75rem;
 		padding: 0.75rem 1.5rem;
-		border-bottom: 1px solid var(--col-line);
-		background: var(--col-surface);
+		border-bottom: 1px solid var(--col-accent-hover);
+		background: var(--col-accent);
+		color: var(--col-on-accent);
 		p {
-			flex: 1;
-			min-width: 12rem;
+			min-width: 0;
+			overflow-wrap: anywhere;
 			margin: 0;
 			max-width: none;
 		}
 		button {
 			min-height: 42px;
+			margin: 0;
+			&:focus-visible {
+				outline: 3px solid var(--col-on-accent);
+				outline-offset: 3px;
+			}
+		}
+		.primary {
+			border-color: var(--col-on-accent);
+		}
+		#dismiss-start-room {
+			align-self: start;
+			width: 42px;
+			padding: 0;
+			font-size: 1.5rem;
+			line-height: 1;
+		}
+		@media (max-width: 680px) {
+			grid-template-columns: minmax(0, 1fr) auto;
+			padding: 0.75rem 1rem;
+			button[type="submit"] {
+				grid-column: 1;
+				justify-self: start;
+			}
+			#dismiss-start-room {
+				grid-column: 2;
+				grid-row: 1;
+			}
 		}
 	}
 	.start-presets-content:not([hidden]) {

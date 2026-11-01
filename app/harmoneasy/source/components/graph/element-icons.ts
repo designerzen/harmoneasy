@@ -51,6 +51,7 @@ const OUTPUT_ICONS: Record<OutputId, string> = {
 	"303": "synth",
 	"drum-kit": "drums",
 	"note-monitor": "piano",
+	"song-tree": "visualizer",
 	"sample-player": "synth",
 	"harmony-sampler": "synth",
 	"event-recorder": "clock",

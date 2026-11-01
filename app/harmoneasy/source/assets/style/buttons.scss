@@ -31,7 +31,22 @@ button {
 	}
 
 	&.secondary {
-		// secondary button styles
+		background-color: var(--col-surface);
+		border-color: var(--col-line);
+		color: var(--col-fg);
+		&:hover:not(:disabled) {
+			border-color: var(--col-accent);
+		}
+	}
+
+	&.tertiary {
+		background-color: transparent;
+		border-color: transparent;
+		color: inherit;
+		&:hover:not(:disabled) {
+			background-color: color-mix(in oklch, currentColor 12%, transparent);
+			border-color: transparent;
+		}
 	}
 }
 

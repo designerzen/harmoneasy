@@ -7,6 +7,8 @@ import { EVENT_CONFIGURATION_CHANGED } from "../../audiobus/event-constants"
 import PolySynth from "../../audiobus/instruments/polyphonic"
 import SynthOscillator from "../../audiobus/instruments/oscillators/synth-oscillator"
 import { normalize } from "../src/model"
+import { isMusicGrid, musicValues, musicRect } from "../src/music"
+import { relativeRect } from "../src/relative-keys"
 
 const frame = () => new Promise<number>((resolve) => requestAnimationFrame(resolve))
 const percentile = (values: number[], p: number) => {
@@ -34,6 +36,9 @@ GpuSurfaceRenderer.prototype.prepare = function (...args) {
 		const data = (this as any).instances as ArrayLike<number>
 		for (let n = 0; n < data.length; n += 20) {
 			if (data[n + 4] === measure.kind) {
+				if (measure.kind === 14 && data[n + 5] === 0) {
+					continue
+				}
 				if (
 					measure.stepAt &&
 					!measure.settled &&
@@ -83,6 +88,14 @@ function descriptor(widget: WidgetType, id: string): ControlDescriptor {
 	}
 }
 function value(widget: WidgetType, n: number): ControlValue {
+	if (isMusicGrid(widget)) {
+		const values = musicValues(descriptor(widget, "grid"))
+		values[Math.floor(n * (values.length - 1))] = widget === "guitar-tab" ? 5 : n
+		return values
+	}
+	if (widget === "relative-keys" || widget === "strum") {
+		return []
+	}
 	if (widget === "toggle") {
 		return n > 0.5
 	}
@@ -215,6 +228,10 @@ async function run(
 		await frame()
 	}
 	const kinds: Partial<Record<WidgetType, number>> = {
+		"relative-keys": 14,
+		"piano-roll": 11,
+		"guitar-tab": 12,
+		strum: 16,
 		dial: 1,
 		slider: 2,
 		range: 2,
@@ -248,7 +265,40 @@ async function run(
 			}
 		}
 		inputAt = performance.now()
-		if (["dial", "slider", "xy", "range", "radio", "number"].includes(widget)) {
+		if (widget === "relative-keys" || widget === "strum") {
+			const box = relativeRect(first.width, first.height)
+			surface.pointerMove(
+				1,
+				first.x + box.x + box.width * 0.35,
+				first.y + box.y + box.height * (widget === "strum" ? n : 0.5),
+				false,
+				n
+			)
+			if (widget === "relative-keys") {
+				surface.pointerMove(
+					2,
+					first.x + box.x + box.width * (0.55 + n * 0.2),
+					first.y + box.y + box.height * 0.3,
+					false,
+					0.7
+				)
+				surface.pointerMove(
+					3,
+					first.x + box.x + box.width * 0.65,
+					first.y + box.y + box.height * (0.55 + n * 0.2),
+					false,
+					0.5
+				)
+			}
+		} else if (isMusicGrid(widget)) {
+			const box = musicRect(first.width, first.height)
+			surface.pointerDown(
+				2,
+				first.x + box.x + box.width * n,
+				first.y + box.y + box.height * 0.55
+			)
+			surface.pointerUp(2)
+		} else if (["dial", "slider", "xy", "range", "radio", "number"].includes(widget)) {
 			const x =
 				widget === "dial" || widget === "number"
 					? 100
@@ -288,6 +338,32 @@ async function run(
 	}
 	if (widget === "pad") {
 		surface.pointerDown(1, 90, 90)
+	}
+	if (widget === "relative-keys" || widget === "strum") {
+		const box = relativeRect(first.width, first.height)
+		surface.pointerDown(
+			1,
+			first.x + box.x + box.width * 0.35,
+			first.y + box.y + box.height * 0.5,
+			false,
+			0.5
+		)
+		if (widget === "relative-keys") {
+			surface.pointerDown(
+				2,
+				first.x + box.x + box.width * 0.65,
+				first.y + box.y + box.height * 0.3,
+				false,
+				0.7
+			)
+			surface.pointerDown(
+				3,
+				first.x + box.x + box.width * 0.65,
+				first.y + box.y + box.height * 0.7,
+				false,
+				0.5
+			)
+		}
 	}
 	reads = 0
 	writes = 0

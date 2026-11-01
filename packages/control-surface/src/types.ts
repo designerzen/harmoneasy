@@ -17,8 +17,24 @@ export type WidgetType =
 	| "rotation"
 	| "guitar-tab"
 	| "piano-roll"
+	| "relative-keys"
+	| "strum"
+export interface StrumOptions {
+	tuning?: number[]
+	frets?: number[]
+	/** Maximum ring time in milliseconds for live output bindings. */
+	duration?: number
+}
+export interface RelativeKeysOptions {
+	rootNote?: number
+	horizontalInterval?: number
+	verticalInterval?: number
+	keySize?: number
+}
 /** Row-major sequence data: piano velocities 0..1; tab frets -1 (rest)..frets. */
 export interface MusicGridOptions {
+	/** Live note gates release on blur/removal; sequence editors retain their data. */
+	live?: boolean
 	steps?: number
 	/** Piano MIDI pitches from top to bottom. */
 	notes?: number[]
@@ -63,6 +79,8 @@ export interface ControlDescriptor {
 	scale?: "linear" | "log"
 	dial?: DialOptions
 	music?: MusicGridOptions
+	relativeKeys?: RelativeKeysOptions
+	strum?: StrumOptions
 	choices?: ControlChoice[]
 	readOnly?: boolean
 	disabled?: boolean
@@ -98,6 +116,7 @@ export interface SurfaceWidget {
 	span?: number
 	/** Height in CSS pixels, independent of width. */
 	height?: number
+	rotation?: 0 | 90 | 180 | 270
 	/** Optional override for programmatically authored surfaces. */
 	dial?: DialOptions
 }

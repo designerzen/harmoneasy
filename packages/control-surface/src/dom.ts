@@ -23,12 +23,20 @@ import {
 	validateValue
 } from "./model"
 import { contactPressure } from "./pressure"
+import { createMusicGrid } from "./music-dom"
+import { isMusicGrid, musicValues } from "./music"
+import { createRelativeKeys } from "./relative-dom"
+import type { RelativeKeys } from "./relative-keys"
+import { createStrum } from "./strum-dom"
+import type { Strum } from "./strum"
 import type { ControlBinding, ControlValue } from "./types"
 
 export interface DomControl {
 	element: HTMLElement
 	update(value: ControlValue | undefined): void
 	release?(): void
+	relative?: RelativeKeys
+	strum?: Strum
 }
 /** Native semantic controls are also the accessible companions to GPU widgets. */
 export function createDomControl(
@@ -36,13 +44,16 @@ export function createDomControl(
 	apply: (value: ControlValue, edge?: boolean) => void
 ): DomControl {
 	const d = binding.descriptor,
-		label = document.createElement("label"),
+		label = document.createElement("div"),
 		caption = document.createElement("span")
 	caption.textContent = d.label
+	label.className = "component-control"
 	label.title = d.help ?? ""
 	label.append(caption)
 	const updates: ((value: ControlValue | undefined) => void)[] = []
 	let release: (() => void) | undefined
+	let relative: RelativeKeys | undefined
+	let strum: Strum | undefined
 	const [min, max] = bounds(d)
 	const input = (type: string, suffix = "") => {
 		const el = document.createElement("input")
@@ -58,7 +69,29 @@ export function createDomControl(
 		label.append(el)
 		return el
 	}
-	if (d.widget === "pad") {
+	if (d.widget === "strum") {
+		const strings = createStrum(d, apply)
+		strum = strings.controller
+		release = strings.release
+		label.append(strings.element)
+	} else if (d.widget === "relative-keys") {
+		const keys = createRelativeKeys(d, apply)
+		relative = keys.controller
+		release = keys.release
+		label.append(keys.element)
+		updates.push(keys.update)
+	} else if (isMusicGrid(d.widget)) {
+		const grid = createMusicGrid(d, apply)
+		label.append(grid.element)
+		updates.push(grid.update)
+		if (d.music?.live && !d.disabled && !d.readOnly) {
+			release = () => {
+				const empty = musicValues(d)
+				grid.update(empty)
+				apply(empty, true)
+			}
+		}
+	} else if (d.widget === "pad") {
 		const button = document.createElement("button")
 		button.type = "button"
 		button.textContent = d.label
@@ -163,9 +196,22 @@ export function createDomControl(
 		label.append(button)
 	} else if (d.widget === "meter" || d.widget === "display") {
 		const output = document.createElement("output")
+		output.setAttribute("aria-label", d.label)
+		if (d.widget === "meter") {
+			output.setAttribute("role", "meter")
+			output.setAttribute("aria-valuemin", String(min))
+			output.setAttribute("aria-valuemax", String(max))
+		}
 		label.append(output)
 		updates.push((v) => {
 			output.value = formatValue(d, v)
+			if (d.widget === "meter") {
+				output.setAttribute(
+					"aria-valuenow",
+					String(typeof v === "number" ? Math.max(min, Math.min(max, v)) : min)
+				)
+				output.setAttribute("aria-valuetext", formatValue(d, v))
+			}
 		})
 	} else if (d.widget === "select" || d.widget === "radio" || d.choices?.length) {
 		// Index option values preserve typed/array-valued choices without string coercion.
@@ -219,7 +265,11 @@ export function createDomControl(
 							? "number"
 							: "range"
 		const el = input(type)
-		if (d.widget === "dial" && dialOptions(d.dial).mode === "rotation") {
+		if (
+			(d.widget === "dial" || d.widget === "rotation") &&
+			dialOptions(d.widget === "rotation" ? { ...d.dial, mode: "rotation" } : d.dial).mode ===
+				"rotation"
+		) {
 			el.addEventListener(EVENT_KEY_DOWN, (event) => {
 				const direction = ["ArrowUp", "ArrowRight"].includes(event.key)
 					? 1
@@ -236,7 +286,9 @@ export function createDomControl(
 					d,
 					dialPosition(
 						normalize(d, el.valueAsNumber) + (direction * step) / (max - min),
-						dialOptions(d.dial)
+						dialOptions(
+							d.widget === "rotation" ? { ...d.dial, mode: "rotation" } : d.dial
+						)
 					)
 				)
 				el.value = String(next)
@@ -253,6 +305,9 @@ export function createDomControl(
 			)
 		})
 		updates.push((v) => {
+			if (type === "range" || type === "number") {
+				el.setAttribute("aria-valuetext", formatValue(d, v))
+			}
 			if (type === "checkbox") {
 				el.checked = !!v
 			} else if (document.activeElement !== el) {
@@ -269,6 +324,8 @@ export function createDomControl(
 	return {
 		element: label,
 		release,
+		relative,
+		strum,
 		update(value) {
 			for (const update of updates) {
 				update(value)

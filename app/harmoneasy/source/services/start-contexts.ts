@@ -10,6 +10,13 @@ export function createStartContexts(
 	let selected: PresetSetup | undefined
 	const host = root.querySelector<HTMLElement>(".start-presets-content")!
 	const toggle = root.querySelector<HTMLButtonElement>("#show-start-presets")!
+	const roomContext = root.querySelector<HTMLElement>("#start-room-context")!
+	const dismissRoom = root.querySelector<HTMLButtonElement>("#dismiss-start-room")!
+	const dismissInvitation = () => {
+		roomContext.hidden = true
+		toggle.focus({ preventScroll: true })
+	}
+	dismissRoom.addEventListener("click", dismissInvitation)
 	host.replaceChildren()
 	const choose = (setup: PresetSetup) => {
 		selected = setup
@@ -36,6 +43,7 @@ export function createStartContexts(
 	return {
 		getSetup: () => selected,
 		destroy() {
+			dismissRoom.removeEventListener("click", dismissInvitation)
 			toggle.removeEventListener("click", togglePresets)
 			browser.destroy()
 		}

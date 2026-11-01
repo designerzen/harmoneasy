@@ -65,7 +65,7 @@ export function createPresetBrowser({
 	const close = () => dialog?.close()
 	const header = element("header")
 	const heading = element("div")
-	const title = element("h2", "", "Find your next sound")
+	const title = element("h2", "", "Browse presets")
 	title.id = titleId
 	heading.append(
 		title,

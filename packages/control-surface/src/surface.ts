@@ -1,6 +1,8 @@
 import { createDomControl } from "./dom"
 import { contactPressure } from "./pressure"
 import { sourceTheme } from "./themes"
+import { isMusicGrid, musicOptions, musicRect, musicValues } from "./music"
+import { relativeRect } from "./relative-keys"
 import {
 	EVENT_ABORT,
 	EVENT_BLUR,
@@ -12,6 +14,7 @@ import {
 	EVENT_DRAG_START,
 	EVENT_DRAG_OVER,
 	EVENT_DROP,
+	EVENT_SUBMIT,
 	EVENT_KEY_DOWN,
 	EVENT_LOST_POINTER_CAPTURE,
 	EVENT_POINTER_CANCEL,
@@ -32,6 +35,7 @@ import {
 	validateValue,
 	widgetChoices
 } from "./model"
+import { widgetPoint } from "./model"
 import { GpuSurfaceRenderer, type WidgetVisual } from "./renderer"
 import type {
 	ControlBinding,
@@ -40,6 +44,9 @@ import type {
 	SurfaceWidget,
 	SurfaceVisualEffects
 } from "./types"
+
+const largeWidget = (widget: string) =>
+	isMusicGrid(widget) || widget === "relative-keys" || widget === "strum"
 
 interface Entry {
 	config: SurfaceWidget
@@ -104,6 +111,8 @@ export class ControlSurface {
 	private enteringXR = false
 	private vrButton: HTMLButtonElement
 	private toolbar = document.createElement("div")
+	private sourceKey = document.createElement("ul")
+	private layoutStatus = document.createElement("p")
 
 	constructor(private options: SurfaceOptions) {
 		this.element.className = "control-surface nodrag nopan nowheel"
@@ -242,7 +251,11 @@ export class ControlSurface {
 		this.status.className = "cs-status"
 		this.status.setAttribute("role", "status")
 		;(options.toolbarHost ?? this.element).append(toolbar)
-		this.element.append(this.stage, this.status)
+		this.sourceKey.className = "cs-source-key"
+		this.sourceKey.setAttribute("aria-label", "Control sources")
+		this.layoutStatus.className = "cs-sr-only"
+		this.layoutStatus.setAttribute("role", "status")
+		this.element.append(this.sourceKey, this.stage, this.status, this.layoutStatus)
 		this.resize = new ResizeObserver(() => this.layout())
 		this.resize.observe(this.element)
 		this.intersection = new IntersectionObserver((entries) => {
@@ -421,6 +434,8 @@ export class ControlSurface {
 		this.entries = []
 		const bindings = new Map(this.options.bindings.map((b) => [b.key, b]))
 		const configurations = this.options.state.widgets
+		this.sourceKey.replaceChildren()
+		const sources = new Set<string>()
 		for (const config of configurations) {
 			let binding = bindings.get(config.key)
 			if (config.yKey && binding && bindings.has(config.yKey)) {
@@ -486,6 +501,13 @@ export class ControlSurface {
 			const element = document.createElement("div")
 			element.className = "cs-widget"
 			const sourceId = binding.sourceId ?? binding.sourceLabel
+			if (!sources.has(sourceId)) {
+				sources.add(sourceId)
+				const item = document.createElement("li")
+				item.style.setProperty("--cs-source", sourceTheme(sourceId).cssAccent)
+				item.textContent = binding.sourceLabel
+				this.sourceKey.append(item)
+			}
 			element.dataset.sourceId = sourceId
 			element.style.setProperty("--cs-source", sourceTheme(sourceId).cssAccent)
 			element.title = `${binding.sourceLabel}: ${binding.descriptor.label}`
@@ -535,6 +557,8 @@ export class ControlSurface {
 					configurations.splice(target, 0, moved)
 					this.rebuild()
 					this.save()
+					this.focusLayout(moved, "Drag")
+					this.layoutStatus.textContent = `Control moved to position ${target + 1} of ${configurations.length}`
 				} catch {
 					/* Ignore unrelated drag data. */
 				}
@@ -552,8 +576,12 @@ export class ControlSurface {
 					descriptor: binding.descriptor,
 					widget,
 					dial:
-						widget === "dial"
-							? dialOptions({ ...binding.descriptor.dial, ...config.dial })
+						widget === "dial" || widget === "rotation"
+							? dialOptions({
+									...binding.descriptor.dial,
+									...config.dial,
+									...(widget === "rotation" ? { mode: "rotation" as const } : {})
+								})
 							: undefined,
 					sourceLabel: binding.sourceLabel,
 					sourceId,
@@ -583,8 +611,12 @@ export class ControlSurface {
 			)
 			control.element.className = `cs-semantic cs-${widget}`
 			entry.release = control.release
-			if (widget === "dial") {
-				element.tabIndex = -1
+			entry.visual.relative = control.relative
+			entry.visual.strum = control.strum
+			{
+				if (widget === "dial" || widget === "rotation") {
+					element.tabIndex = -1
+				}
 				element.addEventListener(EVENT_FOCUS_IN, () => {
 					entry.visual.focused = true
 				})
@@ -623,6 +655,10 @@ export class ControlSurface {
 					config.widget = kind.value as SurfaceWidget["widget"]
 					this.rebuild()
 					this.save()
+					this.entries
+						.find((item) => item.config === config)
+						?.element.querySelector<HTMLSelectElement>(".cs-widget-tools select")
+						?.focus()
 				})
 				const move = (offset: number) => {
 					const i = configurations.indexOf(config),
@@ -633,20 +669,32 @@ export class ControlSurface {
 					;[configurations[i], configurations[j]] = [configurations[j], configurations[i]]
 					this.rebuild()
 					this.save()
+					this.focusLayout(config, offset < 0 ? "Move earlier" : "Move later")
+					this.layoutStatus.textContent = `${binding.descriptor.label} moved to position ${j + 1} of ${configurations.length}`
 				}
 				tools.append(
 					kind,
-					this.button("←", () => move(-1)),
-					this.button("→", () => move(1)),
-					this.button("Size", () => {
-						config.span = ((config.span ?? 1) % 3) + 1
+					this.button("Move earlier", () => move(-1)),
+					this.button("Move later", () => move(1)),
+					this.button("Rotate", () => {
+						config.rotation = (((config.rotation ?? 0) + 90) %
+							360) as SurfaceWidget["rotation"]
 						this.layout()
 						this.save()
+						this.layoutStatus.textContent = `${binding.descriptor.label} rotated to ${config.rotation} degrees`
 					}),
 					this.button("Remove", () => {
-						configurations.splice(configurations.indexOf(config), 1)
+						const index = configurations.indexOf(config)
+						configurations.splice(index, 1)
 						this.rebuild()
 						this.save()
+						const next = configurations[Math.min(index, configurations.length - 1)]
+						if (next) {
+							this.focusLayout(next, "Remove")
+						} else {
+							this.toolbar.querySelector<HTMLButtonElement>("button")?.focus()
+						}
+						this.layoutStatus.textContent = `${binding.descriptor.label} removed`
 					})
 				)
 				for (const button of tools.querySelectorAll("button")) {
@@ -655,6 +703,38 @@ export class ControlSurface {
 						`${button.textContent} ${binding.descriptor.label}`
 					)
 				}
+				const resize = this.button("Resize", () => this.resizeDialog(entry))
+				resize.setAttribute("aria-label", `Resize ${binding.descriptor.label}`)
+				resize.setAttribute(
+					"aria-description",
+					"Drag to resize. Left and right change width; up and down change height."
+				)
+				resize.addEventListener(EVENT_KEY_DOWN, (event) => {
+					if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) {
+						return
+					}
+					event.preventDefault()
+					this.resizeWidget(
+						entry,
+						(config.span ?? (largeWidget(widget) ? 2 : 1)) +
+							(event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0),
+						(entry.config.rotation === 90 || entry.config.rotation === 270
+							? entry.visual.width
+							: entry.visual.height) +
+							(event.key === "ArrowDown" ? 24 : event.key === "ArrowUp" ? -24 : 0)
+					)
+					this.save()
+				})
+				const drag = this.button("Move", () => {})
+				drag.setAttribute("aria-label", `Drag ${binding.descriptor.label}`)
+				drag.setAttribute(
+					"aria-description",
+					"Drag to another position. Use Move earlier or Move later for keyboard or single-click sorting."
+				)
+				this.layoutHandle(drag, entry, false)
+				this.layoutHandle(resize, entry, true)
+				tools.prepend(drag)
+				tools.append(resize)
 				element.append(tools)
 			}
 			this.entries.push(entry)
@@ -672,22 +752,257 @@ export class ControlSurface {
 		this.layout()
 		void this.refresh()
 	}
+	private resizeDialog(entry: Entry): void {
+		const dialog = document.createElement("dialog"),
+			form = document.createElement("form"),
+			heading = document.createElement("h3")
+		dialog.className = "cs-size-dialog"
+		dialog.addEventListener(EVENT_KEY_DOWN, (event) => event.stopPropagation())
+		dialog.setAttribute("aria-label", `${entry.binding.descriptor.label} size`)
+		heading.textContent = `Resize ${entry.binding.descriptor.label}`
+		const width = document.createElement("select"),
+			height = document.createElement("input")
+		for (let i = 1; i <= 3; i++) {
+			const option = document.createElement("option")
+			option.value = String(i)
+			option.textContent = `${i} column${i === 1 ? "" : "s"}`
+			width.append(option)
+		}
+		width.value = String(entry.config.span ?? (largeWidget(entry.visual.widget) ? 2 : 1))
+		height.type = "number"
+		height.min = "132"
+		height.max = "720"
+		height.step = "1"
+		height.required = true
+		height.value = String(
+			entry.config.rotation === 90 || entry.config.rotation === 270
+				? entry.visual.width
+				: entry.visual.height
+		)
+		for (const [title, input] of [
+			["Width", width],
+			["Height in pixels", height]
+		] as const) {
+			const label = document.createElement("label")
+			label.append(title, input)
+			form.append(label)
+		}
+		const shorter = this.button(
+			"Decrease height",
+			() => (height.value = String(Math.max(132, (height.valueAsNumber || 132) - 24)))
+		)
+		const taller = this.button(
+			"Increase height",
+			() => (height.value = String(Math.min(720, (height.valueAsNumber || 132) + 24)))
+		)
+		const apply = document.createElement("button")
+		apply.type = "submit"
+		apply.textContent = "Apply size"
+		form.append(
+			shorter,
+			taller,
+			apply,
+			this.button("Cancel", () => dialog.close())
+		)
+		form.addEventListener(EVENT_SUBMIT, (event) => {
+			event.preventDefault()
+			if (!form.reportValidity()) {
+				return
+			}
+			this.resizeWidget(entry, Number(width.value), height.valueAsNumber)
+			this.save()
+			dialog.close()
+		})
+		dialog.append(heading, form)
+		document.body.append(dialog)
+		dialog.addEventListener(
+			EVENT_CLOSE,
+			() => {
+				dialog.remove()
+				this.focusLayout(entry.config, "Resize")
+			},
+			{ once: true }
+		)
+		this.abort.signal.addEventListener(EVENT_ABORT, () => dialog.close(), { once: true })
+		dialog.showModal()
+	}
+	private focusLayout(config: SurfaceWidget, action: string): void {
+		const entry = this.entries.find((item) => item.config === config)
+		if (!entry) {
+			return
+		}
+		Array.from(entry.element.querySelectorAll<HTMLButtonElement>("button"))
+			.find(
+				(button) =>
+					button.getAttribute("aria-label") ===
+					`${action} ${entry.binding.descriptor.label}`
+			)
+			?.focus()
+	}
+	private resizeWidget(entry: Entry, span: number, height: number): void {
+		entry.config.span = Math.max(1, Math.min(3, Math.round(span)))
+		entry.config.height = Math.max(132, Math.min(720, Math.round(height)))
+		this.layout()
+		this.layoutStatus.textContent = `${entry.binding.descriptor.label}: width ${entry.config.span}, height ${entry.config.height} pixels`
+	}
+	private layoutHandle(handle: HTMLButtonElement, entry: Entry, resizing: boolean): void {
+		handle.classList.add("cs-layout-handle")
+		let moved = false,
+			skipClick = false
+		handle.addEventListener(
+			EVENT_CLICK,
+			(event) => {
+				if (skipClick) {
+					event.preventDefault()
+					event.stopImmediatePropagation()
+					skipClick = false
+				}
+			},
+			{ capture: true }
+		)
+		handle.addEventListener(EVENT_KEY_DOWN, () => {
+			skipClick = false
+		})
+		let start:
+			| { id: number; x: number; y: number; span: number; height: number; scale: number }
+			| undefined
+		handle.addEventListener(EVENT_POINTER_DOWN, (event) => {
+			if (event.button !== 0 || start) {
+				return
+			}
+			event.preventDefault()
+			event.stopPropagation()
+			handle.focus()
+			moved = false
+			skipClick = false
+			handle.setPointerCapture(event.pointerId)
+			start = {
+				id: event.pointerId,
+				x: event.clientX,
+				y: event.clientY,
+				span: entry.config.span ?? (largeWidget(entry.visual.widget) ? 2 : 1),
+				height:
+					entry.config.rotation === 90 || entry.config.rotation === 270
+						? entry.visual.width
+						: entry.visual.height,
+				scale:
+					this.stage.getBoundingClientRect().width / (this.stage.clientWidth || 640) || 1
+			}
+		})
+		handle.addEventListener(EVENT_POINTER_MOVE, (event) => {
+			if (!start || event.pointerId !== start.id) {
+				return
+			}
+			moved ||= Math.hypot(event.clientX - start.x, event.clientY - start.y) > 3
+			event.stopPropagation()
+			if (resizing) {
+				const width = this.stage.clientWidth || 640,
+					cell = width / Math.max(1, Math.floor(width / 200))
+				this.resizeWidget(
+					entry,
+					start.span + (event.clientX - start.x) / (cell * start.scale),
+					start.height + (event.clientY - start.y) / start.scale
+				)
+			} else {
+				for (const target of this.entries) {
+					const rect = target.element.getBoundingClientRect()
+					target.element.classList.toggle(
+						"cs-drop-target",
+						event.clientX >= rect.left &&
+							event.clientX <= rect.right &&
+							event.clientY >= rect.top &&
+							event.clientY <= rect.bottom
+					)
+				}
+			}
+		})
+		const finish = (event: PointerEvent) => {
+			if (!start || event.pointerId !== start.id) {
+				return
+			}
+			const initial = start
+			start = undefined
+			skipClick = moved
+			if (event.type === EVENT_POINTER_UP) {
+				if (!resizing) {
+					const target = this.entries.find((candidate) =>
+						candidate.element.classList.contains("cs-drop-target")
+					)
+					if (target && target !== entry) {
+						const widgets = this.options.state.widgets,
+							from = widgets.indexOf(entry.config),
+							to = widgets.indexOf(target.config)
+						widgets.splice(from, 1)
+						widgets.splice(to, 0, entry.config)
+						this.rebuild()
+						this.focusLayout(entry.config, "Drag")
+						this.layoutStatus.textContent = `${entry.binding.descriptor.label} moved to position ${to + 1} of ${widgets.length}`
+					}
+				}
+				this.save()
+			} else if (resizing) {
+				this.resizeWidget(entry, initial.span, initial.height)
+			}
+			this.entries.forEach((candidate) =>
+				candidate.element.classList.remove("cs-drop-target")
+			)
+		}
+		for (const name of [EVENT_POINTER_UP, EVENT_POINTER_CANCEL, EVENT_LOST_POINTER_CAPTURE]) {
+			handle.addEventListener(name, (event) => finish(event as PointerEvent))
+		}
+	}
 	private layout(): void {
 		this.pointerRect = undefined
 		const layout = layoutWidgets(
-			this.entries.map((e) => e.config),
+			this.entries.map((e) => ({
+				...e.config,
+				span: e.config.span ?? (largeWidget(e.visual.widget) ? 2 : 1),
+				height:
+					e.config.height ??
+					(isMusicGrid(e.visual.widget)
+						? Math.max(
+								250,
+								musicOptions(e.visual.widget, e.binding.descriptor.music).pitches
+									.length *
+									24 +
+									46
+							)
+						: largeWidget(e.visual.widget)
+							? 280
+							: 172)
+			})),
 			this.stage.clientWidth || 640
 		)
 		this.height = layout.height
 		this.stage.style.height = `${this.height}px`
 		for (const [index, entry] of this.entries.entries()) {
-			Object.assign(entry.visual, layout.items[index])
+			const box = layout.items[index],
+				rotation = entry.config.rotation ?? 0,
+				sideways = rotation === 90 || rotation === 270
+			Object.assign(
+				entry.visual,
+				sideways
+					? {
+							x: box.x + (box.width - box.height) / 2,
+							y: box.y + (box.height - box.width) / 2,
+							width: box.height,
+							height: box.width,
+							rotation
+						}
+					: { ...box, rotation }
+			)
 			const r = entry.visual
+			if (r.relative) {
+				const rect = relativeRect(r.width, r.height)
+				r.relative.width = rect.width
+				r.relative.height = rect.height
+			}
 			Object.assign(entry.element.style, {
 				left: `${r.x}px`,
 				top: `${r.y}px`,
 				width: `${r.width}px`,
-				height: `${r.height}px`
+				height: `${r.height}px`,
+				transform: `rotate(${rotation}deg)`
 			})
 		}
 	}
@@ -786,13 +1101,24 @@ export class ControlSurface {
 			(edge ||
 				normalize(entry.binding.descriptor, Number(entry.visual.value)) > 0 !==
 					normalize(entry.binding.descriptor, Number(value)) > 0)
+		const relativeEdge =
+			(entry.visual.widget === "relative-keys" ||
+				entry.visual.widget === "strum" ||
+				(isMusicGrid(entry.visual.widget) && entry.binding.descriptor.music?.live)) &&
+			edge
 		entry.visual.value = value
 		if (entry.visual.widget === "pad") {
 			entry.visual.active = normalize(entry.binding.descriptor, Number(value)) > 0
 		}
+		if (entry.visual.widget === "relative-keys") {
+			entry.visual.active = !!entry.visual.relative?.contacts.size
+		}
+		if (entry.visual.widget === "strum") {
+			entry.visual.active = !!entry.visual.strum?.contacts.size
+		}
 		entry.semanticDirty = true
-		if (entry.visual.widget === "button" || padEdge) {
-			if (padEdge) {
+		if (entry.visual.widget === "button" || padEdge || relativeEdge) {
+			if (padEdge || relativeEdge) {
 				entry.pending = undefined
 			}
 			entry.actions.push(value)
@@ -803,7 +1129,18 @@ export class ControlSurface {
 		if (
 			entry.visual.widget === "button" ||
 			padEdge ||
-			!["dial", "slider", "number", "xy", "range", "pad"].includes(entry.visual.widget)
+			relativeEdge ||
+			![
+				"dial",
+				"rotation",
+				"slider",
+				"number",
+				"xy",
+				"range",
+				"pad",
+				"relative-keys",
+				"strum"
+			].includes(entry.visual.widget)
 		) {
 			void this.flushEntry(entry)
 		}
@@ -831,7 +1168,13 @@ export class ControlSurface {
 				if (result) {
 					await result
 				}
-			} while (entry.actions.length && (!this.disposed || entry.visual.widget === "pad"))
+			} while (
+				entry.actions.length &&
+				(!this.disposed ||
+					entry.visual.widget === "pad" ||
+					entry.visual.widget === "relative-keys" ||
+					entry.visual.widget === "strum")
+			)
 			this.status.textContent = ""
 			this.options.configurationChanged?.()
 		} catch (error) {
@@ -844,13 +1187,15 @@ export class ControlSurface {
 	}
 	/** Local surface coordinates also accept projected XR rays/hand positions. */
 	pointerDown(id: number, x: number, y: number, fine = false, pressure = 1): boolean {
-		const entry = this.entries.find(
-			(e) =>
-				x >= e.visual.x &&
-				x <= e.visual.x + e.visual.width &&
-				y >= e.visual.y &&
-				y <= e.visual.y + e.visual.height
-		)
+		const entry = this.entries.find((e) => {
+			const point = widgetPoint(x, y, e.visual)
+			return (
+				point.x >= e.visual.x &&
+				point.x <= e.visual.x + e.visual.width &&
+				point.y >= e.visual.y &&
+				point.y <= e.visual.y + e.visual.height
+			)
+		})
 		if (
 			!entry ||
 			this.editing ||
@@ -862,7 +1207,53 @@ export class ControlSurface {
 			return false
 		}
 		const value = entry.visual.value
-		if (entry.visual.widget === "dial") {
+		const originalX = x,
+			originalY = y
+		;({ x, y } = widgetPoint(x, y, entry.visual))
+		if (entry.visual.relative || entry.visual.strum) {
+			const rect = relativeRect(entry.visual.width, entry.visual.height)
+			this.gestures.set(id, {
+				entry,
+				startY: y,
+				startValue: 0,
+				axis: 0,
+				pressure,
+				position: 0
+			})
+			const controller = (entry.visual.relative ?? entry.visual.strum)!
+			controller.down(
+				id,
+				clamp((x - entry.visual.x - rect.x) / rect.width),
+				clamp((y - entry.visual.y - rect.y) / rect.height),
+				pressure
+			)
+			return true
+		}
+		if (isMusicGrid(entry.visual.widget)) {
+			const d = entry.binding.descriptor,
+				options = musicOptions(entry.visual.widget, d.music),
+				rect = musicRect(entry.visual.width, entry.visual.height)
+			const px = x - entry.visual.x - rect.x,
+				py = y - entry.visual.y - rect.y
+			if (px < 0 || py < 0 || px >= rect.width || py >= rect.height) {
+				return false
+			}
+			const index =
+				Math.floor((py / rect.height) * options.pitches.length) * options.steps +
+				Math.floor((px / rect.width) * options.steps)
+			const values = musicValues(d, value),
+				tab = entry.visual.widget === "guitar-tab"
+			values[index] = (tab ? values[index] >= 0 : values[index] > 0)
+				? tab
+					? -1
+					: 0
+				: tab
+					? 0
+					: clamp(pressure)
+			this.write(entry, values, true)
+			return true
+		}
+		if (entry.visual.widget === "dial" || entry.visual.widget === "rotation") {
 			entry.element.focus({ preventScroll: true })
 		}
 		const axis =
@@ -908,7 +1299,7 @@ export class ControlSurface {
 				index = choices.findIndex((c) => sameValue(c.value, value))
 			void this.write(entry, choices[(index + 1) % choices.length].value)
 		} else {
-			this.pointerMove(id, x, y, fine)
+			this.pointerMove(id, originalX, originalY, fine)
 		}
 		return true
 	}
@@ -922,14 +1313,28 @@ export class ControlSurface {
 			this.updatePad(gesture.entry)
 			return
 		}
+		if (gesture.entry.visual.relative || gesture.entry.visual.strum) {
+			const v = gesture.entry.visual,
+				point = widgetPoint(x, y, v),
+				rect = relativeRect(v.width, v.height)
+			const controller = (v.relative ?? v.strum)!
+			controller.move(
+				id,
+				clamp((point.x - v.x - rect.x) / rect.width),
+				clamp((point.y - v.y - rect.y) / rect.height),
+				pressure
+			)
+			return
+		}
 		const { entry } = gesture,
 			{
 				visual: v,
 				binding: { descriptor: d }
 			} = entry
+		;({ x, y } = widgetPoint(x, y, v))
 		const px = clamp((x - v.x - 8 - v.width * 0.08) / (v.width * 0.84 - 16)),
-			py = clamp(1 - (y - v.y - 48 - (v.height - 76) * 0.08) / ((v.height - 76) * 0.84))
-		if (v.widget === "dial") {
+			py = clamp(1 - (y - v.y - 22 - (v.height - 24) * 0.08) / ((v.height - 24) * 0.84))
+		if (v.widget === "dial" || v.widget === "rotation") {
 			const settings = dialOptions(v.dial)
 			const direction = settings.reverse ? -1 : 1
 			if (settings.input === "angular") {
@@ -989,6 +1394,12 @@ export class ControlSurface {
 		this.gestures.delete(id)
 		this.pressurePointers.delete(id)
 		if (gesture) {
+			if (gesture.entry.visual.relative || gesture.entry.visual.strum) {
+				;(gesture.entry.visual.relative ?? gesture.entry.visual.strum)!.up(id)
+				gesture.entry.visual.active = !!(gesture.entry.visual.relative ??
+					gesture.entry.visual.strum)!.contacts.size
+				return
+			}
 			if (gesture.entry.visual.widget === "pad") {
 				this.updatePad(
 					gesture.entry,
