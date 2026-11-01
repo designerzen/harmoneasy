@@ -114,6 +114,7 @@
 	flex: none;
 }
 .cs-toolbar button,
+.cs-layout-actions button,
 .cs-toolbar select,
 .cs-widget-tools button,
 .cs-widget-tools select {
@@ -129,6 +130,14 @@
 	position: relative;
 	width: 100%;
 	touch-action: none;
+}
+.cs-layout-actions {
+	display: flex;
+	gap: 8px;
+	margin-bottom: 8px;
+}
+.cs-layout-actions[hidden] {
+	display: none;
 }
 .cs-stage > canvas {
 	position: absolute;

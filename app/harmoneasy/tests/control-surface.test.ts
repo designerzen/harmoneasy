@@ -29,7 +29,8 @@ import {
 	validSurfaces,
 	validateValue,
 	layoutWidgets,
-	widgetPoint
+	widgetPoint,
+	ergonomicOrder
 } from "control-surface/model"
 import type { ControlBinding, ControlDescriptor, SurfaceState } from "control-surface/types"
 import { componentBindings, installComponentUi } from "audiobus/io/component-ui"
@@ -293,6 +294,68 @@ describe("shared component controls", () => {
 })
 
 describe("surface interaction and bindings", () => {
+	it("packs holes and honours preferred columns without overlapping at any screen width", () => {
+		const widgets = Array.from({ length: 75 }, (_, i) => ({
+			span: 1 + (i % 3),
+			height: 132 + ((i * 71) % 580),
+			column: i % 7 === 0 ? i % 3 : undefined,
+			rotation: (i % 4) * 90
+		}))
+		for (const width of [280, 390, 640, 760, 1200]) {
+			const layout = layoutWidgets(widgets, width)
+			for (const [i, a] of layout.items.entries()) {
+				expect(a.x).toBeGreaterThanOrEqual(0)
+				expect(a.x + a.width).toBeLessThanOrEqual(width + 0.001)
+				expect(a.y + a.height).toBeLessThanOrEqual(layout.height)
+				for (const b of layout.items.slice(i + 1))
+					expect(
+						a.x < b.x + b.width &&
+							a.x + a.width > b.x &&
+							a.y < b.y + b.height &&
+							a.y + a.height > b.y
+					).toBe(false)
+			}
+			expect(layoutWidgets(widgets, width)).toEqual(layout)
+		}
+		const holes = layoutWidgets(
+			[{ height: 300 }, { height: 132 }, { span: 2, height: 200 }, { height: 132 }],
+			640
+		)
+		expect(holes.items[3]).toMatchObject({ y: 0 })
+		expect(holes.items[3].x).toBeCloseTo((640 / 3) * 2)
+		const pinned = layoutWidgets([{ column: 2 }, { column: 2 }], 640)
+		expect(pinned.items[1].y).toBe(180)
+	})
+	it("automatically arranges related controls compactly and persists the chosen order", async () => {
+		const widgets = Array.from({ length: 24 }, (_, i) => ({
+			span: i % 4 === 0 ? 2 : 1,
+			height: 132 + ((i * 71) % 300),
+			sourceId: `source-${i % 3}`,
+			group: i % 2 ? "Sound" : "Performance",
+			widget: i % 4 === 0 ? "piano-roll" : "dial"
+		}))
+		const order = ergonomicOrder(widgets, 640)
+		expect([...order].sort((a, b) => a - b)).toEqual(widgets.map((_, i) => i))
+		expect(ergonomicOrder(widgets, 640)).toEqual(order)
+		const a = bind("a"),
+			b = bind("b"),
+			saved = state(),
+			change = vi.fn()
+		saved.widgets = [
+			{ key: a.key, column: 2, height: 300 },
+			{ key: b.key, column: 2 }
+		]
+		const surface = new ControlSurface({ state: saved, bindings: [a, b], change })
+		views.push(surface)
+		await settle()
+		;[...surface.element.querySelectorAll<HTMLButtonElement>("button")]
+			.find((button) => button.textContent === "Auto arrange")!
+			.click()
+		expect(saved.widgets.every((widget) => widget.column === undefined)).toBe(true)
+		expect(saved.widgets.find((widget) => widget.key === a.key)!.height).toBe(300)
+		expect(change).toHaveBeenCalled()
+		expect(validSurfaces(JSON.parse(JSON.stringify([saved])))).toBe(true)
+	})
 	it("strums every crossed string on fast swipes in both directions", () => {
 		const apply = vi.fn(),
 			strum = new Strum(undefined, apply)
@@ -397,7 +460,7 @@ describe("surface interaction and bindings", () => {
 			[{ height: 250 }, { height: 400 }, { height: 132 }, { height: 200 }],
 			640
 		)
-		expect(layout.items[3].y).toBe(408)
+		expect(layout.items[3].y).toBe(140)
 	})
 	it("maps rotated surface hits back to gadget coordinates", async () => {
 		const slider = bind("slide", { widget: "slider" }),

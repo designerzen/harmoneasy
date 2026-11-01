@@ -33,7 +33,8 @@ import {
 	normalize,
 	sameValue,
 	validateValue,
-	widgetChoices
+	widgetChoices,
+	ergonomicOrder
 } from "./model"
 import { widgetPoint } from "./model"
 import { GpuSurfaceRenderer, type WidgetVisual } from "./renderer"
@@ -113,6 +114,7 @@ export class ControlSurface {
 	private toolbar = document.createElement("div")
 	private sourceKey = document.createElement("ul")
 	private layoutStatus = document.createElement("p")
+	private layoutActions = document.createElement("div")
 
 	constructor(private options: SurfaceOptions) {
 		this.element.className = "control-surface nodrag nopan nowheel"
@@ -255,7 +257,15 @@ export class ControlSurface {
 		this.sourceKey.setAttribute("aria-label", "Control sources")
 		this.layoutStatus.className = "cs-sr-only"
 		this.layoutStatus.setAttribute("role", "status")
-		this.element.append(this.sourceKey, this.stage, this.status, this.layoutStatus)
+		this.layoutActions.className = "cs-layout-actions"
+		this.layoutActions.append(this.button("Auto arrange", () => this.autoArrange()))
+		this.element.append(
+			this.sourceKey,
+			this.layoutActions,
+			this.stage,
+			this.status,
+			this.layoutStatus
+		)
 		this.resize = new ResizeObserver(() => this.layout())
 		this.resize.observe(this.element)
 		this.intersection = new IntersectionObserver((entries) => {
@@ -667,6 +677,7 @@ export class ControlSurface {
 						return
 					}
 					;[configurations[i], configurations[j]] = [configurations[j], configurations[i]]
+					delete config.column
 					this.rebuild()
 					this.save()
 					this.focusLayout(config, offset < 0 ? "Move earlier" : "Move later")
@@ -746,6 +757,7 @@ export class ControlSurface {
 			)
 		}
 		this.element.classList.toggle("cs-editing", this.editing)
+		this.layoutActions.hidden = !this.editing
 		this.status.textContent = this.entries.length
 			? ""
 			: "Drag a component’s Controls connector here to choose controls."
@@ -762,6 +774,18 @@ export class ControlSurface {
 		heading.textContent = `Resize ${entry.binding.descriptor.label}`
 		const width = document.createElement("select"),
 			height = document.createElement("input")
+		const column = document.createElement("select"),
+			automatic = document.createElement("option")
+		automatic.value = ""
+		automatic.textContent = "Automatic"
+		column.append(automatic)
+		for (let i = 0; i < Math.max(1, Math.floor((this.stage.clientWidth || 640) / 200)); i++) {
+			const option = document.createElement("option")
+			option.value = String(i)
+			option.textContent = String(i + 1)
+			column.append(option)
+		}
+		column.value = entry.config.column === undefined ? "" : String(entry.config.column)
 		for (let i = 1; i <= 3; i++) {
 			const option = document.createElement("option")
 			option.value = String(i)
@@ -781,7 +805,8 @@ export class ControlSurface {
 		)
 		for (const [title, input] of [
 			["Width", width],
-			["Height in pixels", height]
+			["Height in pixels", height],
+			["Preferred column", column]
 		] as const) {
 			const label = document.createElement("label")
 			label.append(title, input)
@@ -810,6 +835,12 @@ export class ControlSurface {
 				return
 			}
 			this.resizeWidget(entry, Number(width.value), height.valueAsNumber)
+			if (column.value === "") {
+				delete entry.config.column
+			} else {
+				entry.config.column = Number(column.value)
+			}
+			this.layout()
 			this.save()
 			dialog.close()
 		})
@@ -904,16 +935,25 @@ export class ControlSurface {
 					start.height + (event.clientY - start.y) / start.scale
 				)
 			} else {
+				let closest: Entry | undefined,
+					distance = Infinity
 				for (const target of this.entries) {
-					const rect = target.element.getBoundingClientRect()
-					target.element.classList.toggle(
-						"cs-drop-target",
-						event.clientX >= rect.left &&
-							event.clientX <= rect.right &&
-							event.clientY >= rect.top &&
-							event.clientY <= rect.bottom
-					)
+					if (target === entry) {
+						continue
+					}
+					const rect = target.element.getBoundingClientRect(),
+						next = Math.hypot(
+							event.clientX - rect.left - rect.width / 2,
+							event.clientY - rect.top - rect.height / 2
+						)
+					if (next < distance) {
+						distance = next
+						closest = target
+					}
 				}
+				this.entries.forEach((target) =>
+					target.element.classList.toggle("cs-drop-target", target === closest)
+				)
 			}
 		})
 		const finish = (event: PointerEvent) => {
@@ -924,19 +964,34 @@ export class ControlSurface {
 			start = undefined
 			skipClick = moved
 			if (event.type === EVENT_POINTER_UP) {
-				if (!resizing) {
+				if (!resizing && moved) {
 					const target = this.entries.find((candidate) =>
 						candidate.element.classList.contains("cs-drop-target")
 					)
+					const stage = this.stage.getBoundingClientRect(),
+						columns = Math.max(1, Math.floor((this.stage.clientWidth || 640) / 200))
+					entry.config.column = Math.max(
+						0,
+						Math.min(
+							columns - 1,
+							Math.floor(((event.clientX - stage.left) / stage.width) * columns)
+						)
+					)
 					if (target && target !== entry) {
 						const widgets = this.options.state.widgets,
-							from = widgets.indexOf(entry.config),
-							to = widgets.indexOf(target.config)
+							from = widgets.indexOf(entry.config)
 						widgets.splice(from, 1)
+						const targetRect = target.element.getBoundingClientRect()
+						const to =
+							widgets.indexOf(target.config) +
+							(event.clientY >= targetRect.top + targetRect.height / 2 ? 1 : 0)
 						widgets.splice(to, 0, entry.config)
 						this.rebuild()
 						this.focusLayout(entry.config, "Drag")
 						this.layoutStatus.textContent = `${entry.binding.descriptor.label} moved to position ${to + 1} of ${widgets.length}`
+					} else {
+						this.layout()
+						this.layoutStatus.textContent = `${entry.binding.descriptor.label} moved to column ${entry.config.column + 1}`
 					}
 				}
 				this.save()
@@ -951,28 +1006,42 @@ export class ControlSurface {
 			handle.addEventListener(name, (event) => finish(event as PointerEvent))
 		}
 	}
+	private layoutItems() {
+		return this.entries.map((e) => ({
+			...e.config,
+			sourceId: e.binding.sourceId ?? e.binding.sourceLabel,
+			group: e.binding.descriptor.group,
+			widget: e.visual.widget,
+			span: e.config.span ?? (largeWidget(e.visual.widget) ? 2 : 1),
+			height:
+				e.config.height ??
+				(isMusicGrid(e.visual.widget)
+					? Math.max(
+							250,
+							musicOptions(e.visual.widget, e.binding.descriptor.music).pitches
+								.length *
+								24 +
+								46
+						)
+					: largeWidget(e.visual.widget)
+						? 280
+						: 172)
+		}))
+	}
+	private autoArrange(): void {
+		const order = ergonomicOrder(this.layoutItems(), this.stage.clientWidth || 640)
+		this.options.state.widgets = order.map((index) => this.entries[index].config)
+		this.options.state.widgets.forEach((widget) => {
+			delete widget.column
+		})
+		this.rebuild()
+		this.save()
+		this.layoutStatus.textContent =
+			"Layout arranged to reduce empty space and keep related controls together"
+	}
 	private layout(): void {
 		this.pointerRect = undefined
-		const layout = layoutWidgets(
-			this.entries.map((e) => ({
-				...e.config,
-				span: e.config.span ?? (largeWidget(e.visual.widget) ? 2 : 1),
-				height:
-					e.config.height ??
-					(isMusicGrid(e.visual.widget)
-						? Math.max(
-								250,
-								musicOptions(e.visual.widget, e.binding.descriptor.music).pitches
-									.length *
-									24 +
-									46
-							)
-						: largeWidget(e.visual.widget)
-							? 280
-							: 172)
-			})),
-			this.stage.clientWidth || 640
-		)
+		const layout = layoutWidgets(this.layoutItems(), this.stage.clientWidth || 640)
 		this.height = layout.height
 		this.stage.style.height = `${this.height}px`
 		for (const [index, entry] of this.entries.entries()) {

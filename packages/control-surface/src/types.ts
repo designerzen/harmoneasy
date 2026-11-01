@@ -117,6 +117,8 @@ export interface SurfaceWidget {
 	/** Height in CSS pixels, independent of width. */
 	height?: number
 	rotation?: 0 | 90 | 180 | 270
+	/** Optional preferred column; packing moves neighbours to prevent collisions. */
+	column?: number
 	/** Optional override for programmatically authored surfaces. */
 	dial?: DialOptions
 }

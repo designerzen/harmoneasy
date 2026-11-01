@@ -284,34 +284,15 @@ export function validSurfaces(value: unknown): value is SurfaceState[] {
 					(w.height === undefined ||
 						(Number.isInteger(w.height) && w.height >= 132 && w.height <= 720)) &&
 					(w.rotation === undefined || [0, 90, 180, 270].includes(w.rotation)) &&
+					(w.column === undefined ||
+						(Number.isInteger(w.column) && w.column >= 0 && w.column <= 31)) &&
 					(w.dial === undefined || validDialOptions(w.dial))
 			)
 		)
 	})
 }
 
-export function layoutWidgets(widgets: { span?: number; height?: number }[], width: number) {
-	const columns = Math.max(1, Math.floor(width / 200)),
-		cell = width / columns,
-		gap = 8
-	let column = 0,
-		y = 0,
-		rowHeight = 0
-	const items = widgets.map((widget) => {
-		const span = Math.min(columns, widget.span ?? 1)
-		if (column + span > columns) {
-			column = 0
-			y += rowHeight + gap
-			rowHeight = 0
-		}
-		const height = Math.max(132, Math.min(720, widget.height ?? 172))
-		const rect = { x: column * cell, y, width: cell * span - gap, height }
-		rowHeight = Math.max(rowHeight, height)
-		column += span
-		return rect
-	})
-	return { items, height: widgets.length ? y + rowHeight + gap : 120 }
-}
+export { layoutWidgets, ergonomicOrder } from "./layout"
 
 /** Convert a surface/XR hit to the widget's unrotated coordinates. */
 export function widgetPoint(

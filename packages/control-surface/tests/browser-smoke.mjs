@@ -518,6 +518,30 @@ try {
 	await page.waitForFunction(() => window.surfaceSmoke.values.strike === 1)
 	await page.keyboard.up("Space")
 	await page.waitForFunction(() => window.surfaceSmoke.values.strike === 0)
+	const beforeAuto = await page.evaluate(() => window.surfaceSmoke.surface.height)
+	await page.getByRole("button", { name: "Edit layout", exact: true }).click()
+	await page.getByRole("button", { name: "Auto arrange", exact: true }).click()
+	await page.getByRole("button", { name: "Perform", exact: true }).click()
+	assert.ok((await page.evaluate(() => window.surfaceSmoke.surface.height)) <= beforeAuto)
+	await page.evaluate(() => {
+		const stage = document.querySelector(".cs-stage").getBoundingClientRect()
+		const rects = Array.from(document.querySelectorAll(".cs-widget"), (element) =>
+			element.getBoundingClientRect()
+		)
+		for (let i = 0; i < rects.length; i++) {
+			const a = rects[i]
+			if (a.left < stage.left - 0.5 || a.right > stage.right + 0.5)
+				throw new Error("A gadget escaped the surface bounds")
+			for (const b of rects.slice(i + 1))
+				if (
+					a.left < b.right - 0.5 &&
+					a.right > b.left + 0.5 &&
+					a.top < b.bottom - 0.5 &&
+					a.bottom > b.top + 0.5
+				)
+					throw new Error("Auto arrangement overlaps gadgets")
+		}
+	})
 	await page.evaluate(async () => {
 		const { surface } = window.surfaceSmoke,
 			renderer = surface.renderer

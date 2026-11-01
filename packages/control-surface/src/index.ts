@@ -14,5 +14,6 @@ export {
 export { Strum, strumOptions } from "./strum"
 export { RelativeKeys, relativeOptions } from "./relative-keys"
 export { musicOptions, musicValues, noteName } from "./music"
+export { layoutWidgets, ergonomicOrder } from "./layout"
 export type { DialControlOptions } from "./widgets"
 export * from "./types"
