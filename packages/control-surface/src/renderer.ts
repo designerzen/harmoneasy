@@ -173,8 +173,7 @@ fn chassis(distance:f32,top:f32,pressed:f32)->vec4f {
   let grid=select(select(max(line((p.x)%16.0,0.25),line((p.y)%16.0,0.25)),line((p.x+p.y)%14.0,0.35),pattern>0.5),line(length(p)%18.0,0.3),pattern>1.5);
   let a=1.0-smoothstep(0.0,1.0,edge);
   let bevel=(1.0-smoothstep(0.0,2.0,abs(edge+3.0)))*top*frame.effects.x;
-  let rail=line(p.x+size.x*0.5-5.0,1.3)*step(abs(p.y),size.y*0.5-12.0);
-  let rgb=mix(vec3f(0.022,0.031,0.048)*(0.85+top*0.3),i.color.rgb,0.018+grid*0.004)+vec3f(0.07,0.1,0.13)*bevel+i.color.rgb*(line(edge,0.6)*(0.2+engaged*0.65)+rail*0.4);
+  let rgb=mix(vec3f(0.022,0.031,0.048)*(0.85+top*0.3),i.color.rgb,0.018+grid*0.004)+vec3f(0.07,0.1,0.13)*bevel+i.color.rgb*(line(edge,0.6)*(0.2+engaged*0.65));
   return surfaceEffect(vec4f(rgb,a),i.uv,frame.time);
  } else if (kind<1.5) {
   color=settingColor(value);
@@ -290,6 +289,7 @@ export class GpuSurfaceRenderer {
 	private instanceCount = 0
 	private building: number[] = []
 	private cache = new Map<WidgetVisual, CachedWidget>()
+	private advances = new Float32Array(96)
 	private epoch = 0
 	private frameData = new Float32Array(24)
 	private postData = new Float32Array(4)
@@ -330,12 +330,14 @@ export class GpuSurfaceRenderer {
 		atlas.width = 512
 		atlas.height = 192
 		const ctx = atlas.getContext("2d")!
-		ctx.font = "18px monospace"
+		ctx.font = `700 24px ${getComputedStyle(canvas).fontFamily}`
 		ctx.fillStyle = "white"
 		ctx.textBaseline = "top"
 		for (let code = 32; code < 128; code++) {
 			const n = code - 32
-			ctx.fillText(String.fromCharCode(code), (n % 16) * 32 + 2, Math.floor(n / 16) * 32 + 4)
+			const glyph = String.fromCharCode(code)
+			this.advances[n] = ctx.measureText(glyph).width * 0.75
+			ctx.fillText(glyph, (n % 16) * 32 + 2, Math.floor(n / 16) * 32 + 2)
 		}
 		this.atlas = device.createTexture({
 			size: [atlas.width, atlas.height],
@@ -382,6 +384,7 @@ export class GpuSurfaceRenderer {
 			device.destroy()
 			throw new Error("Cannot create WebGPU canvas")
 		}
+		await document.fonts.load(`700 24px ${getComputedStyle(canvas).fontFamily}`)
 		const renderer = new GpuSurfaceRenderer(canvas, device, context, onError)
 		try {
 			await renderer.setEffect(DEFAULT_EFFECT)
@@ -563,22 +566,56 @@ export class GpuSurfaceRenderer {
 		reserve = false,
 		scale = 1
 	): void {
-		const size = 24 * scale,
-			advance = 9 * scale
-		const length = Math.max(0, Math.floor(width / advance)),
-			count = reserve ? length : Math.min(text.length, length)
+		const size = 24 * scale
+		const count = reserve ? Math.max(text.length, Math.floor(width / (4 * scale))) : text.length
+		let advance = 0
 		for (let i = 0; i < count; i++) {
 			const char = text[i] ?? " "
 			const code = char.charCodeAt(0),
 				n = (code >= 32 && code < 128 ? code : 63) - 32
-			this.quad(x + i * advance, y, size, size, 9, 0, 0, 0, 0, i < text.length ? alpha : 0, [
+			const step = this.advances[n] * scale
+			const visible = i < text.length && advance + step <= width + 0.01
+			this.quad(x + advance, y, size, size, 9, 0, 0, 0, 0, visible ? alpha : 0, [
 				((n % 16) * 32) / 512,
 				(Math.floor(n / 16) * 32) / 192,
 				32 / 512,
 				32 / 192
 			])
+			if (i < text.length) {
+				advance += step
+			}
 		}
 	}
+	private textWidth(text: string): number {
+		let width = 0
+		for (const character of text) {
+			const code = character.charCodeAt(0)
+			width += this.advances[(code >= 32 && code < 128 ? code : 63) - 32]
+		}
+		return width
+	}
+	private centeredText(
+		text: string,
+		x: number,
+		y: number,
+		width: number,
+		alpha: number,
+		reserve = false,
+		scale = 1
+	): void {
+		const fitted = Math.min(scale, width / Math.max(1, this.textWidth(text)))
+		const length = this.textWidth(text) * fitted
+		this.text(
+			text,
+			x + (width - length) / 2,
+			y,
+			reserve ? Math.max(length, width) : length,
+			alpha,
+			reserve,
+			fitted
+		)
+	}
+
 	private contact(
 		w: WidgetVisual,
 		x: number,
@@ -801,13 +838,7 @@ export class GpuSurfaceRenderer {
 				const rotary = w.widget === "dial" || w.widget === "rotation"
 				const musical = isMusicGrid(w.widget)
 				const centerY = w.y + w.height / 2 + 10
-				const labelWidth = rotary
-					? Math.min(w.width - 30, (w.height - 24) * 0.62)
-					: w.width - 24
-				const labelScale = Math.max(
-					0.65,
-					Math.min(1, labelWidth / Math.max(1, d.label.length * 9))
-				)
+				const labelWidth = w.width - 24
 				const x = w.x + 8,
 					y = w.y + 22,
 					width = w.width - 16,
@@ -893,7 +924,7 @@ export class GpuSurfaceRenderer {
 							}
 						}
 					}
-				} else {
+				} else if (!["select", "number", "text", "color", "display"].includes(w.widget)) {
 					this.quad(
 						x,
 						y,
@@ -919,31 +950,15 @@ export class GpuSurfaceRenderer {
 							: undefined
 					)
 				}
-				if (rotary) {
-					const words = d.label.split(" "),
-						lines: string[] = []
-					for (const word of words) {
-						const previous = lines[lines.length - 1]
-						if (previous && (previous.length + word.length + 1) * 9 <= labelWidth) {
-							lines[lines.length - 1] += ` ${word}`
-						} else {
-							lines.push(word)
-						}
-					}
-					for (const [i, line] of lines.slice(0, 2).entries()) {
-						this.text(
-							line,
-							w.x + (w.width - Math.min(labelWidth, line.length * 9)) / 2,
-							centerY - 30 + i * 16,
-							labelWidth,
-							alpha,
-							false,
-							Math.min(1, labelWidth / (line.length * 9))
-						)
-					}
-				} else {
-					this.text(d.label, w.x + 12, w.y + 8, labelWidth, alpha, false, labelScale)
-				}
+				this.centeredText(
+					d.label.toUpperCase(),
+					w.x + 12,
+					w.y + 7,
+					labelWidth,
+					alpha,
+					false,
+					1.1
+				)
 				if (w.widget === "radio" && d.choices?.length) {
 					const segment = width / d.choices.length
 					for (const [index, option] of d.choices.entries()) {
@@ -970,14 +985,20 @@ export class GpuSurfaceRenderer {
 						"strum"
 					].includes(w.widget)
 				) {
-					this.text(
+					const valueY =
+						rotary || w.widget === "display"
+							? centerY - 12
+							: ["slider", "range", "meter", "toggle"].includes(w.widget)
+								? centerY + 18
+								: w.y + w.height - 30
+					this.centeredText(
 						w.unavailable ? "Unavailable" : formatValue(d, v),
-						rotary ? w.x + (w.width - labelWidth) / 2 : w.x + 12,
-						rotary ? centerY + 6 : w.y + w.height - 24,
-						rotary ? labelWidth : w.width - 24,
+						w.x + 12,
+						valueY,
+						w.width - 24,
 						alpha,
 						true,
-						rotary ? 0.85 : 1
+						1.1
 					)
 				}
 				cached = {
