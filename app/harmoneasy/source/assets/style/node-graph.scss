@@ -1807,7 +1807,7 @@ dialog.add-output-dialog {
 	}
 	.preset-browser-toolbar {
 		display: grid;
-		grid-template-columns: minmax(12rem, 2fr) repeat(3, minmax(8rem, 1fr));
+		grid-template-columns: minmax(12rem, 2fr) repeat(2, minmax(8rem, 1fr));
 		align-items: end;
 		gap: 0.75rem;
 		padding: 1rem 1.5rem;
@@ -1834,6 +1834,46 @@ dialog.add-output-dialog {
 		min-width: 0;
 		font-size: 0.8rem;
 	}
+	.preset-tags {
+		flex-shrink: 0;
+		padding: 0.65rem 1.5rem;
+		border-bottom: 1px solid var(--preset-line);
+		summary {
+			cursor: pointer;
+			font-size: 0.85rem;
+		}
+	}
+	.preset-tag-groups {
+		max-height: 12rem;
+		overflow: auto;
+		fieldset {
+			border: 0;
+			padding: 0.5rem 0 0;
+			margin: 0;
+		}
+		legend {
+			font-size: 0.75rem;
+			color: var(--preset-muted);
+		}
+	}
+	.preset-tag {
+		margin: 0.2rem 0.35rem 0.2rem 0;
+		padding: 0.35rem 0.65rem;
+		border: 1px solid var(--preset-line);
+		border-radius: 999px;
+		background: var(--preset-surface);
+		color: inherit;
+		font: inherit;
+		font-size: 0.8rem;
+		&[aria-pressed="true"] {
+			border-color: var(--preset-accent);
+			background: var(--preset-accent);
+			color: var(--col-bg);
+		}
+		&:disabled {
+			opacity: 0.4;
+		}
+	}
 	.preset-filter select {
 		width: 100%;
 		min-height: 42px;
@@ -1846,7 +1886,7 @@ dialog.add-output-dialog {
 	}
 	@media (max-width: 760px) {
 		.preset-browser-toolbar {
-			grid-template-columns: repeat(3, minmax(0, 1fr));
+			grid-template-columns: repeat(2, minmax(0, 1fr));
 		}
 		.preset-search {
 			grid-column: 1 / -1;
@@ -2109,7 +2149,7 @@ dialog.add-output-dialog {
 	}
 	@media (max-width: 680px) {
 		.preset-browser-toolbar {
-			grid-template-columns: repeat(3, minmax(0, 1fr));
+			grid-template-columns: repeat(2, minmax(0, 1fr));
 			padding: 0.5rem 1rem;
 			gap: 0.5rem;
 		}
@@ -2173,7 +2213,7 @@ dialog.add-output-dialog {
 			}
 		}
 		.preset-browser-toolbar {
-			grid-template-columns: repeat(3, minmax(0, 1fr));
+			grid-template-columns: repeat(2, minmax(0, 1fr));
 			padding: 0.75rem 1rem;
 			.preset-search {
 				grid-column: 1 / -1;

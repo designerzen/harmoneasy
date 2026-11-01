@@ -177,27 +177,33 @@ export class ControlSurface {
 		toggle.setAttribute("aria-expanded", "false")
 		toggle.setAttribute("aria-controls", menu.id)
 		toggle.innerHTML =
-			'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-1 3-3 1-2 3 2 2-1 3 3 2 3-1 2 2 3-1 1-3 3-1 1-3-2-2 1-3-3-2-3 1-2-1Z"/><circle cx="12" cy="10.5" r="3"/></svg>'
+			'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-1 3-3 1-2 3 2 2-1 3 3 2 3-1 2 2 3-1 1-3 3-1 1-3-2-2 1-3-3-2-3 1-2-1Z"/><circle cx="12" cy="10.5" r="3"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>'
 		const closeMenu = () => {
 			menu.hidden = true
 			toggle.setAttribute("aria-expanded", "false")
 		}
 		for (const item of options.addControls ?? []) {
-			menu.append(
-				this.button(item.label, () => {
-					closeMenu()
-					item.action()
-				})
-			)
-		}
-		menu.append(
-			this.button("Add XY pad", () => {
+			const control = this.button(item.label, () => {
 				closeMenu()
-				this.addXY()
+				item.action()
 			})
-		)
+			const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg")
+			icon.setAttribute("viewBox", "0 0 24 24")
+			icon.setAttribute("aria-hidden", "true")
+			icon.innerHTML = '<path d="M2 12h3l3-8 4 16 4-16 3 8h3"/>'
+			control.prepend(icon)
+			menu.append(control)
+		}
+		const xy = this.button("Add XY pad", () => {
+			closeMenu()
+			this.addXY()
+		})
+		const xyIcon = toggle.firstElementChild!.cloneNode(true) as SVGElement
+		xyIcon.innerHTML = '<path d="M3 4h6v16H3zM15 4h6v16h-6zM9 12h6"/>'
+		xy.prepend(xyIcon)
+		menu.append(xy)
 		const themeLabel = document.createElement("label")
-		themeLabel.append("Theme", theme)
+		themeLabel.append(toggle.firstElementChild!.cloneNode(true), "Theme", theme)
 		menu.append(themeLabel)
 		settings.append(toggle, menu)
 		settings.addEventListener(
@@ -220,7 +226,7 @@ export class ControlSurface {
 			},
 			{ signal: this.abort.signal }
 		)
-		toolbar.append(edit, name, this.vrButton, settings)
+		toolbar.append(edit, settings, name, this.vrButton)
 		this.status.className = "cs-status"
 		this.status.setAttribute("role", "status")
 		;(options.toolbarHost ?? this.element).append(toolbar)

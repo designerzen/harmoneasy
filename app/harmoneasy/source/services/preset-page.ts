@@ -21,6 +21,7 @@ export interface PresetPage {
 		kind?: "chain" | "workspace"
 		order?: number
 		stepSummaries?: string[]
+		tags?: string[]
 		options?: Record<string, any>
 	}
 }
@@ -79,6 +80,13 @@ export function parsePresetPage(json: string): PresetPage {
 					(typeof catalogue[key] !== "string" || !catalogue[key].trim())
 			) ||
 			(catalogue.kind !== undefined && !["chain", "workspace"].includes(catalogue.kind)) ||
+			(catalogue.tags !== undefined &&
+				(!Array.isArray(catalogue.tags) ||
+					catalogue.tags.length > 32 ||
+					!catalogue.tags.every(
+						(tag: unknown) =>
+							typeof tag === "string" && tag.trim().length > 0 && tag.length <= 64
+					))) ||
 			(catalogue.order !== undefined &&
 				(!Number.isInteger(catalogue.order) || catalogue.order < 0)) ||
 			(catalogue.stepSummaries !== undefined &&

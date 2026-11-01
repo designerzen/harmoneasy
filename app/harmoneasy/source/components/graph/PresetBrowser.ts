@@ -3,12 +3,12 @@ import type { TransformerPreset, PresetSetup, PresetLibrary } from "audiobus/io/
 import { EVENT_PRESET_LIBRARY_UPDATED, EVENT_STORAGE } from "audiobus/event-constants"
 import { createPresetDetails } from "./PresetDetails"
 import { createPresetArtwork } from "./PresetArtwork"
-import { completePresets, presetContext, presetSetup } from "./preset-catalogue"
+import { completePresets, presetSetup } from "./preset-catalogue"
+import { presetTags } from "./preset-tags"
 import { builtinPresetRoute } from "../../services/builtin-preset-pages"
 import { isWorkspacePreset } from "../../services/preset-files"
 import { exportPublishedPreset } from "../../services/preset-export"
 import { getState } from "../../libs/state"
-import { START_CONTEXTS } from "../../services/start-context-catalogue"
 import { TRANSFORMER_DEFINITIONS } from "audiobus/io/transformer-definitions"
 import { discoveryMatches } from "./discovery-search"
 import {
@@ -150,14 +150,16 @@ export function createPresetBrowser({
 	}
 	toolbar.append(searchLabel)
 	const category = makeFilter("Preset type", "All preset types")
-	const genre = makeFilter("Genre", "All genres")
 	const transformer = makeFilter("Transformer", "All transformers")
-	for (const context of START_CONTEXTS.filter((item) => item.category === "Genres")) {
-		genre.append(option(context.name.replace(/^Write /, ""), context.id))
-	}
+	const selectedTags = new Set<string>()
+	const tagFilters = element("details", "preset-tags")
+	const tagSummary = element("summary", "", "Filter by tags")
+	const tagGroups = element("div", "preset-tag-groups")
+	tagFilters.append(tagSummary, tagGroups)
 	search.oninput = () => render()
 	const updateReset = searchReset(searchLabel, search, () => {
-		search.value = category.value = genre.value = transformer.value = ""
+		search.value = category.value = transformer.value = ""
+		selectedTags.clear()
 		render()
 	})
 	const resultCount = element("p", "preset-library-note")
@@ -363,7 +365,7 @@ export function createPresetBrowser({
 	content.append(nav, preview)
 	const meta = element("div", "preset-browser-meta")
 	meta.append(resultCount, openTools)
-	scroll.append(toolbar, status, meta, content)
+	scroll.append(toolbar, tagFilters, status, meta, content)
 	const footer = element("footer", "preset-apply-bar")
 	const applyText = element("p")
 	const apply = button(
@@ -415,8 +417,12 @@ export function createPresetBrowser({
 		}
 	}
 	function render() {
-		updateReset(Boolean(search.value || category.value || genre.value || transformer.value))
-		const { presets, preset, setup } = selected()
+		updateReset(
+			Boolean(search.value || category.value || transformer.value || selectedTags.size)
+		)
+		const current = selected()
+		const { presets } = current
+		let { preset, setup } = current
 		const categories = [...new Set(presets.map((item) => item.category))]
 		const values = [
 			...new Set(categories.map((value) => value.replace(/^Activities · /, ""))),
@@ -456,47 +462,115 @@ export function createPresetBrowser({
 			)
 			transformer.value = previous
 		}
-		const matches = (item: {
-			name: string
-			description: string
-			category?: string
-			useCase?: string
-			steps?: TransformerPreset["steps"]
-		}) =>
+		const matches = (
+			item: {
+				name: string
+				description: string
+				category?: string
+				useCase?: string
+				steps?: TransformerPreset["steps"]
+			},
+			labels: string[] = []
+		) =>
 			discoveryMatches(
 				search.value,
 				item.name,
 				item.description,
 				item.category,
 				item.useCase,
+				...labels,
 				...(item.steps?.flatMap((step) => [
 					step.type,
 					step.summary,
 					TRANSFORMER_DEFINITIONS[step.type]?.name
 				]) ?? [])
 			)
-		const filtered = presets.filter(
+		const tags = new Map(
+			[...presets, ...library.setups].map((item) => [item, presetTags(item)])
+		)
+		const matchesTags = (item: TransformerPreset | PresetSetup, except?: string) =>
+			[...selectedTags].every(
+				(id) => id === except || tags.get(item)!.some((tag) => tag.id === id)
+			)
+		const candidates = presets.filter(
 			(item) =>
-				matches(item) &&
+				matches(
+					item,
+					tags.get(item)!.map((tag) => tag.label)
+				) &&
 				(!transformer.value ||
 					item.steps.some((step) => step.type === transformer.value)) &&
-				(!category.value ||
-					item.category.replace(/^Activities · /, "") === category.value) &&
-				(!genre.value || presetContext(item)?.id === genre.value)
+				(!category.value || item.category.replace(/^Activities · /, "") === category.value)
 		)
-		const setups =
-			(createChain && !startup) ||
-			genre.value ||
-			(category.value && category.value !== "Setups")
+		const setupCandidates =
+			(createChain && !startup) || (category.value && category.value !== "Setups")
 				? []
 				: library.setups.filter((item) => {
 						const steps = item.chains.flatMap((chain) => chain.steps)
 						return (
-							matches({ ...item, steps }) &&
+							matches(
+								{ ...item, steps },
+								tags.get(item)!.map((tag) => tag.label)
+							) &&
 							(!transformer.value ||
 								steps.some((step) => step.type === transformer.value))
 						)
 					})
+		const filtered = candidates.filter((item) => matchesTags(item))
+		const setups = setupCandidates.filter((item) => matchesTags(item))
+		if ((!preset || !filtered.includes(preset)) && (!setup || !setups.includes(setup))) {
+			preset = filtered[0]
+			setup = preset
+				? isWorkspacePreset(preset)
+					? presetSetup(preset)
+					: undefined
+				: setups[0]
+			selection = preset ? `preset:${preset.id}` : setup ? `setup:${setup.id}` : ""
+		}
+		const availableTags = [
+			...new Map([...tags.values()].flat().map((tag) => [tag.id, tag])).values()
+		]
+		tagSummary.textContent = selectedTags.size
+			? `Tags · ${[...selectedTags].map((id) => availableTags.find((tag) => tag.id === id)?.label ?? id).join(", ")}`
+			: "Filter by tags"
+		tagGroups.replaceChildren()
+		for (const group of ["Inputs", "Sounds", "Styles", "Tags"]) {
+			const groupTags = availableTags
+				.filter((tag) => tag.group === group)
+				.sort((a, b) => a.label.localeCompare(b.label))
+			if (!groupTags.length) {
+				continue
+			}
+			const fieldset = element("fieldset")
+			fieldset.append(element("legend", "", group))
+			for (const tag of groupTags) {
+				const count = [...candidates, ...setupCandidates].filter(
+					(item) =>
+						tags.get(item)!.some((value) => value.id === tag.id) &&
+						matchesTags(item, tag.id)
+				).length
+				const chip = button(
+					`${tag.label} (${count})`,
+					() => {
+						if (selectedTags.has(tag.id)) {
+							selectedTags.delete(tag.id)
+						} else {
+							selectedTags.add(tag.id)
+						}
+						render()
+						tagGroups
+							.querySelector<HTMLButtonElement>(`[data-tag="${CSS.escape(tag.id)}"]`)
+							?.focus({ preventScroll: true })
+					},
+					"preset-tag"
+				)
+				chip.dataset.tag = tag.id
+				chip.setAttribute("aria-pressed", String(selectedTags.has(tag.id)))
+				chip.disabled = busy || (!count && !selectedTags.has(tag.id))
+				fieldset.append(chip)
+			}
+			tagGroups.append(fieldset)
+		}
 		resultCount.textContent = `${filtered.length} presets · ${setups.length} setups`
 		nav.replaceChildren()
 		const choose = (id: string) => {

@@ -254,7 +254,10 @@ describe("surface interaction and bindings", () => {
 		expect(name.value).toBe("My performance")
 		const buttons = [...toolbarHost.querySelectorAll<HTMLButtonElement>("button")]
 		expect(buttons[0].textContent).toBe("Edit layout")
-		expect(buttons[1].textContent).toBe("Enter VR")
+		expect(toolbarHost.querySelector(".cs-toolbar")!.lastElementChild!.textContent).toBe(
+			"Enter VR"
+		)
+		expect(toolbarHost.querySelector(".cs-toolbar")!.children[1].className).toBe("cs-settings")
 		const settings = toolbarHost.querySelector<HTMLButtonElement>(
 			'[aria-label="Surface settings"]'
 		)!

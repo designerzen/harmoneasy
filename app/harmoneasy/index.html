@@ -29,9 +29,10 @@
 				</button>
 				<div class="start-intro">
 					<h1 id="start-title">Find your next sound</h1>
-					<p>Choose a preset to start playing.</p>
+					<p>Start a session or show presets to explore a sound.</p>
 				</div>
 				<div class="start-secondary-actions">
+					<button type="button" id="show-start-presets" aria-expanded="false" aria-controls="start-presets-content">Show presets</button>
 					<button id="start-wizard" type="button" aria-haspopup="dialog" aria-controls="setup-wizard">Setup wizard</button>
 					<a href="%BASE_URL%presets/">Browse preset pages</a>
 					<button
@@ -61,7 +62,7 @@
 					Start shared setup
 				</button>
 			</div>
-			<div class="start-presets-content"></div>
+			<div id="start-presets-content" class="start-presets-content" hidden></div>
 			<p id="start-error" role="alert" hidden></p>
 		</dialog>
 

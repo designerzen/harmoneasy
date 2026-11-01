@@ -16,6 +16,7 @@
 	box-sizing: border-box;
 }
 .cs-toolbar {
+	position: relative;
 	display: flex;
 	align-items: center;
 	gap: 8px;
@@ -23,7 +24,7 @@
 	font:
 		14px system-ui,
 		sans-serif;
-	color: #d6fff2;
+	color: var(--col-fg, #d6fff2);
 	text-transform: none;
 	letter-spacing: normal;
 }
@@ -46,7 +47,6 @@
 	border-color: #296254;
 }
 .cs-settings {
-	position: relative;
 	flex: none;
 }
 .cs-settings svg {
@@ -55,34 +55,60 @@
 	height: 20px;
 	fill: none;
 	stroke: currentColor;
-	stroke-width: 1.5;
+	stroke-width: 1.75;
+	stroke-linecap: round;
 	stroke-linejoin: round;
+	flex: none;
+}
+.cs-settings > button {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
 }
 .cs-settings-menu {
 	position: absolute;
 	top: calc(100% + 8px);
-	right: 0;
+	left: 0;
 	z-index: 10;
 	display: grid;
-	gap: 8px;
+	gap: 0;
 	width: max-content;
-	max-width: min(320px, calc(100vw - 24px));
+	max-width: min(320px, 100%);
 	max-height: 65dvh;
 	overflow: auto;
-	padding: 10px;
-	border: 1px solid #296254;
+	padding: 0.375rem;
+	border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
 	border-radius: 8px;
-	color: #d6fff2;
-	background: #080d18;
-	box-shadow: 0 8px 24px #0008;
+	color: var(--col-fg, #d6fff2);
+	background: var(--col-bg, #080d18);
+	box-shadow: 0 0.5rem 1.5rem #0004;
 }
 .cs-settings-menu[hidden] {
 	display: none;
 }
 .cs-settings-menu label {
 	display: grid;
-	gap: 4px;
-	font-size: 12px;
+	grid-template-columns: 20px 1fr;
+	align-items: center;
+	gap: 0.625rem;
+	padding: 0.625rem 0.75rem;
+}
+.cs-settings-menu label select {
+	grid-column: 1 / -1;
+}
+.cs-toolbar .cs-settings-menu button {
+	display: flex;
+	align-items: center;
+	gap: 0.625rem;
+	padding: 0.625rem 0.75rem;
+	border: 0;
+	border-radius: 4px;
+	background: transparent;
+	text-align: left;
+}
+.cs-toolbar .cs-settings-menu button:hover,
+.cs-toolbar .cs-settings-menu button:focus-visible {
+	background: color-mix(in srgb, currentColor 12%, transparent);
 }
 .cs-toolbar > button {
 	flex: none;
@@ -92,10 +118,10 @@
 .cs-widget-tools button,
 .cs-widget-tools select {
 	font: inherit;
-	color: #cbfdeb;
-	background: #101f2b;
-	border: 1px solid #296254;
-	border-radius: 5px;
+	color: var(--col-fg, #cbfdeb);
+	background: var(--col-line, #101f2b);
+	border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+	border-radius: 6px;
 	padding: 7px;
 	min-height: 32px;
 }

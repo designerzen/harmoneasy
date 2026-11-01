@@ -9,6 +9,7 @@ export function createStartContexts(
 ) {
 	let selected: PresetSetup | undefined
 	const host = root.querySelector<HTMLElement>(".start-presets-content")!
+	const toggle = root.querySelector<HTMLButtonElement>("#show-start-presets")!
 	host.replaceChildren()
 	const choose = (setup: PresetSetup) => {
 		selected = setup
@@ -21,5 +22,22 @@ export function createStartContexts(
 		onApply: (preset) => choose(presetSetup(preset))
 	})
 	host.append(browser.element)
-	return { getSetup: () => selected, destroy: () => browser.destroy() }
+	const search = host.querySelector<HTMLInputElement>('input[type="search"]')!
+	search.autofocus = false
+	const togglePresets = () => {
+		host.hidden = !host.hidden
+		toggle.setAttribute("aria-expanded", String(!host.hidden))
+		toggle.textContent = host.hidden ? "Show presets" : "Hide presets"
+		if (!host.hidden) {
+			search.focus({ preventScroll: true })
+		}
+	}
+	toggle.addEventListener("click", togglePresets)
+	return {
+		getSetup: () => selected,
+		destroy() {
+			toggle.removeEventListener("click", togglePresets)
+			browser.destroy()
+		}
+	}
 }

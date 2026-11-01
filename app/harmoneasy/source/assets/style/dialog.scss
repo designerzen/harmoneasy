@@ -419,7 +419,7 @@ body:has(dialog:modal) {
 			min-height: 42px;
 		}
 	}
-	.start-presets-content {
+	.start-presets-content:not([hidden]) {
 		display: flex;
 		flex: 1;
 		min-height: 0;

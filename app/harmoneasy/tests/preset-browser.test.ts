@@ -143,7 +143,7 @@ it("illustrates every preset, filters by intent and keeps Apply outside the scro
 	expect(document.querySelector(".preset-no-results")?.textContent).toContain(
 		"No matching presets"
 	)
-	expect(apply.textContent).toBe("Apply Triplet Cascade")
+	expect(document.querySelector<HTMLElement>(".preset-apply-bar")!.hidden).toBe(true)
 })
 
 it("describes every new-chain option before selection and adds only when confirmed", async () => {
@@ -171,7 +171,7 @@ it("describes every new-chain option before selection and adds only when confirm
 	dialog.showModal = vi.fn(() => dialog.setAttribute("open", ""))
 	dialog.close = vi.fn(() => dialog.removeAttribute("open"))
 	expect(host.querySelector("select")).toBeNull()
-	expect(dialog.querySelectorAll(".preset-filter select")).toHaveLength(3)
+	expect(dialog.querySelectorAll(".preset-filter select")).toHaveLength(2)
 	runUI(() => document.querySelector<HTMLButtonElement>(".preset-browse")!.click())
 	expect(dialog.hasAttribute("open")).toBe(true)
 	expect(document.querySelectorAll("nav button")).toHaveLength(completePresets([]).length)
@@ -313,7 +313,7 @@ it("finds presets by misspelled transformer names and combines transformer and c
 	search.dispatchEvent(new Event("input"))
 	expect(document.querySelector("nav")!.textContent).toContain("Soft Echo Trail")
 	const selects = [...document.querySelectorAll<HTMLSelectElement>(".preset-filter select")]
-	const transformer = selects[2]
+	const transformer = selects[1]
 	search.value = ""
 	transformer.value = "Melody-Shadow"
 	transformer.dispatchEvent(new Event("change"))
@@ -340,7 +340,7 @@ it("keeps reset inside search and opens library management without changing the 
 	)!
 	expect(reset.hidden).toBe(true)
 	expect(toolbar.querySelector(":scope > button")).toBeNull()
-	expect(toolbar.children).toHaveLength(4)
+	expect(toolbar.children).toHaveLength(3)
 	search.value = "shadow"
 	search.dispatchEvent(new Event("input"))
 	expect(reset.hidden).toBe(false)
@@ -354,7 +354,7 @@ it("keeps reset inside search and opens library management without changing the 
 	expect(libraryDialog.querySelector(".preset-library-actions")?.textContent).toContain(
 		"Import JSON file"
 	)
-	expect(toolbar.children).toHaveLength(4)
+	expect(toolbar.children).toHaveLength(3)
 	expect(root.element.querySelector("nav")!.textContent).toBe(itemsBefore)
 	libraryDialog.querySelector<HTMLButtonElement>('[aria-label="Close library options"]')!.click()
 	expect(libraryDialog.open).toBe(false)

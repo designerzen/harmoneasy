@@ -4,7 +4,6 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest"
 import { runUI } from "./native-ui"
 import {
 	completePresets,
-	presetContext,
 	presetSetup,
 	ACTIVITY_PRESETS
 } from "../source/components/graph/preset-catalogue"
@@ -157,56 +156,41 @@ it("starts saved setups directly and disables the primary action while starting"
 	})
 })
 
-it("keeps all genres available with an older library and combines type, genre and search filters", async () => {
+it("combines type, tags and search filters without a genre dropdown", async () => {
 	localStorage.setItem(
 		"harmoneasy.preset-library.v1",
 		JSON.stringify({ ...DEFAULT_PRESET_LIBRARY, presets: [] })
 	)
 	document.body.innerHTML = startPage.match(/<dialog id="start-dialog"[\s\S]*?<\/dialog>/)![0]
 	const dialog = document.querySelector<HTMLElement>("#start-dialog")!
-	await runUI(async () => {
-		mountStartContexts(dialog)
-	})
-	const [type, genre] = [...dialog.querySelectorAll<HTMLSelectElement>(".preset-filter select")]
-	const change = async (select: HTMLSelectElement, value: string) =>
-		runUI(async () => {
-			select.value = value
-			select.dispatchEvent(new Event("change", { bubbles: true }))
-		})
+	mountStartContexts(dialog)
+	const filters = [...dialog.querySelectorAll<HTMLSelectElement>(".preset-filter select")]
+	expect(filters).toHaveLength(2)
+	expect(
+		[...dialog.querySelectorAll(".preset-filter")].some((label) =>
+			label.textContent?.includes("All genres")
+		)
+	).toBe(false)
+	const type = filters[0]
+	type.value = "Genres"
+	type.dispatchEvent(new Event("change"))
+	const tag = () => dialog.querySelector<HTMLButtonElement>('[data-tag="sounds:moog"]')!
+	tag().click()
+	expect(tag().getAttribute("aria-pressed")).toBe("true")
 	const names = () =>
 		[...dialog.querySelectorAll<HTMLButtonElement>("nav button")].map(
 			(button) => button.querySelector("span")!.firstChild!.textContent
 		)
-	expect(names()).toHaveLength(completePresets([]).length)
-	await change(type, "Genres")
-	for (const context of START_CONTEXTS.filter((context) => context.category === "Genres")) {
-		expect([...genre.options].some((option) => option.value === context.id)).toBe(true)
-		await change(genre, context.id)
-		expect(names()).toEqual(
-			completePresets([])
-				.filter((preset) => presetContext(preset)?.id === context.id)
-				.map((preset) => preset.name)
-		)
-		expect(names().length).toBeGreaterThan(0)
-	}
-	await change(genre, "drum-and-bass")
+	expect(names()).toContain("Write drum and bass")
+	expect(names()).not.toContain("Write disco")
 	const search = dialog.querySelector<HTMLInputElement>(".preset-search input")!
-	await runUI(async () => {
-		search.value = "170"
-		search.dispatchEvent(new Event("input", { bubbles: true }))
-	})
+	search.value = "170"
+	search.dispatchEvent(new Event("input"))
 	expect(names()).toEqual(["Write drum and bass"])
-	await change(type, "Accessibility")
-	expect(dialog.querySelector(".preset-no-results")).toBeTruthy()
-	await change(type, "")
-	await change(genre, "")
-	await runUI(async () => {
-		search.value = ""
-		search.dispatchEvent(new Event("input", { bubbles: true }))
-	})
+	dialog.querySelector<HTMLButtonElement>('[aria-label="Clear filters"]')!.click()
+	expect(tag().getAttribute("aria-pressed")).toBe("false")
 	expect(names()).toHaveLength(completePresets([]).length)
 })
-
 it("starts each genre with its sound output and independent settings", () => {
 	for (const [id, type] of [
 		["acid-house", "tb303"],
@@ -259,12 +243,26 @@ it("starts each genre with its sound output and independent settings", () => {
 	})
 })
 
-it("shows the browser immediately with one primary start action and secondary session actions", async () => {
+it("hides the browser until Show presets is clicked and retains session actions", async () => {
 	document.body.innerHTML = startPage.match(/<dialog id="start-dialog"[\s\S]*?<\/dialog>/)![0]
 	const dialog = document.querySelector<HTMLDialogElement>("#start-dialog")!
 	await runUI(async () => {
 		mountStartContexts(dialog)
 	})
+	const content = dialog.querySelector<HTMLElement>("#start-presets-content")!
+	const toggle = dialog.querySelector<HTMLButtonElement>("#show-start-presets")!
+	expect(content.hidden).toBe(true)
+	expect(toggle.textContent).toBe("Show presets")
+	expect(toggle.getAttribute("aria-expanded")).toBe("false")
+	expect(toggle.type).toBe("button")
+	toggle.click()
+	expect(content.hidden).toBe(false)
+	expect(toggle.textContent).toBe("Hide presets")
+	expect(toggle.getAttribute("aria-expanded")).toBe("true")
+	expect(document.activeElement).toBe(dialog.querySelector(".preset-search input"))
+	toggle.click()
+	expect(content.hidden).toBe(true)
+	expect(toggle.textContent).toBe("Show presets")
 	expect(dialog.querySelector("#start-contexts")).toBeNull()
 	expect(dialog.querySelector(".preset-browse")).toBeNull()
 	expect(dialog.querySelector(".start-preset-actions")).toBeNull()
@@ -272,7 +270,7 @@ it("shows the browser immediately with one primary start action and secondary se
 	expect(dialog.querySelector(".preset-apply-button")!.textContent).toBe("Start Preset")
 	expect(dialog.textContent).not.toContain("Choose this preset, then")
 	expect(dialog.querySelector(".preset-search input")).toBeTruthy()
-	expect(dialog.querySelectorAll(".preset-filter select")).toHaveLength(3)
+	expect(dialog.querySelectorAll(".preset-filter select")).toHaveLength(2)
 	const empty = dialog.querySelector<HTMLButtonElement>(".btn-start-empty")!
 	const session = dialog.querySelector<HTMLButtonElement>(".btn-continue-session")!
 	expect(empty.textContent?.trim()).toBe("Start Empty")
