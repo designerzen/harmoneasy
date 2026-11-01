@@ -14,9 +14,39 @@ export type WidgetType =
 	| "meter"
 	| "display"
 	| "color"
+	| "rotation"
+	| "guitar-tab"
+	| "piano-roll"
+/** Row-major sequence data: piano velocities 0..1; tab frets -1 (rest)..frets. */
+export interface MusicGridOptions {
+	steps?: number
+	/** Piano MIDI pitches from top to bottom. */
+	notes?: number[]
+	/** Guitar MIDI tuning from top string to bottom string. */
+	tuning?: number[]
+	frets?: number
+}
 export interface ControlChoice {
 	label: string
 	value: ControlValue
+}
+/** Procedural geometry and interaction options for component/widget authors. */
+export interface DialOptions {
+	mode?: "level" | "pan" | "rotation"
+	input?: "vertical" | "angular"
+	startAngle?: number
+	sweepAngle?: number
+	reverse?: boolean
+	centerDetent?: boolean
+	ticks?: number
+	tickDirection?: "inward" | "outward" | "both"
+}
+/** Procedural art direction; values are independent of control response. */
+export interface SurfaceVisualEffects {
+	bloom?: number
+	bloomRadius?: number
+	depth?: number
+	scanlines?: number
 }
 /** Serializable description; no DOM, engine resources, or callbacks. */
 export interface ControlDescriptor {
@@ -31,6 +61,8 @@ export interface ControlDescriptor {
 	step?: number
 	unit?: string
 	scale?: "linear" | "log"
+	dial?: DialOptions
+	music?: MusicGridOptions
 	choices?: ControlChoice[]
 	readOnly?: boolean
 	disabled?: boolean
@@ -51,6 +83,8 @@ export interface ComponentUi {
 }
 export interface ControlBinding {
 	key: string
+	/** Stable component identity; controls from one source share an art direction. */
+	sourceId?: string
 	sourceLabel: string
 	descriptor: ControlDescriptor
 	read(): ControlValue | undefined | Promise<ControlValue | undefined>
@@ -62,6 +96,10 @@ export interface SurfaceWidget {
 	yKey?: string
 	widget?: WidgetType
 	span?: number
+	/** Height in CSS pixels, independent of width. */
+	height?: number
+	/** Optional override for programmatically authored surfaces. */
+	dial?: DialOptions
 }
 export interface SurfaceConnection {
 	componentId: string

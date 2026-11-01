@@ -1,6 +1,12 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { ControlSurface } from "control-surface"
+import {
+	ControlSurface,
+	createDialControl,
+	createPanControl,
+	createRotationControl
+} from "control-surface"
+import { sourceTheme } from "../../../packages/control-surface/src/themes"
 import { createDomGui } from "control-surface/dom"
 import { contactPressure } from "../../../packages/control-surface/src/pressure"
 import {
@@ -11,6 +17,8 @@ import {
 import {
 	bindingKey,
 	denormalize,
+	dialOptions,
+	dialPosition,
 	normalize,
 	validSurfaces,
 	validateValue
@@ -102,6 +110,8 @@ describe("shared component controls", () => {
 			changedB = vi.fn()
 		const unsubscribeA = a.subscribe!(changedA),
 			unsubscribeB = b.subscribe!(changedB)
+		expect(a.sourceId).toBe("engine")
+		expect(b.sourceId).toBe(a.sourceId)
 		expect(a.write(0.5)).toBeUndefined()
 		expect(changedA).toHaveBeenCalledTimes(1)
 		expect(changedB).not.toHaveBeenCalled()
@@ -207,6 +217,138 @@ describe("shared component controls", () => {
 })
 
 describe("surface interaction and bindings", () => {
+	it("keeps source themes stable across surfaces and separates identically named components", async () => {
+		const a = { ...bind("a"), sourceId: "synth-one" },
+			b = { ...bind("b"), sourceId: "synth-one" },
+			c = { ...bind("c"), sourceId: "synth-two" }
+		const make = (bindings: ControlBinding[]) => {
+			const saved = state()
+			saved.widgets = bindings.map(({ key }) => ({ key }))
+			const surface = new ControlSurface({ state: saved, bindings, change: vi.fn() })
+			views.push(surface)
+			return surface
+		}
+		const first = make([a, b, c]),
+			second = make([c, { ...a, sourceLabel: "Renamed" }])
+		await settle()
+		const panels = [...first.element.querySelectorAll<HTMLElement>(".cs-widget")]
+		const colour = (element: HTMLElement) => element.style.getPropertyValue("--cs-source")
+		expect(colour(panels[0])).toBe(colour(panels[1]))
+		expect(colour(panels[0])).not.toBe(colour(panels[2]))
+		expect(colour(second.element.querySelectorAll<HTMLElement>(".cs-widget")[1])).toBe(
+			colour(panels[0])
+		)
+		expect(panels[0].getAttribute("aria-label")).toBe("Synth: a")
+		expect(sourceTheme("synth-one")).toEqual(sourceTheme("synth-one"))
+	})
+	it("creates reusable procedural dial descriptors without user-facing configuration", () => {
+		expect(createPanControl({ id: "pan", label: "Pan" })).toMatchObject({
+			widget: "dial",
+			min: -1,
+			max: 1,
+			defaultValue: 0,
+			dial: { mode: "pan", centerDetent: true }
+		})
+		expect(createPanControl({ id: "balance", label: "Balance", min: 0, max: 1 })).toMatchObject(
+			{ defaultValue: 0.5 }
+		)
+		expect(createRotationControl({ id: "heading", label: "Heading" })).toMatchObject({
+			min: 0,
+			max: 360,
+			unit: "°",
+			dial: { mode: "rotation", input: "angular" }
+		})
+		expect(
+			createRotationControl({ id: "phase", label: "Phase", min: 0, max: 1 }).step
+		).toBeCloseTo(1 / 360)
+		expect(
+			createDialControl({
+				id: "arc",
+				label: "Arc",
+				dial: { startAngle: 45, sweepAngle: 120, ticks: 12 }
+			}).dial
+		).toMatchObject({ startAngle: 45, sweepAngle: 120, ticks: 12 })
+		expect(() => createDialControl({ id: "bad", label: "Bad", dial: { ticks: 5000 } })).toThrow(
+			RangeError
+		)
+	})
+	it("validates saved dial options and resolves pan and rotation presets", () => {
+		expect(dialOptions({ mode: "pan" })).toMatchObject({
+			startAngle: -90,
+			sweepAngle: 180,
+			centerDetent: true
+		})
+		expect(dialOptions({ mode: "rotation" })).toMatchObject({
+			sweepAngle: 360,
+			input: "angular"
+		})
+		expect(dialPosition(0.508, dialOptions({ mode: "pan" }))).toBe(0.5)
+		expect(dialPosition(1.1, dialOptions({ mode: "rotation" }))).toBeCloseTo(0.1)
+		const saved = state()
+		saved.widgets = [{ key: "pan", widget: "dial", dial: { mode: "pan", ticks: 12 } }]
+		expect(validSurfaces([saved])).toBe(true)
+		saved.widgets[0].dial!.sweepAngle = 0
+		expect(validSurfaces([saved])).toBe(false)
+		saved.widgets[0].dial = { ticks: 50000 }
+		expect(validSurfaces([saved])).toBe(false)
+	})
+	it("maps a pan dial to its existing bipolar parameter range and snaps to center", async () => {
+		const pan = bind("pan", { min: -1, max: 1 }, -0.2),
+			saved = state()
+		saved.widgets = [{ key: pan.key, dial: { mode: "pan" } }]
+		const surface = new ControlSurface({ state: saved, bindings: [pan], change: vi.fn() })
+		views.push(surface)
+		await settle()
+		surface.pointerDown(1, 100, 100)
+		surface.pointerMove(1, 100, 84.8)
+		surface.pointerUp(1)
+		await settle()
+		expect(pan.value).toBe(0)
+	})
+	it("unwraps circular drag angles across the seam and wraps rotational values", async () => {
+		const rotation = bind("heading", { min: 0, max: 360 }, 356.4),
+			saved = state()
+		saved.widgets = [{ key: rotation.key, dial: { mode: "rotation" } }]
+		const surface = new ControlSurface({ state: saved, bindings: [rotation], change: vi.fn() })
+		views.push(surface)
+		await settle()
+		const visual = (
+			surface as unknown as {
+				entries: { visual: { x: number; y: number; width: number; height: number } }[]
+			}
+		).entries[0].visual
+		const cx = visual.x + visual.width / 2,
+			cy = visual.y + 48 + (visual.height - 76) / 2
+		const point = (angle: number) => [cx + Math.sin(angle) * 35, cy - Math.cos(angle) * 35]
+		const start = point(3),
+			end = point(-3)
+		surface.pointerDown(1, start[0], start[1])
+		surface.pointerMove(1, end[0], end[1])
+		surface.pointerUp(1)
+		await settle()
+		expect(rotation.value).toBeCloseTo(12.6253229)
+	})
+	it("wraps rotation dials using keyboard arrows", async () => {
+		const rotation = bind(
+				"heading",
+				{ min: 0, max: 360, step: 1, dial: { mode: "rotation" } },
+				359
+			),
+			saved = state()
+		saved.widgets = [{ key: rotation.key }]
+		const surface = new ControlSurface({ state: saved, bindings: [rotation], change: vi.fn() })
+		views.push(surface)
+		document.body.append(surface.element)
+		await settle()
+		const input = surface.element.querySelector<HTMLInputElement>(".cs-dial input")!
+		input.value = "359"
+		input.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: "ArrowRight" }))
+		await settle()
+		expect(rotation.value).toBe(0)
+		input.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: "ArrowLeft" }))
+		await settle()
+		expect(rotation.value).toBe(359)
+	})
 	it("keeps a dial selected after dragging and while its keyboard control is focused", async () => {
 		const dial = bind("cutoff"),
 			saved = state()

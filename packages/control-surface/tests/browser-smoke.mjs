@@ -63,6 +63,22 @@ try {
 		"GPU initialization must compile shaders and create a working render pipeline"
 	)
 	assert.equal(await page.locator(".cs-widget").count(), 14)
+	await page.evaluate(() => {
+		const { surface } = window.surfaceSmoke
+		const accents = new Map()
+		for (const entry of surface.entries) {
+			const id = entry.visual.sourceId
+			const cached = surface.renderer.cache.get(entry.visual)
+			const accent = Array.from(cached.data.slice(8, 11)).join(",")
+			if (accents.has(id) && accents.get(id) !== accent) {
+				throw new Error("Controls from one source have inconsistent GPU accents")
+			}
+			accents.set(id, accent)
+		}
+		if (accents.size !== 3 || new Set(accents.values()).size !== 3) {
+			throw new Error("Source themes did not reach GPU instance data")
+		}
+	})
 	await page.evaluate(async () => {
 		const { surface } = window.surfaceSmoke
 		const renderer = surface.renderer
@@ -187,7 +203,10 @@ try {
 	await page.mouse.down()
 	await page.mouse.move(rect.x + 3, rect.y + 49)
 	await page.mouse.up()
-	await page.waitForFunction((previous) => window.surfaceSmoke.values.cutoff < previous, beforePanelDrag)
+	await page.waitForFunction(
+		(previous) => window.surfaceSmoke.values.cutoff < previous,
+		beforePanelDrag
+	)
 	await page.getByRole("spinbutton", { name: "Tempo" }).fill("140")
 	await page.getByRole("spinbutton", { name: "Tempo" }).press("Tab")
 	await page.waitForFunction(() => window.surfaceSmoke.values.number === 140)
@@ -224,6 +243,81 @@ try {
 	})
 	await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] })
 	await page.waitForFunction(() => window.surfaceSmoke.values.strike === 0)
+	await page.getByRole("button", { name: "Edit layout", exact: true }).click()
+	assert.equal(await page.getByRole("button", { name: /Dial options/ }).count(), 0)
+	assert.equal(await page.getByRole("combobox", { name: "Dial mode", exact: true }).count(), 0)
+	await page.getByRole("button", { name: "Perform", exact: true }).click()
+	await page.evaluate(async () => {
+		const { ControlSurface, createPanControl, createRotationControl } = window.surfaceSmoke
+		const descriptors = [
+			createPanControl({
+				id: "pan",
+				label: "Pan",
+				dial: { ticks: 12, tickDirection: "both", reverse: true }
+			}),
+			createRotationControl({ id: "rotation", label: "Rotation" })
+		]
+		const variant = new ControlSurface({
+			state: {
+				id: "procedural",
+				name: "Procedural",
+				connections: [],
+				widgets: descriptors.map((d) => ({ key: d.id }))
+			},
+			bindings: descriptors.map((descriptor) => ({
+				key: descriptor.id,
+				sourceLabel: "Procedural",
+				descriptor,
+				read: () => descriptor.defaultValue,
+				write: () => {}
+			})),
+			change: () => {}
+		})
+		document.body.append(variant.element)
+		try {
+			const deadline = performance.now() + 15000
+			while (!variant.element.classList.contains("cs-gpu-ready")) {
+				if (performance.now() > deadline) {
+					throw new Error("Procedural widgets failed GPU initialization")
+				}
+				await new Promise(requestAnimationFrame)
+			}
+			variant.renderer.prepare(
+				variant.entries.map((item) => item.visual),
+				false
+			)
+			for (const [index, entry] of variant.entries.entries()) {
+				const data = variant.renderer.cache.get(entry.visual).data
+				let found = false
+				for (let offset = 0; offset < data.length; offset += 20) {
+					if (data[offset + 4] === 1) {
+						const sweep = index === 0 ? Math.PI : Math.PI * 2
+						if (
+							data[offset + 6] !== index + 1 ||
+							Math.abs(data[offset + 17] - sweep) > 0.00001
+						) {
+							throw new Error("Procedural mode did not reach the GPU")
+						}
+						if (
+							index === 0 &&
+							(data[offset + 12] !== 12 ||
+								data[offset + 18] !== 1 ||
+								data[offset + 19] !== 2)
+						) {
+							throw new Error("Procedural style did not reach the GPU")
+						}
+						found = true
+						break
+					}
+				}
+				if (!found) {
+					throw new Error("Procedural dial geometry missing")
+				}
+			}
+		} finally {
+			variant.destroy()
+		}
+	})
 	await cdp.detach()
 	await page.locator(".cs-pad button").focus()
 	assert.equal(await page.getByRole("button", { name: "Velocity pad", exact: true }).count(), 1)
@@ -231,6 +325,34 @@ try {
 	await page.waitForFunction(() => window.surfaceSmoke.values.strike === 1)
 	await page.keyboard.up("Space")
 	await page.waitForFunction(() => window.surfaceSmoke.values.strike === 0)
+	await page.evaluate(async () => {
+		const { surface } = window.surfaceSmoke,
+			renderer = surface.renderer
+		surface.setVisualEffects({ bloom: 0, depth: 0, scanlines: 0 })
+		renderer.render(surface.stage.clientWidth, surface.height, 0, false)
+		if (
+			renderer.frameData[20] !== 0 ||
+			renderer.postData[1] !== 0 ||
+			renderer.postData[2] !== 0
+		) {
+			throw new Error("Procedural effects cannot be disabled")
+		}
+		surface.setVisualEffects({ bloom: 0.6, bloomRadius: 6, depth: 0.9, scanlines: 0.025 })
+		surface.entries[0].element.focus()
+		const pad = surface.entries.find((entry) => entry.visual.widget === "pad").visual
+		surface.pointerDown(999, pad.x + 90, pad.y + 90, false, 0.7)
+		await new Promise(requestAnimationFrame)
+		await new Promise(requestAnimationFrame)
+		if (
+			Math.abs(renderer.frameData[20] - 0.9) > 0.00001 ||
+			Math.abs(renderer.postData[1] - 0.6) > 0.00001
+		) {
+			throw new Error("Procedural effects did not reach GPU uniforms")
+		}
+	})
+	const gameImage = join(output, "game-style.png")
+	await page.screenshot({ path: gameImage, fullPage: true })
+	await page.evaluate(() => window.surfaceSmoke.surface.pointerUp(999))
 	await page.evaluate(async () => {
 		await window.surfaceSmoke.surface.setEffect(
 			"fn surfaceEffect(color:vec4f,uv:vec2f,time:f32)->vec4f{return vec4f(color.rgb*(0.95+0.05*sin(time+uv.y*10.0)),color.a);}"
@@ -262,6 +384,7 @@ try {
 			pressurePad: true,
 			shaderEffects: true,
 			pointerAndKeyboard: true,
+			gameStyle: gameImage,
 			screenshot: image
 		})
 	)

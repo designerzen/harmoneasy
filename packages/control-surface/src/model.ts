@@ -1,4 +1,48 @@
-import type { ControlDescriptor, ControlValue, SurfaceState, WidgetType } from "./types"
+import type {
+	ControlDescriptor,
+	ControlValue,
+	DialOptions,
+	SurfaceState,
+	WidgetType
+} from "./types"
+import { isMusicGrid, musicOptions, musicValues } from "./music"
+
+export function dialOptions(options: DialOptions = {}): Required<DialOptions> {
+	const mode = options.mode ?? "level"
+	return {
+		mode,
+		input: options.input ?? (mode === "rotation" ? "angular" : "vertical"),
+		startAngle: options.startAngle ?? (mode === "rotation" ? 0 : mode === "pan" ? -90 : -135),
+		sweepAngle: options.sweepAngle ?? (mode === "rotation" ? 360 : mode === "pan" ? 180 : 270),
+		reverse: options.reverse ?? false,
+		centerDetent: options.centerDetent ?? mode === "pan",
+		ticks: options.ticks ?? 0,
+		tickDirection: options.tickDirection ?? "outward"
+	}
+}
+export function validDialOptions(value: unknown): value is DialOptions {
+	if (!value || typeof value !== "object" || Array.isArray(value)) {
+		return false
+	}
+	const d = value as DialOptions
+	return (
+		(d.mode === undefined || ["level", "pan", "rotation"].includes(d.mode)) &&
+		(d.input === undefined || ["vertical", "angular"].includes(d.input)) &&
+		(d.tickDirection === undefined ||
+			["inward", "outward", "both"].includes(d.tickDirection)) &&
+		(d.reverse === undefined || typeof d.reverse === "boolean") &&
+		(d.centerDetent === undefined || typeof d.centerDetent === "boolean") &&
+		(d.startAngle === undefined ||
+			(Number.isFinite(d.startAngle) && d.startAngle >= -360 && d.startAngle <= 360)) &&
+		(d.sweepAngle === undefined ||
+			(Number.isFinite(d.sweepAngle) && d.sweepAngle >= 30 && d.sweepAngle <= 360)) &&
+		(d.ticks === undefined || (Number.isInteger(d.ticks) && d.ticks >= 0 && d.ticks <= 48))
+	)
+}
+export function dialPosition(position: number, options: Required<DialOptions>): number {
+	const bounded = options.mode === "rotation" ? ((position % 1) + 1) % 1 : clamp(position)
+	return options.centerDetent && Math.abs(bounded - 0.5) <= 0.0125 ? 0.5 : bounded
+}
 
 export const WIDGET_TYPES: WidgetType[] = [
 	"dial",
@@ -15,6 +59,7 @@ export const WIDGET_TYPES: WidgetType[] = [
 	"meter",
 	"display",
 	"color"
+	,"rotation", "guitar-tab", "piano-roll"
 ]
 export const clamp = (v: number, min = 0, max = 1) => Math.max(min, Math.min(max, v))
 export const sameValue = (a: unknown, b: unknown) =>
@@ -57,6 +102,13 @@ export function validateValue(d: ControlDescriptor, value: ControlValue): Contro
 	if (d.widget === "button") {
 		return value
 	}
+	if (isMusicGrid(d.widget)) {
+		const { steps, pitches } = musicOptions(d.widget, d.music)
+		if (!Array.isArray(value) || value.length !== steps * pitches.length || !value.every(Number.isFinite)) {
+			throw new Error(`${d.label} requires ${steps * pitches.length} finite cell values`)
+		}
+		return musicValues(d, value)
+	}
 	if (d.choices?.length) {
 		const choice = d.choices.find((c) => sameValue(c.value, value))
 		if (!choice) {
@@ -95,8 +147,8 @@ export function widgetChoices(d: ControlDescriptor): WidgetType[] {
 	if (d.choices?.length) {
 		return ["radio", "select"]
 	}
-	if (["dial", "slider", "number", "pad"].includes(d.widget)) {
-		return ["dial", "slider", "number", "pad"]
+	if (["dial", "rotation", "slider", "number", "pad"].includes(d.widget)) {
+		return ["dial", "rotation", "slider", "number", "pad"]
 	}
 	return [d.widget]
 }
@@ -162,27 +214,33 @@ export function validSurfaces(value: unknown): value is SurfaceState[] {
 					typeof w.key === "string" &&
 					(w.yKey === undefined || typeof w.yKey === "string") &&
 					(!w.widget || WIDGET_TYPES.includes(w.widget)) &&
-					(w.span === undefined || [1, 2, 3].includes(w.span))
+					(w.span === undefined || [1, 2, 3].includes(w.span)) &&
+					(w.height === undefined || (Number.isInteger(w.height) && w.height >= 132 && w.height <= 720)) &&
+					(w.dial === undefined || validDialOptions(w.dial))
 			)
 		)
 	})
 }
 
-export function layoutWidgets(widgets: { span?: number }[], width: number) {
+export function layoutWidgets(widgets: { span?: number; height?: number }[], width: number) {
 	const columns = Math.max(1, Math.floor(width / 200)),
 		cell = width / columns,
 		gap = 8
 	let column = 0,
-		row = 0
+		y = 0,
+		rowHeight = 0
 	const items = widgets.map((widget) => {
 		const span = Math.min(columns, widget.span ?? 1)
 		if (column + span > columns) {
 			column = 0
-			row++
+			y += rowHeight + gap
+			rowHeight = 0
 		}
-		const rect = { x: column * cell, y: row * 180, width: cell * span - gap, height: 172 }
+		const height = Math.max(132, Math.min(720, widget.height ?? 172))
+		const rect = { x: column * cell, y, width: cell * span - gap, height }
+		rowHeight = Math.max(rowHeight, height)
 		column += span
 		return rect
 	})
-	return { items, height: widgets.length ? (row + 1) * 180 : 120 }
+	return { items, height: widgets.length ? y + rowHeight + gap : 120 }
 }

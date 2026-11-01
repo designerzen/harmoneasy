@@ -1,4 +1,4 @@
-import { ControlSurface } from "../src/index"
+import { ControlSurface, createPanControl, createRotationControl } from "../src/index"
 import "../src/style.css"
 import type { ControlBinding, ControlDescriptor, ControlValue } from "../src/types"
 
@@ -61,7 +61,16 @@ const descriptors: ControlDescriptor[] = [
 ]
 const bindings: ControlBinding[] = descriptors.map((descriptor) => ({
 	key: descriptor.id,
-	sourceLabel: "Performance synth",
+	sourceId: ["density", "range", "trigger", "strike"].includes(descriptor.id)
+		? "drum-engine"
+		: ["number", "meter", "display"].includes(descriptor.id)
+			? "master-output"
+			: "performance-synth",
+	sourceLabel: ["density", "range", "trigger", "strike"].includes(descriptor.id)
+		? "Drum engine"
+		: ["number", "meter", "display"].includes(descriptor.id)
+			? "Master output"
+			: "Performance synth",
 	descriptor,
 	read: () => values[descriptor.id],
 	write: (value) => {
@@ -83,4 +92,6 @@ const surface = new ControlSurface({
 document.body.style.cssText =
 	"margin:0;background:#080d18;display:flex;justify-content:center;padding:16px"
 document.body.append(surface.element)
-Object.assign(window, { surfaceSmoke: { surface, values } })
+Object.assign(window, {
+	surfaceSmoke: { surface, values, ControlSurface, createPanControl, createRotationControl }
+})

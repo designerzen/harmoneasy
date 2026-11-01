@@ -124,10 +124,12 @@ try {
 		const result =
 			widget === "polysynth"
 				? await page.evaluate(
-						async ({ zoom, iterations }) => window.profilePolySynth(zoom, iterations),
+						async ({ zoom, iterations, mode }) =>
+							window.profilePolySynth(zoom, iterations, mode),
 						{
 							zoom: Number(process.env.SURFACE_PROFILE_ZOOM ?? 1),
-							iterations: Number(process.env.SURFACE_PROFILE_FRAMES ?? 300)
+							iterations: Number(process.env.SURFACE_PROFILE_FRAMES ?? 300),
+							mode: process.env.SURFACE_PROFILE_DIAL_MODE ?? "level"
 						}
 					)
 				: await page.evaluate(

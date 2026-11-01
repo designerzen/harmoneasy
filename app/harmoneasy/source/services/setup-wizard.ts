@@ -31,6 +31,60 @@ type Step =
 	| "pace"
 	| "review"
 
+const GOAL_ICONS: Record<WizardAnswers["goal"], string> = {
+	play: "piano",
+	write: "notation",
+	genre: "drums",
+	file: "input",
+	together: "midi",
+	access: "hand"
+}
+const CHOICE_ICONS: Record<string, string> = {
+	screen: "keyboard",
+	midi: "midi",
+	gamepad: "gamepad",
+	sound: "output",
+	"sound-text": "describe",
+	text: "describe",
+	spoken: "speech",
+	notation: "notation",
+	suggested: "sparkles",
+	slow: "clock",
+	medium: "clock",
+	fast: "clock",
+	"describe-readout": "speech",
+	"show-notation": "notation",
+	"vibrate-notes": "vibration",
+	"describe-silently": "describe",
+	"notation-touch": "hand",
+	bass: "synth",
+	"remix-bass": "synth",
+	"midi-to-score": "notation",
+	convert: "input"
+}
+const STEP_LABELS: Record<Step, string> = {
+	goal: "Your goal",
+	recipe: "Your music",
+	input: "Your instrument",
+	connection: "Connect",
+	file: "Your file",
+	group: "Play together",
+	feedback: "Follow notes",
+	pace: "Speed",
+	review: "Review"
+}
+
+function wizardIcon(name: string) {
+	const icon = document.createElement("span")
+	icon.className = "wizard-icon"
+	icon.setAttribute("aria-hidden", "true")
+	icon.style.setProperty(
+		"--wizard-icon",
+		`url("${import.meta.env.BASE_URL}icons/device-${name}.svg")`
+	)
+	return icon
+}
+
 export function createSetupWizard(
 	trigger: HTMLButtonElement,
 	onStart: (setup: PresetSetup) => void
@@ -38,15 +92,16 @@ export function createSetupWizard(
 	const dialog = document.createElement("dialog")
 	dialog.id = "setup-wizard"
 	dialog.setAttribute("aria-labelledby", "setup-wizard-title")
-	dialog.innerHTML = `<header><div><p>Setup wizard</p><h2 id="setup-wizard-title">Let’s find a setup for you</h2></div><button type="button" aria-label="Close setup wizard">Close</button></header>
-		<div class="wizard-body"><p class="wizard-progress" role="status"></p><section class="wizard-question" aria-labelledby="wizard-question-title"></section><p class="wizard-status" role="status" aria-live="polite"></p></div>
-		<footer><button type="button" data-back>Back</button><button type="button" data-next>Next</button></footer>`
+	dialog.innerHTML = `<header><div><p>Setup wizard</p><h2 id="setup-wizard-title">Let’s find a setup for you</h2></div><button type="button" class="tertiary" aria-label="Close setup wizard">Close</button></header>
+		<div class="wizard-body"><p class="wizard-progress" role="status"></p><ol class="wizard-stepper" aria-label="Setup steps"></ol><section class="wizard-question" aria-labelledby="wizard-question-title"></section><p class="wizard-status" role="status" aria-live="polite"></p></div>
+		<footer><button type="button" class="secondary" data-back>Back</button><button type="button" class="primary" data-next>Next</button></footer>`
 	document.body.append(dialog)
 	const question = dialog.querySelector<HTMLElement>(".wizard-question")!
 	const progress = dialog.querySelector<HTMLElement>(".wizard-progress")!
 	const status = dialog.querySelector<HTMLElement>(".wizard-status")!
 	const back = dialog.querySelector<HTMLButtonElement>("[data-back]")!
 	const next = dialog.querySelector<HTMLButtonElement>("[data-next]")!
+	trigger.classList.add("primary")
 	let answers: WizardAnswers = {
 		goal: "play",
 		contextId: "first-notes",
@@ -75,6 +130,23 @@ export function createSetupWizard(
 		p.textContent = text
 		question.append(p)
 	}
+	const updateProgress = () => {
+		const sequence = steps()
+		progress.textContent = `Step ${position + 1} of ${sequence.length} · ${STEP_LABELS[sequence[position]]}`
+		const tracker = dialog.querySelector<HTMLOListElement>(".wizard-stepper")!
+		tracker.replaceChildren(
+			...sequence.map((step, index) => {
+				const item = document.createElement("li")
+				item.textContent = STEP_LABELS[step]
+				item.dataset.state =
+					index < position ? "complete" : index === position ? "current" : "upcoming"
+				if (index === position) {
+					item.setAttribute("aria-current", "step")
+				}
+				return item
+			})
+		)
+	}
 	const choices = (
 		name: string,
 		items: readonly { id: string; label: string; description?: string }[],
@@ -95,6 +167,7 @@ export function createSetupWizard(
 			radio.addEventListener(EVENT_CHANGE, () => {
 				cancelRequest()
 				change(item.id)
+				updateProgress()
 				next.disabled = false
 			})
 			const text = document.createElement("span")
@@ -104,7 +177,11 @@ export function createSetupWizard(
 				detail.textContent = item.description
 				text.append(detail)
 			}
-			label.append(radio, text)
+			const icon =
+				name === "wizard-goal"
+					? GOAL_ICONS[item.id as WizardAnswers["goal"]]
+					: (CHOICE_ICONS[item.id] ?? GOAL_ICONS[answers.goal])
+			label.append(radio, wizardIcon(icon), text)
 			fieldset.append(label)
 		})
 		question.append(fieldset)
@@ -126,10 +203,23 @@ export function createSetupWizard(
 		const step = sequence[position]
 		question.replaceChildren()
 		status.textContent = ""
-		progress.textContent = `Step ${position + 1} of ${sequence.length}`
+		updateProgress()
 		back.hidden = position === 0
 		next.disabled = step === "goal" && !selectedGoal
 		next.textContent = step === "review" ? "Create my setup" : "Next"
+		const scene =
+			step === "file" || (answers.goal === "file" && step !== "goal")
+				? "file"
+				: step === "group" || (answers.goal === "together" && step !== "goal")
+					? "together"
+					: "play"
+		const illustration = document.createElement("img")
+		illustration.className = "wizard-illustration"
+		illustration.src = `${import.meta.env.BASE_URL}images/setup-${scene}.svg`
+		illustration.alt = ""
+		illustration.width = 640
+		illustration.height = 160
+		question.append(illustration)
 		const heading = document.createElement("h3")
 		heading.id = "wizard-question-title"
 		heading.tabIndex = -1
@@ -163,6 +253,7 @@ export function createSetupWizard(
 			const details = document.createElement("details")
 			const summary = document.createElement("summary")
 			summary.textContent = "Or describe your idea with AI (optional)"
+			summary.prepend(wizardIcon("sparkles"))
 			const help = document.createElement("p")
 			help.textContent = browserAI()
 				? "Describe what you want in English. AI runs on this device without an API key. First use may download a large model. You will check its answers before creating anything."
@@ -180,11 +271,13 @@ export function createSetupWizard(
 			label.append(input)
 			const suggest = document.createElement("button")
 			suggest.type = "button"
+			suggest.className = "secondary"
 			suggest.dataset.aiSuggest = ""
 			suggest.textContent = "Suggest answers"
 			suggest.disabled = !browserAI()
 			const stop = document.createElement("button")
 			stop.type = "button"
+			stop.className = "tertiary"
 			stop.dataset.aiStop = ""
 			stop.textContent = "Stop AI"
 			stop.hidden = true
@@ -298,6 +391,7 @@ export function createSetupWizard(
 			question.append(name)
 			paragraph(setup.description)
 			const list = document.createElement("ul")
+			list.className = "wizard-review"
 			const feedback =
 				answers.goal === "access"
 					? "Feedback follows the activity you chose."
@@ -316,9 +410,23 @@ export function createSetupWizard(
 					: [`Speed: ${setup.clock!.bpm} beats per minute`]),
 				...instructions
 			]
-			for (const text of summary) {
+			for (const [index, text] of summary.entries()) {
 				const li = document.createElement("li")
-				li.textContent = text
+				const content = document.createElement("span")
+				content.textContent = text
+				const icon =
+					index === 0
+						? GOAL_ICONS[answers.goal]
+						: index === 1
+							? answers.goal === "file"
+								? "input"
+								: CHOICE_ICONS[answers.input]
+							: index === 2
+								? answers.goal === "access"
+									? "hand"
+									: CHOICE_ICONS[answers.feedback]
+								: "clock"
+				li.append(wizardIcon(icon), content)
 				list.append(li)
 			}
 			question.append(list)

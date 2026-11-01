@@ -340,7 +340,11 @@ async function run(
 }
 Object.assign(window, { profileSurface: run })
 
-async function profilePolySynth(zoom = 1, iterations = 300) {
+async function profilePolySynth(
+	zoom = 1,
+	iterations = 300,
+	mode: "level" | "pan" | "rotation" = "level"
+) {
 	const audio = new AudioContext({ latencyHint: "interactive" })
 	const synth = new PolySynth(audio, { class: SynthOscillator })
 	const mute = audio.createGain()
@@ -370,7 +374,11 @@ async function profilePolySynth(zoom = 1, iterations = 300) {
 			id: "poly",
 			name: "PolySynth",
 			connections: [],
-			widgets: bindings.map((binding) => ({ key: binding.key, widget: "dial" })),
+			widgets: bindings.map((binding) => ({
+				key: binding.key,
+				widget: "dial",
+				dial: { mode, ticks: 12 }
+			})),
 			theme: "ice"
 		},
 		bindings,
@@ -437,6 +445,7 @@ async function profilePolySynth(zoom = 1, iterations = 300) {
 	}
 	const result = {
 		engine: "PolySynth",
+		mode,
 		zoom,
 		dials: entries.length,
 		activeVoices: synth.activeVoices,

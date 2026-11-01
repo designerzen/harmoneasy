@@ -138,6 +138,7 @@
 	pointer-events: none;
 }
 .cs-widget {
+	box-shadow: inset 3px 0 var(--cs-source, #33ffb8);
 	position: absolute;
 	border-radius: 10px;
 	overflow: hidden;
@@ -146,9 +147,12 @@
 	display: grid;
 	gap: 6px;
 	padding: 12px;
-	color: #d6fff2;
+	color: var(--cs-source, #d6fff2);
 	font: inherit;
 	min-width: 0;
+}
+.cs-gpu-ready .cs-widget {
+	box-shadow: none;
 }
 .cs-semantic input,
 .cs-semantic select,
@@ -163,7 +167,7 @@
 .cs-semantic button {
 	color: #d6fff2;
 	background: #112438;
-	border: 1px solid #296254;
+	border: 1px solid var(--cs-source, #296254);
 	border-radius: 4px;
 	padding: 6px;
 }

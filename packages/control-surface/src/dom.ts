@@ -12,7 +12,16 @@ import {
 	EVENT_POINTER_CANCEL,
 	EVENT_LOST_POINTER_CAPTURE
 } from "./events"
-import { bounds, denormalize, formatValue, normalize, sameValue, validateValue } from "./model"
+import {
+	bounds,
+	denormalize,
+	dialOptions,
+	dialPosition,
+	formatValue,
+	normalize,
+	sameValue,
+	validateValue
+} from "./model"
 import { contactPressure } from "./pressure"
 import type { ControlBinding, ControlValue } from "./types"
 
@@ -210,6 +219,30 @@ export function createDomControl(
 							? "number"
 							: "range"
 		const el = input(type)
+		if (d.widget === "dial" && dialOptions(d.dial).mode === "rotation") {
+			el.addEventListener(EVENT_KEY_DOWN, (event) => {
+				const direction = ["ArrowUp", "ArrowRight"].includes(event.key)
+					? 1
+					: ["ArrowDown", "ArrowLeft"].includes(event.key)
+						? -1
+						: 0
+				if (!direction || max === min) {
+					return
+				}
+				event.preventDefault()
+				const step =
+					(d.step && d.step > 0 ? d.step : (max - min) / 100) * (event.shiftKey ? 0.1 : 1)
+				const next = denormalize(
+					d,
+					dialPosition(
+						normalize(d, el.valueAsNumber) + (direction * step) / (max - min),
+						dialOptions(d.dial)
+					)
+				)
+				el.value = String(next)
+				apply(next)
+			})
+		}
 		el.addEventListener(type === "text" ? EVENT_CHANGE : EVENT_INPUT, () => {
 			apply(
 				type === "checkbox"

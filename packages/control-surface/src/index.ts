@@ -1,4 +1,7 @@
 export { ControlSurface } from "./surface"
 export { GpuSurfaceRenderer } from "./renderer"
+export { sourceTheme } from "./themes"
 export { createDomGui, createDomControl } from "./dom"
+export { createDialControl, createPanControl, createRotationControl } from "./widgets"
+export type { DialControlOptions } from "./widgets"
 export * from "./types"

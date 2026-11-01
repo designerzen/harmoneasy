@@ -1,5 +1,6 @@
 import { createDomControl } from "./dom"
 import { contactPressure } from "./pressure"
+import { sourceTheme } from "./themes"
 import {
 	EVENT_ABORT,
 	EVENT_BLUR,
@@ -23,6 +24,8 @@ import {
 	bindingKey,
 	clamp,
 	denormalize,
+	dialOptions,
+	dialPosition,
 	layoutWidgets,
 	normalize,
 	sameValue,
@@ -30,7 +33,13 @@ import {
 	widgetChoices
 } from "./model"
 import { GpuSurfaceRenderer, type WidgetVisual } from "./renderer"
-import type { ControlBinding, ControlValue, SurfaceState, SurfaceWidget } from "./types"
+import type {
+	ControlBinding,
+	ControlValue,
+	SurfaceState,
+	SurfaceWidget,
+	SurfaceVisualEffects
+} from "./types"
 
 interface Entry {
 	config: SurfaceWidget
@@ -54,8 +63,11 @@ interface Gesture {
 	startValue: number
 	axis: number
 	pressure: number
+	angle?: number
+	position: number
 }
 export interface SurfaceOptions {
+	visualEffects?: SurfaceVisualEffects
 	state: SurfaceState
 	bindings: ControlBinding[]
 	toolbarHost?: HTMLElement
@@ -375,6 +387,9 @@ export class ControlSurface {
 			}
 			this.renderer = renderer
 			renderer.setTheme(this.options.state.theme ?? "neon")
+			if (this.options.visualEffects) {
+				renderer.setVisualEffects(this.options.visualEffects)
+			}
 			this.element.classList.add("cs-gpu-ready")
 		} catch (error) {
 			if (!this.disposed) {
@@ -413,6 +428,10 @@ export class ControlSurface {
 					y = bindings.get(config.yKey)!
 				binding = {
 					key: bindingKey(x.key, y.key),
+					sourceId:
+						(x.sourceId ?? x.sourceLabel) === (y.sourceId ?? y.sourceLabel)
+							? (x.sourceId ?? x.sourceLabel)
+							: bindingKey(x.sourceId ?? x.sourceLabel, y.sourceId ?? y.sourceLabel),
 					sourceLabel: `${x.sourceLabel} / ${y.sourceLabel}`,
 					descriptor: {
 						id: "xy",
@@ -466,6 +485,12 @@ export class ControlSurface {
 					: binding.descriptor.widget
 			const element = document.createElement("div")
 			element.className = "cs-widget"
+			const sourceId = binding.sourceId ?? binding.sourceLabel
+			element.dataset.sourceId = sourceId
+			element.style.setProperty("--cs-source", sourceTheme(sourceId).cssAccent)
+			element.title = `${binding.sourceLabel}: ${binding.descriptor.label}`
+			element.setAttribute("role", "group")
+			element.setAttribute("aria-label", element.title)
 			element.draggable = this.editing
 			element.addEventListener(EVENT_DRAG_START, (event) => {
 				;(event as DragEvent).dataTransfer?.setData(
@@ -526,7 +551,12 @@ export class ControlSurface {
 					height: 172,
 					descriptor: binding.descriptor,
 					widget,
+					dial:
+						widget === "dial"
+							? dialOptions({ ...binding.descriptor.dial, ...config.dial })
+							: undefined,
 					sourceLabel: binding.sourceLabel,
+					sourceId,
 					value: binding.descriptor.defaultValue,
 					unavailable
 				},
@@ -545,6 +575,7 @@ export class ControlSurface {
 					descriptor: {
 						...binding.descriptor,
 						widget,
+						dial: entry.visual.dial,
 						disabled: unavailable || binding.descriptor.disabled
 					}
 				},
@@ -652,7 +683,12 @@ export class ControlSurface {
 		for (const [index, entry] of this.entries.entries()) {
 			Object.assign(entry.visual, layout.items[index])
 			const r = entry.visual
-			entry.element.style.cssText = `left:${r.x}px;top:${r.y}px;width:${r.width}px;height:${r.height}px`
+			Object.assign(entry.element.style, {
+				left: `${r.x}px`,
+				top: `${r.y}px`,
+				width: `${r.width}px`,
+				height: `${r.height}px`
+			})
 		}
 	}
 	private refresh(): void {
@@ -847,7 +883,18 @@ export class ControlSurface {
 			startY: y,
 			startValue: normalize(entry.binding.descriptor, Number(value)),
 			axis,
-			pressure: clamp(pressure)
+			pressure: clamp(pressure),
+			position: normalize(entry.binding.descriptor, Number(value)),
+			angle:
+				Math.hypot(
+					x - entry.visual.x - entry.visual.width / 2,
+					y - entry.visual.y - 48 - (entry.visual.height - 76) / 2
+				) >= 6
+					? Math.atan2(
+							x - entry.visual.x - entry.visual.width / 2,
+							-(y - entry.visual.y - 48 - (entry.visual.height - 76) / 2)
+						)
+					: undefined
 		})
 		entry.visual.active = true
 		if (entry.visual.widget === "pad") {
@@ -882,7 +929,37 @@ export class ControlSurface {
 			} = entry
 		const px = clamp((x - v.x - 8 - v.width * 0.08) / (v.width * 0.84 - 16)),
 			py = clamp(1 - (y - v.y - 48 - (v.height - 76) * 0.08) / ((v.height - 76) * 0.84))
-		if (v.widget === "dial" || v.widget === "number") {
+		if (v.widget === "dial") {
+			const settings = dialOptions(v.dial)
+			const direction = settings.reverse ? -1 : 1
+			if (settings.input === "angular") {
+				const dx = x - v.x - v.width / 2,
+					dy = y - v.y - 48 - (v.height - 76) / 2
+				if (Math.hypot(dx, dy) < 6) {
+					gesture.angle = undefined
+					return
+				}
+				const angle = Math.atan2(dx, -dy)
+				if (gesture.angle !== undefined) {
+					const delta = Math.atan2(
+						Math.sin(angle - gesture.angle),
+						Math.cos(angle - gesture.angle)
+					)
+					gesture.position +=
+						((delta / ((settings.sweepAngle * Math.PI) / 180)) * direction) /
+						(fine ? 10 : 1)
+				}
+				gesture.angle = angle
+			} else {
+				gesture.position += ((gesture.startY - y) / (fine ? 1600 : 160)) * direction
+				gesture.startY = y
+			}
+			gesture.position =
+				settings.mode === "rotation"
+					? ((gesture.position % 1) + 1) % 1
+					: clamp(gesture.position)
+			void this.write(entry, denormalize(d, dialPosition(gesture.position, settings)))
+		} else if (v.widget === "number") {
 			void this.write(
 				entry,
 				denormalize(d, gesture.startValue + (gesture.startY - y) / (fine ? 1600 : 160))
@@ -1044,6 +1121,11 @@ export class ControlSurface {
 		} finally {
 			this.enteringXR = false
 		}
+	}
+	setVisualEffects(options: SurfaceVisualEffects): void {
+		const effects = { ...this.options.visualEffects, ...options }
+		this.renderer?.setVisualEffects(effects)
+		this.options.visualEffects = effects
 	}
 	async setEffect(wgsl: string): Promise<void> {
 		if (!this.renderer) {

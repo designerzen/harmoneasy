@@ -1,7 +1,14 @@
 /// <reference types="@webgpu/types" />
 import { EVENT_GPU_ERROR } from "./events"
-import { formatValue, normalize, sameValue } from "./model"
-import type { ControlDescriptor, ControlValue, WidgetType } from "./types"
+import { sourceTheme } from "./themes"
+import { dialOptions, formatValue, normalize, sameValue } from "./model"
+import type {
+	ControlDescriptor,
+	ControlValue,
+	DialOptions,
+	SurfaceVisualEffects,
+	WidgetType
+} from "./types"
 
 export interface WidgetVisual {
 	key: string
@@ -13,8 +20,10 @@ export interface WidgetVisual {
 	value: ControlValue | undefined
 	widget: WidgetType
 	sourceLabel: string
+	sourceId?: string
 	active?: boolean
 	focused?: boolean
+	dial?: DialOptions
 	unavailable?: boolean
 }
 export type SurfaceTheme = "neon" | "amber" | "ice"
@@ -28,9 +37,11 @@ interface CachedWidget {
 	descriptor: ControlDescriptor
 	widget: WidgetType
 	sourceLabel: string
+	sourceId: string | undefined
 	value: ControlValue | undefined
 	active: boolean | undefined
 	focused: boolean | undefined
+	dial: DialOptions | undefined
 	unavailable: boolean | undefined
 	disabled: boolean | undefined
 	color: number[]
@@ -48,6 +59,7 @@ const POST_SHADER = `
 @group(0) @binding(0) var surfaceTexture: texture_2d<f32>;
 @group(0) @binding(1) var surfaceSampler: sampler;
 @group(0) @binding(2) var<uniform> postFrame: vec4f;
+@group(0) @binding(3) var bloomTexture: texture_2d<f32>;
 struct PostVertex { @builtin(position) position: vec4f, @location(0) uv: vec2f }
 @vertex fn postVertex(@builtin(vertex_index) index: u32)->PostVertex {
  let positions=array<vec2f,3>(vec2f(-1,-1),vec2f(3,-1),vec2f(-1,3));
@@ -61,12 +73,34 @@ fn postEffect(uv:vec2f,time:f32)->vec4f {
  let original=textureSampleLevel(surfaceTexture,surfaceSampler,uv,0.0);
  let texel=1.0/vec2f(textureDimensions(surfaceTexture));
  var glow=vec3f(0);
- let offsets=array<vec2f,8>(vec2f(-2,-2),vec2f(0,-3),vec2f(2,-2),vec2f(-3,0),vec2f(3,0),vec2f(-2,2),vec2f(0,3),vec2f(2,2));
- for(var n=0;n<8;n++){let sample=textureSampleLevel(surfaceTexture,surfaceSampler,uv+offsets[n]*texel,0.0);glow+=max(sample.rgb-vec3f(0.25),vec3f(0));}
- return vec4f(original.rgb+glow*0.055,max(original.a,max(glow.r,max(glow.g,glow.b))*0.055));
+ if(postFrame.y>0.0) {
+  let step=vec2f(0,postFrame.w/4.0)/vec2f(textureDimensions(bloomTexture));
+  let weights=array<f32,5>(0.06,0.24,0.4,0.24,0.06);
+  for(var n=0;n<5;n++){
+   glow+=textureSampleLevel(bloomTexture,surfaceSampler,uv+step*(f32(n)-2.0)*0.5,0.0).rgb*weights[n];
+  }
+ }
+ glow*=postFrame.y*1.8;
+ let scan=1.0-postFrame.z*(0.5+0.5*cos(uv.y/texel.y*2.0943951));
+ return vec4f(original.rgb*scan+glow,max(original.a,max(glow.r,max(glow.g,glow.b))));
+}`
+const BLOOM_EXTRACT = `
+fn postEffect(uv:vec2f,time:f32)->vec4f {
+ let texel=1.0/vec2f(textureDimensions(surfaceTexture));
+ let offsets=array<vec2f,4>(vec2f(-1,-1),vec2f(1,-1),vec2f(-1,1),vec2f(1,1));
+ var bright=vec3f(0);
+ for(var n=0;n<4;n++){bright+=max(textureSampleLevel(surfaceTexture,surfaceSampler,uv+offsets[n]*texel,0.0).rgb-vec3f(0.3),vec3f(0))*0.25;}
+ return vec4f(bright,1);
+}`
+const BLOOM_BLUR = `
+fn postEffect(uv:vec2f,time:f32)->vec4f {
+ let step=vec2f(postFrame.w/4.0,0)/vec2f(textureDimensions(surfaceTexture));
+ let weights=array<f32,5>(0.06,0.24,0.4,0.24,0.06);var glow=vec3f(0);
+ for(var n=0;n<5;n++){glow+=textureSampleLevel(surfaceTexture,surfaceSampler,uv+step*(f32(n)-2.0)*0.5,0.0).rgb*weights[n];}
+ return vec4f(glow,1);
 }`
 const SHADER = `
-struct Frame { projection: mat4x4f, viewport: vec2f, time: f32, motion: f32 }
+struct Frame { projection: mat4x4f, viewport: vec2f, time: f32, motion: f32, effects: vec4f }
 @group(0) @binding(0) var<uniform> frame: Frame;
 @group(0) @binding(1) var atlas: texture_2d<f32>;
 @group(0) @binding(2) var atlasSampler: sampler;
@@ -98,57 +132,85 @@ fn radialMark(p:vec2f,angle:f32,inner:f32,outer:f32,weight:f32)->f32 {
  let nearest=direction*clamp(dot(p,direction),inner,outer);
  return line(length(p-nearest),weight);
 }
+fn chassis(distance:f32,top:f32,pressed:f32)->vec4f {
+ let mask=1.0-smoothstep(-0.5,0.5,distance);
+ let bevel=1.0-smoothstep(0.0,2.0,abs(distance+2.0));
+ let face=vec3f(0.028,0.041,0.058)*(0.7+top*0.5)*(1.0-pressed*0.22);
+ let rim=vec3f(0.12,0.16,0.2)*bevel*(0.15+top*0.85);
+ return vec4f((face+rim)*mask,mask)*frame.effects.x;
+}
 /* EFFECT */
 @fragment fn fragmentMain(i: VertexOutput) -> @location(0) vec4f {
  let kind=i.params.x; let value=i.params.y; let second=i.params.z; let engaged=i.params.w;
- let size=i.rect.zw; let p=(i.uv-0.5)*size; var light=0.0; var fill=0.0; var color=i.color.rgb;
+ let size=i.rect.zw; let p=(i.uv-0.5)*size; var light=0.0; var fill=0.0; var color=i.color.rgb;var material=vec4f(0);
+ let top=clamp(0.65-i.uv.y*0.6-i.uv.x*0.15,0.0,1.0);
  if (kind>8.5&&kind<9.5) {
   let alpha=textureSampleLevel(atlas,atlasSampler,i.textureRect.xy+i.uv*i.textureRect.zw,0.0).a;
   return vec4f(i.color.rgb,alpha*i.color.a);
  }
  if (kind<0.5) {
-  let edge=box(p,size*0.5-vec2f(2),10);
-  let grid=max(line((i.uv.x*size.x)%16.0,0.25),line((i.uv.y*size.y)%16.0,0.25));
+  let pattern=i.extra.x;
+  let edge=box(p,size*0.5-vec2f(2),select(10.0,3.0,pattern>0.5&&pattern<1.5));
+  let grid=select(select(max(line((p.x)%16.0,0.25),line((p.y)%16.0,0.25)),line((p.x+p.y)%14.0,0.35),pattern>0.5),line(length(p)%18.0,0.3),pattern>1.5);
   let a=1.0-smoothstep(0.0,1.0,edge);
-  let rgb=mix(vec3f(0.022,0.031,0.048),i.color.rgb,grid*0.018)+i.color.rgb*line(edge,0.6)*(0.15+engaged*0.55);
+  let bevel=(1.0-smoothstep(0.0,2.0,abs(edge+3.0)))*top*frame.effects.x;
+  let rail=line(p.x+size.x*0.5-5.0,1.3)*step(abs(p.y),size.y*0.5-12.0);
+  let rgb=mix(vec3f(0.022,0.031,0.048)*(0.85+top*0.3),i.color.rgb,0.025+grid*0.025)+vec3f(0.07,0.1,0.13)*bevel+i.color.rgb*(line(edge,0.6)*(0.3+engaged*0.65)+rail*0.55);
   return surfaceEffect(vec4f(rgb,a),i.uv,frame.time);
  } else if (kind<1.5) {
   color=settingColor(value);
   let radius=min(size.x,size.y)*0.34; let dist=length(p)-radius;
-  let angle=atan2(p.x,-p.y); let t=(angle+2.35619449)/4.71238898;
+  material=chassis(length(p)-(radius-5.0),top,engaged);
+  material=vec4f(material.rgb+vec3f(0.07,0.09,0.12)*(1.0-smoothstep(0.0,1.5,abs(length(p+vec2f(0,2.0))-(radius-8.0))))*top*frame.effects.x,material.a);
+  let start=i.textureRect.x; let sweep=max(0.001,i.textureRect.y);
+  let position=select(value,1.0-value,i.textureRect.z>0.5);
+  let angle=atan2(p.x,-p.y); let t=((angle-start+12.56637061)%6.283185307)/sweep;
   let inArc=select(0.0,1.0,t>=0.0&&t<=1.0);
-  light=line(dist,2.2)*inArc*select(0.12,1.0,t<=value);
-  let endpoint=max(radialMark(p,-2.35619449,radius-2.0,radius+9.0,1.2),radialMark(p,2.35619449,radius-2.0,radius+9.0,1.2));
+  let filled=select(t<=position,t>=min(0.5,position)&&t<=max(0.5,position),second>0.5&&second<1.5);
+  light=line(dist,2.2)*inArc*select(0.12,1.0,filled);
+  let endpoint=max(radialMark(p,start,radius-2.0,radius+9.0,1.2),radialMark(p,start+sweep,radius-2.0,radius+9.0,1.2));
   light=max(light,endpoint*0.55);
-  let current=radialMark(p,value*4.71238898-2.35619449,radius-5.0-engaged*4.0,radius+8.0+engaged*5.0,1.8);
+  if (second>0.5&&second<1.5) { light=max(light,radialMark(p,start+sweep*0.5,radius-2.0,radius+9.0,1.0)*0.45); }
+  if (i.extra.x>0.0) {
+   let tick=round(clamp(t,0.0,1.0)*i.extra.x)/i.extra.x;
+   let inner=select(radius-1.0,radius-5.0,i.textureRect.w<0.5||i.textureRect.w>1.5);
+   let outer=select(radius+4.0,radius+1.0,i.textureRect.w<0.5);
+   light=max(light,radialMark(p,start+tick*sweep,inner,outer,0.7)*inArc*0.3);
+  }
+  let current=radialMark(p,start+position*sweep,radius-5.0-engaged*4.0,radius+8.0+engaged*5.0,1.8);
   light=max(light,current);
   fill=(1.0-smoothstep(radius-7.0,radius-5.0,length(p)))*0.055;
  } else if (kind<2.5 || (kind>6.5&&kind<7.5)) {
   let w=size.x*0.42; let x=-w+value*w*2.0;
+  material=chassis(box(p,vec2f(w+6.0,8.0),7.0),1.0-top,0.0);
   light=line(p.y,2.0)*step(abs(p.x),w)*select(0.1,0.8,p.x<=x);
   if (kind<2.5) {
    color=settingColor(value);
    let knob=length(p-vec2f(x,0));
+   let cap=chassis(knob-9.0,top,engaged);material=mix(material,cap,cap.a);
    light=max(light,line(knob-10.0,1.8));
    fill=max(fill,(1.0-smoothstep(8.0,10.0,knob))*0.5);
    if (second>=0.0) {
     let upper=length(p-vec2f(-w+second*w*2.0,0));
+    let upperCap=chassis(upper-9.0,top,engaged);material=mix(material,upperCap,upperCap.a);
     light=max(light,line(upper-10.0,1.8));
     fill=max(fill,(1.0-smoothstep(8.0,10.0,upper))*0.5);
    }
   } else { light=max(light,line(length(p-vec2f(x,0)),5.0)); }
  } else if (kind<3.5) {
   let w=min(size.x*0.25,36.0); let d=box(p,vec2f(w,14),14);
+  material=chassis(d-3.0,1.0-top,0.0);
   light=line(d,1.0)*0.45+line(length(p-vec2f(mix(-w+15.0,w-15.0,value),0))-9.0,2.5);
   fill=(1.0-smoothstep(-1.0,0.0,d))*(0.04+value*0.08);
  } else if (kind<4.5) {
   let extent=size*0.42; let d=box(p,extent,4);
+  material=chassis(d,1.0-top,0.0);
   light=line(d,0.6)*0.25;
   let point=vec2f(mix(-extent.x,extent.x,value),mix(extent.y,-extent.y,second));
   light=max(light,max(line(p.x-point.x,0.4),line(p.y-point.y,0.4))*step(max(abs(p.x)/extent.x,abs(p.y)/extent.y),1.0)*0.25);
   light=max(light,line(length(p-point),5.0));
  } else if (kind<5.5) {
-  let d=box(p,size*0.4,6); light=line(d,1.1)*(0.45+engaged*0.55); fill=(1.0-smoothstep(-1.0,0.0,d))*(0.04+engaged*0.18);
+  let d=box(p,size*0.4,6); material=chassis(d,top,engaged);light=line(d,1.1)*(0.45+engaged*0.55); fill=(1.0-smoothstep(-1.0,0.0,d))*(0.04+engaged*0.18);
  } else if (kind<6.5) {
   let count=max(1.0,i.extra.x); let segment=floor(i.uv.x*count); let center=(segment+0.5)/count;
   let d=length(vec2f((i.uv.x-center)*size.x,p.y))-7.0;
@@ -156,16 +218,18 @@ fn radialMark(p:vec2f,angle:f32,inner:f32,outer:f32,weight:f32)->f32 {
   fill=(1.0-smoothstep(-1.0,0.0,d))*select(0.0,0.4,abs(segment-value)<0.1);
  } else if (kind>9.5) {
   let d=box(p,size*0.4,10);
+  material=chassis(d,top,engaged);
   let pressure=clamp(value*engaged,0.0,1.0);
   light=line(d,1.8)*(0.14+pressure*1.6);
   fill=(1.0-smoothstep(-1.0,0.0,d))*(0.015+pressure*0.8);
  } else {
   let d=box(p,size*0.43,4); light=line(d,0.6)*0.35;
+  material=chassis(d,1.0-top,0.0);
  }
  let pulse=1.0+sin(frame.time*3.0)*engaged*0.12*frame.motion;
  let intensity=(light+fill)*pulse;
- let rgb=color*intensity;
- return surfaceEffect(vec4f(rgb,clamp(intensity,0.0,1.0)*i.color.a),i.uv,frame.time);
+ let rgb=color*intensity+material.rgb*(vec3f(0.75)+i.color.rgb*0.5);
+ return surfaceEffect(vec4f(rgb,max(clamp(intensity,0.0,1.0),material.a)*i.color.a),i.uv,frame.time);
 }`
 
 /** One instanced pipeline for widget geometry and atlas text. No per-widget GPU objects. */
@@ -179,13 +243,16 @@ export class GpuSurfaceRenderer {
 	private postBinding?: GPUBindGroup
 	private postUniform: GPUBuffer
 	private sceneTexture?: GPUTexture
+	private bloomTextures?: [GPUTexture, GPUTexture]
+	private bloomPipelines?: [GPURenderPipeline, GPURenderPipeline]
+	private bloomBindings?: [GPUBindGroup, GPUBindGroup]
 	private capacity = 4096
 	private instances = new Float32Array(this.capacity * STRIDE)
 	private instanceCount = 0
 	private building: number[] = []
 	private cache = new Map<WidgetVisual, CachedWidget>()
 	private epoch = 0
-	private frameData = new Float32Array(20)
+	private frameData = new Float32Array(24)
 	private postData = new Float32Array(4)
 	private projection = new Float32Array(16)
 	private disposed = false
@@ -193,6 +260,8 @@ export class GpuSurfaceRenderer {
 	private active = false
 	private screenSignature = ""
 	private color = COLORS.neon
+	private drawingColor = COLORS.neon
+	private visualEffects = { bloom: 0.6, bloomRadius: 6, depth: 0.9, scanlines: 0.025 }
 	format: GPUTextureFormat
 	private effect = DEFAULT_EFFECT
 	private postEffect = DEFAULT_POST_EFFECT
@@ -209,7 +278,7 @@ export class GpuSurfaceRenderer {
 			usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
 		})
 		this.uniform = device.createBuffer({
-			size: 80,
+			size: 96,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
 		})
 		this.postUniform = device.createBuffer({
@@ -358,6 +427,25 @@ export class GpuSurfaceRenderer {
 	}
 	/** A shared full-surface filter pass. The hook can sample surfaceTexture/surfaceSampler. */
 	async setPostEffect(effect: string): Promise<void> {
+		const pipeline = await this.createPostPipeline(effect)
+		const bloom =
+			effect === DEFAULT_POST_EFFECT
+				? await Promise.all([
+						this.createPostPipeline(BLOOM_EXTRACT),
+						this.createPostPipeline(BLOOM_BLUR)
+					])
+				: undefined
+		if (this.disposed) {
+			return
+		}
+		this.postPipeline = pipeline
+		this.postEffect = effect
+		this.bloomPipelines = bloom
+		this.bloomBindings = undefined
+		this.dirty = true
+		this.postBinding = undefined
+	}
+	private async createPostPipeline(effect: string): Promise<GPURenderPipeline> {
 		const module = this.device.createShaderModule({
 			code: POST_SHADER.replace("/* POST_EFFECT */", effect)
 		})
@@ -367,22 +455,33 @@ export class GpuSurfaceRenderer {
 		if (errors.length) {
 			throw new Error(errors.map((e) => e.message).join("\n"))
 		}
-		const pipeline = await this.device.createRenderPipelineAsync({
+		return this.device.createRenderPipelineAsync({
 			layout: "auto",
 			vertex: { module, entryPoint: "postVertex" },
 			fragment: { module, entryPoint: "postFragment", targets: [{ format: this.format }] },
 			primitive: { topology: "triangle-list" }
 		})
-		if (this.disposed) {
-			return
-		}
-		this.postPipeline = pipeline
-		this.postEffect = effect
-		this.dirty = true
-		this.postBinding = undefined
 	}
 	setTheme(theme: SurfaceTheme): void {
 		this.color = COLORS[theme]
+	}
+	setVisualEffects(options: SurfaceVisualEffects): void {
+		const next = { ...this.visualEffects }
+		for (const name of ["bloom", "bloomRadius", "depth", "scanlines"] as const) {
+			const value = options[name]
+			if (value === undefined) {
+				continue
+			}
+			if (!Number.isFinite(value)) {
+				throw new RangeError(`${name} must be finite`)
+			}
+			next[name] = Math.max(
+				0,
+				Math.min(name === "bloomRadius" ? 16 : name === "scanlines" ? 0.2 : 1, value)
+			)
+		}
+		this.visualEffects = next
+		this.dirty = true
 	}
 	private quad(
 		x: number,
@@ -406,7 +505,7 @@ export class GpuSurfaceRenderer {
 			a,
 			b,
 			active,
-			...this.color,
+			...this.drawingColor,
 			alpha,
 			extra,
 			0,
@@ -475,14 +574,18 @@ export class GpuSurfaceRenderer {
 				cached.descriptor !== w.descriptor ||
 				cached.widget !== w.widget ||
 				cached.sourceLabel !== w.sourceLabel ||
+				cached.sourceId !== w.sourceId ||
 				cached.active !== w.active ||
 				cached.focused !== w.focused ||
+				cached.dial !== w.dial ||
 				cached.unavailable !== w.unavailable ||
 				cached.disabled !== w.descriptor.disabled ||
 				cached.color !== this.color ||
 				!sameValue(cached.value, w.value)
 			if (changed) {
 				this.building = []
+				const theme = sourceTheme(w.sourceId ?? w.sourceLabel)
+				this.drawingColor = theme.accent
 				const d = w.descriptor,
 					v = w.value,
 					active = w.active || w.focused ? 1 : 0,
@@ -491,8 +594,8 @@ export class GpuSurfaceRenderer {
 				const target = Array.isArray(v)
 					? v.map((n) => normalize(d, n))
 					: [typeof v === "boolean" ? Number(v) : normalize(d, Number(v))]
-				this.quad(w.x, w.y, w.width, w.height, 0, 0, 0, active, 0, alpha)
-				this.text(w.sourceLabel, w.x + 12, w.y + 9, w.width - 24, 0.5 * alpha)
+				this.quad(w.x, w.y, w.width, w.height, 0, 0, 0, active, theme.pattern, alpha)
+				this.text(w.sourceLabel, w.x + 12, w.y + 9, w.width - 24, 0.85 * alpha)
 				this.text(d.label, w.x + 12, w.y + 27, w.width - 24, alpha)
 				const x = w.x + 8,
 					y = w.y + 48,
@@ -514,6 +617,7 @@ export class GpuSurfaceRenderer {
 					color: 8,
 					display: 8
 				}[w.widget]
+				const dial = dialOptions(w.dial ?? d.dial)
 				this.quad(
 					x,
 					y,
@@ -521,10 +625,22 @@ export class GpuSurfaceRenderer {
 					height,
 					kind,
 					w.widget === "radio" ? choice : target[0],
-					w.widget === "xy" || w.widget === "range" ? target[1] : -1,
+					w.widget === "dial"
+						? ["level", "pan", "rotation"].indexOf(dial.mode)
+						: w.widget === "xy" || w.widget === "range"
+							? target[1]
+							: -1,
 					active,
-					d.choices?.length ?? 0,
-					alpha
+					w.widget === "dial" ? dial.ticks : (d.choices?.length ?? 0),
+					alpha,
+					w.widget === "dial"
+						? [
+								(dial.startAngle * Math.PI) / 180,
+								(dial.sweepAngle * Math.PI) / 180,
+								Number(dial.reverse),
+								["inward", "outward", "both"].indexOf(dial.tickDirection)
+							]
+						: undefined
 				)
 				if (w.widget === "radio" && d.choices?.length) {
 					const segment = width / d.choices.length
@@ -556,9 +672,11 @@ export class GpuSurfaceRenderer {
 					descriptor: d,
 					widget: w.widget,
 					sourceLabel: w.sourceLabel,
+					sourceId: w.sourceId,
 					value: Array.isArray(v) ? [...v] : v,
 					active: w.active,
 					focused: w.focused,
+					dial: w.dial,
 					unavailable: w.unavailable,
 					disabled: d.disabled,
 					color: this.color,
@@ -584,6 +702,7 @@ export class GpuSurfaceRenderer {
 			}
 		}
 		this.building = []
+		this.drawingColor = this.color
 		for (const cursor of cursors) {
 			this.quad(cursor.x - 12, cursor.y - 12, 24, 24, 1, 1, -1, 1)
 		}
@@ -688,6 +807,7 @@ export class GpuSurfaceRenderer {
 		const frame = this.frameData
 		frame.set(projection)
 		frame.set([width, height, time, motion ? 1 : 0], 16)
+		frame.set([this.visualEffects.depth, 0, 0, 0], 20)
 		this.device.queue.writeBuffer(this.uniform, 0, frame)
 		const targetWidth =
 				targetSize?.width ?? (viewport ? viewport.x + viewport.width : this.canvas.width),
@@ -704,6 +824,18 @@ export class GpuSurfaceRenderer {
 				format: this.format,
 				usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
 			})
+			this.bloomTextures?.forEach((texture) => texture.destroy())
+			const createBloom = () =>
+				this.device.createTexture({
+					size: [
+						Math.max(1, Math.ceil(targetWidth / 4)),
+						Math.max(1, Math.ceil(targetHeight / 4))
+					],
+					format: this.format,
+					usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
+				})
+			this.bloomTextures = [createBloom(), createBloom()]
+			this.bloomBindings = undefined
 			this.postBinding = undefined
 		}
 		if (!this.postBinding) {
@@ -718,11 +850,19 @@ export class GpuSurfaceRenderer {
 							minFilter: "linear"
 						})
 					},
-					{ binding: 2, resource: { buffer: this.postUniform } }
+					{ binding: 2, resource: { buffer: this.postUniform } },
+					...(this.postEffect === DEFAULT_POST_EFFECT
+						? [{ binding: 3, resource: this.bloomTextures![1].createView() }]
+						: [])
 				]
 			})
 		}
 		this.postData[0] = time
+		this.postData[1] = this.visualEffects.bloom
+		this.postData[2] = this.visualEffects.scanlines
+		const bloomRadius =
+			this.visualEffects.bloomRadius * ((viewport?.width ?? targetWidth) / Math.max(1, width))
+		this.postData[3] = bloomRadius
 		this.device.queue.writeBuffer(this.postUniform, 0, this.postData)
 		const encoder = this.device.createCommandEncoder(),
 			pass = encoder.beginRenderPass({
@@ -740,13 +880,14 @@ export class GpuSurfaceRenderer {
 		}
 		if (clip && this.postEffect === DEFAULT_POST_EFFECT) {
 			// Include the bloom kernel's neighbouring texels in the scene pass.
-			const x = Math.max(0, clip.x - 3),
-				y = Math.max(0, clip.y - 3)
+			const padding = Math.ceil(bloomRadius) + 1
+			const x = Math.max(0, clip.x - padding),
+				y = Math.max(0, clip.y - padding)
 			pass.setScissorRect(
 				x,
 				y,
-				Math.min(targetWidth, clip.width + 3) - x,
-				Math.min(targetHeight, clip.height + 3) - y
+				Math.min(targetWidth, clip.width + padding) - x,
+				Math.min(targetHeight, clip.height + padding) - y
 			)
 		}
 		pass.setPipeline(this.pipeline)
@@ -754,6 +895,60 @@ export class GpuSurfaceRenderer {
 		pass.setVertexBuffer(0, this.buffer)
 		pass.draw(6, this.instanceCount)
 		pass.end()
+		if (this.bloomPipelines && this.bloomTextures && this.visualEffects.bloom > 0) {
+			if (!this.bloomBindings) {
+				const sampler = this.device.createSampler({
+					magFilter: "linear",
+					minFilter: "linear"
+				})
+				const bind = (pipeline: GPURenderPipeline, texture: GPUTexture) =>
+					this.device.createBindGroup({
+						layout: pipeline.getBindGroupLayout(0),
+						entries: [
+							{ binding: 0, resource: texture.createView() },
+							{ binding: 1, resource: sampler },
+							{ binding: 2, resource: { buffer: this.postUniform } }
+						]
+					})
+				this.bloomBindings = [
+					bind(this.bloomPipelines[0], this.sceneTexture),
+					bind(this.bloomPipelines[1], this.bloomTextures[0])
+				]
+			}
+			for (let i = 0; i < 2; i++) {
+				const bloom = encoder.beginRenderPass({
+					colorAttachments: [
+						{
+							view: this.bloomTextures[i].createView(),
+							loadOp: "clear",
+							storeOp: "store",
+							clearValue: { r: 0, g: 0, b: 0, a: 0 }
+						}
+					]
+				})
+				if (clip) {
+					const padding = Math.ceil(bloomRadius * 2) + 8
+					const x = Math.max(0, Math.floor((clip.x - padding) / 4)),
+						y = Math.max(0, Math.floor((clip.y - padding) / 4))
+					bloom.setScissorRect(
+						x,
+						y,
+						Math.min(
+							this.bloomTextures[i].width,
+							Math.ceil((clip.width + padding) / 4)
+						) - x,
+						Math.min(
+							this.bloomTextures[i].height,
+							Math.ceil((clip.height + padding) / 4)
+						) - y
+					)
+				}
+				bloom.setPipeline(this.bloomPipelines[i])
+				bloom.setBindGroup(0, this.bloomBindings[i])
+				bloom.draw(3)
+				bloom.end()
+			}
+		}
 		const post = encoder.beginRenderPass({
 			colorAttachments: [
 				{ view, loadOp: "clear", storeOp: "store", clearValue: { r: 0, g: 0, b: 0, a: 0 } }
@@ -777,6 +972,7 @@ export class GpuSurfaceRenderer {
 		this.uniform.destroy()
 		this.postUniform.destroy()
 		this.sceneTexture?.destroy()
+		this.bloomTextures?.forEach((texture) => texture.destroy())
 		this.atlas.destroy()
 		this.context.unconfigure()
 		this.device.destroy()
