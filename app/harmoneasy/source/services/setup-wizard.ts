@@ -92,7 +92,7 @@ export function createSetupWizard(
 	const dialog = document.createElement("dialog")
 	dialog.id = "setup-wizard"
 	dialog.setAttribute("aria-labelledby", "setup-wizard-title")
-	dialog.innerHTML = `<header><div><p>Setup wizard</p><h2 id="setup-wizard-title">Let’s find a setup for you</h2></div><button type="button" class="tertiary" aria-label="Close setup wizard">Close</button></header>
+	dialog.innerHTML = `<header><div><p>Setup wizard</p><h2 id="setup-wizard-title">Let’s find a setup for you</h2></div><button type="button" class="tertiary close-icon" aria-label="Close setup wizard"></button></header>
 		<div class="wizard-body"><p class="wizard-progress" role="status"></p><ol class="wizard-stepper" aria-label="Setup steps"></ol><section class="wizard-question" aria-labelledby="wizard-question-title"></section><p class="wizard-status" role="status" aria-live="polite"></p></div>
 		<footer><button type="button" class="secondary" data-back>Back</button><button type="button" class="primary" data-next>Next</button></footer>`
 	document.body.append(dialog)

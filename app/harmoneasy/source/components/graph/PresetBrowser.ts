@@ -79,7 +79,7 @@ export function createPresetBrowser({
 	)
 	header.append(heading)
 	if (!startup) {
-		const dismiss = button("Close", close)
+		const dismiss = button("", close, "close-icon tertiary")
 		dismiss.setAttribute("aria-label", "Close presets")
 		header.append(dismiss)
 	}
@@ -169,7 +169,7 @@ export function createPresetBrowser({
 	toolsTitle.id = `library-title-${crypto.randomUUID()}`
 	tools.setAttribute("aria-labelledby", toolsTitle.id)
 	const toolsHeader = element("header")
-	const dismissTools = button("Close", () => tools.close())
+	const dismissTools = button("", () => tools.close(), "close-icon tertiary")
 	dismissTools.setAttribute("aria-label", "Close library options")
 	toolsHeader.append(toolsTitle, dismissTools)
 	const openTools = button("Library options", () => tools.showModal(), "preset-library-trigger")

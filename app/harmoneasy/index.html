@@ -20,7 +20,7 @@
 				<button class="primary" form="start-form" type="submit" name="startup" value="room">
 					Start shared setup
 				</button>
-				<button class="tertiary" id="dismiss-start-room" type="button" aria-label="Dismiss room invitation" title="Dismiss room invitation">×</button>
+				<button class="tertiary close-icon" id="dismiss-start-room" type="button" aria-label="Dismiss room invitation" title="Dismiss room invitation"></button>
 			</div>
 			<header class="start-heading">
 				<button
@@ -234,9 +234,7 @@
 		<dialog id="netronome-dialog" aria-labelledby="netronome-title" data-midi-ignore>
 			<header>
 				<h2 id="netronome-title">Shared room</h2>
-				<button type="button" id="netronome-close" aria-label="Close shared room dialog">
-					Close
-				</button>
+				<button class="close-icon" type="button" id="netronome-close" aria-label="Close shared room dialog"></button>
 			</header>
 			<div class="netronome-dialog-content">
 				<div id="netronome-choice">
@@ -362,9 +360,7 @@
 		>
 			<header>
 				<h2 id="command-title">Commands</h2>
-				<button type="button" data-command-close aria-label="Close command palette">
-					Esc
-				</button>
+				<button class="close-icon" type="button" data-command-close aria-label="Close command palette"></button>
 			</header>
 			<label class="sr-only" for="command-search">Find a command or control</label>
 			<input
@@ -510,7 +506,7 @@
 			</div>
 			<div class="recording-actions">
 				<button type="button" id="recording-save" autofocus>Save audio…</button>
-				<button type="button" id="recording-close">Close</button>
+				<button class="close-icon" type="button" id="recording-close" aria-label="Close"></button>
 			</div>
 		</dialog>
 		<main>
@@ -590,7 +586,7 @@
 			</header>
 			<pre id="info-message" class="selectable" role="status" aria-live="polite"></pre>
 			<form method="dialog">
-				<button class="btn-close" type="submit" formmethod="dialog" autofocus>Close</button>
+				<button class="btn-close close-icon" type="submit" formmethod="dialog" autofocus aria-label="Close"></button>
 			</form>
 		</dialog>
 
@@ -609,7 +605,7 @@
 					</p>
 				</div>
 				<form method="dialog">
-					<button type="submit" aria-label="Close OpenDAW export">Close</button>
+					<button class="close-icon" type="submit" aria-label="Close OpenDAW export"></button>
 				</form>
 			</header>
 			<div class="opendaw-code-panel">
@@ -649,7 +645,7 @@
 				<p id="error-solution"></p>
 			</div>
 			<form method="dialog">
-				<button autofocus class="btn-close" type="submit" formmethod="dialog">Close</button>
+				<button autofocus class="btn-close close-icon" type="submit" formmethod="dialog" aria-label="Close"></button>
 			</form>
 		</dialog>
 
@@ -693,7 +689,7 @@
 				</button>
 			</menu>
 			<form method="dialog">
-				<button class="btn-close" type="submit" formmethod="dialog">Close</button>
+				<button class="btn-close close-icon" type="submit" formmethod="dialog" aria-label="Close"></button>
 			</form>
 		</dialog>
 
@@ -707,7 +703,7 @@
 		<dialog id="about-dialog" closedby="any" aria-labelledby="about-title">
 			<header>
 				<span class="about-label">About</span>
-				<form method="dialog"><button type="submit" autofocus>Close</button></form>
+				<form method="dialog"><button class="close-icon" type="submit" autofocus aria-label="Close"></button></form>
 			</header>
 			<div
 				class="about-content selectable"
@@ -830,7 +826,7 @@
 			</p>
 			<div id="midi-control-settings"></div>
 			<div id="midi-macro-controls"></div>
-			<form method="dialog"><button class="btn-close" type="submit">Close</button></form>
+			<form method="dialog"><button class="btn-close close-icon" type="submit" aria-label="Close"></button></form>
 		</dialog>
 
 		<dialog id="midi-devices-dialog" closedby="any" aria-labelledby="midi-devices-title">
@@ -860,7 +856,7 @@
 				</table>
 			</div>
 			<form method="dialog">
-				<button class="btn-close" type="submit" autofocus>Close</button>
+				<button class="btn-close close-icon" type="submit" autofocus aria-label="Close"></button>
 			</form>
 		</dialog>
 
@@ -955,7 +951,7 @@
 				</fieldset>
 			</form>
 			<form method="dialog">
-				<button class="btn-close" type="submit" formmethod="dialog" autofocus>Close</button>
+				<button class="btn-close close-icon" type="submit" formmethod="dialog" autofocus aria-label="Close"></button>
 			</form>
 		</dialog>
 
@@ -968,7 +964,7 @@
 				<!-- Shows a collection of buttons to allow selection -->
 				<menu></menu>
 				<form method="dialog">
-					<button class="btn-close" type="submit" formmethod="dialog">Close</button>
+					<button class="btn-close close-icon" type="submit" formmethod="dialog" aria-label="Close"></button>
 				</form>
 			</dialog>
 		</template>
@@ -982,7 +978,7 @@
 				<!-- Shows a collection of buttons to allow selection -->
 				<menu></menu>
 				<form method="dialog">
-					<button class="btn-close" type="submit" formmethod="dialog">Close</button>
+					<button class="btn-close close-icon" type="submit" formmethod="dialog" aria-label="Close"></button>
 				</form>
 			</dialog>
 		</template>
@@ -996,7 +992,7 @@
 				<!-- Shows a collection of buttons to allow selection -->
 				<menu></menu>
 				<form method="dialog">
-					<button class="btn-close" type="submit" formmethod="dialog">Close</button>
+					<button class="btn-close close-icon" type="submit" formmethod="dialog" aria-label="Close"></button>
 				</form>
 			</dialog>
 		</template>
@@ -1038,9 +1034,7 @@
 					<p class="error-solution"></p>
 				</div>
 				<form method="dialog">
-					<button autofocus class="btn-close" type="submit" formmethod="dialog">
-						Close
-					</button>
+					<button autofocus class="btn-close close-icon" type="submit" formmethod="dialog" aria-label="Close"></button>
 				</form>
 			</dialog>
 		</template>

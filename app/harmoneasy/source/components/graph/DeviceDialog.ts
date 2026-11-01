@@ -26,7 +26,7 @@ function createPickerDialog(
 	content.append(picker.element)
 	const form = element("form")
 	form.method = "dialog"
-	const cancel = element("button", "btn-close", "×")
+	const cancel = element("button", "btn-close")
 	cancel.type = "submit"
 	cancel.title = "Cancel"
 	cancel.setAttribute("aria-label", cancelLabel)

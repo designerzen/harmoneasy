@@ -75,12 +75,10 @@ export function createChainSidebar(context: ChainUIContext) {
 				update()
 				buttons[index].focus()
 			},
-			"chain-sidebar-close"
+			"chain-sidebar-close close-icon"
 		)
 		close.setAttribute("aria-label", "Close sidebar")
 		close.title = `Close ${tabs[index]}`
-		close.innerHTML =
-			'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m14 6-6 6 6 6M8 12h12" /></svg>'
 		const content = element("div", "chain-sidebar-content")
 		picker =
 			index === 1

@@ -1030,10 +1030,6 @@ dialog.add-output-dialog {
 		border: 1px solid transparent;
 		border-radius: 6px;
 		background: transparent;
-
-		&::before {
-			content: none;
-		}
 	}
 }
 
@@ -2447,18 +2443,6 @@ body:has(.preset-browser[open]) {
 			padding: 0.5rem;
 			border-radius: 0 0.5rem 0.5rem 0;
 			background: var(--col-bg);
-			&::before {
-				content: none;
-			}
-			svg {
-				width: 24px;
-				height: 24px;
-				fill: none;
-				stroke: currentColor;
-				stroke-width: 2;
-				stroke-linecap: round;
-				stroke-linejoin: round;
-			}
 		}
 		.chain-sidebar-content {
 			display: flex;

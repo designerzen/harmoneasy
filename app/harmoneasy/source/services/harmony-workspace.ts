@@ -60,9 +60,12 @@ export function mountHarmonyWorkspace(
 	const parent = document.getElementById("btn-settings")?.parentElement ?? document.body
 	parent.append(open)
 	document.body.append(dialog)
+	const close = action("", () => dialog.close(), status)
+	close.className = "close-icon tertiary"
+	close.setAttribute("aria-label", "Close harmony workspace")
 	dialog.append(
 		element("h2", "Harmony workspace"),
-		action("Close", () => dialog.close(), status),
+		close,
 		status
 	)
 	const live = section(dialog, "Current scale and chord")
