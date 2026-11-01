@@ -47,7 +47,7 @@ const browser = await chromium.launch({
 	]
 })
 try {
-	const page = await browser.newPage({ viewport: { width: 960, height: 1100 } }),
+	const page = await browser.newPage({ viewport: { width: 960, height: 10000 } }),
 		errors = []
 	page.on("pageerror", (error) => errors.push(error.message))
 	await page.goto(pathToFileURL(html).href)
@@ -63,6 +63,9 @@ try {
 		"GPU initialization must compile shaders and create a working render pipeline"
 	)
 	assert.equal(await page.locator(".cs-widget").count(), 18)
+	await page.waitForFunction(
+		() => document.querySelector(".control-surface").dataset.hands === "2"
+	)
 	await page.evaluate(() => {
 		const { surface } = window.surfaceSmoke
 		const accents = new Map()
@@ -332,8 +335,17 @@ try {
 	await page.waitForFunction(() => window.surfaceSmoke.values.tab[0] === 7)
 	await page.keyboard.press("Delete")
 	await page.waitForFunction(() => window.surfaceSmoke.values.tab[0] === -1)
+	const revealAction = async (action) =>
+		page.evaluate((action) => {
+			const { surface } = window.surfaceSmoke
+			surface.focusLayout(
+				surface.options.state.widgets.find((w) => w.key === "density"),
+				action
+			)
+		}, action)
 	// Rotate a panel, resize it by keyboard, and preserve focus after sorting.
 	await page.getByRole("button", { name: "Edit layout", exact: true }).click()
+	await revealAction("Rotate")
 	await page.getByRole("button", { name: "Rotate Drum density", exact: true }).click()
 	assert.equal(
 		await page
@@ -342,7 +354,9 @@ try {
 			.evaluate((el) => el.style.transform),
 		"rotate(90deg)"
 	)
+	await revealAction("Resize")
 	await page.getByRole("button", { name: "Resize Drum density", exact: true }).press("ArrowDown")
+	await revealAction("Move later")
 	await page.getByRole("button", { name: "Move later Drum density", exact: true }).click()
 	assert.equal(
 		await page
@@ -350,7 +364,9 @@ try {
 			.evaluate((el) => el === document.activeElement),
 		true
 	)
+	await revealAction("Move earlier")
 	await page.getByRole("button", { name: "Move earlier Drum density", exact: true }).click()
+	await revealAction("Resize")
 	const resizeHandle = page.getByRole("button", { name: "Resize Drum density", exact: true })
 	await resizeHandle.scrollIntoViewIfNeeded()
 	const handleRect = await resizeHandle.boundingBox(),
@@ -382,6 +398,7 @@ try {
 	await sizeDialog.getByRole("button", { name: "Decrease height", exact: true }).click()
 	await sizeDialog.getByRole("button", { name: "Apply size", exact: true }).click()
 	assert.equal(await resizeHandle.evaluate((el) => el === document.activeElement), true)
+	await revealAction("Drag")
 	const moveHandle = page.getByRole("button", { name: "Drag Drum density", exact: true })
 	const moveRect = await moveHandle.boundingBox(),
 		targetRect = await page
@@ -413,7 +430,9 @@ try {
 		() => window.surfaceSmoke.surface.options.state.widgets[3].key === "density"
 	)
 	await layoutTouch.detach()
+	await revealAction("Move earlier")
 	await page.getByRole("button", { name: "Move earlier Drum density", exact: true }).click()
+	await revealAction("Move earlier")
 	await page.getByRole("button", { name: "Move earlier Drum density", exact: true }).click()
 	await page.getByRole("button", { name: "Perform", exact: true }).click()
 	// Actual touch contacts share an anchor and retain it when the first finger lifts.
@@ -446,8 +465,9 @@ try {
 			contacts[0].note !== 60 ||
 			contacts[1].note !== 66 ||
 			Math.abs(contacts[1].pressure - 0.8) > 0.01
-		)
+		) {
 			throw new Error("Relative touch notes or pressure are incorrect")
+		}
 	})
 	await touch.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [secondPoint] })
 	await page.waitForFunction(() => window.surfaceSmoke.values.relative.length === 7)
@@ -530,16 +550,19 @@ try {
 		)
 		for (let i = 0; i < rects.length; i++) {
 			const a = rects[i]
-			if (a.left < stage.left - 0.5 || a.right > stage.right + 0.5)
+			if (a.left < stage.left - 0.5 || a.right > stage.right + 0.5) {
 				throw new Error("A gadget escaped the surface bounds")
-			for (const b of rects.slice(i + 1))
+			}
+			for (const b of rects.slice(i + 1)) {
 				if (
 					a.left < b.right - 0.5 &&
 					a.right > b.left + 0.5 &&
 					a.top < b.bottom - 0.5 &&
 					a.bottom > b.top + 0.5
-				)
+				) {
 					throw new Error("Auto arrangement overlaps gadgets")
+				}
+			}
 		}
 	})
 	await page.evaluate(async () => {
@@ -577,29 +600,9 @@ try {
 		}
 	})
 	const gameImage = join(output, "game-style.png")
-	await page.setViewportSize({
-		width: 960,
-		height: Math.ceil(await page.evaluate(() => document.documentElement.scrollHeight))
-	})
-	await page.evaluate(() => window.scrollTo(0, 0))
-	await page.evaluate(
-		() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
-	)
-	await page.screenshot({ path: gameImage, fullPage: true })
-	const newControls = await page
-		.locator(".cs-widget")
-		.filter({ has: page.locator(".cs-piano-roll") })
-		.boundingBox()
-	const surfaceBox = await page.locator(".control-surface").boundingBox()
-	await page.screenshot({
-		path: join(output, "new-controls.png"),
-		clip: {
-			x: surfaceBox.x,
-			y: newControls.y,
-			width: surfaceBox.width,
-			height: surfaceBox.y + surfaceBox.height - newControls.y
-		}
-	})
+	await page.setViewportSize({ width: 960, height: 900 })
+	await page.waitForTimeout(100)
+	await page.screenshot({ path: gameImage })
 	await page.evaluate(() =>
 		[999, 1001, 1002, 1003, 1004].forEach((id) => window.surfaceSmoke.surface.pointerUp(id))
 	)
@@ -618,8 +621,94 @@ try {
 	assert.equal(await page.locator(".cs-status").textContent(), "")
 	const image = join(output, "surface.png")
 	await page.screenshot({ path: image, fullPage: true })
+	await page.locator(".cs-viewport").evaluate((element) => {
+		element.style.maxHeight = ""
+	})
 	await page.setViewportSize({ width: 390, height: 1100 })
 	await page.waitForTimeout(100)
+	await page.waitForFunction(
+		() => document.querySelector(".control-surface").dataset.hands === "1"
+	)
+	await page.evaluate(() => window.surfaceSmoke.surface.showPage(0))
+	await page.getByRole("button", { name: "Next page", exact: true }).click()
+	await page.evaluate(() => {
+		const { surface } = window.surfaceSmoke
+		if (surface.currentPage !== 1 || surface.pageCount < 2) {
+			throw new Error("Missing gadget pagination")
+		}
+		for (const entry of surface.entries) {
+			if (
+				entry.element.hidden !== (entry.page !== 1) ||
+				entry.element.inert !== entry.element.hidden
+			) {
+				throw new Error("Inactive page remains accessible")
+			}
+		}
+		for (let page = 0; page < surface.pageCount; page++) {
+			surface.showPage(page)
+			const stage = surface.stage.getBoundingClientRect()
+			for (const entry of surface.entries.filter((e) => e.page === page)) {
+				const r = entry.element.getBoundingClientRect()
+				if (
+					r.left < stage.left - 0.5 ||
+					r.right > stage.right + 0.5 ||
+					r.top < stage.top - 0.5 ||
+					r.bottom > stage.bottom + 0.5
+				) {
+					throw new Error("Gadget escapes its page")
+				}
+			}
+			const targets = Array.from(
+				document.querySelectorAll(
+					".control-surface button, .control-surface input, .control-surface select"
+				)
+			).filter(
+				(e) =>
+					e.checkVisibility() &&
+					!e.closest(".cs-semantic:not(.cs-piano-roll):not(.cs-guitar-tab)")
+			)
+			for (const target of targets) {
+				const r = target.getBoundingClientRect()
+				if (r.width < 43.99 || r.height < 43.99) {
+					throw new Error(
+						`Undersized target: ${target.getAttribute("aria-label")} ${r.width}x${r.height}`
+					)
+				}
+				for (const other of targets) {
+					if (target === other) {
+						continue
+					}
+					const b = other.getBoundingClientRect(),
+						dx = Math.max(0, r.left - b.right, b.left - r.right),
+						dy = Math.max(0, r.top - b.bottom, b.top - r.bottom)
+					if (Math.hypot(dx, dy) < 10.99) {
+						throw new Error(
+							`Targets too close: ${target.getAttribute("aria-label")} / ${other.getAttribute("aria-label")}`
+						)
+					}
+				}
+			}
+		}
+		surface.showPage(1)
+		if (
+			document.documentElement.scrollHeight > innerHeight ||
+			document.documentElement.scrollWidth > innerWidth
+		) {
+			throw new Error("Surface requires scrolling")
+		}
+	})
+	assert.equal(await page.locator(".cs-viewport").evaluate((element) => element.scrollTop), 0)
+	await page.getByRole("button", { name: "Previous page", exact: true }).click()
+	await page.screenshot({ path: join(output, "one-hand.png"), fullPage: true })
+	if (process.env.SURFACE_AXE_PATH) {
+		const mobileAudit = await page.evaluate(async () => {
+			const result = await axe.run(document, {
+				runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"] }
+			})
+			return result.violations.map((v) => ({ id: v.id, nodes: v.nodes.map((n) => n.target) }))
+		})
+		assert.deepEqual(mobileAudit, [], JSON.stringify(mobileAudit))
+	}
 	assert.equal(
 		await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
 		true,

@@ -2,8 +2,11 @@ import { createDomControl } from "./dom"
 import { contactPressure } from "./pressure"
 import { sourceTheme } from "./themes"
 import { isMusicGrid, musicOptions, musicRect, musicValues } from "./music"
+import { toolPages } from "./tool-pages"
+import { resizeMusicGrid } from "./music-dom"
 import { relativeRect } from "./relative-keys"
 import {
+	EVENT_RESIZE,
 	EVENT_ABORT,
 	EVENT_BLUR,
 	EVENT_FOCUS_IN,
@@ -37,6 +40,7 @@ import {
 	ergonomicOrder
 } from "./model"
 import { widgetPoint } from "./model"
+import { playingLayout } from "./layout"
 import { GpuSurfaceRenderer, type WidgetVisual } from "./renderer"
 import type {
 	ControlBinding,
@@ -50,6 +54,8 @@ const largeWidget = (widget: string) =>
 	isMusicGrid(widget) || widget === "relative-keys" || widget === "strum"
 
 interface Entry {
+	page?: number
+	tools?: ReturnType<typeof toolPages>
 	config: SurfaceWidget
 	binding: ControlBinding
 	visual: WidgetVisual
@@ -89,8 +95,19 @@ export class ControlSurface {
 	readonly element = document.createElement("section")
 	readonly canvas = document.createElement("canvas")
 	private stage = document.createElement("div")
+	private viewport = document.createElement("div")
+	private playGuide = document.createElement("p")
+	private pageNavigation = document.createElement("div")
+	private pageLabel = document.createElement("span")
+	private currentPage = 0
+	private pageCount = 1
+	private pageHeight = 400
+	private layoutMode = ""
 	private status = document.createElement("p")
 	private abort = new AbortController()
+	private previousPage = this.button("Previous page", () => this.showPage(this.currentPage - 1))
+	private nextPage = this.button("Next page", () => this.showPage(this.currentPage + 1))
+
 	private renderer?: GpuSurfaceRenderer
 	private entries: Entry[] = []
 	private unsubscribers: (() => void)[] = []
@@ -126,6 +143,17 @@ export class ControlSurface {
 		this.stage.className = "cs-stage"
 		this.canvas.setAttribute("aria-hidden", "true")
 		this.stage.append(this.canvas)
+		this.viewport.className = "cs-viewport"
+		this.viewport.tabIndex = 0
+		this.viewport.setAttribute("role", "region")
+		this.viewport.setAttribute("aria-label", "Control gadgets")
+		this.viewport.append(this.stage)
+		this.playGuide.className = "cs-play-guide"
+		this.playGuide.setAttribute("role", "status")
+		this.pageNavigation.className = "cs-page-navigation"
+		this.pageNavigation.setAttribute("aria-label", "Gadget pages")
+		this.pageLabel.setAttribute("role", "status")
+		this.pageNavigation.append(this.previousPage, this.pageLabel, this.nextPage)
 		const toolbar = this.toolbar
 		toolbar.className = "cs-toolbar"
 		const name = document.createElement("input")
@@ -261,11 +289,14 @@ export class ControlSurface {
 		this.layoutActions.append(this.button("Auto arrange", () => this.autoArrange()))
 		this.element.append(
 			this.sourceKey,
+			this.playGuide,
 			this.layoutActions,
-			this.stage,
+			this.viewport,
+			this.pageNavigation,
 			this.status,
 			this.layoutStatus
 		)
+		window.addEventListener(EVENT_RESIZE, () => this.layout(), { signal: this.abort.signal })
 		this.resize = new ResizeObserver(() => this.layout())
 		this.resize.observe(this.element)
 		this.intersection = new IntersectionObserver((entries) => {
@@ -338,20 +369,31 @@ export class ControlSurface {
 					this.pointerRect = rect
 					this.stageWidth = width
 					const scale = rect.width / width || 1
+					const playing = playingLayout(width, Math.min(rect.width, innerWidth))
+					if (this.layoutMode !== `${playing.hands}:${playing.columns}`) {
+						this.layout()
+					}
+					const visible = this.viewport.getBoundingClientRect()
 					this.renderer.prepare(
-						this.entries.map((e) => e.visual),
+						this.entries
+							.filter((e) => e.page === this.currentPage)
+							.map((e) => e.visual),
 						!this.motion.matches
 					)
 					this.renderer.render(width, this.height, time / 1000, !this.motion.matches, {
-						x: Math.max(0, -rect.left / scale),
-						y: Math.max(0, -rect.top / scale),
+						x: Math.max(0, (Math.max(0, visible.left) - rect.left) / scale),
+						y: Math.max(0, (Math.max(0, visible.top) - rect.top) / scale),
 						width: Math.max(
 							0,
-							(Math.min(innerWidth, rect.right) - Math.max(0, rect.left)) / scale
+							(Math.min(innerWidth, rect.right, visible.right) -
+								Math.max(0, rect.left, visible.left)) /
+								scale
 						),
 						height: Math.max(
 							0,
-							(Math.min(innerHeight, rect.bottom) - Math.max(0, rect.top)) / scale
+							(Math.min(innerHeight, rect.bottom, visible.bottom) -
+								Math.max(0, rect.top, visible.top)) /
+								scale
 						),
 						scale
 					})
@@ -620,6 +662,8 @@ export class ControlSurface {
 				(value, edge) => void this.write(entry, value, edge)
 			)
 			control.element.className = `cs-semantic cs-${widget}`
+			control.element.inert = this.editing
+			control.element.hidden = this.editing
 			entry.release = control.release
 			entry.visual.relative = control.relative
 			entry.visual.strum = control.strum
@@ -746,6 +790,7 @@ export class ControlSurface {
 				this.layoutHandle(resize, entry, true)
 				tools.prepend(drag)
 				tools.append(resize)
+				entry.tools = toolPages(tools, binding.descriptor.label)
 				element.append(tools)
 			}
 			this.entries.push(entry)
@@ -779,7 +824,15 @@ export class ControlSurface {
 		automatic.value = ""
 		automatic.textContent = "Automatic"
 		column.append(automatic)
-		for (let i = 0; i < Math.max(1, Math.floor((this.stage.clientWidth || 640) / 200)); i++) {
+		for (
+			let i = 0;
+			i <
+			playingLayout(
+				this.stage.clientWidth || 640,
+				this.stage.getBoundingClientRect().width || 640
+			).columns;
+			i++
+		) {
 			const option = document.createElement("option")
 			option.value = String(i)
 			option.textContent = String(i + 1)
@@ -862,13 +915,15 @@ export class ControlSurface {
 		if (!entry) {
 			return
 		}
-		Array.from(entry.element.querySelectorAll<HTMLButtonElement>("button"))
-			.find(
-				(button) =>
-					button.getAttribute("aria-label") ===
-					`${action} ${entry.binding.descriptor.label}`
-			)
-			?.focus()
+		this.showPage(entry.page ?? 0)
+		const button = Array.from(entry.element.querySelectorAll<HTMLButtonElement>("button")).find(
+			(button) =>
+				button.getAttribute("aria-label") === `${action} ${entry.binding.descriptor.label}`
+		)
+		if (button) {
+			entry.tools?.reveal(button)
+			button.focus({ preventScroll: true })
+		}
 	}
 	private resizeWidget(entry: Entry, span: number, height: number): void {
 		entry.config.span = Math.max(1, Math.min(3, Math.round(span)))
@@ -928,7 +983,11 @@ export class ControlSurface {
 			event.stopPropagation()
 			if (resizing) {
 				const width = this.stage.clientWidth || 640,
-					cell = width / Math.max(1, Math.floor(width / 200))
+					profile = playingLayout(
+						width,
+						this.stage.getBoundingClientRect().width || width
+					),
+					cell = (width - profile.gutter) / profile.columns
 				this.resizeWidget(
 					entry,
 					start.span + (event.clientX - start.x) / (cell * start.scale),
@@ -938,7 +997,7 @@ export class ControlSurface {
 				let closest: Entry | undefined,
 					distance = Infinity
 				for (const target of this.entries) {
-					if (target === entry) {
+					if (target === entry || target.page !== this.currentPage) {
 						continue
 					}
 					const rect = target.element.getBoundingClientRect(),
@@ -969,12 +1028,19 @@ export class ControlSurface {
 						candidate.element.classList.contains("cs-drop-target")
 					)
 					const stage = this.stage.getBoundingClientRect(),
-						columns = Math.max(1, Math.floor((this.stage.clientWidth || 640) / 200))
+						width = this.stage.clientWidth || 640,
+						profile = playingLayout(width, stage.width || width),
+						columns = profile.columns,
+						px = ((event.clientX - stage.left) / stage.width) * width
 					entry.config.column = Math.max(
 						0,
 						Math.min(
 							columns - 1,
-							Math.floor(((event.clientX - stage.left) / stage.width) * columns)
+							Math.floor(
+								(px -
+									(profile.hands === 2 && px > width / 2 ? profile.gutter : 0)) /
+									((width - profile.gutter) / columns)
+							)
 						)
 					)
 					if (target && target !== entry) {
@@ -1029,7 +1095,12 @@ export class ControlSurface {
 		}))
 	}
 	private autoArrange(): void {
-		const order = ergonomicOrder(this.layoutItems(), this.stage.clientWidth || 640)
+		const order = ergonomicOrder(
+			this.layoutItems(),
+			this.stage.clientWidth || 640,
+			Math.min(this.stage.getBoundingClientRect().width || 640, innerWidth),
+			this.pageHeight
+		)
 		this.options.state.widgets = order.map((index) => this.entries[index].config)
 		this.options.state.widgets.forEach((widget) => {
 			delete widget.column
@@ -1041,7 +1112,36 @@ export class ControlSurface {
 	}
 	private layout(): void {
 		this.pointerRect = undefined
-		const layout = layoutWidgets(this.layoutItems(), this.stage.clientWidth || 640)
+		const width = this.stage.clientWidth || 640,
+			screenWidth = Math.min(this.stage.getBoundingClientRect().width || width, innerWidth),
+			profile = playingLayout(width, screenWidth)
+		const mode = `${profile.hands}:${profile.columns}`
+		if (mode !== this.layoutMode) {
+			this.playGuide.textContent =
+				profile.hands === 2
+					? "Two-hand layout · left and right playing zones"
+					: "One-hand layout · compact playing zone"
+			this.layoutMode = mode
+		}
+		this.element.dataset.hands = String(profile.hands)
+		const stageRect = this.stage.getBoundingClientRect()
+		const scale = stageRect.width / width || 1
+		// Reserve footer space even on a single page so pagination cannot change its own capacity.
+		this.pageHeight = Math.max(
+			1,
+			Math.min(
+				(innerHeight * 0.72) / scale,
+				(innerHeight - Math.max(0, stageRect.top) - 90 * scale) / scale
+			)
+		)
+		this.element.style.setProperty("--cs-target", `${44 / scale}px`)
+		this.element.style.setProperty("--cs-gap", `${11 / scale}px`)
+		this.element.style.setProperty("--cs-pager", `${55 / scale}px`)
+		this.toolbar.style.setProperty("--cs-target", `${44 / scale}px`)
+		this.toolbar.style.setProperty("--cs-gap", `${11 / scale}px`)
+		const layout = layoutWidgets(this.layoutItems(), width, screenWidth, this.pageHeight, scale)
+		this.pageCount = layout.pages
+		this.currentPage = Math.min(this.currentPage, this.pageCount - 1)
 		this.height = layout.height
 		this.stage.style.height = `${this.height}px`
 		for (const [index, entry] of this.entries.entries()) {
@@ -1060,9 +1160,16 @@ export class ControlSurface {
 						}
 					: { ...box, rotation }
 			)
+			entry.page = box.page
 			const r = entry.visual
+			entry.tools?.resize(r.width - 6, r.height - 4, scale)
+			const grid = entry.element.querySelector<HTMLElement>(".cs-note-grid")
+			if (grid) {
+				r.musicView = resizeMusicGrid(grid, r.width, r.height, scale)
+			}
 			if (r.relative) {
 				const rect = relativeRect(r.width, r.height)
+				r.relative.minimumKeySize = 55 / scale
 				r.relative.width = rect.width
 				r.relative.height = rect.height
 			}
@@ -1074,7 +1181,43 @@ export class ControlSurface {
 				transform: `rotate(${rotation}deg)`
 			})
 		}
+		this.updatePage()
 	}
+	/** Select a gadget page without moving the surface or scrolling its contents. */
+	showPage(index: number): void {
+		const page = Math.max(0, Math.min(this.pageCount - 1, Math.floor(index)))
+		if (page !== this.currentPage) {
+			this.releasePointers()
+			this.currentPage = page
+		}
+		this.updatePage()
+	}
+	private updatePage(): void {
+		for (const entry of this.entries) {
+			const hidden = entry.page !== this.currentPage
+			if (hidden && !entry.element.hidden) {
+				for (const [id, gesture] of this.gestures) {
+					if (gesture.entry === entry) {
+						this.pointerUp(id)
+					}
+				}
+				entry.release?.()
+				if (entry.element.contains(document.activeElement)) {
+					this.viewport.focus({ preventScroll: true })
+				}
+			}
+			entry.element.hidden = hidden
+			entry.element.inert = hidden
+		}
+		this.previousPage.disabled = this.currentPage === 0
+		this.nextPage.disabled = this.currentPage === this.pageCount - 1
+		this.pageLabel.textContent = `Page ${this.currentPage + 1} of ${this.pageCount}`
+		this.viewport.setAttribute(
+			"aria-label",
+			`Control gadgets, page ${this.currentPage + 1} of ${this.pageCount}`
+		)
+	}
+
 	private refresh(): void {
 		for (const entry of this.entries) {
 			entry.dirty = true
@@ -1257,6 +1400,9 @@ export class ControlSurface {
 	/** Local surface coordinates also accept projected XR rays/hand positions. */
 	pointerDown(id: number, x: number, y: number, fine = false, pressure = 1): boolean {
 		const entry = this.entries.find((e) => {
+			if (e.page !== this.currentPage) {
+				return false
+			}
 			const point = widgetPoint(x, y, e.visual)
 			return (
 				point.x >= e.visual.x &&
@@ -1301,15 +1447,32 @@ export class ControlSurface {
 		if (isMusicGrid(entry.visual.widget)) {
 			const d = entry.binding.descriptor,
 				options = musicOptions(entry.visual.widget, d.music),
-				rect = musicRect(entry.visual.width, entry.visual.height)
+				rect = musicRect(
+					entry.visual.width,
+					entry.visual.height,
+					11 / (entry.visual.musicView?.gap ?? 11)
+				)
 			const px = x - entry.visual.x - rect.x,
 				py = y - entry.visual.y - rect.y
 			if (px < 0 || py < 0 || px >= rect.width || py >= rect.height) {
 				return false
 			}
+			const view = entry.visual.musicView ?? {
+				row: 0,
+				column: 0,
+				rows: options.pitches.length,
+				columns: options.steps,
+				gap: 11
+			}
+			const rows = Math.min(view.rows, options.pitches.length - view.row),
+				columns = Math.min(view.columns, options.steps - view.column)
+			const cw = (rect.width + view.gap) / columns,
+				ch = (rect.height + view.gap) / rows
+			if (px % cw >= cw - view.gap || py % ch >= ch - view.gap) {
+				return false
+			}
 			const index =
-				Math.floor((py / rect.height) * options.pitches.length) * options.steps +
-				Math.floor((px / rect.width) * options.steps)
+				(view.row + Math.floor(py / ch)) * options.steps + view.column + Math.floor(px / cw)
 			const values = musicValues(d, value),
 				tab = entry.visual.widget === "guitar-tab"
 			values[index] = (tab ? values[index] >= 0 : values[index] > 0)
@@ -1575,7 +1738,9 @@ export class ControlSurface {
 					this.flushWrites()
 					this.updateFeedback()
 					return {
-						widgets: this.entries.map((e) => e.visual),
+						widgets: this.entries
+							.filter((e) => e.page === this.currentPage)
+							.map((e) => e.visual),
 						width: this.stage.clientWidth,
 						height: this.height
 					}

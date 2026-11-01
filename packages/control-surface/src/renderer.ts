@@ -1,7 +1,14 @@
 /// <reference types="@webgpu/types" />
 import { EVENT_GPU_ERROR } from "./events"
 import { sourceTheme } from "./themes"
-import { isMusicGrid, musicOptions, musicRect, musicValues, noteName } from "./music"
+import {
+	isMusicGrid,
+	musicOptions,
+	musicRect,
+	musicValues,
+	noteName,
+	type MusicView
+} from "./music"
 import { relativeRect, type RelativeKeys } from "./relative-keys"
 import type { Strum } from "./strum"
 import { dialOptions, formatValue, normalize, sameValue } from "./model"
@@ -30,6 +37,7 @@ export interface WidgetVisual {
 	dial?: DialOptions
 	unavailable?: boolean
 	relative?: RelativeKeys
+	musicView?: MusicView
 	strum?: Strum
 }
 export type SurfaceTheme = "neon" | "amber" | "ice"
@@ -41,6 +49,7 @@ interface CachedWidget {
 	width: number
 	height: number
 	rotation: number | undefined
+	musicRevision: number | undefined
 	strumRevision: number | undefined
 	descriptor: ControlDescriptor
 	widget: WidgetType
@@ -594,7 +603,7 @@ export class GpuSurfaceRenderer {
 			return
 		}
 		const rect = relativeRect(w.width, w.height),
-			size = controller.options.keySize
+			size = controller.keySize
 		const ax = controller.anchor.x * rect.width,
 			ay = controller.anchor.y * rect.height
 		const baseX = w.x + rect.x,
@@ -614,10 +623,19 @@ export class GpuSurfaceRenderer {
 				if (note < 0 || note > 127) {
 					continue
 				}
-				const left = Math.max(0, cx - size * 0.47),
-					top = Math.max(0, cy - size * 0.47)
-				const width = Math.min(rect.width, cx + size * 0.47) - left,
-					height = Math.min(rect.height, cy + size * 0.47) - top
+				const left = Math.max(0, cx - (size - controller.minimumKeySize / 5) / 2),
+					top = Math.max(0, cy - (size - controller.minimumKeySize / 5) / 2)
+				const width =
+						Math.min(rect.width, cx + (size - controller.minimumKeySize / 5) / 2) -
+						left,
+					height =
+						Math.min(rect.height, cy + (size - controller.minimumKeySize / 5) / 2) - top
+				if (
+					width < controller.minimumKeySize * 0.8 ||
+					height < controller.minimumKeySize * 0.8
+				) {
+					continue
+				}
 				this.quad(baseX + left, baseY + top, width, height, 11, 0, -1, 0, 0, alpha * 0.65)
 				if (width > 25 && height > 20) {
 					this.text(
@@ -625,7 +643,7 @@ export class GpuSurfaceRenderer {
 						baseX + left + 4,
 						baseY + top + height / 2 - 8,
 						width - 5,
-						alpha * 0.45,
+						alpha * 0.9,
 						false,
 						0.65
 					)
@@ -753,6 +771,7 @@ export class GpuSurfaceRenderer {
 				cached.height !== w.height ||
 				cached.rotation !== w.rotation ||
 				cached.strumRevision !== w.strum?.revision ||
+				cached.musicRevision !== w.musicView?.revision ||
 				cached.descriptor !== w.descriptor ||
 				cached.widget !== w.widget ||
 				cached.sourceLabel !== w.sourceLabel ||
@@ -824,27 +843,36 @@ export class GpuSurfaceRenderer {
 				} else if (musical) {
 					const options = musicOptions(w.widget, d.music),
 						values = musicValues(d, v)
-					const rect = musicRect(w.width, w.height)
-					const cw = rect.width / options.steps,
-						ch = rect.height / options.pitches.length
-					for (let row = 0; row < options.pitches.length; row++) {
+					const rect = musicRect(w.width, w.height, 11 / (w.musicView?.gap ?? 11))
+					const view = w.musicView ?? {
+						row: 0,
+						column: 0,
+						rows: options.pitches.length,
+						columns: options.steps,
+						gap: 11
+					}
+					const rows = Math.min(view.rows, options.pitches.length - view.row),
+						columns = Math.min(view.columns, options.steps - view.column)
+					const cw = (rect.width + view.gap) / columns,
+						ch = (rect.height + view.gap) / rows
+					for (let row = view.row; row < view.row + rows; row++) {
 						this.text(
 							noteName(options.pitches[row]),
 							w.x + 8,
-							w.y + rect.y + row * ch + ch / 2 - 8,
+							w.y + rect.y + (row - view.row) * ch + ch / 2 - 8,
 							30,
 							alpha * 0.8,
 							false,
 							0.7
 						)
-						for (let col = 0; col < options.steps; col++) {
+						for (let col = view.column; col < view.column + columns; col++) {
 							const value = values[row * options.steps + col],
 								tab = w.widget === "guitar-tab"
 							this.quad(
-								w.x + rect.x + col * cw,
-								w.y + rect.y + row * ch,
-								cw,
-								ch,
+								w.x + rect.x + (col - view.column) * cw,
+								w.y + rect.y + (row - view.row) * ch,
+								cw - view.gap,
+								ch - view.gap,
 								kind,
 								tab ? Number(value >= 0) * 0.4 : value,
 								-1,
@@ -855,8 +883,8 @@ export class GpuSurfaceRenderer {
 							if (tab && value >= 0) {
 								this.text(
 									String(value),
-									w.x + rect.x + col * cw + cw / 2 - 6,
-									w.y + rect.y + row * ch + ch / 2 - 10,
+									w.x + rect.x + (col - view.column) * cw + cw / 2 - 6,
+									w.y + rect.y + (row - view.row) * ch + ch / 2 - 10,
 									cw,
 									alpha,
 									false,
@@ -961,6 +989,7 @@ export class GpuSurfaceRenderer {
 					height: w.height,
 					rotation: w.rotation,
 					strumRevision: w.strum?.revision,
+					musicRevision: w.musicView?.revision,
 					descriptor: d,
 					widget: w.widget,
 					sourceLabel: w.sourceLabel,

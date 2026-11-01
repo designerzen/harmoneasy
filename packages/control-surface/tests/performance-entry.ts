@@ -467,11 +467,13 @@ async function profilePolySynth(
 	while (!surface.element.classList.contains("cs-gpu-ready")) {
 		await frame()
 	}
-	const entries = (surface as any).entries,
+	const entries = (surface as any).entries.filter(
+			(entry: any) => entry.page === (surface as any).currentPage
+		),
 		renderer = (surface as any).renderer
 	for (let i = 0; i < entries.length; i++) {
 		const visual = entries[i].visual
-		surface.pointerDown(100 + i, visual.x + 90, visual.y + 100)
+		surface.pointerDown(100 + i, visual.x + visual.width / 2, visual.y + visual.height / 2)
 	}
 	const stats = {
 		prepare: [] as number[],
@@ -505,11 +507,11 @@ async function profilePolySynth(
 			const gesture = (surface as any).gestures.get(100 + i)
 			const position = 0.5 + Math.sin(n * 0.15 + i) * 0.35
 			const rect = stage.getBoundingClientRect()
-			const y = visual.y + 100 - (position - gesture.startValue) * 160
+			const y = visual.y + visual.height / 2 - (position - gesture.startValue) * 160
 			stage.dispatchEvent(
 				new PointerEvent("pointermove", {
 					pointerId: 100 + i,
-					clientX: rect.left + (visual.x + 90) * zoom,
+					clientX: rect.left + (visual.x + visual.width / 2) * zoom,
 					clientY: rect.top + y * zoom,
 					bubbles: true
 				})

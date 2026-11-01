@@ -12,6 +12,8 @@ import {
 	Strum,
 	createStrumControl
 } from "control-surface"
+import { musicRect, musicView } from "../../../packages/control-surface/src/music"
+import { resizeMusicGrid } from "../../../packages/control-surface/src/music-dom"
 import { sourceTheme } from "../../../packages/control-surface/src/themes"
 import { createDomGui, createDomControl } from "control-surface/dom"
 import { contactPressure } from "../../../packages/control-surface/src/pressure"
@@ -30,7 +32,8 @@ import {
 	validateValue,
 	layoutWidgets,
 	widgetPoint,
-	ergonomicOrder
+	ergonomicOrder,
+	playingLayout
 } from "control-surface/model"
 import type { ControlBinding, ControlDescriptor, SurfaceState } from "control-surface/types"
 import { componentBindings, installComponentUi } from "audiobus/io/component-ui"
@@ -294,6 +297,78 @@ describe("shared component controls", () => {
 })
 
 describe("surface interaction and bindings", () => {
+	it("keeps musical targets at least 44 pixels with 11 pixel gaps when resized or zoomed", () => {
+		for (const scale of [0.5, 1, 2, 3]) {
+			for (const width of [280, 390, 700]) {
+				const height = 46 + 200 / scale,
+					rect = musicRect(width, height, scale),
+					view = musicView(width, height, 12, 8, scale)
+				expect(
+					((rect.width + view.gap) / view.columns - view.gap) * scale
+				).toBeGreaterThanOrEqual(43.999)
+				expect(
+					((rect.height + view.gap) / view.rows - view.gap) * scale
+				).toBeGreaterThanOrEqual(43.999)
+				expect(view.gap * scale).toBe(11)
+			}
+		}
+		const control = createDomControl(
+			bind("roll", createPianoRollControl({ id: "roll", label: "Roll" })),
+			vi.fn()
+		)
+		const grid = control.element.querySelector<HTMLElement>('[role="grid"]')!
+		const view = resizeMusicGrid(grid, 300, 260, 1)!
+		expect(view.columns).toBeLessThan(8)
+		expect(grid.querySelectorAll('[role="row"]:not([hidden])').length).toBe(view.rows)
+		control.element
+			.querySelector<HTMLButtonElement>('[aria-label="Next section of Roll"]')!
+			.click()
+		expect(view.column).toBe(view.columns)
+		expect(grid.querySelector('[role="gridcell"]')!.hasAttribute("hidden")).toBe(true)
+	})
+	it("paginates all gadgets within bounded pages without overlaps", () => {
+		const widgets = Array.from({ length: 75 }, (_, i) => ({
+			span: (i % 3) + 1,
+			height: 132 + i * 13,
+			column: i % 7 === 0 ? 1 : undefined
+		}))
+		for (const width of [280, 390, 900, 1200]) {
+			for (const height of [100, 300, 700]) {
+				const layout = layoutWidgets(widgets, width, width, height)
+				expect(layout.items).toHaveLength(widgets.length)
+				expect(layout.pages).toBeGreaterThan(1)
+				for (const [i, a] of layout.items.entries()) {
+					expect(a.y + a.height).toBeLessThanOrEqual(height)
+					expect(a.x + a.width).toBeLessThanOrEqual(width + 0.001)
+					for (const b of layout.items.slice(i + 1).filter((b) => b.page === a.page)) {
+						expect(
+							a.x < b.x + b.width &&
+								a.x + a.width > b.x &&
+								a.y < b.y + b.height &&
+								a.y + a.height > b.y
+						).toBe(false)
+					}
+				}
+			}
+		}
+	})
+	it("adapts hand zones to visible width and keeps large gadgets inside their playing zone", () => {
+		expect(playingLayout(300)).toMatchObject({ hands: 1, columns: 1, gutter: 0 })
+		expect(playingLayout(390)).toMatchObject({ hands: 1, columns: 2 })
+		expect(playingLayout(900)).toMatchObject({ hands: 2, columns: 4, gutter: 24 })
+		expect(playingLayout(1200)).toMatchObject({ hands: 2, columns: 6 })
+		expect(playingLayout(1100, 390)).toMatchObject({ hands: 1, columns: 2 })
+		const layout = layoutWidgets(
+			[
+				{ span: 2, height: 280 },
+				{ span: 2, height: 280 }
+			],
+			900
+		)
+		expect(layout.items[0].y).toBe(0)
+		expect(layout.items[1].y).toBe(0)
+		expect(layout.items[1].x - layout.items[0].width).toBeGreaterThanOrEqual(24)
+	})
 	it("packs holes and honours preferred columns without overlapping at any screen width", () => {
 		const widgets = Array.from({ length: 75 }, (_, i) => ({
 			span: 1 + (i % 3),
@@ -319,12 +394,11 @@ describe("surface interaction and bindings", () => {
 		}
 		const holes = layoutWidgets(
 			[{ height: 300 }, { height: 132 }, { span: 2, height: 200 }, { height: 132 }],
-			640
+			500
 		)
-		expect(holes.items[3]).toMatchObject({ y: 0 })
-		expect(holes.items[3].x).toBeCloseTo((640 / 3) * 2)
+		expect(holes.items[3]).toMatchObject({ y: 143, x: 250 })
 		const pinned = layoutWidgets([{ column: 2 }, { column: 2 }], 640)
-		expect(pinned.items[1].y).toBe(180)
+		expect(pinned.items[1].y).toBe(183)
 	})
 	it("automatically arranges related controls compactly and persists the chosen order", async () => {
 		const widgets = Array.from({ length: 24 }, (_, i) => ({
@@ -466,7 +540,7 @@ describe("surface interaction and bindings", () => {
 			[{ height: 250 }, { height: 400 }, { height: 132 }, { height: 200 }],
 			640
 		)
-		expect(layout.items[3].y).toBe(140)
+		expect(layout.items[3].y).toBe(0)
 	})
 	it("maps rotated surface hits back to gadget coordinates", async () => {
 		const slider = bind("slide", { widget: "slider" }),
@@ -794,7 +868,8 @@ describe("surface interaction and bindings", () => {
 		views.push(surface)
 		await settle()
 		surface.pointerDown(1, 90, 90, false, 0.25)
-		surface.pointerDown(2, 330, 90, false, 0.8)
+		const second = (surface as any).entries[1].visual
+		surface.pointerDown(2, second.x + second.width / 2, second.y + 90, false, 0.8)
 		await settle()
 		expect(a.value).toBe(0.25)
 		expect(b.value).toBe(0.8)
@@ -916,8 +991,10 @@ describe("surface interaction and bindings", () => {
 		await settle()
 		expect(surface.pointerDown(1, 100, 90)).toBe(true)
 		surface.pointerMove(1, 100, 58)
-		expect(surface.pointerDown(2, 330, 90)).toBe(true)
-		surface.pointerMove(2, 380, 90)
+		const second = (surface as any).entries[1].visual,
+			third = (surface as any).entries[2].visual
+		expect(surface.pointerDown(2, second.x + second.width / 2, second.y + 90)).toBe(true)
+		surface.pointerMove(2, second.x + second.width * 0.9, second.y + 90)
 		surface.pointerUp(1)
 		surface.pointerUp(2)
 		await settle()
@@ -927,7 +1004,7 @@ describe("surface interaction and bindings", () => {
 		surface.pointerMove(1, 100, 50)
 		await settle()
 		expect(a.write).toHaveBeenCalledTimes(calls)
-		surface.pointerDown(3, 590, 90)
+		surface.pointerDown(3, third.x + third.width * 0.9, third.y + 90)
 		surface.pointerUp(3)
 		await settle()
 		expect(radio.value).toBe(1)
@@ -952,7 +1029,8 @@ describe("surface interaction and bindings", () => {
 		views.push(surface)
 		document.body.append(surface.element)
 		await settle()
-		surface.pointerDown(4, 360, 60)
+		const visual = (surface as any).entries[0].visual
+		surface.pointerDown(4, visual.x + visual.width * 0.8, visual.y + 40)
 		surface.pointerUp(4)
 		await settle()
 		expect(a.value).toBeGreaterThan(1000)

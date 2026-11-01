@@ -1,6 +1,6 @@
 .control-surface {
-	width: min(760px, 88vw);
-	min-width: 280px;
+	width: min(1100px, 94vw);
+	min-width: 0;
 	max-width: 100%;
 	font:
 		14px system-ui,
@@ -19,7 +19,7 @@
 	position: relative;
 	display: flex;
 	align-items: center;
-	gap: 8px;
+	gap: var(--cs-gap, 11px);
 	margin-bottom: 12px;
 	font:
 		14px system-ui,
@@ -75,7 +75,7 @@
 	width: max-content;
 	max-width: min(320px, 100%);
 	max-height: 65dvh;
-	overflow: auto;
+	overflow: clip;
 	padding: 0.375rem;
 	border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
 	border-radius: 8px;
@@ -124,16 +124,49 @@
 	border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
 	border-radius: 6px;
 	padding: 7px;
-	min-height: 32px;
+	min-height: var(--cs-target, 44px);
 }
 .cs-stage {
 	position: relative;
 	width: 100%;
 	touch-action: none;
 }
+.cs-viewport {
+	overflow: clip;
+	max-width: 100%;
+	overscroll-behavior: contain;
+}
+.cs-viewport:focus-visible {
+	outline: 2px solid white;
+	outline-offset: 2px;
+}
+.cs-play-guide {
+	margin: 0 0 8px;
+	color: #9bbfb7;
+	font-size: 12px;
+}
+.cs-page-navigation {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 12px;
+	margin-top: 8px;
+}
+.cs-page-navigation[hidden] {
+	display: none;
+}
+.cs-page-navigation button {
+	min-height: var(--cs-target, 44px);
+	padding: 8px 16px;
+	color: inherit;
+	background: #112438;
+	border: 1px solid #296254;
+	border-radius: 6px;
+	font: inherit;
+}
 .cs-layout-actions {
 	display: flex;
-	gap: 8px;
+	gap: var(--cs-gap, 11px);
 	margin-bottom: 8px;
 }
 .cs-layout-actions[hidden] {
@@ -147,6 +180,7 @@
 	pointer-events: none;
 }
 .cs-widget {
+	touch-action: none;
 	box-shadow: inset 3px 0 var(--cs-source, #33ffb8);
 	position: absolute;
 	border-radius: 10px;
@@ -154,7 +188,7 @@
 }
 .cs-semantic {
 	display: grid;
-	gap: 6px;
+	gap: var(--cs-gap, 11px);
 	padding: 12px;
 	color: var(--cs-source, #d6fff2);
 	font: inherit;
@@ -193,7 +227,7 @@
 .cs-gpu-ready .cs-semantic.cs-guitar-tab:focus-within,
 .cs-gpu-ready .cs-semantic.cs-piano-roll:focus-within {
 	position: absolute !important;
-	inset: 32px 12px 14px 38px;
+	inset: 32px 12px calc(14px + var(--cs-pager, 55px)) 38px;
 	width: auto !important;
 	height: auto !important;
 	padding: 0 !important;
@@ -219,7 +253,7 @@
 .cs-note-grid button {
 	width: 100%;
 	height: 100%;
-	min-height: 24px;
+	min-height: var(--cs-target, 44px);
 	padding: 0;
 }
 .cs-note-grid button[data-on="true"] {
@@ -264,7 +298,7 @@
 }
 .cs-gpu-ready .cs-semantic:focus-within {
 	position: absolute !important;
-	inset: 40px 10px 24px;
+	inset: 32px 10px 12px;
 	width: auto !important;
 	height: auto !important;
 	overflow: visible !important;
@@ -292,12 +326,12 @@
 	position: absolute;
 	bottom: 2px;
 	max-height: 100%;
-	overflow: auto;
+	overflow: clip;
 	left: 3px;
 	right: 3px;
 	display: flex;
 	flex-wrap: wrap;
-	gap: 2px;
+	gap: var(--cs-gap, 11px);
 	z-index: 3;
 	background: #080d18;
 }
@@ -305,7 +339,7 @@
 .cs-widget-tools select {
 	font-size: 11px;
 	padding: 2px;
-	min-height: 28px;
+	min-height: var(--cs-target, 44px);
 }
 .cs-layout-handle {
 	touch-action: none;
@@ -321,13 +355,13 @@
 .cs-size-dialog form,
 .cs-size-dialog label {
 	display: grid;
-	gap: 8px;
+	gap: var(--cs-gap, 11px);
 }
 .cs-size-dialog input,
 .cs-size-dialog select,
 .cs-size-dialog button {
 	font: inherit;
-	min-height: 32px;
+	min-height: var(--cs-target, 44px);
 }
 .cs-layout-handle:last-child {
 	cursor: nwse-resize;
@@ -351,7 +385,7 @@
 }
 .component-controls {
 	display: grid;
-	gap: 10px;
+	gap: var(--cs-gap, 11px);
 	width: 100%;
 	min-width: 0;
 	align-content: start;
@@ -360,7 +394,7 @@
 }
 .component-controls fieldset {
 	display: grid;
-	gap: 10px;
+	gap: var(--cs-gap, 11px);
 	min-width: 0;
 	margin: 0;
 	padding: 0;
@@ -390,7 +424,7 @@
 .control-selection-dialog {
 	max-width: min(640px, 95vw);
 	max-height: 85dvh;
-	overflow: auto;
+	overflow: clip;
 }
 .control-selection-dialog form {
 	display: grid;
@@ -398,11 +432,11 @@
 }
 .control-selection-dialog fieldset {
 	display: grid;
-	gap: 8px;
+	gap: var(--cs-gap, 11px);
 }
 .control-selection-dialog label {
 	display: flex;
-	gap: 8px;
+	gap: var(--cs-gap, 11px);
 	align-items: center;
 }
 .control-selection-dialog small {
@@ -433,7 +467,7 @@
 }
 .node-control-surface > header {
 	display: flex;
-	gap: 10px;
+	gap: var(--cs-gap, 11px);
 	align-items: center;
 	justify-content: space-between;
 	margin-bottom: 8px;
@@ -441,4 +475,100 @@
 .node-control-surface .control-surface {
 	width: 100%;
 	padding: 0;
+}
+.cs-widget[hidden] {
+	display: none;
+}
+.cs-page-navigation button:disabled {
+	opacity: 0.45;
+}
+.cs-status:empty {
+	display: none;
+}
+.control-surface button,
+.control-surface input,
+.control-surface select,
+.cs-toolbar button,
+.cs-toolbar input,
+.cs-toolbar select {
+	min-width: var(--cs-target, 44px);
+	min-height: var(--cs-target, 44px);
+}
+.cs-note-grid [hidden] {
+	display: none !important;
+}
+.cs-music-pages {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: calc(-1 * var(--cs-pager, 55px));
+	display: flex;
+	gap: var(--cs-gap, 11px);
+	align-items: center;
+	justify-content: space-between;
+}
+.cs-gpu-ready .cs-music-pages button {
+	color: #d6fff2;
+	background: #112438;
+	border: 1px solid #296254;
+	min-width: var(--cs-target, 44px);
+	min-height: var(--cs-target, 44px);
+}
+.cs-music-pages span {
+	color: #d6fff2;
+	font-size: 12px;
+}
+.cs-note-grid {
+	position: relative;
+}
+.cs-music-editor:not(.cs-gpu-ready .cs-music-editor) {
+	margin-bottom: 55px;
+}
+.cs-music-editor {
+	position: relative;
+	height: 100%;
+	min-height: 0;
+}
+
+.cs-note-selector {
+	display: grid;
+	gap: var(--cs-gap, 11px);
+	min-width: 0;
+}
+.cs-note-selector > button {
+	width: 100%;
+}
+.cs-note-selector [hidden] {
+	display: none !important;
+}
+.cs-note-selector-navigation {
+	display: flex;
+	justify-content: space-between;
+	gap: var(--cs-gap, 11px);
+}
+.cs-widget-tools {
+	display: grid;
+	align-content: start;
+	top: 2px;
+	gap: var(--cs-gap, 11px);
+	overflow: clip;
+}
+.cs-widget-tools > [hidden] {
+	display: none !important;
+}
+.cs-tool-navigation {
+	display: flex;
+	grid-column: 1 / -1;
+	justify-content: space-between;
+	align-items: center;
+	gap: var(--cs-gap, 11px);
+}
+.cs-tool-navigation span {
+	font-size: 11px;
+}
+.cs-widget-tools select {
+	width: 100%;
+}
+.cs-semantic[hidden] {
+	display: none !important;
 }

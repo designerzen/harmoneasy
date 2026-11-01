@@ -1,3 +1,4 @@
+import { noteSelector } from "./note-selector"
 import { EVENT_CLICK, EVENT_KEY_DOWN } from "./events"
 import { Strum } from "./strum"
 import { noteName } from "./music"
@@ -47,7 +48,7 @@ export function createStrum(
 				return
 			}
 			buttons.forEach((b, i) => (b.tabIndex = i === target ? 0 : -1))
-			buttons[target].focus()
+			selectNote(target)
 		})
 		buttons.push(button)
 		element.append(button)
@@ -56,5 +57,6 @@ export function createStrum(
 	if (first) {
 		first.tabIndex = 0
 	}
+	const selectNote = noteSelector(element, buttons, d.label)
 	return { element, controller, release: () => controller.release() }
 }

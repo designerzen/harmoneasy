@@ -1,3 +1,4 @@
+import { noteSelector } from "./note-selector"
 import {
 	EVENT_BLUR,
 	EVENT_CLICK,
@@ -64,7 +65,7 @@ export function createRelativeKeys(
 				event.preventDefault()
 				const target = Math.max(0, Math.min(buttons.length - 1, i + step))
 				buttons.forEach((b, index) => (b.tabIndex = index === target ? 0 : -1))
-				buttons[target].focus()
+				selectNote(target)
 			}
 		})
 		button.addEventListener(EVENT_KEY_UP, (event) => {
@@ -100,5 +101,6 @@ export function createRelativeKeys(
 		element.append(button)
 	}
 	refresh()
+	const selectNote = noteSelector(element, buttons, d.label)
 	return { element, controller, update: refresh, release: () => controller.release() }
 }

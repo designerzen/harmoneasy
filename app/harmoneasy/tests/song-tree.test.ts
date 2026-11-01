@@ -12,6 +12,43 @@ afterEach(() => {
 })
 
 describe("song tree growth", () => {
+	it("uses onset gaps to vary shoot spacing while keeping long rests compact", () => {
+		function secondShoot(gap: number) {
+			const tree = new TreeModel()
+			tree.noteOn(60, 80, 1, 0)
+			tree.allNotesOff(0.02)
+			tree.noteOn(60, 80, 1, gap)
+			const branch = tree.branches[1]
+			return { branch, tip: branchPoint(branch, gap + 2) }
+		}
+		const rapid = secondShoot(0.08),
+			relaxed = secondShoot(0.8),
+			rest = secondShoot(100)
+		expect(Math.abs(rapid.tip.x)).toBeLessThan(Math.abs(relaxed.tip.x))
+		expect(relaxed.branch.spread).toBeLessThan(rest.branch.spread)
+		expect(rest.branch.spread).toBeLessThanOrEqual(40)
+		expect(secondShoot(0.8)).toEqual(relaxed)
+	})
+	it("shares timing-based spacing within chords and restores it after planting a new tree", () => {
+		const tree = new TreeModel()
+		const playChord = (at: number) => {
+			for (const note of [60, 64, 67]) {
+				tree.noteOn(note, 80, 1, at)
+			}
+		}
+		playChord(0)
+		const initial = tree.branches.map((branch) => branch.spread)
+		tree.allNotesOff(0.01)
+		playChord(0.08)
+		const quick = tree.branches.slice(3)
+		const ratios = quick.map((branch) => branch.spread / (40 + (branch.note % 12) * 1.5))
+		expect(ratios[0]).toBeCloseTo(ratios[1])
+		expect(ratios[1]).toBeCloseTo(ratios[2])
+		expect(quick[0].spread).toBeLessThan(initial[0])
+		tree.reset()
+		playChord(10)
+		expect(tree.branches.map((branch) => branch.spread)).toEqual(initial)
+	})
 	it("never sprouts a new chord from a released branch, including notes in the grouping window", () => {
 		const tree = new TreeModel()
 		for (const note of [60, 64, 67]) {
@@ -94,6 +131,95 @@ describe("song tree growth", () => {
 })
 
 describe("song tree output and renderer", () => {
+	function flashScene() {
+		let now = 0
+		const output = new OutputSongTree({ now: () => now })
+		let leaves: number[][] = []
+		Object.assign(output, {
+			canvas: document.createElement("canvas"),
+			renderer: {
+				backend: "Canvas",
+				destroy: vi.fn(),
+				draw(data: Float32Array, count: number) {
+					leaves = []
+					for (let i = 0; i < count * 12; i += 12) {
+						if (data[i + 8] === 1) {
+							leaves.push(Array.from(data.slice(i + 5, i + 8)))
+						}
+					}
+				}
+			}
+		})
+		output.noteOn(60, 80)
+		now = 0.2
+		output.allNotesOff()
+		now = 0.3
+		output.noteOn(64, 80)
+		now = 0.5
+		output.allNotesOff()
+		return {
+			output,
+			render(time: number) {
+				now = time
+				;(output as any).draw(now)
+				return leaves
+			},
+			setTime(time: number) {
+				now = time
+			}
+		}
+	}
+	it("flashes every existing branch on a note trigger and fades back to each pitch's original colour", () => {
+		const scene = flashScene()
+		const regular = scene.render(3)
+		scene.output.sendCommand(
+			musicalCommand({ type: NOTE_ON, number: 67, velocity: 127, channel: 2 })
+		)
+		const peak = scene.render(3)
+		expect(peak).toHaveLength(2)
+		for (let leaf = 0; leaf < regular.length; leaf++) {
+			for (let color = 0; color < 3; color++) {
+				expect(peak[leaf][color]).toBeGreaterThan(regular[leaf][color])
+			}
+		}
+		const fading = scene.render(3.5)
+		expect(fading[0][0]).toBeLessThan(peak[0][0])
+		expect(fading[0][0]).toBeGreaterThan(regular[0][0])
+		expect(scene.render(5)).toEqual(regular)
+		scene.output.destroy()
+	})
+	it("makes harder notes brighter and longer, preserving their fade through softer retriggers", () => {
+		const soft = flashScene(),
+			hard = flashScene()
+		const regular = soft.render(3)
+		hard.render(3)
+		soft.output.noteOn(67, 20)
+		hard.output.noteOn(67, 127)
+		expect(hard.render(3)[0][0]).toBeGreaterThan(soft.render(3)[0][0])
+		hard.setTime(3.1)
+		hard.output.noteOn(69, 20)
+		expect(soft.render(3.5)).toEqual(regular)
+		expect(hard.render(3.5)[0][0]).toBeGreaterThan(regular[0][0])
+		expect(hard.render(5)).toEqual(regular)
+		soft.output.destroy()
+		hard.output.destroy()
+	})
+	it("does not flash on releases, invalid notes, or disconnected input", async () => {
+		const scene = flashScene(),
+			regular = scene.render(3)
+		scene.output.noteOn(60, 0)
+		scene.output.noteOn(128, 127)
+		scene.output.noteOn(60, NaN)
+		scene.output.noteOff(60)
+		expect(scene.render(3)).toEqual(regular)
+		await scene.output.disconnect()
+		scene.output.noteOn(60, 127)
+		scene.output.sendCommand(
+			musicalCommand({ type: NOTE_ON, number: 60, velocity: 127, channel: 1 })
+		)
+		expect(scene.render(3)).toEqual(regular)
+		scene.output.destroy()
+	})
 	it("fits every branch of a long song without truncating GPU batches, and supports zooming back in", () => {
 		let now = 0
 		const output = new OutputSongTree({ now: () => now })

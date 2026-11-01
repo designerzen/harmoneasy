@@ -1,6 +1,19 @@
 import { EVENT_CLICK, EVENT_KEY_DOWN, EVENT_POINTER_DOWN, EVENT_FOCUS_IN } from "./events"
-import { musicOptions, musicValues, noteName } from "./music"
+import { musicOptions, musicValues, noteName, musicView, type MusicView } from "./music"
 import type { ControlDescriptor, ControlValue } from "./types"
+
+const grids = new WeakMap<
+	HTMLElement,
+	(width: number, height: number, scale: number) => MusicView
+>()
+export function resizeMusicGrid(
+	grid: HTMLElement,
+	width: number,
+	height: number,
+	scale: number
+): MusicView | undefined {
+	return grids.get(grid)?.(width, height, scale)
+}
 
 /** One Tab stop per grid, with native buttons and two-dimensional arrow navigation. */
 export function createMusicGrid(
@@ -21,6 +34,79 @@ export function createMusicGrid(
 	)
 	grid.style.setProperty("--cs-steps", String(steps))
 	grid.style.setProperty("--cs-rows", String(pitches.length))
+	const navigation = document.createElement("div")
+	navigation.className = "cs-music-pages"
+	const previous = document.createElement("button"),
+		next = document.createElement("button"),
+		pageLabel = document.createElement("span")
+	previous.type = next.type = "button"
+	previous.textContent = "‹"
+	next.textContent = "›"
+	previous.setAttribute("aria-label", `Previous section of ${d.label}`)
+	next.setAttribute("aria-label", `Next section of ${d.label}`)
+	pageLabel.setAttribute("role", "status")
+	navigation.append(previous, pageLabel, next)
+	const view: MusicView = {
+		row: 0,
+		column: 0,
+		rows: pitches.length,
+		columns: steps,
+		gap: 11,
+		revision: 0
+	}
+	const show = (row: number, column: number) => {
+		view.row = Math.floor(row / view.rows) * view.rows
+		view.column = Math.floor(column / view.columns) * view.columns
+		view.revision++
+		grid.style.setProperty("--cs-rows", String(Math.min(view.rows, pitches.length - view.row)))
+		grid.style.setProperty("--cs-steps", String(Math.min(view.columns, steps - view.column)))
+		grid.style.gap = `${view.gap}px`
+		for (const rowElement of Array.from(grid.children) as HTMLElement[]) {
+			if (rowElement === navigation) {
+				continue
+			}
+			const r = Number(rowElement.getAttribute("aria-rowindex")) - 1
+			rowElement.hidden = r < view.row || r >= view.row + view.rows
+			rowElement.style.gap = `${view.gap}px`
+			for (const [c, cell] of Array.from(rowElement.children).entries()) {
+				;(cell as HTMLElement).hidden = c < view.column || c >= view.column + view.columns
+			}
+		}
+		const visible = buttons.filter(
+			(_, i) =>
+				Math.floor(i / steps) >= view.row &&
+				Math.floor(i / steps) < view.row + view.rows &&
+				i % steps >= view.column &&
+				i % steps < view.column + view.columns
+		)
+		if (!visible.some((b) => b.tabIndex === 0)) {
+			buttons.forEach((b) => (b.tabIndex = b === visible[0] ? 0 : -1))
+		}
+		const cols = Math.ceil(steps / view.columns),
+			page = Math.floor(view.row / view.rows) * cols + Math.floor(view.column / view.columns),
+			total = Math.ceil(pitches.length / view.rows) * cols
+		previous.disabled = page === 0
+		next.disabled = page === total - 1
+		pageLabel.textContent = `${page + 1} / ${total}`
+	}
+	const advance = (delta: number) => {
+		const columns = Math.ceil(steps / view.columns),
+			page =
+				Math.floor(view.row / view.rows) * columns +
+				Math.floor(view.column / view.columns) +
+				delta
+		show(Math.floor(page / columns) * view.rows, (page % columns) * view.columns)
+	}
+	previous.addEventListener(EVENT_CLICK, () => advance(-1))
+	next.addEventListener(EVENT_CLICK, () => advance(1))
+	grids.set(grid, (width, height, scale) => {
+		const size = musicView(width, height, pitches.length, steps, scale)
+		if (size.rows !== view.rows || size.columns !== view.columns || size.gap !== view.gap) {
+			Object.assign(view, { rows: size.rows, columns: size.columns, gap: size.gap })
+			show(Math.min(view.row, pitches.length - 1), Math.min(view.column, steps - 1))
+		}
+		return view
+	})
 	let values = musicValues(d, d.defaultValue)
 	let velocity = 1
 	const buttons: HTMLButtonElement[] = []
@@ -127,7 +213,8 @@ export function createMusicGrid(
 				}
 				event.preventDefault()
 				buttons.forEach((item, index) => (item.tabIndex = index === target ? 0 : -1))
-				buttons[target].focus()
+				show(Math.floor(target / steps), target % steps)
+				buttons[target].focus({ preventScroll: true })
 			})
 			buttons.push(button)
 			cell.append(button)
@@ -135,9 +222,13 @@ export function createMusicGrid(
 		}
 		grid.append(rowElement)
 	})
+	const editor = document.createElement("div")
+	editor.className = "cs-music-editor"
+	editor.append(grid, navigation)
 	refresh()
+	show(0, 0)
 	return {
-		element: grid,
+		element: editor,
 		update(value: ControlValue | undefined) {
 			values = musicValues(d, value)
 			refresh()

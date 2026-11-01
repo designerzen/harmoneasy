@@ -15,7 +15,7 @@ export function relativeOptions(options: RelativeKeysOptions = {}): Required<Rel
 		rootNote: 60,
 		horizontalInterval: 1,
 		verticalInterval: 5,
-		keySize: 48,
+		keySize: 55,
 		...options
 	}
 	if (
@@ -38,6 +38,10 @@ export function relativeOptions(options: RelativeKeysOptions = {}): Required<Rel
 export class RelativeKeys {
 	readonly contacts = new Map<number, RelativeContact>()
 	anchor = { x: 0.5, y: 0.5 }
+	minimumKeySize = 55
+	get keySize(): number {
+		return Math.max(this.minimumKeySize, this.options.keySize)
+	}
 	width = 240
 	height = 240
 	readonly options: Required<RelativeKeysOptions>
@@ -90,8 +94,8 @@ export class RelativeKeys {
 		if (!contact) {
 			return
 		}
-		const dx = ((x - this.anchor.x) * this.width) / this.options.keySize
-		const dy = ((this.anchor.y - y) * this.height) / this.options.keySize
+		const dx = ((x - this.anchor.x) * this.width) / this.keySize
+		const dy = ((this.anchor.y - y) * this.height) / this.keySize
 		if (first || Math.abs(dx - contact.column) > 0.6) {
 			contact.column = Math.round(dx)
 		}

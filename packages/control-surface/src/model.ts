@@ -292,7 +292,7 @@ export function validSurfaces(value: unknown): value is SurfaceState[] {
 	})
 }
 
-export { layoutWidgets, ergonomicOrder } from "./layout"
+export { layoutWidgets, ergonomicOrder, playingLayout } from "./layout"
 
 /** Convert a surface/XR hit to the widget's unrotated coordinates. */
 export function widgetPoint(

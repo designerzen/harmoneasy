@@ -6,8 +6,50 @@ export interface LayoutWidget {
 	group?: string
 	widget?: string
 }
-const GAP = 8
+const GAP = 11
 type Interval = { start: number; end: number }
+
+export function playingLayout(availableWidth: number, screenWidth = availableWidth) {
+	const visible = Math.max(1, Math.min(availableWidth, screenWidth))
+	const hands = visible >= 640 ? 2 : 1
+	const columns = hands === 2 ? (visible >= 1080 ? 6 : 4) : visible >= 340 ? 2 : 1
+	return {
+		hands,
+		columns,
+		zoneColumns: hands === 2 ? columns / 2 : columns,
+		gutter: hands === 2 ? 24 : 0
+	}
+}
+
+/** Merge touching reservations so long columns remain cheap to search. */
+function occupy(occupied: Interval[], start: number, end: number): void {
+	const last = occupied.at(-1)
+	if (!last || last.end < start) {
+		occupied.push({ start, end })
+		return
+	}
+	if (last.end === start) {
+		last.end = end
+		return
+	}
+	let low = 0,
+		high = occupied.length
+	while (low < high) {
+		const middle = (low + high) >>> 1
+		if (occupied[middle].end < start) {
+			low = middle + 1
+		} else {
+			high = middle
+		}
+	}
+	const first = low
+	while (low < occupied.length && occupied[low].start <= end) {
+		start = Math.min(start, occupied[low].start)
+		end = Math.max(end, occupied[low].end)
+		low++
+	}
+	occupied.splice(first, low - first, { start, end })
+}
 
 /** Find the first common free vertical interval; smaller gadgets can fill earlier holes. */
 function fit(columns: Interval[][], column: number, span: number, height: number): number {
@@ -33,55 +75,116 @@ function fit(columns: Interval[][], column: number, span: number, height: number
 }
 
 /** Deterministic column packing. Every footprint is reserved before the next gadget is placed. */
-export function layoutWidgets(widgets: LayoutWidget[], availableWidth: number) {
+export function layoutWidgets(
+	widgets: LayoutWidget[],
+	availableWidth: number,
+	screenWidth = availableWidth,
+	pageHeight = Infinity,
+	scale = 1
+) {
+	const gap = GAP / Math.max(0.01, Math.min(1, scale))
 	const width = Number.isFinite(availableWidth) ? Math.max(1, availableWidth) : 640
-	const count = Math.min(32, Math.max(1, Math.floor(width / 200))),
-		cell = width / count
-	const columns: Interval[][] = Array.from({ length: count }, () => [])
+	const profile = playingLayout(width, screenWidth),
+		count = profile.columns,
+		cell = (width - profile.gutter) / count
+	const limit = Number.isFinite(pageHeight) ? Math.max(1, pageHeight) : Infinity
+	const pages: Interval[][][] = [Array.from({ length: count }, () => [])]
 	const items = widgets.map((widget) => {
 		const span = Math.max(1, Math.min(count, Math.round(widget.span ?? 1)))
-		const height = Math.max(132, Math.min(720, widget.height ?? 172))
+		const height = Math.min(
+			limit,
+			Math.max(
+				132,
+				44 / Math.max(0.01, scale),
+				["piano-roll", "guitar-tab"].includes(widget.widget ?? "")
+					? 46 + 99 / scale
+					: ["xy", "range", "relative-keys", "strum"].includes(widget.widget ?? "")
+						? 80 + 99 / scale
+						: 132,
+				Math.min(720, widget.height ?? 172)
+			)
+		)
 		let column = 0,
 			y = Infinity
 		const preferred =
 			widget.column === undefined
 				? undefined
 				: Math.max(0, Math.min(count - span, Math.round(widget.column)))
-		for (let candidate = 0; candidate <= count - span; candidate++) {
-			if (preferred !== undefined && candidate !== preferred) {
-				continue
+		let page = 0
+		for (;;) {
+			const columns = pages[page] ?? (pages[page] = Array.from({ length: count }, () => []))
+			y = Infinity
+			for (let candidate = 0; candidate <= count - span; candidate++) {
+				if (preferred !== undefined && candidate !== preferred) {
+					continue
+				}
+				if (
+					preferred === undefined &&
+					profile.hands === 2 &&
+					span <= profile.zoneColumns &&
+					candidate < profile.zoneColumns &&
+					candidate + span > profile.zoneColumns
+				) {
+					continue
+				}
+				const top = fit(columns, candidate, span, height + gap)
+				if (top < y) {
+					y = top
+					column = candidate
+				}
 			}
-			const top = fit(columns, candidate, span, height + GAP)
-			if (top < y) {
-				y = top
-				column = candidate
+			if (y + height <= limit) {
+				break
 			}
+			page++
 		}
+		const columns = pages[page]
 		for (let offset = 0; offset < span; offset++) {
-			const occupied = columns[column + offset],
-				interval = { start: y, end: y + height + GAP }
-			if (!occupied.length || occupied[occupied.length - 1].start < y) {
-				occupied.push(interval)
-			} else {
-				const before = occupied.findIndex((item) => item.start > y)
-				occupied.splice(before < 0 ? occupied.length : before, 0, interval)
-			}
+			occupy(columns[column + offset], y, y + height + gap)
 		}
 		return {
-			x: column * cell,
+			page,
+			x:
+				column * cell +
+				(profile.hands === 2 && column >= profile.zoneColumns ? profile.gutter : 0),
 			y,
-			width: Math.max(1, cell * span - Math.min(GAP, width / 2)),
+			width: Math.max(
+				1,
+				cell * span +
+					(profile.hands === 2 &&
+					column < profile.zoneColumns &&
+					column + span > profile.zoneColumns
+						? profile.gutter
+						: 0) -
+					Math.min(gap, width / 2)
+			),
 			height
 		}
 	})
 	return {
 		items,
-		height: widgets.length ? Math.max(...columns.map((column) => column.at(-1)?.end ?? 0)) : 120
+		pages: pages.length,
+		height: Math.min(
+			limit,
+			widgets.length
+				? Math.max(
+						...pages.flatMap((columns) =>
+							columns.map((column) => column.at(-1)?.end ?? 0)
+						)
+					)
+				: 120
+		)
 	}
 }
 
 /** Compare compactness, distance between related controls, and reach to musical playing zones. */
-export function ergonomicOrder(widgets: LayoutWidget[], width: number): number[] {
+export function ergonomicOrder(
+	widgets: LayoutWidget[],
+	width: number,
+	screenWidth = width,
+	pageHeight = Infinity
+): number[] {
+	const profile = playingLayout(width, screenWidth)
 	const indices = widgets.map((_, index) => index)
 	const groups = new Map<string, number>()
 	const group = (index: number) =>
@@ -110,7 +213,9 @@ export function ergonomicOrder(widgets: LayoutWidget[], width: number): number[]
 	const score = (order: number[]) => {
 		const layout = layoutWidgets(
 			order.map((index) => ({ ...widgets[index], column: undefined })),
-			width
+			width,
+			screenWidth,
+			pageHeight
 		)
 		const bounds = new Map<
 			string,
@@ -134,7 +239,12 @@ export function ergonomicOrder(widgets: LayoutWidget[], width: number): number[]
 				)
 			) {
 				reach +=
-					Math.abs(rect.x + rect.width / 2 - width / 2) +
+					(profile.hands === 2
+						? Math.min(
+								Math.abs(rect.x + rect.width / 2 - width * 0.25),
+								Math.abs(rect.x + rect.width / 2 - width * 0.75)
+							)
+						: Math.abs(rect.x + rect.width / 2 - width / 2)) +
 					layout.height -
 					rect.y -
 					rect.height / 2
@@ -147,7 +257,7 @@ export function ergonomicOrder(widgets: LayoutWidget[], width: number): number[]
 				0
 			) / Math.max(1, bounds.size)
 		return {
-			height: layout.height,
+			height: layout.pages * (Number.isFinite(pageHeight) ? pageHeight : 0) + layout.height,
 			travel: spread * 0.15 + (reach / Math.max(1, playable)) * 0.08
 		}
 	}

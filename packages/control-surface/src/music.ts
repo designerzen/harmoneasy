@@ -41,6 +41,37 @@ export function noteName(pitch: number): string {
 	return `${["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"][pitch % 12]}${Math.floor(pitch / 12) - 1}`
 }
 /** Shared geometry keeps GPU cells, native hit targets and XR rays aligned. */
-export function musicRect(width: number, height: number) {
-	return { x: 38, y: 32, width: Math.max(1, width - 50), height: Math.max(1, height - 46) }
+export function musicRect(width: number, height: number, scale = 1) {
+	return {
+		x: 38,
+		y: 32,
+		width: Math.max(1, width - 50),
+		height: Math.max(1, height - 46 - 55 / scale)
+	}
+}
+export interface MusicView {
+	row: number
+	column: number
+	rows: number
+	columns: number
+	gap: number
+	revision: number
+}
+export function musicView(
+	width: number,
+	height: number,
+	rows: number,
+	columns: number,
+	scale = 1
+): MusicView {
+	const rect = musicRect(width, height, scale),
+		gap = 11 / scale
+	return {
+		row: 0,
+		column: 0,
+		rows: Math.max(1, Math.min(rows, Math.floor((rect.height + gap) / (55 / scale)))),
+		columns: Math.max(1, Math.min(columns, Math.floor((rect.width + gap) / (55 / scale)))),
+		gap,
+		revision: 0
+	}
 }
