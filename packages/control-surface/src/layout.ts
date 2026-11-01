@@ -146,13 +146,19 @@ export function ergonomicOrder(widgets: LayoutWidget[], width: number): number[]
 				(sum, box) => sum + box.right - box.left + box.bottom - box.top,
 				0
 			) / Math.max(1, bounds.size)
-		return layout.height + spread * 0.15 + (reach / Math.max(1, playable)) * 0.08
+		return {
+			height: layout.height,
+			travel: spread * 0.15 + (reach / Math.max(1, playable)) * 0.08
+		}
 	}
 	let best = indices,
 		bestScore = score(indices)
 	for (const candidate of candidates.slice(1)) {
 		const next = score(candidate)
-		if (next < bestScore) {
+		if (
+			next.height < bestScore.height ||
+			(next.height === bestScore.height && next.travel < bestScore.travel)
+		) {
 			best = candidate
 			bestScore = next
 		}

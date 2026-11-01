@@ -12,6 +12,23 @@ afterEach(() => {
 })
 
 describe("song tree growth", () => {
+	it("never sprouts a new chord from a released branch, including notes in the grouping window", () => {
+		const tree = new TreeModel()
+		for (const note of [60, 64, 67]) {
+			tree.noteOn(note, 90, 1, 0)
+		}
+		tree.allNotesOff(0.5)
+		const frozen = tree.branches.map((branch) => branchPoint(branch, 0.5))
+		for (const note of [65, 69, 72]) {
+			tree.noteOn(note, 90, 1, 0.6)
+		}
+		const root = tree.branches.find((branch) => branch.note === 65)!
+		expect(root.parent).toBeUndefined()
+		expect(tree.branches.slice(0, 3).map((branch) => branchPoint(branch, 2))).toEqual(frozen)
+		tree.allNotesOff(0.61)
+		tree.noteOn(62, 90, 1, 0.62)
+		expect(tree.branches.at(-1)!.parent).toBeUndefined()
+	})
 	it("starts on the first note, preserves velocity, and freezes released branches", () => {
 		const tree = new TreeModel()
 		expect(tree.started).toBeUndefined()
@@ -44,7 +61,6 @@ describe("song tree growth", () => {
 			tree.noteOn(note, 90, 1, 0)
 		}
 		const first = tree.branches.find((branch) => branch.parent === undefined)!
-		tree.allNotesOff(0.8)
 		for (const note of [65, 69, 72]) {
 			tree.noteOn(note, 90, 1, 1)
 		}
@@ -59,7 +75,7 @@ describe("song tree growth", () => {
 		expect(independent.origin.x).toBe(0)
 		expect(independent.side).toBe(-second.side)
 	})
-	it("keeps channel identities, treats zero velocity as release, and bounds history", () => {
+	it("keeps channel identities, treats zero velocity as release, and retains complete song history", () => {
 		const tree = new TreeModel()
 		tree.noteOn(60, 30, 1, 0)
 		tree.noteOn(60, 127, 2, 0)
@@ -69,7 +85,7 @@ describe("song tree growth", () => {
 			tree.noteOn(62, 90, 1, i)
 			tree.noteOff(62, 1, i + 0.2)
 		}
-		expect(tree.branches.length).toBeLessThanOrEqual(1024)
+		expect(tree.branches.length).toBe(1302)
 		expect(tree.held.has("2:60")).toBe(true)
 		tree.reset()
 		expect(tree.branches).toEqual([])
@@ -78,6 +94,58 @@ describe("song tree growth", () => {
 })
 
 describe("song tree output and renderer", () => {
+	it("fits every branch of a long song without truncating GPU batches, and supports zooming back in", () => {
+		let now = 0
+		const output = new OutputSongTree({ now: () => now })
+		for (let i = 0; i < 8500; i++) {
+			now = i * 0.1
+			output.noteOn(60 + (i % 12), 80)
+			now += 0.08
+			output.allNotesOff()
+		}
+		let leaves = 0
+		let checkFit = true
+		const appends: boolean[] = []
+		const renderer = {
+			backend: "Canvas",
+			destroy: vi.fn(),
+			draw(
+				data: Float32Array,
+				count: number,
+				width: number,
+				height: number,
+				append: boolean
+			) {
+				appends.push(append)
+				for (let i = 0; i < count * 12; i += 12) {
+					if (data[i + 8] === 1) {
+						leaves++
+						if (checkFit) {
+							expect(data[i]).toBeGreaterThan(0)
+							expect(data[i + 1]).toBeGreaterThan(0)
+							expect(data[i + 2]).toBeLessThan(width)
+							expect(data[i + 3]).toBeLessThan(height)
+						}
+					}
+				}
+			}
+		}
+		Object.assign(output, {
+			renderer,
+			canvas: document.createElement("canvas"),
+			viewMode: "fit"
+		})
+		;(output as any).draw(now)
+		expect(leaves).toBe(8500)
+		expect(appends).toEqual([false, true])
+		const fitScale = (output as any).scale
+		expect(fitScale).toBeLessThan(0.02)
+		checkFit = false
+		;(output as any).zoomBy(1.4)
+		expect((output as any).scale).toBeCloseTo(fitScale * 1.4)
+		expect((output as any).viewMode).toBe("manual")
+		output.destroy()
+	})
 	it("adds velocity-sized matching leaves on release while the trunk continues growing", () => {
 		let now = 0
 		const output = new OutputSongTree({ now: () => now })
@@ -109,7 +177,16 @@ describe("song tree output and renderer", () => {
 		}
 		expect(leaves).toHaveLength(2)
 		expect(leaves[0][4]).toBeGreaterThan(leaves[1][4])
-		expect(Array.from(leaves[0].slice(5, 8))).toEqual(Array.from(released.slice(29, 32)))
+		const matchingBranch = Array.from({ length: released.length / 12 }, (_, i) =>
+			released.slice(i * 12, i * 12 + 12)
+		).find(
+			(segment) =>
+				segment[8] === 0 &&
+				segment[5] === leaves[0][5] &&
+				segment[6] === leaves[0][6] &&
+				segment[7] === leaves[0][7]
+		)
+		expect(matchingBranch).toBeDefined()
 		const trunkEnd = released[15]
 		now = 2
 		draw()

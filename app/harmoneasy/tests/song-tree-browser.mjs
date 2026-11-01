@@ -31,7 +31,8 @@ window.treeReady = (async () => {
   data.set([100,100,300,200,8,0.2,0.9,0.4,0,0,0,0]);
   data.set([250,180,275,155,10,0.9,0.3,0.4,1,0,0,0],12);
   await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-  renderer.draw(data,2,480,420);
+  renderer.draw(data,1,480,420);
+  renderer.draw(data.subarray(12),1,480,420,true);
   const copy = document.createElement('canvas'); copy.width=480; copy.height=420;
   const ctx = copy.getContext('2d'); ctx.drawImage(canvas,0,0);
   const pixel = Array.from(ctx.getImageData(200,150,1,1).data);
@@ -103,6 +104,25 @@ try {
 		window.songTree.allNotesOff()
 	})
 	await page.screenshot({ path: join(output, "song-tree.png") })
+	await page.getByRole("button", { name: "Zoom out", exact: true }).click()
+	assert.ok(await page.evaluate(() => window.songTree.scale < 1))
+	await page.getByRole("button", { name: "Zoom in", exact: true }).click()
+	await page.evaluate(() => {
+		for (let i = 1; i <= 1500; i++) {
+			window.advanceTree(4 + i * 0.1)
+			window.songTree.noteOn(48 + (i % 24), 40 + (i % 80))
+			window.songTree.allNotesOff()
+		}
+	})
+	await page.getByRole("button", { name: "Fit whole song", exact: true }).click()
+	assert.ok(
+		await page.evaluate(
+			() => window.songTree.scale < 0.1 && window.songTree.model.branches.length === 1506
+		)
+	)
+	await page.screenshot({ path: join(output, "whole-song.png") })
+	await page.getByRole("button", { name: "Follow growth", exact: true }).click()
+	assert.equal(await page.evaluate(() => window.songTree.scale), 1)
 	await page.evaluate(async () => {
 		const tree = window.songTree
 		await tree.destroyGui()

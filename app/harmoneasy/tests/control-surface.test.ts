@@ -335,6 +335,12 @@ describe("surface interaction and bindings", () => {
 			widget: i % 4 === 0 ? "piano-roll" : "dial"
 		}))
 		const order = ergonomicOrder(widgets, 640)
+		expect(
+			layoutWidgets(
+				order.map((index) => widgets[index]),
+				640
+			).height
+		).toBeLessThanOrEqual(layoutWidgets(widgets, 640).height)
 		expect([...order].sort((a, b) => a - b)).toEqual(widgets.map((_, i) => i))
 		expect(ergonomicOrder(widgets, 640)).toEqual(order)
 		const a = bind("a"),
