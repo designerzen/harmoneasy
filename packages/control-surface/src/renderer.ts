@@ -1,5 +1,7 @@
 /// <reference types="@webgpu/types" />
+import { choiceGrid, waveformPoints } from "./choices"
 import { PadLight, noteColor } from "./pad"
+import type { VisualiserFrame } from "./visualiser"
 import { beatPulse } from "./beat"
 import { EVENT_GPU_ERROR } from "./events"
 import { sourceTheme } from "./themes"
@@ -40,6 +42,8 @@ export interface WidgetVisual {
 	unavailable?: boolean
 	relative?: RelativeKeys
 	musicView?: MusicView
+	visualiser?: VisualiserFrame
+	background?: boolean
 	pad?: PadLight
 	strum?: Strum
 }
@@ -52,6 +56,7 @@ interface CachedWidget {
 	width: number
 	height: number
 	rotation: number | undefined
+	visualiserRevision: number | undefined
 	padRevision: number | undefined
 	musicRevision: number | undefined
 	strumRevision: number | undefined
@@ -171,14 +176,21 @@ fn chassis(distance:f32,top:f32,pressed:f32)->vec4f {
   let alpha=textureSampleLevel(atlas,atlasSampler,i.textureRect.xy+i.uv*i.textureRect.zw,0.0).a;
   return vec4f(i.color.rgb,alpha*i.color.a);
  }
- if (kind<0.5) {
+ if (kind>19.5) {
+  let a=i.textureRect.xy;let b=i.textureRect.zw;let ab=b-a;let q=i.uv*size-a;let t=clamp(dot(q,ab)/max(.001,dot(ab,ab)),0.0,1.0);
+  let stroke=1.0-smoothstep(.8,1.8,length(q-ab*t));
+  return vec4f(i.color.rgb,stroke*i.color.a);
+ } else if (kind>18.5) {
+  let d=box(p,size*.5-vec2f(.5),1);let a=1.0-smoothstep(0.0,1.0,d);
+  return vec4f(i.color.rgb*(.5+i.uv.y*.4),a*i.color.a);
+ } else if (kind<0.5) {
   let pattern=i.extra.x;
   let edge=box(p,size*0.5-vec2f(2),select(10.0,3.0,pattern>0.5&&pattern<1.5));
   let grid=select(select(max(line((p.x)%16.0,0.25),line((p.y)%16.0,0.25)),line((p.x+p.y)%14.0,0.35),pattern>0.5),line(length(p)%18.0,0.3),pattern>1.5);
   let a=1.0-smoothstep(0.0,1.0,edge);
   let bevel=(1.0-smoothstep(0.0,2.0,abs(edge+3.0)))*top*frame.effects.x;
   let rgb=mix(vec3f(0.022,0.031,0.048)*(0.85+top*0.3),i.color.rgb,0.018+grid*0.004)+vec3f(0.07,0.1,0.13)*bevel+i.color.rgb*(line(edge,0.6)*(0.2+engaged*0.65+frame.effects.y));
-  return surfaceEffect(vec4f(rgb,a),i.uv,frame.time);
+  return surfaceEffect(vec4f(rgb,a*select(1.0,.86,frame.effects.z>0.5)),i.uv,frame.time);
  } else if (kind<1.5) {
   color=settingColor(value);
   let radius=min(size.x,size.y)*0.34; let dist=length(p)-radius;
@@ -238,6 +250,10 @@ fn chassis(distance:f32,top:f32,pressed:f32)->vec4f {
   let d=length(vec2f((i.uv.x-center)*size.x,p.y))-7.0;
   light=line(d,1.0)*select(0.2,1.0,abs(segment-value)<0.1);
   fill=(1.0-smoothstep(-1.0,0.0,d))*select(0.0,0.4,abs(segment-value)<0.1);
+ } else if (kind>16.5) {
+  let a=i.textureRect.xy; let b=i.textureRect.zw; let ab=b-a;
+  let q=i.uv*size-a; let t=clamp(dot(q,ab)/max(0.001,dot(ab,ab)),0.0,1.0);
+  light=line(length(q-ab*t),1.2);
  } else if (kind>15.5) {
   let flash=exp(-max(0.0,frame.time-second)*10.0)*frame.motion;
   light=line(p.y,0.7+flash*1.5)*(0.2+flash*1.6);
@@ -300,6 +316,7 @@ export class GpuSurfaceRenderer {
 	private postData = new Float32Array(4)
 	private projection = new Float32Array(16)
 	private disposed = false
+	private hasBackground = false
 	private beatPosition?: number
 	private dirty = true
 	private active = false
@@ -773,6 +790,102 @@ export class GpuSurfaceRenderer {
 			)
 		}
 	}
+	private drawVisualiser(w: WidgetVisual, alpha: number): void {
+		const frame = w.visualiser,
+			options = w.descriptor.visualiser
+		if (!frame?.available || !options) {
+			return
+		}
+		const x = w.x + 12,
+			y = w.y + (w.background ? 12 : 36),
+			width = w.width - 24,
+			height = Math.max(1, w.height - (w.background ? 24 : 48))
+		const opacity = alpha * (options.opacity ?? (w.background ? 0.22 : 0.85))
+		if (options.kind === "notes") {
+			const cell = width / 128,
+				original = this.drawingColor
+			for (let note = 0; note < 128; note++) {
+				const value = frame.samples[note]
+				if (value <= 0.0001) {
+					continue
+				}
+				this.drawingColor = noteColor(note)
+				this.quad(
+					x + note * cell,
+					y + height * (1 - value),
+					Math.max(1, cell - 0.5),
+					Math.max(1, height * value),
+					19,
+					0,
+					-1,
+					0,
+					0,
+					opacity
+				)
+			}
+			this.drawingColor = original
+		} else if (options.kind === "level") {
+			this.quad(
+				x,
+				y + height * (1 - frame.level),
+				width,
+				Math.max(1, height * frame.level),
+				19,
+				0,
+				-1,
+				0,
+				0,
+				opacity
+			)
+		} else if (options.kind === "spectrum") {
+			const count = 64,
+				cell = width / count
+			for (let i = 0; i < count; i++) {
+				const value = Math.max(frame.samples[i * 2], frame.samples[i * 2 + 1])
+				this.quad(
+					x + i * cell,
+					y + height * (1 - value),
+					Math.max(1, cell - 2),
+					Math.max(1, height * value),
+					19,
+					0,
+					-1,
+					0,
+					0,
+					opacity
+				)
+			}
+		} else {
+			for (let i = 1; i < frame.samples.length; i++) {
+				const point = (index: number) => ({
+					x: x + (index / (frame.samples.length - 1)) * width,
+					y:
+						y +
+						height *
+							(options.kind === "waveform"
+								? 0.5 - frame.samples[index] * 0.46
+								: 1 - frame.samples[index])
+				})
+				const a = point(i - 1),
+					b = point(i),
+					left = Math.min(a.x, b.x) - 2,
+					top = Math.min(a.y, b.y) - 2
+				this.quad(
+					left,
+					top,
+					Math.abs(b.x - a.x) + 4,
+					Math.abs(b.y - a.y) + 4,
+					20,
+					0,
+					-1,
+					0,
+					0,
+					opacity,
+					[a.x - left, a.y - top, b.x - left, b.y - top]
+				)
+			}
+		}
+	}
 	prepare(
 		widgets: WidgetVisual[],
 		_motion: boolean,
@@ -783,6 +896,7 @@ export class GpuSurfaceRenderer {
 			dirtyEnd = 0,
 			grown = false
 		const epoch = ++this.epoch
+		this.hasBackground = widgets.some((w) => w.background)
 		const wasActive = this.active
 		this.active = widgets.some(
 			(widget) =>
@@ -821,6 +935,7 @@ export class GpuSurfaceRenderer {
 				cached.strumRevision !== w.strum?.revision ||
 				cached.musicRevision !== w.musicView?.revision ||
 				cached.padRevision !== w.pad?.revision ||
+				cached.visualiserRevision !== w.visualiser?.revision ||
 				cached.descriptor !== w.descriptor ||
 				cached.widget !== w.widget ||
 				cached.sourceLabel !== w.sourceLabel ||
@@ -846,7 +961,9 @@ export class GpuSurfaceRenderer {
 				const target = Array.isArray(v)
 					? v.map((n) => normalize(d, n))
 					: [typeof v === "boolean" ? Number(v) : normalize(d, Number(v))]
-				this.quad(w.x, w.y, w.width, w.height, 0, 0, 0, active, theme.pattern, alpha)
+				if (!w.background) {
+					this.quad(w.x, w.y, w.width, w.height, 0, 0, 0, active, theme.pattern, alpha)
+				}
 				const rotary = w.widget === "dial" || w.widget === "rotation"
 				const musical = isMusicGrid(w.widget)
 				const centerY = w.y + w.height / 2 + 10
@@ -862,6 +979,7 @@ export class GpuSurfaceRenderer {
 					"piano-roll": 11,
 					"relative-keys": 13,
 					strum: 16,
+					visualiser: 19,
 					slider: 2,
 					range: 2,
 					toggle: 3,
@@ -879,7 +997,9 @@ export class GpuSurfaceRenderer {
 				const dial = dialOptions(
 					w.widget === "rotation" ? { ...w.dial, mode: "rotation" } : (w.dial ?? d.dial)
 				)
-				if (w.widget === "strum") {
+				if (w.widget === "visualiser") {
+					this.drawVisualiser(w, alpha)
+				} else if (w.widget === "strum") {
 					this.strum(w, alpha)
 				} else if (w.widget === "relative-keys") {
 					this.relativeKeys(w, alpha)
@@ -936,7 +1056,9 @@ export class GpuSurfaceRenderer {
 							}
 						}
 					}
-				} else if (!["select", "number", "text", "color", "display"].includes(w.widget)) {
+				} else if (
+					!["select", "radio", "number", "text", "color", "display"].includes(w.widget)
+				) {
 					if (w.widget === "pad") {
 						this.drawingColor = noteColor(d.pad?.note ?? 60)
 					}
@@ -976,24 +1098,69 @@ export class GpuSurfaceRenderer {
 					)
 				}
 				this.drawingColor = theme.accent
-				this.centeredText(
-					d.label.toUpperCase(),
-					w.x + 12,
-					w.y + 7,
-					labelWidth,
-					alpha,
-					false,
-					1.1
-				)
+				if (!w.background) {
+					this.centeredText(
+						d.label.toUpperCase(),
+						w.x + 12,
+						w.y + 7,
+						labelWidth,
+						alpha,
+						false,
+						1.1
+					)
+				}
 				if (w.widget === "radio" && d.choices?.length) {
-					const segment = width / d.choices.length
+					const { columns, rows } = choiceGrid(d.choices.length)
+					const cw = width / columns,
+						ch = (w.height - 40) / rows
 					for (const [index, option] of d.choices.entries()) {
-						this.text(
-							option.label,
-							x + index * segment + 4,
-							y + height / 2 + 12,
-							segment - 8,
+						const left = x + (index % columns) * cw + 3
+						const top = w.y + 32 + Math.floor(index / columns) * ch + 3
+						this.quad(
+							left,
+							top,
+							cw - 6,
+							ch - 6,
+							11,
+							index === choice ? 0.7 : 0.04,
+							0,
+							0,
+							0,
 							alpha
+						)
+						const points = waveformPoints(option)
+						if (points) {
+							const iw = Math.min(64, cw - 22),
+								ih = Math.min(28, ch - 32)
+							for (let i = 1; i < points.length; i++) {
+								this.quad(
+									left + (cw - 6 - iw) / 2,
+									top + (ch - 28 - ih) / 2,
+									iw,
+									ih,
+									17,
+									0,
+									0,
+									0,
+									0,
+									alpha,
+									[
+										points[i - 1][0] * iw,
+										points[i - 1][1] * ih,
+										points[i][0] * iw,
+										points[i][1] * ih
+									]
+								)
+							}
+						}
+						this.centeredText(
+							option.label,
+							left + 4,
+							points ? top + ch - 28 : top + (ch - 24) / 2,
+							cw - 14,
+							alpha,
+							false,
+							0.75
 						)
 					}
 				}
@@ -1008,7 +1175,8 @@ export class GpuSurfaceRenderer {
 						"color",
 						"radio",
 						"relative-keys",
-						"strum"
+						"strum",
+						"visualiser"
 					].includes(w.widget)
 				) {
 					const valueY =
@@ -1038,6 +1206,7 @@ export class GpuSurfaceRenderer {
 					strumRevision: w.strum?.revision,
 					musicRevision: w.musicView?.revision,
 					padRevision: w.pad?.revision,
+					visualiserRevision: w.visualiser?.revision,
 					descriptor: d,
 					widget: w.widget,
 					sourceLabel: w.sourceLabel,
@@ -1188,7 +1357,15 @@ export class GpuSurfaceRenderer {
 		const frame = this.frameData
 		frame.set(projection)
 		frame.set([width, height, time, motion ? 1 : 0], 16)
-		frame.set([this.visualEffects.depth, beatPulse(this.beatPosition, motion), 0, 0], 20)
+		frame.set(
+			[
+				this.visualEffects.depth,
+				beatPulse(this.beatPosition, motion),
+				Number(this.hasBackground),
+				0
+			],
+			20
+		)
 		this.device.queue.writeBuffer(this.uniform, 0, frame)
 		const targetWidth =
 				targetSize?.width ?? (viewport ? viewport.x + viewport.width : this.canvas.width),

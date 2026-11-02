@@ -1,3 +1,4 @@
+import { validVisualiser } from "./visualiser"
 import type {
 	ControlDescriptor,
 	ControlValue,
@@ -64,7 +65,8 @@ export const WIDGET_TYPES: WidgetType[] = [
 	"guitar-tab",
 	"piano-roll",
 	"relative-keys",
-	"strum"
+	"strum",
+	"visualiser"
 ]
 export const clamp = (v: number, min = 0, max = 1) => Math.max(min, Math.min(max, v))
 export const sameValue = (a: unknown, b: unknown) =>
@@ -256,6 +258,8 @@ export function validSurfaces(value: unknown): value is SurfaceState[] {
 		}
 		ids.add(s.id)
 		return (
+			(s.background == null || validVisualiser(s.background)) &&
+			(s.visualisersPaused === undefined || typeof s.visualisersPaused === "boolean") &&
 			(s.beatCues === undefined || typeof s.beatCues === "boolean") &&
 			(s.panels === undefined ||
 				(Array.isArray(s.panels) &&
@@ -287,6 +291,7 @@ export function validSurfaces(value: unknown): value is SurfaceState[] {
 					(w.rotation === undefined || [0, 90, 180, 270].includes(w.rotation)) &&
 					(w.column === undefined ||
 						(Number.isInteger(w.column) && w.column >= 0 && w.column <= 31)) &&
+					(w.visualiser === undefined || validVisualiser(w.visualiser)) &&
 					(w.dial === undefined || validDialOptions(w.dial))
 			)
 		)

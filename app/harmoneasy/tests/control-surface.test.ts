@@ -352,6 +352,74 @@ describe("surface interaction and bindings", () => {
 		expect(beatPulse(3)).toBe(0.3)
 		expect(beatPulse(2.5)).toBeLessThan(0.001)
 	})
+	it("defaults to note data and cycles backgrounds without releasing held controls", async () => {
+		const pad = bind("strike", { widget: "pad" }, 0),
+			saved = state()
+		saved.widgets = [{ key: pad.key }]
+		const surface = new ControlSurface({
+			state: saved,
+			bindings: [pad],
+			visualiserSources: [
+				{
+					id: "notes",
+					label: "Note data",
+					kinds: ["notes"],
+					read: () => ({ samples: new Float32Array(128), level: 0 })
+				},
+				{
+					id: "audio",
+					label: "Synth audio",
+					kinds: ["waveform", "spectrum"],
+					read: () => ({ samples: new Float32Array(128), level: 0 })
+				}
+			],
+			change: vi.fn()
+		})
+		views.push(surface)
+		expect(saved.background).toMatchObject({ sourceId: "notes", kind: "notes" })
+		const entry = (surface as any).entries[0]
+		expect(surface.pointerDown(900, entry.visual.x + 20, entry.visual.y + 40, false, 0.8)).toBe(
+			true
+		)
+		const cycle = surface.element.querySelector<HTMLButtonElement>(
+			'[aria-label="Switch visualiser"]'
+		)!
+		cycle.click()
+		expect(saved.background).toMatchObject({ sourceId: "audio", kind: "waveform" })
+		expect((surface as any).gestures.size).toBe(1)
+		cycle.click()
+		expect(saved.background).toMatchObject({ kind: "spectrum" })
+		// Two parameter-history choices follow the audio views, then off and back to notes.
+		cycle.click()
+		cycle.click()
+		cycle.click()
+		expect(saved.background).toBeNull()
+		cycle.click()
+		expect(saved.background).toMatchObject({ kind: "notes" })
+		surface.pointerUp(900)
+		await settle()
+		expect(pad.value).toBe(0)
+	})
+	it("keeps parameter sources connected when only their visualiser remains", () => {
+		const binding = bind("cutoff"),
+			saved = state()
+		saved.connections = [{ componentId: "synth", controlIds: ["cutoff"] }]
+		saved.widgets = [
+			{
+				key: "history",
+				widget: "visualiser",
+				visualiser: { sourceId: `control:${binding.key}`, kind: "history" }
+			}
+		]
+		const surface = new ControlSurface({ state: saved, bindings: [binding], change: vi.fn() })
+		views.push(surface)
+		;(surface as any).save()
+		expect(saved.connections).toEqual([{ componentId: "synth", controlIds: ["cutoff"] }])
+		saved.background = { sourceId: `control:${binding.key}`, kind: "level" }
+		saved.widgets = []
+		;(surface as any).save()
+		expect(saved.connections).toHaveLength(1)
+	})
 	it("keeps musical targets at least 44 pixels with 11 pixel gaps when resized or zoomed", () => {
 		for (const scale of [0.5, 1, 2, 3]) {
 			for (const width of [280, 390, 700]) {
@@ -851,7 +919,9 @@ describe("surface interaction and bindings", () => {
 		expect(menu.hidden).toBe(true)
 		settings.click()
 		expect(menu.hidden).toBe(false)
-		menu.querySelector<HTMLButtonElement>("button")!.click()
+		Array.from(menu.querySelectorAll<HTMLButtonElement>("button"))
+			.find((button) => button.textContent === "Add Synth controls…")!
+			.click()
 		expect(addControls).toHaveBeenCalledOnce()
 		expect(menu.hidden).toBe(true)
 		settings.click()
@@ -1202,5 +1272,113 @@ describe("graph control connections", () => {
 		expect(failed).toHaveBeenCalledOnce()
 		expect(ended).toHaveBeenCalledOnce()
 		expect(session.end).toHaveBeenCalledOnce()
+	})
+})
+
+describe("surface choice radios", () => {
+	it.each([2, 4, 6, 7])(
+		"defaults %i choices by count and preserves explicit selects",
+		async (count) => {
+			const binding = bind(
+				"choice",
+				{
+					widget: "select",
+					choices: Array.from({ length: count }, (_, value) => ({
+						label: String(value),
+						value
+					}))
+				},
+				0
+			)
+			const saved = state()
+			saved.widgets = [{ key: binding.key }, { key: binding.key, widget: "select" }]
+			const surface = new ControlSurface({
+				state: saved,
+				bindings: [binding],
+				change: vi.fn()
+			})
+			views.push(surface)
+			await settle()
+			const controls = surface.element.querySelectorAll(".cs-semantic")
+			expect(controls[0].querySelectorAll('input[type="radio"]').length).toBe(
+				count < 7 ? count : 0
+			)
+			expect(controls[0].querySelectorAll("select").length).toBe(count < 7 ? 0 : 1)
+			expect(controls[1].querySelector("select")).not.toBeNull()
+		}
+	)
+
+	it("keeps typed values and isolates native radio groups", () => {
+		const binding = bind("chord", {
+			widget: "radio",
+			choices: [
+				{ label: "Major", value: [0, 4, 7] },
+				{ label: "Minor", value: [0, 3, 7] }
+			]
+		})
+		const apply = vi.fn()
+		const first = createDomControl(binding, apply),
+			second = createDomControl(binding, vi.fn())
+		document.body.append(first.element, second.element)
+		first.update([0, 4, 7])
+		second.update([0, 4, 7])
+		const radios = first.element.querySelectorAll<HTMLInputElement>('input[type="radio"]')
+		radios[1].click()
+		expect(apply).toHaveBeenCalledWith([0, 3, 7])
+		expect(second.element.querySelector<HTMLInputElement>("input")!.checked).toBe(true)
+		first.update([0, 3, 7])
+		expect(radios[0].checked).toBe(false)
+		expect(radios[1].checked).toBe(true)
+	})
+
+	it("renders waveform icons, synchronizes external changes, and blocks disabled radios", () => {
+		const binding = bind("shape", {
+			widget: "radio",
+			disabled: true,
+			choices: ["sine", "square", "sawtooth", "triangle"].map((value) => ({
+				label: value,
+				value
+			}))
+		})
+		const apply = vi.fn(),
+			control = createDomControl(binding, apply)
+		control.update("sawtooth")
+		expect(control.element.querySelectorAll("svg")).toHaveLength(4)
+		const radios = control.element.querySelectorAll<HTMLInputElement>("input")
+		expect(radios[2].checked).toBe(true)
+		radios[0].click()
+		expect(apply).not.toHaveBeenCalled()
+		control.update("triangle")
+		expect(radios[3].checked).toBe(true)
+	})
+
+	it("maps each two-row waveform tile to its value", async () => {
+		const binding = bind(
+			"shape",
+			{
+				widget: "select",
+				choices: ["sine", "square", "sawtooth", "triangle"].map((value) => ({
+					label: value,
+					value
+				}))
+			},
+			"sine"
+		)
+		const saved = state()
+		saved.widgets = [{ key: binding.key }]
+		const surface = new ControlSurface({ state: saved, bindings: [binding], change: vi.fn() })
+		views.push(surface)
+		await settle()
+		const visual = (surface as any).entries[0].visual
+		for (let index = 0; index < 4; index++) {
+			surface.pointerDown(
+				index + 1,
+				visual.x + 8 + (((index % 2) + 0.5) * (visual.width - 16)) / 2,
+				visual.y + 32 + ((Math.floor(index / 2) + 0.5) * (visual.height - 40)) / 2
+			)
+			surface.pointerUp(index + 1)
+			await settle()
+			expect(binding.value).toBe(binding.descriptor.choices![index].value)
+		}
 	})
 })

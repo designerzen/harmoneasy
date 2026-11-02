@@ -445,10 +445,26 @@ async function profilePolySynth(
 			return write(value)
 		}
 	}
+	const analyser = audio.createAnalyser()
+	analyser.fftSize = 1024
+	synth.output.connect(analyser)
+	const waveform = new Float32Array(1024)
 	const surface = new ControlSurface({
+		visualiserSources: [
+			{
+				id: "profile-audio",
+				label: "PolySynth audio",
+				kinds: ["waveform"],
+				read() {
+					analyser.getFloatTimeDomainData(waveform)
+					return { samples: waveform, level: 0.5 }
+				}
+			}
+		],
 		beatPosition: () => audio.currentTime * 2,
 		state: {
 			id: "poly",
+			background: { sourceId: "profile-audio", kind: "waveform" },
 			name: "PolySynth",
 			connections: [],
 			widgets: bindings.map((binding) => ({
@@ -525,6 +541,7 @@ async function profilePolySynth(
 	const result = {
 		engine: "PolySynth",
 		beatCues: true,
+		visualiserBackground: true,
 		mode,
 		zoom,
 		dials: entries.length,
@@ -541,6 +558,8 @@ async function profilePolySynth(
 	}
 	measure = undefined
 	surface.destroy()
+	synth.output.disconnect(analyser)
+	analyser.disconnect()
 	synth.allNotesOff()
 	await synth.destroyGui()
 	synth.output.disconnect()

@@ -63,6 +63,22 @@ try {
 		"GPU initialization must compile shaders and create a working render pipeline"
 	)
 	assert.equal(await page.locator(".cs-widget").count(), 18)
+	assert.equal(await page.locator(".cs-radio svg").count(), 4)
+	const sine = page.getByRole("radio", { name: "sine", exact: true })
+	await sine.focus()
+	await sine.press("ArrowRight")
+	await page.waitForFunction(() => window.surfaceSmoke.values.wave === "square")
+	await page.getByRole("radio", { name: "square", exact: true }).evaluate((el) => el.blur())
+	await page.evaluate(() => {
+		const surface = window.surfaceSmoke.surface
+		const visual = surface.entries.find((entry) => entry.binding.key === "wave").visual
+		const x = visual.x + 8 + (visual.width - 16) * 0.75
+		const y = visual.y + 32 + (visual.height - 40) * 0.75
+		surface.pointerDown(200, x, y)
+		surface.pointerUp(200)
+	})
+	await page.waitForFunction(() => window.surfaceSmoke.values.wave === "triangle")
+
 	await page.waitForFunction(
 		() => document.querySelector(".control-surface").dataset.hands === "2"
 	)
@@ -243,7 +259,8 @@ try {
 	await page.getByRole("spinbutton", { name: "Tempo" }).fill("140")
 	await page.getByRole("spinbutton", { name: "Tempo" }).press("Tab")
 	await page.waitForFunction(() => window.surfaceSmoke.values.number === 140)
-	await page.getByRole("combobox", { name: "Preset", exact: true }).selectOption("1")
+	await page.getByRole("radio", { name: "Cloud", exact: true }).focus()
+	await page.getByRole("radio", { name: "Cloud", exact: true }).press("Space")
 	await page.waitForFunction(() => window.surfaceSmoke.values.preset === 1)
 	const padWidget = page.locator(".cs-widget").filter({ has: page.locator(".cs-pad") })
 	await padWidget.scrollIntoViewIfNeeded()
@@ -465,6 +482,7 @@ try {
 		targetRect = await page
 			.locator(".cs-widget")
 			.filter({ has: page.locator(".cs-radio") })
+			.first()
 			.boundingBox()
 	const movePoint = {
 		x: moveRect.x + moveRect.width / 2,
@@ -831,6 +849,135 @@ try {
 			surface.destroy()
 			host.remove()
 		}
+	})
+	await page.evaluate(() => {
+		const { surface } = window.surfaceSmoke
+		let reads = 0
+		const samples = new Float32Array(128)
+		surface.visualiserSources = [
+			{
+				id: "test-audio",
+				label: "Test audio",
+				kinds: ["notes", "waveform", "spectrum", "level"],
+				read(kind) {
+					reads++
+					for (let i = 0; i < 128; i++) {
+						samples[i] =
+							kind === "waveform"
+								? Math.sin(i * 0.2 + reads * 0.1)
+								: Math.abs(Math.sin(i * 0.1 + reads * 0.05))
+					}
+					return { samples, level: 0.6 }
+				}
+			}
+		]
+		surface.options.state.widgets = []
+		surface.element.id = "visualiser-smoke"
+		surface.rebuild()
+		window.visualiserSmoke = { surface, getReads: () => reads, host: surface.element }
+	})
+	const visualiserHost = page.locator("#visualiser-smoke")
+	const openVisualisers = async () => {
+		await visualiserHost.getByRole("button", { name: "Surface settings", exact: true }).click()
+		await visualiserHost.getByRole("button", { name: "Add visualiser…", exact: true }).click()
+	}
+	for (const kind of ["notes", "waveform", "spectrum", "level"]) {
+		await openVisualisers()
+		const dialog = page.getByRole("dialog", { name: "Data visualisers", exact: true })
+		await dialog
+			.getByRole("combobox", { name: "Visualiser type", exact: true })
+			.selectOption(kind)
+		await dialog.getByRole("button", { name: "Add visualiser", exact: true }).click()
+	}
+	await openVisualisers()
+	const visualiserDialog = page.getByRole("dialog", { name: "Data visualisers", exact: true })
+	await visualiserDialog
+		.getByRole("combobox", { name: "Placement", exact: true })
+		.selectOption("background")
+	await visualiserDialog
+		.getByRole("combobox", { name: "Visualiser type", exact: true })
+		.selectOption("spectrum")
+	await visualiserDialog.getByRole("button", { name: "Add visualiser", exact: true }).click()
+	await page.waitForTimeout(100)
+	await page.evaluate(() => {
+		const { surface } = window.visualiserSmoke
+		if (
+			surface.options.state.widgets.length !== 4 ||
+			!surface.options.state.background ||
+			!surface.background?.visualiser?.available
+		) {
+			throw new Error("Missing saved visualiser widget/background")
+		}
+		if (surface.renderer.frameData[22] !== 1) {
+			throw new Error("Background is not composited behind gadgets")
+		}
+		const before = surface.options.state.widgets.length
+		const entry = surface.entries.find((e) => e.page === surface.currentPage)
+		if (surface.pointerDown(99999, entry.visual.x + 20, entry.visual.y + 50)) {
+			throw new Error("Read-only visualisers consume control gestures")
+		}
+		if (surface.options.state.widgets.length !== before) {
+			throw new Error("Background modified layout")
+		}
+	})
+	await page.screenshot({ path: join(output, "visualisers.png") })
+	if (process.env.SURFACE_AXE_PATH) {
+		const violations = await page.evaluate(async () => {
+			const report = await axe.run(document, {
+				runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"] }
+			})
+			return report.violations.map((v) => ({ id: v.id, nodes: v.nodes.map((n) => n.target) }))
+		})
+		assert.deepEqual(violations, [], JSON.stringify(violations))
+	}
+	const cycleVisualiser = visualiserHost.getByRole("button", {
+		name: "Switch visualiser",
+		exact: true
+	})
+	await cycleVisualiser.click()
+	await cycleVisualiser.click()
+	await cycleVisualiser.click()
+	assert.equal(
+		await page.evaluate(() => window.visualiserSmoke.surface.options.state.background.kind),
+		"notes"
+	)
+	await page.waitForTimeout(50)
+	await page.evaluate(() => {
+		const { surface } = window.visualiserSmoke
+		const data = surface.renderer.cache.get(surface.background)?.data
+		if (!data?.some((value, i) => i % 20 === 4 && value === 19))
+			throw new Error("Note data has no GPU bars")
+	})
+	await openVisualisers()
+	await visualiserDialog.getByRole("checkbox", { name: "Pause visualisers", exact: true }).check()
+	const pausedReads = await page.evaluate(() => window.visualiserSmoke.getReads())
+	await page.waitForTimeout(120)
+	assert.equal(await page.evaluate(() => window.visualiserSmoke.getReads()), pausedReads)
+	await visualiserDialog.getByRole("button", { name: "Remove background", exact: true }).click()
+	await page.waitForTimeout(50)
+	assert.equal(
+		await page.evaluate(() => window.visualiserSmoke.surface.options.state.background),
+		null
+	)
+	await page.setViewportSize({ width: 640, height: 360 })
+	await page.waitForTimeout(50)
+	await openVisualisers()
+	const compactDialog = page.getByRole("dialog", { name: "Data visualisers", exact: true })
+	const compactBounds = await compactDialog.boundingBox()
+	assert.ok(
+		compactBounds.height <= 360 && compactBounds.width <= 640,
+		"Visualiser dialog must fit without scrolling"
+	)
+	assert.equal(
+		await compactDialog.evaluate(
+			(e) => e.scrollHeight <= e.clientHeight && e.scrollWidth <= e.clientWidth
+		),
+		true
+	)
+	await compactDialog.getByRole("button", { name: "Close", exact: true }).click()
+	await page.evaluate(() => {
+		window.visualiserSmoke.surface.destroy()
+		window.visualiserSmoke.host.remove()
 	})
 	await page.evaluate(() => window.surfaceSmoke.surface.destroy())
 	assert.equal(await page.locator(".control-surface").count(), 0)

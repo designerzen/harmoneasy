@@ -1,6 +1,12 @@
 // @vitest-environment happy-dom
 import { describe, expect, it, vi, afterEach } from "vitest"
-import { TreeModel, branchPoint } from "../../../packages/audiobus/io/outputs/tree-model"
+import {
+	TreeModel,
+	branchPoint,
+	branchPathPoint,
+	branchHeight,
+	TREE_FORK_HEIGHT
+} from "../../../packages/audiobus/io/outputs/tree-model"
 import OutputSongTree from "../../../packages/audiobus/io/outputs/output-song-tree"
 import { createTreeRenderer } from "../../../packages/audiobus/io/outputs/tree-renderer"
 import { musicalCommand } from "../../../packages/audiobus/io/event-clip"
@@ -12,6 +18,83 @@ afterEach(() => {
 })
 
 describe("song tree growth", () => {
+	it("turns every fork into an exactly vertical stem with smooth endpoint tangents", () => {
+		const tree = new TreeModel()
+		for (const note of [64, 67, 72, 76, 79]) {
+			tree.noteOn(note, 110, 1, 0)
+		}
+		for (const branch of tree.branches) {
+			expect(branchPathPoint(branch, 0)).toEqual(branch.origin)
+			expect(branchPathPoint(branch, TREE_FORK_HEIGHT).x).toBe(branch.targetX)
+			expect(branchPathPoint(branch, 100).x).toBe(branch.targetX)
+			expect(branchPathPoint(branch, TREE_FORK_HEIGHT - 0.001).x).toBeCloseTo(
+				branch.targetX,
+				5
+			)
+		}
+	})
+	it("reserves non-overlapping vertical lanes in dense, polyphonic passages", () => {
+		const tree = new TreeModel()
+		for (let group = 0; group < 30; group++) {
+			const at = group * 0.09
+			for (const interval of [0, 4, 7, 11]) {
+				tree.noteOn(48 + (group % 12) + interval, 127, 1 + (group % 4), at)
+			}
+		}
+		tree.allNotesOff(4)
+		const branches = tree.branches
+		for (let i = 0; i < branches.length; i++) {
+			for (let j = i + 1; j < branches.length; j++) {
+				const a = branches[i],
+					b = branches[j]
+				const low = Math.max(a.origin.y, b.origin.y) + TREE_FORK_HEIGHT
+				const high = Math.min(branchPoint(a, 4).y, branchPoint(b, 4).y)
+				if (low < high) {
+					expect(Math.abs(a.targetX - b.targetX)).toBeGreaterThan(12)
+				}
+			}
+		}
+	})
+	it("routes curved forks without crossing unrelated stems", () => {
+		const tree = new TreeModel()
+		for (let group = 0; group < 10; group++) {
+			for (const interval of [0, 4, 7, 11]) {
+				tree.noteOn(48 + (group % 12) + interval, 127, (group % 3) + 1, group * 0.09)
+			}
+		}
+		tree.allNotesOff(2)
+		const branches = tree.branches
+		for (const fork of branches) {
+			let a = branchPathPoint(fork, 0)
+			for (let step = 1; step <= 24; step++) {
+				const b = branchPathPoint(fork, (TREE_FORK_HEIGHT * step) / 24)
+				for (const stem of branches) {
+					if (stem === fork || stem.id === fork.parent) {
+						continue
+					}
+					if ((stem.targetX - a.x) * (stem.targetX - b.x) >= 0) {
+						continue
+					}
+					const y = a.y + ((b.y - a.y) * (stem.targetX - a.x)) / (b.x - a.x)
+					expect(y > stem.origin.y + TREE_FORK_HEIGHT && y < branchPoint(stem, 2).y).toBe(
+						false
+					)
+				}
+				a = b
+			}
+		}
+	})
+	it("reuses lane space for disjoint passages and keeps even very short notes visible", () => {
+		const tree = new TreeModel()
+		for (let i = 0; i < 120; i++) {
+			tree.noteOn(60, 70, 1, i * 2)
+			tree.noteOff(60, 1, i * 2 + 0.001)
+		}
+		for (const branch of tree.branches) {
+			expect(Math.abs(branch.targetX)).toBeLessThan(26)
+			expect(branchHeight(branch, 300)).toBeGreaterThan(TREE_FORK_HEIGHT)
+		}
+	})
 	it("uses onset gaps to vary shoot spacing while keeping long rests compact", () => {
 		function secondShoot(gap: number) {
 			const tree = new TreeModel()
@@ -27,7 +110,7 @@ describe("song tree growth", () => {
 		expect(Math.abs(rapid.tip.x)).toBeLessThan(Math.abs(relaxed.tip.x))
 		expect(relaxed.branch.spread).toBeLessThan(rest.branch.spread)
 		expect(rest.branch.spread).toBeLessThanOrEqual(40)
-		expect(secondShoot(0.8)).toEqual(relaxed)
+		expect(secondShoot(0.8).tip).toEqual(relaxed.tip)
 	})
 	it("shares timing-based spacing within chords and restores it after planting a new tree", () => {
 		const tree = new TreeModel()
@@ -55,13 +138,13 @@ describe("song tree growth", () => {
 			tree.noteOn(note, 90, 1, 0)
 		}
 		tree.allNotesOff(0.5)
-		const frozen = tree.branches.map((branch) => branchPoint(branch, 0.5))
+		const frozen = tree.branches.map((branch) => branchHeight(branch, 0.5))
 		for (const note of [65, 69, 72]) {
 			tree.noteOn(note, 90, 1, 0.6)
 		}
 		const root = tree.branches.find((branch) => branch.note === 65)!
 		expect(root.parent).toBeUndefined()
-		expect(tree.branches.slice(0, 3).map((branch) => branchPoint(branch, 2))).toEqual(frozen)
+		expect(tree.branches.slice(0, 3).map((branch) => branchHeight(branch, 2))).toEqual(frozen)
 		tree.allNotesOff(0.61)
 		tree.noteOn(62, 90, 1, 0.62)
 		expect(tree.branches.at(-1)!.parent).toBeUndefined()
@@ -88,7 +171,8 @@ describe("song tree growth", () => {
 		for (const child of tree.branches.filter((branch) => branch !== root)) {
 			expect(child.parent).toBe(root.id)
 			expect(child.stem).toBe(root)
-			expect(branchPoint(child, 0.1)).toEqual(branchPoint(root, 0.1))
+			expect(child.origin.x).toBe(root.targetX)
+			expect(child.targetX).not.toBe(root.targetX)
 			expect(branchPoint(child, 1)).not.toEqual(branchPoint(root, 1))
 		}
 	})
@@ -103,8 +187,9 @@ describe("song tree growth", () => {
 		}
 		const second = tree.branches.find((branch) => branch.note === 65)!
 		expect(second.parent).toBe(first.id)
-		expect(second.origin).toEqual(branchPoint(first, 1))
-		expect(second.side).toBe(-first.side)
+		expect(second.origin.x).toBe(first.targetX)
+		expect(second.origin.y).toBeLessThanOrEqual(branchPoint(first, 1).y)
+		expect(second.side).toBe(first.side)
 		tree.allNotesOff(2)
 		tree.noteOn(62, 70, 1, 8)
 		const independent = tree.branches.at(-1)!
@@ -131,20 +216,52 @@ describe("song tree growth", () => {
 })
 
 describe("song tree output and renderer", () => {
+	it("brings any historical branch into view at a readable scale", () => {
+		let now = 0
+		const output = new OutputSongTree({ now: () => now })
+		for (let i = 0; i < 100; i++) {
+			now = i
+			output.noteOn(48 + (i % 24), 100)
+			now += 0.2
+			output.allNotesOff()
+		}
+		Object.assign(output, {
+			canvas: document.createElement("canvas"),
+			renderer: { backend: "Canvas", draw: vi.fn(), destroy: vi.fn() },
+			scale: 0.01,
+			viewMode: "fit"
+		})
+		for (const index of [0, 50, 99]) {
+			;(output as any).focusBranch(index)
+			const branch = output.model.branches[index]
+			expect((output as any).selectedBranch).toBe(branch)
+			expect((output as any).scale).toBeGreaterThanOrEqual(1)
+			expect((output as any).cameraX).toBe(branch.targetX)
+			expect((output as any).cameraY).toBe(branch.origin.y + branchHeight(branch, now) / 2)
+		}
+		output.destroy()
+	})
 	function flashScene() {
 		let now = 0
 		const output = new OutputSongTree({ now: () => now })
-		let leaves: number[][] = []
+		let colors: number[][] = []
 		Object.assign(output, {
 			canvas: document.createElement("canvas"),
 			renderer: {
 				backend: "Canvas",
 				destroy: vi.fn(),
 				draw(data: Float32Array, count: number) {
-					leaves = []
+					colors = []
 					for (let i = 0; i < count * 12; i += 12) {
-						if (data[i + 8] === 1) {
-							leaves.push(Array.from(data.slice(i + 5, i + 8)))
+						if (
+							data[i + 8] === 0 &&
+							data[i] === data[i + 2] &&
+							data[i + 1] !== data[i + 3] &&
+							Math.abs(
+								data[i] - (240 - (output as any).cameraX * (output as any).scale)
+							) > 0.01
+						) {
+							colors.push(Array.from(data.slice(i + 5, i + 8)))
 						}
 					}
 				}
@@ -162,7 +279,7 @@ describe("song tree output and renderer", () => {
 			render(time: number) {
 				now = time
 				;(output as any).draw(now)
-				return leaves
+				return colors.slice(-2)
 			},
 			setTime(time: number) {
 				now = time
@@ -229,7 +346,7 @@ describe("song tree output and renderer", () => {
 			now += 0.08
 			output.allNotesOff()
 		}
-		let leaves = 0
+		let stems = 0
 		let checkFit = true
 		const appends: boolean[] = []
 		const renderer = {
@@ -244,8 +361,15 @@ describe("song tree output and renderer", () => {
 			) {
 				appends.push(append)
 				for (let i = 0; i < count * 12; i += 12) {
-					if (data[i + 8] === 1) {
-						leaves++
+					if (
+						data[i + 8] === 0 &&
+						data[i] === data[i + 2] &&
+						data[i + 1] !== data[i + 3] &&
+						Math.abs(
+							data[i] - (width / 2 - (output as any).cameraX * (output as any).scale)
+						) > 0.01
+					) {
+						stems++
 						if (checkFit) {
 							expect(data[i]).toBeGreaterThan(0)
 							expect(data[i + 1]).toBeGreaterThan(0)
@@ -262,8 +386,10 @@ describe("song tree output and renderer", () => {
 			viewMode: "fit"
 		})
 		;(output as any).draw(now)
-		expect(leaves).toBe(8500)
-		expect(appends).toEqual([false, true])
+		expect(stems).toBe(8500)
+		expect(appends[0]).toBe(false)
+		expect(appends.length).toBeGreaterThan(1)
+		expect(appends.slice(1).every(Boolean)).toBe(true)
 		const fitScale = (output as any).scale
 		expect(fitScale).toBeLessThan(0.02)
 		checkFit = false
@@ -272,51 +398,38 @@ describe("song tree output and renderer", () => {
 		expect((output as any).viewMode).toBe("manual")
 		output.destroy()
 	})
-	it("adds velocity-sized matching leaves on release while the trunk continues growing", () => {
+	it("keeps releases bare, retains velocity widths and lets the trunk continue growing", () => {
 		let now = 0
 		const output = new OutputSongTree({ now: () => now })
-		const frames: Float32Array[] = []
-		const renderer = {
-			backend: "Canvas",
-			destroy: vi.fn(),
-			draw: (data: Float32Array, count: number) => frames.push(data.slice(0, count * 12))
-		}
-		Object.assign(output, { renderer, canvas: document.createElement("canvas") })
-		const draw = () => (output as any).draw(now)
+		let frame = new Float32Array()
+		Object.assign(output, {
+			canvas: document.createElement("canvas"),
+			renderer: {
+				backend: "Canvas",
+				destroy: vi.fn(),
+				draw(data: Float32Array, count: number) {
+					frame = data.slice(0, count * 12)
+				}
+			}
+		})
 		output.noteOn(60, 30)
 		output.noteOn(67, 127)
 		now = 1
-		draw()
-		expect(
-			Array.from(frames.at(-1)!)
-				.filter((_, index) => index % 12 === 8)
-				.every((value) => value === 0)
-		).toBe(true)
 		output.allNotesOff()
-		draw()
-		const released = frames.at(-1)!,
-			leaves: Float32Array[] = []
-		for (let index = 0; index < released.length; index += 12) {
-			if (released[index + 8] === 1) {
-				leaves.push(released.slice(index, index + 12))
+		;(output as any).draw(now)
+		const stemRadii: number[] = []
+		for (let i = 0; i < frame.length; i += 12) {
+			expect(frame[i + 8]).toBe(0)
+			if (frame[i] === frame[i + 2] && frame[i] !== 240 && frame[i + 1] !== frame[i + 3]) {
+				stemRadii.push(frame[i + 4])
 			}
 		}
-		expect(leaves).toHaveLength(2)
-		expect(leaves[0][4]).toBeGreaterThan(leaves[1][4])
-		const matchingBranch = Array.from({ length: released.length / 12 }, (_, i) =>
-			released.slice(i * 12, i * 12 + 12)
-		).find(
-			(segment) =>
-				segment[8] === 0 &&
-				segment[5] === leaves[0][5] &&
-				segment[6] === leaves[0][6] &&
-				segment[7] === leaves[0][7]
-		)
-		expect(matchingBranch).toBeDefined()
-		const trunkEnd = released[15]
+		expect(stemRadii).toHaveLength(2)
+		expect(stemRadii[0]).toBeGreaterThan(stemRadii[1])
+		const trunkEnd = frame[15]
 		now = 2
-		draw()
-		expect(frames.at(-1)![15]).toBeLessThan(trunkEnd)
+		;(output as any).draw(now)
+		expect(frame[15]).toBeLessThan(trunkEnd)
 		output.destroy()
 	})
 	it("routes channel-aware commands and ignores input after disconnect", async () => {

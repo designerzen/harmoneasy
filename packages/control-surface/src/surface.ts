@@ -1,3 +1,5 @@
+import { VisualiserFrame, historySource, validVisualiser, VISUALISER_KINDS } from "./visualiser"
+import { choiceWidget, choiceGrid } from "./choices"
 import { createDomControl } from "./dom"
 import { contactPressure } from "./pressure"
 import { sourceTheme } from "./themes"
@@ -48,11 +50,16 @@ import type {
 	ControlValue,
 	SurfaceState,
 	SurfaceWidget,
-	SurfaceVisualEffects
+	SurfaceVisualEffects,
+	VisualiserSource,
+	SurfaceVisualiser
 } from "./types"
 
 const largeWidget = (widget: string) =>
-	isMusicGrid(widget) || widget === "relative-keys" || widget === "strum"
+	widget === "visualiser" ||
+	isMusicGrid(widget) ||
+	widget === "relative-keys" ||
+	widget === "strum"
 
 interface Entry {
 	page?: number
@@ -82,6 +89,7 @@ interface Gesture {
 	position: number
 }
 export interface SurfaceOptions {
+	visualiserSources?: VisualiserSource[]
 	/** Continuous quarter-note position from the shared transport; undefined when stopped. */
 	beatPosition?(): number | undefined
 	visualEffects?: SurfaceVisualEffects
@@ -97,6 +105,11 @@ export interface SurfaceOptions {
 export class ControlSurface {
 	readonly element = document.createElement("section")
 	readonly canvas = document.createElement("canvas")
+	private visualiserSources: VisualiserSource[]
+	private visualiserFrames = new Map<string, VisualiserFrame>()
+	private visualiserLastSample = -Infinity
+	private background?: WidgetVisual
+	private visualiserCycle?: HTMLButtonElement
 	private stage = document.createElement("div")
 	private viewport = document.createElement("div")
 	private playGuide = document.createElement("p")
@@ -140,6 +153,20 @@ export class ControlSurface {
 	private layoutActions = document.createElement("div")
 
 	constructor(private options: SurfaceOptions) {
+		this.visualiserSources = [
+			...(options.visualiserSources ?? []),
+			...options.bindings
+				.filter((b) =>
+					["dial", "slider", "number", "meter", "pad"].includes(b.descriptor.widget)
+				)
+				.map(historySource)
+		]
+		if (options.state.background === undefined) {
+			const notes = this.visualiserSources.find((source) => source.kinds.includes("notes"))
+			if (notes) {
+				options.state.background = { sourceId: notes.id, kind: "notes", opacity: 0.32 }
+			}
+		}
 		this.element.className = "control-surface nodrag nopan nowheel"
 		this.element.dataset.midiScope = `surface:${options.state.id}`
 		this.element.dataset.midiLabel = options.state.name
@@ -239,6 +266,12 @@ export class ControlSurface {
 			menu.hidden = true
 			toggle.setAttribute("aria-expanded", "false")
 		}
+		menu.append(
+			this.button("Add visualiser…", () => {
+				closeMenu()
+				this.addVisualiser()
+			})
+		)
 		for (const item of options.addControls ?? []) {
 			const control = this.button(item.label, () => {
 				closeMenu()
@@ -300,7 +333,9 @@ export class ControlSurface {
 			},
 			{ signal: this.abort.signal }
 		)
-		toolbar.append(edit, settings, name, this.vrButton)
+		this.visualiserCycle = this.button("Visualiser: Off", () => this.cycleVisualiser())
+		this.visualiserCycle.setAttribute("aria-label", "Switch visualiser")
+		toolbar.append(edit, settings, name, this.visualiserCycle, this.vrButton)
 		this.status.className = "cs-status"
 		this.status.setAttribute("role", "status")
 		;(options.toolbarHost ?? this.element).append(toolbar)
@@ -385,6 +420,9 @@ export class ControlSurface {
 			if (this.disposed) {
 				return
 			}
+			if (this.visible && !document.hidden && !this.xr && !this.enteringXR) {
+				this.updateVisualisers()
+			}
 			if (this.renderer && this.visible && !document.hidden && !this.xr && !this.enteringXR) {
 				try {
 					const rect = this.stage.getBoundingClientRect()
@@ -405,12 +443,7 @@ export class ControlSurface {
 					}
 					this.updateBeat()
 					const visible = this.viewport.getBoundingClientRect()
-					this.renderer.prepare(
-						this.entries
-							.filter((e) => e.page === this.currentPage)
-							.map((e) => e.visual),
-						!this.motion.matches
-					)
+					this.renderer.prepare(this.visibleVisuals(), !this.motion.matches)
 					this.renderer.render(width, this.height, time / 1000, !this.motion.matches, {
 						x: Math.max(0, (Math.max(0, visible.left) - rect.left) / scale),
 						y: Math.max(0, (Math.max(0, visible.top) - rect.top) / scale),
@@ -468,8 +501,18 @@ export class ControlSurface {
 	}
 	private save() {
 		const used = new Set(
-			this.options.state.widgets.flatMap((w) => (w.yKey ? [w.key, w.yKey] : [w.key]))
+			this.options.state.widgets.flatMap((w) => [
+				w.key,
+				...(w.yKey ? [w.yKey] : []),
+				...(w.visualiser?.sourceId.startsWith("control:")
+					? [w.visualiser.sourceId.slice(8)]
+					: [])
+			])
 		)
+		const backgroundSource = this.options.state.background?.sourceId
+		if (backgroundSource?.startsWith("control:")) {
+			used.add(backgroundSource.slice(8))
+		}
 		this.options.state.connections = this.options.state.connections
 			.map((c) => ({
 				...c,
@@ -522,12 +565,15 @@ export class ControlSurface {
 			entry.element.remove()
 		}
 		this.entries = []
+		this.updateBackground()
 		const bindings = new Map(this.options.bindings.map((b) => [b.key, b]))
 		const configurations = this.options.state.widgets
 		this.sourceKey.replaceChildren()
 		const sources = new Set<string>()
 		for (const config of configurations) {
-			let binding = bindings.get(config.key)
+			let binding = config.visualiser
+				? this.visualiserBinding(config.visualiser, config.key)
+				: bindings.get(config.key)
 			if (config.yKey && binding && bindings.has(config.yKey)) {
 				const x = binding,
 					y = bindings.get(config.yKey)!
@@ -587,7 +633,7 @@ export class ControlSurface {
 				? "xy"
 				: config.widget && widgetChoices(binding.descriptor).includes(config.widget)
 					? config.widget
-					: binding.descriptor.widget
+					: choiceWidget(binding.descriptor)
 			const element = document.createElement("div")
 			element.className = "cs-widget"
 			const sourceId = binding.sourceId ?? binding.sourceLabel
@@ -1190,6 +1236,10 @@ export class ControlSurface {
 		this.currentPage = Math.min(this.currentPage, this.pageCount - 1)
 		this.height = layout.height
 		this.stage.style.height = `${this.height}px`
+		if (this.background) {
+			this.background.width = width
+			this.background.height = this.height
+		}
 		for (const [index, entry] of this.entries.entries()) {
 			const box = layout.items[index],
 				rotation = entry.config.rotation ?? 0,
@@ -1660,15 +1710,19 @@ export class ControlSurface {
 			values[gesture.axis] = denormalize(d, px)
 			void this.write(entry, values)
 		} else if (v.widget === "radio" && d.choices?.length) {
-			void this.write(
-				entry,
-				d.choices[
-					Math.min(
-						d.choices.length - 1,
-						Math.floor(clamp((x - v.x - 8) / (v.width - 16)) * d.choices.length)
-					)
-				].value
+			const { columns, rows } = choiceGrid(d.choices.length)
+			const column = Math.min(
+				columns - 1,
+				Math.floor(clamp((x - v.x - 8) / (v.width - 16)) * columns)
 			)
+			const row = Math.min(
+				rows - 1,
+				Math.floor(clamp((y - v.y - 32) / (v.height - 40)) * rows)
+			)
+			const choice = d.choices[row * columns + column]
+			if (choice) {
+				this.write(entry, choice.value)
+			}
 		}
 	}
 	pointerUp(id: number): void {
@@ -1767,6 +1821,264 @@ export class ControlSurface {
 		this.abort.signal.addEventListener(EVENT_ABORT, () => dialog.close(), { once: true })
 		dialog.showModal()
 	}
+	private updateBackground(): void {
+		const options = this.options.state.background
+		const binding = options ? this.visualiserBinding(options, "surface-background") : undefined
+		this.background =
+			options && binding
+				? {
+						key: "surface-background",
+						x: 0,
+						y: 0,
+						width: this.stage.clientWidth || 640,
+						height: this.height,
+						widget: "visualiser",
+						background: true,
+						descriptor: binding.descriptor,
+						sourceId: binding.sourceId,
+						sourceLabel: binding.sourceLabel,
+						value: 0
+					}
+				: undefined
+		this.visualiserLastSample = -Infinity
+		this.updateVisualiserCycle()
+	}
+	private visualiserChoices(): SurfaceVisualiser[] {
+		const current = this.options.state.background
+		return VISUALISER_KINDS.flatMap((kind) => {
+			const source =
+				this.visualiserSources.find(
+					(source) => source.id === current?.sourceId && source.kinds.includes(kind)
+				) ?? this.visualiserSources.find((source) => source.kinds.includes(kind))
+			return source ? [{ sourceId: source.id, kind }] : []
+		})
+	}
+	private updateVisualiserCycle(): void {
+		if (!this.visualiserCycle) {
+			return
+		}
+		this.visualiserCycle.hidden = !this.visualiserSources.length
+		const current = this.options.state.background,
+			kind = current?.kind ?? "off"
+		const label = kind[0].toUpperCase() + kind.slice(1)
+		this.visualiserCycle.textContent = `Visualiser: ${label}`
+		this.visualiserCycle.title = current
+			? `${label}: ${this.visualiserSources.find((source) => source.id === current.sourceId)?.label ?? "Unavailable source"}`
+			: "Visualiser off"
+		this.visualiserCycle.setAttribute(
+			"aria-description",
+			`${this.visualiserCycle.title}. Activate to cycle through available visualisers and off.`
+		)
+	}
+	private cycleVisualiser(): void {
+		const choices = this.visualiserChoices(),
+			current = this.options.state.background
+		const index = current
+			? choices.findIndex(
+					(choice) => choice.sourceId === current.sourceId && choice.kind === current.kind
+				)
+			: choices.length
+		const next = choices[(index + 1) % (choices.length + 1)]
+		this.options.state.background = next
+			? { ...next, opacity: next.kind === "notes" ? 0.32 : 0.22 }
+			: null
+		this.updateBackground()
+		this.save()
+		this.layoutStatus.textContent = this.visualiserCycle?.title ?? "Visualiser changed"
+	}
+	private visibleVisuals(): WidgetVisual[] {
+		const visuals = this.entries
+			.filter((entry) => entry.page === this.currentPage)
+			.map((entry) => entry.visual)
+		return this.background ? [this.background, ...visuals] : visuals
+	}
+	private visualiserBinding(options: SurfaceVisualiser, key: string): ControlBinding {
+		const source = this.visualiserSources.find((source) => source.id === options.sourceId)
+		const parameter = options.sourceId.startsWith("control:")
+			? this.options.bindings.find((binding) => binding.key === options.sourceId.slice(8))
+			: undefined
+		return {
+			key,
+			sourceId: source?.sourceId ?? options.sourceId,
+			sourceLabel: source?.label ?? options.sourceId,
+			descriptor: {
+				id: key,
+				label: parameter?.descriptor.label ?? options.kind,
+				widget: "visualiser",
+				readOnly: true,
+				min: 0,
+				max: 1,
+				visualiser: options
+			},
+			read: () => {
+				const frame = this.visualiserFrames.get(`${options.sourceId}:${options.kind}`)
+				return frame?.available ? frame.level : undefined
+			},
+			write: () => {}
+		}
+	}
+	private updateVisualisers(): void {
+		const visuals = this.visibleVisuals().filter((visual) => visual.descriptor.visualiser)
+		if (!visuals.length) {
+			return
+		}
+		const now = performance.now(),
+			interval = this.motion.matches ? 100 : 1000 / 60
+		const sample =
+			!this.options.state.visualisersPaused &&
+			now - this.visualiserLastSample >= interval - 0.5
+		const sampled = new Set<string>()
+		for (const visual of visuals) {
+			const options = visual.descriptor.visualiser!,
+				key = `${options.sourceId}:${options.kind}`
+			let frame = this.visualiserFrames.get(key)
+			if (!frame) {
+				frame = new VisualiserFrame()
+				this.visualiserFrames.set(key, frame)
+			}
+			if (sample && !sampled.has(key)) {
+				const source = this.visualiserSources.find(
+					(source) => source.id === options.sourceId
+				)
+				try {
+					frame.update(
+						source?.kinds.includes(options.kind)
+							? source.read(options.kind)
+							: undefined,
+						options.kind
+					)
+				} catch {
+					frame.update(undefined, options.kind)
+				}
+				sampled.add(key)
+			}
+			visual.visualiser = frame
+			visual.unavailable = !frame.available
+		}
+		if (sample) {
+			this.visualiserLastSample = now
+		}
+	}
+	private addVisualiser(): void {
+		const dialog = document.createElement("dialog"),
+			form = document.createElement("form"),
+			title = document.createElement("h2")
+		dialog.className = "cs-size-dialog cs-visualiser-dialog"
+		title.textContent = "Data visualisers"
+		title.id = `visualiser-${crypto.randomUUID()}`
+		dialog.setAttribute("aria-labelledby", title.id)
+		form.method = "dialog"
+		const select = (name: string) => {
+			const label = document.createElement("label"),
+				input = document.createElement("select")
+			label.append(name, input)
+			input.setAttribute("aria-label", name)
+			form.append(label)
+			return input
+		}
+		form.append(title)
+		const source = select("Data source"),
+			kind = select("Visualiser type"),
+			placement = select("Placement")
+		for (const item of this.visualiserSources) {
+			const option = document.createElement("option")
+			option.value = item.id
+			option.textContent = item.label
+			source.append(option)
+		}
+		const types = () => {
+			kind.replaceChildren()
+			for (const value of this.visualiserSources.find((item) => item.id === source.value)
+				?.kinds ?? []) {
+				const option = document.createElement("option")
+				option.value = value
+				option.textContent = value
+				kind.append(option)
+			}
+		}
+		types()
+		source.addEventListener(EVENT_CHANGE, types)
+		for (const value of ["widget", "background"]) {
+			const option = document.createElement("option")
+			option.value = value
+			option.textContent = value === "widget" ? "Widget" : "Background"
+			placement.append(option)
+		}
+		const pauseLabel = document.createElement("label"),
+			pause = document.createElement("input")
+		pause.type = "checkbox"
+		pause.checked = !!this.options.state.visualisersPaused
+		pauseLabel.className = "cs-visualiser-pause"
+		pauseLabel.append(pause, "Pause visualisers")
+		pause.addEventListener(EVENT_CHANGE, () => {
+			this.options.state.visualisersPaused = pause.checked
+			this.save()
+		})
+		form.append(pauseLabel)
+		const actions = document.createElement("div")
+		actions.className = "cs-visualiser-actions"
+		const add = this.button("Add visualiser", () => {
+			const options = {
+				sourceId: source.value,
+				kind: kind.value as SurfaceVisualiser["kind"]
+			}
+			if (!validVisualiser(options)) {
+				return
+			}
+			if (placement.value === "background") {
+				this.options.state.background = {
+					...options,
+					opacity: options.kind === "notes" ? 0.32 : 0.22
+				}
+			} else {
+				if (this.options.state.widgets.length >= 2048) {
+					return
+				}
+				this.options.state.widgets.push({
+					key: `visualiser:${crypto.randomUUID()}`,
+					widget: "visualiser",
+					visualiser: options,
+					span: 2,
+					height: 240
+				})
+			}
+			if (placement.value === "background") {
+				this.updateBackground()
+			} else {
+				this.rebuild()
+			}
+			this.save()
+			dialog.close()
+			if (placement.value === "widget") {
+				this.showPage(this.entries.at(-1)?.page ?? 0)
+			}
+		})
+		add.disabled = !source.options.length
+		actions.append(add)
+		if (!source.options.length) {
+			const message = document.createElement("p")
+			message.textContent =
+				"Connect audio outputs or numeric controls to make data sources available."
+			form.append(message)
+		}
+		if (this.options.state.background) {
+			actions.append(
+				this.button("Remove background", () => {
+					this.options.state.background = null
+					this.updateBackground()
+					this.save()
+					dialog.close()
+				})
+			)
+		}
+		actions.append(this.button("Close", () => dialog.close()))
+		form.append(actions)
+		dialog.append(form)
+		document.body.append(dialog)
+		dialog.addEventListener(EVENT_CLOSE, () => dialog.remove(), { once: true })
+		this.abort.signal.addEventListener(EVENT_ABORT, () => dialog.close(), { once: true })
+		dialog.showModal()
+	}
 	private async enterXR(): Promise<void> {
 		if (this.enteringXR) {
 			return
@@ -1786,12 +2098,11 @@ export class ControlSurface {
 				this.renderer,
 				() => {
 					this.updateBeat()
+					this.updateVisualisers()
 					this.flushWrites()
 					this.updateFeedback()
 					return {
-						widgets: this.entries
-							.filter((e) => e.page === this.currentPage)
-							.map((e) => e.visual),
+						widgets: this.visibleVisuals(),
 						width: this.stage.clientWidth,
 						height: this.height
 					}

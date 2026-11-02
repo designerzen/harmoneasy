@@ -19,6 +19,22 @@ export type WidgetType =
 	| "piano-roll"
 	| "relative-keys"
 	| "strum"
+	| "visualiser"
+export type VisualiserKind = "notes" | "waveform" | "spectrum" | "level" | "history"
+export interface SurfaceVisualiser {
+	sourceId: string
+	kind: VisualiserKind
+	opacity?: number
+}
+export interface VisualiserSource {
+	/** Component identity used to share its gadget theme. */
+	sourceId?: string
+	id: string
+	label: string
+	kinds: VisualiserKind[]
+	/** Reuse buffers where possible. Samples are signed for waveform, otherwise normalized 0..1. */
+	read(kind: VisualiserKind): { samples: ArrayLike<number>; level: number } | undefined
+}
 export interface StrumOptions {
 	tuning?: number[]
 	frets?: number[]
@@ -80,6 +96,7 @@ export interface ControlDescriptor {
 	dial?: DialOptions
 	/** MIDI note used for the pad light; defaults to middle C. */
 	pad?: { note?: number }
+	visualiser?: SurfaceVisualiser
 	music?: MusicGridOptions
 	relativeKeys?: RelativeKeysOptions
 	strum?: StrumOptions
@@ -112,6 +129,7 @@ export interface ControlBinding {
 	subscribe?(listener: () => void): () => void
 }
 export interface SurfaceWidget {
+	visualiser?: SurfaceVisualiser
 	key: string
 	yKey?: string
 	widget?: WidgetType
@@ -129,6 +147,8 @@ export interface SurfaceConnection {
 	controlIds: string[]
 }
 export interface SurfaceState {
+	background?: SurfaceVisualiser | null
+	visualisersPaused?: boolean
 	beatCues?: boolean
 	panels?: string[]
 	id: string

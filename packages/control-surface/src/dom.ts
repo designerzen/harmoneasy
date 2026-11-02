@@ -1,3 +1,4 @@
+import { choiceGrid, waveformPoints } from "./choices"
 import {
 	EVENT_BLUR,
 	EVENT_VISIBILITY_CHANGE,
@@ -38,6 +39,8 @@ export interface DomControl {
 	relative?: RelativeKeys
 	strum?: Strum
 }
+let radioGroupId = 0
+
 /** Native semantic controls are also the accessible companions to GPU widgets. */
 export function createDomControl(
 	binding: ControlBinding,
@@ -194,9 +197,12 @@ export function createDomControl(
 		button.addEventListener(EVENT_CLICK, () => apply(d.defaultValue ?? 1))
 		caption.remove()
 		label.append(button)
-	} else if (d.widget === "meter" || d.widget === "display") {
+	} else if (d.widget === "meter" || d.widget === "display" || d.widget === "visualiser") {
 		const output = document.createElement("output")
 		output.setAttribute("aria-label", d.label)
+		if (d.widget === "visualiser") {
+			output.setAttribute("role", "img")
+		}
 		if (d.widget === "meter") {
 			output.setAttribute("role", "meter")
 			output.setAttribute("aria-valuemin", String(min))
@@ -205,6 +211,12 @@ export function createDomControl(
 		label.append(output)
 		updates.push((v) => {
 			output.value = formatValue(d, v)
+			if (d.widget === "visualiser") {
+				output.setAttribute(
+					"aria-label",
+					`${d.label}: ${v === undefined ? "source unavailable" : `level ${Math.round(Number(v) * 100)} percent`}`
+				)
+			}
 			if (d.widget === "meter") {
 				output.setAttribute(
 					"aria-valuenow",
@@ -213,7 +225,49 @@ export function createDomControl(
 				output.setAttribute("aria-valuetext", formatValue(d, v))
 			}
 		})
-	} else if (d.widget === "select" || d.widget === "radio" || d.choices?.length) {
+	} else if (d.widget === "radio" && d.choices?.length) {
+		const group = document.createElement("div")
+		group.className = "cs-choice-grid"
+		group.setAttribute("role", "radiogroup")
+		group.setAttribute("aria-label", d.label)
+		group.style.setProperty("--cs-choice-columns", String(choiceGrid(d.choices.length).columns))
+		const name = `cs-choice-${++radioGroupId}`
+		for (const [index, choice] of d.choices.entries()) {
+			const tile = document.createElement("label")
+			const radio = document.createElement("input")
+			radio.type = "radio"
+			radio.name = name
+			radio.value = String(index)
+			radio.setAttribute("aria-label", choice.label)
+			radio.dataset.midiControl = binding.key
+			radio.disabled = !!(d.disabled || d.readOnly)
+			radio.addEventListener(EVENT_CHANGE, () => {
+				if (radio.checked && !radio.disabled) {apply(choice.value)}
+			})
+			tile.append(radio)
+			const points = waveformPoints(choice)
+			if (points) {
+				const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg")
+				svg.setAttribute("viewBox", "-2 -2 104 44")
+				svg.setAttribute("aria-hidden", "true")
+				const path = document.createElementNS(svg.namespaceURI, "polyline")
+				path.setAttribute(
+					"points",
+					points.map(([x, y]) => `${x * 100},${y * 40}`).join(" ")
+				)
+				svg.append(path)
+				tile.append(svg)
+			}
+			const text = document.createElement("span")
+			text.textContent = choice.label
+			tile.append(text)
+			group.append(tile)
+			updates.push((value) => {
+				radio.checked = sameValue(choice.value, value)
+			})
+		}
+		label.append(group)
+	} else if (d.widget === "select" || d.choices?.length) {
 		// Index option values preserve typed/array-valued choices without string coercion.
 		const select = document.createElement("select")
 		select.setAttribute("aria-label", d.label)

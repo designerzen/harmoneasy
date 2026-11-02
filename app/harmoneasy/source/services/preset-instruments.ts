@@ -119,7 +119,7 @@ export function setupSurfaces(setup: PresetSetup): PresetSetup {
 					key: JSON.stringify([componentId, id]),
 					widget:
 						id === "shape" || id === "groove"
-							? ("select" as const)
+							? undefined
 							: id === "volume"
 								? ("slider" as const)
 								: ("dial" as const)

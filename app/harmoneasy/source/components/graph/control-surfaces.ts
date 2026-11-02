@@ -1,3 +1,5 @@
+import { surfaceNoteSource } from "./control-surface-notes"
+import { surfaceAudioSources } from "./control-surface-audio"
 import { ControlSurface } from "control-surface"
 import "control-surface/style.css"
 import { bindingKey } from "control-surface/model"
@@ -136,8 +138,7 @@ export function selectSurfaceControls(
 	form.append(heading, status, groups, actions)
 	dialog.append(form)
 	const choices = new Map<string, HTMLInputElement>()
-	let bindings: ControlBinding[] = [],
-		disposed = false
+	let disposed = false
 	form.addEventListener(EVENT_SUBMIT, (event) => {
 		event.preventDefault()
 		const current = chain.options.controlSurfaces?.find((s) => s.id === surfaceId)
@@ -161,10 +162,7 @@ export function selectSurfaceControls(
 		for (const id of selected) {
 			const key = bindingKey(componentId, id)
 			if (!state.widgets.some((w) => w.key === key && !w.yKey)) {
-				state.widgets.push({
-					key,
-					widget: bindings.find((b) => b.descriptor.id === id)?.descriptor.widget
-				})
+				state.widgets.push({ key })
 			}
 		}
 		updateSurface(chain, state)
@@ -183,7 +181,6 @@ export function selectSurfaceControls(
 			if (disposed) {
 				return
 			}
-			bindings = available
 			const selected =
 				chain.options.controlSurfaces
 					?.find((s) => s.id === surfaceId)
@@ -245,6 +242,8 @@ export function mountControlSurface(
 	surfaceId: string,
 	toolbarHost?: HTMLElement
 ): { destroy(): void } {
+	const noteSource = surfaceNoteSource(chain)
+	let audioSources: ReturnType<typeof surfaceAudioSources> | undefined
 	let surface: ControlSurface | undefined,
 		disposed = false,
 		generation = 0,
@@ -299,12 +298,15 @@ export function mountControlSurface(
 			return
 		}
 		surface?.destroy()
+		audioSources?.destroy()
+		audioSources = surfaceAudioSources(chain.outputs)
 		panelViews.forEach((view) => view.destroy())
 		panelViews = (state.panels ?? []).flatMap((id) => {
 			const view = components.get(id)?.createSurfaceView?.()
 			return view ? [view] : []
 		})
 		surface = new ControlSurface({
+			visualiserSources: [noteSource.source, ...audioSources.sources],
 			beatPosition: () => surfaceBeat(chain.timer),
 			state: structuredClone(state),
 			bindings,
@@ -346,6 +348,8 @@ export function mountControlSurface(
 			abort.abort()
 			schemaAbort.abort()
 			surface?.destroy()
+			audioSources?.destroy()
+			noteSource.destroy()
 			panelViews.forEach((view) => view.destroy())
 			controlDialogs.forEach((dialog) => dialog.destroy())
 		}

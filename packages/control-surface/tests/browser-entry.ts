@@ -14,7 +14,7 @@ const values: Record<string, ControlValue> = {
 	cutoff: 650,
 	density: 0.55,
 	enabled: true,
-	wave: 0,
+	wave: "sine",
 	pad: [0.4, 0.6],
 	range: [0.2, 0.8],
 	trigger: 0,
@@ -46,11 +46,10 @@ const descriptors: ControlDescriptor[] = [
 		id: "wave",
 		label: "Waveform",
 		widget: "radio",
-		choices: [
-			{ label: "Saw", value: 0 },
-			{ label: "Square", value: 1 },
-			{ label: "Triangle", value: 2 }
-		]
+		choices: ["sine", "square", "sawtooth", "triangle"].map((value) => ({
+			label: value,
+			value
+		}))
 	},
 	{ id: "pad", label: "Timbre / motion", widget: "xy", min: 0, max: 1 },
 	{ id: "range", label: "Velocity range", widget: "range", min: 0, max: 1 },
