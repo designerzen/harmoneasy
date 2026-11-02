@@ -1,4 +1,5 @@
 import { validVisualiser } from "./visualiser"
+import { choiceWidget } from "./choices"
 import type {
 	ControlDescriptor,
 	ControlValue,
@@ -213,7 +214,9 @@ export function validateValue(d: ControlDescriptor, value: ControlValue): Contro
 }
 export function widgetChoices(d: ControlDescriptor): WidgetType[] {
 	if (d.choices?.length) {
-		return ["radio", "select"]
+		return choiceWidget({ ...d, widget: "select" }) === "radio"
+			? ["radio"]
+			: ["radio", "select"]
 	}
 	if (["dial", "slider", "number", "pad"].includes(d.widget)) {
 		return ["dial", "slider", "number", "pad"]

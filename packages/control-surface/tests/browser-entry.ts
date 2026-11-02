@@ -46,7 +46,7 @@ const descriptors: ControlDescriptor[] = [
 	{
 		id: "wave",
 		label: "Waveform",
-		widget: "radio",
+		widget: "select",
 		choices: ["sine", "square", "sawtooth", "triangle"].map((value) => ({
 			label: value,
 			value
@@ -99,7 +99,10 @@ const surface = new ControlSurface({
 		id: "demo",
 		name: "Live control",
 		connections: [],
-		widgets: bindings.map((b) => ({ key: b.key })),
+		widgets: bindings.map((b) => ({
+			key: b.key,
+			...(b.descriptor.widget === "select" ? { widget: "select" as const } : {})
+		})),
 		theme: "neon"
 	},
 	bindings,

@@ -1,6 +1,6 @@
 import type { ControlChoice, ControlDescriptor, WidgetType } from "./types"
 
-/** Surface defaults; saved widget overrides are resolved by the caller. */
+/** Small choice lists use radios, including surfaces saved with select widgets. */
 export function choiceWidget(d: ControlDescriptor): WidgetType {
 	return d.widget === "select" && d.choices && d.choices.length > 1 && d.choices.length < 7
 		? "radio"

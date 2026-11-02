@@ -8,7 +8,15 @@ import { TransformerEuclideanGate } from "../../../packages/audiobus/io/transfor
 import { TransformerCCMapper } from "../../../packages/audiobus/io/transformers/transformer-cc-mapper"
 import { TransformerLatch } from "../../../packages/audiobus/io/transformers/transformer-latch"
 import { TransformerChordifier } from "../../../packages/audiobus/io/transformers/transformer-chordifier"
-import { TRANSFORMER_TYPE } from "../../../packages/audiobus/io/transformer-factory"
+import { TransformerLegato } from "../../../packages/audiobus/io/transformers/transformer-legato"
+import { TransformerTransposer } from "../../../packages/audiobus/io/transformers/transformer-transposer"
+import {
+	TRANSFORMER_TYPE,
+	TRANSFORMERS,
+	tranformerFactory
+} from "../../../packages/audiobus/io/transformer-factory"
+import { componentBindings } from "../../../packages/audiobus/io/component-ui"
+import { performanceBindings } from "../../../packages/audiobus/io/performance-controls"
 import { TRANSFORMER_DEFINITIONS } from "../../../packages/audiobus/io/transformer-definitions"
 import { createTransformerPicker } from "../source/components/graph/Transformers"
 import { createAudioCommand } from "../../../packages/audiobus/audio-command-factory"
@@ -36,6 +44,47 @@ function setup() {
 	}
 	return { timer, chain, note, tick }
 }
+
+it.each(TRANSFORMERS)("offers only transformation controls for %s", async (type) => {
+	const effect = tranformerFactory(type)
+	try {
+		const bindings = await componentBindings(effect as never, effect.midiControlId)
+		expect(bindings.some((binding) => binding.descriptor.id.startsWith("surface:"))).toBe(false)
+		const gui = await effect.createGui()
+		expect(gui.querySelector('[role="grid"]')).toBeNull()
+	} finally {
+		effect.destroy()
+	}
+})
+
+it("retains playable controls for instruments with public note methods", () => {
+	const instrument = { noteOn: vi.fn(), noteOff: vi.fn() }
+	expect(
+		performanceBindings(instrument, "instrument", "Instrument").map(
+			(binding) => binding.descriptor.id
+		)
+	).toContain("surface:piano-roll")
+})
+
+it("passes live notes through Legato and a downstream effect after opening and closing its controls", async () => {
+	const { chain, timer, note, tick } = setup()
+	const legato = new TransformerLegato({ overlap: 20, hold: 2 })
+	chain.setTransformers([legato, new TransformerTransposer({ enabled: true, distance: 12 })])
+	const gui = await legato.createGui()
+	expect(gui.querySelector('[role="grid"]')).toBeNull()
+	legato.destroyGui()
+	await legato.createGui()
+	await chain.addCommandToQueue(note(60))
+	expect(tick(0)).toEqual([expect.objectContaining({ type: NOTE_ON, number: 72 })])
+	timer.now = 0.1
+	await chain.addCommandToQueue({ ...note(60), type: NOTE_OFF, velocity: 0 })
+	expect(tick(0.1)).toEqual([])
+	timer.now = 0.2
+	await chain.addCommandToQueue(note(62))
+	expect(tick(0.2)).toEqual([expect.objectContaining({ type: NOTE_ON, number: 74 })])
+	expect(tick(0.221)).toEqual([expect.objectContaining({ type: NOTE_OFF, number: 72 })])
+	expect(tick(1.21)).toEqual([expect.objectContaining({ type: NOTE_OFF, number: 74 })])
+})
 
 it("drives delayed live chord strokes from the chain clock without another input event", async () => {
 	const { chain, note, tick } = setup()

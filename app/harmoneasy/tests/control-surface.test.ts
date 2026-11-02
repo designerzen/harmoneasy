@@ -1438,7 +1438,7 @@ describe("graph control connections", () => {
 
 describe("surface choice radios", () => {
 	it.each([2, 4, 6, 7])(
-		"defaults %i choices by count and preserves explicit selects",
+		"uses radios for %i choices on new and saved surfaces below seven options",
 		async (count) => {
 			const binding = bind(
 				"choice",
@@ -1465,7 +1465,10 @@ describe("surface choice radios", () => {
 				count < 7 ? count : 0
 			)
 			expect(controls[0].querySelectorAll("select").length).toBe(count < 7 ? 0 : 1)
-			expect(controls[1].querySelector("select")).not.toBeNull()
+			expect(controls[1].querySelectorAll('input[type="radio"]').length).toBe(
+				count < 7 ? count : 0
+			)
+			expect(controls[1].querySelectorAll("select").length).toBe(count < 7 ? 0 : 1)
 		}
 	)
 
