@@ -48,6 +48,36 @@ afterEach(() => {
 })
 
 describe("interactive QWERTY display", () => {
+	it.each(["range", "checkbox", "radio", "color", "text", "number"])(
+		"continues to protect ordinary %s inputs outside performance surfaces",
+		(type) => {
+			const { command } = setup()
+			const input = document.body.appendChild(document.createElement("input"))
+			input.type = type
+			input.focus()
+			input.dispatchEvent(
+				new KeyboardEvent(EVENT_KEY_DOWN, { key: "q", bubbles: true, cancelable: true })
+			)
+			expect(command).not.toHaveBeenCalled()
+		}
+	)
+	it("protects dialogs and composition even inside a performance surface", () => {
+		const { command } = setup()
+		const surface = document.body.appendChild(document.createElement("section"))
+		surface.dataset.keyboardNotes = ""
+		const button = surface.appendChild(document.createElement("button"))
+		button.focus()
+		button.dispatchEvent(
+			new KeyboardEvent(EVENT_KEY_DOWN, { key: "q", bubbles: true, isComposing: true })
+		)
+		expect(command).not.toHaveBeenCalled()
+		const dialog = surface.appendChild(document.createElement("dialog"))
+		dialog.setAttribute("open", "")
+		dialog.append(button)
+		button.focus()
+		button.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: "q", bubbles: true }))
+		expect(command).not.toHaveBeenCalled()
+	})
 	it.each([
 		["q", "Q", "KeyQ"],
 		["2", "@", "Digit2"]

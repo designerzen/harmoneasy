@@ -63,6 +63,56 @@ try {
 		"GPU initialization must compile shaders and create a working render pipeline"
 	)
 	assert.equal(await page.locator(".cs-widget").count(), 18)
+	// Exercise the real application musical-key handler with browser focus/default actions.
+	await page.evaluate(() => {
+		window.surfaceSmoke.commands = []
+		window.surfaceSmoke.stopKeyboard = window.surfaceSmoke.addKeyboardDownEvents(
+			(command, key) => window.surfaceSmoke.commands.push([command, key])
+		)
+	})
+	let notePairs = 0
+	for (const widget of await page.locator(".cs-widget").all()) {
+		const control = widget.locator("input, select, button").first()
+		if (!(await control.count())) {
+			continue
+		}
+		await control.focus()
+		const editing = await control.evaluate((el) =>
+			el.matches("input[type=text], input[type=number]")
+		)
+		const before = await page.evaluate(() => window.surfaceSmoke.commands.length)
+		await page.keyboard.down("q")
+		await page.keyboard.up("q")
+		assert.equal(
+			await page.evaluate(() => window.surfaceSmoke.commands.length),
+			before + (editing ? 0 : 2)
+		)
+		if (!editing) {
+			notePairs++
+		}
+		await page.keyboard.press("Escape")
+		assert.equal(
+			await page.locator(".cs-viewport").evaluate((el) => el === document.activeElement),
+			true
+		)
+		await page.keyboard.down("q")
+		await page.keyboard.press("Escape")
+		await page.keyboard.up("q")
+		notePairs++
+	}
+	const musicalCommands = await page.evaluate(() => {
+		window.surfaceSmoke.stopKeyboard()
+		return window.surfaceSmoke.commands
+	})
+	assert.equal(
+		musicalCommands.length,
+		notePairs * 2,
+		"Escape must not issue a transport command or lose held notes"
+	)
+	for (let i = 0; i < musicalCommands.length; i += 2) {
+		assert.deepEqual(musicalCommands[i], ["noteOn", "q"])
+		assert.deepEqual(musicalCommands[i + 1], ["noteOff", "q"])
+	}
 	assert.equal(await page.locator(".cs-radio svg").count(), 4)
 	const sine = page.getByRole("radio", { name: "sine", exact: true })
 	await sine.focus()
@@ -513,6 +563,16 @@ try {
 	await page.getByRole("button", { name: "Move earlier Drum density", exact: true }).click()
 	await revealAction("Move earlier")
 	await page.getByRole("button", { name: "Move earlier Drum density", exact: true }).click()
+	await revealAction("Resize")
+	await resizeHandle.press("Enter")
+	await sizeDialog.getByRole("spinbutton", { name: "Height in pixels", exact: true }).focus()
+	await page.keyboard.press("Escape")
+	await sizeDialog.waitFor({ state: "detached" })
+	await page.waitForFunction(
+		() => document.activeElement?.getAttribute("aria-label") === "Resize Drum density"
+	)
+	await page.keyboard.press("Escape")
+	await page.waitForFunction(() => document.activeElement?.matches(".cs-viewport"))
 	await page.getByRole("button", { name: "Perform", exact: true }).click()
 	// Actual touch contacts share an anchor and retain it when the first finger lifts.
 	const relativeWidget = page
@@ -945,8 +1005,9 @@ try {
 	await page.evaluate(() => {
 		const { surface } = window.visualiserSmoke
 		const data = surface.renderer.cache.get(surface.background)?.data
-		if (!data?.some((value, i) => i % 20 === 4 && value === 19))
+		if (!data?.some((value, i) => i % 20 === 4 && value === 19)) {
 			throw new Error("Note data has no GPU bars")
+		}
 	})
 	await openVisualisers()
 	await visualiserDialog.getByRole("checkbox", { name: "Pause visualisers", exact: true }).check()

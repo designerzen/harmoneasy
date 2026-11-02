@@ -108,3 +108,25 @@ it("keeps the graph visible when a preset has no surfaces", () => {
 	expect(dialog()).toBeNull()
 	expect(document.body.style.overflow).toBe("")
 })
+
+it("lets gadgets handle Escape before closing the expanded surface from the playing region", () => {
+	const { dialog } = setup(true)
+	const host = dialog()!.querySelector<HTMLElement>("[role=tabpanel]")!
+	host.dataset.keyboardNotes = ""
+	const gadget = host.appendChild(document.createElement("button"))
+	const playing = host.appendChild(document.createElement("div"))
+	playing.className = "cs-viewport"
+	playing.tabIndex = 0
+	gadget.addEventListener(EVENT_KEY_DOWN, (event) => {
+		if (event.key === "Escape") {
+			event.stopPropagation()
+			playing.focus()
+		}
+	})
+	gadget.focus()
+	gadget.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: "Escape", bubbles: true }))
+	expect(dialog()).not.toBeNull()
+	expect(document.activeElement).toBe(playing)
+	playing.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: "Escape", bubbles: true }))
+	expect(dialog()).toBeNull()
+})

@@ -9,6 +9,7 @@ import {
 } from "../src/index"
 import "../src/style.css"
 import type { ControlBinding, ControlDescriptor, ControlValue } from "../src/types"
+import { addKeyboardDownEvents } from "../../audiobus/hardware/keyboard/keyboard"
 
 const values: Record<string, ControlValue> = {
 	cutoff: 650,
@@ -108,5 +109,12 @@ document.body.style.cssText =
 	"margin:0;background:#080d18;display:flex;justify-content:center;padding:16px"
 document.body.append(surface.element)
 Object.assign(window, {
-	surfaceSmoke: { surface, values, ControlSurface, createPanControl, createRotationControl }
+	surfaceSmoke: {
+		surface,
+		values,
+		ControlSurface,
+		createPanControl,
+		createRotationControl,
+		addKeyboardDownEvents
+	}
 })

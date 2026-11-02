@@ -170,9 +170,12 @@ export class ControlSurface {
 		this.element.className = "control-surface nodrag nopan nowheel"
 		this.element.dataset.midiScope = `surface:${options.state.id}`
 		this.element.dataset.midiLabel = options.state.name
-		this.element.addEventListener(EVENT_KEY_DOWN, (event) => event.stopPropagation(), {
-			signal: this.abort.signal
-		})
+		for (const region of [this.element, this.toolbar]) {
+			region.dataset.keyboardNotes = ""
+			region.addEventListener(EVENT_KEY_DOWN, (event) => this.keydown(event), {
+				signal: this.abort.signal
+			})
+		}
 		this.stage.className = "cs-stage"
 		this.canvas.setAttribute("aria-hidden", "true")
 		this.stage.append(this.canvas)
@@ -180,6 +183,10 @@ export class ControlSurface {
 		this.viewport.tabIndex = 0
 		this.viewport.setAttribute("role", "region")
 		this.viewport.setAttribute("aria-label", "Control gadgets")
+		this.viewport.setAttribute(
+			"aria-description",
+			"Play notes with the musical keyboard. Press Escape from a gadget to return here; Tab moves between controls."
+		)
 		this.viewport.append(this.stage)
 		this.playGuide.className = "cs-play-guide"
 		this.playGuide.setAttribute("role", "status")
@@ -210,12 +217,16 @@ export class ControlSurface {
 		name.addEventListener(
 			EVENT_KEY_DOWN,
 			(event) => {
+				if (event.isComposing) {
+					return
+				}
 				if (event.key === "Enter") {
 					name.blur()
 				} else if (event.key === "Escape") {
+					event.preventDefault()
 					event.stopPropagation()
 					name.value = options.state.name
-					name.blur()
+					this.returnToPlaying()
 				}
 			},
 			{ signal: this.abort.signal }
@@ -316,7 +327,8 @@ export class ControlSurface {
 		settings.addEventListener(
 			EVENT_KEY_DOWN,
 			(event) => {
-				if (event.key === "Escape" && !menu.hidden) {
+				if (event.key === "Escape" && !event.isComposing && !menu.hidden) {
+					event.preventDefault()
 					event.stopPropagation()
 					closeMenu()
 					toggle.focus()
@@ -481,6 +493,37 @@ export class ControlSurface {
 				: undefined
 		)
 	}
+	private returnToPlaying(): void {
+		this.releasePointers()
+		this.viewport.focus({ preventScroll: true })
+		this.layoutStatus.textContent = "Ready to play"
+	}
+
+	private keydown(event: KeyboardEvent): void {
+		if (event.isComposing || (event.target as HTMLElement).closest("dialog")) {
+			event.stopPropagation()
+			return
+		}
+		if (event.key === "Escape") {
+			event.preventDefault()
+			event.stopPropagation()
+			this.returnToPlaying()
+			return
+		}
+		// Let unused printable note keys reach the musical keyboard. Navigation,
+		// activation and keys consumed by a gadget remain local to the surface.
+		if (
+			event.defaultPrevented ||
+			event.key.length !== 1 ||
+			event.key === " " ||
+			event.ctrlKey ||
+			event.metaKey ||
+			event.altKey
+		) {
+			event.stopPropagation()
+		}
+	}
+
 	private button(label: string, run: () => void): HTMLButtonElement {
 		const button = document.createElement("button")
 		button.type = "button"

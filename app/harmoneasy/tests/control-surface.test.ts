@@ -19,6 +19,8 @@ import { resizeMusicGrid } from "../../../packages/control-surface/src/music-dom
 import { sourceTheme } from "../../../packages/control-surface/src/themes"
 import { createDomGui, createDomControl } from "control-surface/dom"
 import { contactPressure } from "../../../packages/control-surface/src/pressure"
+import { addKeyboardDownEvents } from "../../../packages/audiobus/hardware/keyboard/keyboard"
+import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands"
 import {
 	EVENT_BLUR,
 	EVENT_KEY_DOWN,
@@ -112,6 +114,165 @@ function bind(
 }
 
 describe("shared component controls", () => {
+	it.each([
+		"dial",
+		"slider",
+		"rotation",
+		"toggle",
+		"radio",
+		"select",
+		"xy",
+		"range",
+		"button",
+		"pad",
+		"color",
+		"piano-roll",
+		"guitar-tab",
+		"relative-keys",
+		"strum"
+	] as const)(
+		"keeps musical keys playing after focusing a %s gadget, with Escape returning to play",
+		async (widget) => {
+			const binding = bind(
+				"control",
+				{
+					widget,
+					choices: [
+						{ label: "First", value: 0 },
+						{ label: "Second", value: 1 }
+					]
+				},
+				["xy", "range"].includes(widget)
+					? [0.2, 0.8]
+					: ["piano-roll", "guitar-tab", "relative-keys", "strum"].includes(widget)
+						? []
+						: widget === "color"
+							? "#33ffb8"
+							: widget === "toggle"
+								? false
+								: 0
+			)
+			const saved = state()
+			saved.widgets = [{ key: binding.key }]
+			const surface = new ControlSurface({
+				state: saved,
+				bindings: [binding],
+				change: vi.fn()
+			})
+			views.push(surface)
+			document.body.append(surface.element)
+			await settle()
+			const command = vi.fn()
+			views.push({ destroy: addKeyboardDownEvents(command) })
+			const panel = surface.element.querySelector<HTMLElement>(".cs-widget")!
+			const controls = [...panel.querySelectorAll<HTMLElement>("input, select, button")]
+			// Include the whole-panel pointer focus target used by dials and rotations.
+			if (panel.tabIndex === -1) {
+				controls.push(panel)
+			}
+			expect(controls.length).toBeGreaterThan(0)
+			for (const control of controls) {
+				control.focus()
+				expect(document.activeElement).toBe(control)
+				control.dispatchEvent(
+					new KeyboardEvent(EVENT_KEY_DOWN, {
+						key: "q",
+						code: "KeyQ",
+						bubbles: true,
+						cancelable: true
+					})
+				)
+				expect(command.mock.lastCall?.slice(0, 3)).toEqual([NOTE_ON, "q", 41])
+				control.dispatchEvent(
+					new KeyboardEvent(EVENT_KEY_DOWN, {
+						key: "Escape",
+						bubbles: true,
+						cancelable: true
+					})
+				)
+				expect(document.activeElement).toBe(surface.element.querySelector(".cs-viewport"))
+				// Changing focus must neither stop transport nor lose the held key release.
+				expect(command.mock.lastCall?.[0]).toBe(NOTE_ON)
+				document.activeElement!.dispatchEvent(
+					new KeyboardEvent(EVENT_KEY_UP, { key: "q", code: "KeyQ", bubbles: true })
+				)
+				expect(command.mock.lastCall?.slice(0, 3)).toEqual([NOTE_OFF, "q", 41])
+			}
+			expect(command.mock.calls).toHaveLength(controls.length * 2)
+		}
+	)
+	it("preserves text and numeric editing, then restores notes with Escape, including external toolbars", async () => {
+		const bindings = [
+			bind("text", { widget: "text" }, "Patch"),
+			bind("number", { widget: "number" }, 0.5)
+		]
+		const saved = state()
+		saved.widgets = bindings.map(({ key }) => ({ key }))
+		const toolbarHost = document.body.appendChild(document.createElement("header"))
+		const surface = new ControlSurface({ state: saved, bindings, toolbarHost, change: vi.fn() })
+		views.push(surface)
+		document.body.append(surface.element)
+		await settle()
+		const command = vi.fn()
+		views.push({ destroy: addKeyboardDownEvents(command) })
+		const name = toolbarHost.querySelector<HTMLInputElement>(".cs-title")!
+		for (const input of [
+			...surface.element.querySelectorAll<HTMLInputElement>("input"),
+			name
+		]) {
+			input.focus()
+			for (const key of ["q", "2", "ArrowUp", "Enter", " "]) {
+				input.dispatchEvent(
+					new KeyboardEvent(EVENT_KEY_DOWN, { key, bubbles: true, cancelable: true })
+				)
+			}
+			expect(command).not.toHaveBeenCalled()
+			input.focus()
+			input.dispatchEvent(
+				new KeyboardEvent(EVENT_KEY_DOWN, {
+					key: "Escape",
+					bubbles: true,
+					cancelable: true
+				})
+			)
+			expect(document.activeElement).toBe(surface.element.querySelector(".cs-viewport"))
+		}
+		name.focus()
+		name.value = "Unsaved"
+		name.dispatchEvent(
+			new KeyboardEvent(EVENT_KEY_DOWN, { key: "Escape", bubbles: true, cancelable: true })
+		)
+		expect(name.value).toBe(saved.name)
+		const edit = toolbarHost.querySelector<HTMLButtonElement>("button")!
+		edit.focus()
+		edit.dispatchEvent(
+			new KeyboardEvent(EVENT_KEY_DOWN, { key: "q", bubbles: true, cancelable: true })
+		)
+		expect(command.mock.lastCall?.slice(0, 3)).toEqual([NOTE_ON, "q", 41])
+		edit.dispatchEvent(
+			new KeyboardEvent(EVENT_KEY_DOWN, { key: "Escape", bubbles: true, cancelable: true })
+		)
+		expect(document.activeElement).toBe(surface.element.querySelector(".cs-viewport"))
+	})
+	it("keeps activation and navigation local and respects keys consumed by musical editors", async () => {
+		const binding = bind("tab", createGuitarTabControl({ id: "tab", label: "Tab" }), [])
+		const saved = state()
+		saved.widgets = [{ key: binding.key }]
+		const surface = new ControlSurface({ state: saved, bindings: [binding], change: vi.fn() })
+		views.push(surface)
+		document.body.append(surface.element)
+		await settle()
+		const command = vi.fn()
+		views.push({ destroy: addKeyboardDownEvents(command) })
+		const cell = surface.element.querySelector<HTMLButtonElement>(".cs-widget button")!
+		cell.focus()
+		for (const key of ["2", "Delete", "ArrowRight", " ", "Enter", "Home", "End"]) {
+			document.activeElement!.dispatchEvent(
+				new KeyboardEvent(EVENT_KEY_DOWN, { key, bubbles: true, cancelable: true })
+			)
+		}
+		expect(command).not.toHaveBeenCalled()
+	})
 	it("recovers note ownership after an asynchronous output failure", async () => {
 		const component = installComponentUi({
 			getUiDescriptor: () => ({ controls: [] }),

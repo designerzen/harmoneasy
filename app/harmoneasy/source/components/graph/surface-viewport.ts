@@ -206,13 +206,16 @@ export function createSurfaceViewport(manager: IOChainManager, startExpanded = f
 			return
 		}
 		if (event.key === "Escape") {
+			if (event.isComposing) {
+				return
+			}
 			if (
-				(event.target as HTMLElement)?.closest?.(
-					".cs-title, .cs-settings:has(.cs-settings-menu:not([hidden]))"
-				)
+				(event.target as HTMLElement)?.closest?.("[data-keyboard-notes]") &&
+				!(event.target as HTMLElement).matches(".cs-viewport")
 			) {
 				return
 			}
+			event.preventDefault()
 			event.stopPropagation()
 			close()
 		}
