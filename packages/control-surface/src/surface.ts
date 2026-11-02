@@ -2,6 +2,7 @@ import { createDomControl } from "./dom"
 import { contactPressure } from "./pressure"
 import { sourceTheme } from "./themes"
 import { isMusicGrid, musicOptions, musicRect, musicValues } from "./music"
+import { PadLight } from "./pad"
 import { toolPages } from "./tool-pages"
 import { resizeMusicGrid } from "./music-dom"
 import { relativeRect } from "./relative-keys"
@@ -105,6 +106,9 @@ export class ControlSurface {
 	private pageCount = 1
 	private pageHeight = 400
 	private layoutMode = ""
+	private layoutScale = 1
+	private layoutToolbarScale = 1
+	private layoutViewportHeight = 0
 	private status = document.createElement("p")
 	private abort = new AbortController()
 	private previousPage = this.button("Previous page", () => this.showPage(this.currentPage - 1))
@@ -389,7 +393,14 @@ export class ControlSurface {
 					this.stageWidth = width
 					const scale = rect.width / width || 1
 					const playing = playingLayout(width, Math.min(rect.width, innerWidth))
-					if (this.layoutMode !== `${playing.hands}:${playing.columns}`) {
+					const toolbarScale =
+						this.toolbar.getBoundingClientRect().width / this.toolbar.offsetWidth || 1
+					if (
+						this.layoutMode !== `${playing.hands}:${playing.columns}` ||
+						Math.abs(scale - this.layoutScale) > 0.001 ||
+						Math.abs(toolbarScale - this.layoutToolbarScale) > 0.001 ||
+						this.layoutViewportHeight !== innerHeight
+					) {
 						this.layout()
 					}
 					this.updateBeat()
@@ -675,6 +686,9 @@ export class ControlSurface {
 				reading: false,
 				dirty: true,
 				semanticDirty: true
+			}
+			if (widget === "pad") {
+				entry.visual.pad = new PadLight()
 			}
 			const control = createDomControl(
 				{
@@ -1153,6 +1167,11 @@ export class ControlSurface {
 		this.element.dataset.hands = String(profile.hands)
 		const stageRect = this.stage.getBoundingClientRect()
 		const scale = stageRect.width / width || 1
+		const toolbarScale =
+			this.toolbar.getBoundingClientRect().width / this.toolbar.offsetWidth || 1
+		this.layoutScale = scale
+		this.layoutToolbarScale = toolbarScale
+		this.layoutViewportHeight = innerHeight
 		// Reserve footer space even on a single page so pagination cannot change its own capacity.
 		this.pageHeight = Math.max(
 			1,
@@ -1164,8 +1183,8 @@ export class ControlSurface {
 		this.element.style.setProperty("--cs-target", `${44 / scale}px`)
 		this.element.style.setProperty("--cs-gap", `${11 / scale}px`)
 		this.element.style.setProperty("--cs-pager", `${55 / scale}px`)
-		this.toolbar.style.setProperty("--cs-target", `${44 / scale}px`)
-		this.toolbar.style.setProperty("--cs-gap", `${11 / scale}px`)
+		this.toolbar.style.setProperty("--cs-target", `${44 / toolbarScale}px`)
+		this.toolbar.style.setProperty("--cs-gap", `${11 / toolbarScale}px`)
 		const layout = layoutWidgets(this.layoutItems(), width, screenWidth, this.pageHeight, scale)
 		this.pageCount = layout.pages
 		this.currentPage = Math.min(this.currentPage, this.pageCount - 1)
@@ -1289,6 +1308,9 @@ export class ControlSurface {
 					unavailable !== entry.visual.unavailable
 				) {
 					entry.visual.value = value
+					if (entry.visual.pad && typeof value === "number") {
+						entry.visual.pad.set(normalize(entry.binding.descriptor, value))
+					}
 					entry.visual.unavailable = unavailable
 					entry.semanticDirty = true
 				}
@@ -1348,6 +1370,7 @@ export class ControlSurface {
 		entry.visual.value = value
 		if (entry.visual.widget === "pad") {
 			entry.visual.active = normalize(entry.binding.descriptor, Number(value)) > 0
+			entry.visual.pad?.set(normalize(entry.binding.descriptor, Number(value)))
 		}
 		if (entry.visual.widget === "relative-keys") {
 			entry.visual.active = !!entry.visual.relative?.contacts.size

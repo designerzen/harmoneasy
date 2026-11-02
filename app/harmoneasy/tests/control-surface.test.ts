@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { PadLight, noteColor } from "../../../packages/control-surface/src/pad"
 import { beatPulse } from "../../../packages/control-surface/src/beat"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import {
@@ -299,6 +300,28 @@ describe("shared component controls", () => {
 })
 
 describe("surface interaction and bindings", () => {
+	it("lights pads by pitch and velocity with a longer decay for stronger strikes", () => {
+		expect(noteColor(60)).toEqual(noteColor(72))
+		expect(noteColor(60)[0]).toBeCloseTo(0.72)
+		expect(noteColor(60)[1]).toBeCloseTo(0.08)
+		expect(noteColor(67)).not.toEqual(noteColor(60))
+		const soft = new PadLight(),
+			hard = new PadLight()
+		soft.set(0.25, 1)
+		hard.set(0.9, 1)
+		expect(hard.intensity(2)).toBe(0.9)
+		expect(soft.intensity(2)).toBe(0.25)
+		soft.set(0, 2)
+		hard.set(0, 2)
+		expect(hard.duration).toBeGreaterThan(soft.duration)
+		expect(soft.intensity(2.4)).toBe(0)
+		expect(hard.intensity(2.4)).toBeGreaterThan(0)
+		expect(hard.intensity(3)).toBe(0)
+		expect(hard.intensity(2.1, false)).toBe(0)
+		hard.set(0.4, 3)
+		expect(hard.intensity(3)).toBe(0.4)
+		expect(hard.releasedAt).toBe(-1)
+	})
 	it("follows transport beats and stops cues when playback stops or motion is reduced", () => {
 		const timer = {
 			isRunning: true,
@@ -414,13 +437,14 @@ describe("surface interaction and bindings", () => {
 				expect(a.x).toBeGreaterThanOrEqual(0)
 				expect(a.x + a.width).toBeLessThanOrEqual(width + 0.001)
 				expect(a.y + a.height).toBeLessThanOrEqual(layout.height)
-				for (const b of layout.items.slice(i + 1))
-					{expect(
+				for (const b of layout.items.slice(i + 1)) {
+					expect(
 						a.x < b.x + b.width &&
 							a.x + a.width > b.x &&
 							a.y < b.y + b.height &&
 							a.y + a.height > b.y
-					).toBe(false)}
+					).toBe(false)
+				}
 			}
 			expect(layoutWidgets(widgets, width)).toEqual(layout)
 		}

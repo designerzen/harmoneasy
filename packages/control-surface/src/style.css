@@ -15,6 +15,9 @@
 }
 .cs-toolbar {
 	position: relative;
+	flex-wrap: wrap;
+	width: 100%;
+	min-width: 0;
 	display: flex;
 	align-items: center;
 	gap: var(--cs-gap, 11px);

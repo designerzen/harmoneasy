@@ -78,6 +78,8 @@ export interface ControlDescriptor {
 	unit?: string
 	scale?: "linear" | "log"
 	dial?: DialOptions
+	/** MIDI note used for the pad light; defaults to middle C. */
+	pad?: { note?: number }
 	music?: MusicGridOptions
 	relativeKeys?: RelativeKeysOptions
 	strum?: StrumOptions

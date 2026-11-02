@@ -1,4 +1,5 @@
 /// <reference types="@webgpu/types" />
+import { PadLight, noteColor } from "./pad"
 import { beatPulse } from "./beat"
 import { EVENT_GPU_ERROR } from "./events"
 import { sourceTheme } from "./themes"
@@ -39,6 +40,7 @@ export interface WidgetVisual {
 	unavailable?: boolean
 	relative?: RelativeKeys
 	musicView?: MusicView
+	pad?: PadLight
 	strum?: Strum
 }
 export type SurfaceTheme = "neon" | "amber" | "ice"
@@ -50,6 +52,7 @@ interface CachedWidget {
 	width: number
 	height: number
 	rotation: number | undefined
+	padRevision: number | undefined
 	musicRevision: number | undefined
 	strumRevision: number | undefined
 	descriptor: ControlDescriptor
@@ -258,7 +261,8 @@ fn chassis(distance:f32,top:f32,pressed:f32)->vec4f {
  } else if (kind>9.5) {
   let d=box(p,size*0.4,10);
   material=chassis(d,top,engaged);
-  let pressure=clamp(value*engaged,0.0,1.0);
+  let tail=select(0.0,pow(max(0.0,1.0-max(0.0,frame.time-second)/max(0.001,i.extra.x)),2.0)*frame.motion,second>=0.0);
+  let pressure=clamp(value*select(tail,1.0,engaged>0.5),0.0,1.0);
   light=line(d,1.8)*(0.14+pressure*1.6);
   fill=(1.0-smoothstep(-1.0,0.0,d))*(0.015+pressure*0.8);
  } else {
@@ -779,13 +783,18 @@ export class GpuSurfaceRenderer {
 			dirtyEnd = 0,
 			grown = false
 		const epoch = ++this.epoch
+		const wasActive = this.active
 		this.active = widgets.some(
 			(widget) =>
 				!!widget.active ||
+				(!!widget.pad && _motion && widget.pad.intensity(performance.now() / 1000) > 0) ||
 				(!!widget.strum &&
 					_motion &&
 					performance.now() / 1000 - widget.strum.lastTriggered < 0.75)
 		)
+		if (wasActive && !this.active) {
+			this.dirty = true
+		}
 		const reserve = (required: number) => {
 			if (required <= this.instances.length) {
 				return
@@ -811,6 +820,7 @@ export class GpuSurfaceRenderer {
 				cached.rotation !== w.rotation ||
 				cached.strumRevision !== w.strum?.revision ||
 				cached.musicRevision !== w.musicView?.revision ||
+				cached.padRevision !== w.pad?.revision ||
 				cached.descriptor !== w.descriptor ||
 				cached.widget !== w.widget ||
 				cached.sourceLabel !== w.sourceLabel ||
@@ -927,20 +937,33 @@ export class GpuSurfaceRenderer {
 						}
 					}
 				} else if (!["select", "number", "text", "color", "display"].includes(w.widget)) {
+					if (w.widget === "pad") {
+						this.drawingColor = noteColor(d.pad?.note ?? 60)
+					}
 					this.quad(
 						x,
 						y,
 						width,
 						height,
 						kind,
-						w.widget === "radio" ? choice : target[0],
+						w.widget === "pad"
+							? (w.pad?.velocity ?? target[0])
+							: w.widget === "radio"
+								? choice
+								: target[0],
 						rotary
 							? ["level", "pan", "rotation"].indexOf(dial.mode)
 							: w.widget === "xy" || w.widget === "range"
 								? target[1]
-								: -1,
-						active,
-						rotary ? dial.ticks : (d.choices?.length ?? 0),
+								: w.widget === "pad"
+									? (w.pad?.releasedAt ?? -1)
+									: -1,
+						w.widget === "pad" ? Number(w.pad?.held ?? w.active) : active,
+						rotary
+							? dial.ticks
+							: w.widget === "pad"
+								? (w.pad?.duration ?? 0.8)
+								: (d.choices?.length ?? 0),
 						alpha,
 						rotary
 							? [
@@ -952,6 +975,7 @@ export class GpuSurfaceRenderer {
 							: undefined
 					)
 				}
+				this.drawingColor = theme.accent
 				this.centeredText(
 					d.label.toUpperCase(),
 					w.x + 12,
@@ -1013,6 +1037,7 @@ export class GpuSurfaceRenderer {
 					rotation: w.rotation,
 					strumRevision: w.strum?.revision,
 					musicRevision: w.musicView?.revision,
+					padRevision: w.pad?.revision,
 					descriptor: d,
 					widget: w.widget,
 					sourceLabel: w.sourceLabel,

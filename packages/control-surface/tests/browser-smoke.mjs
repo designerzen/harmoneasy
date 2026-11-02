@@ -276,6 +276,37 @@ try {
 	})
 	await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] })
 	await page.waitForFunction(() => window.surfaceSmoke.values.strike === 0)
+	await page.evaluate(() => {
+		const { surface } = window.surfaceSmoke
+		const entry = surface.entries.find((e) => e.visual.widget === "pad"),
+			light = entry.visual.pad
+		if (light.held || light.releasedAt < 0 || light.velocity !== 0.75) {
+			throw new Error("Pad release must retain its velocity for GPU decay")
+		}
+		surface.renderer.prepare(
+			surface.entries.map((e) => e.visual),
+			true
+		)
+		const data = surface.renderer.cache.get(entry.visual).data
+		let found = false
+		for (let offset = 0; offset < data.length; offset += 20) {
+			if (data[offset + 4] === 10) {
+				found = true
+				if (
+					data[offset + 8] < 0.7 ||
+					data[offset + 9] > 0.1 ||
+					data[offset + 6] < 0 ||
+					data[offset + 7] !== 0
+				) {
+					throw new Error("Pad face does not carry note hue and velocity fade parameters")
+				}
+			}
+		}
+		if (!found) {
+			throw new Error("Missing pad face")
+		}
+	})
+
 	await page.getByRole("button", { name: "Edit layout", exact: true }).click()
 	assert.equal(await page.getByRole("button", { name: /Dial options/ }).count(), 0)
 	assert.equal(await page.getByRole("combobox", { name: "Dial mode", exact: true }).count(), 0)
@@ -744,6 +775,63 @@ try {
 		true,
 		"Surface must fit narrow screens"
 	)
+	await page.evaluate(async () => {
+		const { ControlSurface } = window.surfaceSmoke
+		const host = document.createElement("div"),
+			toolbarHost = document.createElement("div")
+		host.style.cssText = "position:fixed;left:0;top:0;width:700px;"
+		host.append(toolbarHost)
+		document.body.append(host)
+		const surface = new ControlSurface({
+			toolbarHost,
+			state: {
+				id: "scale-test",
+				name: "Scaled surface",
+				connections: [],
+				widgets: [{ key: "scale-dial" }]
+			},
+			bindings: [
+				{
+					key: "scale-dial",
+					sourceLabel: "Test",
+					descriptor: { id: "scale-dial", label: "Dial", widget: "dial", min: 0, max: 1 },
+					read: () => 0.5,
+					write: () => {}
+				}
+			],
+			change: () => {}
+		})
+		surface.element.style.width = "700px"
+		surface.element.style.transformOrigin = "top left"
+		surface.element.style.transform = "scale(.125)"
+		host.append(surface.element)
+		try {
+			while (!surface.element.classList.contains("cs-gpu-ready")) {
+				await new Promise(requestAnimationFrame)
+			}
+			for (const scale of [0.125, 0.2, 1]) {
+				surface.element.style.transform = `scale(${scale})`
+				await new Promise(requestAnimationFrame)
+				await new Promise(requestAnimationFrame)
+				await new Promise(requestAnimationFrame)
+				for (const button of toolbarHost.querySelectorAll(
+					".cs-toolbar > button, .cs-settings > button"
+				)) {
+					const rect = button.getBoundingClientRect()
+					if (rect.height < 43.9 || rect.height > 65 || rect.width > 240) {
+						throw new Error("Toolbar inherited gadget zoom and grew oversized")
+					}
+				}
+				const target = parseFloat(surface.element.style.getPropertyValue("--cs-target"))
+				if (Math.abs(target * scale - 44) > 0.5) {
+					throw new Error("Gadget targets did not adapt to transform-only zoom changes")
+				}
+			}
+		} finally {
+			surface.destroy()
+			host.remove()
+		}
+	})
 	await page.evaluate(() => window.surfaceSmoke.surface.destroy())
 	assert.equal(await page.locator(".control-surface").count(), 0)
 	console.log(
