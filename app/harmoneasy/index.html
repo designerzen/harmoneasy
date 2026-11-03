@@ -28,14 +28,14 @@
 					<span id="start-title">Harmoneasy</span>
 				</button>
 				<div class="start-actions">
-					<button class="btn-continue-session primary" form="start-form" type="submit" name="startup" value="session" hidden>Continue</button>
-					<button class="btn-start-empty primary" form="start-form" type="submit" name="startup" value="empty">New</button>
-					<button class="secondary" type="button" id="show-start-presets" aria-expanded="false" aria-controls="start-presets-content">Presets</button>
+					<button class="btn-continue-session primary" form="start-form" type="submit" name="startup" value="session"><span>Continue Session</span><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14m-6-6 6 6-6 6" /></svg></button>
+					<button class="secondary" id="start-wizard" type="button" aria-haspopup="dialog" aria-controls="setup-wizard"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h4m4 0h8M4 17h8m4 0h4" /><circle cx="10" cy="7" r="2" /><circle cx="14" cy="17" r="2" /></svg>Setup wizard</button>
+					<button class="secondary" type="button" id="show-start-presets" aria-expanded="false" aria-controls="start-presets-content"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><rect x="14" y="14" width="6" height="6" rx="1" /></svg><span data-start-presets-label>Presets</span></button>
 				</div>
-				<details class="start-more">
-					<summary>More</summary>
-					<button class="tertiary" id="start-wizard" type="button" aria-haspopup="dialog" aria-controls="setup-wizard">Guided setup</button>
-				</details>
+				<div class="start-footer">
+					<button class="btn-start-empty tertiary" form="start-form" type="submit" name="startup" value="empty">Start Empty</button>
+					<a href="%BASE_URL%presets/">Browse preset pages</a>
+				</div>
 			</header>
 			<form id="start-form" method="dialog"></form>
 			<div id="start-presets-content" class="start-presets-content" hidden></div>

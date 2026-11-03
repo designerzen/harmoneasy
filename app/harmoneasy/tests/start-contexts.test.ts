@@ -2,6 +2,7 @@ import { PUBLISHED_PRESETS } from "../source/services/preset-files"
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
 import { runUI } from "./native-ui"
+import { EVENT_SUBMIT } from "audiobus/event-constants"
 import { createStateURL } from "../source/libs/location"
 import {
 	completePresets,
@@ -274,14 +275,23 @@ it("hides the browser until Presets is clicked and retains session actions", asy
 	expect(dialog.querySelectorAll(".preset-filter select")).toHaveLength(2)
 	const empty = dialog.querySelector<HTMLButtonElement>(".btn-start-empty")!
 	const session = dialog.querySelector<HTMLButtonElement>(".btn-continue-session")!
-	expect(empty.textContent?.trim()).toBe("New")
+	expect(empty.textContent?.trim()).toBe("Start Empty")
 	expect(empty.value).toBe("empty")
-	expect(session.textContent?.trim()).toBe("Continue")
+	expect(session.textContent?.trim()).toBe("Continue Session")
 	expect(session.value).toBe("session")
-	expect(session.hidden).toBe(true)
-	expect(empty.classList.contains("primary")).toBe(true)
+	expect(session.hidden).toBe(false)
+	expect(session.closest("[hidden], details")).toBeNull()
+	const wizard = dialog.querySelector<HTMLButtonElement>("#start-wizard")!
+	expect(wizard.textContent).toBe("Setup wizard")
+	expect(wizard.closest("[hidden], details")).toBeNull()
+	expect(dialog.querySelector('.start-footer a')?.textContent).toBe("Browse preset pages")
 	expect(empty.form?.id).toBe("start-form")
 	expect(session.form).toBe(empty.form)
+	const submit = vi.fn((event: SubmitEvent) => event.preventDefault())
+	session.form!.addEventListener(EVENT_SUBMIT, submit)
+	session.click()
+	expect(submit).toHaveBeenCalledOnce()
+	expect((submit.mock.calls[0][0].submitter as HTMLButtonElement).value).toBe("session")
 	expect(dialog.querySelector("form form")).toBeNull()
 	expect(createEmptySetup().chains[0].steps).toEqual([])
 })

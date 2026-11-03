@@ -1,7 +1,6 @@
 import { createPresetBrowser } from "../components/graph/PresetBrowser"
 import { presetSetup } from "../components/graph/preset-catalogue"
 import type { PresetSetup } from "audiobus/io/preset-library"
-import { getLocationSettings } from "../libs/location"
 import { EVENT_CLICK } from "audiobus/event-constants"
 export * from "./start-context-catalogue"
 
@@ -12,13 +11,9 @@ export function createStartContexts(
 	let selected: PresetSetup | undefined
 	const host = root.querySelector<HTMLElement>(".start-presets-content")!
 	const toggle = root.querySelector<HTMLButtonElement>("#show-start-presets")!
+	const toggleLabel = toggle.querySelector<HTMLElement>("[data-start-presets-label]")!
 	const roomContext = root.querySelector<HTMLElement>("#start-room-context")!
 	const dismissRoom = root.querySelector<HTMLButtonElement>("#dismiss-start-room")!
-	const resume = root.querySelector<HTMLButtonElement>(".btn-continue-session")!
-	const newSession = root.querySelector<HTMLButtonElement>(".btn-start-empty")!
-	resume.hidden = !getLocationSettings(null).io
-	newSession.classList.toggle("primary", resume.hidden)
-	newSession.classList.toggle("secondary", !resume.hidden)
 	const dismissInvitation = () => {
 		roomContext.hidden = true
 		toggle.focus({ preventScroll: true })
@@ -41,7 +36,7 @@ export function createStartContexts(
 	const togglePresets = () => {
 		host.hidden = !host.hidden
 		toggle.setAttribute("aria-expanded", String(!host.hidden))
-		toggle.textContent = host.hidden ? "Presets" : "Close presets"
+		toggleLabel.textContent = host.hidden ? "Presets" : "Close presets"
 		if (!host.hidden) {
 			search.focus({ preventScroll: true })
 		}
