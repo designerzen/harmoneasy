@@ -534,7 +534,7 @@ export function fillDeviceCard(
 		const image = document.createElement("img")
 		image.className = "device-choice-preview"
 		image.src = `${import.meta.env.BASE_URL}${preview.replace(/^\//, "")}`
-		image.alt = `${factory.name} controls`
+		image.alt = ""
 		image.loading = "lazy"
 		icon.hidden = true
 		image.addEventListener(
