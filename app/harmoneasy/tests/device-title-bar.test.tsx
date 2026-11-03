@@ -51,13 +51,14 @@ it("exposes labelled title controls and updates the toggle when the manager chan
 		)
 		const buttons = host.querySelectorAll("button")
 		const toggle = host.querySelector<HTMLButtonElement>(".device-toggle")!
-		expect(buttons).toHaveLength(5)
-		expect(buttons[0].getAttribute("aria-label")).toBe("Remove input")
+		expect(buttons).toHaveLength(6)
+		expect(buttons[0]).toBe(toggle)
+		expect(buttons[buttons.length - 1].className).toBe("device-expand")
 		expect(host.querySelector("header")!.lastElementChild!.tagName).toBe("H6")
 		expect(host.querySelector(".device-swap")!.textContent).toBe("Swap")
-		expect(host.querySelector(".node-actions-left")!.querySelectorAll("button")).toHaveLength(2)
+		expect(host.querySelector(".node-actions-left")!.querySelectorAll("button")).toHaveLength(1)
 		expect(host.querySelector(".node-actions-right")!.querySelectorAll("button")).toHaveLength(
-			3
+			5
 		)
 		const minimise = host.querySelector<HTMLButtonElement>(".device-minimise")!
 		expect(minimise.getAttribute("aria-label")).toBe("Minimise input")
@@ -74,7 +75,8 @@ it("exposes labelled title controls and updates the toggle when the manager chan
 		expect(toggle.getAttribute("aria-pressed")).toBe("true")
 		await act(async () => {
 			host.querySelector<HTMLButtonElement>(".device-expand")!.click()
-			buttons[0].click()
+			host.querySelector<HTMLButtonElement>(".device-menu")!.click()
+			host.querySelector<HTMLButtonElement>(".device-remove")!.click()
 		})
 		expect(onExpand).toHaveBeenCalledOnce()
 		expect(onRemove).toHaveBeenCalledOnce()

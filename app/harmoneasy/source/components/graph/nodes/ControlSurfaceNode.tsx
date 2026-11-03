@@ -24,7 +24,6 @@ export function ControlSurfaceNode({ id, data }: any) {
 				title={data.surface.name}
 				removeLabel="Remove control surface"
 				onRemove={() => removeSurface(chain, data.surface.id)}
-				swap={null}
 			>
 				<MinimiseButton
 					compact={Boolean(data.isCompact)}

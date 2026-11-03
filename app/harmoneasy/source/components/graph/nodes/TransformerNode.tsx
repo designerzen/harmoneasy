@@ -9,6 +9,7 @@ import { TransformerDialog } from "../GraphDialogs"
 import { MinimiseButton } from "../MinimiseButton"
 import { DeviceGui } from "../DeviceGui"
 import { CONTROL_HANDLE } from "../control-surfaces"
+import { transformerActions } from "../transformer-actions"
 
 function TransformerStatus({ element }: { element: { status: string; statusState?: string } }) {
 	const readStatus = () => ({ text: element.status, state: element.statusState ?? "idle" })
@@ -47,6 +48,16 @@ export function TransformerNode(props: any) {
 	const { chain, chainId } = useChain()
 	const [swapping, setSwapping] = useState(false)
 	const element = props.data.element
+	const name = element.options.displayName || props.data.label
+	const color = element.options.displayColor
+	const customColor = /^#[0-9a-f]{6}$/i.test(color ?? "")
+	const brightness = customColor
+		? [1, 3, 5].reduce(
+				(sum, offset, index) =>
+					sum + parseInt(color.slice(offset, offset + 2), 16) * [299, 587, 114][index],
+				0
+			) / 1000
+		: 0
 	const enabled = useSyncExternalStore(
 		useCallback((callback) => element.subscribeControls(callback), [element]),
 		() => Boolean(element.options.enabled)
@@ -92,74 +103,33 @@ export function TransformerNode(props: any) {
 	return (
 		<div
 			title={description}
+			data-layout={isVertical ? "vertical" : "horizontal"}
+			style={
+				customColor
+					? ({
+							"--node-surface": color,
+							"--node-on-surface": brightness > 150 ? "#10121a" : "#ffffff",
+							backgroundImage: "none"
+						} as React.CSSProperties)
+					: undefined
+			}
 			data-midi-scope={`${chainId}:transformer:${props.data.element.midiControlId}`}
 			className={`node-transformer graph-node can-remove category-${props.data.element.category.toLowerCase()} ${isFullscreen ? "is-fullscreen" : ""} ${isCompact ? "is-compact" : ""}`}
 		>
 			<NodeHeader
 				enabled={enabled}
+				actions={transformerActions(chain, element)}
 				description={props.data.description || description}
 				removeLabel="Delete transformer"
 				onRemove={removeNode}
-				swap={
-					<button
-						type="button"
-						className="device-swap"
-						title="Swap transformer"
-						aria-label="Swap transformer"
-						onClick={() => setSwapping(true)}
-					>
-						Swap
-					</button>
-				}
+				onSwap={() => setSwapping(true)}
 				title={
 					<>
 						<ElementIcon src={icon} title={description} />
-						{props.data.label}
+						{name}
 					</>
 				}
 			>
-				{shouldShowMoveButtons && (
-					<div className="transformer-move-controls">
-						<button
-							type="button"
-							className="btn-previous nodrag nopan"
-							onClick={moveBack}
-							title={isVertical ? "Move transformer up" : "Move transformer left"}
-							aria-label={
-								isVertical ? "Move transformer up" : "Move transformer left"
-							}
-						>
-							<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-								<path
-									d={
-										isVertical
-											? "M12 20V4m-6 6 6-6 6 6"
-											: "M20 12H4m6-6-6 6 6 6"
-									}
-								/>
-							</svg>
-						</button>
-						<button
-							type="button"
-							className="btn-next nodrag nopan"
-							onClick={moveForwards}
-							title={isVertical ? "Move transformer down" : "Move transformer right"}
-							aria-label={
-								isVertical ? "Move transformer down" : "Move transformer right"
-							}
-						>
-							<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-								<path
-									d={
-										isVertical
-											? "M12 4v16m-6-6 6 6 6-6"
-											: "M4 12h16m-6-6 6 6-6 6"
-									}
-								/>
-							</svg>
-						</button>
-					</div>
-				)}
 				<MinimiseButton
 					compact={isCompact}
 					direction="transformer"
@@ -210,6 +180,39 @@ export function TransformerNode(props: any) {
 			)}
 
 			<DeviceGui device={props.data.element} expanded={isFullscreen} />
+
+			{shouldShowMoveButtons && !isFullscreen && (
+				<div
+					className={`transformer-move-controls ${isVertical ? "is-vertical" : "is-horizontal"}`}
+				>
+					<button
+						type="button"
+						className="btn-previous nodrag nopan"
+						onClick={moveBack}
+						title={isVertical ? "Move transformer up" : "Move transformer left"}
+						aria-label={isVertical ? "Move transformer up" : "Move transformer left"}
+					>
+						<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+							<path
+								d={isVertical ? "M12 20V4m-6 6 6-6 6 6" : "M20 12H4m6-6-6 6 6 6"}
+							/>
+						</svg>
+					</button>
+					<button
+						type="button"
+						className="btn-next nodrag nopan"
+						onClick={moveForwards}
+						title={isVertical ? "Move transformer down" : "Move transformer right"}
+						aria-label={isVertical ? "Move transformer down" : "Move transformer right"}
+					>
+						<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+							<path
+								d={isVertical ? "M12 4v16m-6-6 6 6 6-6" : "M4 12h16m-6-6 6 6-6 6"}
+							/>
+						</svg>
+					</button>
+				</div>
+			)}
 
 			{!isFullscreen && (
 				<Handle type="source" position={isVertical ? Position.Bottom : Position.Right} />

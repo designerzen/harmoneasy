@@ -9,6 +9,7 @@ import {
 	EVENT_KEY_DOWN
 } from "audiobus/event-constants"
 import { button, element } from "./dom"
+import { createNodeMenu } from "./node-menu"
 import { mountControlSurface, removeSurface } from "./control-surfaces"
 
 /** One native viewport for every surface, including surfaces in other preset chains. */
@@ -56,12 +57,18 @@ export function createSurfaceViewport(manager: IOChainManager, startExpanded = f
 		document.body.style.overflow = overflow
 		previousFocus?.focus({ preventScroll: true })
 	}
-	const remove = gadget("Remove control surface", "device-remove", "m6 6 12 12M18 6 6 18", () => {
-		if (selected) {
-			removeSurface(selected.chain, selected.surface.id)
+	const menu = createNodeMenu([
+		{
+			label: "Remove control surface",
+			className: "device-remove",
+			run: () => {
+				if (selected) {
+					removeSurface(selected.chain, selected.surface.id)
+				}
+				refresh()
+			}
 		}
-		refresh()
-	})
+	])
 	const minimise = gadget("Minimise control surface", "device-minimise", "M5 12h14", () => {
 		if (selected) {
 			selected.chain.dispatchEvent(
@@ -78,8 +85,7 @@ export function createSurfaceViewport(manager: IOChainManager, startExpanded = f
 		close
 	)
 	expand.setAttribute("aria-expanded", "true")
-	left.append(remove)
-	right.append(minimise, expand)
+	right.append(minimise, menu.element, expand)
 	controls.append(left, right)
 	header.append(controls, title)
 	panel.append(header, tabs, content)
@@ -248,6 +254,7 @@ export function createSurfaceViewport(manager: IOChainManager, startExpanded = f
 	return {
 		destroy() {
 			close()
+			menu.destroy()
 			manager.removeEventListener(EVENT_CHAINS_UPDATED, refresh)
 			document.removeEventListener(EVENT_KEY_DOWN, keydown, true)
 			for (const abort of subscriptions.values()) {

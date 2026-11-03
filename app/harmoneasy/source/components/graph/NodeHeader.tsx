@@ -1,10 +1,12 @@
-import React from "react"
+import React, { useEffect, useRef } from "react"
+import { createNodeMenu, type NodeMenuAction } from "./node-menu"
 
 export function NodeHeader({
 	title,
 	removeLabel,
 	onRemove,
-	swap,
+	onSwap,
+	actions = [],
 	children,
 	enabled,
 	description
@@ -12,29 +14,39 @@ export function NodeHeader({
 	title: React.ReactNode
 	removeLabel: string
 	onRemove: () => void
-	swap: React.ReactNode
+	onSwap?: () => void
+	actions?: NodeMenuAction[]
 	children: React.ReactNode
 	enabled?: boolean
 	description?: string
 }) {
+	const menuHost = useRef<HTMLDivElement>(null)
+	const controls = React.Children.toArray(children)
+	const controlClass = (child: React.ReactNode) =>
+		React.isValidElement<{ className?: string }>(child) ? child.props.className : undefined
+	useEffect(() => {
+		const menu = createNodeMenu([
+			...(onSwap ? [{ label: "Swap", className: "device-swap", run: onSwap }] : []),
+			...actions,
+			{ label: removeLabel, className: "device-remove", run: onRemove }
+		])
+		menuHost.current?.append(menu.element)
+		return () => menu.destroy()
+	}, [onSwap, onRemove, removeLabel, actions])
 	return (
 		<header className="device-node-header node-actions" data-enabled={enabled}>
 			<div className="device-title-controls nodrag nopan">
 				<div className="node-actions-left">
-					<button
-						type="button"
-						className="device-remove"
-						title={removeLabel}
-						aria-label={removeLabel}
-						onClick={onRemove}
-					>
-						<svg viewBox="0 0 24 24" aria-hidden="true">
-							<path d="m6 6 12 12M18 6 6 18" />
-						</svg>
-					</button>
-					{swap}
+					{controls.filter((child) => controlClass(child) === "device-toggle")}
 				</div>
-				<div className="node-actions-right">{children}</div>
+				<div className="node-actions-right">
+					{controls.filter(
+						(child) =>
+							!["device-toggle", "device-expand"].includes(controlClass(child) ?? "")
+					)}
+					<div ref={menuHost} className="node-menu-host" />
+					{controls.filter((child) => controlClass(child) === "device-expand")}
+				</div>
 			</div>
 			{description ? (
 				<details className="node-title-details nodrag nopan">

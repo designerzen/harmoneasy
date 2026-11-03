@@ -56,17 +56,7 @@ export function DeviceTitleBar({
 				enabled={enabled}
 				removeLabel={`Remove ${direction}`}
 				onRemove={onRemove}
-				swap={
-					<button
-						type="button"
-						className="device-swap"
-						title={`Swap ${direction}`}
-						aria-label={`Swap ${direction}`}
-						onClick={() => setSwapping(true)}
-					>
-						Swap
-					</button>
-				}
+				onSwap={() => setSwapping(true)}
 				title={
 					<>
 						<ElementIcon

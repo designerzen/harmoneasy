@@ -22,6 +22,8 @@ it.each([true, 1])(
 		const element = new TransformerHarmoniser({ enabled: initial })
 		const chain = new EventTarget()
 		const save = vi.fn()
+		const move = { moveOneStepBefore: vi.fn(), moveOneStepAfter: vi.fn() }
+		Object.assign(chain, { transformerQuantity: 2, transformerManager: move })
 		chain.addEventListener(EVENT_CONFIGURATION_CHANGED, save)
 		const host = document.body.appendChild(document.createElement("div"))
 		const root = createRoot(host)
@@ -34,6 +36,7 @@ it.each([true, 1])(
 							data={{
 								element,
 								label: element.name,
+								layoutMode: initial === true ? "vertical" : "horizontal",
 								description: element.description
 							}}
 						/>
@@ -42,6 +45,18 @@ it.each([true, 1])(
 			)
 			const toggle = host.querySelector<HTMLButtonElement>(".device-toggle")!
 			expect(toggle.getAttribute("aria-pressed")).toBe("true")
+			const bar = host.querySelector(".device-title-controls")!
+			expect(bar.querySelector("button")).toBe(toggle)
+			expect(
+				bar.querySelectorAll("button")[bar.querySelectorAll("button").length - 1].className
+			).toBe("device-expand")
+			expect(bar.querySelector(".transformer-move-controls")).toBeNull()
+			const ordering = host.querySelector(".transformer-move-controls")!
+			expect(
+				ordering.classList.contains(initial === true ? "is-vertical" : "is-horizontal")
+			).toBe(true)
+			await act(async () => ordering.querySelector<HTMLButtonElement>(".btn-next")!.click())
+			expect(move.moveOneStepAfter).toHaveBeenCalledWith(element)
 			await act(async () => toggle.click())
 			expect(element.options.enabled).toBe(typeof initial === "boolean" ? false : 0)
 			expect(toggle.getAttribute("aria-pressed")).toBe("false")
