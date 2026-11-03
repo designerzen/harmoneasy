@@ -84,7 +84,7 @@ export const START_CONTEXTS: StartContext[] = [
 		category: "Together",
 		description:
 			"Help a classroom improvise together: everyone plays in C major and can share a clock.",
-		next: "After starting, use Sync to connect browsers to a shared clock, then connect each learner’s controller.",
+		next: "After starting, use Shared room to connect browsers to a shared clock, then connect each learner’s controller.",
 		presets: ["c-major-sketchbook"]
 	},
 	{
@@ -116,7 +116,7 @@ export const START_CONTEXTS: StartContext[] = [
 		name: "Jam with friends",
 		category: "Together",
 		description: "Improvise with friends in D Dorian, a minor sound with a brighter sixth.",
-		next: "Use Sync after starting to share timing with the other players.",
+		next: "Use Shared room after starting to share timing with the other players.",
 		presets: ["d-dorian-session"]
 	},
 	{
@@ -581,7 +581,7 @@ export const START_CONTEXTS: StartContext[] = [
 		category: "Together",
 		description:
 			"Give learners a shared C major palette for copying and answering a short phrase.",
-		next: "Use Sync for a shared clock. Have one learner play a phrase, then let the next learner answer.",
+		next: "Use Shared room for a shared clock. Have one learner play a phrase, then let the next learner answer.",
 		presets: ["c-major-sketchbook"]
 	},
 	{
@@ -589,7 +589,7 @@ export const START_CONTEXTS: StartContext[] = [
 		name: "Let beginners accompany a group",
 		category: "Together",
 		description: "Give a new player one-finger major chords to support a group melody.",
-		next: "Agree on C major with the other players. Use Sync for timing and play chord roots on the beat.",
+		next: "Agree on C major with the other players. Use Shared room for timing and play chord roots on the beat.",
 		presets: ["classic-chord"]
 	},
 	{
@@ -597,7 +597,7 @@ export const START_CONTEXTS: StartContext[] = [
 		name: "Take the bass role in a jam",
 		category: "Together",
 		description: "Move a C major part down an octave so it can sit below the other players.",
-		next: "Agree on the key, use Sync for timing and play a few low supporting notes.",
+		next: "Agree on the key, use Shared room for timing and play a few low supporting notes.",
 		presets: ["bass-register"]
 	},
 	{

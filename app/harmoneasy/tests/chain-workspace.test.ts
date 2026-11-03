@@ -17,6 +17,7 @@ afterEach(() => {
 	workspace = undefined
 	document.body.replaceChildren()
 	vi.unstubAllGlobals()
+	vi.restoreAllMocks()
 })
 function mount() {
 	vi.stubGlobal("localStorage", { getItem: () => null })
@@ -97,6 +98,33 @@ it("mounts React only in graph canvases while native navigation switches existin
 		.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: "ArrowLeft", bubbles: true }))
 	expect(document.activeElement?.id).toBe("chain-tab-one")
 	expect(first.hidden).toBe(false)
+})
+
+it.each(["menu", "tab"])("confirms %s deletion and focuses the remaining chain", (control) => {
+	const { manager, graphs } = mount()
+	const confirm = vi.fn().mockReturnValue(false)
+	vi.stubGlobal("confirm", confirm)
+	const remove = () => {
+		if (control === "menu") {
+			const action = document.querySelector<HTMLSelectElement>(
+				"#iochain-one .chain-actions select"
+			)!
+			action.value = "delete"
+			action.dispatchEvent(new Event(EVENT_CHANGE))
+		} else {
+			document.querySelector<HTMLButtonElement>(".chain-tab-remove")!.click()
+		}
+	}
+	remove()
+	expect(confirm).toHaveBeenLastCalledWith("Remove “one”?")
+	expect(manager.removeChain).not.toHaveBeenCalled()
+	expect(graphs.get("one")!.destroy).not.toHaveBeenCalled()
+	confirm.mockReturnValue(true)
+	remove()
+	expect(manager.removeChain).toHaveBeenCalledExactlyOnceWith("one")
+	expect(graphs.get("one")!.destroy).toHaveBeenCalledOnce()
+	expect(document.activeElement?.id).toBe("chain-tab-two")
+	expect(document.getElementById("iochain-two")!.hidden).toBe(false)
 })
 
 it("updates native names, power and layout controls without remounting graphs", () => {

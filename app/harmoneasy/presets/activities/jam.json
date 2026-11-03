@@ -122,7 +122,7 @@
 	"catalogue": {
 		"id": "activity:jam",
 		"category": "Activities · Together",
-		"useCase": "Use Sync after starting to share timing with the other players.",
+		"useCase": "Use Shared room after starting to share timing with the other players.",
 		"order": 105,
 		"kind": "chain",
 		"stepSummaries": [

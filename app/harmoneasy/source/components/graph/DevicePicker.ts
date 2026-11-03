@@ -6,7 +6,7 @@ import {
 
 import { createClassificationFilter } from "./ClassificationFilter"
 import { choiceMatches, groupChoices, type ClassifiedChoice } from "./device-filters"
-import { fillDeviceCard, INPUT_GUIDANCE, OUTPUT_GUIDANCE } from "./device-card"
+import { fillDeviceCard, createDeviceDetails, INPUT_GUIDANCE, OUTPUT_GUIDANCE } from "./device-card"
 import { INPUT_DEFINITIONS } from "audiobus/io/input-definitions"
 import { OUTPUT_DEFINITIONS } from "audiobus/io/output-definitions"
 import {
@@ -333,6 +333,14 @@ export function createDevicePicker(
 					)
 				}
 				item.append(node)
+				if (dialog) {
+					item.append(
+						createDeviceDetails(
+							{ ...choice, id: choice.factoryId ?? choice.id },
+							choice.kind
+						)
+					)
+				}
 				list.append(item)
 			}
 			section.append(list)

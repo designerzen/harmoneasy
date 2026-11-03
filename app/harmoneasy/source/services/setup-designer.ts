@@ -113,7 +113,7 @@ export function designSetup(value: WizardAnswers): { setup: PresetSetup; instruc
 	const instructions: string[] = []
 	if (answers.goal === "file") {
 		instructions.push(
-			"After starting, use Import to open your MIDI, MusicXML, DawProject or tracker file. The wizard does not load or change your file."
+			"After starting, use Upload to open your MIDI, MusicXML, DawProject or tracker file. The wizard does not load or change your file."
 		)
 	} else if (answers.input === "midi") {
 		instructions.push(
@@ -176,7 +176,7 @@ export function designSetup(value: WizardAnswers): { setup: PresetSetup; instruc
 	setupSurfaces(setup)
 	if (answers.goal === "together") {
 		instructions.push(
-			"After starting, use Sync to connect the other players. Each person needs to connect their own instrument; this wizard does not connect a room for you."
+			"After starting, use Shared room to connect the other players. Each person needs to connect their own instrument; this wizard does not connect a room for you."
 		)
 	}
 	if (["vibrate-notes", "notation-touch"].includes(context.id)) {

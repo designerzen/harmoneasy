@@ -1,13 +1,14 @@
 // @vitest-environment happy-dom
 import { existsSync } from "node:fs"
 import { resolve } from "node:path"
-import { expect, it } from "vitest"
+import { expect, it, vi } from "vitest"
 import { defineDevice } from "audiobus/io/device-definition"
 import { TRANSFORMERS, TRANSFORMER_TYPE } from "audiobus/io/transformer-factory"
 import { TRANSFORMER_DEFINITIONS } from "audiobus/io/transformer-definitions"
 import { deviceIcon, elementIcon } from "../source/components/graph/element-icons"
 import {
 	fillDeviceCard,
+	createDeviceDetails,
 	INPUT_GUIDANCE,
 	OUTPUT_GUIDANCE
 } from "../source/components/graph/device-card"
@@ -30,14 +31,35 @@ it("shows WebCLAP metadata and makes authors and licenses searchable", () => {
 		const button = document.createElement("button")
 		fillDeviceCard(button, choice, "output")
 		expect(button.title).toContain(patch.title)
-		expect(button.querySelector(".item-classification")?.textContent).toContain(patch.category)
-		expect(button.querySelector(".item-attribution")?.textContent).toContain(
-			patch.attribution!.author
-		)
+		expect(button.textContent).toBe(choice.name)
+		const details = createDeviceDetails(choice, "output")
+		expect(details.open).toBe(false)
+		expect(details.textContent).toContain(patch.attribution!.author)
+		expect(details.textContent).toContain(patch.attribution!.license)
 		expect(button.dataset.search).toContain(patch.attribution!.license.toLowerCase())
 		expect(choiceMatches(choice, patch.attribution!.author, "")).toBe(true)
 		expect(choiceMatches(choice, patch.attribution!.license, "")).toBe(true)
 	}
+})
+
+it("keeps requirements available without making them part of the add action", () => {
+	const choice = { id: "webmidi", name: "MIDI", description: "Play a MIDI controller." }
+	const button = document.createElement("button")
+	const add = vi.fn()
+	button.onclick = add
+	fillDeviceCard(button, choice, "input")
+	const details = createDeviceDetails(choice, "input")
+	const item = document.createElement("li")
+	item.append(button, details)
+	document.body.append(item)
+	expect(button.textContent).toBe("MIDI")
+	expect(details.textContent).toContain(INPUT_GUIDANCE.webmidi.requirements)
+	details.querySelector("summary")!.click()
+	expect(details.open).toBe(true)
+	expect(add).not.toHaveBeenCalled()
+	button.click()
+	expect(add).toHaveBeenCalledOnce()
+	item.remove()
 })
 
 it("has existing icon assets for every input, output, transformer and fallback", () => {

@@ -64,6 +64,27 @@ export function createChainWorkspace(
 		solo = solo === id ? null : id
 		render()
 	}
+	const removeChain = (id: string) => {
+		const entries = manager.entries
+		const index = entries.findIndex(([key]) => key === id)
+		if (index < 0) {
+			return
+		}
+		const chain = entries[index][1]
+		if (!window.confirm(`Remove “${chain.options.name ?? `Chain ${index + 1}`}”?`)) {
+			return
+		}
+		const nextId = entries[index + 1]?.[0] ?? entries[index - 1]?.[0] ?? null
+		if (front === id) {
+			front = nextId
+		}
+		manager.removeChain(id)
+		if (front) {
+			document.getElementById(`chain-tab-${front}`)?.focus()
+		} else {
+			navigation?.querySelector<HTMLButtonElement>("button")?.focus()
+		}
+	}
 	function createPanel(chainId: string, chain: IOChain) {
 		const context = { chain, chainId, manager }
 		const panel = element("section")
@@ -137,7 +158,7 @@ export function createChainWorkspace(
 			} else if (value === "clone") {
 				void manager.cloneChain(chainId)
 			} else if (value === "delete") {
-				manager.removeChain(chainId)
+				removeChain(chainId)
 			} else if (value === "solo") {
 				toggleSolo(chainId)
 			} else if (value === "save-preset") {
@@ -274,27 +295,7 @@ export function createChainWorkspace(
 					.getElementById(`chain-tab-${entries[next][0]}`)
 					?.focus({ preventScroll: true })
 			}
-			const remove = button(
-				"×",
-				() => {
-					if (
-						!window.confirm(
-							`Are you sure you want to remove “${chain.options.name ?? `Chain ${index + 1}`}”?`
-						)
-					) {
-						return
-					}
-					const nextId = entries[index + 1]?.[0] ?? entries[index - 1]?.[0] ?? null
-					if (front === id) {
-						front = nextId
-					}
-					manager.removeChain(id)
-					if (nextId) {
-						document.getElementById(`chain-tab-${nextId}`)?.focus()
-					}
-				},
-				"chain-tab-remove"
-			)
+			const remove = button("×", () => removeChain(id), "chain-tab-remove")
 			remove.title = "Remove chain"
 			remove.setAttribute(
 				"aria-label",

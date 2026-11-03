@@ -1,7 +1,7 @@
 import type { InputId } from "audiobus/io/inputs/input-types"
 import type { OutputId } from "audiobus/io/outputs/output-types"
 import { elementDescription, elementIcon } from "./element-icons"
-import { classificationLabel, type ClassifiedChoice } from "./device-filters"
+import type { ClassifiedChoice } from "./device-filters"
 import { OUTPUT_DEFINITIONS } from "audiobus/io/output-definitions"
 import { INPUT_DEFINITIONS } from "audiobus/io/input-definitions"
 import { AI_MODELS, type AIInputId } from "audiobus/io/inputs/ai-model-catalogue"
@@ -443,12 +443,11 @@ export const OUTPUT_GUIDANCE: Record<OutputId, Guidance> = {
 	)
 }
 
-export function fillDeviceCard(
-	button: HTMLButtonElement,
-	factory: Pick<ClassifiedChoice, "id" | "name" | "description"> & Partial<ClassifiedChoice>,
-	direction: "input" | "output" | "instrument"
-) {
-	const guidance =
+type DeviceChoice = Pick<ClassifiedChoice, "id" | "name" | "description"> &
+	Partial<ClassifiedChoice>
+
+function deviceGuidance(factory: DeviceChoice, direction: "input" | "output" | "instrument") {
+	return (
 		(direction === "input"
 			? INPUT_GUIDANCE[factory.id as InputId]
 			: direction === "output"
@@ -479,6 +478,37 @@ export function fillDeviceCard(
 						`Playing ${factory.name} in a chain${factory.category ? ` (${factory.category})` : ""}.`,
 						audio + " Any instrument samples or engine assets must be available."
 					))
+	)
+}
+
+export function createDeviceDetails(
+	factory: DeviceChoice,
+	direction: "input" | "output" | "instrument"
+) {
+	const details = document.createElement("details")
+	details.className = "device-choice-info"
+	const summary = document.createElement("summary")
+	summary.textContent = "Details"
+	summary.setAttribute("aria-label", `Details for ${factory.name}`)
+	const description = document.createElement("p")
+	description.textContent = factory.description
+	const requirements = document.createElement("p")
+	requirements.textContent = deviceGuidance(factory, direction).requirements
+	details.append(summary, description, requirements)
+	if (factory.attribution) {
+		const attribution = document.createElement("p")
+		attribution.textContent = `${factory.attribution.author} · ${factory.attribution.license}`
+		details.append(attribution)
+	}
+	return details
+}
+
+export function fillDeviceCard(
+	button: HTMLButtonElement,
+	factory: DeviceChoice,
+	direction: "input" | "output" | "instrument"
+) {
+	const guidance = deviceGuidance(factory, direction)
 	const append = (className: string, text: string) => {
 		const span = document.createElement("span")
 		span.className = className
@@ -518,37 +548,6 @@ export function fillDeviceCard(
 		button.appendChild(image)
 	}
 	append("item-name", factory.name)
-	if (factory.type && factory.subtype) {
-		append(
-			"item-classification",
-			`${classificationLabel(factory.type)} / ${classificationLabel(factory.subtype)}${factory.category ? ` / ${classificationLabel(factory.category)}` : ""}`
-		)
-	}
-	append("item-description", factory.description)
-	if (factory.attribution) {
-		append(
-			"item-attribution",
-			`By ${factory.attribution.author} · ${factory.attribution.license}. Attribution and license links are in the plugin controls.`
-		)
-	}
-	for (const [label, value] of [
-		["Used for", guidance.usedFor],
-		["Useful for", guidance.usefulFor],
-		["Requirements", guidance.requirements]
-	]) {
-		if (label === "Used for" && value.trim() === factory.description.trim()) {
-			continue
-		}
-		const row = document.createElement("span")
-		row.className = "device-choice-detail"
-		const heading = document.createElement("span")
-		heading.className = "device-choice-label"
-		heading.textContent = label
-		const text = document.createElement("span")
-		text.textContent = value
-		row.append(heading, text)
-		button.appendChild(row)
-	}
 	button.dataset.search = [
 		factory.name,
 		factory.title,

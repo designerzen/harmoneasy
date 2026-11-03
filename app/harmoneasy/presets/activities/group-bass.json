@@ -123,7 +123,7 @@
 	"catalogue": {
 		"id": "activity:group-bass",
 		"category": "Activities · Together",
-		"useCase": "Agree on the key, use Sync for timing and play a few low supporting notes.",
+		"useCase": "Agree on the key, use Shared room for timing and play a few low supporting notes.",
 		"order": 140,
 		"kind": "chain",
 		"stepSummaries": [

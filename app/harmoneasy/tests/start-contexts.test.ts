@@ -2,6 +2,7 @@ import { PUBLISHED_PRESETS } from "../source/services/preset-files"
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
 import { runUI } from "./native-ui"
+import { createStateURL } from "../source/libs/location"
 import {
 	completePresets,
 	presetSetup,
@@ -243,7 +244,7 @@ it("starts each genre with its sound output and independent settings", () => {
 	})
 })
 
-it("hides the browser until Show presets is clicked and retains session actions", async () => {
+it("hides the browser until Presets is clicked and retains session actions", async () => {
 	document.body.innerHTML = startPage.match(/<dialog id="start-dialog"[\s\S]*?<\/dialog>/)![0]
 	const dialog = document.querySelector<HTMLDialogElement>("#start-dialog")!
 	await runUI(async () => {
@@ -252,17 +253,17 @@ it("hides the browser until Show presets is clicked and retains session actions"
 	const content = dialog.querySelector<HTMLElement>("#start-presets-content")!
 	const toggle = dialog.querySelector<HTMLButtonElement>("#show-start-presets")!
 	expect(content.hidden).toBe(true)
-	expect(toggle.textContent).toBe("Show presets")
+	expect(toggle.textContent).toBe("Presets")
 	expect(toggle.getAttribute("aria-expanded")).toBe("false")
 	expect(toggle.type).toBe("button")
 	toggle.click()
 	expect(content.hidden).toBe(false)
-	expect(toggle.textContent).toBe("Hide presets")
+	expect(toggle.textContent).toBe("Close presets")
 	expect(toggle.getAttribute("aria-expanded")).toBe("true")
 	expect(document.activeElement).toBe(dialog.querySelector(".preset-search input"))
 	toggle.click()
 	expect(content.hidden).toBe(true)
-	expect(toggle.textContent).toBe("Show presets")
+	expect(toggle.textContent).toBe("Presets")
 	expect(dialog.querySelector("#start-contexts")).toBeNull()
 	expect(dialog.querySelector(".preset-browse")).toBeNull()
 	expect(dialog.querySelector(".start-preset-actions")).toBeNull()
@@ -273,10 +274,12 @@ it("hides the browser until Show presets is clicked and retains session actions"
 	expect(dialog.querySelectorAll(".preset-filter select")).toHaveLength(2)
 	const empty = dialog.querySelector<HTMLButtonElement>(".btn-start-empty")!
 	const session = dialog.querySelector<HTMLButtonElement>(".btn-continue-session")!
-	expect(empty.textContent?.trim()).toBe("Start Empty")
+	expect(empty.textContent?.trim()).toBe("New")
 	expect(empty.value).toBe("empty")
-	expect(session.textContent?.trim()).toBe("Continue Session")
+	expect(session.textContent?.trim()).toBe("Continue")
 	expect(session.value).toBe("session")
+	expect(session.hidden).toBe(true)
+	expect(empty.classList.contains("primary")).toBe(true)
 	expect(empty.form?.id).toBe("start-form")
 	expect(session.form).toBe(empty.form)
 	expect(dialog.querySelector("form form")).toBeNull()
@@ -302,6 +305,22 @@ it("provides restorable contexts with valid routing and independent transformer 
 		createContextSetup(START_CONTEXTS.find((context) => context.id === "convert")!).chains[0]
 			.steps
 	).toEqual([])
+})
+
+it("offers Continue for a saved workspace without replacing its bookmark", () => {
+	const originalHash = window.location.hash
+	try {
+		window.location.hash = createStateURL({ io: "saved-workspace" }, "http://localhost/").hash
+		const bookmark = window.location.hash
+		document.body.innerHTML = startPage.match(/<dialog id="start-dialog"[\s\S]*?<\/dialog>/)![0]
+		const dialog = document.querySelector<HTMLDialogElement>("#start-dialog")!
+		mountStartContexts(dialog)
+		expect(dialog.querySelector<HTMLButtonElement>(".btn-continue-session")!.hidden).toBe(false)
+		expect(dialog.querySelector(".btn-start-empty")!.classList.contains("primary")).toBe(false)
+		expect(window.location.hash).toBe(bookmark)
+	} finally {
+		window.location.hash = originalHash
+	}
 })
 
 it("keeps every goal suggestion mapped to available activity presets", () => {
@@ -334,7 +353,7 @@ it("searches the shared browser by activity descriptions and next actions", asyn
 	await runUI(async () => {
 		classroom.click()
 	})
-	expect(document.querySelector(".preset-preview")!.textContent).toContain("use Sync")
+	expect(document.querySelector(".preset-preview")!.textContent).toContain("use Shared room")
 	await runUI(async () => {
 		document.querySelector<HTMLButtonElement>(".preset-apply-button")!.click()
 	})

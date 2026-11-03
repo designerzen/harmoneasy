@@ -92,8 +92,8 @@ export function createSetupWizard(
 	const dialog = document.createElement("dialog")
 	dialog.id = "setup-wizard"
 	dialog.setAttribute("aria-labelledby", "setup-wizard-title")
-	dialog.innerHTML = `<header><div><p>Setup wizard</p><h2 id="setup-wizard-title">Let’s find a setup for you</h2></div><button type="button" class="tertiary close-icon" aria-label="Close setup wizard"></button></header>
-		<div class="wizard-body"><p class="wizard-progress" role="status"></p><ol class="wizard-stepper" aria-label="Setup steps"></ol><section class="wizard-question" aria-labelledby="wizard-question-title"></section><p class="wizard-status" role="status" aria-live="polite"></p></div>
+	dialog.innerHTML = `<header><h2 id="setup-wizard-title">Guided setup</h2><button type="button" class="tertiary close-icon" aria-label="Close setup wizard"></button></header>
+		<div class="wizard-body"><p class="wizard-progress sr-only" role="status"></p><ol class="wizard-stepper" aria-label="Setup steps"></ol><section class="wizard-question" aria-labelledby="wizard-question-title"></section><p class="wizard-status" role="status" aria-live="polite"></p></div>
 		<footer><button type="button" class="secondary" data-back>Back</button><button type="button" class="primary" data-next>Next</button></footer>`
 	document.body.append(dialog)
 	const question = dialog.querySelector<HTMLElement>(".wizard-question")!
@@ -154,7 +154,8 @@ export function createSetupWizard(
 	) => {
 		const fieldset = document.createElement("fieldset")
 		const legend = document.createElement("legend")
-		legend.textContent = "Choose one answer"
+		legend.textContent = STEP_LABELS[steps()[position]]
+		legend.className = "sr-only"
 		fieldset.append(legend)
 		items.forEach((item) => {
 			const label = document.createElement("label")
@@ -236,7 +237,6 @@ export function createSetupWizard(
 		}
 		heading.textContent = titles[step]
 		if (step === "goal") {
-			paragraph("Answer a few simple questions. You can go back and change any answer.")
 			choices("wizard-goal", WIZARD_GOALS, selectedGoal ? answers.goal : "", (value) => {
 				if (answers.goal !== value) {
 					answers = {
@@ -348,7 +348,6 @@ export function createSetupWizard(
 				}
 			)
 		} else if (step === "input") {
-			paragraph("No instrument? The onscreen keys work with a mouse or touch.")
 			choices("wizard-input", WIZARD_INPUTS, answers.input, (value) => {
 				answers.input = value as WizardAnswers["input"]
 			})
@@ -357,7 +356,6 @@ export function createSetupWizard(
 				answers.feedback = value as WizardAnswers["feedback"]
 			})
 		} else if (step === "pace") {
-			paragraph("You can change the speed later.")
 			choices("wizard-pace", WIZARD_PACES, answers.pace, (value) => {
 				answers.pace = value as WizardAnswers["pace"]
 			})
@@ -368,14 +366,14 @@ export function createSetupWizard(
 			)
 		} else if (step === "file") {
 			paragraph(
-				"After creating your setup, use Import to choose a MIDI, MusicXML, DawProject or tracker file. An ordinary audio recording such as an MP3 is not a note file."
+				"After creating your setup, use Upload to choose a MIDI, MusicXML, DawProject or tracker file. An ordinary audio recording such as an MP3 is not a note file."
 			)
 			paragraph(
 				"Your file stays as it is. You can capture the result and use Export to save a new version."
 			)
 		} else if (step === "group") {
 			paragraph(
-				"Each person opens Harmoneasy on their own device. After starting, use Sync and follow the pairing instructions to share timing."
+				"Each person opens Harmoneasy on their own device. After starting, use Shared room and follow the pairing instructions to share timing."
 			)
 			paragraph(
 				"Choose a classroom setup to keep notes in C major, or a jam setup for a different shared sound. You will still need to connect each player after starting."

@@ -122,7 +122,7 @@
 	"catalogue": {
 		"id": "activity:classroom",
 		"category": "Activities · Together",
-		"useCase": "After starting, use Sync to connect browsers to a shared clock, then connect each learner’s controller.",
+		"useCase": "After starting, use Shared room to connect browsers to a shared clock, then connect each learner’s controller.",
 		"order": 101,
 		"kind": "chain",
 		"stepSummaries": ["Harmoniser — moves notes to the nearest pitch in C major."]

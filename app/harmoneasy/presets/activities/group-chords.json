@@ -122,7 +122,7 @@
 	"catalogue": {
 		"id": "activity:group-chords",
 		"category": "Activities · Together",
-		"useCase": "Agree on C major with the other players. Use Sync for timing and play chord roots on the beat.",
+		"useCase": "Agree on C major with the other players. Use Shared room for timing and play chord roots on the beat.",
 		"order": 139,
 		"kind": "chain",
 		"stepSummaries": [

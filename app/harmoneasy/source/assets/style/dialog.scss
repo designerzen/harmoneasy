@@ -364,72 +364,29 @@ body:has(dialog:modal) {
 			height: 2rem;
 			margin: 0;
 		}
-		h1 {
-			margin: 0;
-			font-size: clamp(2rem, 4.5vw, 3.5rem);
-			line-height: 1.1;
-			text-transform: none;
-			letter-spacing: -0.035em;
-		}
-		p {
-			margin: 0;
-			max-width: none;
-			color: var(--col-muted);
-			font-size: 0.9rem;
-			line-height: 1.5;
-		}
 		button {
 			margin: 0;
 		}
 	}
-	.start-intro {
-		margin-block: 2rem 2.5rem;
-	}
-	.start-secondary-actions {
-		display: grid;
-		gap: 1.25rem;
-	}
-	.start-resume {
+	.start-actions {
 		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 1rem;
-		padding-bottom: 1.25rem;
-		border-bottom: 1px solid var(--col-line);
-	}
-	.start-option-grid {
-		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: 1rem;
-	}
-	.start-option {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-start;
+		flex-wrap: wrap;
 		gap: 0.75rem;
-		padding: 1.5rem;
-		border: 1px solid var(--col-line);
-		border-radius: var(--curve);
-		background: var(--col-surface);
-		h2 {
-			margin: 0;
-			font-size: 1.15rem;
-			text-transform: none;
-			letter-spacing: normal;
-		}
-		p {
+		margin-top: 2rem;
+		button {
 			flex: 1;
+			min-width: 7rem;
+		}
+	}
+	.start-more {
+		margin-top: 1rem;
+		summary {
+			color: var(--col-muted);
+			cursor: pointer;
 		}
 		button {
 			margin-top: 0.5rem;
 		}
-	}
-	.start-footer {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 1rem;
-		font-size: 0.85rem;
 	}
 	&:has(.start-presets-content:not([hidden])) {
 		.start-heading {
@@ -442,27 +399,15 @@ body:has(dialog:modal) {
 			padding: 1rem 1.5rem;
 			border-bottom: 1px solid var(--col-line);
 		}
-		.start-intro,
-		.start-resume p,
-		.start-option h2,
-		.start-option p,
-		.start-footer a {
-			display: none;
-		}
-		.start-secondary-actions {
-			display: flex;
+		.start-actions {
 			flex: 1;
-			flex-wrap: wrap;
 			justify-content: flex-end;
-			gap: 0.5rem;
+			margin: 0;
+			button {
+				flex: 0 1 auto;
+			}
 		}
-		.start-resume,
-		.start-option-grid,
-		.start-option,
-		.start-footer {
-			display: contents;
-		}
-		.start-option button {
+		.start-more {
 			margin: 0;
 		}
 	}
@@ -528,21 +473,7 @@ body:has(dialog:modal) {
 		padding: 0.75rem 1.5rem;
 		color: var(--col-fg);
 	}
-	@media (max-width: 540px) {
-		.start-option-grid {
-			grid-template-columns: minmax(0, 1fr);
-		}
-		.start-option {
-			padding: 1rem;
-		}
-		.start-resume {
-			align-items: stretch;
-			flex-direction: column;
-		}
-		.start-footer {
-			flex-wrap: wrap;
-		}
-	}
+
 }
 
 #opendaw-export-dialog {

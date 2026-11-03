@@ -122,7 +122,7 @@
 	"catalogue": {
 		"id": "activity:call-response",
 		"category": "Activities · Together",
-		"useCase": "Use Sync for a shared clock. Have one learner play a phrase, then let the next learner answer.",
+		"useCase": "Use Shared room for a shared clock. Have one learner play a phrase, then let the next learner answer.",
 		"order": 138,
 		"kind": "chain",
 		"stepSummaries": ["Harmoniser — moves notes to the nearest pitch in C major."]

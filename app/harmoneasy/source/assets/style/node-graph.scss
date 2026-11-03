@@ -2989,7 +2989,21 @@ dialog.add-output-dialog {
 		display: grid;
 		width: 100%;
 		grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
-		align-items: stretch;
+		align-items: start;
+	}
+	.device-choice-info {
+		padding: 0.5rem 1rem;
+		font-size: 0.85rem;
+		summary {
+			cursor: pointer;
+			color: var(--col-muted);
+		}
+		p {
+			margin-block: 0.5rem;
+		}
+	}
+	.items-grid .device-choice-card {
+		height: auto;
 	}
 	.items-grid .device-choice-card,
 	.items-grid .transformer-choice {
@@ -3023,17 +3037,6 @@ dialog.add-output-dialog {
 		}
 		.item-name {
 			font-size: 1rem;
-			font-weight: 700;
-		}
-		.item-description {
-			display: block;
-		}
-		.device-choice-detail {
-			display: grid;
-			gap: 0.125rem;
-		}
-		.device-choice-label {
-			font-size: 0.8rem;
 			font-weight: 700;
 		}
 		&:hover {
