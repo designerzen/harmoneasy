@@ -10,6 +10,8 @@ import {
 	ACTIVITY_PRESETS
 } from "../source/components/graph/preset-catalogue"
 import startPage from "../index.html?raw"
+import arcanaPreset from "../presets/hardware/arcana/strum.json?raw"
+import { parsePresetPage } from "../source/services/preset-page"
 import { DEFAULT_PRESET_LIBRARY } from "../../../packages/audiobus/io/transformer-presets"
 import { parsePresetLibrary } from "../../../packages/audiobus/io/preset-library"
 import { DRUM_GENRES } from "../../../packages/audiobus/io/outputs/drum-accompaniment-settings"
@@ -84,6 +86,45 @@ it("uses the same preset browser on the splash and retains the selected sound se
 	expect(picker!.getSetup()?.id).toBe("drum-and-bass")
 	expect(onStart).toHaveBeenCalledExactlyOnceWith(picker!.getSetup())
 	expect(root.querySelector(".start-preset-actions")).toBeNull()
+})
+
+it("preloads URL presets as the main start choice and keeps other presets available", async () => {
+	document.body.innerHTML = startPage.match(/<dialog id="start-dialog"[\s\S]*?<\/dialog>/)![0]
+	const root = document.querySelector<HTMLElement>("#start-dialog")!
+	const onStart = vi.fn()
+	const picker = mountStartContexts(root, onStart)
+	const preset = parsePresetPage(arcanaPreset)
+	picker.setPresetPage(preset)
+	expect(root.querySelector<HTMLElement>("#start-room-context")!.hidden).toBe(true)
+	expect(root.querySelector<HTMLElement>("#start-preset-context")!.hidden).toBe(false)
+	expect(root.querySelector("#start-preset-name")!.textContent).toBe(preset.name)
+	expect(root.querySelector("#start-preset-description")!.textContent).toBe(preset.description)
+	const start = root.querySelector<HTMLButtonElement>(".btn-continue-session")!
+	expect(start.textContent?.trim()).toBe("Start preset")
+	expect(start.disabled).toBe(false)
+	const submit = vi.fn((event: Event) => event.preventDefault())
+	start.form!.addEventListener(EVENT_SUBMIT, submit)
+	start.click()
+	expect(submit).toHaveBeenCalledOnce()
+	expect(onStart).not.toHaveBeenCalled()
+	const toggle = root.querySelector<HTMLButtonElement>("#show-start-presets")!
+	expect(toggle.textContent).toBe("Load another preset")
+	toggle.click()
+	expect(root.querySelector<HTMLElement>("#start-presets-content")!.hidden).toBe(false)
+	const another = [...root.querySelectorAll<HTMLButtonElement>("nav button")].find((button) =>
+		button.textContent?.includes("Write drum and bass")
+	)!
+	another.click()
+	await runUI(async () => {
+		root.querySelector<HTMLButtonElement>(".preset-apply-button")!.click()
+	})
+	expect(onStart).toHaveBeenCalledExactlyOnceWith(picker.getSetup())
+	expect(picker.getSetup()?.id).toBe("drum-and-bass")
+	toggle.click()
+	expect(toggle.textContent).toBe("Load another preset")
+	expect(root.querySelector<HTMLAnchorElement>(".start-footer a")!.getAttribute("href")).toBe(
+		"%BASE_URL%presets/"
+	)
 })
 
 it("covers the percussion genres with valid grooves and connected sound outputs", () => {
@@ -284,7 +325,7 @@ it("hides the browser until Presets is clicked and retains session actions", asy
 	const wizard = dialog.querySelector<HTMLButtonElement>("#start-wizard")!
 	expect(wizard.textContent).toBe("Setup wizard")
 	expect(wizard.closest("[hidden], details")).toBeNull()
-	expect(dialog.querySelector('.start-footer a')?.textContent).toBe("Browse preset pages")
+	expect(dialog.querySelector(".start-footer a")?.textContent).toBe("Browse preset pages")
 	expect(empty.form?.id).toBe("start-form")
 	expect(session.form).toBe(empty.form)
 	const submit = vi.fn((event: SubmitEvent) => event.preventDefault())

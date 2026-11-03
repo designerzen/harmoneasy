@@ -318,6 +318,32 @@
 .cs-gpu-ready .cs-semantic > small {
 	display: none;
 }
+.cs-compact .cs-semantic {
+	padding: 0;
+	gap: 0;
+}
+.cs-compact .cs-semantic > span,
+.cs-compact .cs-semantic > small {
+	display: none;
+}
+.cs-gpu-ready .cs-compact .cs-semantic:focus-within,
+.cs-gpu-ready .cs-compact .cs-text,
+.cs-gpu-ready .cs-compact .cs-number,
+.cs-gpu-ready .cs-compact .cs-select,
+.cs-gpu-ready .cs-compact .cs-color {
+	inset: 0;
+	width: 100% !important;
+	height: 100% !important;
+	padding: 0 !important;
+	gap: 0;
+}
+.cs-compact .cs-semantic > input,
+.cs-compact .cs-semantic > select,
+.cs-compact .cs-semantic > button {
+	width: 100%;
+	height: 100%;
+	margin: 0;
+}
 .cs-widget-tools {
 	position: absolute;
 	bottom: 2px;

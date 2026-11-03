@@ -288,9 +288,9 @@ export function validSurfaces(value: unknown): value is SurfaceState[] {
 					typeof w.key === "string" &&
 					(w.yKey === undefined || typeof w.yKey === "string") &&
 					(!w.widget || WIDGET_TYPES.includes(w.widget)) &&
-					(w.span === undefined || [1, 2, 3].includes(w.span)) &&
+					(w.span === undefined || [1, 2, 3, 4, 5, 6].includes(w.span)) &&
 					(w.height === undefined ||
-						(Number.isInteger(w.height) && w.height >= 132 && w.height <= 720)) &&
+						(Number.isInteger(w.height) && w.height >= 44 && w.height <= 720)) &&
 					(w.rotation === undefined || [0, 90, 180, 270].includes(w.rotation)) &&
 					(w.column === undefined ||
 						(Number.isInteger(w.column) && w.column >= 0 && w.column <= 31)) &&

@@ -43,7 +43,7 @@ import {
 	ergonomicOrder
 } from "./model"
 import { widgetPoint } from "./model"
-import { playingLayout } from "./layout"
+import { playingLayout, minimumWidgetHeight } from "./layout"
 import { GpuSurfaceRenderer, type WidgetVisual } from "./renderer"
 import type {
 	ControlBinding,
@@ -133,6 +133,7 @@ export class ControlSurface {
 	private gestures = new Map<number, Gesture>()
 	private pressurePointers = new Set<number>()
 	private resize: ResizeObserver
+	private layoutHosts = new Set<HTMLElement>()
 	private intersection: IntersectionObserver
 	private visible = true
 	private disposed = false
@@ -369,6 +370,7 @@ export class ControlSurface {
 		window.addEventListener(EVENT_RESIZE, () => this.layout(), { signal: this.abort.signal })
 		this.resize = new ResizeObserver(() => this.layout())
 		this.resize.observe(this.element)
+		this.resize.observe(this.toolbar)
 		this.intersection = new IntersectionObserver((entries) => {
 			this.visible = entries.some((e) => e.isIntersecting)
 		})
@@ -903,9 +905,7 @@ export class ControlSurface {
 						entry,
 						(config.span ?? (largeWidget(widget) ? 2 : 1)) +
 							(event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0),
-						(entry.config.rotation === 90 || entry.config.rotation === 270
-							? entry.visual.width
-							: entry.visual.height) +
+						this.preferredHeight(entry) +
 							(event.key === "ArrowDown" ? 24 : event.key === "ArrowUp" ? -24 : 0)
 					)
 					this.save()
@@ -969,7 +969,15 @@ export class ControlSurface {
 			column.append(option)
 		}
 		column.value = entry.config.column === undefined ? "" : String(entry.config.column)
-		for (let i = 1; i <= 3; i++) {
+		for (
+			let i = 1;
+			i <=
+			playingLayout(
+				this.stage.clientWidth || 640,
+				this.stage.getBoundingClientRect().width || 640
+			).columns;
+			i++
+		) {
 			const option = document.createElement("option")
 			option.value = String(i)
 			option.textContent = `${i} column${i === 1 ? "" : "s"}`
@@ -977,15 +985,12 @@ export class ControlSurface {
 		}
 		width.value = String(entry.config.span ?? (largeWidget(entry.visual.widget) ? 2 : 1))
 		height.type = "number"
-		height.min = "132"
+		const minimum = Math.ceil(minimumWidgetHeight(entry.visual.widget))
+		height.min = String(minimum)
 		height.max = "720"
 		height.step = "1"
 		height.required = true
-		height.value = String(
-			entry.config.rotation === 90 || entry.config.rotation === 270
-				? entry.visual.width
-				: entry.visual.height
-		)
+		height.value = String(this.preferredHeight(entry))
 		for (const [title, input] of [
 			["Width", width],
 			["Height in pixels", height],
@@ -997,11 +1002,11 @@ export class ControlSurface {
 		}
 		const shorter = this.button(
 			"Decrease height",
-			() => (height.value = String(Math.max(132, (height.valueAsNumber || 132) - 24)))
+			() => (height.value = String(Math.max(minimum, (height.valueAsNumber || minimum) - 24)))
 		)
 		const taller = this.button(
 			"Increase height",
-			() => (height.value = String(Math.min(720, (height.valueAsNumber || 132) + 24)))
+			() => (height.value = String(Math.min(720, (height.valueAsNumber || minimum) + 24)))
 		)
 		const apply = document.createElement("button")
 		apply.type = "submit"
@@ -1056,8 +1061,20 @@ export class ControlSurface {
 		}
 	}
 	private resizeWidget(entry: Entry, span: number, height: number): void {
-		entry.config.span = Math.max(1, Math.min(3, Math.round(span)))
-		entry.config.height = Math.max(132, Math.min(720, Math.round(height)))
+		entry.config.span = Math.max(
+			1,
+			Math.min(
+				playingLayout(
+					this.stage.clientWidth || 640,
+					this.stage.getBoundingClientRect().width || 640
+				).columns,
+				Math.round(span)
+			)
+		)
+		entry.config.height = Math.max(
+			Math.ceil(minimumWidgetHeight(entry.visual.widget)),
+			Math.min(720, Math.round(height))
+		)
 		this.layout()
 		this.layoutStatus.textContent = `${entry.binding.descriptor.label}: width ${entry.config.span}, height ${entry.config.height} pixels`
 	}
@@ -1097,10 +1114,7 @@ export class ControlSurface {
 				x: event.clientX,
 				y: event.clientY,
 				span: entry.config.span ?? (largeWidget(entry.visual.widget) ? 2 : 1),
-				height:
-					entry.config.rotation === 90 || entry.config.rotation === 270
-						? entry.visual.width
-						: entry.visual.height,
+				height: this.preferredHeight(entry),
 				scale:
 					this.stage.getBoundingClientRect().width / (this.stage.clientWidth || 640) || 1
 			}
@@ -1202,26 +1216,41 @@ export class ControlSurface {
 			handle.addEventListener(name, (event) => finish(event as PointerEvent))
 		}
 	}
+	private preferredHeight(entry: Entry): number {
+		if (
+			entry.config.height === undefined &&
+			["text", "number", "color", "display", "meter"].includes(entry.visual.widget)
+		) {
+			return minimumWidgetHeight(entry.visual.widget)
+		}
+		return (
+			entry.config.height ??
+			(isMusicGrid(entry.visual.widget)
+				? Math.max(
+						250,
+						musicOptions(entry.visual.widget, entry.binding.descriptor.music).pitches
+							.length *
+							24 +
+							46
+					)
+				: largeWidget(entry.visual.widget)
+					? 280
+					: 172)
+		)
+	}
 	private layoutItems() {
 		return this.entries.map((e) => ({
 			...e.config,
 			sourceId: e.binding.sourceId ?? e.binding.sourceLabel,
 			group: e.binding.descriptor.group,
 			widget: e.visual.widget,
+			flexible: !this.editing && e.config.height === undefined,
 			span: e.config.span ?? (largeWidget(e.visual.widget) ? 2 : 1),
-			height:
-				e.config.height ??
-				(isMusicGrid(e.visual.widget)
-					? Math.max(
-							250,
-							musicOptions(e.visual.widget, e.binding.descriptor.music).pitches
-								.length *
-								24 +
-								46
-						)
-					: largeWidget(e.visual.widget)
-						? 280
-						: 172)
+			// Editing needs room for one action row and its navigation. Keep the
+			// saved playing size, so even a 44px gadget can always be resized again.
+			height: this.editing
+				? Math.max(this.preferredHeight(e), 4 + 99 / this.layoutScale)
+				: this.preferredHeight(e)
 		}))
 	}
 	private autoArrange(): void {
@@ -1261,20 +1290,56 @@ export class ControlSurface {
 		this.layoutScale = scale
 		this.layoutToolbarScale = toolbarScale
 		this.layoutViewportHeight = innerHeight
-		// Reserve footer space even on a single page so pagination cannot change its own capacity.
-		this.pageHeight = Math.max(
-			1,
-			Math.min(
-				(innerHeight * 0.72) / scale,
-				(innerHeight - Math.max(0, stageRect.top) - 90 * scale) / scale
-			)
-		)
 		this.element.style.setProperty("--cs-target", `${44 / scale}px`)
 		this.element.style.setProperty("--cs-gap", `${11 / scale}px`)
 		this.element.style.setProperty("--cs-pager", `${55 / scale}px`)
 		this.toolbar.style.setProperty("--cs-target", `${44 / toolbarScale}px`)
 		this.toolbar.style.setProperty("--cs-gap", `${11 / toolbarScale}px`)
-		const layout = layoutWidgets(this.layoutItems(), width, screenWidth, this.pageHeight, scale)
+		// Measure the actual footer and panel boundary instead of discarding a
+		// percentage of the display. Explicitly bounded hosts can be smaller than it.
+		const bodyStyle = getComputedStyle(document.body)
+		let bottom =
+			innerHeight -
+			(parseFloat(bodyStyle.paddingBottom) || 0) -
+			(parseFloat(bodyStyle.marginBottom) || 0)
+		for (let host = this.element.parentElement; host; host = host.parentElement) {
+			const style = getComputedStyle(host)
+			if (
+				[style.overflowY, style.overflow].some((value) =>
+					["hidden", "clip", "auto", "scroll"].includes(value)
+				)
+			) {
+				const rect = host.getBoundingClientRect()
+				if (rect.height > 0) {
+					const hostScale = rect.width / host.offsetWidth || 1
+					bottom = Math.min(
+						bottom,
+						rect.bottom -
+							((parseFloat(style.paddingBottom) || 0) +
+								(parseFloat(style.borderBottomWidth) || 0)) *
+								hostScale
+					)
+					if (!this.layoutHosts.has(host)) {
+						this.layoutHosts.add(host)
+						this.resize.observe(host)
+					}
+				}
+			}
+		}
+		this.pageNavigation.hidden = false
+		const footer = this.pageNavigation.getBoundingClientRect().height || 44
+		const padding = parseFloat(getComputedStyle(this.element).paddingBottom) || 0
+		this.pageHeight = Math.max(
+			1,
+			(bottom - Math.max(0, stageRect.top) - padding * scale) / scale
+		)
+		const widgets = this.layoutItems()
+		let layout = layoutWidgets(widgets, width, screenWidth, this.pageHeight, scale)
+		if (layout.pages > 1) {
+			this.pageHeight = Math.max(1, this.pageHeight - footer / scale - 8)
+			layout = layoutWidgets(widgets, width, screenWidth, this.pageHeight, scale)
+		}
+		this.pageNavigation.hidden = layout.pages === 1
 		this.pageCount = layout.pages
 		this.currentPage = Math.min(this.currentPage, this.pageCount - 1)
 		this.height = layout.height
@@ -1301,6 +1366,9 @@ export class ControlSurface {
 			)
 			entry.page = box.page
 			const r = entry.visual
+			r.compact = r.height * scale < 100
+			entry.element.classList.toggle("cs-compact", r.compact)
+			entry.element.title = r.compact ? entry.binding.descriptor.label : ""
 			entry.tools?.resize(r.width - 6, r.height - 4, scale)
 			const grid = entry.element.querySelector<HTMLElement>(".cs-note-grid")
 			if (grid) {

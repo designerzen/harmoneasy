@@ -5,9 +5,132 @@ export interface LayoutWidget {
 	sourceId?: string
 	group?: string
 	widget?: string
+	/** Default sizes may compact to avoid an unnecessary page; explicit sizes stay preferred. */
+	flexible?: boolean
 }
 const GAP = 11
 type Interval = { start: number; end: number }
+type Rect = { x: number; y: number; width: number; height: number }
+
+/** One target needs 44 physical pixels; compound controls also reserve their rows and gaps. */
+export function minimumWidgetHeight(widget = "", scale = 1): number {
+	return Math.max(
+		44 / scale,
+		["piano-roll", "guitar-tab"].includes(widget)
+			? 46 + 99 / scale
+			: ["xy", "range", "relative-keys", "strum"].includes(widget)
+				? 80 + 99 / scale
+				: widget === "radio"
+					? 132
+					: 44 / scale
+	)
+}
+
+/** Stretch independent rows/columns while keeping gutters fixed, rather than scaling the gaps. */
+function fillSpace(items: Rect[], bounds: Rect, gap: number, handGutter: number): void {
+	if (items.length === 1) {
+		Object.assign(items[0], bounds)
+		return
+	}
+	for (const axis of ["y", "x"] as const) {
+		const size = axis === "x" ? "width" : "height"
+		const sorted = [...items].sort((a, b) => a[axis] - b[axis])
+		const groups: { items: Rect[]; start: number; end: number }[] = []
+		for (const item of sorted) {
+			const last = groups.at(-1)
+			if (!last || item[axis] >= last.end - 0.001) {
+				groups.push({ items: [item], start: item[axis], end: item[axis] + item[size] })
+			} else {
+				last.items.push(item)
+				last.end = Math.max(last.end, item[axis] + item[size])
+			}
+		}
+		if (groups.length < 2) {
+			continue
+		}
+		const distribute = (parts: typeof groups, start: number, length: number) => {
+			const weight = parts.reduce((sum, group) => sum + group.end - group.start, 0)
+			const room = length - gap * (parts.length - 1)
+			let position = start
+			for (const group of parts) {
+				const extent = (room * (group.end - group.start)) / weight
+				fillSpace(
+					group.items,
+					{ ...bounds, [axis]: position, [size]: extent },
+					gap,
+					axis === "y" ? handGutter : 0
+				)
+				position += extent + gap
+			}
+		}
+		if (axis === "x" && handGutter > 0) {
+			// Keep two reachable hand zones when both groups can fit without shrinking.
+			const half = (bounds.width - handGutter) / 2
+			let split = 0,
+				best = Infinity
+			for (let i = 1; i < groups.length; i++) {
+				const left =
+					groups.slice(0, i).reduce((sum, group) => sum + group.end - group.start, 0) +
+					gap * (i - 1)
+				const right =
+					groups.slice(i).reduce((sum, group) => sum + group.end - group.start, 0) +
+					gap * (groups.length - i - 1)
+				if (
+					left <= half + 0.001 &&
+					right <= half + 0.001 &&
+					Math.abs(left - right) < best
+				) {
+					split = i
+					best = Math.abs(left - right)
+				}
+			}
+			if (split) {
+				distribute(groups.slice(0, split), bounds.x, half)
+				distribute(groups.slice(split), bounds.x + half + handGutter, half)
+				return
+			}
+		}
+		distribute(groups, bounds[axis], bounds[size])
+		return
+	}
+	// Interlocked masonry cannot be split into rows or columns. Grow each face
+	// into its free rectangle; neighbours continue to reserve the target gap.
+	for (const axis of ["x", "y"] as const) {
+		const size = axis === "x" ? "width" : "height"
+		const start = Math.min(...items.map((item) => item[axis]))
+		const end = Math.max(...items.map((item) => item[axis] + item[size]))
+		const ratio = bounds[size] / (end - start)
+		for (const item of items) {
+			item[axis] = bounds[axis] + (item[axis] - start) * ratio
+			item[size] *= ratio
+		}
+	}
+	for (const axis of ["x", "y"] as const) {
+		const size = axis === "x" ? "width" : "height"
+		const cross = axis === "x" ? "y" : "x"
+		const crossSize = axis === "x" ? "height" : "width"
+		for (const item of items) {
+			let start = bounds[axis],
+				end = bounds[axis] + bounds[size]
+			for (const other of items) {
+				if (
+					other === item ||
+					other[cross] >= item[cross] + item[crossSize] + gap - 0.001 ||
+					item[cross] >= other[cross] + other[crossSize] + gap - 0.001
+				) {
+					continue
+				}
+				if (other[axis] + other[size] <= item[axis]) {
+					start = Math.max(start, other[axis] + other[size] + gap)
+				} else if (other[axis] >= item[axis] + item[size]) {
+					end = Math.min(end, other[axis] - gap)
+				}
+			}
+			item[axis] = start
+			item[size] = end - start
+		}
+	}
+}
 
 export function playingLayout(availableWidth: number, screenWidth = availableWidth) {
 	const visible = Math.max(1, Math.min(availableWidth, screenWidth))
@@ -81,7 +204,7 @@ export function layoutWidgets(
 	screenWidth = availableWidth,
 	pageHeight = Infinity,
 	scale = 1
-) {
+): { items: (Rect & { page: number })[]; pages: number; height: number } {
 	const gap = GAP / Math.max(0.01, Math.min(1, scale))
 	const width = Number.isFinite(availableWidth) ? Math.max(1, availableWidth) : 640
 	const profile = playingLayout(width, screenWidth),
@@ -94,13 +217,7 @@ export function layoutWidgets(
 		const height = Math.min(
 			limit,
 			Math.max(
-				132,
-				44 / Math.max(0.01, scale),
-				["piano-roll", "guitar-tab"].includes(widget.widget ?? "")
-					? 46 + 99 / scale
-					: ["xy", "range", "relative-keys", "strum"].includes(widget.widget ?? "")
-						? 80 + 99 / scale
-						: 132,
+				minimumWidgetHeight(widget.widget, Math.max(0.01, scale)),
 				Math.min(720, widget.height ?? 172)
 			)
 		)
@@ -161,19 +278,50 @@ export function layoutWidgets(
 			height
 		}
 	})
+	if (Number.isFinite(limit) && items.length) {
+		if (pages.length > 1 && widgets.some((widget) => widget.flexible)) {
+			const compact = layoutWidgets(
+				widgets.map((widget) => ({
+					...widget,
+					height: widget.flexible
+						? minimumWidgetHeight(widget.widget, scale)
+						: widget.height,
+					flexible: false
+				})),
+				width,
+				screenWidth,
+				limit,
+				scale
+			)
+			if (compact.pages < pages.length) {
+				return compact
+			}
+		}
+		for (let page = 0; page < pages.length; page++) {
+			fillSpace(
+				items.filter((item) => item.page === page),
+				{ x: 0, y: 0, width, height: limit },
+				gap,
+				profile.hands === 2 ? Math.max(gap, profile.gutter) : 0
+			)
+		}
+	}
 	return {
 		items,
 		pages: pages.length,
-		height: Math.min(
-			limit,
-			widgets.length
-				? Math.max(
-						...pages.flatMap((columns) =>
-							columns.map((column) => column.at(-1)?.end ?? 0)
-						)
+		height:
+			Number.isFinite(limit) && items.length
+				? limit
+				: Math.min(
+						limit,
+						widgets.length
+							? Math.max(
+									...pages.flatMap((columns) =>
+										columns.map((column) => column.at(-1)?.end ?? 0)
+									)
+								)
+							: 120
 					)
-				: 120
-		)
 	}
 }
 

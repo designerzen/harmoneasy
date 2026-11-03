@@ -2,6 +2,7 @@ import { createPresetBrowser } from "../components/graph/PresetBrowser"
 import { presetSetup } from "../components/graph/preset-catalogue"
 import type { PresetSetup } from "audiobus/io/preset-library"
 import { EVENT_CLICK } from "audiobus/event-constants"
+import type { PresetPage } from "./preset-page"
 export * from "./start-context-catalogue"
 
 export function createStartContexts(
@@ -9,6 +10,7 @@ export function createStartContexts(
 	onStart?: (setup: PresetSetup) => void | Promise<void>
 ) {
 	let selected: PresetSetup | undefined
+	let hasPagePreset = false
 	const host = root.querySelector<HTMLElement>(".start-presets-content")!
 	const toggle = root.querySelector<HTMLButtonElement>("#show-start-presets")!
 	const toggleLabel = toggle.querySelector<HTMLElement>("[data-start-presets-label]")!
@@ -36,7 +38,11 @@ export function createStartContexts(
 	const togglePresets = () => {
 		host.hidden = !host.hidden
 		toggle.setAttribute("aria-expanded", String(!host.hidden))
-		toggleLabel.textContent = host.hidden ? "Presets" : "Close presets"
+		toggleLabel.textContent = host.hidden
+			? hasPagePreset
+				? "Load another preset"
+				: "Presets"
+			: "Close presets"
 		if (!host.hidden) {
 			search.focus({ preventScroll: true })
 		}
@@ -44,6 +50,18 @@ export function createStartContexts(
 	toggle.addEventListener(EVENT_CLICK, togglePresets)
 	return {
 		getSetup: () => selected,
+		setPresetPage(preset: PresetPage) {
+			hasPagePreset = true
+			root.querySelector<HTMLElement>("#start-preset-context")!.hidden = false
+			root.querySelector<HTMLElement>("#start-preset-name")!.textContent = preset.name
+			root.querySelector<HTMLElement>("#start-preset-description")!.textContent =
+				preset.description
+			root.querySelector<HTMLElement>(".btn-continue-session span")!.textContent =
+				"Start preset"
+			if (host.hidden) {
+				toggleLabel.textContent = "Load another preset"
+			}
+		},
 		destroy() {
 			dismissRoom.removeEventListener(EVENT_CLICK, dismissInvitation)
 			toggle.removeEventListener(EVENT_CLICK, togglePresets)

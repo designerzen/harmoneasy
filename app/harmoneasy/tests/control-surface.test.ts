@@ -636,6 +636,120 @@ describe("surface interaction and bindings", () => {
 			}
 		}
 	})
+	it("fills sparse pages, balances hand zones, and distributes spare height without widening gaps", () => {
+		expect(layoutWidgets([{}], 900, 900, 600).items[0]).toMatchObject({
+			x: 0,
+			y: 0,
+			width: 900,
+			height: 600
+		})
+		const pair = layoutWidgets([{}, {}], 900, 900, 600)
+		expect(pair.items).toMatchObject([
+			{ x: 0, y: 0, width: 438, height: 600 },
+			{ x: 462, y: 0, width: 438, height: 600 }
+		])
+		const grid = layoutWidgets(
+			Array.from({ length: 8 }, () => ({})),
+			900,
+			900,
+			600
+		)
+		expect(grid.pages).toBe(1)
+		expect(grid.height).toBe(600)
+		for (const item of grid.items) {
+			expect(item.height).toBeCloseTo((600 - 11) / 2)
+		}
+		expect(grid.items[4].y - grid.items[0].height).toBeCloseTo(11)
+		expect(grid.items[3].x + grid.items[3].width).toBeCloseTo(900)
+		expect(grid.items[7].y + grid.items[7].height).toBeCloseTo(600)
+	})
+	it("allows 44px simple gadgets and retains that physical minimum when zoomed", () => {
+		for (const scale of [0.5, 1, 2]) {
+			const gap = 11 / Math.min(1, scale)
+			const height = 44 / scale
+			const widgets = [
+				"dial",
+				"slider",
+				"toggle",
+				"pad",
+				"text",
+				"number",
+				"color",
+				"meter",
+				"display"
+			].map((widget) => ({ widget, height }))
+			const layout = layoutWidgets(
+				widgets,
+				280 / scale,
+				280,
+				height * widgets.length + gap * (widgets.length - 1),
+				scale
+			)
+			expect(layout.pages).toBe(1)
+			for (const item of layout.items) {
+				expect(item.height * scale).toBeCloseTo(44)
+				expect(item.width * scale).toBeGreaterThanOrEqual(44)
+			}
+		}
+	})
+	it("compacts default sizes to fit more controls while respecting manually chosen sizes", () => {
+		const widgets = Array.from({ length: 12 }, () => ({ widget: "dial", height: 172 }))
+		expect(layoutWidgets(widgets, 900, 900, 500).pages).toBe(2)
+		const compact = layoutWidgets(
+			widgets.map((widget) => ({ ...widget, flexible: true })),
+			900,
+			900,
+			500
+		)
+		expect(compact.pages).toBe(1)
+		expect(compact.items.every((item) => item.height >= 132)).toBe(true)
+		const fields = layoutWidgets(
+			Array.from({ length: 6 }, () => ({ widget: "number", height: 100 })),
+			390,
+			390,
+			340
+		)
+		expect(fields.pages).toBe(1)
+		expect(fields.items.every((item) => item.height >= 100)).toBe(true)
+	})
+	it("fills masonry holes while preserving requested size proportions and scaled target gaps", () => {
+		for (const scale of [0.5, 1, 2]) {
+			const layout = layoutWidgets(
+				[{ height: 300 }, { height: 132 }, { span: 2, height: 200 }],
+				500,
+				500,
+				700,
+				scale
+			)
+			expect(layout.pages).toBe(1)
+			const [left, right, bottom] = layout.items
+			expect(left.height).toBeCloseTo(right.height)
+			expect(left.width + right.width + 11 / Math.min(1, scale)).toBeCloseTo(500)
+			expect(bottom.width).toBe(500)
+			expect(bottom.y - left.height).toBeCloseTo(11 / Math.min(1, scale))
+			expect(bottom.y + bottom.height).toBeCloseTo(700)
+			expect(left.height / bottom.height).toBeCloseTo(300 / 200)
+		}
+	})
+	it("keeps a physical gap between all packed faces after filling irregular pages", () => {
+		const widgets = Array.from({ length: 35 }, (_, i) => ({
+			span: 1 + (i % 3),
+			height: 132 + ((i * 71) % 400)
+		}))
+		for (const width of [280, 390, 900, 1200]) {
+			for (const scale of [0.5, 1, 2]) {
+				const layout = layoutWidgets(widgets, width, width, 700 / scale, scale)
+				for (const [i, a] of layout.items.entries()) {
+					for (const b of layout.items.slice(i + 1).filter((b) => b.page === a.page)) {
+						const dx = Math.max(0, a.x - b.x - b.width, b.x - a.x - a.width)
+						const dy = Math.max(0, a.y - b.y - b.height, b.y - a.y - a.height)
+						expect(Math.hypot(dx, dy) * scale).toBeGreaterThanOrEqual(10.999)
+					}
+				}
+				expect(layoutWidgets(widgets, width, width, 700 / scale, scale)).toEqual(layout)
+			}
+		}
+	})
 	it("adapts hand zones to visible width and keeps large gadgets inside their playing zone", () => {
 		expect(playingLayout(300)).toMatchObject({ hands: 1, columns: 1, gutter: 0 })
 		expect(playingLayout(390)).toMatchObject({ hands: 1, columns: 2 })
@@ -819,6 +933,11 @@ describe("surface interaction and bindings", () => {
 		expect(document.activeElement).toBe(button("Move later a"))
 		expect(change).toHaveBeenCalled()
 		expect(validSurfaces([saved])).toBe(true)
+		saved.widgets[1].span = 6
+		expect(validSurfaces([saved])).toBe(true)
+		saved.widgets[1].span = 7
+		expect(validSurfaces([saved])).toBe(false)
+		saved.widgets[1].span = 2
 		saved.widgets[1].height = Infinity
 		expect(validSurfaces([saved])).toBe(false)
 		const layout = layoutWidgets(

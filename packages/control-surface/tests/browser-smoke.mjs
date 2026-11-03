@@ -63,6 +63,83 @@ try {
 		"GPU initialization must compile shaders and create a working render pipeline"
 	)
 	assert.equal(await page.locator(".cs-widget").count(), 18)
+	await page.evaluate(async () => {
+		const { surface, ControlSurface } = window.surfaceSmoke
+		const bindings = surface.options.bindings.filter((binding) =>
+			[
+				"dial",
+				"slider",
+				"toggle",
+				"button",
+				"number",
+				"text",
+				"meter",
+				"color",
+				"pad"
+			].includes(binding.descriptor.widget)
+		)
+		const host = document.createElement("div")
+		host.style.cssText =
+			"position:fixed;left:0;top:0;width:300px;height:800px;overflow:hidden;z-index:100"
+		document.body.append(host)
+		const compact = new ControlSurface({
+			state: {
+				id: "compact",
+				name: "Compact",
+				connections: [],
+				widgets: bindings.map(({ key }) => ({ key, height: 44, column: 0 }))
+			},
+			bindings,
+			change: () => {}
+		})
+		host.append(compact.element)
+		try {
+			const deadline = performance.now() + 15000
+			while (!compact.element.classList.contains("cs-gpu-ready")) {
+				if (performance.now() > deadline) {
+					throw new Error("Compact GPU surface did not initialize")
+				}
+				await new Promise(requestAnimationFrame)
+			}
+			host.style.height = `${compact.stage.getBoundingClientRect().top + bindings.length * 44 + (bindings.length - 1) * 11 + 12}px`
+			compact.layout()
+			for (const entry of compact.entries) {
+				const rect = entry.element.getBoundingClientRect()
+				if (Math.abs(rect.height - 44) > 0.1 || rect.width < 44) {
+					throw new Error("Compact gadget does not respect its 44px size")
+				}
+				const input = entry.element.querySelector("input, button")
+				if (!input || input.disabled) {
+					continue
+				}
+				input.focus()
+				const target = input.getBoundingClientRect()
+				if (
+					target.width < 43.99 ||
+					target.height < 43.99 ||
+					target.bottom > rect.bottom + 0.1 ||
+					target.top < rect.top - 0.1
+				) {
+					throw new Error(`Compact target clipped: ${input.getAttribute("aria-label")}`)
+				}
+			}
+			;[...compact.toolbar.querySelectorAll("button")]
+				.find((button) => button.textContent === "Edit layout")
+				.click()
+			for (const entry of compact.entries.filter(
+				(entry) => entry.page === compact.currentPage
+			)) {
+				if (entry.visual.height < 103 || entry.config.height !== 44) {
+					throw new Error(
+						"Compact gadget cannot expose its editing controls without changing the saved size"
+					)
+				}
+			}
+		} finally {
+			compact.destroy()
+			host.remove()
+		}
+	})
 	// Exercise the real application musical-key handler with browser focus/default actions.
 	await page.evaluate(() => {
 		window.surfaceSmoke.commands = []
@@ -904,6 +981,31 @@ try {
 				if (Math.abs(target * scale - 44) > 0.5) {
 					throw new Error("Gadget targets did not adapt to transform-only zoom changes")
 				}
+			}
+			// A sparse surface fills its bounded host and responds to height-only resizing.
+			host.style.height = "540px"
+			host.style.overflow = "hidden"
+			surface.layout()
+			for (let i = 0; i < 4; i++) {
+				await new Promise(requestAnimationFrame)
+			}
+			const before = surface.height
+			host.style.height = "680px"
+			for (let i = 0; i < 4; i++) {
+				await new Promise(requestAnimationFrame)
+			}
+			if (Math.abs(surface.height - before - 140) > 1) {
+				throw new Error("Surface did not fill a resized host")
+			}
+			const face = surface.entries[0].element.getBoundingClientRect()
+			const stage = surface.stage.getBoundingClientRect()
+			if (
+				Math.abs(face.width - stage.width) > 1 ||
+				Math.abs(face.height - stage.height) > 1 ||
+				surface.pageNavigation.getBoundingClientRect().bottom >
+					host.getBoundingClientRect().bottom
+			) {
+				throw new Error("Sparse surface wastes space or escapes its host")
 			}
 		} finally {
 			surface.destroy()

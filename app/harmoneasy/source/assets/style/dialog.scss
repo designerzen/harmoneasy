@@ -383,6 +383,19 @@ body:has(dialog:modal) {
 			outline-offset: 4px;
 		}
 	}
+	#start-preset-context {
+		margin-top: 2rem;
+		h1 {
+			margin: 0 0 0.75rem;
+			font-size: 1.75rem;
+			line-height: 1.2;
+			overflow-wrap: anywhere;
+		}
+		p {
+			margin: 0;
+			color: var(--col-muted);
+		}
+	}
 	.start-actions {
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));

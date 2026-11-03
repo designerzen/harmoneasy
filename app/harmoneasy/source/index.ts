@@ -792,15 +792,14 @@ if (storage) {
 
 // Keep context browsing available until the explicit audio activation gesture.
 const startDialog = document.querySelector<HTMLDialogElement>("#start-dialog")!
+const startContexts = createStartContexts(startDialog, (setup) =>
+	startApplication(startDialog.querySelector<HTMLButtonElement>(".preset-apply-button")!, setup)
+)
 // Fetch before the audio activation gesture, and retain failures for the start dialog.
 const presetPageResult = loadPresetPage(window.location.href, import.meta.env.BASE_URL)
 	.then((preset) => {
 		if (preset) {
-			document.getElementById("start-room-context")!.hidden = false
-			startDialog.querySelector<HTMLButtonElement>('[value="room"]')!.textContent =
-				`Start ${preset.name}`
-			document.getElementById("start-room-description")!.textContent =
-				`${preset.name}: ${preset.description}`
+			startContexts.setPresetPage(preset)
 		}
 		return { preset, error: undefined }
 	})
@@ -823,9 +822,6 @@ try {
 	message.hidden = false
 	message.textContent = error instanceof Error ? error.message : "Invalid room setup link."
 }
-createStartContexts(startDialog, (setup) =>
-	startApplication(startDialog.querySelector<HTMLButtonElement>(".preset-apply-button")!, setup)
-)
 startDialog.removeAttribute("open")
 const wizardButton = startDialog.querySelector<HTMLButtonElement>("#start-wizard")!
 createSetupWizard(wizardButton, (setup) => { void startApplication(wizardButton, setup) })

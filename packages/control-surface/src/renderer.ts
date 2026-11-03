@@ -30,6 +30,7 @@ export interface WidgetVisual {
 	y: number
 	width: number
 	height: number
+	compact?: boolean
 	rotation?: number
 	descriptor: ControlDescriptor
 	value: ControlValue | undefined
@@ -55,6 +56,7 @@ interface CachedWidget {
 	y: number
 	width: number
 	height: number
+	compact: boolean | undefined
 	rotation: number | undefined
 	visualiserRevision: number | undefined
 	padRevision: number | undefined
@@ -931,6 +933,7 @@ export class GpuSurfaceRenderer {
 				cached.y !== w.y ||
 				cached.width !== w.width ||
 				cached.height !== w.height ||
+				cached.compact !== w.compact ||
 				cached.rotation !== w.rotation ||
 				cached.strumRevision !== w.strum?.revision ||
 				cached.musicRevision !== w.musicView?.revision ||
@@ -966,12 +969,21 @@ export class GpuSurfaceRenderer {
 				}
 				const rotary = w.widget === "dial" || w.widget === "rotation"
 				const musical = isMusicGrid(w.widget)
-				const centerY = w.y + w.height / 2 + 10
-				const labelWidth = w.width - 24
-				const x = w.x + 8,
-					y = w.y + 22,
-					width = w.width - 16,
-					height = w.height - 24
+				const compact = !!w.compact
+				const compactFace = rotary ? Math.min(w.height, w.width * 0.45) : w.width * 0.55
+				const sideLabel =
+					compact && (rotary || ["slider", "meter", "toggle"].includes(w.widget))
+				const labelX = sideLabel ? (rotary ? w.x + compactFace : w.x + 4) : w.x + 12
+				const labelWidth = sideLabel ? w.width - compactFace - 8 : w.width - 24
+				const centerY = w.y + w.height / 2 + (compact ? 0 : 10)
+				const x = compact
+						? sideLabel && !rotary
+							? w.x + w.width - compactFace
+							: w.x
+						: w.x + 8,
+					y = compact ? w.y : w.y + 22,
+					width = compact ? (sideLabel ? compactFace : w.width) : w.width - 16,
+					height = compact ? w.height : w.height - 24
 				const kind = {
 					dial: 1,
 					rotation: 1,
@@ -1098,15 +1110,20 @@ export class GpuSurfaceRenderer {
 					)
 				}
 				this.drawingColor = theme.accent
-				if (!w.background) {
+				if (
+					!w.background &&
+					!(compact && ["text", "number", "select", "color"].includes(w.widget))
+				) {
 					this.centeredText(
 						d.label.toUpperCase(),
-						w.x + 12,
-						w.y + 7,
+						labelX,
+						compact
+							? w.y + (sideLabel || w.widget === "display" ? 3 : (w.height - 18) / 2)
+							: w.y + 7,
 						labelWidth,
 						alpha,
 						false,
-						1.1
+						compact ? 0.7 : 1.1
 					)
 				}
 				if (w.widget === "radio" && d.choices?.length) {
@@ -1179,20 +1196,21 @@ export class GpuSurfaceRenderer {
 						"visualiser"
 					].includes(w.widget)
 				) {
-					const valueY =
-						rotary || w.widget === "display"
+					const valueY = compact
+						? w.y + w.height - 19
+						: rotary || w.widget === "display"
 							? centerY - 12
 							: ["slider", "range", "meter", "toggle"].includes(w.widget)
 								? centerY + 18
 								: w.y + w.height - 30
 					this.centeredText(
 						w.unavailable ? "Unavailable" : formatValue(d, v),
-						w.x + 12,
+						compact ? labelX : w.x + 12,
 						valueY,
-						w.width - 24,
+						compact ? labelWidth : w.width - 24,
 						alpha,
 						true,
-						1.1
+						compact ? 0.7 : 1.1
 					)
 				}
 				cached = {
@@ -1202,6 +1220,7 @@ export class GpuSurfaceRenderer {
 					y: w.y,
 					width: w.width,
 					height: w.height,
+					compact: w.compact,
 					rotation: w.rotation,
 					strumRevision: w.strum?.revision,
 					musicRevision: w.musicView?.revision,
@@ -1291,7 +1310,11 @@ export class GpuSurfaceRenderer {
 		if (this.disposed) {
 			return
 		}
-		const ratio = Math.min((devicePixelRatio || 1) * (visible?.scale ?? 1), 2),
+		const ratio = Math.min(
+				(devicePixelRatio || 1) * (visible?.scale ?? 1),
+				2,
+				this.device.limits.maxTextureDimension2D / Math.max(1, width, height)
+			),
 			w = Math.max(1, Math.round(width * ratio)),
 			h = Math.max(1, Math.round(height * ratio))
 		const signature = [
