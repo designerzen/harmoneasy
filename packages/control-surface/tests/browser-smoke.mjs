@@ -63,6 +63,23 @@ try {
 		"GPU initialization must compile shaders and create a working render pipeline"
 	)
 	assert.equal(await page.locator(".cs-widget").count(), 18)
+	assert.equal(await page.locator(".cs-play-guide").count(), 0)
+	assert.equal(
+		await page
+			.locator(".control-surface")
+			.evaluate((element) => element.lastElementChild?.matches(".cs-source-key")),
+		true
+	)
+	assert.equal(
+		await page
+			.locator(".cs-source-key")
+			.evaluate(
+				(element) =>
+					element.getBoundingClientRect().top >=
+					document.querySelector(".cs-viewport").getBoundingClientRect().bottom - 0.05
+			),
+		true
+	)
 	await page.evaluate(async () => {
 		const { ControlSurface } = window.surfaceSmoke
 		const host = document.createElement("div")
@@ -106,7 +123,7 @@ try {
 				}
 				await new Promise(requestAnimationFrame)
 			}
-			host.style.height = `${surface.stage.getBoundingClientRect().top + 655 + 12}px`
+			host.style.height = `${surface.stage.getBoundingClientRect().top + 655 + 12 + surface.sourceKey.getBoundingClientRect().height + 8}px`
 			surface.layout()
 			const boxes = surface.entries.map((entry) => entry.element.getBoundingClientRect())
 			const stage = surface.stage.getBoundingClientRect()
@@ -164,7 +181,7 @@ try {
 				}
 				await new Promise(requestAnimationFrame)
 			}
-			host.style.height = `${compact.stage.getBoundingClientRect().top + bindings.length * 44 + (bindings.length - 1) * 11 + 12}px`
+			host.style.height = `${compact.stage.getBoundingClientRect().top + bindings.length * 44 + (bindings.length - 1) * 11 + 12 + compact.sourceKey.getBoundingClientRect().height + 8}px`
 			compact.layout()
 			for (const entry of compact.entries) {
 				const rect = entry.element.getBoundingClientRect()
@@ -613,6 +630,34 @@ try {
 		}, action)
 	// Rotate a panel, resize it by keyboard, and preserve focus after sorting.
 	await page.getByRole("button", { name: "Edit layout", exact: true }).click()
+	assert.equal(await page.locator(".cs-resize-handle").count(), 18)
+	const cornerGrip = page.getByRole("button", { name: "Resize Filter cutoff", exact: true })
+	assert.equal(
+		await cornerGrip.evaluate((element) => element.closest(".cs-widget-tools") === null),
+		true
+	)
+	const corner = await cornerGrip.boundingBox()
+	assert.ok(corner.width >= 43.99 && corner.height >= 43.99, JSON.stringify(corner))
+	await page.mouse.move(corner.x + corner.width / 2, corner.y + corner.height / 2)
+	await page.mouse.down()
+	await page.mouse.move(corner.x + corner.width / 2 + 340, corner.y + corner.height / 2 + 24, {
+		steps: 5
+	})
+	await page.mouse.up()
+	await page.waitForFunction(() => {
+		const widget = window.surfaceSmoke.surface.options.state.widgets.find(
+			(widget) => widget.key === "cutoff"
+		)
+		return widget.span > 1 && widget.height === 196
+	})
+	assert.equal(await page.locator("dialog[open]").count(), 0)
+	await page.evaluate(() => {
+		const { surface } = window.surfaceSmoke
+		const widget = surface.options.state.widgets.find((widget) => widget.key === "cutoff")
+		delete widget.span
+		delete widget.height
+		surface.layout()
+	})
 	await revealAction("Rotate")
 	await page.getByRole("button", { name: "Rotate Drum density", exact: true }).click()
 	assert.equal(

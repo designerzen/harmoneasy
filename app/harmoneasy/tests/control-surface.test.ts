@@ -24,7 +24,11 @@ import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands"
 import {
 	EVENT_BLUR,
 	EVENT_KEY_DOWN,
-	EVENT_KEY_UP
+	EVENT_KEY_UP,
+	EVENT_POINTER_DOWN,
+	EVENT_POINTER_MOVE,
+	EVENT_POINTER_UP,
+	EVENT_POINTER_CANCEL
 } from "../../../packages/control-surface/src/events"
 import {
 	bindingKey,
@@ -899,6 +903,138 @@ describe("surface interaction and bindings", () => {
 			createGuitarTabControl({ id: "bad", label: "Bad", music: { steps: 100000 } })
 		).toThrow()
 	})
+	it("keeps corner resize grips available and reflows neighbours during mouse dragging", async () => {
+		const bindings = [bind("a"), bind("b"), bind("c")],
+			saved = state(),
+			change = vi.fn()
+		saved.widgets = bindings.map(({ key }) => ({ key }))
+		const surface = new ControlSurface({ state: saved, bindings, change })
+		views.push(surface)
+		document.body.append(surface.element)
+		await settle()
+		;[...surface.element.querySelectorAll<HTMLButtonElement>("button")]
+			.find((button) => button.textContent === "Edit layout")!
+			.click()
+		const handle = surface.element.querySelector<HTMLButtonElement>(".cs-resize-handle")!
+		handle.setPointerCapture = vi.fn()
+		expect(handle.closest(".cs-widget-tools")).toBeNull()
+		expect(handle.getAttribute("aria-label")).toBe("Resize a")
+		const before = (surface as any).entries.map((entry: any) => ({ ...entry.visual }))
+		handle.dispatchEvent(
+			new PointerEvent(EVENT_POINTER_DOWN, {
+				pointerId: 1,
+				button: 0,
+				clientX: 100,
+				clientY: 100,
+				bubbles: true
+			})
+		)
+		handle.dispatchEvent(
+			new PointerEvent(EVENT_POINTER_MOVE, {
+				pointerId: 1,
+				clientX: 440,
+				clientY: 130,
+				bubbles: true
+			})
+		)
+		expect(saved.widgets[0]).toMatchObject({ span: 3, height: 202 })
+		expect((surface as any).entries[0].visual.width).not.toBe(before[0].width)
+		expect((surface as any).entries[1].visual.x).not.toBe(before[1].x)
+		handle.dispatchEvent(new PointerEvent(EVENT_POINTER_UP, { pointerId: 1, bubbles: true }))
+		expect(change).toHaveBeenCalledWith(saved)
+	})
+	it("allows resizing only while the external titlebar edit toggle is on", async () => {
+		const toolbarHost = document.body.appendChild(document.createElement("header"))
+		const binding = bind("a"),
+			saved = state(),
+			change = vi.fn()
+		saved.widgets = [{ key: binding.key }]
+		const surface = new ControlSurface({
+			state: saved,
+			bindings: [binding],
+			toolbarHost,
+			change
+		})
+		views.push(surface)
+		document.body.append(surface.element)
+		await settle()
+		const toggle = toolbarHost.querySelector<HTMLButtonElement>("button[aria-pressed]")!
+		expect(toggle.getAttribute("aria-pressed")).toBe("false")
+		expect(surface.element.querySelector(".cs-resize-handle")).toBeNull()
+		toggle.click()
+		expect(toggle.getAttribute("aria-pressed")).toBe("true")
+		const handle = surface.element.querySelector<HTMLButtonElement>(".cs-resize-handle")!
+		handle.setPointerCapture = vi.fn()
+		handle.dispatchEvent(
+			new PointerEvent(EVENT_POINTER_DOWN, {
+				pointerId: 7,
+				button: 0,
+				clientX: 100,
+				clientY: 100,
+				bubbles: true
+			})
+		)
+		handle.dispatchEvent(
+			new PointerEvent(EVENT_POINTER_MOVE, {
+				pointerId: 7,
+				clientX: 300,
+				clientY: 130,
+				bubbles: true
+			})
+		)
+		expect(saved.widgets[0].height).toBe(202)
+		toggle.click()
+		expect(toggle.getAttribute("aria-pressed")).toBe("false")
+		expect(surface.element.classList.contains("cs-editing")).toBe(false)
+		expect(surface.element.querySelector(".cs-resize-handle")).toBeNull()
+		expect(saved.widgets[0]).toEqual({ key: binding.key })
+		handle.dispatchEvent(
+			new PointerEvent(EVENT_POINTER_MOVE, { pointerId: 7, clientX: 400, clientY: 200 })
+		)
+		handle.dispatchEvent(new PointerEvent(EVENT_POINTER_UP, { pointerId: 7 }))
+		handle.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: "ArrowDown" }))
+		handle.click()
+		expect(saved.widgets[0]).toEqual({ key: binding.key })
+		expect(change).not.toHaveBeenCalled()
+		expect(document.querySelector("dialog")).toBeNull()
+	})
+	it("restores automatic sizing when a resize drag is cancelled", async () => {
+		const binding = bind("a"),
+			saved = state(),
+			change = vi.fn()
+		saved.widgets = [{ key: binding.key }]
+		const surface = new ControlSurface({ state: saved, bindings: [binding], change })
+		views.push(surface)
+		document.body.append(surface.element)
+		await settle()
+		;[...surface.element.querySelectorAll<HTMLButtonElement>("button")]
+			.find((button) => button.textContent === "Edit layout")!
+			.click()
+		const handle = surface.element.querySelector<HTMLButtonElement>(".cs-resize-handle")!
+		handle.setPointerCapture = vi.fn()
+		handle.dispatchEvent(
+			new PointerEvent(EVENT_POINTER_DOWN, {
+				pointerId: 2,
+				button: 0,
+				clientX: 100,
+				clientY: 100,
+				bubbles: true
+			})
+		)
+		handle.dispatchEvent(
+			new PointerEvent(EVENT_POINTER_MOVE, {
+				pointerId: 2,
+				clientX: 300,
+				clientY: 130,
+				bubbles: true
+			})
+		)
+		handle.dispatchEvent(
+			new PointerEvent(EVENT_POINTER_CANCEL, { pointerId: 2, bubbles: true })
+		)
+		expect(saved.widgets[0]).toEqual({ key: binding.key })
+		expect(change).not.toHaveBeenCalled()
+	})
 	it("saves independent sizes, rotation and keyboard sorting without losing focus", async () => {
 		const a = bind("a"),
 			b = bind("b"),
@@ -1008,6 +1144,24 @@ describe("surface interaction and bindings", () => {
 		await settle()
 		expect(relative.write.mock.calls.map(([value]) => value)).toHaveLength(2)
 		expect(relative.write.mock.lastCall![0]).toEqual([])
+	})
+	it("keeps the colour key at the very bottom and reserves its space without a hand-layout description", async () => {
+		const binding = bind("a"),
+			saved = state()
+		saved.widgets = [{ key: binding.key }]
+		const surface = new ControlSurface({ state: saved, bindings: [binding], change: vi.fn() })
+		views.push(surface)
+		document.body.append(surface.element)
+		await settle()
+		const key = surface.element.querySelector<HTMLElement>(".cs-source-key")!
+		expect(surface.element.lastElementChild).toBe(key)
+		expect(key.getAttribute("aria-label")).toBe("Control sources")
+		expect(key.textContent).toBe("Synth")
+		expect(surface.element.querySelector(".cs-play-guide")).toBeNull()
+		const before = (surface as any).pageHeight
+		vi.spyOn(key, "getBoundingClientRect").mockReturnValue({ height: 40 } as DOMRect)
+		;(surface as any).layout()
+		expect((surface as any).pageHeight).toBeCloseTo(before - 48)
 	})
 	it("keeps source themes stable across surfaces and separates identically named components", async () => {
 		const a = { ...bind("a"), sourceId: "synth-one" },

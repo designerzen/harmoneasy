@@ -56,24 +56,37 @@ it("starts preset surfaces expanded and switches across chains without closing t
 	const surface = dialog()!
 	expect(surface.getAttribute("aria-label")).toBe("Lead mix controls")
 	expect(document.body.style.overflow).toBe("hidden")
-	const tabs = surface.querySelectorAll<HTMLButtonElement>("[role=tab]")
-	expect(tabs).toHaveLength(2)
-	tabs[1].click()
+	expect(surface.querySelector("[role=tablist]")).toBeNull()
+	const trigger = surface.querySelector<HTMLButtonElement>(".device-menu")!
+	const menu = surface.querySelector<HTMLElement>(".node-menu-panel")!
+	const open = (name: string) =>
+		[...menu.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent === `Open ${name}`
+		)!
+	trigger.click()
+	trigger.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: "Escape", bubbles: true }))
+	expect(menu.hidden).toBe(true)
 	expect(dialog()).toBe(surface)
-	expect(surface.querySelector("[role=tabpanel]")!.textContent).toBe("Controls for Drums")
-	expect(tabs[1].getAttribute("aria-selected")).toBe("true")
+	trigger.click()
+	open("Drums mix").click()
+	expect(dialog()).toBe(surface)
+	expect(surface.querySelector(".surface-viewport-content")!.textContent).toBe(
+		"Controls for Drums"
+	)
+	expect(menu.hidden).toBe(true)
 	expect(vi.mocked(mountControlSurface).mock.results[0].value.destroy).toHaveBeenCalledOnce()
-	tabs[1].dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: "ArrowLeft", bubbles: true }))
-	expect(document.activeElement).toBe(tabs[0])
-	expect(tabs[0].getAttribute("aria-selected")).toBe("true")
+	trigger.click()
+	open("Lead mix").click()
+	expect(document.activeElement).toBe(trigger)
+	expect(surface.getAttribute("aria-label")).toBe("Lead mix controls")
 	manager.dispatchEvent(new Event(EVENT_CHAINS_UPDATED))
-	expect(tabs[0].getAttribute("aria-selected")).toBe("true")
+	expect(surface.getAttribute("aria-label")).toBe("Lead mix controls")
 	expect(mountControlSurface).toHaveBeenCalledTimes(3)
 	entries[0][1].options.controlSurfaces = []
 	manager.dispatchEvent(new Event(EVENT_CHAINS_UPDATED))
 	expect(dialog()).toBe(surface)
 	expect(surface.getAttribute("aria-label")).toBe("Drums mix controls")
-	expect(surface.querySelector<HTMLElement>("[role=tablist]")!.hidden).toBe(true)
+	expect(open("Drums mix")).toBeUndefined()
 	surface.querySelector<HTMLButtonElement>(".device-remove")!.click()
 	expect(dialog()).toBeNull()
 	expect(document.body.style.overflow).toBe("")
@@ -111,7 +124,7 @@ it("keeps the graph visible when a preset has no surfaces", () => {
 
 it("lets gadgets handle Escape before closing the expanded surface from the playing region", () => {
 	const { dialog } = setup(true)
-	const host = dialog()!.querySelector<HTMLElement>("[role=tabpanel]")!
+	const host = dialog()!.querySelector<HTMLElement>(".surface-viewport-content")!
 	host.dataset.keyboardNotes = ""
 	const gadget = host.appendChild(document.createElement("button"))
 	const playing = host.appendChild(document.createElement("div"))

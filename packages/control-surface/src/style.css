@@ -137,11 +137,6 @@
 	outline: 2px solid white;
 	outline-offset: 2px;
 }
-.cs-play-guide {
-	margin: 0 0 8px;
-	color: #9bbfb7;
-	font-size: 12px;
-}
 .cs-page-navigation {
 	display: flex;
 	justify-content: space-between;
@@ -272,7 +267,7 @@
 	flex-wrap: wrap;
 	gap: 6px 16px;
 	list-style: none;
-	margin: 0 0 8px;
+	margin: 8px 0 0;
 	padding: 0;
 	font-size: 12px;
 }
@@ -284,6 +279,9 @@
 	margin-right: 6px;
 	border-radius: 2px;
 	background: var(--cs-source);
+}
+.cs-source-key:empty {
+	display: none;
 }
 .cs-sr-only {
 	position: absolute;
@@ -346,7 +344,7 @@
 }
 .cs-widget-tools {
 	position: absolute;
-	bottom: 2px;
+	bottom: calc(2px + var(--cs-target, 44px) + var(--cs-gap, 11px));
 	max-height: 100%;
 	overflow: clip;
 	left: 3px;
@@ -385,8 +383,38 @@
 	font: inherit;
 	min-height: var(--cs-target, 44px);
 }
-.cs-layout-handle:last-child {
+.cs-resize-handle {
+	position: absolute;
+	right: 3px;
+	bottom: 2px;
+	width: var(--cs-target, 44px);
+	height: var(--cs-target, 44px);
+	padding: 8px;
+	z-index: 4;
+	color: var(--cs-source, #d6fff2);
+	background: #112438;
+	border: 1px solid currentColor;
+	border-radius: 6px;
 	cursor: nwse-resize;
+}
+.cs-resize-handle svg {
+	width: 100%;
+	height: 100%;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2;
+}
+.cs-widget-size {
+	position: absolute;
+	left: 8px;
+	right: calc(3px + var(--cs-target, 44px) + var(--cs-gap, 11px));
+	bottom: 2px;
+	height: var(--cs-target, 44px);
+	display: flex;
+	align-items: center;
+	font-size: 12px;
+	font-weight: 600;
+	pointer-events: none;
 }
 .cs-drop-target {
 	outline: 2px solid white !important;

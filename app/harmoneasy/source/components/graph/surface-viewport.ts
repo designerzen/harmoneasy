@@ -21,7 +21,7 @@ export function createSurfaceViewport(manager: IOChainManager, startExpanded = f
 	let previousFocus: HTMLElement | null = null
 	let overflow = ""
 	let open = false
-	let tabSignature = ""
+	let menuSignature = ""
 	const subscriptions = new Map<IOChain, AbortController>()
 	const viewport = element("div", "node-viewport-editor surface-viewport nodrag nopan nowheel")
 	viewport.setAttribute("role", "dialog")
@@ -32,12 +32,9 @@ export function createSurfaceViewport(manager: IOChainManager, startExpanded = f
 	const left = element("div", "node-actions-left")
 	const right = element("div", "node-actions-right")
 	const title = element("div", "surface-titlebar")
-	const tabs = element("div", "surface-viewport-tabs")
-	tabs.setAttribute("role", "tablist")
-	tabs.setAttribute("aria-label", "Control surfaces")
 	const content = element("div", "surface-viewport-content nodrag nopan nowheel")
 	content.id = `surface-panel-${crypto.randomUUID()}`
-	content.setAttribute("role", "tabpanel")
+	content.setAttribute("role", "region")
 	const gadget = (label: string, className: string, path: string, action: () => void) => {
 		const control = button("", action, className)
 		control.title = label
@@ -57,18 +54,17 @@ export function createSurfaceViewport(manager: IOChainManager, startExpanded = f
 		document.body.style.overflow = overflow
 		previousFocus?.focus({ preventScroll: true })
 	}
-	const menu = createNodeMenu([
-		{
-			label: "Remove control surface",
-			className: "device-remove",
-			run: () => {
-				if (selected) {
-					removeSurface(selected.chain, selected.surface.id)
-				}
-				refresh()
+	const removeAction = {
+		label: "Remove control surface",
+		className: "device-remove",
+		run: () => {
+			if (selected) {
+				removeSurface(selected.chain, selected.surface.id)
 			}
+			refresh()
 		}
-	])
+	}
+	const menu = createNodeMenu([removeAction])
 	const minimise = gadget("Minimise control surface", "device-minimise", "M5 12h14", () => {
 		if (selected) {
 			selected.chain.dispatchEvent(
@@ -88,7 +84,7 @@ export function createSurfaceViewport(manager: IOChainManager, startExpanded = f
 	right.append(minimise, menu.element, expand)
 	controls.append(left, right)
 	header.append(controls, title)
-	panel.append(header, tabs, content)
+	panel.append(header, content)
 	viewport.append(panel)
 	const select = (entry: Entry) => {
 		const opening = !open
@@ -109,13 +105,6 @@ export function createSurfaceViewport(manager: IOChainManager, startExpanded = f
 		}
 		viewport.setAttribute("aria-label", `${entry.surface.name} controls`)
 		content.setAttribute("aria-label", entry.surface.name)
-		for (const [index, tab] of [
-			...tabs.querySelectorAll<HTMLButtonElement>("[role=tab]")
-		].entries()) {
-			const active = entries[index] === entry
-			tab.setAttribute("aria-selected", String(active))
-			tab.tabIndex = active ? 0 : -1
-		}
 		if (opening) {
 			expand.focus({ preventScroll: true })
 		}
@@ -161,39 +150,18 @@ export function createSurfaceViewport(manager: IOChainManager, startExpanded = f
 				chain.options.name
 			])
 		)
-		if (signature !== tabSignature) {
-			tabSignature = signature
-			tabs.replaceChildren(
-				...entries.map((entry, index) => {
-					const tab = button(
-						`${entry.chain.options.name ?? "Chain"} · ${entry.surface.name}`,
-						() => select(entries[index])
-					)
-					tab.setAttribute("role", "tab")
-					tab.setAttribute("aria-controls", content.id)
-					tab.onkeydown = (event) => {
-						const next =
-							event.key === "ArrowRight"
-								? (index + 1) % entries.length
-								: event.key === "ArrowLeft"
-									? (index + entries.length - 1) % entries.length
-									: event.key === "Home"
-										? 0
-										: event.key === "End"
-											? entries.length - 1
-											: null
-						if (next === null) {
-							return
-						}
-						event.preventDefault()
-						select(entries[next])
-						tabs.querySelectorAll<HTMLButtonElement>("button")[next]?.focus()
-					}
-					return tab
-				})
-			)
+		if (signature !== menuSignature) {
+			menuSignature = signature
+			menu.setActions([
+				...(entries.length > 1
+					? entries.map((entry) => ({
+							label: `Open ${entry.surface.name}`,
+							run: () => select(entry)
+						}))
+					: []),
+				removeAction
+			])
 		}
-		tabs.hidden = entries.length < 2
 		if (open) {
 			const next =
 				entries.find(
@@ -216,8 +184,11 @@ export function createSurfaceViewport(manager: IOChainManager, startExpanded = f
 				return
 			}
 			if (
-				(event.target as HTMLElement)?.closest?.("[data-keyboard-notes]") &&
-				!(event.target as HTMLElement).matches(".cs-viewport")
+				(event.target as HTMLElement)?.closest?.(
+					".node-menu:has(.node-menu-panel:not([hidden]))"
+				) ||
+				((event.target as HTMLElement)?.closest?.("[data-keyboard-notes]") &&
+					!(event.target as HTMLElement).matches(".cs-viewport"))
 			) {
 				return
 			}

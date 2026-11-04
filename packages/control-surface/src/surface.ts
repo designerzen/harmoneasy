@@ -112,7 +112,6 @@ export class ControlSurface {
 	private visualiserCycle?: HTMLButtonElement
 	private stage = document.createElement("div")
 	private viewport = document.createElement("div")
-	private playGuide = document.createElement("p")
 	private pageNavigation = document.createElement("div")
 	private pageLabel = document.createElement("span")
 	private currentPage = 0
@@ -120,6 +119,7 @@ export class ControlSurface {
 	private pageHeight = 400
 	private layoutMode = ""
 	private layoutScale = 1
+	private stageLayoutWidth = 640
 	private layoutToolbarScale = 1
 	private layoutViewportHeight = 0
 	private status = document.createElement("p")
@@ -138,6 +138,7 @@ export class ControlSurface {
 	private visible = true
 	private disposed = false
 	private editing = false
+	private cancelLayoutGesture?: () => void
 	private frame = 0
 	private poll = 0
 	private height = 120
@@ -189,8 +190,6 @@ export class ControlSurface {
 			"Play notes with the musical keyboard. Press Escape from a gadget to return here; Tab moves between controls."
 		)
 		this.viewport.append(this.stage)
-		this.playGuide.className = "cs-play-guide"
-		this.playGuide.setAttribute("role", "status")
 		this.pageNavigation.className = "cs-page-navigation"
 		this.pageNavigation.setAttribute("aria-label", "Gadget pages")
 		this.pageLabel.setAttribute("role", "status")
@@ -359,13 +358,12 @@ export class ControlSurface {
 		this.layoutActions.className = "cs-layout-actions"
 		this.layoutActions.append(this.button("Auto arrange", () => this.autoArrange()))
 		this.element.append(
-			this.sourceKey,
-			this.playGuide,
 			this.layoutActions,
 			this.viewport,
 			this.pageNavigation,
 			this.status,
-			this.layoutStatus
+			this.layoutStatus,
+			this.sourceKey
 		)
 		window.addEventListener(EVENT_RESIZE, () => this.layout(), { signal: this.abort.signal })
 		this.resize = new ResizeObserver(() => this.layout())
@@ -443,7 +441,7 @@ export class ControlSurface {
 					const width = this.stage.clientWidth || 640
 					this.pointerRect = rect
 					this.stageWidth = width
-					const scale = rect.width / width || 1
+					const scale = rect.width / this.stageLayoutWidth || 1
 					const playing = playingLayout(width, Math.min(rect.width, innerWidth))
 					const toolbarScale =
 						this.toolbar.getBoundingClientRect().width / this.toolbar.offsetWidth || 1
@@ -603,6 +601,7 @@ export class ControlSurface {
 		this.recovering = false
 	}
 	private rebuild(): void {
+		this.cancelLayoutGesture?.()
 		this.releasePointers()
 		this.unsubscribers.forEach((fn) => fn())
 		this.unsubscribers = []
@@ -891,12 +890,19 @@ export class ControlSurface {
 					)
 				}
 				const resize = this.button("Resize", () => this.resizeDialog(entry))
+				resize.classList.add("cs-resize-handle")
+				resize.title = `Drag to resize ${binding.descriptor.label}; click for dimensions`
+				resize.innerHTML =
+					'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 20 20 8M13 20l7-7M18 20l2-2"/></svg>'
 				resize.setAttribute("aria-label", `Resize ${binding.descriptor.label}`)
 				resize.setAttribute(
 					"aria-description",
 					"Drag to resize. Left and right change width; up and down change height."
 				)
 				resize.addEventListener(EVENT_KEY_DOWN, (event) => {
+					if (!this.editing || !resize.isConnected) {
+						return
+					}
 					if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) {
 						return
 					}
@@ -919,9 +925,11 @@ export class ControlSurface {
 				this.layoutHandle(drag, entry, false)
 				this.layoutHandle(resize, entry, true)
 				tools.prepend(drag)
-				tools.append(resize)
 				entry.tools = toolPages(tools, binding.descriptor.label)
-				element.append(tools)
+				const size = document.createElement("output")
+				size.className = "cs-widget-size"
+				size.setAttribute("aria-hidden", "true")
+				element.append(tools, size, resize)
 			}
 			this.entries.push(entry)
 			this.stage.append(element)
@@ -940,6 +948,9 @@ export class ControlSurface {
 		void this.refresh()
 	}
 	private resizeDialog(entry: Entry): void {
+		if (!this.editing || this.disposed) {
+			return
+		}
 		const dialog = document.createElement("dialog"),
 			form = document.createElement("form"),
 			heading = document.createElement("h3")
@@ -1061,6 +1072,9 @@ export class ControlSurface {
 		}
 	}
 	private resizeWidget(entry: Entry, span: number, height: number): void {
+		if (!this.editing || this.disposed) {
+			return
+		}
 		entry.config.span = Math.max(
 			1,
 			Math.min(
@@ -1097,12 +1111,22 @@ export class ControlSurface {
 			skipClick = false
 		})
 		let start:
-			| { id: number; x: number; y: number; span: number; height: number; scale: number }
+			| {
+					id: number
+					x: number
+					y: number
+					span: number
+					height: number
+					scale: number
+					savedSpan?: number
+					savedHeight?: number
+			  }
 			| undefined
 		handle.addEventListener(EVENT_POINTER_DOWN, (event) => {
-			if (event.button !== 0 || start) {
+			if (!this.editing || !handle.isConnected || event.button !== 0 || start) {
 				return
 			}
+			this.cancelLayoutGesture?.()
 			event.preventDefault()
 			event.stopPropagation()
 			handle.focus()
@@ -1115,12 +1139,14 @@ export class ControlSurface {
 				y: event.clientY,
 				span: entry.config.span ?? (largeWidget(entry.visual.widget) ? 2 : 1),
 				height: this.preferredHeight(entry),
-				scale:
-					this.stage.getBoundingClientRect().width / (this.stage.clientWidth || 640) || 1
+				savedSpan: entry.config.span,
+				savedHeight: entry.config.height,
+				scale: this.layoutScale
 			}
+			this.cancelLayoutGesture = cancel
 		})
 		handle.addEventListener(EVENT_POINTER_MOVE, (event) => {
-			if (!start || event.pointerId !== start.id) {
+			if (!this.editing || !start || event.pointerId !== start.id) {
 				return
 			}
 			moved ||= Math.hypot(event.clientX - start.x, event.clientY - start.y) > 3
@@ -1159,12 +1185,17 @@ export class ControlSurface {
 				)
 			}
 		})
-		const finish = (event: PointerEvent) => {
+		const finish = (
+			event: Pick<PointerEvent, "pointerId" | "type" | "clientX" | "clientY">
+		) => {
 			if (!start || event.pointerId !== start.id) {
 				return
 			}
 			const initial = start
 			start = undefined
+			if (this.cancelLayoutGesture === cancel) {
+				this.cancelLayoutGesture = undefined
+			}
 			skipClick = moved
 			if (event.type === EVENT_POINTER_UP) {
 				if (!resizing && moved) {
@@ -1206,11 +1237,31 @@ export class ControlSurface {
 				}
 				this.save()
 			} else if (resizing) {
-				this.resizeWidget(entry, initial.span, initial.height)
+				if (initial.savedSpan === undefined) {
+					delete entry.config.span
+				} else {
+					entry.config.span = initial.savedSpan
+				}
+				if (initial.savedHeight === undefined) {
+					delete entry.config.height
+				} else {
+					entry.config.height = initial.savedHeight
+				}
+				this.layout()
 			}
 			this.entries.forEach((candidate) =>
 				candidate.element.classList.remove("cs-drop-target")
 			)
+		}
+		const cancel = () => {
+			if (!start) {
+				return
+			}
+			const pointerId = start.id
+			finish({ pointerId, type: EVENT_POINTER_CANCEL, clientX: 0, clientY: 0 })
+			if (handle.hasPointerCapture?.(pointerId)) {
+				handle.releasePointerCapture(pointerId)
+			}
 		}
 		for (const name of [EVENT_POINTER_UP, EVENT_POINTER_CANCEL, EVENT_LOST_POINTER_CAPTURE]) {
 			handle.addEventListener(name, (event) => finish(event as PointerEvent))
@@ -1246,10 +1297,10 @@ export class ControlSurface {
 			widget: e.visual.widget,
 			flexible: !this.editing && e.config.height === undefined,
 			span: e.config.span ?? (largeWidget(e.visual.widget) ? 2 : 1),
-			// Editing needs room for one action row and its navigation. Keep the
+			// Editing needs an action row, its navigation and a separate resize grip. Keep the
 			// saved playing size, so even a 44px gadget can always be resized again.
 			height: this.editing
-				? Math.max(this.preferredHeight(e), 4 + 99 / this.layoutScale)
+				? Math.max(this.preferredHeight(e), 4 + 154 / this.layoutScale)
 				: this.preferredHeight(e)
 		}))
 	}
@@ -1275,16 +1326,11 @@ export class ControlSurface {
 			screenWidth = Math.min(this.stage.getBoundingClientRect().width || width, innerWidth),
 			profile = playingLayout(width, screenWidth)
 		const mode = `${profile.hands}:${profile.columns}`
-		if (mode !== this.layoutMode) {
-			this.playGuide.textContent =
-				profile.hands === 2
-					? "Two-hand layout · left and right playing zones"
-					: "One-hand layout · compact playing zone"
-			this.layoutMode = mode
-		}
+		this.layoutMode = mode
 		this.element.dataset.hands = String(profile.hands)
 		const stageRect = this.stage.getBoundingClientRect()
-		const scale = stageRect.width / width || 1
+		this.stageLayoutWidth = parseFloat(getComputedStyle(this.stage).width) || width
+		const scale = stageRect.width / this.stageLayoutWidth || 1
 		const toolbarScale =
 			this.toolbar.getBoundingClientRect().width / this.toolbar.offsetWidth || 1
 		this.layoutScale = scale
@@ -1329,9 +1375,18 @@ export class ControlSurface {
 		this.pageNavigation.hidden = false
 		const footer = this.pageNavigation.getBoundingClientRect().height || 44
 		const padding = parseFloat(getComputedStyle(this.element).paddingBottom) || 0
+		const keyHeight = this.sourceKey.getBoundingClientRect().height
+		const statusHeight = this.status.getBoundingClientRect().height
 		this.pageHeight = Math.max(
 			1,
-			(bottom - Math.max(0, stageRect.top) - padding * scale) / scale
+			(bottom -
+				Math.max(0, stageRect.top) -
+				padding * scale -
+				keyHeight -
+				(keyHeight ? 8 * scale : 0) -
+				statusHeight -
+				(statusHeight ? 6 * scale : 0)) /
+				scale
 		)
 		const widgets = this.layoutItems()
 		let layout = layoutWidgets(widgets, width, screenWidth, this.pageHeight, scale)
@@ -1366,10 +1421,14 @@ export class ControlSurface {
 			)
 			entry.page = box.page
 			const r = entry.visual
+			const size = entry.element.querySelector<HTMLOutputElement>(".cs-widget-size")
+			if (size) {
+				size.value = `${Math.round(box.width)} × ${Math.round(box.height)} px`
+			}
 			r.compact = r.height * scale < 100
 			entry.element.classList.toggle("cs-compact", r.compact)
 			entry.element.title = r.compact ? entry.binding.descriptor.label : ""
-			entry.tools?.resize(r.width - 6, r.height - 4, scale)
+			entry.tools?.resize(r.width - 6, r.height - 4 - 55 / scale, scale)
 			const grid = entry.element.querySelector<HTMLElement>(".cs-note-grid")
 			if (grid) {
 				r.musicView = resizeMusicGrid(grid, r.width, r.height, scale)
@@ -2261,6 +2320,7 @@ export class ControlSurface {
 		if (this.disposed) {
 			return
 		}
+		this.cancelLayoutGesture?.()
 		for (const entry of this.entries) {
 			if (entry.visual.widget === "pad") {
 				entry.pending = undefined

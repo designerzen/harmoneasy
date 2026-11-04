@@ -29,20 +29,24 @@ export function createNodeMenu(actions: NodeMenuAction[]) {
 		panel.hidden = !open
 		trigger.setAttribute("aria-expanded", String(open))
 	}
-	for (const action of actions) {
-		const item = button(
-			action.label,
-			() => {
-				setOpen(false)
-				trigger.focus()
-				action.run()
-			},
-			action.className
-		)
-		item.title = action.label
-		item.setAttribute("aria-label", action.label)
-		panel.append(item)
+	const setActions = (actions: NodeMenuAction[]) => {
+		panel.replaceChildren()
+		for (const action of actions) {
+			const item = button(
+				action.label,
+				() => {
+					setOpen(false)
+					trigger.focus()
+					action.run()
+				},
+				action.className
+			)
+			item.title = action.label
+			item.setAttribute("aria-label", action.label)
+			panel.append(item)
+		}
 	}
+	setActions(actions)
 	const outside = (event: Event) => {
 		if (!host.contains(event.target as Node)) {
 			setOpen(false)
@@ -64,6 +68,7 @@ export function createNodeMenu(actions: NodeMenuAction[]) {
 	host.append(trigger, panel)
 	return {
 		element: host,
+		setActions,
 		destroy() {
 			document.removeEventListener(EVENT_POINTER_DOWN, outside)
 			host.remove()

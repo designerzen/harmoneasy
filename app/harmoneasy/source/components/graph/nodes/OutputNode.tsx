@@ -105,7 +105,8 @@ export function OutputNode(props: any) {
 					<Handle
 						type="source"
 						id={CONTROL_HANDLE}
-						position={isVertical ? Position.Bottom : Position.Right}
+						position={Position.Right}
+						style={{ top: "80%" }}
 						className="control-connector"
 						aria-label={`${output.name} controls`}
 					/>
