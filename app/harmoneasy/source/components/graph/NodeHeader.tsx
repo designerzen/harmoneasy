@@ -21,17 +21,25 @@ export function NodeHeader({
 	description?: string
 }) {
 	const menuHost = useRef<HTMLDivElement>(null)
+	const menuView = useRef<ReturnType<typeof createNodeMenu> | null>(null)
 	const controls = React.Children.toArray(children)
 	const controlClass = (child: React.ReactNode) =>
 		React.isValidElement<{ className?: string }>(child) ? child.props.className : undefined
 	useEffect(() => {
-		const menu = createNodeMenu([
+		const menu = createNodeMenu([])
+		menuView.current = menu
+		menuHost.current?.append(menu.element)
+		return () => {
+			menu.destroy()
+			menuView.current = null
+		}
+	}, [])
+	useEffect(() => {
+		menuView.current?.setActions([
 			...(onSwap ? [{ label: "Swap", className: "device-swap", run: onSwap }] : []),
 			...actions,
 			{ label: removeLabel, className: "device-remove", run: onRemove }
 		])
-		menuHost.current?.append(menu.element)
-		return () => menu.destroy()
 	}, [onSwap, onRemove, removeLabel, actions])
 	return (
 		<header className="device-node-header node-actions" data-enabled={enabled}>

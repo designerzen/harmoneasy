@@ -312,7 +312,7 @@ dialog {
 	}
 }
 
-::backdrop {
+dialog::backdrop {
 	background: var(--col-backdrop);
 	backdrop-filter: blur(20px);
 }

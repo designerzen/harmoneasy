@@ -51,6 +51,11 @@
 .he-dropdown-panel[hidden] {
 	display: none;
 }
+.he-dropdown-panel::backdrop {
+	background: transparent;
+	backdrop-filter: none;
+	pointer-events: none;
+}
 .he-dropdown-panel::before {
 	content: "";
 	position: absolute;

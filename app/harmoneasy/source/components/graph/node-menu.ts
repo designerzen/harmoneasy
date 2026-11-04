@@ -16,19 +16,37 @@ export function createNodeMenu(actions: NodeMenuAction[]) {
 	menu.element.classList.add("node-menu")
 	menu.trigger.classList.add("device-menu")
 	menu.panel.classList.add("node-menu-panel")
+	let currentActions: NodeMenuAction[] = []
 	const setActions = (actions: NodeMenuAction[]) => {
+		const unchanged =
+			actions.length === currentActions.length &&
+			actions.every((action, index) => {
+				const previous = currentActions[index]
+				return (
+					action.label === previous.label &&
+					action.icon === previous.icon &&
+					action.className === previous.className &&
+					action.disabled === previous.disabled
+				)
+			})
+		currentActions = actions
+		if (unchanged) {
+			return
+		}
 		menu.close(menu.panel.contains(document.activeElement))
 		menu.content.replaceChildren()
-		for (const action of actions) {
+		for (const [index, action] of actions.entries()) {
 			const item = button(
 				action.label,
 				() => {
 					menu.close(true)
-					action.run()
+					currentActions[index].run()
 				},
 				action.className
 			)
 			item.tabIndex = -1
+			item.title = action.label
+			item.setAttribute("aria-label", action.label)
 			item.disabled = action.disabled ?? false
 			item.setAttribute("role", "menuitem")
 			item.prepend(menuIcon(action.icon ?? action.label))
