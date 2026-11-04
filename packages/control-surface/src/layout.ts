@@ -11,6 +11,102 @@ export interface LayoutWidget {
 const GAP = 11
 type Interval = { start: number; end: number }
 type Rect = { x: number; y: number; width: number; height: number }
+type Minimums = ReadonlyMap<Rect, { width: number; height: number }>
+
+/** Dynamic programming finds feasible row/column cuts; spare area is shared by weight. */
+function partitionSpace(items: Rect[], bounds: Rect, gap: number, minimums: Minimums): boolean {
+	let best: Rect[] | undefined,
+		bestScore = Infinity
+	for (const axis of ["y", "x"] as const) {
+		const size = axis === "y" ? "height" : "width"
+		const cross = axis === "y" ? "x" : "y"
+		const crossSize = axis === "y" ? "width" : "height"
+		for (const order of [
+			items,
+			[...items].sort((a, b) => a[axis] - b[axis] || a[cross] - b[cross])
+		]) {
+			const cost = Array<number>(order.length + 1).fill(Infinity)
+			const previous = Array<number>(order.length + 1).fill(-1)
+			cost[0] = 0
+			for (let end = 1; end <= order.length; end++) {
+				let across = 0,
+					along = 0
+				for (let start = end - 1; start >= 0; start--) {
+					const minimum = minimums.get(order[start])!
+					across += minimum[crossSize] + (start === end - 1 ? 0 : gap)
+					if (across > bounds[crossSize] + 0.001) {
+						break
+					}
+					along = Math.max(along, minimum[size])
+					const next = cost[start] + along + (start ? gap : 0)
+					if (next < cost[end]) {
+						cost[end] = next
+						previous[end] = start
+					}
+				}
+			}
+			if (cost[order.length] > bounds[size] + 0.001) {
+				continue
+			}
+			const groups: Rect[][] = []
+			for (let end = order.length; end > 0; ) {
+				const start = previous[end]
+				groups.unshift(order.slice(start, end))
+				end = start
+			}
+			const allocate = (length: number, minimum: number[], weight: number[]) => {
+				const spare = Math.max(
+					0,
+					length - gap * (minimum.length - 1) - minimum.reduce((sum, n) => sum + n, 0)
+				)
+				const total = weight.reduce((sum, n) => sum + n, 0)
+				return minimum.map((n, i) => n + (spare * weight[i]) / total)
+			}
+			const extents = allocate(
+				bounds[size],
+				groups.map((group) => Math.max(...group.map((item) => minimums.get(item)![size]))),
+				groups.map((group) => Math.max(...group.map((item) => item[size])))
+			)
+			const result = new Map<Rect, Rect>()
+			let position = bounds[axis]
+			groups.forEach((group, i) => {
+				const sizes = allocate(
+					bounds[crossSize],
+					group.map((item) => minimums.get(item)![crossSize]),
+					group.map((item) => item[crossSize])
+				)
+				let across = bounds[cross]
+				group.forEach((item, j) => {
+					result.set(item, {
+						...bounds,
+						[axis]: position,
+						[size]: extents[i],
+						[cross]: across,
+						[crossSize]: sizes[j]
+					})
+					across += sizes[j] + gap
+				})
+				position += extents[i] + gap
+			})
+			const rectangles = items.map((item) => result.get(item)!)
+			const score = rectangles.reduce(
+				(sum, rect, i) =>
+					sum +
+					Math.log(rect.width / rect.height / (items[i].width / items[i].height)) ** 2,
+				0
+			)
+			if (score < bestScore) {
+				bestScore = score
+				best = rectangles
+			}
+		}
+	}
+	if (!best) {
+		return false
+	}
+	items.forEach((item, i) => Object.assign(item, best![i]))
+	return true
+}
 
 /** One target needs 44 physical pixels; compound controls also reserve their rows and gaps. */
 export function minimumWidgetHeight(widget = "", scale = 1): number {
@@ -27,10 +123,20 @@ export function minimumWidgetHeight(widget = "", scale = 1): number {
 }
 
 /** Stretch independent rows/columns while keeping gutters fixed, rather than scaling the gaps. */
-function fillSpace(items: Rect[], bounds: Rect, gap: number, handGutter: number): void {
+function fillSpace(
+	items: Rect[],
+	bounds: Rect,
+	gap: number,
+	handGutter: number,
+	minimums: Minimums
+): boolean {
 	if (items.length === 1) {
+		const minimum = minimums.get(items[0])!
+		if (bounds.width + 0.000001 < minimum.width || bounds.height + 0.000001 < minimum.height) {
+			return false
+		}
 		Object.assign(items[0], bounds)
-		return
+		return true
 	}
 	for (const axis of ["y", "x"] as const) {
 		const size = axis === "x" ? "width" : "height"
@@ -54,14 +160,20 @@ function fillSpace(items: Rect[], bounds: Rect, gap: number, handGutter: number)
 			let position = start
 			for (const group of parts) {
 				const extent = (room * (group.end - group.start)) / weight
-				fillSpace(
-					group.items,
-					{ ...bounds, [axis]: position, [size]: extent },
-					gap,
-					axis === "y" ? handGutter : 0
-				)
+				if (
+					!fillSpace(
+						group.items,
+						{ ...bounds, [axis]: position, [size]: extent },
+						gap,
+						axis === "y" ? handGutter : 0,
+						minimums
+					)
+				) {
+					return false
+				}
 				position += extent + gap
 			}
+			return true
 		}
 		if (axis === "x" && handGutter > 0) {
 			// Keep two reachable hand zones when both groups can fit without shrinking.
@@ -85,51 +197,20 @@ function fillSpace(items: Rect[], bounds: Rect, gap: number, handGutter: number)
 				}
 			}
 			if (split) {
-				distribute(groups.slice(0, split), bounds.x, half)
-				distribute(groups.slice(split), bounds.x + half + handGutter, half)
-				return
+				return (
+					(distribute(groups.slice(0, split), bounds.x, half) &&
+						distribute(groups.slice(split), bounds.x + half + handGutter, half)) ||
+					partitionSpace(items, bounds, gap, minimums)
+				)
 			}
 		}
-		distribute(groups, bounds[axis], bounds[size])
-		return
+		return (
+			distribute(groups, bounds[axis], bounds[size]) ||
+			partitionSpace(items, bounds, gap, minimums)
+		)
 	}
-	// Interlocked masonry cannot be split into rows or columns. Grow each face
-	// into its free rectangle; neighbours continue to reserve the target gap.
-	for (const axis of ["x", "y"] as const) {
-		const size = axis === "x" ? "width" : "height"
-		const start = Math.min(...items.map((item) => item[axis]))
-		const end = Math.max(...items.map((item) => item[axis] + item[size]))
-		const ratio = bounds[size] / (end - start)
-		for (const item of items) {
-			item[axis] = bounds[axis] + (item[axis] - start) * ratio
-			item[size] *= ratio
-		}
-	}
-	for (const axis of ["x", "y"] as const) {
-		const size = axis === "x" ? "width" : "height"
-		const cross = axis === "x" ? "y" : "x"
-		const crossSize = axis === "x" ? "height" : "width"
-		for (const item of items) {
-			let start = bounds[axis],
-				end = bounds[axis] + bounds[size]
-			for (const other of items) {
-				if (
-					other === item ||
-					other[cross] >= item[cross] + item[crossSize] + gap - 0.001 ||
-					item[cross] >= other[cross] + other[crossSize] + gap - 0.001
-				) {
-					continue
-				}
-				if (other[axis] + other[size] <= item[axis]) {
-					start = Math.max(start, other[axis] + other[size] + gap)
-				} else if (other[axis] >= item[axis] + item[size]) {
-					end = Math.min(end, other[axis] - gap)
-				}
-			}
-			item[axis] = start
-			item[size] = end - start
-		}
-	}
+	// An interlocked floorplan needs new cuts, not growth around its central hole.
+	return partitionSpace(items, bounds, gap, minimums)
 }
 
 export function playingLayout(availableWidth: number, screenWidth = availableWidth) {
@@ -278,6 +359,7 @@ export function layoutWidgets(
 			height
 		}
 	})
+	let pageCount = pages.length
 	if (Number.isFinite(limit) && items.length) {
 		if (pages.length > 1 && widgets.some((widget) => widget.flexible)) {
 			const compact = layoutWidgets(
@@ -297,18 +379,38 @@ export function layoutWidgets(
 				return compact
 			}
 		}
+		const minimums = new Map(
+			items.map((item, i) => [
+				item,
+				{
+					width: item.width,
+					height: Math.min(limit, minimumWidgetHeight(widgets[i].widget, scale))
+				}
+			])
+		)
+		const bounds = { x: 0, y: 0, width, height: limit }
 		for (let page = 0; page < pages.length; page++) {
-			fillSpace(
-				items.filter((item) => item.page === page),
-				{ x: 0, y: 0, width, height: limit },
-				gap,
-				profile.hands === 2 ? Math.max(gap, profile.gutter) : 0
-			)
+			const group = items.filter((item) => item.page === page)
+			if (
+				!fillSpace(
+					group,
+					bounds,
+					gap,
+					profile.hands === 2 ? Math.max(gap, profile.gutter) : 0,
+					minimums
+				)
+			) {
+				// If the target minima cannot form a slicing floorplan on this page,
+				// paginate rather than leave holes or shrink an interactive target.
+				group.forEach((item, i) =>
+					Object.assign(item, bounds, { page: i ? pageCount++ : page })
+				)
+			}
 		}
 	}
 	return {
 		items,
-		pages: pages.length,
+		pages: pageCount,
 		height:
 			Number.isFinite(limit) && items.length
 				? limit

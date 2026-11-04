@@ -64,6 +64,69 @@ try {
 	)
 	assert.equal(await page.locator(".cs-widget").count(), 18)
 	await page.evaluate(async () => {
+		const { ControlSurface } = window.surfaceSmoke
+		const host = document.createElement("div")
+		host.style.cssText =
+			"position:fixed;left:0;top:0;width:924px;height:900px;overflow:hidden;z-index:100"
+		document.body.append(host)
+		const bindings = Array.from({ length: 4 }, (_, i) => ({
+			key: `interlocked-${i}`,
+			sourceLabel: "Test",
+			descriptor: {
+				id: `interlocked-${i}`,
+				label: `Interlocked ${i}`,
+				widget: "dial",
+				min: 0,
+				max: 1
+			},
+			read: () => 0.5,
+			write: () => {}
+		}))
+		const surface = new ControlSurface({
+			state: {
+				id: "interlocked",
+				name: "Interlocked",
+				connections: [],
+				widgets: bindings.map(({ key }, i) => ({
+					key,
+					span: i === 0 || i === 3 ? 3 : 1,
+					height: i === 0 || i === 3 ? 129 : 508
+				}))
+			},
+			bindings,
+			change: () => {}
+		})
+		surface.element.style.width = "100%"
+		host.append(surface.element)
+		try {
+			const deadline = performance.now() + 15000
+			while (!surface.element.classList.contains("cs-gpu-ready")) {
+				if (performance.now() > deadline) {
+					throw new Error("Interlocked GPU surface did not initialize")
+				}
+				await new Promise(requestAnimationFrame)
+			}
+			host.style.height = `${surface.stage.getBoundingClientRect().top + 655 + 12}px`
+			surface.layout()
+			const boxes = surface.entries.map((entry) => entry.element.getBoundingClientRect())
+			const stage = surface.stage.getBoundingClientRect()
+			if (
+				surface.pageCount !== 1 ||
+				Math.abs(boxes[0].bottom - boxes[1].bottom) > 0.05 ||
+				Math.abs(boxes[2].top - boxes[3].top) > 0.05 ||
+				Math.abs(boxes[1].right - stage.right) > 0.05 ||
+				Math.abs(boxes[3].bottom - stage.bottom) > 0.05
+			) {
+				throw new Error(
+					`Interlocked GPU gadgets leave usable space empty: ${JSON.stringify({ pages: surface.pageCount, boxes: boxes.map((box) => box.toJSON()), stage: stage.toJSON() })}`
+				)
+			}
+		} finally {
+			surface.destroy()
+			host.remove()
+		}
+	})
+	await page.evaluate(async () => {
 		const { surface, ControlSurface } = window.surfaceSmoke
 		const bindings = surface.options.bindings.filter((binding) =>
 			[
