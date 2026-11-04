@@ -157,3 +157,11 @@ export interface SurfaceState {
 	widgets: SurfaceWidget[]
 	theme?: "neon" | "amber" | "ice"
 }
+/** Actions supplied by the application to the surface's single settings popup. */
+export interface SurfaceMenuAction {
+	label: string
+	icon?: string
+	className?: string
+	editOnly?: boolean
+	action(): void
+}

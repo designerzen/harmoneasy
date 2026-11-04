@@ -7,6 +7,7 @@ import {
 	createRelativeKeysControl,
 	createStrumControl
 } from "../src/index"
+import { createDropdown, menuIcon } from "../src/dropdown"
 import "../src/style.css"
 import type { ControlBinding, ControlDescriptor, ControlValue } from "../src/types"
 import { addKeyboardDownEvents } from "../../audiobus/hardware/keyboard/keyboard"
@@ -113,6 +114,8 @@ document.body.style.cssText =
 document.body.append(surface.element)
 Object.assign(window, {
 	surfaceSmoke: {
+		createDropdown,
+		menuIcon,
 		surface,
 		values,
 		ControlSurface,

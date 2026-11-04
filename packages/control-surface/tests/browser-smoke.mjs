@@ -62,6 +62,85 @@ try {
 		"",
 		"GPU initialization must compile shaders and create a working render pipeline"
 	)
+	// Shared dropdown semantics, pointer placement, zoom-safe targets and native activation.
+	await page.setViewportSize({ width: 420, height: 680 })
+	await page.evaluate(() => {
+		const { createDropdown, menuIcon } = window.surfaceSmoke
+		const menu = createDropdown("Test node actions")
+		menu.element.id = "menu-smoke"
+		menu.element.style.cssText = "position:fixed;right:12px;bottom:12px;z-index:10000"
+		for (const label of ["Swap", "Clone", "Rename", "Recolor", "Delete transformer"]) {
+			const item = document.createElement("button")
+			item.type = "button"
+			item.textContent = label
+			item.prepend(menuIcon(label))
+			item.addEventListener("click", () => {
+				window.menuAction = label
+				menu.close(true)
+			})
+			menu.content.append(item)
+		}
+		document.body.append(menu.element)
+		window.menuSmoke = menu
+	})
+	const menuTrigger = page.getByRole("button", { name: "Test node actions", exact: true })
+	await menuTrigger.focus()
+	await page.keyboard.press("ArrowUp")
+	assert.equal(
+		await page
+			.getByRole("menuitem", { name: "Delete transformer" })
+			.evaluate((item) => item === document.activeElement),
+		true
+	)
+	const menuGeometry = await page.locator("#menu-smoke .he-dropdown-panel").evaluate((panel) => {
+		const rect = panel.getBoundingClientRect(),
+			trigger = panel.previousElementSibling.getBoundingClientRect()
+		const items = [...panel.querySelectorAll("button")].map((item) =>
+			item.getBoundingClientRect()
+		)
+		return {
+			inBounds:
+				rect.left >= 7 &&
+				rect.right <= innerWidth - 7 &&
+				rect.top >= 7 &&
+				rect.bottom <= innerHeight - 7,
+			side: panel.dataset.side,
+			pointer: getComputedStyle(panel, "::before").content,
+			pointerAligned:
+				Math.abs(
+					rect.left +
+						parseFloat(panel.style.getPropertyValue("--dropdown-pointer")) -
+						(trigger.left + trigger.width / 2)
+				) < 2,
+			targets: items.every((item) => item.width >= 44 && item.height >= 44),
+			gaps: items.slice(1).every((item, i) => item.top - items[i].bottom >= 10.9)
+		}
+	})
+	assert.deepEqual(menuGeometry, {
+		inBounds: true,
+		side: "above",
+		pointer: '""',
+		pointerAligned: true,
+		targets: true,
+		gaps: true
+	})
+	await page.keyboard.press("Home")
+	await page.keyboard.press("r")
+	assert.equal(
+		await page
+			.getByRole("menuitem", { name: "Rename" })
+			.evaluate((item) => item === document.activeElement),
+		true
+	)
+	await page.keyboard.press("Enter")
+	assert.equal(await page.evaluate(() => window.menuAction), "Rename")
+	assert.equal(await menuTrigger.getAttribute("aria-expanded"), "false")
+	assert.equal(await menuTrigger.evaluate((item) => item === document.activeElement), true)
+	await menuTrigger.click()
+	await page.keyboard.press("Escape")
+	assert.equal(await menuTrigger.getAttribute("aria-expanded"), "false")
+	await page.evaluate(() => window.menuSmoke.destroy())
+	await page.setViewportSize({ width: 960, height: 10000 })
 	assert.equal(await page.locator(".cs-widget").count(), 18)
 	assert.equal(await page.locator(".cs-play-guide").count(), 0)
 	assert.equal(
@@ -1078,7 +1157,7 @@ try {
 				await new Promise(requestAnimationFrame)
 				await new Promise(requestAnimationFrame)
 				for (const button of toolbarHost.querySelectorAll(
-					".cs-toolbar > button, .cs-settings > button"
+					".cs-toolbar > button:not([hidden]), .cs-settings:not([hidden]) > button"
 				)) {
 					const rect = button.getBoundingClientRect()
 					if (rect.height < 43.9 || rect.height > 65 || rect.width > 240) {
@@ -1148,8 +1227,13 @@ try {
 	})
 	const visualiserHost = page.locator("#visualiser-smoke")
 	const openVisualisers = async () => {
-		await visualiserHost.getByRole("button", { name: "Surface settings", exact: true }).click()
-		await visualiserHost.getByRole("button", { name: "Add visualiser…", exact: true }).click()
+		const edit = visualiserHost.getByRole("button", { name: "Edit layout", exact: true })
+		if (await edit.count()) await edit.click()
+		await visualiserHost.getByRole("button", { name: "+ Add", exact: true }).click()
+		await page
+			.getByRole("dialog", { name: "Add controls", exact: true })
+			.getByRole("button", { name: "Add visualiser…", exact: true })
+			.click()
 	}
 	for (const kind of ["notes", "waveform", "spectrum", "level"]) {
 		await openVisualisers()

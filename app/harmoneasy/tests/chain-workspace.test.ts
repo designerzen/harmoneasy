@@ -106,11 +106,13 @@ it.each(["menu", "tab"])("confirms %s deletion and focuses the remaining chain",
 	vi.stubGlobal("confirm", confirm)
 	const remove = () => {
 		if (control === "menu") {
-			const action = document.querySelector<HTMLSelectElement>(
-				"#iochain-one .chain-actions select"
+			const trigger = document.querySelector<HTMLButtonElement>(
+				'#iochain-one .chain-actions [aria-haspopup="menu"]'
 			)!
-			action.value = "delete"
-			action.dispatchEvent(new Event(EVENT_CHANGE))
+			trigger.click()
+			document
+				.querySelector<HTMLButtonElement>("#iochain-one .chain-actions .device-remove")!
+				.click()
 		} else {
 			document.querySelector<HTMLButtonElement>(".chain-tab-remove")!.click()
 		}
@@ -187,14 +189,15 @@ it("saves from the chain menu and offers overwrite or rename for duplicate names
 	const chain = manager.entries[0][1]
 	chain.exportConfiguration = () => ({ options: { ...chain.options }, transformers: "[]" })
 	const panel = document.getElementById("iochain-one")!
-	const action = panel.querySelector<HTMLSelectElement>(".chain-actions select")!
-	expect(
-		[...action.options].filter((item) => item.textContent === "Save as a Preset")
-	).toHaveLength(1)
+	const trigger = panel.querySelector<HTMLButtonElement>('.chain-actions [aria-haspopup="menu"]')!
+	const action = [
+		...panel.querySelectorAll<HTMLButtonElement>('.chain-actions [role="menuitem"]')
+	].find((item) => item.textContent === "Save as a Preset")!
+	expect(action.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true")
 	expect(panel.querySelector(".save-preset")).toBeNull()
 	const open = () => {
-		action.value = "save-preset"
-		action.dispatchEvent(new Event(EVENT_CHANGE))
+		trigger.click()
+		action.click()
 		return document.querySelector<HTMLDialogElement>(".save-preset-dialog[open]")!
 	}
 	const submit = (dialog: HTMLDialogElement) =>

@@ -1328,11 +1328,26 @@ describe("surface interaction and bindings", () => {
 			bindings: [],
 			change,
 			toolbarHost,
-			addControls: [{ label: "Add Synth controls…", action: addControls }]
+			addControls: [{ label: "Add Synth controls…", action: addControls }],
+			menuActions: () => [
+				{ label: "Open another surface", action: vi.fn() },
+				{ label: "Remove control surface", editOnly: true, action: vi.fn() }
+			]
 		})
 		views.push(surface)
 		const name = toolbarHost.querySelector<HTMLInputElement>(".cs-title")!
 		expect(name.hidden).toBe(false)
+		expect(name.readOnly).toBe(true)
+		const edit = toolbarHost.querySelector<HTMLButtonElement>("button")!
+		const add = [...toolbarHost.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent === "+ Add"
+		)!
+		expect(add.hidden).toBe(true)
+		expect(edit.textContent).toBe("Edit layout")
+		edit.click()
+		expect(surface.isEditing).toBe(true)
+		expect(name.readOnly).toBe(false)
+		expect(add.hidden).toBe(false)
 		name.value = "  My performance  "
 		name.dispatchEvent(new Event("change"))
 		expect(saved.name).toBe("My performance")
@@ -1341,11 +1356,13 @@ describe("surface interaction and bindings", () => {
 		name.dispatchEvent(new Event("change"))
 		expect(name.value).toBe("My performance")
 		const buttons = [...toolbarHost.querySelectorAll<HTMLButtonElement>("button")]
-		expect(buttons[0].textContent).toBe("Edit layout")
+		expect(buttons[0].textContent).toBe("Perform")
 		expect(toolbarHost.querySelector(".cs-toolbar")!.lastElementChild!.textContent).toBe(
 			"Enter VR"
 		)
-		expect(toolbarHost.querySelector(".cs-toolbar")!.children[1].className).toBe("cs-settings")
+		expect(
+			toolbarHost.querySelector(".cs-toolbar")!.children[1].classList.contains("cs-settings")
+		).toBe(true)
 		const settings = toolbarHost.querySelector<HTMLButtonElement>(
 			'[aria-label="Surface settings"]'
 		)!
@@ -1353,12 +1370,26 @@ describe("surface interaction and bindings", () => {
 		expect(menu.hidden).toBe(true)
 		settings.click()
 		expect(menu.hidden).toBe(false)
-		Array.from(menu.querySelectorAll<HTMLButtonElement>("button"))
+		expect(menu.querySelector('[aria-label="Surface theme"]')).not.toBeNull()
+		expect(menu.textContent).not.toContain("Add Synth")
+		expect(menu.textContent).toContain("Remove control surface")
+		settings.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: "Escape", bubbles: true }))
+		add.click()
+		const chooser = document.querySelector<HTMLDialogElement>(".cs-add-dialog")!
+		expect(chooser.open).toBe(true)
+		expect(chooser.getAttribute("aria-labelledby")).toBe(chooser.querySelector("h2")!.id)
+		Array.from(chooser.querySelectorAll<HTMLButtonElement>("button"))
 			.find((button) => button.textContent === "Add Synth controls…")!
 			.click()
 		expect(addControls).toHaveBeenCalledOnce()
 		expect(menu.hidden).toBe(true)
+		edit.click()
+		expect(add.hidden).toBe(true)
+		expect(name.readOnly).toBe(true)
 		settings.click()
+		expect(menu.querySelector("label")!.hidden).toBe(true)
+		expect(menu.textContent).not.toContain("Remove control surface")
+		expect(menu.textContent).toContain("Open another surface")
 		settings.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: "Escape", bubbles: true }))
 		expect(menu.hidden).toBe(true)
 		surface.destroy()

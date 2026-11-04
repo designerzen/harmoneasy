@@ -1,79 +1,42 @@
-import {
-	EVENT_CLICK,
-	EVENT_CLOSE,
-	EVENT_KEY_DOWN,
-	EVENT_POINTER_DOWN,
-	EVENT_SUBMIT
-} from "audiobus/event-constants"
+import { createDropdown, menuIcon } from "control-surface/dropdown"
+import "control-surface/dropdown.css"
+import { EVENT_CLICK, EVENT_CLOSE, EVENT_SUBMIT } from "audiobus/event-constants"
 import { button, element } from "./dom"
 
 export interface NodeMenuAction {
 	label: string
 	className?: string
+	icon?: string
+	disabled?: boolean
 	run(): void
 }
 
 export function createNodeMenu(actions: NodeMenuAction[]) {
-	const host = element("div", "node-menu"),
-		panel = element("div", "node-menu-panel"),
-		trigger = button("", () => setOpen(panel.hidden), "device-menu")
-	trigger.innerHTML =
-		'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>'
-	trigger.title = "Node actions"
-	trigger.setAttribute("aria-label", "Node actions")
-	trigger.setAttribute("aria-expanded", "false")
-	panel.id = `node-menu-${crypto.randomUUID()}`
-	trigger.setAttribute("aria-controls", panel.id)
-	panel.hidden = true
-	const setOpen = (open: boolean) => {
-		panel.hidden = !open
-		trigger.setAttribute("aria-expanded", String(open))
-	}
+	const menu = createDropdown("Node actions")
+	menu.element.classList.add("node-menu")
+	menu.trigger.classList.add("device-menu")
+	menu.panel.classList.add("node-menu-panel")
 	const setActions = (actions: NodeMenuAction[]) => {
-		panel.replaceChildren()
+		menu.close(menu.panel.contains(document.activeElement))
+		menu.content.replaceChildren()
 		for (const action of actions) {
 			const item = button(
 				action.label,
 				() => {
-					setOpen(false)
-					trigger.focus()
+					menu.close(true)
 					action.run()
 				},
 				action.className
 			)
-			item.title = action.label
-			item.setAttribute("aria-label", action.label)
-			panel.append(item)
+			item.tabIndex = -1
+			item.disabled = action.disabled ?? false
+			item.setAttribute("role", "menuitem")
+			item.prepend(menuIcon(action.icon ?? action.label))
+			menu.content.append(item)
 		}
 	}
 	setActions(actions)
-	const outside = (event: Event) => {
-		if (!host.contains(event.target as Node)) {
-			setOpen(false)
-		}
-	}
-	const keydown = (event: KeyboardEvent) => {
-		if (event.key === "Escape" && !panel.hidden) {
-			event.stopPropagation()
-			setOpen(false)
-			trigger.focus()
-		} else if (event.key === "ArrowDown" && event.target === trigger) {
-			event.preventDefault()
-			setOpen(true)
-			panel.querySelector("button")?.focus()
-		}
-	}
-	host.addEventListener(EVENT_KEY_DOWN, keydown)
-	document.addEventListener(EVENT_POINTER_DOWN, outside)
-	host.append(trigger, panel)
-	return {
-		element: host,
-		setActions,
-		destroy() {
-			document.removeEventListener(EVENT_POINTER_DOWN, outside)
-			host.remove()
-		}
-	}
+	return { element: menu.element, setActions, destroy: menu.destroy }
 }
 
 export function editNodeValue(

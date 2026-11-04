@@ -1,3 +1,4 @@
+import { createDropdown, menuIcon } from "./dropdown"
 import { VisualiserFrame, historySource, validVisualiser, VISUALISER_KINDS } from "./visualiser"
 import { choiceWidget, choiceGrid } from "./choices"
 import { createDomControl } from "./dom"
@@ -52,7 +53,8 @@ import type {
 	SurfaceWidget,
 	SurfaceVisualEffects,
 	VisualiserSource,
-	SurfaceVisualiser
+	SurfaceVisualiser,
+	SurfaceMenuAction
 } from "./types"
 
 const largeWidget = (widget: string) =>
@@ -95,6 +97,8 @@ export interface SurfaceOptions {
 	visualEffects?: SurfaceVisualEffects
 	state: SurfaceState
 	bindings: ControlBinding[]
+	editing?: boolean
+	menuActions?(): SurfaceMenuAction[]
 	toolbarHost?: HTMLElement
 	addControls?: { label: string; action(): void }[]
 	change(state: SurfaceState): void
@@ -152,9 +156,14 @@ export class ControlSurface {
 	private toolbar = document.createElement("div")
 	private sourceKey = document.createElement("ul")
 	private layoutStatus = document.createElement("p")
+	private settings?: ReturnType<typeof createDropdown>
+	get isEditing(): boolean {
+		return this.editing
+	}
 	private layoutActions = document.createElement("div")
 
 	constructor(private options: SurfaceOptions) {
+		this.editing = options.editing ?? false
 		this.visualiserSources = [
 			...(options.visualiserSources ?? []),
 			...options.bindings
@@ -231,13 +240,25 @@ export class ControlSurface {
 			},
 			{ signal: this.abort.signal }
 		)
-		const edit = this.button("Edit layout", () => {
+		const hasPerformanceSettings = () =>
+			Boolean(options.beatPosition) ||
+			(options.menuActions?.() ?? []).some((action) => !action.editOnly)
+		const edit = this.button(this.editing ? "Perform" : "Edit layout", () => {
 			this.editing = !this.editing
 			edit.textContent = this.editing ? "Perform" : "Edit layout"
 			edit.setAttribute("aria-pressed", String(this.editing))
+			add.hidden = !this.editing
+			name.readOnly = !this.editing
+			this.settings?.close()
+			if (this.settings) {
+				this.settings.element.hidden = !this.editing && !hasPerformanceSettings()
+			}
 			this.rebuild()
 		})
-		edit.setAttribute("aria-pressed", "false")
+		edit.setAttribute("aria-pressed", String(this.editing))
+		name.readOnly = !this.editing
+		const add = this.button("+ Add", () => this.addControls(add))
+		add.hidden = !this.editing
 		const theme = document.createElement("select")
 		theme.setAttribute("aria-label", "Surface theme")
 		for (const value of ["neon", "amber", "ice"] as const) {
@@ -257,54 +278,34 @@ export class ControlSurface {
 			{ signal: this.abort.signal }
 		)
 		this.vrButton = this.button("Enter VR", () => void this.enterXR())
-		const settings = document.createElement("div")
-		settings.className = "cs-settings"
-		const menu = document.createElement("div")
-		menu.className = "cs-settings-menu"
-		menu.hidden = true
-		menu.id = `cs-settings-${crypto.randomUUID()}`
-		const toggle = this.button("", () => {
-			menu.hidden = !menu.hidden
-			toggle.setAttribute("aria-expanded", String(!menu.hidden))
+		const settings = createDropdown("Surface settings", false, () => {
+			themeLabel.hidden = !this.editing
+			for (const item of dynamicActions) {
+				item.remove()
+			}
+			dynamicActions = (options.menuActions?.() ?? [])
+				.filter((action) => !action.editOnly || this.editing)
+				.map((action) => {
+					const item = this.button(action.label, () => {
+						settings.close(true)
+						action.action()
+					})
+					if (action.className) {
+						item.className = action.className
+					}
+					item.prepend(menuIcon(action.icon ?? action.label))
+					menu.append(item)
+					return item
+				})
 		})
-		toggle.title = "Surface settings"
-		toggle.setAttribute("aria-label", "Surface settings")
-		toggle.setAttribute("aria-expanded", "false")
-		toggle.setAttribute("aria-controls", menu.id)
-		toggle.innerHTML =
-			'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-1 3-3 1-2 3 2 2-1 3 3 2 3-1 2 2 3-1 1-3 3-1 1-3-2-2 1-3-3-2-3 1-2-1Z"/><circle cx="12" cy="10.5" r="3"/></svg><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>'
-		const closeMenu = () => {
-			menu.hidden = true
-			toggle.setAttribute("aria-expanded", "false")
-		}
-		menu.append(
-			this.button("Add visualiser…", () => {
-				closeMenu()
-				this.addVisualiser()
-			})
-		)
-		for (const item of options.addControls ?? []) {
-			const control = this.button(item.label, () => {
-				closeMenu()
-				item.action()
-			})
-			const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg")
-			icon.setAttribute("viewBox", "0 0 24 24")
-			icon.setAttribute("aria-hidden", "true")
-			icon.innerHTML = '<path d="M2 12h3l3-8 4 16 4-16 3 8h3"/>'
-			control.prepend(icon)
-			menu.append(control)
-		}
-		const xy = this.button("Add XY pad", () => {
-			closeMenu()
-			this.addXY()
-		})
-		const xyIcon = toggle.firstElementChild!.cloneNode(true) as SVGElement
-		xyIcon.innerHTML = '<path d="M3 4h6v16H3zM15 4h6v16h-6zM9 12h6"/>'
-		xy.prepend(xyIcon)
-		menu.append(xy)
+		this.settings = settings
+		settings.element.hidden = !this.editing && !hasPerformanceSettings()
+		settings.element.classList.add("cs-settings")
+		settings.panel.classList.add("cs-settings-menu")
+		const menu = settings.content
+		let dynamicActions: HTMLElement[] = []
 		const themeLabel = document.createElement("label")
-		themeLabel.append(toggle.firstElementChild!.cloneNode(true), "Theme", theme)
+		themeLabel.append(menuIcon("theme"), "Theme", theme)
 		menu.append(themeLabel)
 		if (options.beatPosition) {
 			const label = document.createElement("label"),
@@ -323,31 +324,9 @@ export class ControlSurface {
 			label.append(enabled, "Beat cues")
 			menu.append(label)
 		}
-		settings.append(toggle, menu)
-		settings.addEventListener(
-			EVENT_KEY_DOWN,
-			(event) => {
-				if (event.key === "Escape" && !event.isComposing && !menu.hidden) {
-					event.preventDefault()
-					event.stopPropagation()
-					closeMenu()
-					toggle.focus()
-				}
-			},
-			{ signal: this.abort.signal }
-		)
-		document.addEventListener(
-			EVENT_POINTER_DOWN,
-			(event) => {
-				if (!settings.contains(event.target as Node)) {
-					closeMenu()
-				}
-			},
-			{ signal: this.abort.signal }
-		)
 		this.visualiserCycle = this.button("Visualiser: Off", () => this.cycleVisualiser())
 		this.visualiserCycle.setAttribute("aria-label", "Switch visualiser")
-		toolbar.append(edit, settings, name, this.visualiserCycle, this.vrButton)
+		toolbar.append(edit, settings.element, add, name, this.visualiserCycle, this.vrButton)
 		this.status.className = "cs-status"
 		this.status.setAttribute("role", "status")
 		;(options.toolbarHost ?? this.element).append(toolbar)
@@ -2129,6 +2108,57 @@ export class ControlSurface {
 			this.visualiserLastSample = now
 		}
 	}
+	private addControls(trigger: HTMLButtonElement): void {
+		const dialog = document.createElement("dialog"),
+			title = document.createElement("h2"),
+			choices = document.createElement("div")
+		dialog.className = "cs-add-dialog"
+		title.id = `add-controls-${crypto.randomUUID()}`
+		title.textContent = "Add controls"
+		dialog.setAttribute("aria-labelledby", title.id)
+		choices.className = "cs-add-choices"
+		for (const item of [
+			...(this.options.addControls ?? []).map((item) => ({ ...item, icon: "control" })),
+			{ label: "Add XY pad", icon: "xy", action: () => this.addXY() },
+			{ label: "Add visualiser…", icon: "visualiser", action: () => this.addVisualiser() }
+		]) {
+			const choice = this.button(item.label, () => {
+				dialog.close()
+				item.action()
+			})
+			choice.prepend(menuIcon(item.icon))
+			choices.append(choice)
+		}
+		dialog.append(
+			title,
+			choices,
+			this.button("Cancel", () => dialog.close())
+		)
+		dialog.addEventListener(EVENT_KEY_DOWN, (event) => event.stopPropagation())
+		dialog.addEventListener(
+			EVENT_CLOSE,
+			() => {
+				dialog.remove()
+				// Do not steal focus from a follow-on chooser opened by an action.
+				if (!document.querySelector("dialog[open]") && trigger.isConnected) {
+					trigger.focus()
+				}
+			},
+			{ once: true }
+		)
+		this.abort.signal.addEventListener(
+			EVENT_ABORT,
+			() => {
+				dialog.close()
+				dialog.remove()
+			},
+			{ once: true }
+		)
+		document.body.append(dialog)
+		dialog.showModal()
+		choices.querySelector("button")?.focus()
+	}
+
 	private addVisualiser(): void {
 		const dialog = document.createElement("dialog"),
 			form = document.createElement("form"),
@@ -2337,6 +2367,7 @@ export class ControlSurface {
 		cancelAnimationFrame(this.frame)
 		void this.xr?.end().catch(() => {})
 		this.renderer?.destroy()
+		this.settings?.destroy()
 		this.toolbar.remove()
 		this.element.remove()
 	}

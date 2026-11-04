@@ -195,6 +195,10 @@
 		height: 100%;
 		padding: 0;
 		margin: 0;
+
+		.device-minimise {
+			display: none;
+		}
 	}
 }
 
@@ -3289,7 +3293,7 @@ dialog.add-output-dialog {
 			margin-left: auto;
 		}
 
-		button {
+		button:not([role="menuitem"]) {
 			box-sizing: border-box;
 			flex: 0 0 auto;
 			display: inline-flex;
@@ -3342,7 +3346,7 @@ dialog.add-output-dialog {
 		.device-toggle[aria-pressed="false"] {
 			border-style: dashed;
 		}
-		.device-remove {
+		.device-remove:not([role="menuitem"]) {
 			order: -1;
 			width: 40px;
 			padding: 0;
@@ -3591,50 +3595,6 @@ dialog.add-output-dialog {
 	}
 }
 
-@supports (appearance: base-select) {
-	.chain-action-picker {
-		&,
-		&::picker(select) {
-			appearance: base-select;
-		}
-		&::picker(select) {
-			min-width: 15rem;
-			padding: 0.375rem;
-			margin-block: 0.375rem;
-			border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
-			border-radius: 8px;
-			color: var(--col-fg);
-			background: var(--col-bg);
-			box-shadow: 0 0.5rem 1.5rem #0004;
-		}
-		option {
-			display: flex;
-			align-items: center;
-			gap: 0.625rem;
-			padding: 0.625rem 0.75rem;
-			border-radius: 4px;
-			font: inherit;
-			cursor: pointer;
-			&::checkmark {
-				display: none;
-			}
-			&:hover,
-			&:focus {
-				background: color-mix(in srgb, currentColor 12%, transparent);
-			}
-			&:disabled {
-				opacity: 0.45;
-				cursor: default;
-			}
-			&[value="delete"] {
-				color: var(--col-red, #e97777);
-			}
-		}
-		optgroup {
-			padding-block-start: 0.375rem;
-		}
-	}
-}
 
 .save-preset-dialog {
 	width: min(30rem, calc(100vw - 2rem));
@@ -3693,36 +3653,6 @@ dialog.add-output-dialog {
 	.node-menu {
 		position: relative;
 		display: block;
-	}
-	.node-menu-panel {
-		position: absolute;
-		top: calc(100% + 6px);
-		right: 0;
-		z-index: 20;
-		display: grid;
-		min-width: 10rem;
-		padding: 0.375rem;
-		border: 1px solid var(--col-line);
-		border-radius: 8px;
-		background: var(--col-bg);
-		color: var(--col-fg);
-		box-shadow: 0 6px 20px #0005;
-		&[hidden] {
-			display: none;
-		}
-		button {
-			width: 100%;
-			justify-content: flex-start;
-			padding: 0.625rem 0.75rem;
-			border: 0;
-			border-radius: 4px;
-			background: transparent;
-			color: inherit;
-		}
-		.device-remove {
-			order: initial;
-			color: light-dark(#9b183b, #ff9eb7);
-		}
 	}
 }
 

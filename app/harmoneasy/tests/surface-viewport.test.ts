@@ -57,27 +57,16 @@ it("starts preset surfaces expanded and switches across chains without closing t
 	expect(surface.getAttribute("aria-label")).toBe("Lead mix controls")
 	expect(document.body.style.overflow).toBe("hidden")
 	expect(surface.querySelector("[role=tablist]")).toBeNull()
-	const trigger = surface.querySelector<HTMLButtonElement>(".device-menu")!
-	const menu = surface.querySelector<HTMLElement>(".node-menu-panel")!
-	const open = (name: string) =>
-		[...menu.querySelectorAll<HTMLButtonElement>("button")].find(
-			(button) => button.textContent === `Open ${name}`
-		)!
-	trigger.click()
-	trigger.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: "Escape", bubbles: true }))
-	expect(menu.hidden).toBe(true)
-	expect(dialog()).toBe(surface)
-	trigger.click()
-	open("Drums mix").click()
+	expect(surface.querySelector(".device-menu")).toBeNull()
+	const actions = () => vi.mocked(mountControlSurface).mock.calls.at(-1)![4]!()
+	const open = (name: string) => actions().find((action) => action.label === `Open ${name}`)
+	open("Drums mix")!.action()
 	expect(dialog()).toBe(surface)
 	expect(surface.querySelector(".surface-viewport-content")!.textContent).toBe(
 		"Controls for Drums"
 	)
-	expect(menu.hidden).toBe(true)
 	expect(vi.mocked(mountControlSurface).mock.results[0].value.destroy).toHaveBeenCalledOnce()
-	trigger.click()
-	open("Lead mix").click()
-	expect(document.activeElement).toBe(trigger)
+	open("Lead mix")!.action()
 	expect(surface.getAttribute("aria-label")).toBe("Lead mix controls")
 	manager.dispatchEvent(new Event(EVENT_CHAINS_UPDATED))
 	expect(surface.getAttribute("aria-label")).toBe("Lead mix controls")
@@ -87,7 +76,9 @@ it("starts preset surfaces expanded and switches across chains without closing t
 	expect(dialog()).toBe(surface)
 	expect(surface.getAttribute("aria-label")).toBe("Drums mix controls")
 	expect(open("Drums mix")).toBeUndefined()
-	surface.querySelector<HTMLButtonElement>(".device-remove")!.click()
+	const remove = actions().find((action) => action.label === "Remove control surface")!
+	expect(remove.editOnly).toBe(true)
+	remove.action()
 	expect(dialog()).toBeNull()
 	expect(document.body.style.overflow).toBe("")
 })

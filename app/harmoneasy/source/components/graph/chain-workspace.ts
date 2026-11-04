@@ -1,3 +1,5 @@
+import { createDropdown } from "control-surface/dropdown"
+import "control-surface/dropdown.css"
 import type IOChain from "audiobus/io/IO-chain"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
 import {
@@ -108,20 +110,23 @@ export function createChainWorkspace(
 		identity.append(power, name.element)
 		const presets = createPresets(chain, manager)
 		const actions = element("div", "chain-actions")
-		const action = element("select")
-		action.className = "chain-action-picker"
-		action.setAttribute("aria-label", "Actions")
+		const action = createDropdown("Chain actions")
+		action.trigger.append("Actions")
 		const actionOption = (text: string, value: string, path: string) => {
-			const item = option("", value)
+			const item = button("", () => {
+				action.close(true)
+				runAction(value)
+			})
+			item.tabIndex = -1
+			item.setAttribute("role", "menuitem")
+			if (value === "delete") {
+				item.className = "device-remove"
+			}
 			item.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${path}" /></svg>`
 			item.append(element("span", "", text))
 			return item
 		}
-		const placeholder = option("Actions", "")
-		placeholder.disabled = true
 		const soloOption = actionOption("Solo", "solo", "M9 3H3v6m12-6h6v6M3 15v6h6m6 0h6v-6")
-		const layoutGroup = element("optgroup")
-		layoutGroup.label = "Graph layout"
 		const horizontal = actionOption(
 				"Horizontal layout",
 				"horizontal",
@@ -132,9 +137,7 @@ export function createChainWorkspace(
 				"vertical",
 				"M4 3h16v6H4zM4 15h16v6H4zM12 9v6"
 			)
-		layoutGroup.append(horizontal, vertical)
-		action.append(
-			placeholder,
+		action.content.append(
 			actionOption(
 				"Save as a Preset",
 				"save-preset",
@@ -142,17 +145,15 @@ export function createChainWorkspace(
 			),
 			actionOption("Clone chain", "clone", "M9 9h12v12H9zM15 9V3H3v12h6"),
 			soloOption,
-			layoutGroup,
+			horizontal,
+			vertical,
 			actionOption(
 				"Delete chain",
 				"delete",
 				"M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7"
 			)
 		)
-		action.value = ""
-		action.onchange = () => {
-			const value = action.value
-			action.value = ""
+		const runAction = (value: string) => {
 			if (value === "horizontal" || value === "vertical") {
 				chain.setGraphOptions({ graphLayout: value, positions: {} })
 			} else if (value === "clone") {
@@ -165,7 +166,7 @@ export function createChainWorkspace(
 				presets.openSave()
 			}
 		}
-		actions.append(action)
+		actions.append(action.element)
 		const expand = button("", () => toggleSolo(chainId), "chain-solo-toggle chain-icon-button")
 		expand.innerHTML =
 			'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path /></svg>'
@@ -232,6 +233,7 @@ export function createChainWorkspace(
 				graphView.destroy()
 				sidebar.destroy()
 				presets.destroy()
+				action.destroy()
 				layoutLabel.remove()
 				panel.remove()
 			}

@@ -9,7 +9,6 @@ import {
 	EVENT_KEY_DOWN
 } from "audiobus/event-constants"
 import { button, element } from "./dom"
-import { createNodeMenu } from "./node-menu"
 import { mountControlSurface, removeSurface } from "./control-surfaces"
 
 /** One native viewport for every surface, including surfaces in other preset chains. */
@@ -21,7 +20,6 @@ export function createSurfaceViewport(manager: IOChainManager, startExpanded = f
 	let previousFocus: HTMLElement | null = null
 	let overflow = ""
 	let open = false
-	let menuSignature = ""
 	const subscriptions = new Map<IOChain, AbortController>()
 	const viewport = element("div", "node-viewport-editor surface-viewport nodrag nopan nowheel")
 	viewport.setAttribute("role", "dialog")
@@ -64,7 +62,6 @@ export function createSurfaceViewport(manager: IOChainManager, startExpanded = f
 			refresh()
 		}
 	}
-	const menu = createNodeMenu([removeAction])
 	const minimise = gadget("Minimise control surface", "device-minimise", "M5 12h14", () => {
 		if (selected) {
 			selected.chain.dispatchEvent(
@@ -81,7 +78,7 @@ export function createSurfaceViewport(manager: IOChainManager, startExpanded = f
 		close
 	)
 	expand.setAttribute("aria-expanded", "true")
-	right.append(minimise, menu.element, expand)
+	right.append(minimise, expand)
 	controls.append(left, right)
 	header.append(controls, title)
 	panel.append(header, content)
@@ -101,7 +98,16 @@ export function createSurfaceViewport(manager: IOChainManager, startExpanded = f
 		if (changed || !view) {
 			view?.destroy()
 			content.replaceChildren()
-			view = mountControlSurface(content, entry.chain, entry.surface.id, title)
+			view = mountControlSurface(content, entry.chain, entry.surface.id, title, () => [
+				...(entries.length > 1
+					? entries.map((item) => ({
+							label: `Open ${item.surface.name}`,
+							icon: "open",
+							action: () => select(item)
+						}))
+					: []),
+				{ ...removeAction, editOnly: true, action: removeAction.run }
+			])
 		}
 		viewport.setAttribute("aria-label", `${entry.surface.name} controls`)
 		content.setAttribute("aria-label", entry.surface.name)
@@ -142,26 +148,6 @@ export function createSurfaceViewport(manager: IOChainManager, startExpanded = f
 				{ signal: abort.signal }
 			)
 		}
-		const signature = JSON.stringify(
-			entries.map(({ chainId, surface, chain }) => [
-				chainId,
-				surface.id,
-				surface.name,
-				chain.options.name
-			])
-		)
-		if (signature !== menuSignature) {
-			menuSignature = signature
-			menu.setActions([
-				...(entries.length > 1
-					? entries.map((entry) => ({
-							label: `Open ${entry.surface.name}`,
-							run: () => select(entry)
-						}))
-					: []),
-				removeAction
-			])
-		}
 		if (open) {
 			const next =
 				entries.find(
@@ -185,7 +171,7 @@ export function createSurfaceViewport(manager: IOChainManager, startExpanded = f
 			}
 			if (
 				(event.target as HTMLElement)?.closest?.(
-					".node-menu:has(.node-menu-panel:not([hidden]))"
+					".he-dropdown:has(.he-dropdown-panel:not([hidden]))"
 				) ||
 				((event.target as HTMLElement)?.closest?.("[data-keyboard-notes]") &&
 					!(event.target as HTMLElement).matches(".cs-viewport"))
@@ -225,7 +211,6 @@ export function createSurfaceViewport(manager: IOChainManager, startExpanded = f
 	return {
 		destroy() {
 			close()
-			menu.destroy()
 			manager.removeEventListener(EVENT_CHAINS_UPDATED, refresh)
 			document.removeEventListener(EVENT_KEY_DOWN, keydown, true)
 			for (const abort of subscriptions.values()) {

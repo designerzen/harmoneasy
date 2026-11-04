@@ -1,0 +1,137 @@
+.he-dropdown {
+	position: relative;
+	flex: none;
+}
+.he-dropdown > button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 7px;
+	border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+	border-radius: 6px;
+	font: inherit;
+	color: var(--col-fg, #f5f4fc);
+	background: var(--col-line, #292735);
+	cursor: pointer;
+	min-width: 44px;
+	min-height: 44px;
+}
+.he-dropdown svg,
+.cs-add-dialog svg {
+	width: 22px;
+	height: 22px;
+	flex: none;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.8;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+.he-dropdown-panel {
+	box-sizing: border-box;
+	position: fixed;
+	inset: auto;
+	z-index: 10000;
+	margin: 0;
+	padding: 0;
+	width: max-content;
+	min-width: min(15rem, calc(100vw - 16px));
+	max-width: calc(100vw - 16px);
+	border: 1px solid var(--col-line, #777784);
+	border-radius: 12px;
+	color: var(--col-fg, #f5f4fc);
+	background: var(--col-bg, #100f19);
+	font: 600 1rem/1.4 var(--font-family, system-ui, sans-serif);
+	box-shadow: 0 10px 30px #0006;
+	overflow: visible;
+	text-transform: none;
+	letter-spacing: normal;
+}
+.he-dropdown-panel[hidden] {
+	display: none;
+}
+.he-dropdown-panel::before {
+	content: "";
+	position: absolute;
+	left: var(--dropdown-pointer, 50%);
+	top: -7px;
+	width: 12px;
+	height: 12px;
+	background: inherit;
+	border: inherit;
+	border-right: 0;
+	border-bottom: 0;
+	transform: translateX(-50%) rotate(45deg);
+}
+.he-dropdown-panel[data-side="above"]::before {
+	top: auto;
+	bottom: -7px;
+	transform: translateX(-50%) rotate(225deg);
+}
+.he-dropdown-items {
+	display: grid;
+	gap: 11px;
+	padding: 11px;
+	max-height: var(--dropdown-height, 70dvh);
+	overflow-y: auto;
+	box-sizing: border-box;
+}
+.he-dropdown .he-dropdown-panel .he-dropdown-items > button {
+	position: static;
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 12px;
+	width: 100%;
+	min-width: 44px;
+	min-height: 44px;
+	height: auto;
+	margin: 0;
+	padding: 10px 12px;
+	border: 0;
+	border-radius: 6px;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	text-align: left;
+	white-space: normal;
+	overflow-wrap: anywhere;
+	cursor: pointer;
+}
+.he-dropdown .he-dropdown-panel .he-dropdown-items > button:hover {
+	background: color-mix(in srgb, currentColor 12%, transparent);
+}
+.he-dropdown :focus-visible {
+	outline: 3px solid var(--col-accent, #c5b9ff);
+	outline-offset: 2px;
+}
+.he-dropdown .he-dropdown-panel .he-dropdown-items > .device-remove {
+	color: light-dark(#9b183b, #ff9eb7);
+}
+.he-dropdown-panel button:disabled {
+	opacity: 0.55;
+	cursor: default;
+}
+.he-dropdown-items > label {
+	display: grid;
+	align-items: center;
+	grid-template-columns: 22px 1fr;
+	gap: 12px;
+	padding: 10px 12px;
+	min-height: 44px;
+}
+.he-dropdown-items > label select {
+	grid-column: 1 / -1;
+	min-height: 44px;
+	width: 100%;
+	font: inherit;
+}
+@media (forced-colors: active) {
+	.he-dropdown-panel {
+		border-color: CanvasText;
+	}
+	.he-dropdown :focus-visible {
+		outline-color: Highlight;
+	}
+}

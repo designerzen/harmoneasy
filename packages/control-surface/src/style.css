@@ -1,3 +1,4 @@
+@import "./dropdown.css";
 .control-surface {
 	width: min(1100px, 94vw);
 	min-width: 0;
@@ -42,70 +43,6 @@
 .cs-title:hover,
 .cs-title:focus-visible {
 	border-color: #296254;
-}
-.cs-settings {
-	flex: none;
-}
-.cs-settings svg {
-	display: block;
-	width: 20px;
-	height: 20px;
-	fill: none;
-	stroke: currentColor;
-	stroke-width: 1.75;
-	stroke-linecap: round;
-	stroke-linejoin: round;
-	flex: none;
-}
-.cs-settings > button {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.375rem;
-}
-.cs-settings-menu {
-	position: absolute;
-	top: calc(100% + 8px);
-	left: 0;
-	z-index: 10;
-	display: grid;
-	gap: 0;
-	width: max-content;
-	max-width: min(320px, 100%);
-	max-height: 65dvh;
-	overflow: clip;
-	padding: 0.375rem;
-	border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
-	border-radius: 8px;
-	color: var(--col-fg, #d6fff2);
-	background: var(--col-bg, #080d18);
-	box-shadow: 0 0.5rem 1.5rem #0004;
-}
-.cs-settings-menu[hidden] {
-	display: none;
-}
-.cs-settings-menu label {
-	display: grid;
-	grid-template-columns: 20px 1fr;
-	align-items: center;
-	gap: 0.625rem;
-	padding: 0.625rem 0.75rem;
-}
-.cs-settings-menu label select {
-	grid-column: 1 / -1;
-}
-.cs-toolbar .cs-settings-menu button {
-	display: flex;
-	align-items: center;
-	gap: 0.625rem;
-	padding: 0.625rem 0.75rem;
-	border: 0;
-	border-radius: 4px;
-	background: transparent;
-	text-align: left;
-}
-.cs-toolbar .cs-settings-menu button:hover,
-.cs-toolbar .cs-settings-menu button:focus-visible {
-	background: color-mix(in srgb, currentColor 12%, transparent);
 }
 .cs-toolbar > button {
 	flex: none;
@@ -732,4 +669,44 @@
 }
 .cs-visualiser-actions button {
 	flex: 1;
+}
+.cs-toolbar [hidden] {
+	display: none;
+}
+.cs-add-dialog {
+	color: var(--col-fg, #f5f4fc);
+	background: var(--col-bg, #100f19);
+	border: 1px solid var(--col-line, #777784);
+	border-radius: 12px;
+	max-width: min(32rem, calc(100vw - 32px));
+	max-height: calc(100dvh - 32px);
+	font: 1rem var(--font-family, system-ui, sans-serif);
+}
+.cs-add-choices {
+	display: grid;
+	gap: 11px;
+}
+.cs-add-dialog button {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-height: 44px;
+	padding: 10px 12px;
+	font: inherit;
+	color: inherit;
+	background: transparent;
+	border: 1px solid var(--col-line, #777784);
+	border-radius: 6px;
+	text-align: left;
+}
+.cs-add-dialog :focus-visible {
+	outline: 3px solid var(--col-accent, #c5b9ff);
+	outline-offset: 2px;
+}
+.cs-add-dialog[open] {
+	display: grid;
+	gap: 11px;
+}
+.cs-add-dialog h2 {
+	margin: 0;
 }

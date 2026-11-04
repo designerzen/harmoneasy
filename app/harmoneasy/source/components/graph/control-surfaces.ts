@@ -3,7 +3,12 @@ import { surfaceAudioSources } from "./control-surface-audio"
 import { ControlSurface } from "control-surface"
 import "control-surface/style.css"
 import { bindingKey } from "control-surface/model"
-import type { ComponentUi, ControlBinding, SurfaceState } from "control-surface/types"
+import type {
+	ComponentUi,
+	ControlBinding,
+	SurfaceState,
+	SurfaceMenuAction
+} from "control-surface/types"
 import { componentBindings } from "audiobus/io/component-ui"
 import { deviceId } from "audiobus/io/device-definition"
 import {
@@ -240,7 +245,8 @@ export function mountControlSurface(
 	host: HTMLElement,
 	chain: IOChain,
 	surfaceId: string,
-	toolbarHost?: HTMLElement
+	toolbarHost?: HTMLElement,
+	menuActions?: () => SurfaceMenuAction[]
 ): { destroy(): void } {
 	const noteSource = surfaceNoteSource(chain)
 	let audioSources: ReturnType<typeof surfaceAudioSources> | undefined
@@ -297,6 +303,7 @@ export function mountControlSurface(
 		if (disposed || version !== generation) {
 			return
 		}
+		const editing = surface?.isEditing ?? false
 		surface?.destroy()
 		audioSources?.destroy()
 		audioSources = surfaceAudioSources(chain.outputs)
@@ -311,6 +318,8 @@ export function mountControlSurface(
 			state: structuredClone(state),
 			bindings,
 			toolbarHost,
+			editing,
+			menuActions,
 			addControls: [...components].map(([id, component]) => ({
 				label: `Add ${component.name} controls…`,
 				action: () => {

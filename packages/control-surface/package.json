@@ -8,6 +8,8 @@
 		"./types": "./src/types.ts",
 		"./model": "./src/model.ts",
 		"./dom": "./src/dom.ts",
+		"./dropdown": "./src/dropdown.ts",
+		"./dropdown.css": "./src/dropdown.css",
 		"./style.css": "./src/style.css"
 	},
 	"scripts": {
