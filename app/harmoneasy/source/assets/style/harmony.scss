@@ -2,7 +2,11 @@
 	width: min(960px, 95vw);
 	max-height: 90dvh;
 	overflow: auto;
-	padding: 1.25rem;
+	.close-icon {
+		position: absolute;
+		top: 0.75rem;
+		right: 0.75rem;
+	}
 	.music-tools-section {
 		display: grid;
 		gap: 0.75rem;
@@ -11,22 +15,18 @@
 	fieldset {
 		padding: 0.5rem;
 	}
-	button[aria-pressed="true"] {
-		outline: 2px solid currentColor;
-		font-weight: bold;
-	}
 	.harmony-network,
 	.harmony-sketch {
 		position: relative;
 		height: 400px;
 		overflow: hidden;
-		border: 1px solid currentColor;
-		border-radius: 0.5rem;
+		border: var(--border);
+		border-radius: var(--radius-md);
 		button {
 			position: absolute;
 			transform: translate(-50%, -50%);
 			max-width: 110px;
-			font-size: 0.75rem;
+			font-size: var(--text-xs);
 		}
 	}
 	.harmony-network svg {

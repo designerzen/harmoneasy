@@ -241,7 +241,7 @@ it.each(["input", "output"] as const)(
 		const dialog = document.querySelector("dialog")!
 		expect(show).toHaveBeenCalledOnce()
 		expect(dialog.getAttribute("aria-label")).toBe(
-			`Add New ${direction === "input" ? "Input" : "Output"}`
+			`Add new ${direction === "input" ? "input" : "output"}`
 		)
 		await selectFilter(
 			dialog,

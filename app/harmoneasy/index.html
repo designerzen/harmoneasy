@@ -11,10 +11,21 @@
 		<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 		<meta name="apple-mobile-web-app-title" content="Harmoneasy" />
 		<link rel="manifest" href="/site.webmanifest" />
+		<script>
+			try {
+				const theme = JSON.parse(localStorage.getItem("harmoneasy.theme"))
+				if (typeof theme?.hue === "number") {
+					document.documentElement.style.setProperty("--theme-hue", theme.hue)
+				}
+				if (theme?.mode) {
+					document.documentElement.dataset.themeMode = theme.mode
+				}
+			} catch {}
+		</script>
 	</head>
 
 	<body>
-		<dialog id="start-dialog" open aria-labelledby="start-title">
+		<dialog id="start-dialog" open aria-labelledby="start-title" data-midi-ignore>
 			<div id="start-room-context" hidden>
 				<p id="start-room-description"></p>
 				<button class="primary" form="start-form" type="submit" name="startup" value="room">
@@ -32,12 +43,12 @@
 					<p id="start-preset-description"></p>
 				</section>
 				<div class="start-actions">
-					<button class="btn-continue-session primary" form="start-form" type="submit" name="startup" value="session"><span>Continue Session</span><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14m-6-6 6 6-6 6" /></svg></button>
+					<button class="btn-continue-session primary" form="start-form" type="submit" name="startup" value="session" autofocus><span>Continue session</span><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14m-6-6 6 6-6 6" /></svg></button>
 					<button class="secondary" id="start-wizard" type="button" aria-haspopup="dialog" aria-controls="setup-wizard"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h4m4 0h8M4 17h8m4 0h4" /><circle cx="10" cy="7" r="2" /><circle cx="14" cy="17" r="2" /></svg>Setup wizard</button>
 					<button class="secondary" type="button" id="show-start-presets" aria-expanded="false" aria-controls="start-presets-content"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><rect x="14" y="14" width="6" height="6" rx="1" /></svg><span data-start-presets-label>Presets</span></button>
 				</div>
 				<div class="start-footer">
-					<button class="btn-start-empty tertiary" form="start-form" type="submit" name="startup" value="empty">Start Empty</button>
+					<button class="btn-start-empty tertiary" form="start-form" type="submit" name="startup" value="empty">Start empty</button>
 					<a href="%BASE_URL%presets/">Browse preset pages</a>
 				</div>
 			</header>
@@ -46,7 +57,99 @@
 			<p id="start-error" role="alert" hidden></p>
 		</dialog>
 
-		<header class="header-main">
+		<dialog id="netronome-dialog" aria-labelledby="netronome-title" data-midi-ignore>
+			<header>
+				<h2 id="netronome-title">Shared room</h2>
+				<button class="close-icon" type="button" id="netronome-close" aria-label="Close shared room dialog"></button>
+			</header>
+			<div class="netronome-dialog-content">
+				<div id="netronome-choice">
+					<p>Play together with the same sounds and tempo.</p>
+					<div class="room-choices">
+						<button type="button" id="netronome-start" class="primary" autofocus>
+							Start a room
+						</button>
+						<button type="button" id="netronome-join">Join a room</button>
+					</div>
+				</div>
+				<section id="netronome-flow" hidden aria-labelledby="netronome-step">
+					<h3 id="netronome-step"></h3>
+					<p id="netronome-instructions"></p>
+					<div id="netronome-outgoing" hidden>
+						<img
+							id="netronome-qr"
+							alt="Scan this room invitation on the other device"
+							hidden
+						/>
+						<button type="button" id="netronome-copy" class="primary">
+							Copy invitation
+						</button>
+						<details>
+							<summary>Show link</summary>
+							<textarea
+								id="netronome-local-link"
+								aria-label="Link to send"
+								readonly
+								rows="2"
+								spellcheck="false"
+							></textarea>
+						</details>
+					</div>
+					<div id="netronome-incoming" hidden>
+						<label id="netronome-remote-label" for="netronome-remote-link"
+							>Invitation link</label
+						>
+						<textarea
+							id="netronome-remote-link"
+							rows="2"
+							spellcheck="false"
+							placeholder="Paste invitation link"
+						></textarea>
+						<button type="button" id="netronome-apply" class="primary">
+							Join room
+						</button>
+					</div>
+				</section>
+				<p id="netronome-status" role="status" hidden></p>
+				<div class="room-actions">
+					<button type="button" id="netronome-back" hidden>Back</button>
+					<button type="button" id="netronome-regenerate" hidden>
+						Invite another player
+					</button>
+					<button type="button" id="netronome-leave" hidden>Leave room</button>
+				</div>
+				<details id="netronome-options">
+					<summary>Share setup</summary>
+					<p>Send a copy of your sounds and tempo to use later.</p>
+					<label for="netronome-room-name">Room name</label>
+					<input
+						id="netronome-room-name"
+						type="text"
+						maxlength="64"
+						pattern="[a-z0-9][a-z0-9._\-]{0,63}"
+						autocomplete="off"
+						spellcheck="false"
+					/>
+					<button type="button" id="netronome-copy-room">Copy room setup</button>
+					<button type="button" id="netronome-copy-setup">
+						Copy setup for a new room
+					</button>
+					<textarea
+						id="netronome-room-link"
+						aria-label="Room or setup link"
+						readonly
+						rows="2"
+						spellcheck="false"
+						hidden
+					></textarea>
+					<button type="button" id="netronome-new-room">
+						Start a new room with this setup
+					</button>
+				</details>
+			</div>
+		</dialog>
+
+		<menu id="action-bar" class="file-menu" aria-label="Application actions">
 			<button
 				class="backlink"
 				type="button"
@@ -59,6 +162,149 @@
 				<p class="h2">Harmoneasy</p>
 			</button>
 
+			<button
+				id="btn-import"
+				class="btn-import"
+				type="button"
+				title="Upload MIDI tunes, WAM2 ZIP bundles, or other supported music files"
+			>
+				Upload
+			</button>
+			<button id="btn-export" class="btn-export" type="button">Export</button>
+			<button id="btn-settings" class="btn-settings" type="button">Settings</button>
+			<button
+				id="btn-command-palette"
+				type="button"
+				aria-haspopup="dialog"
+				aria-controls="command-palette"
+				aria-keyshortcuts="Control+k Meta+k"
+				title="Find and control commands (Ctrl+K / Cmd+K)"
+			>
+				Commands <kbd>Ctrl/Cmd+K</kbd>
+			</button>
+			<button id="btn-midi" type="button" aria-haspopup="dialog" aria-controls="midi-dialog">
+				MIDI
+			</button>
+			<button id="btn-kill-switch" class="btn-kill-switch btn-panic" type="button">
+				Panic
+			</button>
+		</menu>
+
+		<dialog
+			id="command-palette"
+			aria-labelledby="command-title"
+			aria-describedby="command-help"
+			data-midi-ignore
+		>
+			<header>
+				<h2 id="command-title">Commands</h2>
+				<button class="close-icon" type="button" data-command-close aria-label="Close command palette"></button>
+			</header>
+			<label class="sr-only" for="command-search">Find a command or control</label>
+			<input
+				id="command-search"
+				type="search"
+				placeholder="Search commands, abbreviations or control names…"
+				autocomplete="off"
+				spellcheck="false"
+				role="combobox"
+				aria-autocomplete="list"
+				aria-controls="command-results"
+				aria-expanded="true"
+			/>
+			<div id="command-results" role="listbox" aria-label="Commands"></div>
+			<form id="command-editor" hidden>
+				<label id="command-value-label" for="command-value"></label>
+				<div id="command-value-host"></div>
+				<div class="command-editor-actions">
+					<button type="button" data-command-back>Back</button>
+					<button type="submit" class="primary">Apply</button>
+				</div>
+			</form>
+			<p id="command-status" role="status" aria-live="polite"></p>
+			<footer id="command-help">
+				Small typos welcome · ↑ ↓ to browse · Enter to select · Esc to close
+			</footer>
+		</dialog>
+
+		<div
+			id="midi-transport-control"
+			class="controls"
+			role="group"
+			aria-labelledby="transport-label"
+		>
+			<label class="sr-only" id="transport-label" for="transport-status"
+				>MIDI transport</label
+			>
+			<button
+				type="button"
+				id="btn-transport-reset"
+				class="btn-transport"
+				disabled
+				title="Stop and rewind the shared transport"
+			>
+				<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
+					<path d="M4 4h3v16H4zm16 0v16L8 12z" />
+				</svg>
+				<span class="sr-only">Reset</span>
+			</button>
+			<button
+				type="button"
+				title="Start playback"
+				id="btn-transport-start"
+				class="btn-transport"
+				disabled
+			>
+				<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
+					<path d="M7 4v16l13-8z" />
+				</svg>
+				<span class="sr-only">Start</span>
+			</button>
+			<button
+				type="button"
+				title="Stop playback"
+				id="btn-transport-stop"
+				class="btn-transport"
+				hidden
+				disabled
+			>
+				<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
+					<path d="M5 4h5v16H5zm9 0h5v16h-5z" />
+				</svg>
+				<span class="sr-only">Stop</span>
+			</button>
+			<output class="sr-only" id="transport-status" role="status">Loading</output>
+			<div id="transport">
+				<button
+					type="button"
+					id="btn-transport-details"
+					title="View note timeline"
+					aria-controls="recordings"
+				>
+					<span class="sr-only">Time / duration; view note timeline:</span>
+					<time id="clock">00:00:00:00</time>
+				</button>
+			</div>
+			<button
+				type="button"
+				id="btn-record"
+				aria-pressed="false"
+				hidden
+				disabled
+				title="Toggle all Recorder outputs"
+			>
+				Record
+			</button>
+			<button
+				type="button"
+				id="btn-recording-review"
+				aria-haspopup="dialog"
+				aria-controls="recording-dialog"
+				hidden
+				disabled
+			>
+				Last take
+			</button>
 			<div class="header-controls" role="group" aria-label="Session controls">
 				<div id="tempo-control" class="controls">
 					<label for="tempo">Tempo</label>
@@ -209,243 +455,6 @@
 					</button>
 				</div>
 			</div>
-		</header>
-		<dialog id="netronome-dialog" aria-labelledby="netronome-title" data-midi-ignore>
-			<header>
-				<h2 id="netronome-title">Shared room</h2>
-				<button class="close-icon" type="button" id="netronome-close" aria-label="Close shared room dialog"></button>
-			</header>
-			<div class="netronome-dialog-content">
-				<div id="netronome-choice">
-					<p>Play together with the same sounds and tempo.</p>
-					<div class="room-choices">
-						<button type="button" id="netronome-start" class="primary" autofocus>
-							Start a room
-						</button>
-						<button type="button" id="netronome-join">Join a room</button>
-					</div>
-				</div>
-				<section id="netronome-flow" hidden aria-labelledby="netronome-step">
-					<h3 id="netronome-step"></h3>
-					<p id="netronome-instructions"></p>
-					<div id="netronome-outgoing" hidden>
-						<img
-							id="netronome-qr"
-							alt="Scan this room invitation on the other device"
-							hidden
-						/>
-						<button type="button" id="netronome-copy" class="primary">
-							Copy invitation
-						</button>
-						<details>
-							<summary>Show link</summary>
-							<textarea
-								id="netronome-local-link"
-								aria-label="Link to send"
-								readonly
-								rows="2"
-								spellcheck="false"
-							></textarea>
-						</details>
-					</div>
-					<div id="netronome-incoming" hidden>
-						<label id="netronome-remote-label" for="netronome-remote-link"
-							>Invitation link</label
-						>
-						<textarea
-							id="netronome-remote-link"
-							rows="2"
-							spellcheck="false"
-							placeholder="Paste invitation link"
-						></textarea>
-						<button type="button" id="netronome-apply" class="primary">
-							Join room
-						</button>
-					</div>
-				</section>
-				<p id="netronome-status" role="status" hidden></p>
-				<div class="room-actions">
-					<button type="button" id="netronome-back" hidden>Back</button>
-					<button type="button" id="netronome-regenerate" hidden>
-						Invite another player
-					</button>
-					<button type="button" id="netronome-leave" hidden>Leave room</button>
-				</div>
-				<details id="netronome-options">
-					<summary>Share setup</summary>
-					<p>Send a copy of your sounds and tempo to use later.</p>
-					<label for="netronome-room-name">Room name</label>
-					<input
-						id="netronome-room-name"
-						type="text"
-						maxlength="64"
-						pattern="[a-z0-9][a-z0-9._\-]{0,63}"
-						autocomplete="off"
-						spellcheck="false"
-					/>
-					<button type="button" id="netronome-copy-room">Copy room setup</button>
-					<button type="button" id="netronome-copy-setup">
-						Copy setup for a new room
-					</button>
-					<textarea
-						id="netronome-room-link"
-						aria-label="Room or setup link"
-						readonly
-						rows="2"
-						spellcheck="false"
-						hidden
-					></textarea>
-					<button type="button" id="netronome-new-room">
-						Start a new room with this setup
-					</button>
-				</details>
-			</div>
-		</dialog>
-
-		<menu id="action-bar" class="file-menu" aria-label="Application actions">
-			<button
-				id="btn-import"
-				class="btn-import primary"
-				type="button"
-				title="Upload MIDI tunes, WAM2 ZIP bundles, or other supported music files"
-			>
-				Upload
-			</button>
-			<button id="btn-export" class="btn-export primary" type="button">Export</button>
-			<button id="btn-settings" class="btn-settings" type="button">Settings</button>
-			<button
-				id="btn-command-palette"
-				type="button"
-				aria-haspopup="dialog"
-				aria-controls="command-palette"
-				aria-keyshortcuts="Control+k Meta+k"
-				title="Find and control commands (Ctrl+K / Cmd+K)"
-			>
-				Commands <kbd>Ctrl/Cmd+K</kbd>
-			</button>
-			<button id="btn-midi" type="button" aria-haspopup="dialog" aria-controls="midi-dialog">
-				MIDI
-			</button>
-			<button id="btn-kill-switch" class="btn-kill-switch btn-panic primary" type="button">
-				Panic
-			</button>
-		</menu>
-
-		<dialog
-			id="command-palette"
-			aria-labelledby="command-title"
-			aria-describedby="command-help"
-			data-midi-ignore
-		>
-			<header>
-				<h2 id="command-title">Commands</h2>
-				<button class="close-icon" type="button" data-command-close aria-label="Close command palette"></button>
-			</header>
-			<label class="sr-only" for="command-search">Find a command or control</label>
-			<input
-				id="command-search"
-				type="search"
-				placeholder="Search commands, abbreviations or control names…"
-				autocomplete="off"
-				spellcheck="false"
-				role="combobox"
-				aria-autocomplete="list"
-				aria-controls="command-results"
-				aria-expanded="true"
-			/>
-			<div id="command-results" role="listbox" aria-label="Commands"></div>
-			<form id="command-editor" hidden>
-				<label id="command-value-label" for="command-value"></label>
-				<div id="command-value-host"></div>
-				<div class="command-editor-actions">
-					<button type="button" data-command-back>Back</button>
-					<button type="submit" class="primary">Apply</button>
-				</div>
-			</form>
-			<p id="command-status" role="status" aria-live="polite"></p>
-			<footer id="command-help">
-				Small typos welcome · ↑ ↓ to browse · Enter to select · Esc to close
-			</footer>
-		</dialog>
-
-		<div
-			id="midi-transport-control"
-			class="controls"
-			role="group"
-			aria-labelledby="transport-label"
-		>
-			<label class="sr-only" id="transport-label" for="transport-status"
-				>MIDI transport</label
-			>
-			<button
-				type="button"
-				id="btn-transport-reset"
-				class="btn-transport"
-				disabled
-				title="Stop and rewind the shared transport"
-			>
-				<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
-					<path d="M4 4h3v16H4zm16 0v16L8 12z" />
-				</svg>
-				<span class="sr-only">Reset</span>
-			</button>
-			<button
-				type="button"
-				title="Start playback"
-				id="btn-transport-start"
-				class="btn-transport"
-				disabled
-			>
-				<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
-					<path d="M7 4v16l13-8z" />
-				</svg>
-				<span class="sr-only">Start</span>
-			</button>
-			<button
-				type="button"
-				title="Stop playback"
-				id="btn-transport-stop"
-				class="btn-transport"
-				hidden
-				disabled
-			>
-				<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
-					<path d="M5 4h5v16H5zm9 0h5v16h-5z" />
-				</svg>
-				<span class="sr-only">Stop</span>
-			</button>
-			<output class="sr-only" id="transport-status" role="status">Loading</output>
-			<div id="transport">
-				<button
-					type="button"
-					id="btn-transport-details"
-					title="View note timeline"
-					aria-controls="recordings"
-				>
-					<span class="sr-only">Time / duration; view note timeline:</span>
-					<time id="clock">00:00:00:00</time>
-				</button>
-			</div>
-			<button
-				type="button"
-				id="btn-record"
-				aria-pressed="false"
-				hidden
-				disabled
-				title="Toggle all Recorder outputs"
-			>
-				Record
-			</button>
-			<button
-				type="button"
-				id="btn-recording-review"
-				aria-haspopup="dialog"
-				aria-controls="recording-dialog"
-				hidden
-				disabled
-			>
-				Last take
-			</button>
 			<nav id="chain-navigation" aria-label="IOChains"></nav>
 		</div>
 
@@ -484,7 +493,7 @@
 				</p>
 			</div>
 			<div class="recording-actions">
-				<button type="button" id="recording-save" autofocus>Save audio…</button>
+				<button type="button" id="recording-save" class="primary" autofocus>Save audio…</button>
 				<button class="close-icon" type="button" id="recording-close" aria-label="Close"></button>
 			</div>
 		</dialog>
@@ -605,7 +614,7 @@
 				<a href="https://opendaw.studio/scripting" target="_blank" rel="noopener noreferrer"
 					>Open script editor <span aria-hidden="true">↗</span></a
 				>
-				<button type="button" id="opendaw-copy-code" autofocus>Copy code</button>
+				<button type="button" id="opendaw-copy-code" class="primary" autofocus>Copy code</button>
 			</footer>
 		</dialog>
 
@@ -664,7 +673,7 @@
 					Export to MusicXML
 				</button>
 				<button type="button" id="btn-vexflow-export" class="export-option">
-					Download Sheet Music
+					Download sheet music
 				</button>
 			</menu>
 			<form method="dialog">
@@ -797,7 +806,7 @@
 			>
 				MIDI devices
 			</button>
-			<h2>Control via MIDI</h2>
+			<h3>Control via MIDI</h3>
 			<p>
 				These assignments belong to the whole workspace. Global controls affect the app;
 				chain controls affect only the named chain. Connect a MIDI input to any chain to
@@ -880,10 +889,10 @@
 					<div id="graph-layout-settings"></div>
 				</fieldset>
 				<fieldset id="ble-manual-send-fieldset" hidden>
-					<legend>Manual BLE Send</legend>
+					<legend>Manual BLE send</legend>
 
 					<label for="midi-channel-selector"
-						>BLE MIDI Channel:
+						>BLE MIDI channel
 						<select id="midi-channel-selector">
 							<option value="1">1</option>
 							<option value="2">2</option>
@@ -905,7 +914,7 @@
 					</label>
 
 					<label for="ble-manual-input"
-						>Manual BLE Send
+						>Bytes
 						<input
 							id="ble-manual-input"
 							type="text"
@@ -916,9 +925,9 @@
 					<button type="button" id="btn-send-ble-manual">Send BLE</button>
 				</fieldset>
 				<fieldset>
-					<legend>Timer Settings</legend>
+					<legend>Timer</legend>
 					<label for="timer-type-select"
-						>Timer Type:
+						>Timer type
 						<select id="timer-type-select" name="timerType">
 							<option value="audio-context">Audio Context Worker</option>
 							<option value="audio-worklet">Audio Worklet</option>
@@ -938,7 +947,7 @@
 		<template id="add-input-overlay-template">
 			<dialog closedby="any">
 				<header>
-					<h5>Add Input</h5>
+					<h5>Add input</h5>
 				</header>
 				<!-- Shows a collection of buttons to allow selection -->
 				<menu></menu>
@@ -952,7 +961,7 @@
 		<template id="add-output-overlay-template">
 			<dialog closedby="any">
 				<header>
-					<h5>Add Output</h5>
+					<h5>Add output</h5>
 				</header>
 				<!-- Shows a collection of buttons to allow selection -->
 				<menu></menu>
@@ -966,7 +975,7 @@
 		<template id="add-instrument-overlay-template">
 			<dialog closedby="any">
 				<header>
-					<h5>Add Instrument</h5>
+					<h5>Add instrument</h5>
 				</header>
 				<!-- Shows a collection of buttons to allow selection -->
 				<menu></menu>

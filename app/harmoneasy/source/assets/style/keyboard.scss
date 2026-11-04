@@ -1,11 +1,12 @@
 .piano-key {
 	transition:
-		opacity var(--time-quick, 90ms) linear,
+		opacity var(--time-short) linear,
 		fill 4ms linear;
 
-	border-radius: 10%;
-
-	fill: var(--fill, white);
+	fill: var(--fill, var(--key-white));
+	stroke: var(--key-edge);
+	stroke-width: 1;
+	vector-effect: non-scaling-stroke;
 
 	.piano-key-name {
 		visibility: hidden;
@@ -13,7 +14,7 @@
 
 	@media (hover: hover) and (pointer: fine) {
 		&:hover {
-			fill: var(--col-green);
+			fill: var(--col-success);
 			.piano-key-name {
 				visibility: visible;
 			}
@@ -23,7 +24,7 @@
 	&.playing,
 	&.active,
 	&.pressed {
-		fill: var(--col-accent, var(--col-orange, orange));
+		fill: var(--col-accent);
 		// opacity: 0;
 	}
 	@media (hover: hover) and (pointer: fine) {
@@ -34,27 +35,19 @@
 		}
 	}
 
-	&:focus {
-		outline: none;
-	}
-
 	&:focus-visible {
 		outline: none;
-		stroke-width: 4px;
-		stroke: var(--col-orange);
+		stroke-width: 3px;
+		stroke: var(--focus-ring);
 	}
 }
 
 .piano-key-white {
-	--fill: var(--col-white, white);
+	--fill: var(--key-white);
 }
 
 .piano-key-black {
-	--fill: var(--col-black, black);
-	&:focus-visible {
-		stroke-width: 4px;
-		stroke: var(--col-orange);
-	}
+	--fill: var(--key-black);
 }
 
 .piano-key-indicators {
@@ -62,10 +55,10 @@
 }
 
 .piano-note-indicator {
-	transition: opacity var(--time-quick, 90ms) linear;
-	stroke: var(--col-white);
+	transition: opacity var(--time-short) linear;
+	stroke: var(--key-white);
 	stroke-width: 0.3;
-	fill: var(--col-orange);
+	fill: var(--col-accent);
 	opacity: 0;
 }
 
@@ -88,6 +81,8 @@
 		min-height: 0;
 		min-width: 0;
 		overflow: hidden;
+		background: var(--col-surface-sunken);
+		border-top: 1px solid var(--col-line-strong);
 	}
 
 	.piano-keys {
@@ -101,19 +96,35 @@
 
 	.piano-octave,
 	.piano-retract {
-		flex: 0 0 44px;
-		min-width: 44px;
 		margin: 0;
 		padding: 4px;
 		pointer-events: auto;
 		touch-action: manipulation;
 	}
 
+	.piano-octave {
+		flex: 0 0 44px;
+		border-width: 1px 0 0;
+		border-color: var(--col-line-strong);
+		border-radius: 0;
+		background: var(--col-surface-raised);
+		font-size: var(--text-xs);
+		&:disabled {
+			opacity: 1;
+			color: color-mix(in oklch, var(--col-fg) 35%, var(--col-surface-raised));
+		}
+	}
+
 	.piano-retract {
 		position: absolute;
 		bottom: 100%;
-		right: 0;
-		min-height: 32px;
+		right: 0.5rem;
+		min-width: 44px;
+		min-height: 22px;
+		padding: 0;
+		border-bottom: 0;
+		border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+		background: var(--col-surface-raised);
 	}
 
 	&.piano-peeking .piano-octave {
@@ -134,88 +145,6 @@
 			min-height: 44px;
 		}
 	}
-}
-
-/* Accessible checkbox styles: larger hit area (>=48px) and clearer visuals */
-input[type="checkbox"] {
-	--visual-size: 20px;
-	-webkit-appearance: none;
-	appearance: none;
-
-	width: var(--visual-size);
-	height: var(--visual-size);
-	margin: 0;
-
-	padding: calc((48px - var(--visual-size)) / 2);
-	box-sizing: content-box;
-
-	position: relative;
-	cursor: pointer;
-	vertical-align: middle;
-	display: inline-block;
-}
-
-/* draw the visible box using ::after so the padded area remains clickable but visually compact */
-input[type="checkbox"]::after {
-	content: "";
-	position: absolute;
-	left: calc((100% - var(--visual-size)) / 2 - ((48px - var(--visual-size)) / 2));
-	top: calc((100% - var(--visual-size)) / 2 - ((48px - var(--visual-size)) / 2));
-	width: var(--visual-size);
-	height: var(--visual-size);
-	border-radius: 4px;
-	background: light-dark(
-		var(--col-white),
-		color-mix(in oklch, var(--col-white) 90%, var(--col-black))
-	);
-	border: 2px solid
-		light-dark(
-			color-mix(in oklch, var(--col-black) 20%, var(--col-white)),
-			color-mix(in oklch, var(--col-white) 20%, var(--col-black))
-		);
-	box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03) inset;
-	transition:
-		background 0.12s ease,
-		border-color 0.12s ease,
-		box-shadow 0.12s ease;
-}
-
-input[type="checkbox"]:checked::after {
-	background: var(--col-blue);
-	border-color: var(--col-blue);
-	box-shadow: inset 0 0 0 3px var(--col-white);
-}
-
-input[type="checkbox"]:focus-visible {
-	outline: none;
-}
-
-input[type="checkbox"]:focus-visible::after {
-	box-shadow:
-		0 0 0 4px
-			light-dark(
-				color-mix(in oklch, var(--col-blue) 14%, transparent),
-				color-mix(in oklch, var(--col-blue) 14%, transparent)
-			),
-		inset 0 1px 0 rgba(0, 0, 0, 0.03);
-}
-
-/* increase hit area for labels that wrap checkboxes as well */
-label > input[type="checkbox"] {
-	display: inline-block;
-}
-
-/* When the checkbox is disabled, show a muted style */
-input[type="checkbox"][disabled]::after {
-	background: light-dark(
-		color-mix(in oklch, var(--col-white) 95%, var(--col-black)),
-		color-mix(in oklch, var(--col-white) 20%, var(--col-black))
-	);
-	border-color: light-dark(
-		color-mix(in oklch, var(--col-black) 13%, var(--col-white)),
-		color-mix(in oklch, var(--col-white) 35%, var(--col-black))
-	);
-	opacity: 0.8;
 }
 
 .keyboard-input-settings {
@@ -253,10 +182,7 @@ input[type="checkbox"][disabled]::after {
 	--key-size: 40px;
 	--key-spacing: 2px;
 	--row-spacing: 8px;
-	--key-color: #ccc;
-	--special-key-color: #555;
-	--key-active-color: var(--col-green);
-	--key-border: #999;
+		--key-active-color: var(--col-success);
 
 	pointer-events: all;
 	user-select: none;
@@ -264,10 +190,9 @@ input[type="checkbox"][disabled]::after {
 	box-sizing: border-box;
 	min-width: 0;
 	overflow: hidden;
-	padding: 10px;
-	background: var(--col-surface);
-	border-radius: 8px;
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	padding: 0.5rem;
+	background: var(--col-surface-sunken);
+	border-radius: var(--radius-sm);
 
 	.qwerty-keys {
 		touch-action: none;
@@ -280,37 +205,34 @@ input[type="checkbox"][disabled]::after {
 	.qwerty-key {
 		cursor: pointer;
 		user-select: none;
-		transition:
-			fill 50ms linear,
-			filter 50ms linear;
-		filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+		fill: var(--key-white);
+		stroke: var(--key-edge);
+		transition: fill 50ms linear;
 
-		&:hover {
-			filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.15)) brightness(0.95);
-		}
 
 		&.active {
 			fill: var(--key-active-color) !important;
-			filter: drop-shadow(0 2px 8px rgba(76, 175, 80, 0.4));
 		}
 
-		&:active {
-			filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2)) brightness(0.9);
-		}
 	}
 
 	.qwerty-key-label {
+		fill: var(--key-black);
+		font-family: var(--font-ui);
 		font-weight: 500;
 		user-select: none;
 		pointer-events: none;
 	}
 
+	.qwerty-key-special {
+		fill: var(--col-surface-raised);
+	}
+	.qwerty-key-group:has(.qwerty-key-special) .qwerty-key-label {
+		fill: var(--col-fg);
+	}
 	.qwerty-key-group {
 		cursor: pointer;
 
-		&:hover .qwerty-key {
-			filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.15)) brightness(0.95);
-		}
 	}
 }
 

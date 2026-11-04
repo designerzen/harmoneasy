@@ -192,7 +192,7 @@ it("saves from the chain menu and offers overwrite or rename for duplicate names
 	const trigger = panel.querySelector<HTMLButtonElement>('.chain-actions [aria-haspopup="menu"]')!
 	const action = [
 		...panel.querySelectorAll<HTMLButtonElement>('.chain-actions [role="menuitem"]')
-	].find((item) => item.textContent === "Save as a Preset")!
+	].find((item) => item.textContent === "Save as a preset")!
 	expect(action.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true")
 	expect(panel.querySelector(".save-preset")).toBeNull()
 	const open = () => {

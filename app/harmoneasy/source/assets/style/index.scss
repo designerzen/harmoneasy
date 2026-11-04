@@ -9,6 +9,7 @@
 @use "./setup-wizard.scss";
 @use "./command-palette.scss";
 @use "./layout.scss";
+@use "./chrome.scss";
 @use "./typography.scss";
 @use "./keyframes.scss";
 @use "./notes.scss";
@@ -25,21 +26,9 @@
 .logo {
 	height: 1lh;
 	margin-right: calc(var(--pad) / 2);
-	will-change: filter;
-	transition: filter var(--time-medium);
-}
-
-.logo:hover {
-	filter: drop-shadow(0 0 2em #646cffaa);
 }
 
 .card {
 	padding: var(--pad);
 }
 
-.read-the-docs {
-	color: light-dark(
-		color-mix(in oklch, var(--col-black) 50%, var(--col-white)),
-		color-mix(in oklch, var(--col-white) 50%, var(--col-black))
-	);
-}

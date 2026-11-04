@@ -20,8 +20,7 @@ function createPickerDialog(
 	dialog.setAttribute("closedby", "any")
 	const header = element("header", titleInHeader ? "" : "device-picker-header")
 	const content = element("div", "dialog-content")
-	const headingParent = titleInHeader ? header : content
-	headingParent.append(element("h5", titleInHeader ? "" : "device-picker-title", title))
+	header.append(element("h5", titleInHeader ? "" : "device-picker-title", title))
 	const picker = createPicker(header, () => dialog.close())
 	content.append(picker.element)
 	const form = element("form")
@@ -67,7 +66,7 @@ export function createDeviceDialog(
 	}
 ) {
 	return createPickerDialog(
-		`${replacing ? "Swap" : "Add New"} ${direction === "input" ? "Input" : "Output"}`,
+		`${replacing ? "Swap" : "Add new"} ${direction === "input" ? "input" : "output"}`,
 		`add-${direction}-dialog`,
 		`Cancel ${replacing ? "swapping" : "adding"} ${direction}`,
 		onClose,
@@ -86,7 +85,7 @@ export function createTransformerDialog(
 	{ replacing, onClose }: { replacing?: Transformer<any>; onClose: () => void }
 ) {
 	return createPickerDialog(
-		replacing ? "Swap Transformer" : "Add New Transformer",
+		replacing ? "Swap transformer" : "Add new transformer",
 		"add-transformer-dialog",
 		`Cancel ${replacing ? "swapping" : "adding"} transformer`,
 		onClose,

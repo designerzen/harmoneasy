@@ -1,135 +1,141 @@
+// Default button: a quiet, bordered control. Variants change emphasis, never size.
 button {
-	border-radius: 8px;
-	border: var(--border);
-	border-color: transparent;
-	padding: calc(var(--pad) / 2) calc(var(--pad));
-	// ios a11y guidelines
-	min-width: 44px;
-	min-height: 44px;
-	font-size: 1em;
-	font-weight: 600;
-	font-family: inherit;
-	line-height: 1.35;
-	background-color: var(--col-bg);
-	color: var(--col-fg);
-	cursor: pointer;
 	box-sizing: border-box;
-
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.375rem;
+	min-width: var(--control-height);
+	min-height: var(--control-height);
+	padding: 0.25rem 0.75rem;
+	border: var(--border);
+	border-radius: var(--radius-sm);
+	background: var(--col-surface);
+	color: var(--col-fg);
+	font: inherit;
+	font-size: var(--text-sm);
+	font-weight: 500;
+	line-height: 1.2;
+	cursor: pointer;
 	transition:
-		background 0.2s ease,
-		border-color 0.25s;
+		background-color var(--time-medium) ease,
+		border-color var(--time-medium) ease,
+		color var(--time-medium) ease;
 
-	&.primary,
-	&[autofocus],
-	dialog[open] &[autofocus] {
-		background-color: var(--col-accent);
+	&:hover:not(:disabled) {
+		background: var(--col-surface-raised);
+		border-color: var(--col-line-strong);
+	}
+	&:active:not(:disabled) {
+		background: var(--col-pressed);
+	}
+	&:disabled {
+		opacity: 0.5;
+		cursor: default;
+	}
+
+	&.primary {
+		background: var(--col-accent);
+		border-color: transparent;
 		color: var(--col-on-accent);
-
-		&:hover {
-			background-color: var(--col-accent-hover);
+		font-weight: 600;
+		&:hover:not(:disabled) {
+			background: var(--col-accent-hover);
+			border-color: transparent;
 		}
 	}
 
 	&.secondary {
-		background-color: var(--col-surface);
+		background: var(--col-surface);
 		border-color: var(--col-line);
 		color: var(--col-fg);
-		&:hover:not(:disabled) {
-			border-color: var(--col-accent);
-		}
 	}
 
 	&.tertiary {
-		background-color: transparent;
+		background: transparent;
 		border-color: transparent;
 		color: inherit;
 		&:hover:not(:disabled) {
-			background-color: color-mix(in oklch, currentColor 12%, transparent);
+			background: var(--col-hover);
+			border-color: transparent;
+		}
+	}
+
+	&.danger {
+		background: var(--col-danger-solid);
+		border-color: transparent;
+		color: var(--col-on-danger);
+		font-weight: 600;
+		&:hover:not(:disabled) {
+			background: color-mix(in oklch, var(--col-danger-solid) 86%, black);
 			border-color: transparent;
 		}
 	}
 }
 
-button:hover {
-	border-color: light-dark(color-mix(in oklch, var(--col-plum) 60%, #fff), var(--col-plum));
+// Pressed toggles use the accent as a tint so several can sit together calmly.
+button[aria-pressed="true"] {
+	background: var(--col-accent-selected);
+	border-color: var(--col-accent);
 }
 
-button:active {
-	transform: scale(0.96);
-}
-
-#btn-metronome[aria-pressed="true"] {
-	background-color: var(--col-plum);
-	color: var(--col-on-accent);
-	border-color: currentColor;
-}
-
-button:focus {
-	outline: none;
-}
-button:focus-visible {
-	outline: 4px auto var(--col-orange);
-}
-
+// Icon-only close control shared by every dialog, tab and banner.
 .btn-close,
 .close-icon {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
+	padding: 0;
+	background: transparent;
+	border-color: transparent;
+	color: var(--col-muted);
 	&::before {
 		content: "\00d7" / "";
-		font-size: 1.5rem;
-		font-weight: 600;
+		font-size: var(--text-xl);
+		font-weight: 400;
 		line-height: 1;
+	}
+	&:hover:not(:disabled) {
+		background: var(--col-hover);
+		border-color: transparent;
+		color: var(--col-fg);
 	}
 }
 
 dialog .btn-close {
 	position: absolute;
-	top: var(--pad);
-	right: calc(var(--pad));
-	z-index: 999;
+	top: 0.75rem;
+	right: 0.75rem;
+	z-index: 2;
 }
 
 .logo-inline {
 	display: inline-block;
-	height: 1.5em;
 	height: 1lh;
 	width: auto;
-	margin-right: 0.5em;
+	flex: none;
+	margin-right: 0.25rem;
 	vertical-align: middle;
-	filter: invert(100%);
+	// These logos are black artwork; flip them to read on dark surfaces.
+	filter: invert(var(--dark));
 }
 
 .btn-remove {
-	background: light-dark(
-		color-mix(in oklch, var(--col-red) 30%, #fff),
-		color-mix(in oklch, var(--col-red) 90%, #000)
-	);
-	color: light-dark(var(--col-red), #fff);
-	border: none;
-	border-radius: 4px;
-	cursor: pointer;
-	transition: background 0.2s;
-	font-size: 0;
-
 	position: absolute;
 	right: var(--pad);
 	top: var(--pad);
-
-	&:hover {
-		background: light-dark(color-mix(in oklch, var(--col-red) 50%, #fff), var(--col-red));
+	padding: 0;
+	border-color: transparent;
+	background: var(--col-danger-soft);
+	color: var(--col-danger);
+	font-size: 0;
+	&:hover:not(:disabled) {
+		background: var(--col-danger-solid);
+		border-color: transparent;
+		color: var(--col-on-danger);
 	}
 }
 
-.btn-reset {
-	text-decoration: underline;
-	text-decoration-style: dotted;
-	text-underline-offset: 4px;
-	&:hover {
-		color: var(--col-red, red);
-		text-decoration-color: var(--col-red, red);
-	}
+.btn-reset:hover:not(:disabled) {
+	color: var(--col-danger);
+	border-color: var(--col-danger);
 }
 
 .btn-remove,
@@ -138,99 +144,51 @@ dialog .btn-close {
 	&::before {
 		content: "";
 		display: inline-block;
-		width: 20px;
-		height: 20px;
+		width: 1.125rem;
+		height: 1.125rem;
 		flex: none;
-		vertical-align: middle;
 		background-color: currentColor;
 		mask: url("../icons/trash.svg") center / contain no-repeat;
-		margin-right: 0.375rem;
 	}
 }
 
-.btn-remove {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-}
-
+// Emergency stop: always the one solid danger control on screen.
 .btn-kill-switch {
-	--col-bg: var(--col-red, red);
-	color: white;
-	text-transform: uppercase;
-}
-
-.btn-bluetooth {
-	&::before {
-		content: "📡";
-		margin-right: 0.375rem;
+	background: var(--col-danger-solid);
+	border-color: transparent;
+	color: var(--col-on-danger);
+	font-weight: 600;
+	&:hover:not(:disabled) {
+		background: color-mix(in oklch, var(--col-danger-solid) 86%, black);
+		border-color: transparent;
 	}
 }
 
-.btn-midi {
-	&::before {
-		content: "🎛";
-		margin-right: 0.375rem;
-	}
-}
-
-.btn-connect {
-	--col-bg: var(--col-green);
-	color: var(--col-on-accent);
-	&::before {
-		content: "+";
-		margin-right: 0.2rem;
-	}
+.btn-connect::before {
+	content: "+" / "";
 }
 
 .btn-disconnect {
-	--col-bg: var(--col-pink);
-	color: var(--col-on-accent);
+	color: var(--col-danger);
 	&::before {
-		content: "-";
-		margin-right: 0.2rem;
+		content: "\2212" / "";
 	}
 }
 
-.btn-import {
-	&::before {
-		content: "↑";
-		margin-right: 0.2rem;
-	}
+.btn-import::before {
+	content: "\2191" / "";
 }
 
-.btn-export {
-	&::before {
-		content: "↓";
-		margin-right: 0.2rem;
-	}
+.btn-export::before {
+	content: "\2193" / "";
 }
 
-.btn-settings {
-	--col-bg: var(--col-pink);
-	color: var(--col-on-accent);
-	&::before {
-		content: "⚙";
-		margin-right: 0.2rem;
-	}
-}
-.btn-add {
-	&::before {
-		content: "+";
-		margin-right: 0.2rem;
-	}
-}
-
-.btn-zoom {
+.btn-add::before {
+	content: "+" / "";
 }
 
 .btn-zoom-in,
 .btn-zoom-out {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: 0.375em;
-
 	&::before {
 		content: "";
 		display: inline-block;
@@ -254,44 +212,9 @@ dialog .btn-close {
 	}
 }
 
-.btn-follow {
-}
-
-.file-menu > button,
-.btn-file-menu-item {
-	min-width: 32px;
-	min-height: 28px;
-	padding: 4px 10px;
-	border: 1px solid transparent;
-	border-radius: 4px;
-	font-size: 12px;
-	line-height: 1.1;
-	font-weight: 500;
-	background: transparent;
-	color: var(--col-fg);
-
-	&:hover {
-		background: color-mix(in oklch, var(--col-fg) 12%, transparent);
-	}
-	&:focus-visible {
-		outline: 2px solid var(--col-orange);
-		outline-offset: 1px;
-	}
-}
-
-.transformer-drawer {
-	--col-bg: rgba(0, 0, 0, 0.5);
-}
-.btn-transport {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: var(--gap);
-
-	svg {
-		width: 1em;
-		height: 1em;
-		flex: none;
-		fill: currentColor;
-	}
+.btn-transport svg {
+	width: 1em;
+	height: 1em;
+	flex: none;
+	fill: currentColor;
 }

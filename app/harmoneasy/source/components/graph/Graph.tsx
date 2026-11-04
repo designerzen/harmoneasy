@@ -20,6 +20,7 @@ import {
 	type Edge,
 	type Connection,
 	useReactFlow,
+	useStoreApi,
 	useNodesInitialized
 } from "@xyflow/react"
 
@@ -40,7 +41,13 @@ import {
 	selectSurfaceControls
 } from "./control-surfaces"
 
-import { DEFAULT_GRAPH_OPTIONS, DEFAULT_VIEWPORT_OPTIONS, DEFAULT_LAYOUT_MODE } from "./options.ts"
+import {
+	DEFAULT_GRAPH_OPTIONS,
+	DEFAULT_VIEWPORT_OPTIONS,
+	DEFAULT_LAYOUT_MODE,
+	READABLE_FIT_OPTIONS,
+	FIT_TOP_MARGIN
+} from "./options.ts"
 
 import { EVENT_TRANSFORMERS_UPDATED } from "audiobus/io/transformer-manager.ts"
 import { EVENT_INPUTS_UPDATED } from "audiobus/io/input-manager.ts"
@@ -73,7 +80,8 @@ function FlowComponent({ isFront, focusRequest }: { isFront: boolean; focusReque
 	const [nodes, setNodes] = useState(initialNodes)
 	const [edges, setEdges] = useState(initialEdges)
 	const [layoutMode, setLayoutMode] = useState(chain.options.graphLayout ?? DEFAULT_LAYOUT_MODE)
-	const { fitView, getViewport, setViewport } = useReactFlow()
+	const { fitView, getNodes, getNodesBounds, getViewport, setViewport } = useReactFlow()
+	const store = useStoreApi()
 	const savedViewport = useRef<ReturnType<typeof getViewport> | null>(null)
 	const fittedLayout = useRef<string | null>(null)
 	const fittedFocusRequest = useRef(-1)
@@ -170,7 +178,13 @@ function FlowComponent({ isFront, focusRequest }: { isFront: boolean; focusReque
 		const frame = requestAnimationFrame(() => {
 			fittedLayout.current = layoutMode
 			fittedFocusRequest.current = focusRequest
-			void fitView({ padding: 0.15, duration: 150, ...DEFAULT_GRAPH_OPTIONS })
+			void fitView(READABLE_FIT_OPTIONS).then(() => {
+				const { x, zoom } = getViewport()
+				const bounds = getNodesBounds(getNodes())
+				if (bounds.height * zoom > store.getState().height) {
+					void setViewport({ x, y: FIT_TOP_MARGIN - bounds.y * zoom, zoom })
+				}
+			})
 		})
 		return () => cancelAnimationFrame(frame)
 	}, [

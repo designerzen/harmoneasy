@@ -369,7 +369,7 @@ export function createPresetArtwork({
 				(i * 10) / Math.max(3, preset.steps.length),
 				2 + (((seed >>> (i % 8)) + i * 3) % 7)
 			]),
-			colour: `hsl(${seed % 360} 65% 72%)`,
+			colour: `oklch(78% 0.11 ${seed % 360})`,
 			gesture: context?.description ?? "A custom musical chain"
 		}
 	const short = /staccato|minimal|tap|ratchet|pulse|stabs|sparkle/.test(preset.id)
@@ -395,8 +395,12 @@ export function createPresetArtwork({
 		svg.setAttribute("aria-label", `${preset.name}: ${score.gesture}`)
 	}
 	const gradient = add("linearGradient", { id, x2: 1, y2: 1 }, add("defs", {}))
-	add("stop", { "stop-color": "#232637" }, gradient)
-	add("stop", { offset: 1, "stop-color": "#111320" }, gradient)
+	add("stop", { style: "stop-color: oklch(26% var(--neutral-chroma) var(--theme-hue))" }, gradient)
+	add(
+		"stop",
+		{ offset: 1, style: "stop-color: oklch(15% var(--neutral-chroma) var(--theme-hue))" },
+		gradient
+	)
 	add("rect", { width: 320, height: 160, rx: 14, fill: `url(#${id})` })
 	add("circle", { cx: 270, cy: 16, r: 110, fill: score.colour, opacity: 0.08 })
 	for (let i = 0; i < 5; i++) {
@@ -416,7 +420,12 @@ export function createPresetArtwork({
 			opacity: 0.65 + (index % 3) * 0.15
 		})
 	)
-	add("circle", { cx: 278, cy: 34, r: 24, fill: "#171a29" })
+	add("circle", {
+		cx: 278,
+		cy: 34,
+		r: 24,
+		style: "fill: oklch(19% var(--neutral-chroma) var(--theme-hue))"
+	})
 	add("image", { class: "preset-artwork-icon", href: icon, x: 262, y: 18, width: 32, height: 32 })
 	if (context?.category === "Accessibility") {
 		const group = add("g", {})
@@ -428,7 +437,7 @@ export function createPresetArtwork({
 				width: 108,
 				height: 76,
 				rx: 16,
-				fill: "#171a29",
+				style: "fill: oklch(19% var(--neutral-chroma) var(--theme-hue))",
 				stroke: score.colour
 			},
 			group

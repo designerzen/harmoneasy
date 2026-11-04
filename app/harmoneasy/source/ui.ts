@@ -1166,8 +1166,7 @@ export default class UI implements IAudioOutput {
 			// Create download button
 			const downloadBtn = document.createElement("button")
 			downloadBtn.textContent = "Download as HTML"
-			downloadBtn.style.cssText =
-				"margin-top: 20px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;"
+			downloadBtn.className = "primary"
 			downloadBtn.onclick = async () => {
 				const blob = await htmlCreator(recorder, timer)
 				htmlSaver(blob, recorder.name)

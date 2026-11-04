@@ -3,12 +3,10 @@
 	gap: 0.75rem;
 	min-width: 0;
 	padding-block: 0.75rem;
-	text-transform: none;
-	letter-spacing: normal;
 	label {
 		display: grid;
 		gap: 0.35rem;
-		font-size: 0.875rem;
+		font-size: var(--text-md);
 	}
 	input,
 	select,
@@ -23,7 +21,7 @@
 		gap: 0.5rem;
 		padding: 0.75rem;
 		border: 1px solid var(--col-line);
-		border-radius: 10px;
+		border-radius: var(--radius-md);
 	}
 	.performance-macro input[type="range"] {
 		width: 100%;
@@ -35,8 +33,6 @@
 	border: 0;
 	background: transparent;
 	color: inherit;
-	text-transform: none;
-	letter-spacing: normal;
 	&::before,
 	&::after {
 		content: none;
@@ -51,12 +47,7 @@
 
 #about-dialog {
 	width: min(42rem, calc(100vw - 2rem));
-	height: auto;
 	padding: 0;
-	border: 1px solid var(--col-line);
-	border-radius: 20px;
-	background: var(--col-surface);
-	box-shadow: 0 24px 80px rgb(0 0 0 / 0.25);
 	overflow: hidden;
 	&[open] {
 		display: flex;
@@ -71,13 +62,14 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: 1rem;
+		margin: 0;
+		padding-block: 0.5rem;
+		padding-right: 0.75rem;
 		border-bottom: 1px solid var(--col-line);
 	}
 	.about-label {
-		font-size: 0.75rem;
+		font-size: var(--text-xs);
 		font-weight: 700;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
 		color: var(--col-muted);
 	}
 	h2,
@@ -85,21 +77,9 @@
 	h6,
 	summary {
 		margin: 0;
-		text-transform: none;
-		letter-spacing: normal;
 	}
 	form {
 		margin: 0;
-	}
-	> header button {
-		padding: 0.5rem 0.75rem;
-		font-size: 0.8125rem;
-		background: transparent;
-		color: var(--col-fg);
-		border: 1px solid var(--col-line);
-		&:hover {
-			background: var(--col-accent-soft);
-		}
 	}
 	.about-content {
 		min-height: 0;
@@ -128,25 +108,23 @@
 			font-size: clamp(1.5rem, 5vw, 2rem);
 			font-weight: 700;
 			line-height: 1.2;
-			letter-spacing: -0.04em;
 		}
 	}
 	#about-version {
 		margin: 0.25rem 0 0;
-		font-size: 0.75rem;
+		font-size: var(--text-xs);
 		color: var(--col-muted);
 		font-variant-numeric: tabular-nums;
 	}
 	.about-tagline {
-		margin-bottom: 0.625rem;
-		font-size: clamp(1.5rem, 5vw, 2rem);
+		margin-bottom: 0.5rem;
+		font-size: var(--text-xl);
 		font-weight: 600;
 		line-height: 1.25;
-		letter-spacing: -0.035em;
 	}
 	.about-description {
 		color: var(--col-muted);
-		font-size: 0.9375rem;
+		font-size: var(--text-md);
 	}
 	.about-links {
 		display: flex;
@@ -158,57 +136,36 @@
 			align-items: center;
 			gap: 0.375rem;
 			min-height: 44px;
-			font-size: 0.8125rem;
-			font-weight: 700;
+			font-size: var(--text-sm);
+			font-weight: 600;
 		}
-	}
-	a:hover {
-		text-decoration: underline;
-		text-underline-offset: 0.2em;
-	}
-	:where(a, summary, .about-content):focus-visible {
-		outline: 2px solid var(--col-accent);
-		outline-offset: 3px;
-		border-radius: 3px;
 	}
 	.about-community {
 		padding: 1.25rem;
 		margin-bottom: 1rem;
-		border-radius: 12px;
+		border-radius: var(--radius-lg);
 		background: var(--col-surface-raised);
 		p {
 			margin: 0.5rem 0 0;
-			font-size: 0.8125rem;
+			font-size: var(--text-sm);
 			color: var(--col-muted);
 		}
 	}
 	h3 {
-		font-size: 0.9375rem;
+		font-size: var(--text-md);
 		font-weight: 700;
 	}
 	details {
 		display: block;
 		border-top: 1px solid var(--col-line);
 		> p {
-			font-size: 0.8125rem;
+			font-size: var(--text-sm);
 			color: var(--col-muted);
 		}
 	}
 	summary {
-		justify-items: start;
 		min-height: 48px;
-		padding: 0.875rem 0;
-		font-size: 0.8125rem;
-		font-weight: 600;
-		&:hover {
-			color: var(--col-accent);
-		}
-	}
-	summary::after {
-		transform: rotate(-90deg);
-	}
-	details[open] > summary::after {
-		transform: rotate(180deg);
+		font-size: var(--text-sm);
 	}
 	ul {
 		margin: 0 0 1rem;
@@ -217,13 +174,13 @@
 	}
 	li {
 		padding: 0.75rem 0;
-		font-size: 0.875rem;
+		font-size: var(--text-md);
 		border-bottom: 1px solid var(--col-line);
 	}
 	#about-credits span {
 		display: block;
 		margin-top: 0.25rem;
-		font-size: 0.75rem;
+		font-size: var(--text-xs);
 		color: var(--col-muted);
 	}
 	#about-packages {
@@ -233,22 +190,22 @@
 	}
 	.package-item {
 		padding: 1rem;
-		border-radius: 8px;
+		border-radius: var(--radius-md);
 		background: var(--col-surface-raised);
 		h6 {
 			margin: 0 0 0.25rem;
-			font-size: 0.875rem;
+			font-size: var(--text-md);
 		}
 		.version {
 			color: var(--col-muted);
 			font-weight: 400;
 		}
 		p {
-			font-size: 0.8125rem;
+			font-size: var(--text-sm);
 			color: var(--col-muted);
 		}
 		a {
-			font-size: 0.8125rem;
+			font-size: var(--text-sm);
 		}
 	}
 	> footer {
@@ -257,7 +214,7 @@
 		p {
 			margin: 0;
 			color: var(--col-muted);
-			font-size: 0.75rem;
+			font-size: var(--text-xs);
 		}
 	}
 }
@@ -265,28 +222,24 @@
 dialog {
 	box-sizing: border-box;
 	width: fit-content;
-	min-width: 0;
-	height: auto;
+	min-width: min(24rem, calc(100vw - 2rem));
+	height: fit-content;
 	max-width: calc(100vw - 2rem);
 	max-height: calc(100dvh - 2rem);
 	margin: auto;
-	padding: clamp(1rem, 4vw, 2rem) clamp(1rem, 5vw, 3rem);
+	padding: 1.25rem;
 	overflow: auto;
 	overscroll-behavior: contain;
-	overflow-wrap: anywhere;
+	overflow-wrap: break-word;
 	z-index: 9009;
-
-	align-self: center;
-	justify-self: center;
 	position: fixed;
-	top: 0;
-	bottom: 0;
+	inset: 0;
+	border: var(--border);
+	border-radius: var(--radius-lg);
+	background: var(--col-surface);
+	color: var(--col-fg);
+	box-shadow: var(--shadow-lg);
 
-	// Keep backdrop decoration outside the dialog's scrolling content.
-	&::before,
-	&::after {
-		content: none;
-	}
 	*,
 	*::before,
 	*::after {
@@ -295,7 +248,18 @@ dialog {
 	> * {
 		min-width: 0;
 	}
-	> header,
+	// Every dialog title has the same size and leaves room for the close button.
+	> header {
+		flex-shrink: 0;
+		min-height: var(--control-height);
+		margin-bottom: 1rem;
+		padding-right: 2.5rem;
+		:is(h2, h5) {
+			font-size: var(--text-xl);
+			font-weight: 600;
+			line-height: var(--control-height);
+		}
+	}
 	> footer {
 		flex-shrink: 0;
 	}
@@ -307,14 +271,26 @@ dialog {
 		white-space: normal;
 	}
 	:where(pre) {
+		margin: 0;
+		font-size: var(--text-sm);
 		white-space: pre-wrap;
 		overflow-wrap: anywhere;
+	}
+	:where(p) {
+		line-height: 1.5;
+	}
+	:where(details) {
+		border-top: var(--border);
+	}
+	// Scrollable regions take focus; keep their ring inside the dialog's clipped edge.
+	[tabindex="0"]:focus-visible {
+		outline-offset: -2px;
 	}
 }
 
 dialog::backdrop {
 	background: var(--col-backdrop);
-	backdrop-filter: blur(20px);
+	backdrop-filter: blur(6px);
 }
 
 html:has(dialog:modal),
@@ -323,8 +299,9 @@ body:has(dialog:modal) {
 }
 
 #start-dialog {
-	--start-line: color-mix(in oklch, var(--col-line) 50%, var(--col-bg));
+	--start-line: var(--col-line);
 	width: 100vw;
+	min-width: 0;
 	max-width: 100vw;
 	height: 100dvh;
 	max-height: 100dvh;
@@ -336,15 +313,11 @@ body:has(dialog:modal) {
 	background: var(--col-bg);
 	color: var(--col-fg);
 	overflow: auto;
-	font-size: 1rem;
+	font-size: var(--text-lg);
 	line-height: 1.45;
 	&[open] {
 		display: flex;
 		flex-direction: column;
-	}
-	&::before,
-	&::after {
-		display: none;
 	}
 	.start-heading {
 		box-sizing: border-box;
@@ -352,17 +325,13 @@ body:has(dialog:modal) {
 		margin: auto;
 		padding: 2.5rem clamp(1.25rem, 5vw, 2rem);
 		flex-shrink: 0;
-		font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-		text-transform: none;
-		letter-spacing: normal;
 		.backlink {
 			display: inline-flex;
 			align-items: center;
-			gap: 0.875rem;
+			gap: 0.75rem;
 			color: var(--col-fg);
-			font-size: 1.5rem;
+			font-size: var(--text-2xl);
 			font-weight: 600;
-			letter-spacing: -0.04em;
 		}
 		.logo {
 			width: 2.25rem;
@@ -371,23 +340,13 @@ body:has(dialog:modal) {
 		}
 		button {
 			margin: 0;
-			font-weight: 500;
-			text-transform: none;
-			letter-spacing: normal;
-			&:active {
-				transform: translateY(1px);
-			}
-		}
-		:focus-visible {
-			outline: 2px solid var(--col-accent);
-			outline-offset: 4px;
 		}
 	}
 	#start-preset-context {
 		margin-top: 2rem;
 		h1 {
 			margin: 0 0 0.75rem;
-			font-size: 1.75rem;
+			font-size: var(--text-2xl);
 			line-height: 1.2;
 			overflow-wrap: anywhere;
 		}
@@ -409,15 +368,9 @@ body:has(dialog:modal) {
 			min-width: 0;
 			min-height: 3.25rem;
 			padding: 0.875rem 1rem;
-			border: 1px solid var(--start-line);
-			border-radius: 10px;
-			font-size: 0.875rem;
+			border-radius: var(--radius-md);
+			font-size: var(--text-md);
 			line-height: 1.4;
-			background: color-mix(in oklch, var(--col-surface) 60%, var(--col-bg));
-			&:hover:not(:disabled) {
-				background: var(--col-surface-raised);
-				border-color: color-mix(in oklch, var(--col-accent) 50%, var(--start-line));
-			}
 		}
 		svg {
 			width: 1.125rem;
@@ -452,7 +405,7 @@ body:has(dialog:modal) {
 		margin-top: 1.5rem;
 		padding-top: 1rem;
 		border-top: 1px solid var(--start-line);
-		font-size: 0.8125rem;
+		font-size: var(--text-sm);
 		button,
 		a {
 			display: inline-flex;
@@ -482,7 +435,7 @@ body:has(dialog:modal) {
 			padding: 1rem 1.5rem;
 			border-bottom: 1px solid var(--col-line);
 			.backlink {
-				font-size: 1.125rem;
+				font-size: var(--text-lg);
 			}
 			.logo {
 				width: 1.75rem;
@@ -527,22 +480,20 @@ body:has(dialog:modal) {
 			margin: 0;
 			max-width: none;
 		}
+		--focus-ring: var(--col-on-accent);
 		button {
-			min-height: 42px;
 			margin: 0;
-			&:focus-visible {
-				outline: 3px solid var(--col-on-accent);
-				outline-offset: 3px;
-			}
 		}
 		.primary {
-			border-color: var(--col-on-accent);
+			background: var(--col-surface);
+			color: var(--col-fg);
 		}
 		#dismiss-start-room {
+			color: inherit;
 			align-self: start;
 			width: 42px;
 			padding: 0;
-			font-size: 1.5rem;
+			font-size: var(--text-2xl);
 			line-height: 1;
 		}
 		@media (max-width: 680px) {
@@ -581,75 +532,35 @@ body:has(dialog:modal) {
 	max-width: calc(100% - 2rem);
 	max-height: calc(100dvh - 2rem);
 	padding: 0;
-	border: 1px solid var(--export-line);
-	border-radius: 16px;
-	background: var(--col-bg);
-	color: var(--col-fg);
-	box-shadow: 0 24px 100px #0006;
 	overflow: hidden;
 	isolation: isolate;
-	font-size: 1rem;
-	line-height: 1.5;
 	&[open] {
 		display: flex;
 		flex-direction: column;
 	}
-	&::before,
-	&::after {
-		display: none;
-	}
-	&::backdrop {
-		background: var(--col-backdrop);
-		backdrop-filter: blur(8px);
-	}
-	*,
-	*::before,
-	*::after {
-		box-sizing: border-box;
-	}
 	form,
 	p {
 		margin: 0;
-	}
-	button {
-		min-height: 40px;
-		padding: 0.6rem 1rem;
-		border-radius: 8px;
-		font-size: 0.85rem;
-		text-transform: none;
-		letter-spacing: normal;
-	}
-	button:focus-visible,
-	a:focus-visible {
-		outline: 2px solid var(--export-accent);
-		outline-offset: 3px;
 	}
 	.opendaw-export-heading {
 		display: flex;
 		align-items: start;
 		justify-content: space-between;
 		gap: 1rem;
-		padding: 1.5rem;
+		margin: 0;
+		padding: 1.25rem 0.75rem 1.25rem 1.5rem;
 		h2 {
 			margin: 0;
-			font-size: 1.3rem;
-			font-weight: 700;
-			text-transform: none;
-			letter-spacing: -0.025em;
+			line-height: 1.2;
 		}
 		p {
 			margin-top: 0.4rem;
 			max-width: none;
 			color: var(--export-muted);
-			font-size: 0.85rem;
+			font-size: var(--text-sm);
 		}
 		form {
 			flex: 0 0 auto;
-		}
-		button {
-			background: transparent;
-			color: var(--export-muted);
-			border: 1px solid var(--export-line);
 		}
 	}
 	.opendaw-code-panel {
@@ -659,7 +570,7 @@ body:has(dialog:modal) {
 		min-height: 0;
 		margin: 0 1.5rem;
 		border: 1px solid var(--export-line);
-		border-radius: 10px;
+		border-radius: var(--radius-md);
 		overflow: hidden;
 		background: var(--col-surface);
 	}
@@ -670,12 +581,12 @@ body:has(dialog:modal) {
 		padding: 0.65rem 1rem;
 		border-bottom: 1px solid var(--export-line);
 		color: var(--export-muted);
-		font-size: 0.75rem;
+		font-size: var(--text-xs);
 		label {
 			font-weight: 600;
 		}
 		span {
-			font-family: monospace;
+			font-family: var(--font-mono);
 		}
 	}
 	#opendaw-export-code {
@@ -699,7 +610,7 @@ body:has(dialog:modal) {
 		tab-size: 4;
 		user-select: text;
 		&:focus-visible {
-			outline: 2px solid var(--export-accent);
+			outline: 2px solid var(--focus-ring);
 			outline-offset: -2px;
 		}
 	}
@@ -710,26 +621,17 @@ body:has(dialog:modal) {
 		padding: 1rem 1.5rem;
 		p {
 			flex: 1;
-			font-size: 0.75rem;
+			font-size: var(--text-xs);
 			color: var(--export-muted);
 		}
 		a {
-			color: var(--export-accent);
-			font-size: 0.85rem;
-			text-decoration: none;
+			font-size: var(--text-sm);
 			white-space: nowrap;
-			&:hover {
-				text-decoration: underline;
-			}
 		}
 		button {
 			flex: 0 0 auto;
-			background: var(--export-accent);
-			color: var(--col-on-accent);
-			border: 1px solid transparent;
 		}
 		button:disabled {
-			opacity: 0.65;
 			cursor: wait;
 		}
 	}
@@ -738,7 +640,7 @@ body:has(dialog:modal) {
 			padding: 1rem;
 			gap: 0.5rem;
 			h2 {
-				font-size: 1.1rem;
+				font-size: var(--text-lg);
 			}
 		}
 		.opendaw-code-panel {
@@ -762,7 +664,7 @@ body:has(dialog:modal) {
 }
 
 .midi-device-preview {
-	margin: 0.65rem 0 0;
+	margin: 0.625rem 0 0;
 	max-width: 100%;
 	min-width: 0;
 	img {
@@ -770,20 +672,19 @@ body:has(dialog:modal) {
 		width: 100%;
 		max-height: 10rem;
 		object-fit: contain;
-		border-radius: 0.5rem;
+		border-radius: var(--radius-md);
 	}
 	figcaption {
 		margin-top: 0.5rem;
 	}
 	p {
 		margin-block: 0.4rem;
-		font-size: 0.8rem;
-		text-transform: none;
+		font-size: var(--text-sm);
 	}
 	a {
 		display: inline-block;
 		margin: 0.25rem 0.75rem 0.25rem 0;
-		font-size: 0.75rem;
+		font-size: var(--text-xs);
 	}
 }
 
@@ -798,7 +699,7 @@ body:has(dialog:modal) {
 		width: 100%;
 		border-collapse: collapse;
 		text-align: left;
-		font-size: 0.85rem;
+		font-size: var(--text-sm);
 	}
 	caption {
 		text-align: left;
@@ -806,8 +707,8 @@ body:has(dialog:modal) {
 	}
 	th,
 	td {
-		padding: 0.65rem;
-		border-bottom: 1px solid currentColor;
+		padding: 0.625rem;
+		border-bottom: var(--border);
 		vertical-align: top;
 	}
 	th {
@@ -822,7 +723,7 @@ body:has(dialog:modal) {
 		white-space: nowrap;
 	}
 	td:last-child {
-		font-family: monospace;
+		font-family: var(--font-mono);
 		min-width: 10rem;
 	}
 	form {
@@ -850,13 +751,13 @@ body:has(dialog:modal) {
 
 	label {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
 		gap: 0.5rem;
 		min-width: 0;
-	}
-
-	select {
-		max-width: 100%;
+		> :is(select, input:not([type="checkbox"], [type="radio"])) {
+			flex: 1 1 12rem;
+		}
 	}
 
 	li {
@@ -867,8 +768,10 @@ body:has(dialog:modal) {
 #midi-dialog {
 	width: 56rem;
 	max-width: calc(100vw - 2rem);
-	text-transform: none;
 
+	h3 {
+		margin-block: 1rem 0.5rem;
+	}
 	#midi-control-settings {
 		max-width: 100%;
 
@@ -888,7 +791,7 @@ body:has(dialog:modal) {
 			flex-wrap: wrap;
 			gap: 0.75rem;
 			padding-block: 0.75rem;
-			border-bottom: 1px solid currentColor;
+			border-bottom: var(--border);
 		}
 
 		li label:first-child {
@@ -898,7 +801,7 @@ body:has(dialog:modal) {
 
 	.performance-macro {
 		padding-block: var(--pad);
-		border-bottom: 1px solid currentColor;
+		border-bottom: var(--border);
 
 		label {
 			display: flex;

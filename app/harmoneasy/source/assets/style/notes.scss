@@ -1,43 +1,26 @@
-// [data-number="0"],
-[data-key="A"] {
-	--col-accent: var(--col-orange);
-}
-[data-key="A#"] {
-	--col-accent: var(--col-orange);
-}
-// [data-number="1"],
-[data-key="B"] {
-	--col-accent: var(--col-red);
-}
-// [data-number="2"],
-[data-key="C"] {
-	--col-accent: var(--col-plum);
-}
-[data-key="C#"] {
-	--col-accent: var(--col-plum);
-}
-// [data-number="3"],
-[data-key="D"] {
-	--col-accent: var(--col-pink);
-}
-[data-key="D#"] {
-	--col-accent: var(--col-pink);
-}
-// [data-number="4"],
-[data-key="E"] {
-	--col-accent: var(--col-purple);
-}
-// [data-number="5"],
-[data-key="F"] {
-	--col-accent: var(--col-blue);
-}
-[data-key="F#"] {
-	--col-accent: var(--col-blue);
-}
-// [data-number="6"],
-[data-key="G"] {
-	--col-accent: var(--col-green);
-}
-[data-key="G#"] {
-	--col-accent: var(--col-green);
+// Pitch classes step evenly around the hue wheel from the theme, so sharps sit beside
+// their natural and every note stays equally visible in light and dark mode.
+$note-steps: (
+	"C": 0,
+	"C#": 0,
+	"D": 1,
+	"D#": 1,
+	"E": 2,
+	"F": 3,
+	"F#": 3,
+	"G": 4,
+	"G#": 4,
+	"A": 5,
+	"A#": 5,
+	"B": 6
+);
+
+@each $key, $step in $note-steps {
+	[data-key="#{$key}"] {
+		--note-hue: calc(var(--theme-hue) + #{$step * 51.43});
+		--col-accent: light-dark(
+			oklch(52% var(--vivid-chroma) var(--note-hue)),
+			oklch(74% var(--vivid-chroma) var(--note-hue))
+		);
+	}
 }

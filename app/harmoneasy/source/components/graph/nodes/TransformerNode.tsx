@@ -51,13 +51,6 @@ export function TransformerNode(props: any) {
 	const name = element.options.displayName || props.data.label
 	const color = element.options.displayColor
 	const customColor = /^#[0-9a-f]{6}$/i.test(color ?? "")
-	const brightness = customColor
-		? [1, 3, 5].reduce(
-				(sum, offset, index) =>
-					sum + parseInt(color.slice(offset, offset + 2), 16) * [299, 587, 114][index],
-				0
-			) / 1000
-		: 0
 	const enabled = useSyncExternalStore(
 		useCallback((callback) => element.subscribeControls(callback), [element]),
 		() => Boolean(element.options.enabled)
@@ -106,11 +99,7 @@ export function TransformerNode(props: any) {
 			data-layout={isVertical ? "vertical" : "horizontal"}
 			style={
 				customColor
-					? ({
-							"--node-surface": color,
-							"--node-on-surface": brightness > 150 ? "#10121a" : "#ffffff",
-							backgroundImage: "none"
-						} as React.CSSProperties)
+					? ({ "--node-accent": color } as React.CSSProperties)
 					: undefined
 			}
 			data-midi-scope={`${chainId}:transformer:${props.data.element.midiControlId}`}

@@ -7,20 +7,20 @@
 	align-items: center;
 	justify-content: center;
 	gap: 8px;
-	padding: 7px;
-	border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
-	border-radius: 6px;
+	padding: 0.25rem 0.5rem;
+	border: 1px solid transparent;
+	border-radius: var(--radius-sm, 6px);
 	font: inherit;
 	color: var(--col-fg, #f5f4fc);
-	background: var(--col-line, #292735);
+	background: transparent;
 	cursor: pointer;
-	min-width: 44px;
-	min-height: 44px;
+	min-width: var(--control-height, 44px);
+	min-height: var(--control-height, 44px);
 }
 .he-dropdown svg,
 .cs-add-dialog svg {
-	width: 22px;
-	height: 22px;
+	width: 18px;
+	height: 18px;
 	flex: none;
 	fill: none;
 	stroke: currentColor;
@@ -39,11 +39,11 @@
 	min-width: min(15rem, calc(100vw - 16px));
 	max-width: calc(100vw - 16px);
 	border: 1px solid var(--col-line, #777784);
-	border-radius: 12px;
+	border-radius: var(--radius-md, 12px);
 	color: var(--col-fg, #f5f4fc);
-	background: var(--col-bg, #100f19);
-	font: 600 1rem/1.4 var(--font-family, system-ui, sans-serif);
-	box-shadow: 0 10px 30px #0006;
+	background: var(--col-surface, #100f19);
+	font: 500 var(--text-md, 1rem) / 1.4 var(--font-ui, system-ui, sans-serif);
+	box-shadow: var(--shadow-md, 0 10px 30px #0006);
 	overflow: visible;
 	text-transform: none;
 	letter-spacing: normal;
@@ -108,11 +108,11 @@
 	background: color-mix(in srgb, currentColor 12%, transparent);
 }
 .he-dropdown :focus-visible {
-	outline: 3px solid var(--col-accent, #c5b9ff);
+	outline: 2px solid var(--focus-ring, #c5b9ff);
 	outline-offset: 2px;
 }
 .he-dropdown .he-dropdown-panel .he-dropdown-items > .device-remove {
-	color: light-dark(#9b183b, #ff9eb7);
+	color: var(--col-danger, light-dark(#9b183b, #ff9eb7));
 }
 .he-dropdown-panel button:disabled {
 	opacity: 0.55;

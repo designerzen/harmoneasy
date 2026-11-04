@@ -2,12 +2,13 @@ import { EVENT_CHANGE, EVENT_CLICK, EVENT_INPUT } from "audiobus/event-constants
 
 export const THEME_STORAGE_KEY = "harmoneasy.theme"
 export const THEME_PRESETS = [
-	{ name: "Violet", hue: 290 },
-	{ name: "Ocean", hue: 250 },
-	{ name: "Lagoon", hue: 190 },
-	{ name: "Forest", hue: 145 },
-	{ name: "Amber", hue: 75 },
-	{ name: "Rose", hue: 15 }
+	{ name: "Violet", hue: 290, chroma: 1 },
+	{ name: "Ocean", hue: 250, chroma: 1 },
+	{ name: "Lagoon", hue: 190, chroma: 1 },
+	{ name: "Forest", hue: 145, chroma: 1 },
+	{ name: "Amber", hue: 75, chroma: 1 },
+	{ name: "Rose", hue: 15, chroma: 1 },
+	{ name: "Graphite", hue: 260, chroma: 0.25 }
 ] as const
 
 type ThemeMode = "system" | "light" | "dark"
@@ -57,6 +58,10 @@ export function createThemeControls(doc: Document) {
 
 	const render = () => {
 		doc.documentElement.style.setProperty("--theme-hue", String(theme.hue))
+		doc.documentElement.style.setProperty(
+			"--theme-chroma",
+			String(THEME_PRESETS.find((item) => item.hue === theme.hue)?.chroma ?? 1)
+		)
 		doc.documentElement.dataset.themeMode = theme.mode
 		if (preset) {
 			preset.value = THEME_PRESETS.some((item) => item.hue === theme.hue)

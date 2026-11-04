@@ -142,7 +142,7 @@ export const getStructure = (
 				type: "smoothstep",
 				label: `${connection.controlIds.length} controls`,
 				deletable: true,
-				style: { stroke: "#33bb91", strokeDasharray: "5 4", strokeWidth: 2 },
+				style: { stroke: "var(--col-control)", strokeDasharray: "5 4", strokeWidth: 1.5 },
 				data: { controlSurfaceId: surface.id, componentId: connection.componentId }
 			})
 		}
@@ -151,6 +151,8 @@ export const getStructure = (
 }
 
 export const NODE_GAP = 48
+/** Stages with more parallel nodes than this wrap, keeping the graph legible when fitted. */
+export const MAX_STAGE_NODES = 4
 
 /** Lay out each routing stage using actual node bounds, centered across the flow. */
 export function layoutMeasuredNodes(nodes: GraphNode[], mode: string): GraphNode[] {
@@ -169,24 +171,34 @@ export function layoutMeasuredNodes(nodes: GraphNode[], mode: string): GraphNode
 	}
 	const positions = new Map<string, { x: number; y: number }>()
 	let along = 0
+	const crossSize = (node: GraphNode) => (vertical ? size(node).width : size(node).height)
+	const alongSize = (node: GraphNode) => (vertical ? size(node).height : size(node).width)
 	for (const [, group] of [...columns].sort(([a], [b]) => a - b)) {
 		group.sort((a, b) => a.data.layoutRow - b.data.layoutRow)
-		const crossSize = (node: GraphNode) => (vertical ? size(node).width : size(node).height)
-		const alongSize = (node: GraphNode) => (vertical ? size(node).height : size(node).width)
-		const routingNodes = group.filter((node) => !node.data.standalone)
-		const total =
-			routingNodes.reduce((sum, node) => sum + crossSize(node), 0) +
-			NODE_GAP * (routingNodes.length - 1)
-		let cross = -total / 2
-		for (const node of group) {
-			positions.set(
-				node.id,
-				node.data.manualPosition ??
-					(vertical ? { x: cross, y: along } : { x: along, y: cross })
-			)
-			cross += crossSize(node) + NODE_GAP
+		const routingCount = group.filter((node) => !node.data.standalone).length
+		const lines: GraphNode[][] = []
+		for (let index = 0; index < group.length; index += MAX_STAGE_NODES) {
+			lines.push(group.slice(index, index + MAX_STAGE_NODES))
 		}
-		along += Math.max(...group.map(alongSize)) + NODE_GAP
+		for (const line of lines) {
+			const routingNodes =
+				routingCount > MAX_STAGE_NODES
+					? line
+					: line.filter((node) => !node.data.standalone)
+			const total =
+				routingNodes.reduce((sum, node) => sum + crossSize(node), 0) +
+				NODE_GAP * (routingNodes.length - 1)
+			let cross = -total / 2
+			for (const node of line) {
+				positions.set(
+					node.id,
+					node.data.manualPosition ??
+						(vertical ? { x: cross, y: along } : { x: along, y: cross })
+				)
+				cross += crossSize(node) + NODE_GAP
+			}
+			along += Math.max(...line.map(alongSize)) + NODE_GAP
+		}
 	}
 	return nodes.map((node) => {
 		const position = positions.get(node.id)!

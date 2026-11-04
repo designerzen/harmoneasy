@@ -3,6 +3,15 @@ export const DEFAULT_GRAPH_OPTIONS = {
 	maxZoom: 1.5
 }
 
+// Opening a chain favours readable nodes; "Fit all" still shows everything.
+export const READABLE_FIT_OPTIONS = {
+	padding: 0.06,
+	minZoom: 0.6,
+	maxZoom: 1
+}
+
+export const FIT_TOP_MARGIN = 16
+
 export const DEFAULT_VIEWPORT_OPTIONS = {
 	x: 0,
 	y: 0,

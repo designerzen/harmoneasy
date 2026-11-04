@@ -2,8 +2,6 @@
 	width: min(36rem, calc(100vw - 2rem));
 	max-height: calc(100dvh - 2rem);
 	overflow-y: auto;
-	padding: var(--pad);
-
 	fieldset {
 		display: grid;
 		gap: 0.75rem;
@@ -25,7 +23,6 @@
 	}
 
 	button:disabled {
-		opacity: 0.55;
 		cursor: wait;
 	}
 }

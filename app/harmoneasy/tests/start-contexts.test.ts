@@ -310,15 +310,15 @@ it("hides the browser until Presets is clicked and retains session actions", asy
 	expect(dialog.querySelector(".preset-browse")).toBeNull()
 	expect(dialog.querySelector(".start-preset-actions")).toBeNull()
 	expect(dialog.querySelectorAll(".preset-apply-button")).toHaveLength(1)
-	expect(dialog.querySelector(".preset-apply-button")!.textContent).toBe("Start Preset")
+	expect(dialog.querySelector(".preset-apply-button")!.textContent).toBe("Start preset")
 	expect(dialog.textContent).not.toContain("Choose this preset, then")
 	expect(dialog.querySelector(".preset-search input")).toBeTruthy()
 	expect(dialog.querySelectorAll(".preset-filter select")).toHaveLength(2)
 	const empty = dialog.querySelector<HTMLButtonElement>(".btn-start-empty")!
 	const session = dialog.querySelector<HTMLButtonElement>(".btn-continue-session")!
-	expect(empty.textContent?.trim()).toBe("Start Empty")
+	expect(empty.textContent?.trim()).toBe("Start empty")
 	expect(empty.value).toBe("empty")
-	expect(session.textContent?.trim()).toBe("Continue Session")
+	expect(session.textContent?.trim()).toBe("Continue session")
 	expect(session.value).toBe("session")
 	expect(session.hidden).toBe(false)
 	expect(session.closest("[hidden], details")).toBeNull()

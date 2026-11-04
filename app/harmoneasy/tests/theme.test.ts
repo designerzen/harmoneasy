@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { readFileSync } from "node:fs"
+import { readdirSync, readFileSync } from "node:fs"
 import { Storage } from "happy-dom"
 import { EVENT_CHANGE, EVENT_CLICK, EVENT_INPUT } from "../../../packages/audiobus/event-constants"
 import { createThemeControls, THEME_PRESETS, THEME_STORAGE_KEY } from "../source/services/theme"
@@ -32,6 +32,23 @@ function setup() {
 	}
 }
 describe("Browser-local appearance", () => {
+	it("drives colour intensity from the preset while storing only hue and mode", () => {
+		const { preset, hue } = setup()
+		preset.value = "260"
+		preset.dispatchEvent(new Event(EVENT_CHANGE))
+		expect(document.documentElement.style.getPropertyValue("--theme-chroma")).toBe("0.25")
+		expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('{"hue":260,"mode":"system"}')
+		hue.value = "217"
+		hue.dispatchEvent(new Event(EVENT_INPUT))
+		expect(document.documentElement.style.getPropertyValue("--theme-chroma")).toBe("1")
+	})
+	it("keeps every application colour in the token file", () => {
+		const styles = readdirSync("source/assets/style").filter((file) => file.endsWith(".scss"))
+		for (const file of styles) {
+			const source = readFileSync(`source/assets/style/${file}`, "utf8")
+			expect(source, file).not.toMatch(/:[^;{]*(#[0-9a-f]{3,8}\b(?![\w-])|rgba?\(|hsla?\()/i)
+		}
+	})
 	it("starts with system brightness and renders all hue presets without writing storage", () => {
 		const { preset, mode } = setup()
 		expect(mode.value).toBe("system")

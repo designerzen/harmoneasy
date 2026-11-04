@@ -7,7 +7,6 @@ song-visualiser {
 	width: 100%;
 	height: 100%;
 	min-height: 200px;
-	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
 	&::part(container) {
 		display: flex;
@@ -21,50 +20,14 @@ song-visualiser {
 		cursor: crosshair;
 	}
 
-	/* Light mode (default) */
-	--bg-primary: var(--col-white);
-	--bg-secondary: color-mix(in oklch, var(--col-white) 97%, var(--col-black));
-	--text-primary: #333333;
-	--text-secondary: color-mix(in oklch, var(--col-black) 40%, var(--col-white));
-	--border-color: color-mix(in oklch, var(--col-black) 13%, var(--col-white));
-	--grid-color: color-mix(in oklch, var(--col-black) 8%, transparent);
-	--grid-axis: color-mix(in oklch, var(--col-black) 40%, var(--col-white));
-	--legend-bg: color-mix(in oklch, var(--col-white) 90%, transparent);
-
-	/* Respect user's dark mode preference */
-	@media (prefers-color-scheme: dark) {
-		--bg-primary: color-mix(in oklch, var(--col-black) 87%, #000);
-		--bg-secondary: color-mix(in oklch, var(--col-black) 82%, #000);
-		--text-primary: var(--col-white);
-		--text-secondary: color-mix(in oklch, var(--col-white) 67%, var(--col-black));
-		--border-color: color-mix(in oklch, var(--col-white) 26%, var(--col-black));
-		--grid-color: color-mix(in oklch, var(--col-white) 8%, transparent);
-		--grid-axis: color-mix(in oklch, var(--col-white) 40%, var(--col-black));
-		--legend-bg: color-mix(in oklch, var(--col-black) 90%, transparent);
-	}
-
-	/* Allow manual override via data attribute */
-	&[data-theme="light"] {
-		--bg-primary: var(--col-white);
-		--bg-secondary: color-mix(in oklch, var(--col-white) 97%, var(--col-black));
-		--text-primary: #333333;
-		--text-secondary: color-mix(in oklch, var(--col-black) 40%, var(--col-white));
-		--border-color: color-mix(in oklch, var(--col-black) 13%, var(--col-white));
-		--grid-color: color-mix(in oklch, var(--col-black) 8%, transparent);
-		--grid-axis: color-mix(in oklch, var(--col-black) 40%, var(--col-white));
-		--legend-bg: color-mix(in oklch, var(--col-white) 90%, transparent);
-	}
-
-	&[data-theme="dark"] {
-		--bg-primary: color-mix(in oklch, var(--col-black) 87%, #000);
-		--bg-secondary: color-mix(in oklch, var(--col-black) 82%, #000);
-		--text-primary: var(--col-white);
-		--text-secondary: color-mix(in oklch, var(--col-white) 67%, var(--col-black));
-		--border-color: color-mix(in oklch, var(--col-white) 26%, var(--col-black));
-		--grid-color: color-mix(in oklch, var(--col-white) 8%, transparent);
-		--grid-axis: color-mix(in oklch, var(--col-white) 40%, var(--col-black));
-		--legend-bg: color-mix(in oklch, var(--col-black) 90%, transparent);
-	}
+	--bg-primary: var(--col-surface);
+	--bg-secondary: var(--col-surface-raised);
+	--text-primary: var(--col-fg);
+	--text-secondary: var(--col-muted);
+	--border-color: var(--col-line);
+	--grid-color: var(--col-line);
+	--grid-axis: var(--col-line-strong);
+	--legend-bg: color-mix(in oklch, var(--col-surface) 90%, transparent);
 }
 
 /* Info panel below visualiser */
@@ -72,7 +35,7 @@ song-visualiser {
 	padding: 1rem;
 	background-color: var(--bg-secondary);
 	border-top: 1px solid var(--border-color);
-	font-size: 0.875rem;
+	font-size: var(--text-md);
 	color: var(--text-secondary);
 
 	display: grid;
@@ -87,16 +50,14 @@ song-visualiser {
 
 	&__label {
 		font-weight: 600;
-		font-size: 0.75rem;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
+		font-size: var(--text-xs);
 		color: var(--text-secondary);
 	}
 
 	&__value {
-		font-size: 1rem;
+		font-size: var(--text-lg);
 		color: var(--text-primary);
-		font-family: monospace;
+		font-family: var(--font-mono);
 	}
 }
 
@@ -115,7 +76,7 @@ song-visualiser {
 		align-items: center;
 
 		&__label {
-			font-size: 0.875rem;
+			font-size: var(--text-md);
 			color: var(--text-secondary);
 			padding: 0 0.5rem;
 		}
@@ -127,9 +88,9 @@ song-visualiser {
 	padding: 0.5rem 1rem;
 	background-color: var(--bg-primary);
 	border: 1px solid var(--border-color);
-	border-radius: 4px;
+	border-radius: var(--radius-sm);
 	cursor: pointer;
-	font-size: 0.875rem;
+	font-size: var(--text-md);
 	color: var(--text-primary);
 	transition: all 0.2s ease;
 
@@ -142,36 +103,24 @@ song-visualiser {
 	}
 
 	&--primary {
-		background-color: var(--col-blue);
-		color: var(--col-white);
-		border-color: var(--col-blue);
+		background-color: var(--col-accent);
+		color: var(--col-on-accent);
+		border-color: var(--col-accent);
 
 		&:hover {
-			background-color: light-dark(
-				color-mix(in oklch, var(--col-blue) 90%, var(--col-white)),
-				color-mix(in oklch, var(--col-blue) 110%, var(--col-white))
-			);
-			border-color: light-dark(
-				color-mix(in oklch, var(--col-blue) 90%, var(--col-white)),
-				color-mix(in oklch, var(--col-blue) 110%, var(--col-white))
-			);
+			background-color: var(--col-accent-hover);
+			border-color: var(--col-accent-hover);
 		}
 	}
 
 	&--danger {
-		background-color: var(--col-red);
-		color: var(--col-white);
-		border-color: var(--col-red);
+		background-color: var(--col-danger-solid);
+		color: var(--col-on-danger);
+		border-color: transparent;
 
 		&:hover {
-			background-color: light-dark(
-				color-mix(in oklch, var(--col-red) 90%, var(--col-white)),
-				color-mix(in oklch, var(--col-red) 110%, var(--col-white))
-			);
-			border-color: light-dark(
-				color-mix(in oklch, var(--col-red) 90%, var(--col-white)),
-				color-mix(in oklch, var(--col-red) 110%, var(--col-white))
-			);
+			background-color: color-mix(in oklch, var(--col-danger-solid) 86%, black);
+			border-color: transparent;
 		}
 	}
 
@@ -201,9 +150,9 @@ song-visualiser {
 	grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
 	gap: 0.5rem;
 	padding: 0.5rem;
-	font-size: 0.75rem;
+	font-size: var(--text-xs);
 	background-color: var(--legend-bg);
-	border-radius: 4px;
+	border-radius: var(--radius-sm);
 
 	&__item {
 		display: flex;
@@ -214,7 +163,7 @@ song-visualiser {
 	&__color {
 		width: 12px;
 		height: 12px;
-		border-radius: 2px;
+		border-radius: var(--radius-sm);
 	}
 
 	&__label {

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
 	getStructure,
 	layoutMeasuredNodes,
+	MAX_STAGE_NODES,
 	NODE_GAP,
 	type GraphNode
 } from "../source/components/graph/layout"
@@ -21,6 +22,15 @@ const node = (
 })
 
 describe("Measured graph layout", () => {
+	it("wraps wide stages onto extra lines and never overlaps them", () => {
+		const nodes = Array.from({ length: MAX_STAGE_NODES + 2 }, (_, index) =>
+			node(`n${index}`, 0, index, 300, 200)
+		)
+		const laidOut = layoutMeasuredNodes(nodes, "vertical")
+		const lines = [...new Set(laidOut.map((item) => item.position.y))]
+		expect(lines).toEqual([0, 200 + NODE_GAP])
+		expect(laidOut.filter((item) => item.position.y === 0)).toHaveLength(MAX_STAGE_NODES)
+	})
 	it.each(["vertical", "horizontal"])(
 		"keeps the transformer picker on the trunk after all transformers in %s mode",
 		(mode) => {

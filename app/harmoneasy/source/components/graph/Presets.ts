@@ -22,7 +22,7 @@ export function createPresets(chain: IOChain, manager: IOChainManager) {
 		}
 	})
 	const dialog = element("dialog", "save-preset-dialog")
-	const title = element("h2", "", "Save as a Preset")
+	const title = element("h2", "", "Save as a preset")
 	title.id = `save-preset-${crypto.randomUUID()}`
 	dialog.setAttribute("aria-labelledby", title.id)
 	const form = element("form", "save-preset")

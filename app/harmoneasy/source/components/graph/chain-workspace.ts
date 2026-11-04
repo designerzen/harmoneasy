@@ -139,7 +139,7 @@ export function createChainWorkspace(
 			)
 		action.content.append(
 			actionOption(
-				"Save as a Preset",
+				"Save as a preset",
 				"save-preset",
 				"M5 3h12l4 4v14H3V3h2ZM7 3v6h10V3M7 21v-8h10v8"
 			),

@@ -822,7 +822,7 @@ export function createPresetBrowser({
 				? "Starting…"
 				: "Applying…"
 			: startup
-				? "Start Preset"
+				? "Start preset"
 				: setup
 					? `Replace workspace with ${setup.name}`
 					: createChain

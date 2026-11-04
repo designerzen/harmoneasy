@@ -1,0 +1,169 @@
+/*
+ * Design tokens shared by the app and the static preset pages.
+ *
+ * Every colour is derived from two seeds, so any hue or brightness keeps the same
+ * hierarchy and contrast. OKLCH lightness is perceptual, which means each role
+ * holds its lightness steady while the hue rotates.
+ *   --theme-hue     0-360, set by services/theme.ts
+ *   --theme-chroma  colour intensity multiplier, 0 is a neutral greyscale
+ * Light and dark values are chosen by color-scheme through light-dark().
+ */
+:root {
+	color-scheme: light dark;
+
+	--theme-hue: 290;
+	--theme-chroma: 1;
+	/* 1 in dark mode: drives filters, which light-dark() cannot express. */
+	--dark: 0;
+
+	--neutral-chroma: calc(0.014 * var(--theme-chroma));
+	--accent-chroma: calc(0.13 * var(--theme-chroma));
+	--vivid-chroma: calc(0.16 * var(--theme-chroma));
+
+	/* Neutrals: darkest to lightest in light mode, reversed in dark mode. */
+	--col-bg: light-dark(
+		oklch(98% var(--neutral-chroma) var(--theme-hue)),
+		oklch(16% var(--neutral-chroma) var(--theme-hue))
+	);
+	--col-surface-sunken: light-dark(
+		oklch(94% var(--neutral-chroma) var(--theme-hue)),
+		oklch(13% var(--neutral-chroma) var(--theme-hue))
+	);
+	--col-surface: light-dark(
+		oklch(100% 0 var(--theme-hue)),
+		oklch(20.5% var(--neutral-chroma) var(--theme-hue))
+	);
+	--col-surface-raised: light-dark(
+		oklch(96% var(--neutral-chroma) var(--theme-hue)),
+		oklch(25% var(--neutral-chroma) var(--theme-hue))
+	);
+	--col-line: light-dark(
+		oklch(87% var(--neutral-chroma) var(--theme-hue)),
+		oklch(32% var(--neutral-chroma) var(--theme-hue))
+	);
+	/* Control boundaries, at least 3:1 against every surface. */
+	--col-line-strong: light-dark(
+		oklch(56% var(--neutral-chroma) var(--theme-hue)),
+		oklch(60% var(--neutral-chroma) var(--theme-hue))
+	);
+	--col-fg: light-dark(
+		oklch(20% var(--neutral-chroma) var(--theme-hue)),
+		oklch(96% var(--neutral-chroma) var(--theme-hue))
+	);
+	--col-muted: light-dark(
+		oklch(44% var(--neutral-chroma) var(--theme-hue)),
+		oklch(77% var(--neutral-chroma) var(--theme-hue))
+	);
+	--col-hover: color-mix(in oklch, var(--col-fg) 9%, transparent);
+	--col-pressed: color-mix(in oklch, var(--col-fg) 16%, transparent);
+	--col-backdrop: oklch(10% var(--neutral-chroma) var(--theme-hue) / 0.6);
+
+	/* Accent: the single colour that marks the primary action and current selection. */
+	--col-accent: light-dark(
+		oklch(45% var(--accent-chroma) var(--theme-hue)),
+		oklch(80% var(--accent-chroma) var(--theme-hue))
+	);
+	--col-accent-hover: light-dark(
+		oklch(38% var(--accent-chroma) var(--theme-hue)),
+		oklch(86% var(--accent-chroma) var(--theme-hue))
+	);
+	--col-on-accent: light-dark(
+		oklch(99% 0 var(--theme-hue)),
+		oklch(16% var(--neutral-chroma) var(--theme-hue))
+	);
+	--col-accent-soft: color-mix(in oklch, var(--col-accent) 14%, var(--col-surface));
+	--col-accent-selected: color-mix(in oklch, var(--col-accent) 26%, var(--col-surface));
+	--focus-ring: var(--col-accent);
+	--accent-color: var(--col-accent);
+
+	/* States keep their meaning, so their hues stay fixed whatever the theme. */
+	--col-danger: light-dark(oklch(45% 0.17 25), oklch(78% 0.13 25));
+	--col-danger-solid: oklch(50% 0.19 25);
+	--col-on-danger: oklch(99% 0 0);
+	--col-danger-soft: color-mix(in oklch, var(--col-danger) 14%, var(--col-surface));
+	--col-success: light-dark(oklch(44% 0.11 150), oklch(80% 0.13 150));
+	--col-success-soft: color-mix(in oklch, var(--col-success) 14%, var(--col-surface));
+	--col-warning: light-dark(oklch(47% 0.1 75), oklch(82% 0.12 75));
+	--col-warning-soft: color-mix(in oklch, var(--col-warning) 14%, var(--col-surface));
+	--col-info: var(--col-accent);
+
+	/* Signal-flow categories keep their relationship as the theme rotates. */
+	--hue-input: calc(var(--theme-hue) - 130);
+	--hue-tuning: calc(var(--theme-hue) - 70);
+	--hue-timing: calc(var(--theme-hue) - 35);
+	--hue-transformer: calc(var(--theme-hue) - 10);
+	--hue-output: calc(var(--theme-hue) + 50);
+
+	/* Graph signals. */
+	--col-edge: light-dark(
+		oklch(58% var(--neutral-chroma) var(--theme-hue)),
+		oklch(62% var(--neutral-chroma) var(--theme-hue))
+	);
+	--col-control: light-dark(
+		oklch(46% var(--accent-chroma) var(--hue-input)),
+		oklch(78% var(--accent-chroma) var(--hue-input))
+	);
+
+	/* Piano keys read as physical objects in both modes. */
+	--key-white: oklch(98% var(--neutral-chroma) var(--theme-hue));
+	--key-black: oklch(22% var(--neutral-chroma) var(--theme-hue));
+	--key-edge: oklch(70% var(--neutral-chroma) var(--theme-hue));
+
+	/* Type */
+	--font-ui:
+		"IBM Plex Sans Condensed", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+		sans-serif;
+	--font-mono: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace;
+	--text-xs: 0.75rem;
+	--text-sm: 0.8125rem;
+	--text-md: 0.9375rem;
+	--text-lg: 1.0625rem;
+	--text-xl: 1.25rem;
+	--text-2xl: 1.5rem;
+	--text-3xl: 2rem;
+
+	/* Shape and space */
+	--radius-sm: 6px;
+	--radius-md: 10px;
+	--radius-lg: 14px;
+	--curve: var(--radius-lg);
+	--gap: 0.75rem;
+	--pad: 1rem;
+	--border: 1px solid var(--col-line);
+	--control-height: 36px;
+	--shadow-sm: 0 1px 3px oklch(0% 0 0 / 0.16);
+	--shadow-md: 0 6px 20px oklch(0% 0 0 / 0.2);
+	--shadow-lg: 0 24px 80px oklch(0% 0 0 / 0.32);
+
+	/* Motion */
+	--time-short: 90ms;
+	--time-medium: 145ms;
+	--time-long: 450ms;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--dark: 1;
+	}
+}
+@media (pointer: coarse) {
+	:root {
+		--control-height: 44px;
+	}
+}
+:root[data-theme-mode="light"] {
+	color-scheme: light;
+	--dark: 0;
+}
+:root[data-theme-mode="dark"] {
+	color-scheme: dark;
+	--dark: 1;
+}
+
+@media (prefers-contrast: more) {
+	:root {
+		--col-line: var(--col-line-strong);
+		--col-muted: var(--col-fg);
+		--col-hover: color-mix(in oklch, var(--col-fg) 18%, transparent);
+	}
+}
