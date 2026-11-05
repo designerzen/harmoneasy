@@ -307,7 +307,36 @@
 			</button>
 			<div class="header-controls" role="group" aria-label="Session controls">
 				<div id="tempo-control" class="controls">
-					<label for="tempo">Tempo</label>
+					<div id="clock-controls" class="controls">
+						<label class="clock-source-control" for="clock-source">
+							<span>Tempo<span class="sr-only"> clock source</span></span>
+							<select
+								id="clock-source"
+								title="Clock source: choose what sets the tempo"
+								aria-describedby="clock-source-status"
+								disabled
+							>
+								<option value="internal">Internal</option>
+								<option value="microphone">Follow microphone tempo</option>
+								<option value="shared">Shared (QR / room)</option>
+								<option value="manual">Manual key press</option>
+							</select>
+						</label>
+						<label id="clock-midi-label" hidden
+							>MIDI device
+							<select id="clock-midi-device"></select
+						></label>
+						<button
+							type="button"
+							id="btn-clock-tick"
+							title="Advance one clock tick (24 ticks per beat); keyboard shortcut: Space"
+							hidden
+						>
+							Tick (Space)
+						</button>
+						<output id="clock-source-status" role="status"></output>
+					</div>
+					<label class="sr-only" for="tempo">Tempo</label>
 					<input id="tempo" type="range" min="10" max="303" aria-describedby="bpm" />
 					<span class="control-value"
 						><output id="bpm" for="tempo"></output> <span>BPM</span></span
@@ -401,34 +430,6 @@
 					</div>
 				</div>
 				<div class="header-secondary">
-					<div id="clock-controls" class="controls">
-						<label class="clock-source-control" for="clock-source">
-							<span>Clock</span>
-							<select
-								id="clock-source"
-								aria-describedby="clock-source-status"
-								disabled
-							>
-								<option value="internal">Internal</option>
-								<option value="microphone">Follow microphone tempo</option>
-								<option value="shared">Shared (QR / room)</option>
-								<option value="manual">Manual key press</option>
-							</select>
-						</label>
-						<label id="clock-midi-label" hidden
-							>MIDI device
-							<select id="clock-midi-device"></select
-						></label>
-						<button
-							type="button"
-							id="btn-clock-tick"
-							title="Advance one clock tick (24 ticks per beat); keyboard shortcut: Space"
-							hidden
-						>
-							Tick (Space)
-						</button>
-						<output id="clock-source-status" role="status"></output>
-					</div>
 					<button
 						type="button"
 						id="btn-metronome"
