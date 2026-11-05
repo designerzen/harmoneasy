@@ -39,6 +39,25 @@ function exported() {
 }
 
 describe("JSON preset contributions", () => {
+	it("generates song pages for every MIDI library entry", async () => {
+		const songs = JSON.parse(await readFile("public/midi/index.json", "utf8"))
+		const plugin = presetPagesPlugin()
+		plugin.configResolved({ publicDir: "public", base: "/harmoneasy/" })
+		const emitFile = vi.fn()
+		await plugin.generateBundle.call(
+			{ emitFile },
+			{},
+			{
+				"index.html": { type: "asset", source: "<html>app</html>" }
+			}
+		)
+		const generated = new Set(emitFile.mock.calls.map(([asset]) => asset.fileName))
+		for (const song of songs) {
+			expect(generated.has(`${song.route}/index.html`), song.route).toBe(true)
+			expect(generated.has(`${song.route}/preset.json`), song.route).toBe(true)
+		}
+	})
+
 	it("exports a self-contained preset and automatically publishes a newly added file", async () => {
 		const root = await mkdtemp(join(tmpdir(), "harmoneasy-preset-"))
 		temporary.push(root)
