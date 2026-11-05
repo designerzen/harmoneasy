@@ -1,7 +1,27 @@
 import type { ControlChoice, ControlDescriptor, WidgetType } from "./types"
 
+/** Performance controls never require opening a picker or typing a numeric value. */
+export function directDescriptor(d: ControlDescriptor): ControlDescriptor {
+	if (d.choices?.length && d.choices.every(choice => typeof choice.value === "number")) {
+		return { ...d, widget: "radio" }
+	}
+	if (d.widget !== "number") { return d }
+	const step = d.step ?? 1, min = d.min, max = d.max
+	if (Number.isInteger(min) && Number.isInteger(max) && Number.isInteger(step) && step > 0 && max! >= min!) {
+		const count = Math.floor((max! - min!) / step) + 1
+		if (count <= 128) {
+			return { ...d, widget: "radio", choices: Array.from({ length: count }, (_, index) => {
+				const value = min! + index * step
+				return { label: String(value), value }
+			}) }
+		}
+	}
+	return { ...d, widget: "slider", step }
+}
+
 /** Small choice lists use radios, including surfaces saved with select widgets. */
 export function choiceWidget(d: ControlDescriptor): WidgetType {
+	d = directDescriptor(d)
 	return d.widget === "select" && d.choices && d.choices.length > 1 && d.choices.length < 7
 		? "radio"
 		: d.widget

@@ -1,5 +1,6 @@
 import { validVisualiser } from "./visualiser"
-import { choiceWidget } from "./choices"
+import { choiceWidget, directDescriptor } from "./choices"
+export { directDescriptor } from "./choices"
 import type {
 	ControlDescriptor,
 	ControlValue,
@@ -213,13 +214,14 @@ export function validateValue(d: ControlDescriptor, value: ControlValue): Contro
 	return denormalize(d, normalize(d, value))
 }
 export function widgetChoices(d: ControlDescriptor): WidgetType[] {
+	d = directDescriptor(d)
 	if (d.choices?.length) {
 		return choiceWidget({ ...d, widget: "select" }) === "radio"
 			? ["radio"]
 			: ["radio", "select"]
 	}
 	if (["dial", "slider", "number", "pad"].includes(d.widget)) {
-		return ["dial", "slider", "number", "pad"]
+		return ["dial", "slider", "pad"]
 	}
 	return [d.widget]
 }

@@ -1,4 +1,5 @@
-import { choiceGrid, waveformPoints } from "./choices"
+import { directDescriptor } from "./choices"
+import { createChoicePages, type ChoicePages } from "./choice-pages"
 import {
 	EVENT_BLUR,
 	EVENT_VISIBILITY_CHANGE,
@@ -38,15 +39,15 @@ export interface DomControl {
 	release?(): void
 	relative?: RelativeKeys
 	strum?: Strum
+	choices?: ChoicePages
 }
-let radioGroupId = 0
 
 /** Native semantic controls are also the accessible companions to GPU widgets. */
 export function createDomControl(
 	binding: ControlBinding,
 	apply: (value: ControlValue, edge?: boolean) => void
 ): DomControl {
-	const d = binding.descriptor,
+	const d = directDescriptor(binding.descriptor),
 		label = document.createElement("div"),
 		caption = document.createElement("span")
 	caption.textContent = d.label
@@ -56,6 +57,7 @@ export function createDomControl(
 	const updates: ((value: ControlValue | undefined) => void)[] = []
 	let release: (() => void) | undefined
 	let relative: RelativeKeys | undefined
+	let choices: ChoicePages | undefined
 	let strum: Strum | undefined
 	const [min, max] = bounds(d)
 	const input = (type: string, suffix = "") => {
@@ -226,47 +228,10 @@ export function createDomControl(
 			}
 		})
 	} else if (d.widget === "radio" && d.choices?.length) {
-		const group = document.createElement("div")
-		group.className = "cs-choice-grid"
-		group.setAttribute("role", "radiogroup")
-		group.setAttribute("aria-label", d.label)
-		group.style.setProperty("--cs-choice-columns", String(choiceGrid(d.choices.length).columns))
-		const name = `cs-choice-${++radioGroupId}`
-		for (const [index, choice] of d.choices.entries()) {
-			const tile = document.createElement("label")
-			const radio = document.createElement("input")
-			radio.type = "radio"
-			radio.name = name
-			radio.value = String(index)
-			radio.setAttribute("aria-label", choice.label)
-			radio.dataset.midiControl = binding.key
-			radio.disabled = !!(d.disabled || d.readOnly)
-			radio.addEventListener(EVENT_CHANGE, () => {
-				if (radio.checked && !radio.disabled) {apply(choice.value)}
-			})
-			tile.append(radio)
-			const points = waveformPoints(choice)
-			if (points) {
-				const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg")
-				svg.setAttribute("viewBox", "-2 -2 104 44")
-				svg.setAttribute("aria-hidden", "true")
-				const path = document.createElementNS(svg.namespaceURI, "polyline")
-				path.setAttribute(
-					"points",
-					points.map(([x, y]) => `${x * 100},${y * 40}`).join(" ")
-				)
-				svg.append(path)
-				tile.append(svg)
-			}
-			const text = document.createElement("span")
-			text.textContent = choice.label
-			tile.append(text)
-			group.append(tile)
-			updates.push((value) => {
-				radio.checked = sameValue(choice.value, value)
-			})
-		}
-		label.append(group)
+		choices = createChoicePages(d, binding.key, apply)
+		label.append(choices.element)
+		updates.push(value => choices!.update(value))
+		release = () => choices!.destroy()
 	} else if (d.widget === "select" || d.choices?.length) {
 		// Index option values preserve typed/array-valued choices without string coercion.
 		const select = document.createElement("select")
@@ -315,9 +280,7 @@ export function createDomControl(
 					? "color"
 					: d.widget === "text"
 						? "text"
-						: d.widget === "number"
-							? "number"
-							: "range"
+						: "range"
 		const el = input(type)
 		if (
 			(d.widget === "dial" || d.widget === "rotation") &&
@@ -380,6 +343,7 @@ export function createDomControl(
 		release,
 		relative,
 		strum,
+		choices,
 		update(value) {
 			for (const update of updates) {
 				update(value)

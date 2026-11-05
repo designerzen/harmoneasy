@@ -1,6 +1,6 @@
 import { createDropdown, menuIcon } from "./dropdown"
 import { VisualiserFrame, historySource, validVisualiser, VISUALISER_KINDS } from "./visualiser"
-import { choiceWidget, choiceGrid } from "./choices"
+import { directDescriptor, choiceWidget, choiceGrid } from "./choices"
 import { createDomControl } from "./dom"
 import { contactPressure } from "./pressure"
 import { sourceTheme } from "./themes"
@@ -652,6 +652,7 @@ export class ControlSurface {
 				read: () => undefined,
 				write: () => {}
 			}
+			binding = { ...binding, descriptor: directDescriptor(binding.descriptor) }
 			const widget = config.yKey
 				? "xy"
 				: config.widget && widgetChoices(binding.descriptor).includes(config.widget)
