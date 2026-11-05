@@ -58,6 +58,7 @@ export function createNetronomeLink(
 	} = {}
 ) {
 	const button = document.getElementById("netronome-link") as HTMLButtonElement
+	const buttonTitle = button.title
 	const preview = document.getElementById("netronome-qr-preview") as HTMLImageElement
 	const dialog = document.getElementById("netronome-dialog") as HTMLDialogElement
 	const qr = document.getElementById("netronome-qr") as HTMLImageElement
@@ -143,7 +144,9 @@ export function createNetronomeLink(
 		if (source !== "internal") {
 			hideQR()
 		}
-		button.hidden = source === "midi" || source === "manual"
+		// Stay in place so the bar does not reflow; these sources cannot share a clock.
+		button.disabled = source === "midi" || source === "manual"
+		button.title = button.disabled ? "Shared rooms need the Internal clock" : buttonTitle
 		regenerate.disabled = busy || source !== "internal"
 	}
 
@@ -385,7 +388,7 @@ export function createNetronomeLink(
 			showError(error)
 		}
 	}
-	button.disabled = false
+	updateSourceUI()
 	button.addEventListener(EVENT_CLICK, () => dialog.showModal())
 	document.getElementById("netronome-close")!.addEventListener(EVENT_CLICK, () => dialog.close())
 	document.getElementById("netronome-start")!.addEventListener(EVENT_CLICK, () => {

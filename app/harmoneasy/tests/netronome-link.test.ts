@@ -203,6 +203,9 @@ describe("Netronome connection links", () => {
 		const controller = mocks.controllers[0]
 		for (const source of ["midi", "manual", "shared"] as const) {
 			await link.setSource(source)
+			const room = element<HTMLButtonElement>("netronome-link")
+			expect(room.hidden).toBe(false)
+			expect(room.disabled).toBe(source !== "shared")
 			expect(element<HTMLImageElement>("netronome-qr-preview").hidden).toBe(true)
 			expect(element<HTMLImageElement>("netronome-qr").hidden).toBe(true)
 			expect(element<HTMLButtonElement>("netronome-regenerate").disabled).toBe(true)

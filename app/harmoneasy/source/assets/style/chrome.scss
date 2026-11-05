@@ -125,7 +125,7 @@
 		margin-left: auto;
 	}
 	// Too narrow for one row: buttons stay beside tempo and the two sliders share the next row.
-	@media (min-width: 721px) and (max-width: 1240px) {
+	@media (min-width: 721px) and (max-width: 1279px) {
 		> .header-secondary {
 			order: 1;
 		}
@@ -194,6 +194,9 @@
 		flex-basis: 25rem;
 		> :is(#tempo, .control-stepper) {
 			display: none;
+		}
+		#clock-source-status {
+			min-width: 9rem;
 		}
 	}
 	&:has(.context-controls:not([hidden])) {
@@ -274,7 +277,7 @@
 	}
 	#clock-source-status {
 		flex: 1 1 0;
-		min-width: 9rem;
+		min-width: 6rem;
 		white-space: normal;
 		line-height: 1.2;
 		font-size: var(--text-xs);
@@ -299,12 +302,6 @@
 	&[aria-pressed="true"]::before {
 		background: var(--col-accent);
 		border-color: var(--col-accent);
-	}
-}
-
-#netronome-link {
-	&[hidden] {
-		display: none;
 	}
 }
 
