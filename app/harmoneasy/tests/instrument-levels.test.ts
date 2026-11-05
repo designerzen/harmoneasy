@@ -1,3 +1,4 @@
+import { engineGain } from "../../../packages/audiobus/instruments/engine-levels"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import SynthOscillator from "../../../packages/audiobus/instruments/oscillators/synth-oscillator"
 import PolySynth from "../../../packages/audiobus/instruments/polyphonic"
@@ -117,7 +118,7 @@ describe("instrument output levels", () => {
 		// The voice sum can exceed unity; the real audio regression checks the
 		// saturator bounds it without reducing single-note gain.
 		expect(totalPeak).toBeGreaterThan(1)
-		expect(gain).toBe(1)
+		expect(gain).toBeCloseTo(engineGain("polyphonic"))
 		for (let note = 48; note < 72; note++) {
 			manager.noteOff(note)
 		}
@@ -161,16 +162,26 @@ describe("instrument output levels", () => {
 					: Instrument === ToneSynth
 						? 0.3
 						: 0.2
-		expect(instrument.output.gain.value).toBeCloseTo(defaultGain)
+		const trim =
+			Instrument === ToneMonoSynth
+				? engineGain("tone-mono-synth")
+				: Instrument === ToneFMSynth
+					? engineGain("tone-fm-synth")
+					: Instrument === TonePluck
+						? engineGain("tone-pluck-string")
+						: Instrument === ToneSynth
+							? engineGain("tone-synth")
+							: 1
+		expect(instrument.output.gain.value).toBeCloseTo(defaultGain * trim)
 		instrument.gain = 0.1
-		expect(instrument.output.gain.value).toBeCloseTo(0.1)
+		expect(instrument.output.gain.value).toBeCloseTo(0.1 * trim)
 		expect(tone.voices[0].volume.value).toBe(0)
 		instrument.volume = 0.5
 		expect(instrument.volume).toBeCloseTo(0.5)
 		await instrument.noteOn(62, 64)
 		if (Instrument === TonePluck) {
 			expect(instrument.output.gain.setValueAtTime.mock.lastCall[0]).toBeCloseTo(
-				(0.1 * 64) / 127
+				(0.1 * 64 * trim) / 127
 			)
 		} else {
 			expect(tone.voices[0].triggerAttack.mock.lastCall[2]).toBeCloseTo(64 / 127)

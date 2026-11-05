@@ -1,3 +1,4 @@
+import { engineGain } from "../../../packages/audiobus/instruments/engine-levels"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 const { createEngine } = vi.hoisted(() => ({ createEngine: vi.fn() }))
@@ -115,7 +116,11 @@ describe("Vaporisateur", () => {
 		await expect(synth.connect()).rejects.toThrow("worklet unavailable")
 		await synth.connect()
 		synth.volume = 0.4
-		expect(output.gain.setTargetAtTime).toHaveBeenCalledWith(0.4, 2, 0.02)
+		expect(output.gain.setTargetAtTime).toHaveBeenCalledWith(
+			0.4 * engineGain("opendaw-vaporisateur"),
+			2,
+			0.02
+		)
 		await synth.dispose()
 		expect(output.disconnect).toHaveBeenCalledOnce()
 	})

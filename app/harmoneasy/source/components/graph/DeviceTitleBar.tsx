@@ -3,7 +3,7 @@ import { EVENT_INPUTS_UPDATED, EVENT_OUTPUTS_UPDATED } from "audiobus/event-cons
 import type AbstractInput from "audiobus/io/inputs/abstract-input"
 import type { IAudioOutput } from "audiobus/io/outputs/output-interface"
 import { useChain } from "./ChainContext"
-import { deviceIcon, elementDescription } from "./element-icons"
+import { deviceDescription, deviceIcon } from "./element-icons"
 import { ElementIcon } from "./ElementIcon"
 import { NodeHeader } from "./NodeHeader"
 import { DeviceDialog } from "./GraphDialogs"
@@ -50,24 +50,18 @@ export function DeviceTitleBar({
 	}
 	const toggleLabel = `${enabled ? "Disable" : "Enable"} ${direction}`
 	const expandLabel = expanded ? `Exit fullscreen ${direction}` : `Expand ${direction}`
+	const description = deviceDescription(device, direction)
 	return (
 		<>
 			<NodeHeader
 				enabled={enabled}
+				description={description}
 				removeLabel={`Remove ${direction}`}
 				onRemove={onRemove}
 				onSwap={() => setSwapping(true)}
 				title={
 					<>
-						<ElementIcon
-							src={deviceIcon(device, direction)}
-							title={elementDescription(
-								direction,
-								"",
-								device.name,
-								device.description
-							)}
-						/>
+						<ElementIcon src={deviceIcon(device, direction)} title={description} />
 						{device.name}
 					</>
 				}

@@ -10,7 +10,7 @@ import AbstractInput from "../../../packages/audiobus/io/inputs/abstract-input"
 
 vi.mock("../source/components/graph/element-icons", () => ({
 	deviceIcon: () => "",
-	elementDescription: () => ""
+	deviceDescription: () => "Plays test notes"
 }))
 class Input extends AbstractInput {
 	destroy() {}
@@ -54,7 +54,11 @@ it("exposes labelled title controls and updates the toggle when the manager chan
 		expect(buttons).toHaveLength(6)
 		expect(buttons[0]).toBe(toggle)
 		expect(buttons[buttons.length - 1].className).toBe("device-expand")
-		expect(host.querySelector("header")!.lastElementChild!.tagName).toBe("H6")
+		const details = host.querySelector("header")!.lastElementChild!
+		expect(details.tagName).toBe("DETAILS")
+		expect(details.querySelector("summary h6")).not.toBeNull()
+		expect(details.querySelector("summary .node-info-icon")).not.toBeNull()
+		expect(details.querySelector("p")!.textContent).toBe("Plays test notes")
 		expect(host.querySelector(".device-swap")!.textContent).toBe("Swap")
 		expect(host.querySelector(".node-actions-left")!.querySelectorAll("button")).toHaveLength(1)
 		expect(host.querySelector(".node-actions-right")!.querySelectorAll("button")).toHaveLength(

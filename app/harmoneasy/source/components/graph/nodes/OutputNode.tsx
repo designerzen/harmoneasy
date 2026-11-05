@@ -1,5 +1,5 @@
 import { DeviceGui } from "../DeviceGui"
-import { elementDescription } from "../element-icons"
+import { deviceDescription } from "../element-icons"
 import { DeviceTitleBar } from "../DeviceTitleBar"
 import { EVENT_CONFIGURATION_CHANGED } from "audiobus/event-constants"
 import { deviceId } from "audiobus/io/device-definition"
@@ -57,7 +57,7 @@ export function OutputNode(props: any) {
 		<div
 			data-midi-scope={`${chainId}:output:${deviceId(output)}`}
 			className={`node-output graph-node can-remove ${hasControls ? "has-controls" : "no-controls"} ${isFullscreen ? "is-fullscreen" : ""} ${isCompact ? "is-compact" : ""}`}
-			title={elementDescription("output", "", output.name, output.description)}
+			title={deviceDescription(output, "output")}
 		>
 			<DeviceTitleBar
 				device={output}

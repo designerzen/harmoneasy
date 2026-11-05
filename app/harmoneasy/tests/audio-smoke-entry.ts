@@ -10,6 +10,13 @@ import TonePluck from "../../../packages/audiobus/instruments/tone/tone-pluck-st
 import OutputMetronome from "../../../packages/audiobus/io/outputs/output-metronome"
 import { PercussionSynth } from "../../../packages/audiobus/instruments/percussion/percussion-synth"
 
+import OutputPinkTrombone from "../../../packages/audiobus/io/outputs/output-pink-trombone"
+import OutputSuperSonic from "../../../packages/audiobus/io/outputs/output-supersonic"
+import OutputSiON from "../../../packages/audiobus/io/outputs/output-sion"
+import Output303 from "../../../packages/audiobus/io/outputs/output-303"
+import OutputYoshimi from "../../../packages/audiobus/io/outputs/output-yoshimi"
+import OpenDAWVaporisateur from "../../../packages/audiobus/instruments/openDAW/opendaw-vaporisateur"
+
 export async function measurePolyphony() {
 	const results = []
 	for (const notes of [[57], Array.from({ length: 24 }, (_, i) => 48 + i)]) {
@@ -37,13 +44,37 @@ export async function measurePolyphony() {
 	return results
 }
 
-export async function measureOutputs() {
+export async function measureOutputs(includeSharedMemory = true, only = "") {
 	const bus = new AudioBus(0.5)
 	await bus.loaded
 	const context = bus.audioContext
-	const analyser = context.createAnalyser()
-	analyser.fftSize = 2048
-	bus.output.connect(analyser)
+	const url = URL.createObjectURL(
+		new Blob(
+			[
+				`
+ registerProcessor("level-capture", class extends AudioWorkletProcessor {
+  constructor() { super(); this.port.onmessage = () => { this.remaining = sampleRate * 0.6; this.squares = this.count = this.peak = 0 } }
+  process(inputs) {
+   const samples = inputs[0]?.[0]
+   if (this.remaining && samples) {
+    for (const value of samples) {
+     this.squares += value * value; this.peak = Math.max(this.peak, Math.abs(value)); this.count++
+     if (--this.remaining === 0) { this.port.postMessage({rms: Math.sqrt(this.squares / this.count), peak: this.peak}); break }
+    }
+   }
+   return true
+  }
+ })`
+			],
+			{ type: "application/javascript" }
+		)
+	)
+	await context.audioWorklet.addModule(url)
+	URL.revokeObjectURL(url)
+	const capture = new AudioWorkletNode(context, "level-capture")
+	const mute = context.createGain()
+	mute.gain.value = 0
+	bus.output.connect(capture).connect(mute).connect(context.destination)
 	const results: { name: string; rms: number; peak: number }[] = []
 	const oscillator = new SynthOscillator(context)
 	oscillator.output.connect(bus.mixer)
@@ -71,38 +102,58 @@ export async function measureOutputs() {
 		noteOn: () =>
 			drums.trigger({ part: "snare", velocity: 80 / 127, triggerAt: context.currentTime })
 	}
+	const vaporisateur = new OpenDAWVaporisateur(context)
+	vaporisateur.output.connect(bus.mixer)
+	const pink = new OutputPinkTrombone({ audioContext: context })
 	const outputs = [
 		oscillator,
 		...instruments,
 		new OutputTB303(context, bus.mixer),
 		new OutputMoog(context, bus.mixer),
+		new Output303({ audioContext: context, mixer: bus.mixer }),
+		...(includeSharedMemory ? [vaporisateur, new OutputSuperSonic(bus.mixer)] : []),
+		new OutputYoshimi(context, undefined, bus.mixer),
+		new OutputSiON({ audioContext: context, mixer: bus.mixer }),
+		pink,
 		new OutputMetronome(context),
 		kick,
 		snare
 	]
 	try {
 		for (const output of outputs) {
-			if (output instanceof OutputTB303 || output instanceof OutputMoog) {
-				await output.connect()
+			if (only && output.name !== only) {
+				continue
 			}
-			await output.noteOn(57, 80)
-			const samples = new Float32Array(analyser.fftSize)
-			let squares = 0,
-				count = 0,
-				peak = 0
-			for (let i = 0; i < 50; i++) {
-				await new Promise((resolve) => setTimeout(resolve, 10))
-				analyser.getFloatTimeDomainData(samples)
-				for (const value of samples) {
-					squares += value * value
-					peak = Math.max(peak, Math.abs(value))
-					count++
+			if (
+				output instanceof OutputTB303 ||
+				output instanceof OutputMoog ||
+				output instanceof OutputYoshimi ||
+				output instanceof OpenDAWVaporisateur ||
+				output instanceof OutputSuperSonic ||
+				output instanceof OutputPinkTrombone
+			) {
+				try {
+					await output.connect()
+				} catch (error) {
+					console.log(JSON.stringify(results))
+					throw error
 				}
 			}
+			console.log("Measuring", output.name)
+			// Warm lazy engines before measuring so network and module loading cannot
+			// change the duration of the reference phrase.
+			await output.noteOn(57, 80)
+			await new Promise((resolve) => setTimeout(resolve, 600))
+			output.allNotesOff()
+			await new Promise((resolve) => setTimeout(resolve, 1200))
+			const measured = new Promise<{ rms: number; peak: number }>((resolve) => {
+				capture.port.onmessage = (event) => resolve(event.data)
+			})
+			capture.port.postMessage("capture")
+			await output.noteOn(57, 80)
 			results.push({
 				name: output === oscillator ? "Oscillator" : output.name,
-				rms: Math.sqrt(squares / count),
-				peak
+				...(await measured)
 			})
 			output.allNotesOff()
 			await new Promise((resolve) => setTimeout(resolve, 1100))
@@ -111,10 +162,11 @@ export async function measureOutputs() {
 		return results
 	} finally {
 		for (const output of outputs) {
-			if (output instanceof OutputTB303 || output instanceof OutputMoog) {
+			if ("destroy" in output && typeof output.destroy === "function") {
 				await output.destroy()
 			}
 		}
+		capture.disconnect()
 		await context.close()
 	}
 }

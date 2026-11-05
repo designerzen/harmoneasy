@@ -1530,7 +1530,7 @@ class PinkTrombone {
 	addModules(audioContext) {
 		if (audioContext.audioWorklet !== undefined) {
 			return audioContext.audioWorklet.addModule(
-				"./script/audio/nodes/pinkTrombone/processors/WorkletProcessor.js"
+				new URL("./pink-trombone-worklet-processor.js", import.meta.url)
 			)
 		} else {
 			return new Promise((resolve, _reject) => {

@@ -1,4 +1,6 @@
 import { deviceDefinition } from "audiobus/io/device-definition"
+import { getInputDefinition } from "audiobus/io/input-definitions"
+import { getOutputDefinition } from "audiobus/io/output-definitions"
 import { getTransformerDefinition, getTransformerIcon } from "audiobus/io/transformer-definitions"
 import type { InputId } from "audiobus/io/inputs/input-types"
 import type { OutputId } from "audiobus/io/outputs/output-types"
@@ -18,6 +20,24 @@ export function elementDescription(
 		(kind === "instrument"
 			? `Turn incoming notes into ${name} instrument audio.`
 			: `Use ${name} as a ${kind} in this chain.`)
+	)
+}
+
+// Many device classes only describe themselves by name, so prefer the registry's wording.
+export function deviceDescription(
+	device: { name: string; description?: string },
+	direction: "input" | "output"
+): string {
+	let type = ""
+	try {
+		type = deviceDefinition(device).type ?? ""
+	} catch {}
+	const definition = direction === "input" ? getInputDefinition(type) : getOutputDefinition(type)
+	return elementDescription(
+		direction,
+		"",
+		device.name,
+		definition?.description || device.description
 	)
 }
 

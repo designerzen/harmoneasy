@@ -137,7 +137,8 @@
 		padding: 0;
 		border: 0;
 		z-index: 1;
-		> h6 {
+		> h6,
+		> .node-title-details {
 			display: none;
 		}
 	}
@@ -2488,7 +2489,7 @@ dialog.add-output-dialog {
 .graph-node.can-remove > .device-node-header {
 	display: grid;
 	grid-template-columns: auto minmax(0, 1fr) auto;
-	align-items: center;
+	align-items: start;
 	gap: 0.25rem;
 	width: calc(100% + 2 * var(--node-content-padding));
 	margin-inline: calc(-1 * var(--node-content-padding));

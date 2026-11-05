@@ -357,7 +357,7 @@ describe("Moog sound controls", () => {
 describe("Moog GUI and output", () => {
 	it("initializes the synth when its controls are mounted and resumes suspended audio", async () => {
 		vi.stubGlobal("AudioWorklet", class {})
-		const gain = { connect: vi.fn(), disconnect: vi.fn() }
+		const gain = { gain: { value: 1 }, connect: vi.fn(), disconnect: vi.fn() }
 		const context = {
 			state: "suspended",
 			resume: vi.fn(async () => {
@@ -437,7 +437,7 @@ describe("Moog GUI and output", () => {
 	})
 	it("creates an output routed to the mixer and forwards MIDI through the WAM node", async () => {
 		vi.stubGlobal("AudioWorklet", class {})
-		const gain = { connect: vi.fn(), disconnect: vi.fn() }
+		const gain = { gain: { value: 1 }, connect: vi.fn(), disconnect: vi.fn() }
 		const mixer = {} as AudioNode
 		const context = {
 			createGain: () => gain,

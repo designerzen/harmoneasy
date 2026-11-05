@@ -1,3 +1,4 @@
+import { engineGain } from "../../../packages/audiobus/instruments/engine-levels"
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from "vitest"
 import PolySynth from "../../../packages/audiobus/instruments/polyphonic.ts"
@@ -158,7 +159,7 @@ describe("PolySynth controls", () => {
 			release: NaN,
 			shape: "invalid" as any
 		})
-		expect((synth.output as GainNode).gain.value).toBeCloseTo(0.25)
+		expect((synth.output as GainNode).gain.value).toBeCloseTo(0.25 * engineGain("polyphonic"))
 		expect(synth.options).toMatchObject({
 			volume: 0.25,
 			attack: 0,
@@ -169,7 +170,7 @@ describe("PolySynth controls", () => {
 		await Promise.resolve()
 		await synth.noteOn(60)
 		synth.allNotesOff()
-		expect((synth.output as GainNode).gain.value).toBeCloseTo(0.25)
+		expect((synth.output as GainNode).gain.value).toBeCloseTo(0.25 * engineGain("polyphonic"))
 	})
 
 	it("connects labeled controls to sound settings and retains settings when reopened", async () => {

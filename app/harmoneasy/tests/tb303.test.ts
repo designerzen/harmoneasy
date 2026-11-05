@@ -423,7 +423,7 @@ describe("303-inspired improvements without replacing the TB-303 voice", () => {
 describe("TB-303 output and panel", () => {
 	it("restores the acid house preset output, routes to the mixer, forwards MIDI, resumes audio and cleans up", async () => {
 		vi.stubGlobal("AudioWorkletNode", class {})
-		const gain = { connect: vi.fn(), disconnect: vi.fn() },
+		const gain = { gain: { value: 1 }, connect: vi.fn(), disconnect: vi.fn() },
 			mixer = {} as AudioNode
 		const context = {
 			state: "suspended",
