@@ -141,6 +141,107 @@ try {
 	assert.equal(await menuTrigger.getAttribute("aria-expanded"), "false")
 	await page.evaluate(() => window.menuSmoke.destroy())
 	await page.setViewportSize({ width: 960, height: 10000 })
+	await page.setViewportSize({ width: 420, height: 680 })
+	await page.evaluate(() => {
+		const host = document.createElement("div")
+		host.id = "numeric-smoke"
+		host.style.cssText =
+			"position:fixed;inset:0;width:400px;height:420px;overflow:hidden;z-index:1000"
+		document.body.append(host)
+		let value = -1
+		const binding = {
+			key: "numeric",
+			sourceLabel: "Test",
+			descriptor: {
+				id: "track",
+				label: "Melody track",
+				widget: "select",
+				choices: Array.from({ length: 40 }, (_, i) => ({
+					label: i ? `Track ${i}` : "Auto",
+					value: i - 1
+				}))
+			},
+			read: () => value,
+			write: (next) => {
+				value = next
+			}
+		}
+		const surface = new window.surfaceSmoke.ControlSurface({
+			state: {
+				id: "numeric",
+				name: "Numeric",
+				connections: [],
+				widgets: [{ key: "numeric", widget: "number" }]
+			},
+			bindings: [binding],
+			change: () => {}
+		})
+		surface.element.style.width = "100%"
+		host.append(surface.element)
+		window.numericSmoke = { surface, host, binding, getValue: () => value }
+	})
+	const numeric = page.locator("#numeric-smoke")
+	await numeric.locator(".cs-gpu-ready").waitFor()
+	assert.equal(
+		await numeric.locator('.cs-semantic input[type="number"],.cs-semantic select').count(),
+		0
+	)
+	await numeric.getByRole("button", { name: "Next Melody track options", exact: true }).click()
+	assert.equal(await page.evaluate(() => window.numericSmoke.getValue()), -1)
+	const numericRadio = numeric.getByRole("radio").first()
+	const optionValue = Number(await numericRadio.getAttribute("value")) - 1
+	await numericRadio.click()
+	await page.waitForFunction(
+		(expected) => window.numericSmoke.getValue() === expected,
+		optionValue
+	)
+	const numericGeometry = await numeric.locator(".cs-choice-grid").evaluate((grid) => {
+		const tiles = [...grid.querySelectorAll("label:not([hidden])")].map((tile) =>
+			tile.getBoundingClientRect()
+		)
+		const rect = grid.getBoundingClientRect()
+		return (
+			tiles.every(
+				(tile) =>
+					tile.width >= 43.9 && tile.height >= 43.9 && tile.bottom <= rect.bottom + 0.1
+			) && getComputedStyle(grid).gap === "11px"
+		)
+	})
+	assert.equal(numericGeometry, true)
+	await page.keyboard.press("Home")
+	await page.waitForFunction(() => window.numericSmoke.getValue() === -1)
+	await page.evaluate(() => {
+		const { surface, binding } = window.numericSmoke
+		binding.descriptor = {
+			id: "amount",
+			label: "Amount",
+			widget: "number",
+			min: 0,
+			max: 10000,
+			step: 1
+		}
+		surface.rebuild()
+	})
+	const numericWidget = numeric.locator(".cs-widget")
+	const numericBox = await numericWidget.boundingBox()
+	await page.mouse.click(
+		numericBox.x + numericBox.width * 0.75,
+		numericBox.y + numericBox.height * 0.5
+	)
+	await page.waitForFunction(() => window.numericSmoke.getValue() > 6000)
+	await numeric.getByRole("slider", { name: "Amount", exact: true }).focus()
+	assert.equal(
+		await numeric
+			.locator(".cs-semantic")
+			.evaluate((el) => getComputedStyle(el).backgroundColor),
+		"rgba(0, 0, 0, 0)"
+	)
+	assert.equal(await numeric.locator('input[type="number"]').count(), 0)
+	await page.evaluate(() => {
+		window.numericSmoke.surface.destroy()
+		window.numericSmoke.host.remove()
+	})
+	await page.setViewportSize({ width: 960, height: 10000 })
 	assert.equal(await page.locator(".cs-widget").count(), 18)
 	assert.equal(await page.locator(".cs-play-guide").count(), 0)
 	assert.equal(
@@ -542,9 +643,10 @@ try {
 		(previous) => window.surfaceSmoke.values.cutoff < previous,
 		beforePanelDrag
 	)
-	await page.getByRole("spinbutton", { name: "Tempo" }).fill("140")
-	await page.getByRole("spinbutton", { name: "Tempo" }).press("Tab")
-	await page.waitForFunction(() => window.surfaceSmoke.values.number === 140)
+	await page.getByRole("slider", { name: "Tempo", exact: true }).press("End")
+	await page.waitForFunction(() => window.surfaceSmoke.values.number === 300)
+	await page.getByRole("slider", { name: "Tempo", exact: true }).press("ArrowLeft")
+	await page.waitForFunction(() => window.surfaceSmoke.values.number === 299)
 	await page.getByRole("radio", { name: "Cloud", exact: true }).focus()
 	await page.getByRole("radio", { name: "Cloud", exact: true }).press("Space")
 	await page.waitForFunction(() => window.surfaceSmoke.values.preset === 1)
@@ -742,7 +844,7 @@ try {
 	assert.equal(
 		await page
 			.locator(".cs-widget")
-			.filter({ has: page.locator(".cs-slider") })
+			.filter({ has: page.locator('.cs-slider input[aria-label="Drum density"]') })
 			.evaluate((el) => el.style.transform),
 		"rotate(90deg)"
 	)

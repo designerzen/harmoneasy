@@ -205,7 +205,7 @@ describe("shared component controls", () => {
 			expect(command.mock.calls).toHaveLength(controls.length * 2)
 		}
 	)
-	it("preserves text and numeric editing, then restores notes with Escape, including external toolbars", async () => {
+	it("preserves text editing, migrates numeric editors, and restores notes with Escape, including external toolbars", async () => {
 		const bindings = [
 			bind("text", { widget: "text" }, "Patch"),
 			bind("number", { widget: "number" }, 0.5)
@@ -221,7 +221,7 @@ describe("shared component controls", () => {
 		views.push({ destroy: addKeyboardDownEvents(command) })
 		const name = toolbarHost.querySelector<HTMLInputElement>(".cs-title")!
 		for (const input of [
-			...surface.element.querySelectorAll<HTMLInputElement>("input"),
+			...surface.element.querySelectorAll<HTMLInputElement>('input[type="text"]'),
 			name
 		]) {
 			input.focus()
@@ -379,14 +379,14 @@ describe("shared component controls", () => {
 		toggle.dispatchEvent(new Event("input"))
 		await settle()
 		expect(transformer.options.enabled).toBe(false)
-		const select = gui.element.querySelector("select")!
-		select.value = "2"
-		select.dispatchEvent(new Event("change"))
+		const radios = [...gui.element.querySelectorAll<HTMLInputElement>('input[type="radio"]')]
+		expect(gui.element.querySelector("select")).toBeNull()
+		radios[2].click()
 		await settle()
 		expect(transformer.options.step).toBe(3)
 		transformer.setConfig("step", 16)
 		await settle()
-		expect(select.selectedOptions[0].textContent).toBe("16")
+		expect(radios.find((radio) => radio.checked)?.getAttribute("aria-label")).toBe("16")
 	})
 	it("exposes legacy GUI controls without moving them or replacing custom GUIs", async () => {
 		const panel = document.createElement("div"),
@@ -1742,7 +1742,7 @@ describe("graph control connections", () => {
 
 describe("surface choice radios", () => {
 	it.each([2, 4, 6, 7])(
-		"uses radios for %i choices on new and saved surfaces below seven options",
+		"uses direct radios for %i numeric choices on new and saved surfaces",
 		async (count) => {
 			const binding = bind(
 				"choice",
@@ -1765,14 +1765,10 @@ describe("surface choice radios", () => {
 			views.push(surface)
 			await settle()
 			const controls = surface.element.querySelectorAll(".cs-semantic")
-			expect(controls[0].querySelectorAll('input[type="radio"]').length).toBe(
-				count < 7 ? count : 0
-			)
-			expect(controls[0].querySelectorAll("select").length).toBe(count < 7 ? 0 : 1)
-			expect(controls[1].querySelectorAll('input[type="radio"]').length).toBe(
-				count < 7 ? count : 0
-			)
-			expect(controls[1].querySelectorAll("select").length).toBe(count < 7 ? 0 : 1)
+			expect(controls[0].querySelectorAll('input[type="radio"]').length).toBe(count)
+			expect(controls[0].querySelectorAll("select").length).toBe(0)
+			expect(controls[1].querySelectorAll('input[type="radio"]').length).toBe(count)
+			expect(controls[1].querySelectorAll("select").length).toBe(0)
 		}
 	)
 

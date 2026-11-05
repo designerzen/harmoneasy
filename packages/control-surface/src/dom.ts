@@ -37,6 +37,7 @@ export interface DomControl {
 	element: HTMLElement
 	update(value: ControlValue | undefined): void
 	release?(): void
+	destroy?(): void
 	relative?: RelativeKeys
 	strum?: Strum
 	choices?: ChoicePages
@@ -230,8 +231,7 @@ export function createDomControl(
 	} else if (d.widget === "radio" && d.choices?.length) {
 		choices = createChoicePages(d, binding.key, apply)
 		label.append(choices.element)
-		updates.push(value => choices!.update(value))
-		release = () => choices!.destroy()
+		updates.push((value) => choices!.update(value))
 	} else if (d.widget === "select" || d.choices?.length) {
 		// Index option values preserve typed/array-valued choices without string coercion.
 		const select = document.createElement("select")
@@ -313,16 +313,10 @@ export function createDomControl(
 			})
 		}
 		el.addEventListener(type === "text" ? EVENT_CHANGE : EVENT_INPUT, () => {
-			apply(
-				type === "checkbox"
-					? el.checked
-					: type === "range" || type === "number"
-						? el.valueAsNumber
-						: el.value
-			)
+			apply(type === "checkbox" ? el.checked : type === "range" ? el.valueAsNumber : el.value)
 		})
 		updates.push((v) => {
-			if (type === "range" || type === "number") {
+			if (type === "range") {
 				el.setAttribute("aria-valuetext", formatValue(d, v))
 			}
 			if (type === "checkbox") {
@@ -344,6 +338,7 @@ export function createDomControl(
 		relative,
 		strum,
 		choices,
+		destroy: () => choices?.destroy(),
 		update(value) {
 			for (const update of updates) {
 				update(value)
@@ -401,6 +396,7 @@ export function createDomGui(bindings: ControlBinding[]): {
 				}
 			}
 		}
+		cleanup.push(() => control.destroy?.())
 		if (control.release) {
 			releases.push(control.release)
 		}

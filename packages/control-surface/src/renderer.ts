@@ -1,4 +1,5 @@
 /// <reference types="@webgpu/types" />
+import type { ChoicePages } from "./choice-pages"
 import { choiceGrid, waveformPoints } from "./choices"
 import { PadLight, noteColor } from "./pad"
 import type { VisualiserFrame } from "./visualiser"
@@ -47,6 +48,7 @@ export interface WidgetVisual {
 	background?: boolean
 	pad?: PadLight
 	strum?: Strum
+	choices?: ChoicePages
 }
 export type SurfaceTheme = "neon" | "amber" | "ice"
 interface CachedWidget {
@@ -61,6 +63,7 @@ interface CachedWidget {
 	visualiserRevision: number | undefined
 	padRevision: number | undefined
 	musicRevision: number | undefined
+	choicesRevision: number | undefined
 	strumRevision: number | undefined
 	descriptor: ControlDescriptor
 	widget: WidgetType
@@ -936,6 +939,7 @@ export class GpuSurfaceRenderer {
 				cached.compact !== w.compact ||
 				cached.rotation !== w.rotation ||
 				cached.strumRevision !== w.strum?.revision ||
+				cached.choicesRevision !== w.choices?.revision ||
 				cached.musicRevision !== w.musicView?.revision ||
 				cached.padRevision !== w.pad?.revision ||
 				cached.visualiserRevision !== w.visualiser?.revision ||
@@ -1127,19 +1131,22 @@ export class GpuSurfaceRenderer {
 					)
 				}
 				if (w.widget === "radio" && d.choices?.length) {
-					const { columns, rows } = choiceGrid(d.choices.length)
-					const cw = width / columns,
-						ch = (w.height - 40) / rows
-					for (const [index, option] of d.choices.entries()) {
-						const left = x + (index % columns) * cw + 3
-						const top = w.y + 32 + Math.floor(index / columns) * ch + 3
+					const page = w.choices?.layout
+					const options = page?.choices ?? d.choices
+					const { columns, rows } = page ?? choiceGrid(options.length)
+					const gap = page?.gap ?? 11
+					const cw = (width - gap * (columns - 1)) / columns
+					const ch = ((page?.height ?? w.height - 40) - gap * (rows - 1)) / rows
+					for (const [index, option] of options.entries()) {
+						const left = x + (index % columns) * (cw + gap)
+						const top = w.y + 32 + Math.floor(index / columns) * (ch + gap)
 						this.quad(
 							left,
 							top,
-							cw - 6,
-							ch - 6,
+							cw,
+							ch,
 							11,
-							index === choice ? 0.7 : 0.04,
+							sameValue(option.value, v) ? 0.7 : 0.04,
 							0,
 							0,
 							0,
@@ -1223,6 +1230,7 @@ export class GpuSurfaceRenderer {
 					compact: w.compact,
 					rotation: w.rotation,
 					strumRevision: w.strum?.revision,
+					choicesRevision: w.choices?.revision,
 					musicRevision: w.musicView?.revision,
 					padRevision: w.pad?.revision,
 					visualiserRevision: w.visualiser?.revision,

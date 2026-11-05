@@ -1,22 +1,47 @@
 import type { ControlChoice, ControlDescriptor, WidgetType } from "./types"
 
-/** Performance controls never require opening a picker or typing a numeric value. */
+/** Numeric performance controls never require opening a picker or typing a numeric value. */
 export function directDescriptor(d: ControlDescriptor): ControlDescriptor {
-	if (d.choices?.length && d.choices.every(choice => typeof choice.value === "number")) {
+	if (
+		d.choices?.length &&
+		(d.widget === "number" ||
+			d.choices.some(
+				(choice) =>
+					typeof choice.value === "number" ||
+					(typeof choice.value === "string" &&
+						choice.value.trim() !== "" &&
+						Number.isFinite(Number(choice.value)))
+			))
+	) {
 		return { ...d, widget: "radio" }
 	}
-	if (d.widget !== "number") { return d }
-	const step = d.step ?? 1, min = d.min, max = d.max
-	if (Number.isInteger(min) && Number.isInteger(max) && Number.isInteger(step) && step > 0 && max! >= min!) {
+	if (d.widget !== "number") {
+		return d
+	}
+	const step = d.step,
+		min = d.min,
+		max = d.max
+	if (
+		Number.isInteger(min) &&
+		Number.isInteger(max) &&
+		Number.isInteger(step) &&
+		step !== undefined &&
+		step > 0 &&
+		max! >= min!
+	) {
 		const count = Math.floor((max! - min!) / step) + 1
 		if (count <= 128) {
-			return { ...d, widget: "radio", choices: Array.from({ length: count }, (_, index) => {
-				const value = min! + index * step
-				return { label: String(value), value }
-			}) }
+			return {
+				...d,
+				widget: "radio",
+				choices: Array.from({ length: count }, (_, index) => {
+					const value = min! + index * step
+					return { label: String(value), value }
+				})
+			}
 		}
 	}
-	return { ...d, widget: "slider", step }
+	return { ...d, widget: "slider" }
 }
 
 /** Small choice lists use radios, including surfaces saved with select widgets. */
@@ -41,7 +66,7 @@ export function waveformPoints(choice: ControlChoice): number[][] | undefined {
 			0.5 - Math.sin((i / 32) * Math.PI * 2) * 0.4
 		])
 	}
-	if (shape === "square")
+	if (shape === "square") {
 		return [
 			[0, 0.9],
 			[0, 0.1],
@@ -50,19 +75,22 @@ export function waveformPoints(choice: ControlChoice): number[][] | undefined {
 			[1, 0.9],
 			[1, 0.1]
 		]
-	if (shape === "triangle")
+	}
+	if (shape === "triangle") {
 		return [
 			[0, 0.5],
 			[0.25, 0.1],
 			[0.75, 0.9],
 			[1, 0.5]
 		]
-	if (shape === "sawtooth" || shape === "ramp")
+	}
+	if (shape === "sawtooth" || shape === "ramp") {
 		return [
 			[0, 0.9],
 			[0.5, 0.1],
 			[0.5, 0.9],
 			[1, 0.1]
 		]
+	}
 	return undefined
 }

@@ -27,6 +27,8 @@ import {
 import { AnimatedSVGEdge } from "./AnimatedSVGEdge.tsx"
 import { StartNode } from "./nodes/StartNode.tsx"
 import { EndNode } from "./nodes/EndNode.tsx"
+import { SpeakerNode } from "./nodes/SpeakerNode.tsx"
+import { AudioSignalEdge } from "./AudioSignalEdge.tsx"
 import { InputNode } from "./nodes/InputNode.tsx"
 import { OutputNode } from "./nodes/OutputNode.tsx"
 import { TransformerNode } from "./nodes/TransformerNode.tsx"
@@ -64,6 +66,7 @@ import {
 const nodeTypes = {
 	start: StartNode,
 	end: EndNode,
+	speaker: SpeakerNode,
 	input: InputNode,
 	output: OutputNode,
 	transformer: TransformerNode,
@@ -72,7 +75,8 @@ const nodeTypes = {
 }
 
 const edgeTypes = {
-	animatedSvg: AnimatedSVGEdge
+	animatedSvg: AnimatedSVGEdge,
+	audioSignal: AudioSignalEdge
 }
 
 function FlowComponent({ isFront, focusRequest }: { isFront: boolean; focusRequest: number }) {

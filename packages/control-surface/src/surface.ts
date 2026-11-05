@@ -356,7 +356,9 @@ export class ControlSurface {
 			this.stage.addEventListener(type, listener, { signal: this.abort.signal })
 		listen(EVENT_POINTER_DOWN, (event) => {
 			const e = event as PointerEvent
-			if ((e.target as HTMLElement).closest("input,select,button,textarea")) {
+			if (
+				(e.target as HTMLElement).closest("input,select,button,textarea,.cs-choice-panel")
+			) {
 				return
 			}
 			const rect = this.stage.getBoundingClientRect()
@@ -776,8 +778,10 @@ export class ControlSurface {
 			control.element.inert = this.editing
 			control.element.hidden = this.editing
 			entry.release = control.release
+			this.unsubscribers.push(() => control.destroy?.())
 			entry.visual.relative = control.relative
 			entry.visual.strum = control.strum
+			entry.visual.choices = control.choices
 			{
 				if (widget === "dial" || widget === "rotation") {
 					element.tabIndex = -1
@@ -1409,6 +1413,7 @@ export class ControlSurface {
 			entry.element.classList.toggle("cs-compact", r.compact)
 			entry.element.title = r.compact ? entry.binding.descriptor.label : ""
 			entry.tools?.resize(r.width - 6, r.height - 4 - 55 / scale, scale)
+			r.choices?.resize(r.width - 16, r.height - 40, scale)
 			const grid = entry.element.querySelector<HTMLElement>(".cs-note-grid")
 			if (grid) {
 				r.musicView = resizeMusicGrid(grid, r.width, r.height, scale)
@@ -1860,16 +1865,25 @@ export class ControlSurface {
 			values[gesture.axis] = denormalize(d, px)
 			void this.write(entry, values)
 		} else if (v.widget === "radio" && d.choices?.length) {
-			const { columns, rows } = choiceGrid(d.choices.length)
-			const column = Math.min(
-				columns - 1,
-				Math.floor(clamp((x - v.x - 8) / (v.width - 16)) * columns)
-			)
-			const row = Math.min(
-				rows - 1,
-				Math.floor(clamp((y - v.y - 32) / (v.height - 40)) * rows)
-			)
-			const choice = d.choices[row * columns + column]
+			const page = v.choices?.layout
+			const options = page?.choices ?? d.choices
+			const { columns, rows } = page ?? choiceGrid(options.length)
+			const gap = page?.gap ?? 11
+			const width = v.width - 16,
+				height = page?.height ?? v.height - 40
+			const cx = x - v.x - 8,
+				cy = y - v.y - 32
+			if (cx < 0 || cx > width || cy < 0 || cy > height) {
+				return
+			}
+			const cw = (width - gap * (columns - 1)) / columns
+			const ch = (height - gap * (rows - 1)) / rows
+			const column = Math.floor(cx / (cw + gap)),
+				row = Math.floor(cy / (ch + gap))
+			if (cx - column * (cw + gap) > cw || cy - row * (ch + gap) > ch) {
+				return
+			}
+			const choice = options[row * columns + column]
 			if (choice) {
 				this.write(entry, choice.value)
 			}

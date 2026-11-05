@@ -31,10 +31,23 @@
 				<button class="primary" form="start-form" type="submit" name="startup" value="room">
 					Start shared setup
 				</button>
-				<button class="tertiary close-icon" id="dismiss-start-room" type="button" aria-label="Dismiss room invitation" title="Dismiss room invitation"></button>
+				<button
+					class="tertiary close-icon"
+					id="dismiss-start-room"
+					type="button"
+					aria-label="Dismiss room invitation"
+					title="Dismiss room invitation"
+				></button>
 			</div>
 			<header class="start-heading">
-				<button class="backlink" type="button" data-about aria-label="About Harmoneasy" aria-haspopup="dialog" aria-controls="about-dialog">
+				<button
+					class="backlink"
+					type="button"
+					data-about
+					aria-label="About Harmoneasy"
+					aria-haspopup="dialog"
+					aria-controls="about-dialog"
+				>
 					<img class="logo" src="/source/assets/logos/harmoneasy.svg" alt="" />
 					<span id="start-title">Harmoneasy</span>
 				</button>
@@ -43,12 +56,57 @@
 					<p id="start-preset-description"></p>
 				</section>
 				<div class="start-actions">
-					<button class="btn-continue-session primary" form="start-form" type="submit" name="startup" value="session" autofocus><span>Continue session</span><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14m-6-6 6 6-6 6" /></svg></button>
-					<button class="secondary" id="start-wizard" type="button" aria-haspopup="dialog" aria-controls="setup-wizard"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h4m4 0h8M4 17h8m4 0h4" /><circle cx="10" cy="7" r="2" /><circle cx="14" cy="17" r="2" /></svg>Setup wizard</button>
-					<button class="secondary" type="button" id="show-start-presets" aria-expanded="false" aria-controls="start-presets-content"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><rect x="14" y="14" width="6" height="6" rx="1" /></svg><span data-start-presets-label>Presets</span></button>
+					<button
+						class="btn-continue-session primary"
+						form="start-form"
+						type="submit"
+						name="startup"
+						value="session"
+						autofocus
+					>
+						<span>Continue session</span
+						><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+							<path d="M5 12h14m-6-6 6 6-6 6" />
+						</svg>
+					</button>
+					<button
+						class="secondary"
+						id="start-wizard"
+						type="button"
+						aria-haspopup="dialog"
+						aria-controls="setup-wizard"
+					>
+						<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+							<path d="M4 7h4m4 0h8M4 17h8m4 0h4" />
+							<circle cx="10" cy="7" r="2" />
+							<circle cx="14" cy="17" r="2" /></svg
+						>Setup wizard
+					</button>
+					<button
+						class="secondary"
+						type="button"
+						id="show-start-presets"
+						aria-expanded="false"
+						aria-controls="start-presets-content"
+					>
+						<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+							<rect x="4" y="4" width="6" height="6" rx="1" />
+							<rect x="14" y="4" width="6" height="6" rx="1" />
+							<rect x="4" y="14" width="6" height="6" rx="1" />
+							<rect x="14" y="14" width="6" height="6" rx="1" /></svg
+						><span data-start-presets-label>Presets</span>
+					</button>
 				</div>
 				<div class="start-footer">
-					<button class="btn-start-empty tertiary" form="start-form" type="submit" name="startup" value="empty">Start empty</button>
+					<button
+						class="btn-start-empty tertiary"
+						form="start-form"
+						type="submit"
+						name="startup"
+						value="empty"
+					>
+						Start empty
+					</button>
 					<a href="%BASE_URL%presets/">Browse preset pages</a>
 				</div>
 			</header>
@@ -60,7 +118,12 @@
 		<dialog id="netronome-dialog" aria-labelledby="netronome-title" data-midi-ignore>
 			<header>
 				<h2 id="netronome-title">Shared room</h2>
-				<button class="close-icon" type="button" id="netronome-close" aria-label="Close shared room dialog"></button>
+				<button
+					class="close-icon"
+					type="button"
+					id="netronome-close"
+					aria-label="Close shared room dialog"
+				></button>
 			</header>
 			<div class="netronome-dialog-content">
 				<div id="netronome-choice">
@@ -198,7 +261,12 @@
 		>
 			<header>
 				<h2 id="command-title">Commands</h2>
-				<button class="close-icon" type="button" data-command-close aria-label="Close command palette"></button>
+				<button
+					class="close-icon"
+					type="button"
+					data-command-close
+					aria-label="Close command palette"
+				></button>
 			</header>
 			<label class="sr-only" for="command-search">Find a command or control</label>
 			<input
@@ -304,6 +372,15 @@
 				disabled
 			>
 				Last take
+			</button>
+			<button
+				id="btn-mixer"
+				type="button"
+				aria-haspopup="dialog"
+				aria-controls="mixer-dialog"
+				disabled
+			>
+				Mixer
 			</button>
 			<div class="header-controls" role="group" aria-label="Session controls">
 				<div id="tempo-control" class="controls">
@@ -494,8 +571,15 @@
 				</p>
 			</div>
 			<div class="recording-actions">
-				<button type="button" id="recording-save" class="primary" autofocus>Save audio…</button>
-				<button class="close-icon" type="button" id="recording-close" aria-label="Close"></button>
+				<button type="button" id="recording-save" class="primary" autofocus>
+					Save audio…
+				</button>
+				<button
+					class="close-icon"
+					type="button"
+					id="recording-close"
+					aria-label="Close"
+				></button>
 			</div>
 		</dialog>
 		<main>
@@ -575,7 +659,13 @@
 			</header>
 			<pre id="info-message" class="selectable" role="status" aria-live="polite"></pre>
 			<form method="dialog">
-				<button class="btn-close close-icon" type="submit" formmethod="dialog" autofocus aria-label="Close"></button>
+				<button
+					class="btn-close close-icon"
+					type="submit"
+					formmethod="dialog"
+					autofocus
+					aria-label="Close"
+				></button>
 			</form>
 		</dialog>
 
@@ -594,7 +684,11 @@
 					</p>
 				</div>
 				<form method="dialog">
-					<button class="close-icon" type="submit" aria-label="Close OpenDAW export"></button>
+					<button
+						class="close-icon"
+						type="submit"
+						aria-label="Close OpenDAW export"
+					></button>
 				</form>
 			</header>
 			<div class="opendaw-code-panel">
@@ -615,7 +709,9 @@
 				<a href="https://opendaw.studio/scripting" target="_blank" rel="noopener noreferrer"
 					>Open script editor <span aria-hidden="true">↗</span></a
 				>
-				<button type="button" id="opendaw-copy-code" class="primary" autofocus>Copy code</button>
+				<button type="button" id="opendaw-copy-code" class="primary" autofocus>
+					Copy code
+				</button>
 			</footer>
 		</dialog>
 
@@ -634,7 +730,13 @@
 				<p id="error-solution"></p>
 			</div>
 			<form method="dialog">
-				<button autofocus class="btn-close close-icon" type="submit" formmethod="dialog" aria-label="Close"></button>
+				<button
+					autofocus
+					class="btn-close close-icon"
+					type="submit"
+					formmethod="dialog"
+					aria-label="Close"
+				></button>
 			</form>
 		</dialog>
 
@@ -678,7 +780,12 @@
 				</button>
 			</menu>
 			<form method="dialog">
-				<button class="btn-close close-icon" type="submit" formmethod="dialog" aria-label="Close"></button>
+				<button
+					class="btn-close close-icon"
+					type="submit"
+					formmethod="dialog"
+					aria-label="Close"
+				></button>
 			</form>
 		</dialog>
 
@@ -692,7 +799,9 @@
 		<dialog id="about-dialog" closedby="any" aria-labelledby="about-title">
 			<header>
 				<span class="about-label">About</span>
-				<form method="dialog"><button class="close-icon" type="submit" autofocus aria-label="Close"></button></form>
+				<form method="dialog">
+					<button class="close-icon" type="submit" autofocus aria-label="Close"></button>
+				</form>
 			</header>
 			<div
 				class="about-content selectable"
@@ -815,7 +924,9 @@
 			</p>
 			<div id="midi-control-settings"></div>
 			<div id="midi-macro-controls"></div>
-			<form method="dialog"><button class="btn-close close-icon" type="submit" aria-label="Close"></button></form>
+			<form method="dialog">
+				<button class="btn-close close-icon" type="submit" aria-label="Close"></button>
+			</form>
 		</dialog>
 
 		<dialog id="midi-devices-dialog" closedby="any" aria-labelledby="midi-devices-title">
@@ -845,7 +956,12 @@
 				</table>
 			</div>
 			<form method="dialog">
-				<button class="btn-close close-icon" type="submit" autofocus aria-label="Close"></button>
+				<button
+					class="btn-close close-icon"
+					type="submit"
+					autofocus
+					aria-label="Close"
+				></button>
 			</form>
 		</dialog>
 
@@ -940,7 +1056,13 @@
 				</fieldset>
 			</form>
 			<form method="dialog">
-				<button class="btn-close close-icon" type="submit" formmethod="dialog" autofocus aria-label="Close"></button>
+				<button
+					class="btn-close close-icon"
+					type="submit"
+					formmethod="dialog"
+					autofocus
+					aria-label="Close"
+				></button>
 			</form>
 		</dialog>
 
@@ -953,7 +1075,12 @@
 				<!-- Shows a collection of buttons to allow selection -->
 				<menu></menu>
 				<form method="dialog">
-					<button class="btn-close close-icon" type="submit" formmethod="dialog" aria-label="Close"></button>
+					<button
+						class="btn-close close-icon"
+						type="submit"
+						formmethod="dialog"
+						aria-label="Close"
+					></button>
 				</form>
 			</dialog>
 		</template>
@@ -967,7 +1094,12 @@
 				<!-- Shows a collection of buttons to allow selection -->
 				<menu></menu>
 				<form method="dialog">
-					<button class="btn-close close-icon" type="submit" formmethod="dialog" aria-label="Close"></button>
+					<button
+						class="btn-close close-icon"
+						type="submit"
+						formmethod="dialog"
+						aria-label="Close"
+					></button>
 				</form>
 			</dialog>
 		</template>
@@ -981,7 +1113,12 @@
 				<!-- Shows a collection of buttons to allow selection -->
 				<menu></menu>
 				<form method="dialog">
-					<button class="btn-close close-icon" type="submit" formmethod="dialog" aria-label="Close"></button>
+					<button
+						class="btn-close close-icon"
+						type="submit"
+						formmethod="dialog"
+						aria-label="Close"
+					></button>
 				</form>
 			</dialog>
 		</template>
@@ -1023,7 +1160,13 @@
 					<p class="error-solution"></p>
 				</div>
 				<form method="dialog">
-					<button autofocus class="btn-close close-icon" type="submit" formmethod="dialog" aria-label="Close"></button>
+					<button
+						autofocus
+						class="btn-close close-icon"
+						type="submit"
+						formmethod="dialog"
+						aria-label="Close"
+					></button>
 				</form>
 			</dialog>
 		</template>

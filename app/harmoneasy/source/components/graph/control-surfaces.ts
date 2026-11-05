@@ -9,9 +9,10 @@ import type {
 	SurfaceState,
 	SurfaceMenuAction
 } from "control-surface/types"
-import { componentBindings } from "audiobus/io/component-ui"
+import { componentBindings, subscribeControlSchema } from "audiobus/io/component-ui"
 import { deviceId } from "audiobus/io/device-definition"
 import {
+	EVENT_ABORT,
 	EVENT_CLICK,
 	EVENT_CLOSE,
 	EVENT_CONFIGURATION_CHANGED,
@@ -274,6 +275,11 @@ export function mountControlSurface(
 		schemaAbort.abort()
 		schemaAbort = new AbortController()
 		for (const component of components.values()) {
+			const unsubscribeSchema = subscribeControlSchema(component, () => {
+				signature = ""
+				void refresh()
+			})
+			schemaAbort.signal.addEventListener(EVENT_ABORT, unsubscribeSchema, { once: true })
 			const target = component as ComponentUi & Partial<EventTarget>
 			target.addEventListener?.(
 				EVENT_CONTROL_SCHEMA_CHANGED,

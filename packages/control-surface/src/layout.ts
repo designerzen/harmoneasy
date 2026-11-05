@@ -117,7 +117,7 @@ export function minimumWidgetHeight(widget = "", scale = 1): number {
 			: ["xy", "range", "relative-keys", "strum"].includes(widget)
 				? 80 + 99 / scale
 				: widget === "radio"
-					? 132
+					? 46 + 99 / scale
 					: 44 / scale
 	)
 }

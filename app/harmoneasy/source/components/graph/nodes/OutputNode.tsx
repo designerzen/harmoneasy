@@ -7,6 +7,8 @@ import { useChain } from "../ChainContext"
 import { Handle, Position } from "@xyflow/react"
 import React, { useCallback } from "react"
 import { CONTROL_HANDLE } from "../control-surfaces"
+import { hasAudibleOutput } from "../audio-levels"
+import { AUDIO_HANDLE } from "../layout"
 
 import type { IAudioOutput } from "audiobus/io/outputs/output-interface"
 
@@ -98,6 +100,17 @@ export function OutputNode(props: any) {
 
 			{!isFullscreen && (
 				<Handle type="target" position={isVertical ? Position.Top : Position.Left} />
+			)}
+			{!isFullscreen && (
+				<Handle
+					type="source"
+					id={AUDIO_HANDLE}
+					position={isVertical ? Position.Bottom : Position.Right}
+					isConnectable={false}
+					// Always mounted so the speaker edge finds it if an engine gains audio later.
+					style={{ visibility: hasAudibleOutput(output) ? undefined : "hidden" }}
+					aria-label={`${output.name} audio out`}
+				/>
 			)}
 			{!isFullscreen && (
 				<>

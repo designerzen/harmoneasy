@@ -3,15 +3,18 @@ import { deviceId } from "audiobus/io/device-definition"
 import type IOChain from "audiobus/io/IO-chain"
 import { DEFAULT_LAYOUT_MODE } from "./options"
 import { CONTROL_HANDLE, SURFACE_HANDLE, controlComponentId } from "./control-surfaces"
+import { hasAudibleOutput } from "./audio-levels"
 
-export const EDGE_TYPE = { animated: "animatedSvg" }
+export const EDGE_TYPE = { animated: "animatedSvg", audio: "audioSignal" }
+export const AUDIO_HANDLE = "audio-out"
 export const NOTE_TYPE = {
 	input: "input",
 	start: "start",
 	transformer: "transformer",
 	addTransformer: "addTransformer",
 	output: "output",
-	end: "end"
+	end: "end",
+	speaker: "speaker"
 }
 export type GraphNode = Node<Record<string, any>>
 export const initialNodes: GraphNode[] = []
@@ -51,7 +54,11 @@ export const getStructure = (
 			position: chain.options.positions?.[positionKey] ?? { x: 0, y: 0 },
 			sourcePosition: vertical ? Position.Bottom : Position.Right,
 			targetPosition: vertical ? Position.Top : Position.Left,
-			deletable: type !== "start" && type !== "end" && type !== "addTransformer",
+			deletable:
+				type !== "start" &&
+				type !== "end" &&
+				type !== "addTransformer" &&
+				type !== NOTE_TYPE.speaker,
 			draggable: type !== "addTransformer"
 		}
 		nodes.push(node)
@@ -117,11 +124,31 @@ export const getStructure = (
 		)
 		previous.forEach((source) => connect(source, node))
 	})
+	const audible = outputs.filter(hasAudibleOutput)
+	if (audible.length) {
+		const speaker = addNode("node-speaker", NOTE_TYPE.speaker, transformerColumn + 2, 0, {
+			label: "Speakers",
+			outputs: audible
+		})
+		for (const output of audible) {
+			const source = prefix("node-output-" + deviceId(output))
+			edges.push({
+				id: `audio:${source}->${speaker.id}`,
+				source,
+				target: speaker.id,
+				sourceHandle: AUDIO_HANDLE,
+				type: EDGE_TYPE.audio,
+				deletable: false,
+				selectable: false,
+				data: { output }
+			})
+		}
+	}
 	for (const [index, surface] of (chain.options.controlSurfaces ?? []).entries()) {
 		const node = addNode(
 			`control-surface-${surface.id}`,
 			"controlSurface",
-			transformerColumn + 2,
+			transformerColumn + 3,
 			index,
 			{ label: surface.name, surface }
 		)

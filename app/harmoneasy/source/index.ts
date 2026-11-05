@@ -23,6 +23,7 @@ import { createMidiControlPanel } from "./services/midi-control-panel"
 import { startKnownMidiInputs } from "audiobus/midi/hardware/known-midi-inputs"
 import { showMidiDeviceDisconnected } from "./services/midi-device-errors"
 import { createMidiDevicesDialog } from "./services/midi-devices-dialog"
+import { createMixer } from "./services/mixer"
 import { createRecordingControls } from "./services/recording-dialog"
 import { createMusicalFeatureControls } from "./services/musical-feature-controls"
 import { EVENT_HARMONY_CHANGED, EVENT_HARMONY_SETTINGS_CHANGED } from "audiobus/event-constants"
@@ -489,6 +490,7 @@ const initialiseApplication = async (
 		autoConnect,
 		externalDevices: { ui }
 	})
+	createMixer(ioManager, bus.output)
 	const audioRecording = createRecordingControls(
 		bus.audioContext,
 		bus.output,

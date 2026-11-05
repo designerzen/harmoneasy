@@ -663,6 +663,68 @@
 	min-width: 18rem;
 }
 
+.node-speaker {
+	--hue-accent: var(--hue-output);
+	--audio-level: 0;
+	min-width: 0;
+	width: 8rem;
+	padding: var(--gap);
+
+	svg {
+		display: block;
+		width: 100%;
+		fill: none;
+		stroke: var(--node-accent);
+		stroke-width: 2;
+		stroke-linecap: round;
+	}
+	.speaker-surround {
+		fill: var(--node-tint);
+	}
+	.speaker-cone {
+		fill: color-mix(in oklch, var(--node-accent) 30%, var(--col-surface));
+		transform-box: fill-box;
+		transform-origin: center;
+		transform: scale(calc(0.92 + var(--audio-level) * 0.22));
+	}
+	.speaker-cap {
+		fill: var(--node-accent);
+	}
+	.speaker-waves {
+		opacity: var(--audio-level);
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.speaker-cone {
+			transform: none;
+		}
+	}
+}
+
+#graph .audio-signal-edge {
+	--audio-level: 0;
+	.react-flow__edge-path {
+		stroke-dasharray: 3 5;
+	}
+	&[data-live] .react-flow__edge-path {
+		stroke: light-dark(
+			oklch(46% var(--accent-chroma) var(--hue-output)),
+			oklch(76% var(--accent-chroma) var(--hue-output))
+		);
+		stroke-width: calc(1.5px + var(--audio-level) * 3px);
+		stroke-dasharray: 8 6;
+		animation: audio-signal-flow 0.6s linear infinite;
+		@media (prefers-reduced-motion: reduce) {
+			animation: none;
+		}
+	}
+}
+
+@keyframes audio-signal-flow {
+	to {
+		stroke-dashoffset: -14;
+	}
+}
+
 .graph-node.node-output:has(.webclap-gui) {
 	--node-content-padding: 0px;
 	width: min(1000px, calc(100vw - 3rem));
