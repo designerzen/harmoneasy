@@ -1,6 +1,7 @@
 import { surfaceNoteSource } from "./control-surface-notes"
 import { surfaceAudioSources } from "./control-surface-audio"
-import { ControlSurface } from "control-surface"
+import { ControlSurface, featuredBindings } from "control-surface"
+import { portableComponents, surfaceShareURL } from "./control-surface-share"
 import "control-surface/style.css"
 import { bindingKey } from "control-surface/model"
 import type {
@@ -67,13 +68,15 @@ export function controlComponents(chain: IOChain): Map<string, ComponentUi & { n
 		])
 	)
 }
-export function createSurface(chain: IOChain): void {
+/** New surfaces start with the chain's key controls so they are playable immediately. */
+export function createSurface(chain: IOChain): Promise<void> {
 	const surfaces = chain.options.controlSurfaces ?? []
+	const id = crypto.randomUUID()
 	chain.setGraphOptions({
 		controlSurfaces: [
 			...surfaces,
 			{
-				id: crypto.randomUUID(),
+				id,
 				name: `Control Surface ${surfaces.length + 1}`,
 				connections: [],
 				widgets: [],
@@ -81,6 +84,40 @@ export function createSurface(chain: IOChain): void {
 			}
 		]
 	})
+	return fillSurface(chain, id)
+}
+
+/** Add the most important controls from every chain component, keeping existing widgets. */
+export async function fillSurface(chain: IOChain, surfaceId: string, limit = 12): Promise<void> {
+	const available: ControlBinding[] = []
+	for (const [id, component] of controlComponents(chain)) {
+		try {
+			available.push(...(await componentBindings(component, id)))
+		} catch {
+			/* A component without a running engine contributes nothing yet. */
+		}
+	}
+	const current = chain.options.controlSurfaces?.find((s) => s.id === surfaceId)
+	if (!current) {
+		return
+	}
+	const state = structuredClone(current)
+	const present = new Set(state.widgets.flatMap((w) => [w.key, w.yKey]))
+	for (const binding of featuredBindings(
+		available.filter((b) => !present.has(b.key)),
+		Math.max(0, limit - state.widgets.length)
+	)) {
+		const componentId = binding.sourceId!
+		let connection = state.connections.find((c) => c.componentId === componentId)
+		if (!connection) {
+			state.connections.push((connection = { componentId, controlIds: [] }))
+		}
+		if (!connection.controlIds.includes(binding.descriptor.id)) {
+			connection.controlIds.push(binding.descriptor.id)
+		}
+		state.widgets.push({ key: binding.key })
+	}
+	updateSurface(chain, state)
 }
 export function updateSurface(chain: IOChain, state: SurfaceState): void {
 	chain.setGraphOptions({
@@ -326,6 +363,16 @@ export function mountControlSurface(
 			toolbarHost,
 			editing,
 			menuActions,
+			fillControls: () => void fillSurface(chain, surfaceId),
+			async share() {
+				const current = chain.options.controlSurfaces?.find((s) => s.id === surfaceId)
+				if (!current) {
+					throw new Error("This surface no longer exists")
+				}
+				const url = surfaceShareURL(current, portableComponents(controlComponents(chain)))
+				await navigator.clipboard.writeText(url)
+				return "Share link copied. Anyone opening it gets this surface on their own instruments."
+			},
 			addControls: [...components].map(([id, component]) => ({
 				label: `Add ${component.name} controls…`,
 				action: () => {

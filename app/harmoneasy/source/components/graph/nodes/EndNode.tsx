@@ -22,7 +22,11 @@ export function EndNode({
 			>
 				Output
 			</button>
-			<button className="nodrag nopan" type="button" onClick={() => createSurface(chain)}>
+			<button
+				className="nodrag nopan"
+				type="button"
+				onClick={() => void createSurface(chain)}
+			>
 				Control Surface
 			</button>
 			{!data?.standalone && (

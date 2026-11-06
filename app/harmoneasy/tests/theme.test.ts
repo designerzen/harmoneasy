@@ -43,10 +43,20 @@ describe("Browser-local appearance", () => {
 		expect(document.documentElement.style.getPropertyValue("--theme-chroma")).toBe("1")
 	})
 	it("keeps every application colour in the token file", () => {
+		const literalColour = /:[^;{]*(#[0-9a-f]{3,8}\b(?![\w-])|rgba?\(|hsla?\()/i
+		// Gradients may keep literal stops, such as fixed meter colours and hardware shading.
+		const withoutGradients = (source: string) =>
+			source.replace(/[\w-]*gradient\((?:[^()]|\((?:[^()]|\([^()]*\))*\))*\)/gi, "")
+		expect(
+			withoutGradients("a { background: repeating-linear-gradient(#000, rgb(0 0 0) 50%); }")
+		).not.toMatch(literalColour)
+		expect(withoutGradients("a { background: linear-gradient(#000, #fff) #123; }")).toMatch(
+			literalColour
+		)
 		const styles = readdirSync("source/assets/style").filter((file) => file.endsWith(".scss"))
 		for (const file of styles) {
 			const source = readFileSync(`source/assets/style/${file}`, "utf8")
-			expect(source, file).not.toMatch(/:[^;{]*(#[0-9a-f]{3,8}\b(?![\w-])|rgba?\(|hsla?\()/i)
+			expect(withoutGradients(source), file).not.toMatch(literalColour)
 		}
 	})
 	it("starts with system brightness and renders all hue presets without writing storage", () => {

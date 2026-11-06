@@ -49,6 +49,68 @@
 }
 .cs-toolbar button,
 .cs-layout-actions button,
+.cs-fill button {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	transition:
+		background-color 80ms,
+		transform 60ms;
+}
+.cs-toolbar button svg,
+.cs-layout-actions button svg,
+.cs-fill button svg {
+	width: 18px;
+	height: 18px;
+	flex: none;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.8;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+.cs-toolbar button:active,
+.cs-layout-actions button:active,
+.cs-fill button:active {
+	transform: scale(0.96);
+	background: color-mix(in srgb, currentColor 22%, var(--col-line, #101f2b));
+}
+.cs-toolbar button[aria-pressed="true"] {
+	border-color: currentColor;
+}
+.cs-fill {
+	display: flex;
+	justify-content: center;
+	padding: 24px 0 8px;
+}
+.cs-fill[hidden] {
+	display: none;
+}
+.cs-fill button {
+	min-height: 56px;
+	padding: 10px 22px;
+	color: #04140f;
+	background: var(--col-accent, #2effb3);
+	border: 0;
+	border-radius: 8px;
+	font: 700 1rem/1.2 var(--font-family, system-ui, sans-serif);
+	box-shadow: 0 0 24px color-mix(in srgb, var(--col-accent, #2effb3) 45%, transparent);
+	cursor: pointer;
+}
+@media (prefers-reduced-motion: reduce) {
+	.cs-toolbar button,
+	.cs-layout-actions button,
+	.cs-fill button {
+		transition: none;
+	}
+	.cs-toolbar button:active,
+	.cs-layout-actions button:active,
+	.cs-fill button:active {
+		transform: none;
+	}
+}
+.cs-toolbar button,
+.cs-layout-actions button,
 .cs-toolbar select,
 .cs-widget-tools button,
 .cs-widget-tools select {

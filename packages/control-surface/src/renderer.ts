@@ -1,6 +1,7 @@
 /// <reference types="@webgpu/types" />
 import type { ChoicePages } from "./choice-pages"
 import { choiceGrid, waveformPoints } from "./choices"
+import { CONTROL_ICONS, choiceIcon, controlIcon } from "./icons"
 import { PadLight, noteColor } from "./pad"
 import type { VisualiserFrame } from "./visualiser"
 import { beatPulse } from "./beat"
@@ -49,6 +50,8 @@ export interface WidgetVisual {
 	pad?: PadLight
 	strum?: Strum
 	choices?: ChoicePages
+	/** Seconds on the frame clock of the last committed press, for trigger flashes. */
+	triggeredAt?: number
 }
 export type SurfaceTheme = "neon" | "amber" | "ice"
 interface CachedWidget {
@@ -75,6 +78,7 @@ interface CachedWidget {
 	dial: DialOptions | undefined
 	unavailable: boolean | undefined
 	disabled: boolean | undefined
+	triggeredAt: number | undefined
 	color: number[]
 	epoch: number
 }
@@ -291,7 +295,10 @@ fn chassis(distance:f32,top:f32,pressed:f32)->vec4f {
   material=chassis(d,1.0-top,0.0);
  }
  let pulse=1.0+sin(frame.time*3.0)*engaged*0.12*frame.motion;
- let intensity=(light+fill)*pulse*(1.0+frame.effects.y*0.6);
+ // Buttons, toggles and choice cells flash on each committed press; others use second differently.
+ let triggerable=(kind>2.5&&kind<3.5)||(kind>4.5&&kind<5.5)||(kind>10.5&&kind<11.5);
+ let trig=select(0.0,exp(-max(0.0,frame.time-second)*9.0)*frame.motion,triggerable&&second>=0.0);
+ let intensity=(light*(1.0+trig*1.8)+fill*(1.0+trig*3.0))*pulse*(1.0+frame.effects.y*0.6);
  let rgb=color*intensity+material.rgb*(vec3f(0.75)+i.color.rgb*0.5);
  return surfaceEffect(vec4f(rgb,max(clamp(intensity,0.0,1.0),material.a)*i.color.a),i.uv,frame.time);
 }`
@@ -622,6 +629,38 @@ export class GpuSurfaceRenderer {
 		}
 		return width
 	}
+	/** Strokes reuse the segment primitive so icons share the face's glow, rotation and theme. */
+	private icon(name: string, x: number, y: number, size: number, alpha: number): void {
+		const unit = size / 24
+		for (const stroke of CONTROL_ICONS[name] ?? CONTROL_ICONS.control) {
+			for (let i = 2; i < stroke.length; i += 2) {
+				this.quad(x, y, size, size, 17, 0, 0, 0, 0, alpha, [
+					stroke[i - 2] * unit,
+					stroke[i - 1] * unit,
+					stroke[i] * unit,
+					stroke[i + 1] * unit
+				])
+			}
+		}
+	}
+	/** Glyph and text centred as one group, sharing the label's fitted scale. */
+	private iconLabel(
+		name: string,
+		text: string,
+		x: number,
+		y: number,
+		width: number,
+		alpha: number,
+		scale: number
+	): void {
+		const size = Math.round(Math.max(12, 15 * scale)),
+			gap = 5 * scale
+		const fitted = Math.min(scale, (width - size - gap) / Math.max(1, this.textWidth(text)))
+		const length = this.textWidth(text) * fitted
+		const left = x + (width - size - gap - length) / 2
+		this.icon(name, left, y + 11 * fitted - size / 2, size, alpha * 0.9)
+		this.text(text, left + size + gap, y, length, alpha, false, fitted)
+	}
 	private centeredText(
 		text: string,
 		x: number,
@@ -909,7 +948,10 @@ export class GpuSurfaceRenderer {
 				(!!widget.pad && _motion && widget.pad.intensity(performance.now() / 1000) > 0) ||
 				(!!widget.strum &&
 					_motion &&
-					performance.now() / 1000 - widget.strum.lastTriggered < 0.75)
+					performance.now() / 1000 - widget.strum.lastTriggered < 0.75) ||
+				(widget.triggeredAt !== undefined &&
+					_motion &&
+					performance.now() / 1000 - widget.triggeredAt < 0.6)
 		)
 		if (wasActive && !this.active) {
 			this.dirty = true
@@ -952,6 +994,7 @@ export class GpuSurfaceRenderer {
 				cached.dial !== w.dial ||
 				cached.unavailable !== w.unavailable ||
 				cached.disabled !== w.descriptor.disabled ||
+				cached.triggeredAt !== w.triggeredAt ||
 				cached.color !== this.color ||
 				!sameValue(cached.value, w.value)
 			if (changed) {
@@ -1095,7 +1138,9 @@ export class GpuSurfaceRenderer {
 								? target[1]
 								: w.widget === "pad"
 									? (w.pad?.releasedAt ?? -1)
-									: -1,
+									: w.widget === "button" || w.widget === "toggle"
+										? (w.triggeredAt ?? -1)
+										: -1,
 						w.widget === "pad" ? Number(w.pad?.held ?? w.active) : active,
 						rotary
 							? dial.ticks
@@ -1114,21 +1159,53 @@ export class GpuSurfaceRenderer {
 					)
 				}
 				this.drawingColor = theme.accent
+				const icon = w.background ? undefined : controlIcon(d)
+				// Full-size buttons and pads carry the glyph on their face; elsewhere it leads the label.
+				const faceIcon =
+					icon && !compact && (w.widget === "button" || w.widget === "pad")
+						? icon
+						: undefined
 				if (
 					!w.background &&
 					!(compact && ["text", "number", "select", "color"].includes(w.widget))
 				) {
-					this.centeredText(
-						d.label.toUpperCase(),
-						labelX,
-						compact
-							? w.y + (sideLabel || w.widget === "display" ? 3 : (w.height - 18) / 2)
-							: w.y + 7,
-						labelWidth,
-						alpha,
-						false,
-						compact ? 0.7 : 1.1
-					)
+					const labelY = compact
+						? w.y + (sideLabel || w.widget === "display" ? 3 : (w.height - 18) / 2)
+						: w.y + 7
+					const labelScale = compact ? 0.7 : 1.1
+					if (icon && !faceIcon && labelWidth >= 64) {
+						this.iconLabel(
+							icon,
+							d.label.toUpperCase(),
+							labelX,
+							labelY,
+							labelWidth,
+							alpha,
+							labelScale
+						)
+					} else {
+						this.centeredText(
+							d.label.toUpperCase(),
+							labelX,
+							labelY,
+							labelWidth,
+							alpha,
+							false,
+							labelScale
+						)
+					}
+				}
+				if (faceIcon) {
+					const size = Math.min(44, width * 0.4, height * 0.45)
+					if (size >= 12) {
+						this.icon(
+							faceIcon,
+							x + (width - size) / 2,
+							y + (height - size) / 2,
+							size,
+							alpha * (w.active ? 1 : 0.85)
+						)
+					}
 				}
 				if (w.widget === "radio" && d.choices?.length) {
 					const page = w.choices?.layout
@@ -1147,11 +1224,22 @@ export class GpuSurfaceRenderer {
 							ch,
 							11,
 							sameValue(option.value, v) ? 0.7 : 0.04,
-							0,
+							sameValue(option.value, v) ? (w.triggeredAt ?? -1) : -1,
 							0,
 							0,
 							alpha
 						)
+						const glyph = waveformPoints(option) ? undefined : choiceIcon(option)
+						if (glyph && ch >= 52) {
+							const size = Math.min(24, ch - 34, cw - 16)
+							this.icon(
+								glyph,
+								left + (cw - 6 - size) / 2,
+								top + (ch - 28 - size) / 2,
+								size,
+								alpha
+							)
+						}
 						const points = waveformPoints(option)
 						if (points) {
 							const iw = Math.min(64, cw - 22),
@@ -1180,7 +1268,7 @@ export class GpuSurfaceRenderer {
 						this.centeredText(
 							option.label,
 							left + 4,
-							points ? top + ch - 28 : top + (ch - 24) / 2,
+							points || (glyph && ch >= 52) ? top + ch - 28 : top + (ch - 24) / 2,
 							cw - 14,
 							alpha,
 							false,
@@ -1244,6 +1332,7 @@ export class GpuSurfaceRenderer {
 					dial: w.dial,
 					unavailable: w.unavailable,
 					disabled: d.disabled,
+					triggeredAt: w.triggeredAt,
 					color: this.color,
 					epoch
 				}

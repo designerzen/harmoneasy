@@ -1331,7 +1331,7 @@ try {
 	const openVisualisers = async () => {
 		const edit = visualiserHost.getByRole("button", { name: "Edit layout", exact: true })
 		if (await edit.count()) await edit.click()
-		await visualiserHost.getByRole("button", { name: "+ Add", exact: true }).click()
+		await visualiserHost.getByRole("button", { name: "Add", exact: true }).click()
 		await page
 			.getByRole("dialog", { name: "Add controls", exact: true })
 			.getByRole("button", { name: "Add visualiser…", exact: true })

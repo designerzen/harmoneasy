@@ -1,3 +1,4 @@
+import { CONTROL_ICONS, iconPath } from "./icons"
 import {
 	EVENT_CLICK,
 	EVENT_FOCUS_IN,
@@ -20,7 +21,13 @@ const paths: Record<string, string> = {
 	open: "M4 5h6l2 3h8v12H4z",
 	beat: "M3 12h4l3-8 4 16 3-8h4",
 	theme: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM12 3v18",
-	control: "M4 7h16M4 17h16M8 4v6m8 4v6"
+	control: "M4 7h16M4 17h16M8 4v6m8 4v6",
+	edit: "m4 16-1 5 5-1L20 8l-4-4ZM14 6l4 4",
+	perform: "M7 4l12 8-12 8z",
+	vr: "M3 8h18v9h-6l-3-3-3 3H3z",
+	share: "M12 15V3M7 8l5-5 5 5M5 13v8h14v-8",
+	fill: "M12 3l2.4 5.6L20 9.3l-4.3 3.8 1.3 5.9-5-3.1-5 3.1 1.3-5.9L4 9.3l5.6-.7z",
+	arrange: "M3 4h8v7H3zM13 4h8v4h-8zM13 10h8v10h-8zM3 13h8v7H3z"
 }
 
 /** Decorative icons never replace the visible, accessible action name. */
@@ -30,7 +37,7 @@ export function menuIcon(name: string): SVGSVGElement {
 	icon.setAttribute("aria-hidden", "true")
 	icon.setAttribute("focusable", "false")
 	const key = name.toLowerCase().split(" ")[0]
-	icon.innerHTML = `<path d="${paths[key] ?? (key === "remove" ? paths.delete : paths.control)}"/>`
+	icon.innerHTML = `<path d="${paths[key] ?? (key === "remove" ? paths.delete : CONTROL_ICONS[key] ? iconPath(key) : paths.control)}"/>`
 	return icon
 }
 

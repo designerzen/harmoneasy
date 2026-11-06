@@ -1340,7 +1340,7 @@ describe("surface interaction and bindings", () => {
 		expect(name.readOnly).toBe(true)
 		const edit = toolbarHost.querySelector<HTMLButtonElement>("button")!
 		const add = [...toolbarHost.querySelectorAll<HTMLButtonElement>("button")].find(
-			(button) => button.textContent === "+ Add"
+			(button) => button.textContent === "Add"
 		)!
 		expect(add.hidden).toBe(true)
 		expect(edit.textContent).toBe("Edit layout")

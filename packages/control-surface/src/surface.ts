@@ -101,6 +101,10 @@ export interface SurfaceOptions {
 	menuActions?(): SurfaceMenuAction[]
 	toolbarHost?: HTMLElement
 	addControls?: { label: string; action(): void }[]
+	/** One-click population with the host's most important controls. */
+	fillControls?(): void
+	/** Copy a link that recreates this surface elsewhere; resolves to a status message. */
+	share?(): Promise<string>
 	change(state: SurfaceState): void
 	configurationChanged?(): void
 }
@@ -161,6 +165,7 @@ export class ControlSurface {
 		return this.editing
 	}
 	private layoutActions = document.createElement("div")
+	private fill = document.createElement("div")
 
 	constructor(private options: SurfaceOptions) {
 		this.editing = options.editing ?? false
@@ -243,21 +248,29 @@ export class ControlSurface {
 		const hasPerformanceSettings = () =>
 			Boolean(options.beatPosition) ||
 			(options.menuActions?.() ?? []).some((action) => !action.editOnly)
-		const edit = this.button(this.editing ? "Perform" : "Edit layout", () => {
-			this.editing = !this.editing
-			edit.textContent = this.editing ? "Perform" : "Edit layout"
-			edit.setAttribute("aria-pressed", String(this.editing))
-			add.hidden = !this.editing
-			name.readOnly = !this.editing
-			this.settings?.close()
-			if (this.settings) {
-				this.settings.element.hidden = !this.editing && !hasPerformanceSettings()
-			}
-			this.rebuild()
-		})
+		const edit = this.button(
+			this.editing ? "Perform" : "Edit layout",
+			() => {
+				this.editing = !this.editing
+				this.label(
+					edit,
+					this.editing ? "Perform" : "Edit layout",
+					this.editing ? "perform" : "edit"
+				)
+				edit.setAttribute("aria-pressed", String(this.editing))
+				add.hidden = !this.editing
+				name.readOnly = !this.editing
+				this.settings?.close()
+				if (this.settings) {
+					this.settings.element.hidden = !this.editing && !hasPerformanceSettings()
+				}
+				this.rebuild()
+			},
+			this.editing ? "perform" : "edit"
+		)
 		edit.setAttribute("aria-pressed", String(this.editing))
 		name.readOnly = !this.editing
-		const add = this.button("+ Add", () => this.addControls(add))
+		const add = this.button("Add", () => this.addControls(add), "add")
 		add.hidden = !this.editing
 		const theme = document.createElement("select")
 		theme.setAttribute("aria-label", "Surface theme")
@@ -277,7 +290,7 @@ export class ControlSurface {
 			},
 			{ signal: this.abort.signal }
 		)
-		this.vrButton = this.button("Enter VR", () => void this.enterXR())
+		this.vrButton = this.button("Enter VR", () => void this.enterXR(), "vr")
 		const settings = createDropdown("Surface settings", false, () => {
 			themeLabel.hidden = !this.editing
 			for (const item of dynamicActions) {
@@ -324,9 +337,27 @@ export class ControlSurface {
 			label.append(enabled, "Beat cues")
 			menu.append(label)
 		}
-		this.visualiserCycle = this.button("Visualiser: Off", () => this.cycleVisualiser())
+		this.visualiserCycle = this.button(
+			"Visualiser: Off",
+			() => this.cycleVisualiser(),
+			"visualiser"
+		)
 		this.visualiserCycle.setAttribute("aria-label", "Switch visualiser")
 		toolbar.append(edit, settings.element, add, name, this.visualiserCycle, this.vrButton)
+		if (options.share) {
+			const share = this.button(
+				"Share",
+				() => {
+					share.disabled = true
+					void options.share!()
+						.then((message) => (this.layoutStatus.textContent = message))
+						.catch((error) => (this.status.textContent = String(error)))
+						.finally(() => (share.disabled = false))
+				},
+				"share"
+			)
+			toolbar.append(share)
+		}
 		this.status.className = "cs-status"
 		this.status.setAttribute("role", "status")
 		;(options.toolbarHost ?? this.element).append(toolbar)
@@ -335,11 +366,21 @@ export class ControlSurface {
 		this.layoutStatus.className = "cs-sr-only"
 		this.layoutStatus.setAttribute("role", "status")
 		this.layoutActions.className = "cs-layout-actions"
-		this.layoutActions.append(this.button("Auto arrange", () => this.autoArrange()))
+		this.layoutActions.append(this.button("Auto arrange", () => this.autoArrange(), "arrange"))
+		if (options.fillControls) {
+			this.layoutActions.append(
+				this.button("Fill with key controls", () => options.fillControls!(), "fill")
+			)
+			this.fill.className = "cs-fill"
+			this.fill.append(
+				this.button("Fill with key controls", () => options.fillControls!(), "fill")
+			)
+		}
 		this.element.append(
 			this.layoutActions,
 			this.viewport,
 			this.pageNavigation,
+			this.fill,
 			this.status,
 			this.layoutStatus,
 			this.sourceKey
@@ -505,12 +546,15 @@ export class ControlSurface {
 		}
 	}
 
-	private button(label: string, run: () => void): HTMLButtonElement {
+	private button(label: string, run: () => void, icon?: string): HTMLButtonElement {
 		const button = document.createElement("button")
 		button.type = "button"
-		button.textContent = label
+		this.label(button, label, icon)
 		button.addEventListener(EVENT_CLICK, run, { signal: this.abort.signal })
 		return button
+	}
+	private label(button: HTMLButtonElement, label: string, icon?: string): void {
+		button.replaceChildren(...(icon ? [menuIcon(icon), label] : [label]))
 	}
 	private pressure(event: PointerEvent): number {
 		const value = contactPressure(
@@ -927,7 +971,10 @@ export class ControlSurface {
 		this.layoutActions.hidden = !this.editing
 		this.status.textContent = this.entries.length
 			? ""
-			: "Drag a component’s Controls connector here to choose controls."
+			: this.options.fillControls
+				? "Fill this surface with the chain’s key controls, or drag a component’s Controls connector here."
+				: "Drag a component’s Controls connector here to choose controls."
+		this.fill.hidden = !!this.entries.length || !this.options.fillControls
 		this.layout()
 		void this.refresh()
 	}
@@ -1573,6 +1620,10 @@ export class ControlSurface {
 				(isMusicGrid(entry.visual.widget) && entry.binding.descriptor.music?.live)) &&
 			edge
 		entry.visual.value = value
+		if (["button", "toggle", "radio", "select"].includes(entry.visual.widget)) {
+			// Frame-clock timestamp drives the GPU trigger flash; no timers or extra state.
+			entry.visual.triggeredAt = performance.now() / 1000
+		}
 		if (entry.visual.widget === "pad") {
 			entry.visual.active = normalize(entry.binding.descriptor, Number(value)) > 0
 			entry.visual.pad?.set(normalize(entry.binding.descriptor, Number(value)))
@@ -2025,7 +2076,7 @@ export class ControlSurface {
 		const current = this.options.state.background,
 			kind = current?.kind ?? "off"
 		const label = kind[0].toUpperCase() + kind.slice(1)
-		this.visualiserCycle.textContent = `Visualiser: ${label}`
+		this.label(this.visualiserCycle, `Visualiser: ${label}`, "visualiser")
 		this.visualiserCycle.title = current
 			? `${label}: ${this.visualiserSources.find((source) => source.id === current.sourceId)?.label ?? "Unavailable source"}`
 			: "Visualiser off"

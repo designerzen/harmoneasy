@@ -18,7 +18,7 @@ export function GraphControls({ layoutMode }: { layoutMode: string }) {
 			<ControlButton
 				title="Add Control Surface"
 				aria-label="Add Control Surface"
-				onClick={() => createSurface(chain)}
+				onClick={() => void createSurface(chain)}
 			>
 				<span aria-hidden="true">▦</span>
 			</ControlButton>

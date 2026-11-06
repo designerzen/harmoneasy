@@ -15,10 +15,42 @@ import { createChainSidebar } from "./ChainSidebar"
 import { element, button, option } from "./dom"
 import type { ChainUIContext } from "./chain-ui-context"
 import { createSurfaceViewport } from "./surface-viewport"
+import {
+	SURFACE_FRAGMENT_KEY,
+	importSharedSurface,
+	portableComponents,
+	readSharedSurface
+} from "./control-surface-share"
+import { controlComponents } from "./control-surfaces"
 
 export interface GraphView {
 	update(isFront: boolean, focusRequest: number): void
 	destroy(): void
+}
+/** A surface link adds that surface to the active chain once, then leaves the URL clean. */
+function openSharedSurface(manager: IOChainManager): boolean {
+	const shared = readSharedSurface()
+	const chain = manager.activeChain ?? manager.entries[0]?.[1]
+	if (!shared || !chain) {
+		return false
+	}
+	const url = new URL(window.location.href)
+	const fragment = new URLSearchParams(url.hash.slice(1))
+	fragment.delete(SURFACE_FRAGMENT_KEY)
+	url.hash = fragment.toString()
+	history.replaceState(history.state, "", url)
+	const imported = importSharedSurface(
+		chain,
+		shared,
+		portableComponents(controlComponents(chain))
+	)
+	if (imported?.missing.length) {
+		console.info(
+			"Shared surface controls skipped for missing components",
+			imported.missing.map((c) => c.name)
+		)
+	}
+	return Boolean(imported)
 }
 export function createChainWorkspace(
 	container: HTMLElement,
@@ -362,7 +394,10 @@ export function createChainWorkspace(
 	}
 	updateOffset()
 	render()
-	const surfaceViewport = createSurfaceViewport(manager, startWithSurfaces)
+	const surfaceViewport = createSurfaceViewport(
+		manager,
+		openSharedSurface(manager) || startWithSurfaces
+	)
 	let destroyed = false
 	return {
 		destroy() {

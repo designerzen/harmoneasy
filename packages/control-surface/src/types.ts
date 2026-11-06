@@ -87,6 +87,10 @@ export interface ControlDescriptor {
 	widget: WidgetType
 	group?: string
 	help?: string
+	/** Name from CONTROL_ICONS; inferred from the id and label when omitted. */
+	icon?: string
+	/** 0..1 performance importance used when filling a surface automatically. */
+	priority?: number
 	defaultValue?: ControlValue
 	min?: number
 	max?: number
