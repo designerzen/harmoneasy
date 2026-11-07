@@ -143,6 +143,14 @@ export function readSharedSurface(location = window.location.href): PortableSurf
 	}
 }
 
+const notices = new Map<string, string>()
+/** One-shot message for the first view of an imported surface. */
+export function takeSurfaceNotice(surfaceId: string): string | undefined {
+	const notice = notices.get(surfaceId)
+	notices.delete(surfaceId)
+	return notice
+}
+
 /** Add a shared surface to the chain and make it the main surface. */
 export function importSharedSurface(
 	chain: IOChain,
@@ -153,6 +161,13 @@ export function importSharedSurface(
 	const resolved = surfaces.length < 32 && resolvePortableSurface(portable, components)
 	if (!resolved) {
 		return undefined
+	}
+	if (resolved.missing.length) {
+		const names = [...new Set(resolved.missing.map((c) => c.name))].join(", ")
+		notices.set(
+			resolved.state.id,
+			`Some shared controls were skipped because this chain has no ${names}. Add ${resolved.missing.length > 1 ? "them" : "it"}, then use Fill with key controls.`
+		)
 	}
 	chain.setGraphOptions({
 		controlSurfaces: [...surfaces, resolved.state],

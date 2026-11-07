@@ -1,7 +1,7 @@
 import { surfaceNoteSource } from "./control-surface-notes"
 import { surfaceAudioSources } from "./control-surface-audio"
 import { ControlSurface, featuredBindings } from "control-surface"
-import { portableComponents, surfaceShareURL } from "./control-surface-share"
+import { portableComponents, surfaceShareURL, takeSurfaceNotice } from "./control-surface-share"
 import "control-surface/style.css"
 import { bindingKey } from "control-surface/model"
 import type {
@@ -297,6 +297,8 @@ export function mountControlSurface(
 	const controlDialogs: { destroy(): void }[] = []
 	let schemaAbort = new AbortController()
 	const abort = new AbortController()
+	// Shown until the performer edits the surface.
+	let notice = takeSurfaceNotice(surfaceId)
 	const refresh = async () => {
 		const state = chain.options.controlSurfaces?.find((s) => s.id === surfaceId)
 		if (!state) {
@@ -363,7 +365,11 @@ export function mountControlSurface(
 			toolbarHost,
 			editing,
 			menuActions,
-			fillControls: () => void fillSurface(chain, surfaceId),
+			notice,
+			fillControls() {
+				notice = undefined
+				void fillSurface(chain, surfaceId)
+			},
 			async share() {
 				const current = chain.options.controlSurfaces?.find((s) => s.id === surfaceId)
 				if (!current) {
@@ -380,6 +386,7 @@ export function mountControlSurface(
 				}
 			})),
 			change(changed) {
+				notice = undefined
 				signature = JSON.stringify([changed, [...controlComponents(chain).keys()]])
 				updateSurface(chain, changed)
 			},

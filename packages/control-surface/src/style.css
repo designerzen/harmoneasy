@@ -382,6 +382,49 @@
 	font: inherit;
 	min-height: var(--cs-target, 44px);
 }
+.cs-size-choices {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--cs-gap, 11px);
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+.cs-size-choices legend {
+	padding: 0 0 6px;
+}
+.cs-size-choices label {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: var(--cs-target, 44px);
+	min-height: var(--cs-target, 44px);
+	padding: 0 10px;
+	box-sizing: border-box;
+	border: 1px solid #296254;
+	border-radius: 6px;
+	cursor: pointer;
+}
+.cs-size-choices input {
+	position: absolute;
+	opacity: 0;
+	pointer-events: none;
+}
+.cs-size-choices label:has(:checked) {
+	color: #04140f;
+	background: var(--col-accent, #2effb3);
+	border-color: transparent;
+}
+.cs-size-choices label:has(:focus-visible) {
+	outline: 2px solid white;
+	outline-offset: 2px;
+}
+.cs-size-height {
+	grid-template-columns: 1fr auto;
+}
+.cs-size-height input {
+	grid-column: 1;
+}
 .cs-resize-handle {
 	position: absolute;
 	right: 3px;

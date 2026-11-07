@@ -39,18 +39,7 @@ function openSharedSurface(manager: IOChainManager): boolean {
 	fragment.delete(SURFACE_FRAGMENT_KEY)
 	url.hash = fragment.toString()
 	history.replaceState(history.state, "", url)
-	const imported = importSharedSurface(
-		chain,
-		shared,
-		portableComponents(controlComponents(chain))
-	)
-	if (imported?.missing.length) {
-		console.info(
-			"Shared surface controls skipped for missing components",
-			imported.missing.map((c) => c.name)
-		)
-	}
-	return Boolean(imported)
+	return Boolean(importSharedSurface(chain, shared, portableComponents(controlComponents(chain))))
 }
 export function createChainWorkspace(
 	container: HTMLElement,

@@ -887,7 +887,7 @@ try {
 	)
 	await resizeHandle.press("Enter")
 	const sizeDialog = page.getByRole("dialog", { name: "Drum density size", exact: true })
-	await sizeDialog.getByRole("spinbutton", { name: "Height in pixels", exact: true }).fill("228")
+	await sizeDialog.getByRole("slider", { name: "Height in pixels", exact: true }).fill("228")
 	await sizeDialog.getByRole("button", { name: "Increase height", exact: true }).click()
 	await sizeDialog.getByRole("button", { name: "Decrease height", exact: true }).click()
 	await sizeDialog.getByRole("button", { name: "Apply size", exact: true }).click()
@@ -931,7 +931,7 @@ try {
 	await page.getByRole("button", { name: "Move earlier Drum density", exact: true }).click()
 	await revealAction("Resize")
 	await resizeHandle.press("Enter")
-	await sizeDialog.getByRole("spinbutton", { name: "Height in pixels", exact: true }).focus()
+	await sizeDialog.getByRole("slider", { name: "Height in pixels", exact: true }).focus()
 	await page.keyboard.press("Escape")
 	await sizeDialog.waitFor({ state: "detached" })
 	await page.waitForFunction(

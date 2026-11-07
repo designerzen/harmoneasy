@@ -143,6 +143,8 @@ export const CONTROL_ICONS: Record<string, number[][]> = {
 }
 
 const RULES: [RegExp, string][] = [
+	// Device modes are configuration, not musical modes.
+	[/\b(operating|input|output|routing|display) mode\b/, "control"],
 	[/\b(mute|silence)\b/, "mute"],
 	[/\b(volume|gain|level|loudness|amp(litude)?|velocity)\b/, "volume"],
 	[/\b(pan|balance|stereo)\b/, "pan"],

@@ -5,7 +5,7 @@ const PERFORMANCE = ["relative-keys", "strum", "piano-roll", "guitar-tab"]
 const EXPRESSIVE =
 	/\b(volume|gain|level|cutoff|filter|resonance|tempo|bpm|mix|wet|drive|pan|octave|transpose|play|stop|record|mute|wave(form)?|attack|release|scale|key|chord|preset|random|swing|density|intensity|spread)\b/
 const PLUMBING =
-	/\b(channel|port|device|midi|url|file|path|name|id|address|host|api|token|seed|debug|latency|buffer|sample ?rate|polyphony)\b/
+	/\b(channel|port|device|midi|url|file|path|name|id|address|host|api|token|seed|debug|latency|buffer|sample ?rate|polyphony|operating mode|routing)\b/
 
 /** 0..1 interest for live performance. Author priority wins; heuristics rank everything else. */
 export function controlImportance(d: ControlDescriptor, index = 0): number {

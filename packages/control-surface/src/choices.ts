@@ -44,12 +44,10 @@ export function directDescriptor(d: ControlDescriptor): ControlDescriptor {
 	return { ...d, widget: "slider" }
 }
 
-/** Small choice lists use radios, including surfaces saved with select widgets. */
+/** Every choice list is a paged one-click grid, including surfaces saved with select widgets. */
 export function choiceWidget(d: ControlDescriptor): WidgetType {
 	d = directDescriptor(d)
-	return d.widget === "select" && d.choices && d.choices.length > 1 && d.choices.length < 7
-		? "radio"
-		: d.widget
+	return d.widget === "select" && d.choices && d.choices.length > 1 ? "radio" : d.widget
 }
 
 export function choiceGrid(count: number): { columns: number; rows: number } {

@@ -13,8 +13,10 @@ import type { ControlBinding, ControlDescriptor, SurfaceState } from "control-su
 import {
 	portableSurface,
 	readSharedSurface,
+	importSharedSurface,
 	resolvePortableSurface,
-	surfaceShareURL
+	surfaceShareURL,
+	takeSurfaceNotice
 } from "../source/components/graph/control-surface-share"
 
 const binding = (
@@ -113,4 +115,42 @@ it("shares a surface by component role and rebinds it to the recipient's devices
 	expect(readSharedSurface(url)).toEqual(portable)
 	expect(readSharedSurface("https://example.test/#surface=garbage")).toBeUndefined()
 	expect(resolvePortableSurface({ ...portable, v: 2 as 1 }, recipient)).toBeUndefined()
+})
+
+it("imports a shared surface as the main surface and explains skipped controls once", () => {
+	const state: SurfaceState = {
+		id: "mine",
+		name: "Shared",
+		connections: [{ componentId: "sampler-a", controlIds: ["volume"] }],
+		widgets: [{ key: JSON.stringify(["sampler-a", "volume"]) }]
+	}
+	const portable = portableSurface(
+		state,
+		new Map([["sampler-a", { kind: "instrument:sampler", name: "Sampler" }]])
+	)
+	const chain = {
+		options: {
+			controlSurfaces: [] as SurfaceState[],
+			mainSurfaceId: undefined as string | undefined
+		},
+		setGraphOptions(options: object) {
+			Object.assign(this.options, options)
+		}
+	}
+	const imported = importSharedSurface(chain as never, portable, new Map())!
+	expect(chain.options.controlSurfaces).toEqual([imported.state])
+	expect(chain.options.mainSurfaceId).toBe(imported.state.id)
+	expect(takeSurfaceNotice(imported.state.id)).toContain("no Sampler")
+	expect(takeSurfaceNotice(imported.state.id)).toBeUndefined()
+})
+it("treats device modes as configuration and makes long choice lists one-click grids", async () => {
+	const { choiceWidget } = await import("../../../packages/control-surface/src/choices")
+	const operating = { id: "mode", label: "Operating mode", widget: "select" } as const
+	expect(controlIcon(operating)).toBe("control")
+	expect(controlIcon({ id: "mode", label: "Mode", widget: "select" })).toBe("scale")
+	expect(controlImportance(operating)).toBeLessThan(
+		controlImportance({ id: "mode", label: "Mode", widget: "select" })
+	)
+	const modes = Array.from({ length: 9 }, (_, i) => ({ label: `Mode ${i}`, value: `m${i}` }))
+	expect(choiceWidget({ ...operating, choices: modes })).toBe("radio")
 })

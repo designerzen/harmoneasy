@@ -18,6 +18,7 @@ import {
 	EVENT_CHANGE,
 	EVENT_CLICK,
 	EVENT_CLOSE,
+	EVENT_INPUT,
 	EVENT_DRAG_START,
 	EVENT_DRAG_OVER,
 	EVENT_DROP,
@@ -103,6 +104,8 @@ export interface SurfaceOptions {
 	addControls?: { label: string; action(): void }[]
 	/** One-click population with the host's most important controls. */
 	fillControls?(): void
+	/** Persistent host message, e.g. controls skipped when a shared surface was opened. */
+	notice?: string
 	/** Copy a link that recreates this surface elsewhere; resolves to a status message. */
 	share?(): Promise<string>
 	change(state: SurfaceState): void
@@ -970,7 +973,7 @@ export class ControlSurface {
 		this.element.classList.toggle("cs-editing", this.editing)
 		this.layoutActions.hidden = !this.editing
 		this.status.textContent = this.entries.length
-			? ""
+			? (this.options.notice ?? "")
 			: this.options.fillControls
 				? "Fill this surface with the chain’s key controls, or drag a component’s Controls connector here."
 				: "Drag a component’s Controls connector here to choose controls."
@@ -989,67 +992,78 @@ export class ControlSurface {
 		dialog.addEventListener(EVENT_KEY_DOWN, (event) => event.stopPropagation())
 		dialog.setAttribute("aria-label", `${entry.binding.descriptor.label} size`)
 		heading.textContent = `Resize ${entry.binding.descriptor.label}`
-		const width = document.createElement("select"),
-			height = document.createElement("input")
-		const column = document.createElement("select"),
-			automatic = document.createElement("option")
-		automatic.value = ""
-		automatic.textContent = "Automatic"
-		column.append(automatic)
-		for (
-			let i = 0;
-			i <
-			playingLayout(
-				this.stage.clientWidth || 640,
-				this.stage.getBoundingClientRect().width || 640
-			).columns;
-			i++
-		) {
-			const option = document.createElement("option")
-			option.value = String(i)
-			option.textContent = String(i + 1)
-			column.append(option)
+		const columns = playingLayout(
+			this.stage.clientWidth || 640,
+			this.stage.getBoundingClientRect().width || 640
+		).columns
+		// Direct one-click choices: radio groups for counts, a click-to-position slider for height.
+		const choices = (
+			legend: string,
+			name: string,
+			options: [string, string][],
+			current: string
+		) => {
+			const group = document.createElement("fieldset")
+			const title = document.createElement("legend")
+			title.textContent = legend
+			group.className = "cs-size-choices"
+			group.append(title)
+			for (const [value, text] of options) {
+				const label = document.createElement("label"),
+					input = document.createElement("input")
+				input.type = "radio"
+				input.name = name
+				input.value = value
+				input.checked = value === current
+				label.append(input, text)
+				group.append(label)
+			}
+			form.append(group)
+			return () =>
+				form.querySelector<HTMLInputElement>(`input[name="${name}"]:checked`)?.value ??
+				current
 		}
-		column.value = entry.config.column === undefined ? "" : String(entry.config.column)
-		for (
-			let i = 1;
-			i <=
-			playingLayout(
-				this.stage.clientWidth || 640,
-				this.stage.getBoundingClientRect().width || 640
-			).columns;
-			i++
-		) {
-			const option = document.createElement("option")
-			option.value = String(i)
-			option.textContent = `${i} column${i === 1 ? "" : "s"}`
-			width.append(option)
-		}
-		width.value = String(entry.config.span ?? (largeWidget(entry.visual.widget) ? 2 : 1))
-		height.type = "number"
+		const width = choices(
+			"Width in columns",
+			"width",
+			Array.from({ length: columns }, (_, i) => [String(i + 1), String(i + 1)]),
+			String(entry.config.span ?? (largeWidget(entry.visual.widget) ? 2 : 1))
+		)
+		const height = document.createElement("input"),
+			readout = document.createElement("output")
+		height.type = "range"
 		const minimum = Math.ceil(minimumWidgetHeight(entry.visual.widget))
 		height.min = String(minimum)
 		height.max = "720"
 		height.step = "1"
-		height.required = true
 		height.value = String(this.preferredHeight(entry))
-		for (const [title, input] of [
-			["Width", width],
-			["Height in pixels", height],
-			["Preferred column", column]
-		] as const) {
-			const label = document.createElement("label")
-			label.append(title, input)
-			form.append(label)
-		}
-		const shorter = this.button(
-			"Decrease height",
-			() => (height.value = String(Math.max(minimum, (height.valueAsNumber || minimum) - 24)))
+		const showHeight = () => (readout.textContent = `${height.value} px`)
+		showHeight()
+		height.addEventListener(EVENT_INPUT, showHeight, { signal: this.abort.signal })
+		const heightLabel = document.createElement("label")
+		heightLabel.append("Height in pixels", height, readout)
+		heightLabel.className = "cs-size-height"
+		form.append(heightLabel)
+		const column = choices(
+			"Preferred column",
+			"column",
+			[
+				["", "Auto"],
+				...Array.from({ length: columns }, (_, i): [string, string] => [
+					String(i),
+					String(i + 1)
+				])
+			],
+			entry.config.column === undefined ? "" : String(entry.config.column)
 		)
-		const taller = this.button(
-			"Increase height",
-			() => (height.value = String(Math.min(720, (height.valueAsNumber || minimum) + 24)))
-		)
+		const shorter = this.button("Decrease height", () => {
+			height.value = String(Math.max(minimum, (height.valueAsNumber || minimum) - 24))
+			showHeight()
+		})
+		const taller = this.button("Increase height", () => {
+			height.value = String(Math.min(720, (height.valueAsNumber || minimum) + 24))
+			showHeight()
+		})
 		const apply = document.createElement("button")
 		apply.type = "submit"
 		apply.textContent = "Apply size"
@@ -1064,11 +1078,11 @@ export class ControlSurface {
 			if (!form.reportValidity()) {
 				return
 			}
-			this.resizeWidget(entry, Number(width.value), height.valueAsNumber)
-			if (column.value === "") {
+			this.resizeWidget(entry, Number(width()), height.valueAsNumber)
+			if (column() === "") {
 				delete entry.config.column
 			} else {
-				entry.config.column = Number(column.value)
+				entry.config.column = Number(column())
 			}
 			this.layout()
 			this.save()
