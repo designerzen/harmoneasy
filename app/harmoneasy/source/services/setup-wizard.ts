@@ -16,6 +16,8 @@ import {
 	WIZARD_FEEDBACK,
 	WIZARD_GOALS,
 	WIZARD_INPUTS,
+	WIZARD_INPUT_INSTRUCTIONS,
+	WIZARD_CONNECTION_INPUTS,
 	WIZARD_PACES,
 	type WizardAnswers
 } from "./setup-designer"
@@ -43,6 +45,12 @@ const CHOICE_ICONS: Record<string, string> = {
 	screen: "keyboard",
 	midi: "midi",
 	gamepad: "gamepad",
+	pads: "drums",
+	"music-mouse": "mouse",
+	"microphone-pitch": "microphone",
+	"microphone-trigger": "microphone",
+	"camera-gestures": "hand",
+	"step-sequencer": "clock",
 	sound: "output",
 	"sound-text": "describe",
 	text: "describe",
@@ -65,7 +73,7 @@ const CHOICE_ICONS: Record<string, string> = {
 const STEP_LABELS: Record<Step, string> = {
 	goal: "Your goal",
 	recipe: "Your music",
-	input: "Your instrument",
+	input: "Your instruments",
 	connection: "Connect",
 	file: "Your file",
 	group: "Play together",
@@ -104,7 +112,7 @@ export function createSetupWizard(
 	let answers: WizardAnswers = {
 		goal: "play",
 		contextId: "first-notes",
-		input: "screen",
+		inputs: ["screen"],
 		feedback: "sound",
 		pace: "suggested"
 	}
@@ -118,7 +126,12 @@ export function createSetupWizard(
 		"recipe",
 		...(answers.goal === "file"
 			? ["file" as const]
-			: ["input" as const, ...(answers.input === "screen" ? [] : ["connection" as const])]),
+			: [
+					"input" as const,
+					...(answers.inputs.some((id) => WIZARD_CONNECTION_INPUTS.includes(id))
+						? ["connection" as const]
+						: [])
+				]),
 		...(answers.goal === "together" ? ["group" as const] : []),
 		...(answers.goal === "access" ? [] : ["feedback" as const]),
 		...(["access", "file"].includes(answers.goal) ? [] : ["pace" as const]),
@@ -149,8 +162,9 @@ export function createSetupWizard(
 	const choices = (
 		name: string,
 		items: readonly { id: string; label: string; description?: string }[],
-		value: string,
-		change: (value: string) => void
+		value: string | readonly string[],
+		change: (value: string) => void,
+		multiple = false
 	) => {
 		const fieldset = document.createElement("fieldset")
 		const legend = document.createElement("legend")
@@ -160,15 +174,15 @@ export function createSetupWizard(
 		items.forEach((item) => {
 			const label = document.createElement("label")
 			const radio = document.createElement("input")
-			radio.type = "radio"
+			radio.type = multiple ? "checkbox" : "radio"
 			radio.name = name
 			radio.value = item.id
-			radio.checked = value === item.id
+			radio.checked = typeof value === "string" ? value === item.id : value.includes(item.id)
 			radio.addEventListener(EVENT_CHANGE, () => {
 				cancelRequest()
 				change(item.id)
 				updateProgress()
-				next.disabled = false
+				next.disabled = name === "wizard-input" && answers.inputs.length === 0
 			})
 			const text = document.createElement("span")
 			text.textContent = item.label
@@ -205,7 +219,8 @@ export function createSetupWizard(
 		status.textContent = ""
 		updateProgress()
 		back.hidden = position === 0
-		next.disabled = step === "goal" && !selectedGoal
+		next.disabled =
+			(step === "goal" && !selectedGoal) || (step === "input" && answers.inputs.length === 0)
 		next.textContent = step === "review" ? "Create my setup" : "Next"
 		const scene =
 			step === "file" || (answers.goal === "file" && step !== "goal")
@@ -228,7 +243,7 @@ export function createSetupWizard(
 			goal: "What would you like to do?",
 			recipe: "What would you like to try?",
 			input: "What will you play with?",
-			connection: "Get your controller ready",
+			connection: "Get your instruments ready",
 			file: "Your file comes next",
 			group: "Help everyone play together",
 			feedback: "How would you like to follow the notes?",
@@ -243,6 +258,7 @@ export function createSetupWizard(
 						...answers,
 						goal: value as WizardAnswers["goal"],
 						contextId: wizardContexts(value as WizardAnswers["goal"])[0].id,
+						inputs: value === "file" ? ["screen"] : answers.inputs,
 						feedback: "sound",
 						pace: "suggested"
 					}
@@ -348,9 +364,19 @@ export function createSetupWizard(
 				}
 			)
 		} else if (step === "input") {
-			choices("wizard-input", WIZARD_INPUTS, answers.input, (value) => {
-				answers.input = value as WizardAnswers["input"]
-			})
+			paragraph("Choose all that you want to use. You can play with more than one input.")
+			choices(
+				"wizard-input",
+				WIZARD_INPUTS,
+				answers.inputs,
+				(value) => {
+					const input = value as WizardAnswers["inputs"][number]
+					answers.inputs = answers.inputs.includes(input)
+						? answers.inputs.filter((id) => id !== input)
+						: [...answers.inputs, input]
+				},
+				true
+			)
 		} else if (step === "feedback") {
 			choices("wizard-feedback", WIZARD_FEEDBACK, answers.feedback, (value) => {
 				answers.feedback = value as WizardAnswers["feedback"]
@@ -360,7 +386,9 @@ export function createSetupWizard(
 				answers.pace = value as WizardAnswers["pace"]
 			})
 		} else if (step === "connection") {
-			paragraph(designSetup(answers).instructions[0])
+			answers.inputs
+				.filter((id) => WIZARD_CONNECTION_INPUTS.includes(id))
+				.forEach((id) => paragraph(WIZARD_INPUT_INSTRUCTIONS[id]))
 			paragraph(
 				"If it does not connect, try the onscreen keys. You can finish the setup now and connect your controller later."
 			)
@@ -400,7 +428,9 @@ export function createSetupWizard(
 				WIZARD_GOALS.find((item) => item.id === answers.goal)!.label,
 				answers.goal === "file"
 					? "Import a music file after starting"
-					: WIZARD_INPUTS.find((item) => item.id === answers.input)!.label,
+					: WIZARD_INPUTS.filter((item) => answers.inputs.includes(item.id))
+							.map((item) => item.label)
+							.join(", "),
 				feedback,
 				...(["file", "access"].includes(answers.goal)
 					? []
@@ -417,7 +447,7 @@ export function createSetupWizard(
 						: index === 1
 							? answers.goal === "file"
 								? "input"
-								: CHOICE_ICONS[answers.input]
+								: CHOICE_ICONS[answers.inputs[0]]
 							: index === 2
 								? answers.goal === "access"
 									? "hand"

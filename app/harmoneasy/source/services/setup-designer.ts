@@ -46,8 +46,50 @@ export const WIZARD_GOALS = [
 export const WIZARD_INPUTS = [
 	{ id: "screen", label: "My screen or computer keyboard" },
 	{ id: "midi", label: "A music keyboard or MIDI controller" },
-	{ id: "gamepad", label: "A game controller" }
+	{ id: "gamepad", label: "A game controller" },
+	{ id: "pads", label: "Onscreen chord or drum pads" },
+	{ id: "music-mouse", label: "My mouse or trackpad" },
+	{
+		id: "microphone-pitch",
+		label: "My voice or an acoustic instrument",
+		description: "Use a microphone to detect notes."
+	},
+	{
+		id: "microphone-trigger",
+		label: "Claps, taps or other sounds",
+		description: "Use a microphone to trigger notes."
+	},
+	{ id: "camera-gestures", label: "Hand gestures with my camera" },
+	{ id: "step-sequencer", label: "A repeating pattern in a step sequencer" }
 ] as const
+
+export type WizardInput = (typeof WIZARD_INPUTS)[number]["id"]
+
+export const WIZARD_INPUT_INSTRUCTIONS: Record<WizardInput, string> = {
+	screen: "Click or tap the onscreen keys to try your setup. You can also use your computer keyboard.",
+	midi: "Connect your music controller, then choose it in MIDI Devices after starting. Allow MIDI access if your browser asks. The onscreen keys are ready while you connect.",
+	gamepad:
+		"Connect a game controller and press one of its buttons. Open its input panel to play notes. You can also try the onscreen keys.",
+	pads: "Open the chord or drum pads input panel, then tap the pads or use their keyboard shortcuts.",
+	"music-mouse":
+		"Open the Music Mouse input panel and move your mouse or trackpad to play notes.",
+	"microphone-pitch":
+		"Open the microphone pitch input panel and start listening. Allow microphone access, then sing or play into it. Pitch detection needs a model download; headphones help prevent feedback.",
+	"microphone-trigger":
+		"Open the microphone triggers input panel and start listening. Allow microphone access, then clap or tap to trigger notes. Adjust the threshold and use headphones to help prevent feedback.",
+	"camera-gestures":
+		"Open the camera gestures input panel and start tracking. Allow camera access and the model download, then pinch to play and move your hand to choose notes.",
+	"step-sequencer":
+		"Open the step sequencer input panel, edit your pattern, then press Play in the transport controls."
+}
+
+export const WIZARD_CONNECTION_INPUTS: readonly WizardInput[] = [
+	"midi",
+	"gamepad",
+	"microphone-pitch",
+	"microphone-trigger",
+	"camera-gestures"
+]
 export const WIZARD_FEEDBACK = [
 	{ id: "sound", label: "Just the instrument sound" },
 	{ id: "sound-text", label: "Sound and written note names" },
@@ -65,7 +107,7 @@ export const WIZARD_PACES = [
 export interface WizardAnswers {
 	goal: (typeof WIZARD_GOALS)[number]["id"]
 	contextId: string
-	input: (typeof WIZARD_INPUTS)[number]["id"]
+	inputs: WizardInput[]
 	feedback: (typeof WIZARD_FEEDBACK)[number]["id"]
 	pace: (typeof WIZARD_PACES)[number]["id"]
 }
@@ -84,7 +126,10 @@ export function validateWizardAnswers(value: unknown): WizardAnswers {
 	if (
 		!WIZARD_GOALS.some((item) => item.id === answers.goal) ||
 		!wizardContexts(answers.goal).some((item) => item.id === answers.contextId) ||
-		!WIZARD_INPUTS.some((item) => item.id === answers.input) ||
+		!Array.isArray(answers.inputs) ||
+		answers.inputs.length === 0 ||
+		new Set(answers.inputs).size !== answers.inputs.length ||
+		!answers.inputs.every((id) => WIZARD_INPUTS.some((item) => item.id === id)) ||
 		!WIZARD_FEEDBACK.some((item) => item.id === answers.feedback) ||
 		!WIZARD_PACES.some((item) => item.id === answers.pace)
 	) {
@@ -95,7 +140,7 @@ export function validateWizardAnswers(value: unknown): WizardAnswers {
 	return {
 		goal: answers.goal,
 		contextId: answers.contextId,
-		input: answers.input,
+		inputs: [...answers.inputs],
 		feedback: answers.feedback,
 		pace: answers.pace
 	}
@@ -115,24 +160,22 @@ export function designSetup(value: WizardAnswers): { setup: PresetSetup; instruc
 		instructions.push(
 			"After starting, use Upload to open your MIDI, MusicXML, DawProject or tracker file. The wizard does not load or change your file."
 		)
-	} else if (answers.input === "midi") {
-		instructions.push(
-			"Connect your music controller, then choose it in MIDI Devices after starting. Allow MIDI access if your browser asks. The onscreen keys are ready while you connect."
-		)
-	} else if (answers.input === "gamepad") {
-		setup.devices.push({
-			id: "wizard-gamepad",
-			direction: "input",
-			definition: { factory: "input", type: "gamepad-music" }
-		})
-		setup.chains.forEach((chain) => chain.inputs.push("wizard-gamepad"))
-		instructions.push(
-			"Connect a game controller and press one of its buttons. Open its input panel to play notes. You can also try the onscreen keys."
-		)
 	} else {
-		instructions.push(
-			"Click or tap the onscreen keys to try your setup. You can also use your computer keyboard."
-		)
+		for (const input of answers.inputs) {
+			if (input !== "screen" && input !== "midi") {
+				const id = `wizard-${input}`
+				setup.devices.push({
+					id,
+					direction: "input",
+					definition: {
+						factory: "input",
+						type: input === "gamepad" ? "gamepad-music" : input
+					}
+				})
+				setup.chains.forEach((chain) => chain.inputs.push(id))
+			}
+			instructions.push(WIZARD_INPUT_INSTRUCTIONS[input])
+		}
 	}
 	if (answers.goal !== "access") {
 		const feedbackTypes =
@@ -210,11 +253,16 @@ export function designSetup(value: WizardAnswers): { setup: PresetSetup; instruc
 export const WIZARD_ANSWERS_SCHEMA = {
 	type: "object",
 	additionalProperties: false,
-	required: ["goal", "contextId", "input", "feedback", "pace"],
+	required: ["goal", "contextId", "inputs", "feedback", "pace"],
 	properties: {
 		goal: { type: "string", enum: WIZARD_GOALS.map((item) => item.id) },
 		contextId: { type: "string", enum: WIZARD_GOALS.flatMap((item) => [...item.contexts]) },
-		input: { type: "string", enum: WIZARD_INPUTS.map((item) => item.id) },
+		inputs: {
+			type: "array",
+			minItems: 1,
+			uniqueItems: true,
+			items: { type: "string", enum: WIZARD_INPUTS.map((item) => item.id) }
+		},
 		feedback: { type: "string", enum: WIZARD_FEEDBACK.map((item) => item.id) },
 		pace: { type: "string", enum: WIZARD_PACES.map((item) => item.id) }
 	}
@@ -223,8 +271,8 @@ export const WIZARD_ANSWERS_SCHEMA = {
 export function wizardAIPrompt(description: string) {
 	return (
 		"Suggest answers for a music setup wizard. Return only JSON matching the schema. " +
-		"Choose contextId from the chosen goal's contexts. Default to screen input, sound feedback and suggested pace unless requested otherwise. " +
-		"For access goals, the context determines feedback. For file goals, use screen input and suggested pace. " +
+		'Choose contextId from the chosen goal\'s contexts. Choose one or more inputs. Default to inputs ["screen"], sound feedback and suggested pace unless requested otherwise. ' +
+		'For access goals, the context determines feedback. For file goals, use inputs ["screen"] and suggested pace. ' +
 		"Only select supported choices; do not invent devices or features. Available goals and contexts: " +
 		JSON.stringify(
 			WIZARD_GOALS.map((goal) => ({

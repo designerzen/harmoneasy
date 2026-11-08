@@ -189,7 +189,8 @@
 	fieldset label:focus-within {
 		border-color: var(--col-accent);
 	}
-	input[type="radio"] {
+	input[type="radio"],
+	input[type="checkbox"] {
 		margin-top: 0.125rem;
 	}
 	small {

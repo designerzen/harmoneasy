@@ -6,6 +6,7 @@ import {
 	validateWizardAnswers,
 	WIZARD_GOALS,
 	WIZARD_FEEDBACK,
+	WIZARD_INPUTS,
 	wizardContexts,
 	type WizardAnswers
 } from "../source/services/setup-designer"
@@ -15,7 +16,7 @@ import { START_CONTEXTS, createContextSetup } from "../source/services/start-con
 const defaults: WizardAnswers = {
 	goal: "play",
 	contextId: "first-notes",
-	input: "screen",
+	inputs: ["screen"],
 	feedback: "sound",
 	pace: "suggested"
 }
@@ -35,7 +36,7 @@ it("builds valid routing and controls for every offered activity and feedback ch
 					goal: goal.id,
 					contextId: context.id,
 					feedback: feedback.id,
-					input: "gamepad"
+					inputs: ["gamepad"]
 				})
 				expect(() =>
 					parsePresetLibrary(
@@ -90,19 +91,19 @@ it("removes all musical sound for silent feedback and preserves accessibility ac
 })
 
 it("adds real gamepad routing, leaves MIDI connection explicit, and shows notation for score workflows", () => {
-	const gamepad = designSetup({ ...defaults, input: "gamepad" }).setup
+	const gamepad = designSetup({ ...defaults, inputs: ["gamepad"] }).setup
 	expect(gamepad.chains[0].inputs).toContain("wizard-gamepad")
 	expect(gamepad.devices.find((device) => device.id === "wizard-gamepad")?.definition.type).toBe(
 		"gamepad-music"
 	)
-	expect(designSetup({ ...defaults, input: "midi" }).instructions[0]).toContain(
+	expect(designSetup({ ...defaults, inputs: ["midi"] }).instructions[0]).toContain(
 		"choose it in MIDI Devices"
 	)
 	const score = designSetup({
 		...defaults,
 		goal: "file",
 		contextId: "midi-to-score",
-		input: "gamepad"
+		inputs: ["gamepad"]
 	})
 	expect(score.setup.devices.some((device) => device.definition.type === "notation")).toBe(true)
 	expect(score.setup.devices.some((device) => device.id === "wizard-gamepad")).toBe(false)
@@ -113,14 +114,44 @@ it("rejects invented or mismatched AI answers without altering the factory setup
 	expect(() => validateWizardAnswers({ ...defaults, contextId: "techno" })).toThrow(
 		"supported setup"
 	)
-	expect(() => validateWizardAnswers({ ...defaults, input: "invented-device" })).toThrow(
+	expect(() => validateWizardAnswers({ ...defaults, inputs: ["invented-device"] })).toThrow(
 		"supported setup"
 	)
 	expect(() => validateWizardAnswers(null)).toThrow()
+	expect(() => validateWizardAnswers({ ...defaults, inputs: [] })).toThrow()
+	expect(() => validateWizardAnswers({ ...defaults, inputs: ["screen", "screen"] })).toThrow()
 	designSetup({ ...defaults, goal: "genre", contextId: "techno", feedback: "text" })
 	expect(createContextSetup(START_CONTEXTS.find((context) => context.id === "techno")!)).toEqual(
 		before
 	)
+})
+
+it("routes all selected inputs together through a valid setup", () => {
+	const { setup, instructions } = designSetup({
+		...defaults,
+		inputs: WIZARD_INPUTS.map((item) => item.id)
+	})
+	for (const input of WIZARD_INPUTS.filter((item) => !["screen", "midi"].includes(item.id))) {
+		const id = `wizard-${input.id}`
+		expect(setup.devices.find((device) => device.id === id)?.definition.type).toBe(
+			input.id === "gamepad" ? "gamepad-music" : input.id
+		)
+		for (const chain of setup.chains) {
+			expect(chain.inputs).toContain(id)
+		}
+	}
+	expect(instructions.join(" ")).toContain("choose it in MIDI Devices")
+	expect(instructions.join(" ")).toContain("Allow camera access")
+	expect(() =>
+		parsePresetLibrary(
+			JSON.stringify({
+				format: "harmoneasy-preset-library",
+				version: 1,
+				presets: [],
+				setups: [setup]
+			})
+		)
+	).not.toThrow()
 })
 
 function mount() {
@@ -154,9 +185,9 @@ it("requires an answer, adds controller steps, and waits for explicit creation",
 	ui.next()
 	ui.choose("gamepad")
 	ui.next()
-	expect(ui.title()).toBe("Get your controller ready")
+	expect(ui.title()).toBe("Get your instruments ready")
 	ui.back()
-	ui.choose("screen")
+	ui.choose("gamepad")
 	ui.next()
 	expect(ui.title()).toBe("How would you like to follow the notes?")
 	ui.next()
@@ -190,6 +221,42 @@ it("branches for files and accessibility without irrelevant controller or speed 
 	expect(ui.start).not.toHaveBeenCalled()
 })
 
+it("requires at least one checkbox and preserves multiple inputs through review and creation", () => {
+	const ui = mount()
+	ui.choose("play")
+	ui.next()
+	ui.next()
+	expect(ui.dialog.querySelectorAll('input[name="wizard-input"][type="checkbox"]')).toHaveLength(
+		WIZARD_INPUTS.length
+	)
+	ui.choose("screen")
+	expect(ui.dialog.querySelector<HTMLButtonElement>("[data-next]")!.disabled).toBe(true)
+	ui.choose("pads")
+	ui.choose("gamepad")
+	ui.choose("camera-gestures")
+	ui.next()
+	expect(ui.dialog.textContent).toContain("Connect a game controller")
+	expect(ui.dialog.textContent).toContain("Allow camera access")
+	ui.back()
+	for (const id of ["pads", "gamepad", "camera-gestures"]) {
+		expect(ui.dialog.querySelector<HTMLInputElement>(`input[value="${id}"]`)!.checked).toBe(
+			true
+		)
+	}
+	ui.next()
+	ui.next()
+	ui.next()
+	ui.next()
+	expect(ui.title()).toBe("Your setup is ready to create")
+	expect(ui.dialog.querySelector(".wizard-review")!.textContent).toContain(
+		"Onscreen chord or drum pads"
+	)
+	ui.next()
+	expect(ui.start.mock.calls[0][0].chains[0].inputs).toEqual(
+		expect.arrayContaining(["wizard-pads", "wizard-gamepad", "wizard-camera-gestures"])
+	)
+})
+
 it("keeps manual setup available when local AI is unsupported", () => {
 	vi.stubGlobal("LanguageModel", undefined)
 	const ui = mount()
@@ -204,6 +271,24 @@ it("keeps manual setup available when local AI is unsupported", () => {
 	ui.next()
 	ui.next()
 	expect(ui.title()).toBe("Help everyone play together")
+})
+
+it("can switch to a file workflow after clearing all inputs", () => {
+	const ui = mount()
+	ui.choose("play")
+	ui.next()
+	ui.next()
+	ui.choose("screen")
+	ui.back()
+	ui.back()
+	ui.choose("file")
+	ui.next()
+	ui.next()
+	ui.next()
+	ui.next()
+	expect(ui.title()).toBe("Your setup is ready to create")
+	ui.next()
+	expect(ui.start).toHaveBeenCalledOnce()
 })
 
 it("reviews AI suggestions and destroys the local model session", async () => {
