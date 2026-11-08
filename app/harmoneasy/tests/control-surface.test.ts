@@ -1145,6 +1145,32 @@ describe("surface interaction and bindings", () => {
 		expect(relative.write.mock.calls.map(([value]) => value)).toHaveLength(2)
 		expect(relative.write.mock.lastCall![0]).toEqual([])
 	})
+	it("moves focus out of text fields when a gadget is played so note keys keep working", async () => {
+		const relative = bind("r", createRelativeKeysControl({ id: "r", label: "Relative" }), []),
+			saved = state()
+		saved.widgets = [{ key: relative.key }]
+		const surface = new ControlSurface({ state: saved, bindings: [relative], change: vi.fn() })
+		views.push(surface)
+		document.body.append(surface.element)
+		await settle()
+		const stage = surface.element.querySelector<HTMLElement>(".cs-stage")!
+		stage.setPointerCapture = vi.fn()
+		stage.getBoundingClientRect = () =>
+			({ left: 0, top: 0, width: 640, height: (surface as any).height }) as DOMRect
+		surface.element.querySelector<HTMLInputElement>(".cs-title")!.focus()
+		stage.dispatchEvent(
+			new PointerEvent(EVENT_POINTER_DOWN, {
+				pointerId: 1,
+				button: 0,
+				clientX: 80,
+				clientY: 80,
+				bubbles: true,
+				cancelable: true
+			})
+		)
+		expect(document.activeElement).toBe(surface.element.querySelector(".cs-viewport"))
+		stage.dispatchEvent(new PointerEvent(EVENT_POINTER_UP, { pointerId: 1, bubbles: true }))
+	})
 	it("keeps the colour key at the very bottom and reserves its space without a hand-layout description", async () => {
 		const binding = bind("a"),
 			saved = state()

@@ -3,6 +3,7 @@ import { validSurfaces } from "control-surface/model"
 import { configurationSteps, parsePresetLibrary } from "audiobus/io/preset-library"
 import { parseMusicTools } from "audiobus/io/music-tools"
 import { isRoomSetup } from "./room-url"
+import { loadPlayPage, playRoute } from "./play-page"
 import { validBinding, type MidiBinding } from "./midi-controls"
 import type { PresetSetup } from "audiobus/io/preset-library"
 
@@ -185,6 +186,10 @@ export async function loadPresetPage(
 	base: string,
 	fetcher = fetch
 ): Promise<PresetPage | undefined> {
+	const play = playRoute(location, base)
+	if (play) {
+		return loadPlayPage(play, base, new URL(location).origin, fetcher)
+	}
 	const url = presetPageUrl(location, base)
 	if (!url) {
 		return

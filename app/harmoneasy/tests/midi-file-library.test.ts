@@ -4,7 +4,10 @@ import { readFile } from "node:fs/promises"
 import { createRequire } from "node:module"
 import { resolve } from "node:path"
 import { pathToFileURL, URL as NodeURL } from "node:url"
-import { TransformerMIDIFilePlayer } from "audiobus/io/transformers/transformer-midi-file-player"
+import {
+	TransformerMIDIFilePlayer,
+	searchBitMidi
+} from "audiobus/io/transformers/transformer-midi-file-player"
 import AudioCommand from "audiobus/audio-command"
 import { NOTE_ON } from "audiobus/commands"
 import { EVENT_CHANGE } from "audiobus/event-constants"
@@ -136,5 +139,88 @@ describe("MIDI file library and uploads", () => {
 		await transformer.loadMIDIFile("")
 		expect(fetch).not.toHaveBeenCalled()
 		expect(transformer.transform([press()], {} as any)).toEqual([])
+	})
+
+	it("searches BitMidi, falls back to similar titles, and loads a chosen result into memory", async () => {
+		const bytes = await readFile(new NodeURL("twinkle-twinkle-little-star.mid", libraryRoot))
+		const result = (q: string, page: number, pageTotal: number) => ({
+			result: {
+				results: [
+					{
+						name: `${q} ${page}.mid`,
+						url: `/${q}-${page}`,
+						downloadUrl: `/uploads/${page}.mid`
+					}
+				],
+				total: pageTotal * 15,
+				pageTotal
+			}
+		})
+		const requested: string[] = []
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async (input: string) => {
+				requested.push(input)
+				const url = new URL(input, "http://localhost/")
+				if (url.pathname.endsWith("index.json")) {
+					return Response.json([])
+				}
+				if (url.pathname.startsWith("/uploads/")) {
+					return new Response(bytes)
+				}
+				const q = url.searchParams.get("q")!
+				return q === "twinkel star"
+					? Response.json({ result: { results: [], total: 0, pageTotal: 0 } })
+					: Response.json(result(q, Number(url.searchParams.get("page")), 2))
+			})
+		)
+		const similar = await searchBitMidi(" twinkel  star ")
+		expect(requested.at(-1)).toContain("q=twin%20star")
+		expect(similar.results[0]).toMatchObject({
+			name: "twin star 0.mid",
+			downloadUrl: "https://bitmidi.com/uploads/0.mid"
+		})
+
+		const transformer = player()
+		const gui = await transformer.createGui()
+		const query = gui.querySelector<HTMLInputElement>('input[aria-label="Search BitMidi"]')!
+		query.value = "twinkle"
+		query.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }))
+		const results = gui.querySelector('[aria-label="BitMidi results"]')!
+		await vi.waitFor(() => expect(results.children.length).toBe(1))
+		const more = [...gui.querySelectorAll("button")].find(
+			(button) => button.textContent === "More results"
+		)!
+		expect(more.hidden).toBe(false)
+		more.click()
+		await vi.waitFor(() => expect(results.children.length).toBe(2))
+		expect(more.hidden).toBe(true)
+		results.querySelector("button")!.click()
+		await vi.waitFor(() => expect(gui.textContent).toContain("Loaded: twinkle 0.mid"))
+		expect(transformer.options.midiFileUrl).toBe("https://bitmidi.com/uploads/0.mid")
+		expect(transformer.transform([press()], {} as any)[0]?.type).toBe(NOTE_ON)
+	})
+
+	it("runs a saved BitMidi search when its controls open", async () => {
+		const requested: string[] = []
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async (input: string) => {
+				requested.push(input)
+				return input.endsWith("index.json")
+					? Response.json([])
+					: Response.json({ result: { results: [], total: 0, pageTotal: 0 } })
+			})
+		)
+		const transformer = new TransformerMIDIFilePlayer({ searchQuery: "abba sos" })
+		transformers.push(transformer)
+		const gui = await transformer.createGui()
+		expect(gui.querySelector<HTMLInputElement>('input[type="search"]')?.value).toBe("abba sos")
+		expect(transformer.description).toContain("https://bitmidi.com")
+		expect(gui.querySelector('a[href="https://bitmidi.com"]')?.textContent).toBe(
+			"Songs from BitMidi"
+		)
+		await vi.waitFor(() => expect(gui.textContent).toContain("No matching or similar"))
+		expect(requested.some((url) => url.includes("q=abba%20sos"))).toBe(true)
 	})
 })

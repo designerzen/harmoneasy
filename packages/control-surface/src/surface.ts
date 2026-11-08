@@ -419,6 +419,10 @@ export class ControlSurface {
 			) {
 				e.preventDefault()
 				this.stage.setPointerCapture(e.pointerId)
+				// preventDefault keeps focus where it was; a text field there would swallow note keys.
+				if (!this.stage.contains(document.activeElement)) {
+					this.viewport.focus({ preventScroll: true })
+				}
 			}
 		})
 		listen(EVENT_POINTER_MOVE, (event) => {

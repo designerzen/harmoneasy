@@ -2,7 +2,7 @@
 	"name": "harmoneasy",
 	"private": true,
 	"type": "module",
-	"version": "0.17.1",
+	"version": "0.18.1",
 	"description": "A web-based music collaboration platform that transforms, quantizes, and harmonizes live MIDI input in real-time",
 	"author": "designerzen <radio@awesomething.co.uk>",
 	"packageManager": "pnpm@12.0.0",

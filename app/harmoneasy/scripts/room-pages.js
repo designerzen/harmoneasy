@@ -1,5 +1,6 @@
-export function roomFallbackHtml(roomPath) {
+export function roomFallbackHtml(roomPath, playPath) {
 	const target = JSON.stringify(roomPath).replace(/</g, "\\u003c")
+	const play = JSON.stringify(playPath).replace(/</g, "\\u003c")
 	return `<!doctype html>
 <html lang="en">
 <head>
@@ -11,8 +12,14 @@ export function roomFallbackHtml(roomPath) {
   <p>Opening Harmoneasy…</p>
   <p><a id="room-link">Open Harmoneasy</a></p>
   <script>
-    const destination = new URL(${target}, location.origin);
+    const play = ${play};
+    const playing = location.pathname.startsWith(play);
+    const destination = new URL(playing ? play : ${target}, location.origin);
     destination.search = location.search;
+    if (playing) {
+      // The app restores the readable /play/{artist}/{title} address.
+      destination.searchParams.set("play", location.pathname.slice(play.length));
+    }
     destination.hash = location.hash;
     document.getElementById('room-link').href = destination.href;
     location.replace(destination.href);
@@ -23,7 +30,7 @@ export function roomFallbackHtml(roomPath) {
 `
 }
 
-/** Publish real static entry points so room links work on GitHub Pages. */
+/** Publish real static entry points so room and play links work on GitHub Pages. */
 export function roomPagesPlugin() {
 	let base = "/"
 	return {
@@ -38,10 +45,11 @@ export function roomPagesPlugin() {
 				throw new Error("Missing Harmoneasy HTML entry point")
 			}
 			this.emitFile({ type: "asset", fileName: "room/index.html", source: entry.source })
+			this.emitFile({ type: "asset", fileName: "play/index.html", source: entry.source })
 			this.emitFile({
 				type: "asset",
 				fileName: "404.html",
-				source: roomFallbackHtml(`${base}room/`)
+				source: roomFallbackHtml(`${base}room/`, `${base}play/`)
 			})
 		}
 	}

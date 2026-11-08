@@ -20,18 +20,24 @@ describe("static room pages", () => {
 		})
 		expect(emitFile).toHaveBeenCalledWith({
 			type: "asset",
+			fileName: "play/index.html",
+			source: html
+		})
+		expect(emitFile).toHaveBeenCalledWith({
+			type: "asset",
 			fileName: "404.html",
-			source: roomFallbackHtml("/harmoneasy/room/")
+			source: roomFallbackHtml("/harmoneasy/room/", "/harmoneasy/play/")
 		})
 	})
 	it.each(["/harmoneasy/", "/"])(
 		"recovers missing paths under %s without losing setup or pairing data",
 		(base) => {
-			const html = roomFallbackHtml(`${base}room/`)
+			const html = roomFallbackHtml(`${base}room/`, `${base}play/`)
 			const script = html.match(/<script>([\s\S]*?)<\/script>/)![1]
 			const link = { href: "" }
 			const location = {
 				origin: "https://example.test",
+				pathname: `${base}missing`,
 				search: "?room=our-jam",
 				hash: "#room-setup=seed&sync-bundle=offer",
 				replace: vi.fn()
@@ -42,4 +48,23 @@ describe("static room pages", () => {
 			expect(link.href).toBe(expected)
 		}
 	)
+	it("redirects missing play paths to the play entry with the song kept", () => {
+		const html = roomFallbackHtml("/harmoneasy/room/", "/harmoneasy/play/")
+		const script = html.match(/<script>([\s\S]*?)<\/script>/)![1]
+		const location = {
+			origin: "https://example.test",
+			pathname: "/harmoneasy/play/rick-astley/never-gonna-give-you-up/",
+			search: "",
+			hash: "",
+			replace: vi.fn()
+		}
+		runInNewContext(script, {
+			URL,
+			location,
+			document: { getElementById: () => ({ href: "" }) }
+		})
+		expect(location.replace).toHaveBeenCalledExactlyOnceWith(
+			"https://example.test/harmoneasy/play/?play=rick-astley%2Fnever-gonna-give-you-up%2F"
+		)
+	})
 })

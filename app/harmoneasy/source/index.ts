@@ -19,6 +19,7 @@ import type { PresetSetup } from "audiobus/io/preset-library"
 import { createNetronomeLink } from "./services/netronome-link"
 import { readRoomUrl } from "./services/room-url"
 import { loadPresetPage, presetWorkspace } from "./services/preset-page"
+import { PLAY_REDIRECT_KEY, playRoute, playUrl } from "./services/play-page"
 import { createMidiControlPanel } from "./services/midi-control-panel"
 import { startKnownMidiInputs } from "audiobus/midi/hardware/known-midi-inputs"
 import { showMidiDeviceDisconnected } from "./services/midi-device-errors"
@@ -797,6 +798,16 @@ const startDialog = document.querySelector<HTMLDialogElement>("#start-dialog")!
 const startContexts = createStartContexts(startDialog, (setup) =>
 	startApplication(startDialog.querySelector<HTMLButtonElement>(".preset-apply-button")!, setup)
 )
+try {
+	const play = playRoute(window.location.href, import.meta.env.BASE_URL)
+	if (play && new URLSearchParams(window.location.search).has(PLAY_REDIRECT_KEY)) {
+		const url = playUrl(play, import.meta.env.BASE_URL, window.location.origin)
+		url.hash = window.location.hash
+		history.replaceState(history.state, "", url)
+	}
+} catch {
+	// loadPresetPage reports invalid play links in the start dialog.
+}
 // Fetch before the audio activation gesture, and retain failures for the start dialog.
 const presetPageResult = loadPresetPage(window.location.href, import.meta.env.BASE_URL)
 	.then((preset) => {
@@ -826,7 +837,9 @@ try {
 }
 startDialog.removeAttribute("open")
 const wizardButton = startDialog.querySelector<HTMLButtonElement>("#start-wizard")!
-createSetupWizard(wizardButton, (setup) => { void startApplication(wizardButton, setup) })
+createSetupWizard(wizardButton, (setup) => {
+	void startApplication(wizardButton, setup)
+})
 startDialog.showModal()
 startDialog.addEventListener("cancel", (event) => event.preventDefault())
 async function startApplication(button: HTMLButtonElement, setup?: PresetSetup) {
