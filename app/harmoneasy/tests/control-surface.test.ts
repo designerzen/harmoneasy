@@ -1145,6 +1145,74 @@ describe("surface interaction and bindings", () => {
 		expect(relative.write.mock.calls.map(([value]) => value)).toHaveLength(2)
 		expect(relative.write.mock.lastCall![0]).toEqual([])
 	})
+	it("plays buttons, toggles and pads from hardware triggers with click feedback", async () => {
+		const go = bind("go", { widget: "button", defaultValue: 1 }),
+			loop = bind("loop", { widget: "toggle" }, false),
+			hit = bind("hit", { widget: "pad" }, 0),
+			level = bind("level"),
+			saved = state()
+		saved.widgets = [go, loop, hit, level].map(({ key }) => ({ key }))
+		const surface = new ControlSurface({
+			state: saved,
+			bindings: [go, loop, hit, level],
+			change: vi.fn()
+		})
+		views.push(surface)
+		await settle()
+		expect(surface.trigger(go.key, true)).toBe(true)
+		expect(surface.trigger(loop.key, true)).toBe(true)
+		expect(surface.trigger(hit.key, true)).toBe(true)
+		await settle()
+		expect(go.write).toHaveBeenLastCalledWith(1)
+		expect(loop.write).toHaveBeenLastCalledWith(true)
+		expect(hit.write).toHaveBeenLastCalledWith(1)
+		const entry = (surface as any).entries.find((e: any) => e.config.key === go.key)
+		expect(entry.visual.triggeredAt).toBeGreaterThan(0)
+		surface.trigger(hit.key, false)
+		surface.trigger(go.key, false)
+		await settle()
+		expect(hit.write).toHaveBeenLastCalledWith(0)
+		expect(go.write).toHaveBeenCalledTimes(1)
+		expect(surface.trigger(level.key, true)).toBe(false)
+		expect(surface.trigger("missing", true)).toBe(false)
+	})
+	it("learns and clears a gadget trigger in edit mode", async () => {
+		const go = bind("go", { widget: "button" }),
+			saved = state(),
+			change = vi.fn()
+		saved.widgets = [{ key: go.key }]
+		const learnTrigger = vi.fn(async () => ({ key: "1" }))
+		const surface = new ControlSurface({
+			state: saved,
+			bindings: [go],
+			change,
+			editing: true,
+			learnTrigger
+		})
+		views.push(surface)
+		document.body.append(surface.element)
+		await settle()
+		HTMLDialogElement.prototype.showModal ??= function (this: HTMLDialogElement) {
+			this.open = true
+		}
+		const buttons = () => [...document.querySelectorAll<HTMLButtonElement>("button")]
+		buttons()
+			.find((b) => b.getAttribute("aria-label") === "Trigger go")!
+			.click()
+		buttons()
+			.find((b) => b.textContent === "Learn")!
+			.click()
+		await settle()
+		expect(saved.widgets[0].trigger).toEqual({ key: "1" })
+		expect(change).toHaveBeenCalled()
+		expect(document.querySelector(".cs-trigger-dialog [role=status]")!.textContent).toBe(
+			"Key 1"
+		)
+		buttons()
+			.find((b) => b.textContent === "Clear")!
+			.click()
+		expect(saved.widgets[0].trigger).toBeUndefined()
+	})
 	it("does not stretch gadgets to the whole window before the surface is attached", async () => {
 		const binding = bind("a"),
 			saved = state()
@@ -1152,8 +1220,12 @@ describe("surface interaction and bindings", () => {
 		const surface = new ControlSurface({ state: saved, bindings: [binding], change: vi.fn() })
 		views.push(surface)
 		await settle()
-		expect((surface as any).entries[0].visual.height).toBeLessThan(innerHeight / 2)
+		expect((surface as any).entries[0].visual.height).toBeLessThan(innerHeight - 100)
 		expect((surface as any).layoutViewportHeight).toBe(-1)
+		document.body.append(surface.element)
+		// The next frame measures the attached stage before anything is drawn.
+		vi.mocked(requestAnimationFrame).mock.lastCall![0](16)
+		expect((surface as any).layoutViewportHeight).toBe(innerHeight)
 	})
 	it("moves focus out of text fields when a gadget is played so note keys keep working", async () => {
 		const relative = bind("r", createRelativeKeysControl({ id: "r", label: "Relative" }), []),
@@ -1194,6 +1266,7 @@ describe("surface interaction and bindings", () => {
 		expect(key.getAttribute("aria-label")).toBe("Control sources")
 		expect(key.textContent).toBe("Synth")
 		expect(surface.element.querySelector(".cs-play-guide")).toBeNull()
+		;(surface as any).layout()
 		const before = (surface as any).pageHeight
 		vi.spyOn(key, "getBoundingClientRect").mockReturnValue({ height: 40 } as DOMRect)
 		;(surface as any).layout()

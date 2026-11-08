@@ -132,8 +132,17 @@ export interface ControlBinding {
 	write(value: ControlValue): void | Promise<void>
 	subscribe?(listener: () => void): () => void
 }
+/** A key or MIDI message reserved for one gadget; matching events never reach instruments. */
+export interface SurfaceTrigger {
+	/** KeyboardEvent.key, lower-cased for single characters. */
+	key?: string
+	/** Channel 0 matches every channel. */
+	midi?: { type: "note" | "cc"; number: number; channel: number }
+}
 export interface SurfaceWidget {
 	visualiser?: SurfaceVisualiser
+	/** Hardware trigger for buttons, toggles and pads. */
+	trigger?: SurfaceTrigger
 	key: string
 	yKey?: string
 	widget?: WidgetType

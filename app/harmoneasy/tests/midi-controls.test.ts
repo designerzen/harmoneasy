@@ -200,6 +200,19 @@ describe("MIDI control routing and persistence", () => {
 		expect(b).toHaveBeenCalledTimes(1)
 		manager.destroy()
 	})
+	it("stops surface trigger notes at the chain input while other notes continue", () => {
+		const { manager, chain } = workspace()
+		const trigger = vi.fn((command) => command.number === 36)
+		manager.triggerHandler = trigger
+		const note = (number: number) => ({
+			command: cc(100, { type: "noteOn", number, velocity: 100 }),
+			origin: {}
+		})
+		expect(chain.inputCommandHandler!(note(36) as any)).toBe(true)
+		expect(chain.inputCommandHandler!(note(60) as any)).toBe(false)
+		expect(trigger).toHaveBeenCalledTimes(2)
+		manager.destroy()
+	})
 	it("preserves transformer targets across workspace restoration and reorder", async () => {
 		const { manager, chain, input, timer } = workspace()
 		const transformer = new TransformerHarmoniser()

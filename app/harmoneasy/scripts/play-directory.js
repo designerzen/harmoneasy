@@ -136,6 +136,17 @@ export function mountPlayDirectory(root, songs, artistOrder) {
 		? artistOrder.map((index) => entries[index])
 		: [...titleOrder].sort((a, b) => a.artist.localeCompare(b.artist))
 	const byCount = [...titleOrder].sort((a, b) => (b.count ?? 0) - (a.count ?? 0))
+	const letters = new Map(
+		entries.map((song) => {
+			const initial = song.name
+				.replace(/^the\s+/i, "")
+				.normalize("NFD")
+				.replace(/[\u0300-\u036f]/g, "")
+				.charAt(0)
+				.toUpperCase()
+			return [song, /^[A-Z]$/.test(initial) ? initial : "#"]
+		})
+	)
 	const pageSize = 60
 	let page = 0
 	let matches = []
@@ -190,24 +201,54 @@ export function mountPlayDirectory(root, songs, artistOrder) {
 		).filter(
 			(song) =>
 				words.every((word) => searchText.get(song).includes(word)) &&
+				(root.dataset.view !== "artists" ||
+					!root.dataset.letter ||
+					letters.get(song) === root.dataset.letter) &&
 				(!artist.value || artist.value === song.artist) &&
 				(!category.value ||
 					category.value === song.category ||
 					song.categories?.includes(category.value))
 		)
+		for (const link of root.querySelectorAll("[data-letter]")) {
+			if (link.dataset.letter === (root.dataset.letter ?? "")) {
+				link.setAttribute("aria-current", "page")
+			} else {
+				link.removeAttribute("aria-current")
+			}
+		}
 		page = 0
 		render()
 		const more = root.querySelector(".more")
 		more.hidden = root.dataset.view === "artists" || !search.value.trim()
 		more.href = `${root.dataset.base}play/${encodeURIComponent(search.value.trim().replace(/\s+/g, "-"))}/`
 	}
+	const selectLetter = (letter) => {
+		root.dataset.letter = letter
+		const history = globalThis.history
+		if (history?.replaceState) {
+			const url = new URL(globalThis.location.href)
+			if (letter) {
+				url.searchParams.set("letter", letter)
+			} else {
+				url.searchParams.delete("letter")
+			}
+			history.replaceState(history.state, "", url)
+		}
+		update()
+	}
 	form.oninput = update
 	form.onchange = update
 	form.onsubmit = (event) => event.preventDefault()
 	root.querySelector("button").onclick = () => {
 		form.reset()
-		update()
+		selectLetter("")
 		search.focus()
+	}
+	for (const link of root.querySelectorAll("[data-letter]")) {
+		link.onclick = (event) => {
+			event.preventDefault()
+			selectLetter(link.dataset.letter)
+		}
 	}
 	const previous = root.querySelector(".previous")
 	if (previous) {
@@ -250,21 +291,24 @@ export function playDirectoryHtml(songs, base, catalogueUrl = `${base}play/catal
 	return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Play a melody · Harmoneasy</title>
 <script>const requestedPlay = new URLSearchParams(location.search).get("play");if(requestedPlay && requestedPlay.split("/").filter(Boolean).length > 1){location.replace(${JSON.stringify(base)}+location.search+location.hash)}</script>
 <style>${tokens}
-*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;background:var(--col-bg);color:var(--col-fg);font:16px/1.5 system-ui,sans-serif}main,header{max-width:1100px;margin:auto;padding:24px}header{display:flex;justify-content:space-between;border-bottom:1px solid var(--col-line-strong)}a{color:var(--col-accent);text-underline-offset:4px}h1{font-size:clamp(32px,5vw,56px);line-height:1.1;margin:20px 0}h2{font-size:22px;line-height:1.3}h2 a{color:var(--col-fg);text-decoration:none}p,.tag{color:var(--col-muted)}form{display:grid;grid-template-columns:2fr repeat(3,1fr);gap:12px;margin:28px 0 16px}label{display:grid;gap:6px}input,select,button{font:inherit;background:var(--col-surface);color:var(--col-fg);border:1px solid var(--col-line-strong);border-radius:8px;padding:12px;min-width:0}button{cursor:pointer}.bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.tracks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}article{display:flex;flex-direction:column;border:1px solid var(--col-line-strong);background:var(--col-surface);border-radius:12px;padding:24px}article p{margin-top:0}.open{margin-top:auto;padding-top:20px}.tag{font-size:13px}.empty{padding:32px 0}:focus-visible{outline:2px solid var(--col-accent);outline-offset:4px}.more{display:inline-block;margin-top:24px}@media(max-width:760px){form{grid-template-columns:1fr 1fr}.tracks{grid-template-columns:1fr 1fr}label:first-child{grid-column:1/-1}}@media(max-width:480px){.tracks{grid-template-columns:1fr}main,header{padding:18px}}
-</style></head><body><header><a href="${base}">Harmoneasy</a><a href="${base}play/?tracks=1">Browse all tracks</a><a href="${base}presets/">All presets</a></header>
+*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;background:var(--col-bg);color:var(--col-fg);font:16px/1.5 system-ui,sans-serif}main,header{max-width:1100px;margin:auto;padding:24px}header{display:flex;justify-content:space-between;border-bottom:1px solid var(--col-line-strong)}a{color:var(--col-accent);text-underline-offset:4px}h1{font-size:clamp(32px,5vw,56px);line-height:1.1;margin:20px 0}h2{font-size:22px;line-height:1.3}h2 a{color:var(--col-fg);text-decoration:none}p,.tag{color:var(--col-muted)}form{display:grid;grid-template-columns:2fr repeat(3,1fr);gap:12px;margin:28px 0 16px}label{display:grid;gap:6px}input,select,button{font:inherit;background:var(--col-surface);color:var(--col-fg);border:1px solid var(--col-line-strong);border-radius:8px;padding:12px;min-width:0}button{cursor:pointer}.bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.tracks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}article{display:flex;flex-direction:column;border:1px solid var(--col-line-strong);background:var(--col-surface);border-radius:12px;padding:24px}article p{margin-top:0}.open{margin-top:auto;padding-top:20px}.tag{font-size:13px}.empty{padding:32px 0}:focus-visible{outline:2px solid var(--col-accent);outline-offset:4px}.artist-alphabet{display:flex;flex-wrap:wrap;gap:6px;margin-top:24px}.artist-alphabet a{padding:6px 10px;border:1px solid var(--col-line-strong);border-radius:6px;text-decoration:none}.artist-alphabet [aria-current]{background:var(--col-accent);color:var(--col-bg)}.more{display:inline-block;margin-top:24px}@media(max-width:760px){form{grid-template-columns:1fr 1fr}.tracks{grid-template-columns:1fr 1fr}label:first-child{grid-column:1/-1}}@media(max-width:480px){.tracks{grid-template-columns:1fr}main,header{padding:18px}}
+</style></head><body><header><a href="${base}">Harmoneasy</a><a href="${base}play/">Artists A–Z</a><a href="${base}play/?tracks=1">Browse all tracks</a><a href="${base}presets/">All presets</a></header>
 <main data-base="${escapeHtml(base)}" data-view="artists"><h1>Find an artist.</h1><p>Browse artists, choose a song, then play its melody one note at a time. Explore ${songs.length.toLocaleString()} tracks.</p>
+<nav class="artist-alphabet" aria-label="Artists by letter">${["", "#", ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ"].map((letter) => `<a data-letter="${letter}" href="${base}play/${letter ? `?letter=${encodeURIComponent(letter)}` : ""}">${letter || "All"}</a>`).join("")}</nav>
 <form role="search"><label><span class="search-label">Search artists</span><input type="search" name="q" placeholder="Song title or artist…" autocomplete="off"></label><label class="artist-filter" hidden>Artist<select name="artist"><option value="">All artists</option>${options("artist")}</select></label><label>Collection<select name="category"><option value="">All collections</option>${options("category")}</select></label><label>Sort by<select name="sort"><option value="title">Name</option><option value="count">Most tracks</option></select></label></form>
 <div class="bar"><span role="status" aria-live="polite">${artists.length.toLocaleString()} artists</span><button type="button">Clear filters</button></div><div class="tracks">${cards}</div><nav aria-label="Track pages" class="bar"><button class="previous" type="button">Previous</button><span class="page-number"></span><button class="next" type="button">Next</button></nav><button type="button" class="retry" hidden>Retry loading catalogue</button><p class="empty" hidden>No results match. Try another search or clear the filters.</p><a class="more" hidden>Find more matching songs on BitMidi →</a><noscript><p>Enable JavaScript to search and filter. The first 60 track links work without it; enable JavaScript to browse the full catalogue.</p></noscript></main>
 <script type="module">${playArtistEntries.toString()}
 ${mountPlayDirectory.toString()}
 ${loadPlayDirectory.toString()}
 const root = document.querySelector("main");
+root.dataset.letter = new URLSearchParams(location.search).get("letter") || "";
 const playPath = ${JSON.stringify(`${base}play/`)};
 const artistPath = new URLSearchParams(location.search).get("play") || (location.pathname.startsWith(playPath) ? location.pathname.slice(playPath.length) : "");
 const artistSegments = artistPath.split("/").filter(Boolean);
 if ((artistSegments.length === 1 && artistSegments[0] !== "index.html") || new URLSearchParams(location.search).has("tracks")) {
  const artist = artistSegments[0] && artistSegments[0] !== "index.html" ? decodeURIComponent(artistSegments[0]).replace(/[-_+]+/g," ") : "";
  root.dataset.view = "tracks";
+ root.querySelector(".artist-alphabet").hidden = true;
  root.querySelector(".search-label").textContent = "Search tracks";
  root.querySelector(".artist-filter").hidden = false;
  root.querySelector('[name="sort"]').innerHTML = '<option value="title">Title</option><option value="artist">Artist</option>';

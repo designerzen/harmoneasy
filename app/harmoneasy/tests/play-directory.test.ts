@@ -6,8 +6,41 @@ import {
 	loadPlayDirectory,
 	playDirectoryCatalogue
 } from "../scripts/play-directory.js"
+import { playArtistEntries } from "../scripts/play-directory.js"
+import { popularArtistForTitle } from "../scripts/popular-artists.js"
 
 describe("play directory", () => {
+	it("combines A–Z selection with search and counts The Beatles under B", () => {
+		const root = document.createElement("main")
+		root.dataset.base = "/harmoneasy/"
+		root.dataset.view = "artists"
+		root.innerHTML = `<nav><a href="?letter=A" data-letter="A">A</a><a href="?letter=B" data-letter="B">B</a></nav><form><input name="q"><select name="artist"><option value="">All</option></select><select name="category"><option value="">All</option></select><select name="sort"><option value="title">Name</option></select></form><span role="status"></span><button>Clear</button><div class="tracks"></div><p class="empty" hidden></p><a class="more" hidden></a>`
+		const songs = ["ABBA", "The Beatles", "Björk", "Not specified"].map((artist) => ({
+			name: "Tune",
+			artist,
+			category: "BitMidi catalogue",
+			route: "play/bitmidi/tune"
+		}))
+		mountPlayDirectory(root, playArtistEntries(songs))
+		root.querySelector<HTMLAnchorElement>('[data-letter="B"]')!.click()
+		expect(
+			[...root.querySelectorAll("h2")].map((heading) => heading.textContent).sort()
+		).toEqual(["Björk", "The Beatles"])
+		expect(root.querySelector('[data-letter="B"]')?.getAttribute("aria-current")).toBe("page")
+		const search = root.querySelector<HTMLInputElement>("input")!
+		search.value = "Beatles"
+		search.dispatchEvent(new Event(EVENT_INPUT, { bubbles: true }))
+		expect(root.querySelectorAll("article")).toHaveLength(1)
+		root.querySelector("button")!.click()
+		expect(root.querySelectorAll("article")).toHaveLength(3)
+	})
+	it("credits filename aliases without mistaking a song title for its artist", () => {
+		expect(popularArtistForTitle("Beatles-Hey_Jude.mid")).toBe("The Beatles")
+		expect(popularArtistForTitle("R.ASTLEY.Never gonna give you up K.mid")).toBe("Rick Astley")
+		expect(popularArtistForTitle("JOHN.Your song.mid")).toBe("Elton John")
+		expect(popularArtistForTitle("Pink-Floyd-Wish-you-were-here.mid")).toBe("Pink Floyd")
+		expect(popularArtistForTitle("Dancing-Queen.mid")).toBeUndefined()
+	})
 	it("loads the compact catalogue separately, retains filters, and allows retry after failure", async () => {
 		const root = document.createElement("main")
 		root.dataset.base = "/harmoneasy/"

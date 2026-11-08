@@ -6,6 +6,7 @@ import type {
 	ControlValue,
 	DialOptions,
 	SurfaceState,
+	SurfaceTrigger,
 	WidgetType
 } from "./types"
 import { isMusicGrid, musicOptions, musicValues } from "./music"
@@ -244,6 +245,43 @@ export function formatValue(d: ControlDescriptor, value: ControlValue | undefine
 export function bindingKey(componentId: string, controlId: string): string {
 	return JSON.stringify([componentId, controlId])
 }
+export const TRIGGER_WIDGETS: WidgetType[] = ["button", "toggle", "pad"]
+export function validTrigger(t: unknown): t is SurfaceTrigger {
+	const { key, midi } = (t ?? {}) as SurfaceTrigger
+	return (
+		!!t &&
+		typeof t === "object" &&
+		(key !== undefined || midi !== undefined) &&
+		(key === undefined || (typeof key === "string" && key.length > 0 && key.length <= 20)) &&
+		(midi === undefined ||
+			(!!midi &&
+				(midi.type === "note" || midi.type === "cc") &&
+				Number.isInteger(midi.number) &&
+				midi.number >= 0 &&
+				midi.number <= 127 &&
+				Number.isInteger(midi.channel) &&
+				midi.channel >= 0 &&
+				midi.channel <= 16))
+	)
+}
+/** Single characters ignore case so Shift or Caps Lock cannot change a binding. */
+export function triggerKey(key: string): string {
+	return key.length === 1 ? key.toLowerCase() : key
+}
+export function triggerLabel(t: SurfaceTrigger | undefined): string {
+	const parts: string[] = []
+	if (t?.key) {
+		parts.push(
+			`Key ${t.key === " " ? "Space" : t.key.length === 1 ? t.key.toUpperCase() : t.key}`
+		)
+	}
+	if (t?.midi) {
+		parts.push(
+			`MIDI ${t.midi.type === "note" ? "note" : "CC"} ${t.midi.number}${t.midi.channel ? ` ch ${t.midi.channel}` : ""}`
+		)
+	}
+	return parts.join(" · ")
+}
 /** Validate untrusted workspace data before it can allocate widgets or bind devices. */
 export function validSurfaces(value: unknown): value is SurfaceState[] {
 	if (!Array.isArray(value) || value.length > 32) {
@@ -297,7 +335,8 @@ export function validSurfaces(value: unknown): value is SurfaceState[] {
 					(w.column === undefined ||
 						(Number.isInteger(w.column) && w.column >= 0 && w.column <= 31)) &&
 					(w.visualiser === undefined || validVisualiser(w.visualiser)) &&
-					(w.dial === undefined || validDialOptions(w.dial))
+					(w.dial === undefined || validDialOptions(w.dial)) &&
+					(w.trigger === undefined || validTrigger(w.trigger))
 			)
 		)
 	})

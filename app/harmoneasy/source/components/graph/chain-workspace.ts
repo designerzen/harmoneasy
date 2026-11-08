@@ -15,6 +15,7 @@ import { createChainSidebar } from "./ChainSidebar"
 import { element, button, option } from "./dom"
 import type { ChainUIContext } from "./chain-ui-context"
 import { createSurfaceViewport } from "./surface-viewport"
+import { installSurfaceTriggers } from "./control-surface-triggers"
 import {
 	SURFACE_FRAGMENT_KEY,
 	importSharedSurface,
@@ -387,6 +388,7 @@ export function createChainWorkspace(
 		manager,
 		openSharedSurface(manager) || startWithSurfaces
 	)
+	const removeSurfaceTriggers = installSurfaceTriggers(manager)
 	let destroyed = false
 	return {
 		destroy() {
@@ -395,6 +397,7 @@ export function createChainWorkspace(
 			}
 			destroyed = true
 			surfaceViewport.destroy()
+			removeSurfaceTriggers()
 			if (scrollFrame !== null) {
 				cancelAnimationFrame(scrollFrame)
 			}

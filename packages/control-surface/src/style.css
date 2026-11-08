@@ -187,6 +187,25 @@
 .cs-gpu-ready .cs-widget {
 	box-shadow: none;
 }
+/* Hardware trigger chip: shows which key or MIDI message plays the gadget. */
+.cs-widget[data-trigger]::after {
+	content: attr(data-trigger);
+	position: absolute;
+	top: 4px;
+	right: 4px;
+	max-width: calc(100% - 8px);
+	padding: 1px 6px;
+	border-radius: 6px;
+	background: color-mix(in oklab, var(--cs-source, #d6fff2) 22%, #0008);
+	color: var(--cs-source, #d6fff2);
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 1.5;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	pointer-events: none;
+}
 .cs-semantic input,
 .cs-semantic select,
 .cs-semantic button,

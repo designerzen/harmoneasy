@@ -120,7 +120,10 @@ describe("static room pages", () => {
 			/^play\/catalogue-[a-f0-9]+\.json$/.test(asset.fileName)
 		)!
 		const page = assets.find((asset) => asset.fileName === "play/index.html")!
-		expect(JSON.parse(catalogue.source).tracks).toHaveLength(10005)
+		expect(JSON.parse(catalogue.source).tracks).toHaveLength(
+			JSON.parse(readFileSync("public/midi/bitmidi-catalogue.json", "utf8")).songs.length +
+				JSON.parse(readFileSync("public/midi/index.json", "utf8")).length
+		)
 		expect(page.source.length).toBeLessThan(100000)
 		expect(page.source).toContain(`/harmoneasy/${catalogue.fileName}`)
 		expect(page.source).not.toContain('"tracks":[')

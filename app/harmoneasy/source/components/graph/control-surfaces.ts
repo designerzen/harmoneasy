@@ -2,6 +2,7 @@ import { surfaceNoteSource } from "./control-surface-notes"
 import { surfaceAudioSources } from "./control-surface-audio"
 import { ControlSurface, featuredBindings } from "control-surface"
 import { portableComponents, surfaceShareURL, takeSurfaceNotice } from "./control-surface-share"
+import { learnSurfaceTrigger, registerTriggerView } from "./control-surface-triggers"
 import "control-surface/style.css"
 import { bindingKey } from "control-surface/model"
 import type {
@@ -299,6 +300,9 @@ export function mountControlSurface(
 	const abort = new AbortController()
 	// Shown until the performer edits the surface.
 	let notice = takeSurfaceNotice(surfaceId)
+	const unregisterTriggers = registerTriggerView(surfaceId, {
+		trigger: (key, pressed) => surface?.trigger(key, pressed) ?? false
+	})
 	const refresh = async () => {
 		const state = chain.options.controlSurfaces?.find((s) => s.id === surfaceId)
 		if (!state) {
@@ -366,6 +370,7 @@ export function mountControlSurface(
 			editing,
 			menuActions,
 			notice,
+			learnTrigger: learnSurfaceTrigger,
 			fillControls() {
 				notice = undefined
 				void fillSurface(chain, surfaceId)
@@ -413,6 +418,7 @@ export function mountControlSurface(
 		destroy() {
 			disposed = true
 			generation++
+			unregisterTriggers()
 			clearTimeout(saveTimer)
 			abort.abort()
 			schemaAbort.abort()

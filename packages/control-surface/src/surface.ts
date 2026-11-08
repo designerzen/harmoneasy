@@ -42,7 +42,9 @@ import {
 	sameValue,
 	validateValue,
 	widgetChoices,
-	ergonomicOrder
+	ergonomicOrder,
+	TRIGGER_WIDGETS,
+	triggerLabel
 } from "./model"
 import { widgetPoint } from "./model"
 import { playingLayout, minimumWidgetHeight } from "./layout"
@@ -52,6 +54,7 @@ import type {
 	ControlValue,
 	SurfaceState,
 	SurfaceWidget,
+	SurfaceTrigger,
 	SurfaceVisualEffects,
 	VisualiserSource,
 	SurfaceVisualiser,
@@ -108,6 +111,8 @@ export interface SurfaceOptions {
 	notice?: string
 	/** Copy a link that recreates this surface elsewhere; resolves to a status message. */
 	share?(): Promise<string>
+	/** Resolve with the next key press or MIDI note/CC, for assigning hardware triggers. */
+	learnTrigger?(signal: AbortSignal): Promise<SurfaceTrigger>
 	change(state: SurfaceState): void
 	configurationChanged?(): void
 }
@@ -463,6 +468,9 @@ export class ControlSurface {
 			}
 			if (this.visible && !document.hidden && !this.xr && !this.enteringXR) {
 				this.updateVisualisers()
+			}
+			if (this.layoutViewportHeight < 0 && this.element.isConnected) {
+				this.layout()
 			}
 			if (this.renderer && this.visible && !document.hidden && !this.xr && !this.enteringXR) {
 				try {
@@ -859,6 +867,15 @@ export class ControlSurface {
 				}
 			}
 			element.append(control.element)
+			if (config.trigger && TRIGGER_WIDGETS.includes(widget)) {
+				element.dataset.trigger = triggerLabel(config.trigger)
+				if (config.trigger.key) {
+					element.setAttribute(
+						"aria-keyshortcuts",
+						config.trigger.key === " " ? "Space" : config.trigger.key
+					)
+				}
+			}
 			if (this.editing) {
 				const tools = document.createElement("div")
 				tools.className = "cs-widget-tools"
@@ -904,6 +921,9 @@ export class ControlSurface {
 						this.save()
 						this.layoutStatus.textContent = `${binding.descriptor.label} rotated to ${config.rotation} degrees`
 					}),
+					...(this.options.learnTrigger && TRIGGER_WIDGETS.includes(widget)
+						? [this.button("Trigger", () => this.triggerDialog(entry))]
+						: []),
 					this.button("Remove", () => {
 						const index = configurations.indexOf(config)
 						configurations.splice(index, 1)
@@ -1104,6 +1124,120 @@ export class ControlSurface {
 		)
 		this.abort.signal.addEventListener(EVENT_ABORT, () => dialog.close(), { once: true })
 		dialog.showModal()
+	}
+	/** Assign the key or MIDI message that plays this gadget from hardware such as Cosmo Dots. */
+	private triggerDialog(entry: Entry): void {
+		if (!this.editing || this.disposed || !this.options.learnTrigger) {
+			return
+		}
+		const label = entry.binding.descriptor.label
+		const dialog = document.createElement("dialog"),
+			heading = document.createElement("h3"),
+			help = document.createElement("p"),
+			current = document.createElement("p"),
+			actions = document.createElement("div")
+		dialog.className = "cs-size-dialog cs-trigger-dialog"
+		dialog.setAttribute("aria-label", `${label} trigger`)
+		heading.textContent = `Trigger ${label}`
+		help.textContent =
+			"Choose Learn, then press a key, a Cosmo Dot or a MIDI pad, key or button. That input then plays this gadget only and no longer plays notes."
+		current.setAttribute("role", "status")
+		let learning: AbortController | undefined,
+			changed = false
+		const learn = this.button(
+			"Learn",
+			() => {
+				learning?.abort()
+				const controller = (learning = new AbortController())
+				show("Waiting for a key or MIDI message…")
+				learn.disabled = true
+				this.options.learnTrigger!(controller.signal)
+					.then((trigger) => {
+						if (controller.signal.aborted) {
+							return
+						}
+						// A key and a MIDI message can both trigger the same gadget.
+						entry.config.trigger = { ...entry.config.trigger, ...trigger }
+						changed = true
+						this.save()
+						show()
+						this.layoutStatus.textContent = `${label} triggered by ${triggerLabel(entry.config.trigger)}`
+					})
+					.catch(() => {
+						if (!controller.signal.aborted) {
+							show()
+						}
+					})
+					.finally(() => {
+						learn.disabled = false
+					})
+			},
+			"record"
+		)
+		const clear = this.button(
+			"Clear",
+			() => {
+				learning?.abort()
+				delete entry.config.trigger
+				changed = true
+				this.save()
+				show()
+				this.layoutStatus.textContent = `${label} trigger cleared`
+			},
+			"off"
+		)
+		const show = (message?: string) => {
+			current.textContent =
+				message ?? (triggerLabel(entry.config.trigger) || "No trigger assigned")
+			clear.disabled = !entry.config.trigger
+		}
+		actions.className = "cs-trigger-actions"
+		actions.append(
+			learn,
+			clear,
+			this.button("Done", () => dialog.close())
+		)
+		show()
+		dialog.append(heading, help, current, actions)
+		document.body.append(dialog)
+		dialog.addEventListener(
+			EVENT_CLOSE,
+			() => {
+				learning?.abort()
+				dialog.remove()
+				if (changed) {
+					this.rebuild()
+				}
+				this.focusLayout(entry.config, "Trigger")
+			},
+			{ once: true }
+		)
+		this.abort.signal.addEventListener(EVENT_ABORT, () => dialog.close(), { once: true })
+		dialog.showModal()
+	}
+	/**
+	 * Play a gadget from its hardware trigger with the same feedback as a click.
+	 * Returns false when this surface has no available gadget for the key.
+	 */
+	trigger(key: string, pressed: boolean): boolean {
+		const entry = this.entries.find((e) => e.config.key === key && !e.config.yKey)
+		if (!entry || entry.visual.unavailable || !TRIGGER_WIDGETS.includes(entry.visual.widget)) {
+			return false
+		}
+		const d = entry.binding.descriptor
+		if (entry.visual.widget === "pad") {
+			entry.visual.active = pressed
+			void this.write(entry, denormalize(d, pressed ? 1 : 0), true)
+		} else if (pressed) {
+			entry.visual.active = true
+			void this.write(
+				entry,
+				entry.visual.widget === "button" ? (d.defaultValue ?? 1) : !entry.visual.value
+			)
+		} else {
+			entry.visual.active = false
+		}
+		return true
 	}
 	private focusLayout(config: SurfaceWidget, action: string): void {
 		const entry = this.entries.find((item) => item.config === config)
@@ -1426,7 +1560,8 @@ export class ControlSurface {
 		}
 		if (!overlay) {
 			bottom -=
-				(parseFloat(bodyStyle.paddingBottom) || 0) + (parseFloat(bodyStyle.marginBottom) || 0)
+				(parseFloat(bodyStyle.paddingBottom) || 0) +
+				(parseFloat(bodyStyle.marginBottom) || 0)
 		}
 		this.pageNavigation.hidden = false
 		const footer = this.pageNavigation.getBoundingClientRect().height || 44

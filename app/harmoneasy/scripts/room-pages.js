@@ -45,11 +45,13 @@ export function roomPagesPlugin() {
 		const catalogue = JSON.parse(remoteJson)
 		const songs = catalogue.songs.map((song) => ({
 			name: song.name.replace(/\.(mid|midi)$/i, ""),
-			artist: /^abba[-_. ]/i.test(song.name)
-				? "ABBA"
-				: song.name.includes(" - ")
-					? song.name.split(" - ")[0]
-					: "Not specified",
+			artist:
+				song.artist ??
+				(/^abba[-_. ]/i.test(song.name)
+					? "ABBA"
+					: song.name.includes(" - ")
+						? song.name.split(" - ")[0]
+						: "Not specified"),
 			category: "BitMidi catalogue",
 			route: `play/bitmidi/${song.slug}`
 		}))
