@@ -20,7 +20,9 @@ const words = (segment: string) =>
 export function playRoute(location: string, base: string): PlayRoute | undefined {
 	const url = new URL(location)
 	const playPath = `${new URL(base, url).pathname.replace(/\/$/, "")}/play/`
-	if (!`${url.pathname}/`.startsWith(playPath)) {
+	const redirected =
+		url.pathname === new URL(base, url).pathname && url.searchParams.has(PLAY_REDIRECT_KEY)
+	if (!`${url.pathname}/`.startsWith(playPath) && !redirected) {
 		return
 	}
 	const path =
@@ -30,7 +32,10 @@ export function playRoute(location: string, base: string): PlayRoute | undefined
 	if (!artist || segments.length > 2 || (segments.length === 2 && !title)) {
 		throw new Error("Use a play link in the form /play/{artist} or /play/{artist}/{title}.")
 	}
-	return { artist, title }
+	return {
+		artist,
+		title: artist.toLowerCase() === "bitmidi" ? decodeURIComponent(segments[1] ?? "") : title
+	}
 }
 
 /** The readable link for a play route, so redirected links show /play/{artist}/{title} again. */
@@ -59,12 +64,31 @@ export async function loadPlayPage(
 	const page: PresetPage & { source?: { url: string; trackIndex: number } } =
 		await response.json()
 	const searchQuery = `${route.artist} ${route.title}`.trim()
-	const match = route.title
-		? await searchBitMidi(searchQuery)
-				.then(({ results }) => results[0])
-				.catch(() => undefined)
-		: undefined
-	if (route.title) {
+	const exact = route.artist.toLowerCase() === "bitmidi" && route.title
+	const match = exact
+		? await fetcher(
+				`https://bitmidi.com/api/midi/get?slug=${encodeURIComponent(route.title)}`
+			).then(async (response) => {
+				if (!response.ok) {
+					throw new Error("Could not load this BitMidi track")
+				}
+				const { result } = await response.json()
+				return {
+					...result.result,
+					downloadUrl: new URL(result.result.downloadUrl, "https://bitmidi.com").href,
+					url: new URL(result.result.url, "https://bitmidi.com").href
+				}
+			})
+		: route.title
+			? await searchBitMidi(searchQuery)
+					.then(({ results }) => results[0])
+					.catch(() => undefined)
+			: undefined
+	if (exact && match) {
+		page.name = `${match.name.replace(/\.(mid|midi)$/i, "")} — One-key melody`
+		page.description =
+			"Press any playing key to play the next melody note of this BitMidi track. Release the key to end the note."
+	} else if (route.title) {
 		page.name = `${route.title} by ${route.artist} — One-key melody`
 		page.description = `Press any playing key to play the next melody note of the closest BitMidi match for “${searchQuery}”. Choose another search result to change the song.`
 	} else {
@@ -80,7 +104,7 @@ export async function loadPlayPage(
 			midiFileUrl: match?.downloadUrl ?? "",
 			midiFileName: match?.name,
 			trackIndex: -1,
-			searchQuery
+			searchQuery: exact ? match?.name.replace(/\.(mid|midi)$/i, "") : searchQuery
 		}),
 		...steps
 	])

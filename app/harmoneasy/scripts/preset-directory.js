@@ -68,7 +68,10 @@ export function presetDirectoryEntries(pages, staticPages = new Map()) {
 		.sort((a, b) => a.name.localeCompare(b.name))
 }
 
-const TOKENS = readFileSync(resolve(import.meta.dirname, "../source/assets/style/tokens.css"), "utf8")
+const TOKENS = readFileSync(
+	resolve(import.meta.dirname, "../source/assets/style/tokens.css"),
+	"utf8"
+)
 const PAGE_STYLE = `
 @font-face{font-family:"IBM Plex Sans Condensed";src:url("FONT_BASEIBMPlexSansCondensed-Regular.ttf") format("truetype");font-weight:400;font-display:swap}
 @font-face{font-family:"IBM Plex Sans Condensed";src:url("FONT_BASEIBMPlexSansCondensed-SemiBold.ttf") format("truetype");font-weight:600;font-display:swap}
@@ -153,7 +156,7 @@ ${TOKENS}
 ${PAGE_STYLE.replaceAll("FONT_BASE", href("fonts/"))}
 </style>
 </head>
-<body><div class="shell"><header class="top"><a class="brand" href="${href("")}"><img src="${href("favicon.svg")}" alt="" width="24" height="24">Harmoneasy</a><a class="app-link" href="${href("")}">Open the app ↗</a></header>
+<body><div class="shell"><header class="top"><a class="brand" href="${href("")}"><img src="${href("favicon.svg")}" alt="" width="24" height="24">Harmoneasy</a><a class="app-link" href="${href("play/")}">Play songs</a><a class="app-link" href="${href("")}">Open the app ↗</a></header>
 <main id="preset-directory"><section class="intro"><p class="eyebrow">Preset directory</p><h1>Find a setup.<br>Make it your own.</h1><p>Explore instruments, hardware setups and complete performance rooms. Pick a preset to open its chains, sounds and controls in Harmoneasy.</p></section>
 <form class="filters" role="search" onsubmit="return false">
 <label class="search">Search presets<input type="search" name="q" placeholder="Name, controller, sound or transformer…" autocomplete="off"></label>

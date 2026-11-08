@@ -33,11 +33,66 @@ export function roomFallbackHtml(roomPath, playPath) {
 /** Publish real static entry points so room and play links work on GitHub Pages. */
 export function roomPagesPlugin() {
 	let base = "/"
+	let publicDir = resolve(import.meta.dirname, "../public")
+	let cached
+	const directory = () => {
+		const localJson = readFileSync(resolve(publicDir, "midi/index.json"), "utf8")
+		const remoteJson = readFileSync(resolve(publicDir, "midi/bitmidi-catalogue.json"), "utf8")
+		if (cached?.localJson === localJson && cached?.remoteJson === remoteJson) {
+			return cached
+		}
+		const local = JSON.parse(localJson)
+		const catalogue = JSON.parse(remoteJson)
+		const songs = catalogue.songs.map((song) => ({
+			name: song.name.replace(/\.(mid|midi)$/i, ""),
+			artist: song.name.includes(" - ") ? song.name.split(" - ")[0] : "Not specified",
+			category: "BitMidi catalogue",
+			route: `play/bitmidi/${song.slug}`
+		}))
+		const tracks = [...local, ...songs].sort((a, b) => a.name.localeCompare(b.name))
+		const json = JSON.stringify(playDirectoryCatalogue(tracks))
+		const hash = createHash("sha256").update(json).digest("hex").slice(0, 16)
+		const fileName = `play/catalogue-${hash}.json`
+		cached = {
+			localJson,
+			remoteJson,
+			json,
+			fileName,
+			html: playDirectoryHtml(tracks, base, `${base}${fileName}`)
+		}
+		return cached
+	}
 	return {
 		name: "harmoneasy-room-pages",
 		enforce: "post",
 		configResolved(config) {
 			base = config.base
+			publicDir = config.publicDir ?? publicDir
+		},
+		configureServer(server) {
+			server.middlewares.use((request, response, next) => {
+				const url = new URL(request.url, "http://localhost")
+				if (url.pathname.startsWith(`${base}play/catalogue-`)) {
+					const assets = directory()
+					if (url.pathname !== `${base}${assets.fileName}`) {
+						return next()
+					}
+					response.setHeader("Content-Type", "application/json")
+					response.setHeader("Cache-Control", "public, max-age=31536000, immutable")
+					response.end(assets.json)
+					return
+				}
+				if (
+					![`${base}play`, `${base}play/`, `${base}play/index.html`].includes(
+						url.pathname
+					) ||
+					url.searchParams.has("play")
+				) {
+					return next()
+				}
+				response.setHeader("Content-Type", "text/html; charset=utf-8")
+				response.end(directory().html)
+			})
 		},
 		generateBundle(_options, bundle) {
 			const entry = bundle["index.html"]
@@ -45,7 +100,9 @@ export function roomPagesPlugin() {
 				throw new Error("Missing Harmoneasy HTML entry point")
 			}
 			this.emitFile({ type: "asset", fileName: "room/index.html", source: entry.source })
-			this.emitFile({ type: "asset", fileName: "play/index.html", source: entry.source })
+			const assets = directory()
+			this.emitFile({ type: "asset", fileName: "play/index.html", source: assets.html })
+			this.emitFile({ type: "asset", fileName: assets.fileName, source: assets.json })
 			this.emitFile({
 				type: "asset",
 				fileName: "404.html",
@@ -54,3 +111,7 @@ export function roomPagesPlugin() {
 		}
 	}
 }
+import { readFileSync } from "node:fs"
+import { resolve } from "node:path"
+import { createHash } from "node:crypto"
+import { playDirectoryHtml, playDirectoryCatalogue } from "./play-directory.js"

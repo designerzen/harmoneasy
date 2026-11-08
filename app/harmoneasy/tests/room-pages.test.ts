@@ -1,8 +1,51 @@
 import { describe, expect, it, vi } from "vitest"
 import { runInNewContext } from "node:vm"
 import { roomFallbackHtml, roomPagesPlugin } from "../scripts/room-pages.js"
+import { playDirectoryHtml } from "../scripts/play-directory.js"
+import { readFileSync } from "node:fs"
 
 describe("static room pages", () => {
+	it("ships thousands of distinct real BitMidi records with exact play links", () => {
+		const catalogue = JSON.parse(readFileSync("public/midi/bitmidi-catalogue.json", "utf8"))
+		expect(catalogue.songs.length).toBeGreaterThanOrEqual(9000)
+		expect(new Set(catalogue.songs.map((song: any) => song.id)).size).toBe(
+			catalogue.songs.length
+		)
+		expect(new Set(catalogue.songs.map((song: any) => song.slug)).size).toBe(
+			catalogue.songs.length
+		)
+		for (const song of catalogue.songs) {
+			expect(song.id).toBeGreaterThan(0)
+			expect(song.name).toBeTruthy()
+			expect(song.slug).toMatch(/^[^/?#]+$/)
+		}
+	})
+	it("serves the directory in development while retaining song routes", () => {
+		const plugin = roomPagesPlugin()
+		plugin.configResolved({ base: "/harmoneasy/" })
+		let handler: any
+		plugin.configureServer({
+			middlewares: {
+				use: (value: any) => {
+					handler = value
+				}
+			}
+		})
+		const response = { setHeader: vi.fn(), end: vi.fn() }
+		const next = vi.fn()
+		handler({ url: "/harmoneasy/play/" }, response, next)
+		expect(response.end).toHaveBeenCalledWith(expect.stringContaining("Play this track"))
+		handler({ url: "/harmoneasy/play/?play=abba" }, response, next)
+		handler({ url: "/harmoneasy/play/abba/" }, response, next)
+		expect(next).toHaveBeenCalledTimes(2)
+	})
+	it("passes static song redirects through to the application with their query and hash", () => {
+		const html = playDirectoryHtml([], "/harmoneasy/")
+		const script = html.match(/<script>([\s\S]*?)<\/script>/)![1]
+		const location = { search: "?play=abba%2Fsos", hash: "#setup", replace: vi.fn() }
+		runInNewContext(script, { URLSearchParams, location })
+		expect(location.replace).toHaveBeenCalledWith("/harmoneasy/?play=abba%2Fsos#setup")
+	})
 	it("publishes the application at /room/ with the same built asset URLs", () => {
 		const plugin = roomPagesPlugin()
 		plugin.configResolved({ base: "/harmoneasy/" })
@@ -21,8 +64,17 @@ describe("static room pages", () => {
 		expect(emitFile).toHaveBeenCalledWith({
 			type: "asset",
 			fileName: "play/index.html",
-			source: html
+			source: expect.stringContaining("Search tracks")
 		})
+		const assets = emitFile.mock.calls.map(([asset]) => asset)
+		const catalogue = assets.find((asset) =>
+			/^play\/catalogue-[a-f0-9]+\.json$/.test(asset.fileName)
+		)!
+		const page = assets.find((asset) => asset.fileName === "play/index.html")!
+		expect(JSON.parse(catalogue.source).tracks).toHaveLength(10005)
+		expect(page.source.length).toBeLessThan(100000)
+		expect(page.source).toContain(`/harmoneasy/${catalogue.fileName}`)
+		expect(page.source).not.toContain('"tracks":[')
 		expect(emitFile).toHaveBeenCalledWith({
 			type: "asset",
 			fileName: "404.html",

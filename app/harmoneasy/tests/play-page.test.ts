@@ -9,6 +9,31 @@ afterEach(() => vi.unstubAllGlobals())
 const playerConfig = (page: any) => JSON.parse(JSON.parse(page.workspace.chains[0].transformers)[0])
 
 describe("play links", () => {
+	it("opens the exact catalogue record without a fuzzy search", async () => {
+		const fetcher = vi.fn(async (url: string) =>
+			url.includes("/api/midi/get")
+				? Response.json({
+						result: {
+							result: {
+								name: "Queen - Bohemian Rhapsody.mid",
+								url: "/queen-bohemian-rhapsody-mid",
+								downloadUrl: "/uploads/42.mid"
+							}
+						}
+					})
+				: Response.json(template)
+		)
+		const page = await loadPresetPage(
+			"https://example.test/play/bitmidi/queen-bohemian-rhapsody-mid/",
+			"/",
+			fetcher
+		)
+		expect(fetcher).toHaveBeenCalledWith(
+			"https://bitmidi.com/api/midi/get?slug=queen-bohemian-rhapsody-mid"
+		)
+		expect(page?.name).toBe("Queen - Bohemian Rhapsody — One-key melody")
+		expect(playerConfig(page).midiFileUrl).toBe("https://bitmidi.com/uploads/42.mid")
+	})
 	it("reads /play/{artist}/{title} and the static redirect form below the deployment base", () => {
 		const song = { artist: "rick astley", title: "never gonna give you up" }
 		expect(
@@ -29,6 +54,9 @@ describe("play links", () => {
 		expect(playRoute("https://example.test/harmoneasy/player/a/b", "/harmoneasy/")).toBe(
 			undefined
 		)
+		expect(
+			playRoute("https://example.test/harmoneasy/?play=the-beatles", "/harmoneasy/")
+		).toEqual({ artist: "the beatles", title: "" })
 		expect(playRoute("https://example.test/play/the-beatles/", "/")).toEqual({
 			artist: "the beatles",
 			title: ""

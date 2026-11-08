@@ -4,34 +4,44 @@
 		"file": "twinkle-twinkle-little-star.mid",
 		"source": "https://bitmidi.com/twinkle-twinkle-little-star-mid",
 		"route": "presets/songs/twinkle-twinkle-little-star",
-		"trackIndex": -1
+		"trackIndex": -1,
+		"artist": "Traditional",
+		"category": "Nursery rhyme"
 	},
 	{
 		"name": "Frère Jacques",
 		"file": "frere-jacques.mid",
 		"source": "https://bitmidi.com/frere-jacques-mid",
 		"route": "presets/songs/frere-jacques",
-		"trackIndex": -1
+		"trackIndex": -1,
+		"artist": "Traditional",
+		"category": "Nursery rhyme"
 	},
 	{
 		"name": "Ode to Joy",
 		"file": "ode-to-joy.mid",
 		"source": "https://bitmidi.com/ode-to-joy-mid",
 		"route": "presets/songs/ode-to-joy",
-		"trackIndex": -1
+		"trackIndex": -1,
+		"artist": "Ludwig van Beethoven",
+		"category": "Classical"
 	},
 	{
 		"name": "The Only Way Is Up",
 		"file": "102635.mid",
 		"source": "https://bitmidi.com/uploads/102635.mid",
 		"route": "presets/songs/only-way-is-up",
-		"trackIndex": 24
+		"trackIndex": 24,
+		"artist": "Yazz",
+		"category": "Pop"
 	},
 	{
 		"name": "Never Gonna Give You Up — Rick Astley",
 		"file": "never-gonna-give-you-up.mid",
 		"source": "https://bitmidi.com/never-gonna-give-you-up-1-mid",
 		"route": "presets/songs/never-gonna-give-you-up",
-		"trackIndex": -1
+		"trackIndex": -1,
+		"artist": "Rick Astley",
+		"category": "Pop"
 	}
 ]
