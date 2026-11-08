@@ -22,6 +22,7 @@ export function controlImportance(d: ControlDescriptor, index = 0): number {
 			strum: 0.72,
 			pad: 0.7,
 			xy: 0.68,
+			envelope: 0.9,
 			dial: 0.55,
 			slider: 0.55,
 			radio: 0.52,

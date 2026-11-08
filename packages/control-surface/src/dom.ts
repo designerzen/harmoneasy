@@ -1,3 +1,4 @@
+import { ENVELOPE_STAGES, envelopeValues, envelopeMaxima, envelopeText } from "./envelope"
 import { directDescriptor } from "./choices"
 import { createChoicePages, type ChoicePages } from "./choice-pages"
 import {
@@ -255,6 +256,36 @@ export function createDomControl(
 			select.value = String(choices.findIndex((c) => sameValue(c.value, v)))
 		})
 		label.append(select)
+	} else if (d.widget === "envelope") {
+		let current = envelopeValues(d, d.defaultValue)
+		const maxima = envelopeMaxima(d)
+		for (let axis = 0; axis < 4; axis++) {
+			const row = document.createElement("label")
+			row.textContent = `${ENVELOPE_STAGES[axis]} (${axis === 2 ? "%" : "s"})`
+			const el = input("number", ` ${ENVELOPE_STAGES[axis]}`)
+			el.min = "0"
+			el.max = String(maxima[axis] * (axis === 2 ? 100 : 1))
+			el.step = axis === 2 ? "1" : "0.001"
+			row.append(el)
+			label.append(row)
+			el.addEventListener(EVENT_INPUT, () => {
+				if (!Number.isFinite(el.valueAsNumber)) {
+					return
+				}
+				current = [...current]
+				current[axis] = el.valueAsNumber / (axis === 2 ? 100 : 1)
+				current = envelopeValues(d, current)
+				apply(current)
+			})
+			updates.push((value) => {
+				current = envelopeValues(d, value)
+				const displayed = axis === 2 ? Math.round(current[axis] * 100) : current[axis]
+				if (el.valueAsNumber !== displayed) {
+					el.value = String(displayed)
+				}
+				el.setAttribute("aria-valuetext", envelopeText(current[axis], axis))
+			})
+		}
 	} else if (d.widget === "xy" || d.widget === "range") {
 		let current: number[] = [min, min]
 		for (let axis = 0; axis < 2; axis++) {

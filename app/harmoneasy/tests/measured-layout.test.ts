@@ -22,6 +22,33 @@ const node = (
 })
 
 describe("Measured graph layout", () => {
+	it.each(["horizontal", "vertical"])(
+		"keeps measured surfaces and their picker clear of routing in %s mode",
+		(mode) => {
+			const routing = [node("input", 0, 0, 400, 900), node("output", 1, 0, 650, 1200)]
+			const surface = {
+				...node("surface", 3, 0, 700, 600),
+				type: "controlSurface",
+				data: { layoutColumn: 3, layoutRow: 0, manualPosition: { x: 100, y: 10 } }
+			}
+			const picker = { ...node("picker", 0, 0, 180, 56), type: "addControlSurface" }
+			const result = layoutMeasuredNodes([...routing, surface, picker], mode)
+			const axis = mode === "horizontal" ? "y" : "x"
+			const dimension = mode === "horizontal" ? "height" : "width"
+			const boundary = Math.max(
+				...result.slice(0, 2).map((n) => n.position[axis] + n.measured![dimension]!)
+			)
+			for (const n of result.slice(2)) {
+				expect(n.position[axis]).toBeGreaterThanOrEqual(boundary + NODE_GAP)
+			}
+			const along = mode === "horizontal" ? "x" : "y"
+			const alongDimension = mode === "horizontal" ? "width" : "height"
+			expect(result[3].position[along]).toBeGreaterThanOrEqual(
+				result[2].position[along] + surface.measured![alongDimension]! + NODE_GAP
+			)
+			expect(layoutMeasuredNodes(result, mode)).toEqual(result)
+		}
+	)
 	it("wraps wide stages onto extra lines and never overlaps them", () => {
 		const nodes = Array.from({ length: MAX_STAGE_NODES + 2 }, (_, index) =>
 			node(`n${index}`, 0, index, 300, 200)

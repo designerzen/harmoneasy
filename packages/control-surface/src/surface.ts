@@ -1,3 +1,4 @@
+import { envelopeGeometry, moveEnvelope } from "./envelope"
 import { createDropdown, menuIcon } from "./dropdown"
 import { VisualiserFrame, historySource, validVisualiser, VISUALISER_KINDS } from "./visualiser"
 import { directDescriptor, choiceWidget, choiceGrid } from "./choices"
@@ -62,6 +63,7 @@ import type {
 } from "./types"
 
 const largeWidget = (widget: string) =>
+	widget === "envelope" ||
 	widget === "visualiser" ||
 	isMusicGrid(widget) ||
 	widget === "relative-keys" ||
@@ -86,6 +88,7 @@ interface Entry {
 	release?(): void
 }
 interface Gesture {
+	envelope?: { x: number; y: number; values: number[]; knob?: boolean }
 	entry: Entry
 	startY: number
 	startValue: number
@@ -1474,9 +1477,11 @@ export class ControlSurface {
 							24 +
 							46
 					)
-				: largeWidget(entry.visual.widget)
-					? 280
-					: 172)
+				: entry.visual.widget === "envelope"
+					? 360
+					: largeWidget(entry.visual.widget)
+						? 280
+						: 172)
 		)
 	}
 	private layoutItems() {
@@ -1835,6 +1840,7 @@ export class ControlSurface {
 				"number",
 				"xy",
 				"range",
+				"envelope",
 				"pad",
 				"relative-keys",
 				"strum"
@@ -1911,6 +1917,41 @@ export class ControlSurface {
 		const originalX = x,
 			originalY = y
 		;({ x, y } = widgetPoint(x, y, entry.visual))
+		if (entry.visual.widget === "envelope") {
+			if ([...this.gestures.values()].some((gesture) => gesture.entry === entry)) {
+				return false
+			}
+			const geometry = envelopeGeometry(
+				entry.binding.descriptor,
+				value,
+				entry.visual.width,
+				entry.visual.height
+			)
+			const distances = geometry.points
+				.slice(1)
+				.map(([px, py]) => Math.hypot(x - entry.visual.x - px, y - entry.visual.y - py))
+			const knobAxis = geometry.knobs.findIndex(
+				(knob) =>
+					Math.hypot(x - entry.visual.x - knob.x, y - entry.visual.y - knob.y) <=
+					Math.max(22, knob.radius)
+			)
+			const axis = knobAxis >= 0 ? knobAxis : distances.indexOf(Math.min(...distances))
+			if (knobAxis < 0 && distances[axis] > 24) {
+				return false
+			}
+			this.gestures.set(id, {
+				entry,
+				startY: y,
+				startValue: 0,
+				position: 0,
+				axis,
+				pressure,
+				envelope: { x, y, values: geometry.values, knob: knobAxis >= 0 }
+			})
+			entry.visual.active = true
+			this.viewport.focus({ preventScroll: true })
+			return true
+		}
 		if (entry.visual.relative || entry.visual.strum) {
 			const rect = relativeRect(entry.visual.width, entry.visual.height)
 			this.gestures.set(id, {
@@ -2050,6 +2091,31 @@ export class ControlSurface {
 				binding: { descriptor: d }
 			} = entry
 		;({ x, y } = widgetPoint(x, y, v))
+		if (v.widget === "envelope" && gesture.envelope) {
+			const start = gesture.envelope
+			if (start.knob) {
+				const next = [...start.values]
+				const max = envelopeGeometry(d, start.values, v.width, v.height).maxima[
+					gesture.axis
+				]
+				next[gesture.axis] += ((start.y - y) / (fine ? 1600 : 160)) * max
+				void this.write(entry, next)
+				return
+			}
+			void this.write(
+				entry,
+				moveEnvelope(
+					d,
+					start.values,
+					gesture.axis,
+					(x - start.x) / (fine ? 10 : 1),
+					(y - start.y) / (fine ? 10 : 1),
+					v.width,
+					v.height
+				)
+			)
+			return
+		}
 		const px = clamp((x - v.x - 8 - v.width * 0.08) / (v.width * 0.84 - 16)),
 			py = clamp(1 - (y - v.y - 22 - (v.height - 24) * 0.08) / ((v.height - 24) * 0.84))
 		if (v.widget === "dial" || v.widget === "rotation") {

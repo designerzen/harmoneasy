@@ -48,6 +48,7 @@ import { componentBindings, installComponentUi } from "audiobus/io/component-ui"
 import { TransformerQuantise } from "audiobus/io/transformers/transformer-quantise"
 import {
 	surfaceBeat,
+	fillSurface,
 	disconnectSurface,
 	selectSurfaceControls,
 	CONTROL_HANDLE,
@@ -1788,12 +1789,12 @@ describe("graph control connections", () => {
 		}
 		return { chain, output, componentId }
 	}
-	it("places surfaces beyond Outputs with dedicated control edges and only detaches bindings", () => {
+	it("places surfaces below devices with dedicated control edges and only detaches bindings", () => {
 		const { chain, componentId } = chainFixture()
 		const { nodes, edges } = getStructure(chain, true, true, "horizontal")
 		const surface = nodes.find((n) => n.type === "controlSurface")!,
 			output = nodes.find((n) => n.type === "output")!
-		expect(surface.position.x).toBeGreaterThan(output.position.x)
+		expect(surface.position.y).toBeGreaterThan(output.position.y + 240)
 		expect(edges.find((e) => e.target === surface.id)).toMatchObject({
 			sourceHandle: CONTROL_HANDLE,
 			targetHandle: SURFACE_HANDLE,
@@ -1803,6 +1804,26 @@ describe("graph control connections", () => {
 		expect(chain.options.controlSurfaces[0].widgets).toEqual([])
 		expect(chain.outputs).toHaveLength(1)
 		expect(chain.removeOutput).not.toHaveBeenCalled()
+	})
+	it("includes every component with controls when the featured control limit is full", async () => {
+		const { chain, output } = chainFixture()
+		chain.inputs = [{ ...output, name: "Player" }]
+		chain.transformers = [{ ...output, midiControlId: "transform", name: "Transformer" }]
+		chain.options.controlSurfaces[0].connections = []
+		chain.options.controlSurfaces[0].widgets = []
+		await fillSurface(chain, "surface", 1)
+		const connections = chain.options.controlSurfaces[0].connections
+		expect(connections).toHaveLength(3)
+		// Duplicate saved entries still draw one wire with the union of their controls.
+		connections.push({ ...connections[0], controlIds: ["cutoff", "volume"] })
+		const { nodes, edges } = getStructure(chain)
+		const surface = nodes.find((n) => n.type === "controlSurface")!
+		const controlEdges = edges.filter((e) => e.target === surface.id)
+		expect(controlEdges).toHaveLength(3)
+		expect(new Set(controlEdges.map((e) => e.source)).size).toBe(3)
+		expect(
+			controlEdges.find((e) => e.data?.componentId === connections[0].componentId)?.label
+		).toBe("2 controls")
 	})
 	const chainFixture = chain
 	it("only commits control selections when Apply is pressed", async () => {

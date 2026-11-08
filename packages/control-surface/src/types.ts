@@ -6,6 +6,7 @@ export type WidgetType =
 	| "radio"
 	| "select"
 	| "xy"
+	| "envelope"
 	| "range"
 	| "button"
 	| "pad"
@@ -97,6 +98,8 @@ export interface ControlDescriptor {
 	step?: number
 	unit?: string
 	scale?: "linear" | "log"
+	/** Compound ADSR: [attack seconds, decay seconds, sustain 0..1, release seconds]. */
+	envelope?: { attackMax?: number; decayMax?: number; releaseMax?: number }
 	dial?: DialOptions
 	/** MIDI note used for the pad light; defaults to middle C. */
 	pad?: { note?: number }

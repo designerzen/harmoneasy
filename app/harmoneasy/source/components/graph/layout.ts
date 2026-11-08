@@ -49,7 +49,9 @@ export const getStructure = (
 				layoutColumn: column,
 				layoutRow: row,
 				manualPosition:
-					type === "addTransformer" ? undefined : chain.options.positions?.[positionKey]
+					type === "addTransformer" || type === "addControlSurface"
+						? undefined
+						: chain.options.positions?.[positionKey]
 			},
 			position: chain.options.positions?.[positionKey] ?? { x: 0, y: 0 },
 			sourcePosition: vertical ? Position.Bottom : Position.Right,
@@ -58,8 +60,9 @@ export const getStructure = (
 				type !== "start" &&
 				type !== "end" &&
 				type !== "addTransformer" &&
+				type !== "addControlSurface" &&
 				type !== NOTE_TYPE.speaker,
-			draggable: type !== "addTransformer"
+			draggable: type !== "addTransformer" && type !== "addControlSurface"
 		}
 		nodes.push(node)
 		return node
@@ -152,10 +155,19 @@ export const getStructure = (
 			index,
 			{ label: surface.name, surface }
 		)
+		const connections = new Map<string, Set<string>>()
 		for (const connection of surface.connections) {
+			const controls = connections.get(connection.componentId) ?? new Set<string>()
+			connection.controlIds.forEach((id) => controls.add(id))
+			connections.set(connection.componentId, controls)
+		}
+		for (const [componentId, controls] of connections) {
+			if (!controls.size) {
+				continue
+			}
 			const source = nodes.find((n) => {
 				const component = n.data.input ?? n.data.output ?? n.data.element
-				return component && controlComponentId(component) === connection.componentId
+				return component && controlComponentId(component) === componentId
 			})
 			if (!source) {
 				continue
@@ -166,14 +178,17 @@ export const getStructure = (
 				target: node.id,
 				sourceHandle: CONTROL_HANDLE,
 				targetHandle: SURFACE_HANDLE,
-				type: "smoothstep",
-				label: `${connection.controlIds.length} controls`,
+				type: "default",
+				label: `${controls.size} controls`,
 				deletable: true,
 				style: { stroke: "var(--col-control)", strokeDasharray: "5 4", strokeWidth: 1.5 },
-				data: { controlSurfaceId: surface.id, componentId: connection.componentId }
+				data: { controlSurfaceId: surface.id, componentId }
 			})
 		}
 	}
+	addNode("node-add-control-surface", "addControlSurface", 0, 0, {
+		label: "Control Surface"
+	})
 	return { nodes: layoutMeasuredNodes(nodes, layoutMode), edges }
 }
 
@@ -189,7 +204,13 @@ export function layoutMeasuredNodes(nodes: GraphNode[], mode: string): GraphNode
 		height: node.measured?.height ?? node.height ?? 240
 	})
 	const columns = new Map<number, GraphNode[]>()
+	const surfaceNodes = nodes.filter(
+		(node) => node.type === "controlSurface" || node.type === "addControlSurface"
+	)
 	for (const node of nodes) {
+		if (surfaceNodes.includes(node)) {
+			continue
+		}
 		const column = node.data.layoutColumn as number
 		if (!columns.has(column)) {
 			columns.set(column, [])
@@ -209,9 +230,7 @@ export function layoutMeasuredNodes(nodes: GraphNode[], mode: string): GraphNode
 		}
 		for (const line of lines) {
 			const routingNodes =
-				routingCount > MAX_STAGE_NODES
-					? line
-					: line.filter((node) => !node.data.standalone)
+				routingCount > MAX_STAGE_NODES ? line : line.filter((node) => !node.data.standalone)
 			const total =
 				routingNodes.reduce((sum, node) => sum + crossSize(node), 0) +
 				NODE_GAP * (routingNodes.length - 1)
@@ -226,6 +245,26 @@ export function layoutMeasuredNodes(nodes: GraphNode[], mode: string): GraphNode
 			}
 			along += Math.max(...line.map(alongSize)) + NODE_GAP
 		}
+	}
+	// Controls occupy a separate lane below horizontal routing, or right of vertical routing.
+	const crossEnd =
+		Math.max(
+			0,
+			...nodes
+				.filter((node) => !surfaceNodes.includes(node))
+				.map((node) => {
+					const position = positions.get(node.id)!
+					return (vertical ? position.x : position.y) + crossSize(node)
+				})
+		) +
+		NODE_GAP * 2
+	let surfaceAlong = 0
+	for (const node of surfaceNodes) {
+		const manual = node.data.manualPosition
+		const cross = Math.max(crossEnd, manual ? (vertical ? manual.x : manual.y) : crossEnd)
+		const start = manual ? (vertical ? manual.y : manual.x) : surfaceAlong
+		positions.set(node.id, vertical ? { x: cross, y: start } : { x: start, y: cross })
+		surfaceAlong = Math.max(surfaceAlong, start + alongSize(node) + NODE_GAP)
 	}
 	return nodes.map((node) => {
 		const position = positions.get(node.id)!

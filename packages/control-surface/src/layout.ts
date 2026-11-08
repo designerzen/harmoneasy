@@ -112,13 +112,15 @@ function partitionSpace(items: Rect[], bounds: Rect, gap: number, minimums: Mini
 export function minimumWidgetHeight(widget = "", scale = 1): number {
 	return Math.max(
 		44 / scale,
-		["piano-roll", "guitar-tab"].includes(widget)
-			? 46 + 99 / scale
-			: ["xy", "range", "relative-keys", "strum"].includes(widget)
-				? 80 + 99 / scale
-				: widget === "radio"
-					? 46 + 99 / scale
-					: 44 / scale
+		widget === "envelope"
+			? 180 + 99 / scale
+			: ["piano-roll", "guitar-tab"].includes(widget)
+				? 46 + 99 / scale
+				: ["xy", "range", "relative-keys", "strum", "envelope"].includes(widget)
+					? 80 + 99 / scale
+					: widget === "radio"
+						? 46 + 99 / scale
+						: 44 / scale
 	)
 }
 

@@ -104,10 +104,23 @@ export async function fillSurface(chain: IOChain, surfaceId: string, limit = 12)
 	}
 	const state = structuredClone(current)
 	const present = new Set(state.widgets.flatMap((w) => [w.key, w.yKey]))
-	for (const binding of featuredBindings(
+	const selected = featuredBindings(
 		available.filter((b) => !present.has(b.key)),
 		Math.max(0, limit - state.widgets.length)
-	)) {
+	)
+	// Every component with controls must be represented, even when curation's limit is full.
+	const represented = new Set([
+		...state.connections.filter((c) => c.controlIds.length).map((c) => c.componentId),
+		...selected.map((b) => b.sourceId)
+	])
+	for (const binding of available) {
+		if (!represented.has(binding.sourceId)) {
+			const candidates = available.filter((b) => b.sourceId === binding.sourceId)
+			selected.push(featuredBindings(candidates, 1)[0] ?? binding)
+			represented.add(binding.sourceId)
+		}
+	}
+	for (const binding of selected) {
 		const componentId = binding.sourceId!
 		let connection = state.connections.find((c) => c.componentId === componentId)
 		if (!connection) {
@@ -116,7 +129,10 @@ export async function fillSurface(chain: IOChain, surfaceId: string, limit = 12)
 		if (!connection.controlIds.includes(binding.descriptor.id)) {
 			connection.controlIds.push(binding.descriptor.id)
 		}
-		state.widgets.push({ key: binding.key })
+		if (!present.has(binding.key)) {
+			state.widgets.push({ key: binding.key })
+			present.add(binding.key)
+		}
 	}
 	updateSurface(chain, state)
 }

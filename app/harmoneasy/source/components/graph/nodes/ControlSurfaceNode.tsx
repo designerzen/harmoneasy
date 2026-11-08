@@ -60,7 +60,7 @@ export function ControlSurfaceNode({ id, data }: any) {
 			<Handle
 				type="target"
 				id={SURFACE_HANDLE}
-				position={data.layoutMode === "vertical" ? Position.Top : Position.Left}
+				position={data.layoutMode === "vertical" ? Position.Left : Position.Top}
 				className="control-connector"
 				aria-label="Connect component controls"
 			/>

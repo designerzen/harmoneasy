@@ -34,6 +34,7 @@ import { OutputNode } from "./nodes/OutputNode.tsx"
 import { TransformerNode } from "./nodes/TransformerNode.tsx"
 import { AddTransformerNode } from "./nodes/AddTransformerNode.tsx"
 import { ControlSurfaceNode } from "./nodes/ControlSurfaceNode"
+import { AddControlSurfaceNode } from "./nodes/AddControlSurfaceNode"
 import {
 	CONTROL_HANDLE,
 	SURFACE_HANDLE,
@@ -71,7 +72,8 @@ const nodeTypes = {
 	output: OutputNode,
 	transformer: TransformerNode,
 	addTransformer: AddTransformerNode,
-	controlSurface: ControlSurfaceNode
+	controlSurface: ControlSurfaceNode,
+	addControlSurface: AddControlSurfaceNode
 }
 
 const edgeTypes = {

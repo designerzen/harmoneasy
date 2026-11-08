@@ -7,6 +7,7 @@
 		".": "./src/index.ts",
 		"./types": "./src/types.ts",
 		"./model": "./src/model.ts",
+		"./envelope-bindings": "./src/envelope-bindings.ts",
 		"./dom": "./src/dom.ts",
 		"./dropdown": "./src/dropdown.ts",
 		"./dropdown.css": "./src/dropdown.css",

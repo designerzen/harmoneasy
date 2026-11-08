@@ -1,4 +1,5 @@
 /// <reference types="@webgpu/types" />
+import { envelopeGeometry, envelopeText, envelopeCurve, ENVELOPE_STAGES } from "./envelope"
 import type { ChoicePages } from "./choice-pages"
 import { choiceGrid, waveformPoints } from "./choices"
 import { CONTROL_ICONS, choiceIcon, controlIcon } from "./icons"
@@ -185,7 +186,24 @@ fn chassis(distance:f32,top:f32,pressed:f32)->vec4f {
   let alpha=textureSampleLevel(atlas,atlasSampler,i.textureRect.xy+i.uv*i.textureRect.zw,0.0).a;
   return vec4f(i.color.rgb,alpha*i.color.a);
  }
- if (kind>19.5) {
+ if (kind>22.5) {
+  let radius=min(size.x,size.y)*.38;let radial=length(p);
+  let angle=atan2(p.x,-p.y);let t=((angle+2.35619449+12.56637061)%6.283185307)/4.71238898;
+  let arc=line(radial-radius-5.0,1.8)*select(0.0,1.0,t<=1.0);
+  let cap=1.0-smoothstep(radius-3.0,radius-1.0,radial);
+  let bezel=1.0-smoothstep(radius-1.0,radius+2.0,radial);
+  var rgb=mix(vec3f(.12),vec3f(.68+top*.38),cap);
+  let needle=radialMark(p,-2.35619449+value*4.71238898,radius*.38,radius*.85,1.3);
+  rgb=mix(rgb,vec3f(.08),needle);
+  rgb=mix(rgb,mix(vec3f(.25),i.color.rgb,select(.15,1.0,t<=value)),arc);
+  return vec4f(rgb,max(bezel,arc)*i.color.a);
+ } else if (kind>21.5) {
+  let mask=1.0-smoothstep(min(size.x,size.y)*.44,min(size.x,size.y)*.48,length(p));
+  return vec4f(i.color.rgb,mask*i.color.a);
+ } else if (kind>20.5) {
+  let mask=1.0-smoothstep(0.0,1.0,box(p,size*.5,5.0));
+  return vec4f(vec3f(.17),mask*i.color.a);
+ } else if (kind>19.5) {
   let a=i.textureRect.xy;let b=i.textureRect.zw;let ab=b-a;let q=i.uv*size-a;let t=clamp(dot(q,ab)/max(.001,dot(ab,ab)),0.0,1.0);
   let stroke=1.0-smoothstep(.8,1.8,length(q-ab*t));
   return vec4f(i.color.rgb,stroke*i.color.a);
@@ -834,6 +852,82 @@ export class GpuSurfaceRenderer {
 			)
 		}
 	}
+	private drawEnvelope(w: WidgetVisual, alpha: number): void {
+		const { points, rect, values, maxima, knobs } = envelopeGeometry(
+			w.descriptor,
+			w.value,
+			w.width,
+			w.height
+		)
+		const accent = this.drawingColor
+		this.quad(w.x, w.y, w.width, w.height, 21, 0, -1, 0, 0, alpha)
+		const segment = (a: number[], b: number[], opacity: number) => {
+			const left = Math.min(a[0], b[0]) - 3,
+				top = Math.min(a[1], b[1]) - 3
+			this.quad(
+				w.x + left,
+				w.y + top,
+				Math.abs(b[0] - a[0]) + 6,
+				Math.abs(b[1] - a[1]) + 6,
+				20,
+				0,
+				-1,
+				0,
+				0,
+				opacity,
+				[a[0] - left, a[1] - top, b[0] - left, b[1] - top]
+			)
+		}
+		this.drawingColor = [0.65, 0.65, 0.65]
+		for (let row = 0; row <= 4; row++) {
+			const y = rect.y + (rect.height * row) / 4
+			segment([8, y], [w.width - 8, y], alpha * 0.18)
+		}
+		this.drawingColor = accent
+		const curve = envelopeCurve(points)
+		for (let i = 1; i < curve.length; i++) {
+			segment(curve[i - 1], curve[i], alpha)
+		}
+		for (let i = 0; i < 4; i++) {
+			const [x, y] = points[i + 1],
+				letter = ENVELOPE_STAGES[i][0],
+				knob = knobs[i]
+			this.quad(w.x + x - 12, w.y + y - 12, 24, 24, 22, 0, -1, 0, 0, alpha)
+			this.drawingColor = [0.08, 0.08, 0.08]
+			this.centeredText(letter, w.x + x - 10, w.y + y - 9, 20, alpha, false, 0.85)
+			this.drawingColor = accent
+			this.quad(
+				w.x + knob.x - knob.radius - 7,
+				w.y + knob.y - knob.radius - 7,
+				(knob.radius + 7) * 2,
+				(knob.radius + 7) * 2,
+				23,
+				values[i] / maxima[i],
+				-1,
+				Number(w.active),
+				0,
+				alpha
+			)
+			this.centeredText(
+				letter,
+				w.x + knob.x - 20,
+				w.y + w.height - 40,
+				40,
+				alpha * 0.8,
+				false,
+				0.85
+			)
+			this.centeredText(
+				envelopeText(values[i], i),
+				w.x + 12 + (i * (w.width - 24)) / 4,
+				w.y + w.height - 20,
+				(w.width - 24) / 4,
+				alpha * 0.65,
+				false,
+				0.65
+			)
+		}
+	}
 	private drawVisualiser(w: WidgetVisual, alpha: number): void {
 		const frame = w.visualiser,
 			options = w.descriptor.visualiser
@@ -1043,6 +1137,7 @@ export class GpuSurfaceRenderer {
 					range: 2,
 					toggle: 3,
 					xy: 4,
+					envelope: 8,
 					button: 5,
 					pad: 10,
 					radio: 6,
@@ -1056,7 +1151,9 @@ export class GpuSurfaceRenderer {
 				const dial = dialOptions(
 					w.widget === "rotation" ? { ...w.dial, mode: "rotation" } : (w.dial ?? d.dial)
 				)
-				if (w.widget === "visualiser") {
+				if (w.widget === "envelope") {
+					this.drawEnvelope(w, alpha)
+				} else if (w.widget === "visualiser") {
 					this.drawVisualiser(w, alpha)
 				} else if (w.widget === "strum") {
 					this.strum(w, alpha)
@@ -1288,6 +1385,7 @@ export class GpuSurfaceRenderer {
 						"radio",
 						"relative-keys",
 						"strum",
+						"envelope",
 						"visualiser"
 					].includes(w.widget)
 				) {

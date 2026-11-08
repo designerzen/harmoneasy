@@ -896,3 +896,21 @@
 	opacity: 0;
 	pointer-events: none;
 }
+
+.cs-gpu-ready .cs-semantic.cs-envelope:focus-within {
+	inset: auto 12px 2px;
+	height: 36px !important;
+	padding: 0 !important;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 8px;
+	background: #2b2b2b;
+}
+.cs-gpu-ready .cs-envelope:focus-within > label {
+	font-size: 0;
+}
+.cs-gpu-ready .cs-envelope:focus-within input {
+	min-width: 0;
+	width: 100%;
+	min-height: 32px;
+	font-size: 12px;
+}

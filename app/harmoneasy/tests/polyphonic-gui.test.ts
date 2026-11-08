@@ -56,6 +56,23 @@ afterEach(() => {
 })
 
 describe("PolySynth controls", () => {
+	it("groups ADSR into a surface envelope while retaining individual parameter bindings", async () => {
+		const { synth } = setup()
+		const bindings = await componentBindings(synth, "poly")
+		const envelope = bindings.find((binding) => binding.descriptor.widget === "envelope")!
+		expect(await envelope.read()).toEqual([0.4, 0.9, 0.85, 0.3])
+		await envelope.write([0.12, 0.5, 0.6, 1.2])
+		expect(synth.options).toMatchObject({
+			attack: 0.12,
+			decay: 0.5,
+			sustain: 0.6,
+			release: 1.2
+		})
+		const attack = bindings.find((binding) => binding.descriptor.id === "attack")!
+		expect(attack.read()).toBe(0.12)
+		synth.configure({ sustain: 0.4 })
+		expect(await envelope.read()).toEqual([0.12, 0.5, 0.4, 1.2])
+	})
 	it("binds surface dials directly without constructing or dispatching into the legacy GUI", async () => {
 		const { synth } = setup()
 		const gui = vi.spyOn(synth, "createGui")
@@ -182,13 +199,19 @@ describe("PolySynth controls", () => {
 		expect(shape.value).toBe("sawtooth")
 		shape.value = "triangle"
 		shape.dispatchEvent(new Event(EVENT_CHANGE))
-		const attack = gui.querySelector<HTMLInputElement>('[name="attack"]')!
+		const attack = gui
+			.querySelector("adsr-shaper")!
+			.shadowRoot!.querySelector<HTMLInputElement>('[name="attack"]')!
 		attack.value = "0.25"
 		attack.dispatchEvent(new Event(EVENT_INPUT))
 		expect(synth.options).toMatchObject({ shape: "triangle", attack: 0.25 })
 		expect(attack.getAttribute("aria-valuetext")).toBe("0.25 s")
 		synth.configure({ sustain: 0.4 })
-		expect(gui.querySelector<HTMLInputElement>('[name="sustain"]')!.value).toBe("0.4")
+		expect(
+			gui
+				.querySelector("adsr-shaper")!
+				.shadowRoot!.querySelector<HTMLInputElement>('[name="sustain"]')!.value
+		).toBe("40")
 		await synth.destroyGui()
 		expect(gui.isConnected).toBe(false)
 		attack.value = "1"
@@ -196,7 +219,11 @@ describe("PolySynth controls", () => {
 		expect(synth.options.attack).toBe(0.25)
 		const reopened = await synth.createGui()
 		expect(reopened).not.toBe(gui)
-		expect(reopened.querySelector<HTMLInputElement>('[name="attack"]')!.value).toBe("0.25")
+		expect(
+			reopened
+				.querySelector("adsr-shaper")!
+				.shadowRoot!.querySelector<HTMLInputElement>('[name="attack"]')!.value
+		).toBe("0.25")
 		await synth.destroyGui()
 	})
 

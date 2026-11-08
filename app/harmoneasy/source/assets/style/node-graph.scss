@@ -222,7 +222,6 @@
 	}
 }
 
-
 .node-transformer:has(.transformer-settings) {
 	width: min(23rem, calc(100vw - 3rem));
 	box-sizing: border-box;
@@ -480,7 +479,6 @@
 		padding: calc(var(--pad) * 0.5);
 		margin: 0 auto;
 		color: currentColor;
-
 	}
 
 	> h6 {
@@ -495,7 +493,6 @@
 }
 
 .node-transformer:has(.transformer-controls) {
-
 	&:not(.is-fullscreen) {
 		width: min(36rem, calc(100vw - 3rem));
 		min-width: 0;
@@ -715,6 +712,7 @@
 
 .node-start,
 .node-add-transformer,
+.node-add-control-surface,
 .node-end {
 	--size: 0;
 	width: max-content;
@@ -780,6 +778,10 @@
 
 .node-end {
 	--hue-accent: var(--hue-output);
+}
+
+.node-add-control-surface {
+	--node-accent: var(--col-control);
 }
 
 .node-add-transformer {
@@ -919,7 +921,6 @@
 	width: fit-content;
 }
 
-
 .no-matches {
 	color: var(--col-muted);
 }
@@ -960,8 +961,6 @@
 		}
 	}
 }
-
-
 
 .node-actions {
 	display: flex;
@@ -1261,7 +1260,6 @@ dialog.add-output-dialog {
 	max-width: 100%;
 	min-width: 0;
 }
-
 
 .chain-preset-picker {
 	&,
@@ -3101,7 +3099,6 @@ dialog.add-output-dialog {
 	}
 }
 
-
 .save-preset-dialog {
 	width: min(30rem, calc(100vw - 2rem));
 	h2 {
@@ -3207,6 +3204,14 @@ dialog.add-output-dialog {
 	transform: translate(100%, -50%);
 	padding: 0;
 	pointer-events: none;
+}
+
+.graph-node > .control-connector-label-bottom {
+	top: auto;
+	right: auto;
+	bottom: -11px;
+	left: 80%;
+	transform: translate(-50%, 100%);
 }
 
 .node-value-dialog {

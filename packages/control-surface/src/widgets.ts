@@ -1,3 +1,4 @@
+import { envelopeValues, validEnvelope } from "./envelope"
 import { denormalize, dialOptions, validDialOptions } from "./model"
 import type { ControlDescriptor, DialOptions } from "./types"
 import { musicOptions, musicValues } from "./music"
@@ -86,4 +87,13 @@ export function createStrumControl(
 ): ControlDescriptor {
 	strumOptions(options.strum)
 	return { ...options, widget: "strum", defaultValue: [] }
+}
+export function createEnvelopeControl(
+	options: Omit<ControlDescriptor, "widget">
+): ControlDescriptor {
+	if (!validEnvelope(options.envelope)) {
+		throw new RangeError("Invalid envelope time limits")
+	}
+	const descriptor: ControlDescriptor = { ...options, widget: "envelope" }
+	return { ...descriptor, defaultValue: envelopeValues(descriptor, options.defaultValue) }
 }

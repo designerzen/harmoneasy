@@ -101,12 +101,16 @@ export function InputNode(props: any) {
 			)}
 			{!isFullscreen && (
 				<>
-					<span className="control-connector-label">Controls</span>
+					<span
+						className={`control-connector-label ${isVertical ? "" : "control-connector-label-bottom"}`}
+					>
+						Controls
+					</span>
 					<Handle
 						type="source"
 						id={CONTROL_HANDLE}
-						position={Position.Right}
-						style={{ top: "80%" }}
+						position={isVertical ? Position.Right : Position.Bottom}
+						style={isVertical ? { top: "80%" } : { left: "80%" }}
 						className="control-connector"
 						aria-label={`${input.name} controls`}
 					/>

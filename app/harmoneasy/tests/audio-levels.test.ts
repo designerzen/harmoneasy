@@ -49,16 +49,36 @@ describe("Speaker node", () => {
 		expect(audio[0].deletable).toBe(false)
 		expect(nodes.some((node) => node.id === audio[0].source)).toBe(true)
 	})
-	it("keeps saved control surfaces after the speaker column", () => {
-		const { nodes } = getStructure({
-			...chainWith([device("Synth", true)]),
-			options: { controlSurfaces: [{ id: "a", name: "A", connections: [] }] }
-		})
-		const column = (type: string) =>
-			nodes.find((node) => node.type === type)!.data.layoutColumn as number
-		expect(column("controlSurface")).toBeGreaterThan(column("speaker"))
-		expect(column("speaker")).toBeGreaterThan(column("output"))
-	})
+	it.each(["horizontal", "vertical"])(
+		"places surfaces and their picker beside routing in %s mode",
+		(mode) => {
+			const { nodes, edges } = getStructure(
+				{
+					...chainWith([device("Synth", true)]),
+					options: { controlSurfaces: [{ id: "a", name: "A", connections: [] }] }
+				},
+				true,
+				true,
+				mode
+			)
+			const controls = nodes.filter((n) =>
+				["controlSurface", "addControlSurface"].includes(n.type!)
+			)
+			const routing = nodes.filter((n) => !controls.includes(n))
+			for (const control of controls) {
+				for (const route of routing) {
+					const axis = mode === "horizontal" ? "y" : "x"
+					expect(control.position[axis]).toBeGreaterThan(route.position[axis] + 240)
+				}
+			}
+			const speaker = nodes.find((n) => n.type === "speaker")!
+			expect(edges.some((e) => e.source === speaker.id)).toBe(false)
+			expect(nodes.find((n) => n.type === "addControlSurface")).toMatchObject({
+				draggable: false,
+				deletable: false
+			})
+		}
+	)
 	it("recognises a tappable node without a declared audio output", () => {
 		expect(hasAudibleOutput({ output: audioNode() } as any)).toBe(true)
 		expect(hasAudibleOutput({ output: { name: "webmidi port" } } as any)).toBe(false)

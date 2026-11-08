@@ -1,3 +1,4 @@
+import { envelopeValues, validEnvelope } from "./envelope"
 import { validVisualiser } from "./visualiser"
 import { choiceWidget, directDescriptor } from "./choices"
 export { directDescriptor } from "./choices"
@@ -56,6 +57,7 @@ export const WIDGET_TYPES: WidgetType[] = [
 	"radio",
 	"select",
 	"xy",
+	"envelope",
 	"range",
 	"button",
 	"pad",
@@ -111,6 +113,17 @@ export function validateValue(d: ControlDescriptor, value: ControlValue): Contro
 	}
 	if (d.widget === "button") {
 		return value
+	}
+	if (d.widget === "envelope") {
+		if (
+			!validEnvelope(d.envelope) ||
+			!Array.isArray(value) ||
+			value.length !== 4 ||
+			!value.every(Number.isFinite)
+		) {
+			throw new Error(`${d.label} requires four finite ADSR values and valid time limits`)
+		}
+		return envelopeValues(d, value)
 	}
 	if (isMusicGrid(d.widget)) {
 		const { steps, pitches } = musicOptions(d.widget, d.music)
