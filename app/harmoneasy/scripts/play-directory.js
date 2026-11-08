@@ -212,7 +212,7 @@ export function playDirectoryHtml(songs, base, catalogueUrl = `${base}play/catal
 		)
 		.join("\n")
 	return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Play a melody · Harmoneasy</title>
-<script>if(new URLSearchParams(location.search).has("play")){location.replace(${JSON.stringify(base)}+location.search+location.hash)}</script>
+<script>const requestedPlay = new URLSearchParams(location.search).get("play");if(requestedPlay && requestedPlay.split("/").filter(Boolean).length > 1){location.replace(${JSON.stringify(base)}+location.search+location.hash)}</script>
 <style>${tokens}
 *{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;background:var(--col-bg);color:var(--col-fg);font:16px/1.5 system-ui,sans-serif}main,header{max-width:1100px;margin:auto;padding:24px}header{display:flex;justify-content:space-between;border-bottom:1px solid var(--col-line-strong)}a{color:var(--col-accent);text-underline-offset:4px}h1{font-size:clamp(32px,5vw,56px);line-height:1.1;margin:20px 0}h2{font-size:22px;line-height:1.3}h2 a{color:var(--col-fg);text-decoration:none}p,.tag{color:var(--col-muted)}form{display:grid;grid-template-columns:2fr repeat(3,1fr);gap:12px;margin:28px 0 16px}label{display:grid;gap:6px}input,select,button{font:inherit;background:var(--col-surface);color:var(--col-fg);border:1px solid var(--col-line-strong);border-radius:8px;padding:12px;min-width:0}button{cursor:pointer}.bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.tracks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}article{display:flex;flex-direction:column;border:1px solid var(--col-line-strong);background:var(--col-surface);border-radius:12px;padding:24px}article p{margin-top:0}.open{margin-top:auto;padding-top:20px}.tag{font-size:13px}.empty{padding:32px 0}:focus-visible{outline:2px solid var(--col-accent);outline-offset:4px}.more{display:inline-block;margin-top:24px}@media(max-width:760px){form{grid-template-columns:1fr 1fr}.tracks{grid-template-columns:1fr 1fr}label:first-child{grid-column:1/-1}}@media(max-width:480px){.tracks{grid-template-columns:1fr}main,header{padding:18px}}
 </style></head><body><header><a href="${base}">Harmoneasy</a><a href="${base}presets/">All presets</a></header>
@@ -222,6 +222,15 @@ export function playDirectoryHtml(songs, base, catalogueUrl = `${base}play/catal
 <script type="module">${mountPlayDirectory.toString()}
 ${loadPlayDirectory.toString()}
 const root = document.querySelector("main");
+const playPath = ${JSON.stringify(`${base}play/`)};
+const artistPath = new URLSearchParams(location.search).get("play") || (location.pathname.startsWith(playPath) ? location.pathname.slice(playPath.length) : "");
+const artistSegments = artistPath.split("/").filter(Boolean);
+if (artistSegments.length === 1 && artistSegments[0] !== "index.html") {
+ const artist = decodeURIComponent(artistSegments[0]).replace(/[-_+]+/g," ");
+ root.querySelector('[name="q"]').value = artist;
+ root.querySelector("h1").textContent = "Songs matching “" + artist + "”";
+ document.title = "Songs matching " + artist + " · Harmoneasy";
+}
 mountPlayDirectory(root);
 loadPlayDirectory(root, ${JSON.stringify(catalogueUrl).replaceAll("<", "\\u003c")});</script></body></html>`
 }

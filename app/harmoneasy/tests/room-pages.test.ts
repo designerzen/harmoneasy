@@ -37,6 +37,9 @@ describe("static room pages", () => {
 		expect(response.end).toHaveBeenCalledWith(expect.stringContaining("Play this track"))
 		handler({ url: "/harmoneasy/play/?play=abba" }, response, next)
 		handler({ url: "/harmoneasy/play/abba/" }, response, next)
+		expect(next).not.toHaveBeenCalled()
+		handler({ url: "/harmoneasy/play/abba/sos/" }, response, next)
+		handler({ url: "/harmoneasy/play/?play=abba%2Fsos" }, response, next)
 		expect(next).toHaveBeenCalledTimes(2)
 	})
 	it("passes static song redirects through to the application with their query and hash", () => {

@@ -82,14 +82,14 @@ export function roomPagesPlugin() {
 					response.end(assets.json)
 					return
 				}
-				if (
-					![`${base}play`, `${base}play/`, `${base}play/index.html`].includes(
-						url.pathname
-					) ||
-					url.searchParams.has("play")
-				) {
-					return next()
-				}
+    const playRoot = `${base}play/`
+    const suffix = url.pathname.startsWith(playRoot) ? url.pathname.slice(playRoot.length).replace(/\/$/, "") : ""
+    const indexPath = [`${base}play`, playRoot, `${playRoot}index.html`].includes(url.pathname)
+    const artistPath = url.pathname.startsWith(playRoot) && suffix && !suffix.includes("/") && suffix !== "index.html"
+    const redirected = url.searchParams.get("play")?.split("/").filter(Boolean) ?? []
+    if ((!indexPath && !artistPath) || redirected.length > 1) {
+     return next()
+    }
 				response.setHeader("Content-Type", "text/html; charset=utf-8")
 				response.end(directory().html)
 			})
