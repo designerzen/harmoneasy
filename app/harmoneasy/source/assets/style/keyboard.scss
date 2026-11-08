@@ -147,10 +147,29 @@
 	}
 }
 
+.keyboard-input-gui {
+	display: grid;
+	gap: 0.75rem;
+	min-width: 0;
+	padding: 0.75rem;
+}
+
 .keyboard-input-settings {
 	display: grid;
 	gap: 0.5rem;
-	padding: 0.75rem;
+	min-width: 0;
+
+	summary {
+		cursor: pointer;
+		padding-block: 0.5rem;
+		font-weight: 600;
+	}
+
+	.keyboard-binding-editor {
+		display: grid;
+		gap: 0.75rem;
+		padding-block: 0.5rem;
+	}
 
 	p {
 		margin: 0;
@@ -182,7 +201,7 @@
 	--key-size: 40px;
 	--key-spacing: 2px;
 	--row-spacing: 8px;
-		--key-active-color: var(--col-success);
+	--key-active-color: var(--col-success);
 
 	pointer-events: all;
 	user-select: none;
@@ -209,11 +228,9 @@
 		stroke: var(--key-edge);
 		transition: fill 50ms linear;
 
-
 		&.active {
 			fill: var(--key-active-color) !important;
 		}
-
 	}
 
 	.qwerty-key-label {
@@ -232,7 +249,6 @@
 	}
 	.qwerty-key-group {
 		cursor: pointer;
-
 	}
 }
 

@@ -6,7 +6,8 @@ import { NOTE_ON, NOTE_OFF, PLAYBACK_TOGGLE, TEMPO_TAP } from "../../../packages
 import {
 	EVENT_KEY_DOWN,
 	EVENT_KEY_UP,
-	EVENT_BLUR
+	EVENT_BLUR,
+	EVENT_TOGGLE
 } from "../../../packages/audiobus/event-constants"
 import { defineDevice, deviceDefinition } from "../../../packages/audiobus/io/device-definition"
 
@@ -85,6 +86,9 @@ it("selects and learns bindings without emitting commands, including duplicate k
 	})
 	const gui = await input.createGui()
 	document.body.append(gui)
+	const settings = gui.querySelector("details")!
+	settings.open = true
+	settings.dispatchEvent(new Event(EVENT_TOGGLE))
 	const select = gui.querySelector<HTMLSelectElement>('select[aria-label="Key"]')!
 	select.value = "c"
 	select.dispatchEvent(new Event("change"))
@@ -114,4 +118,59 @@ it("rejects malformed serialized bindings", () => {
 			]
 		}).bindings
 	).toEqual([])
+})
+
+it("starts with a playable keyboard and no per-key editor", async () => {
+	const { input, dispatch } = setup()
+	const gui = await input.createGui()
+	document.body.append(gui)
+	expect(gui.querySelector(".qwerty-keyboard")).not.toBeNull()
+	expect(gui.querySelector("fieldset")).toBeNull()
+	key("q")
+	key("q", EVENT_KEY_UP)
+	expect(dispatch.mock.calls.map(([command]) => command.type)).toEqual([NOTE_ON, NOTE_OFF])
+	const mode = gui.querySelector<HTMLSelectElement>('select[aria-label="Operating mode"]')!
+	mode.value = "custom"
+	mode.dispatchEvent(new Event("change"))
+	expect(input.configuration.bindings.length).toBeGreaterThan(40)
+	expect(gui.querySelector("fieldset")).toBeNull()
+	const settings = gui.querySelector("details")!
+	settings.open = true
+	settings.dispatchEvent(new Event(EVENT_TOGGLE))
+	expect(gui.querySelectorAll("fieldset")).toHaveLength(1)
+	key("q")
+	key("q", EVENT_KEY_UP)
+	expect(dispatch.mock.calls.map(([command]) => [command.type, command.value])).toEqual([
+		[NOTE_ON, 41],
+		[NOTE_OFF, 41],
+		[NOTE_ON, 41],
+		[NOTE_OFF, 41]
+	])
+})
+
+it("keeps saved custom mappings collapsed and edits the selected binding", async () => {
+	const { input } = setup({
+		mode: "custom",
+		bindings: [
+			{ key: "a", command: NOTE_ON, value: 60 },
+			{ key: "b", command: NOTE_ON, value: 62 }
+		]
+	})
+	const gui = await input.createGui()
+	document.body.append(gui)
+	expect(gui.querySelector("fieldset")).toBeNull()
+	const settings = gui.querySelector("details")!
+	settings.open = true
+	settings.dispatchEvent(new Event(EVENT_TOGGLE))
+	const picker = gui.querySelector<HTMLSelectElement>('select[aria-label="Edit binding"]')!
+	picker.value = "1"
+	picker.dispatchEvent(new Event("change"))
+	const value = gui.querySelector<HTMLInputElement>('input[aria-label="Value"]')!
+	value.value = "70"
+	value.dispatchEvent(new Event("change"))
+	expect(input.configuration.bindings).toEqual([
+		{ key: "a", command: NOTE_ON, value: 60 },
+		{ key: "b", command: NOTE_ON, value: 70 }
+	])
+	expect(gui.querySelectorAll("fieldset")).toHaveLength(1)
 })

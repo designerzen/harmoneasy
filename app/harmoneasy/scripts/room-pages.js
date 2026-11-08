@@ -1,16 +1,80 @@
 export function roomFallbackHtml(roomPath, playPath) {
 	const target = JSON.stringify(roomPath).replace(/</g, "\\u003c")
 	const play = JSON.stringify(playPath).replace(/</g, "\\u003c")
+	const tokens = readFileSync(
+		resolve(import.meta.dirname, "../source/assets/style/tokens.css"),
+		"utf8"
+	)
 	return `<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Open Harmoneasy</title>
+  <meta name="color-scheme" content="light dark">
+  <title>Loading Harmoneasy</title>
+  <style>
+    ${tokens}
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      min-height: 100svh;
+      display: grid;
+      place-items: center;
+      background: var(--col-bg);
+      color: var(--col-fg);
+      font: 16px/1.5 system-ui, sans-serif;
+      text-align: center;
+    }
+    main { padding: 32px 24px; }
+    .equalizer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      height: 64px;
+      margin-bottom: 24px;
+      color: var(--col-accent);
+    }
+    .equalizer span {
+      width: 6px;
+      height: 48px;
+      border-radius: 3px;
+      background: currentColor;
+      animation: equalize 1s ease-in-out infinite;
+    }
+    .equalizer span:nth-child(2) { animation-delay: -0.8s; }
+    .equalizer span:nth-child(3) { animation-delay: -0.6s; }
+    .equalizer span:nth-child(4) { animation-delay: -0.4s; }
+    .equalizer span:nth-child(5) { animation-delay: -0.2s; }
+    h1 { margin: 0; font-size: 24px; font-weight: 600; }
+    p { margin: 12px 0 0; color: var(--col-muted); }
+    a { color: var(--col-muted); text-underline-offset: 4px; font-size: 14px; }
+    a:hover { color: var(--col-accent); }
+    a:focus-visible { outline: 2px solid var(--col-accent); outline-offset: 6px; }
+    noscript { display: block; margin-top: 16px; }
+    @keyframes equalize {
+      0%, 100% { transform: scaleY(0.3); }
+      50% { transform: scaleY(1); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .equalizer span { animation: none; transform: scaleY(0.4); }
+      .equalizer span:nth-child(2n) { transform: scaleY(0.7); }
+      .equalizer span:nth-child(3) { transform: scaleY(1); }
+    }
+  </style>
 </head>
 <body>
-  <p>Opening Harmoneasy…</p>
-  <p><a id="room-link">Open Harmoneasy</a></p>
+  <main>
+    <div role="status" aria-live="polite">
+      <div class="equalizer" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <h1>Loading Harmoneasy…</h1>
+    </div>
+    <p><a id="room-link">Open Harmoneasy</a></p>
+    <noscript>Enable JavaScript to use Harmoneasy.</noscript>
+  </main>
   <script>
     const play = ${play};
     const playing = location.pathname.startsWith(play);
@@ -24,7 +88,6 @@ export function roomFallbackHtml(roomPath, playPath) {
     document.getElementById('room-link').href = destination.href;
     location.replace(destination.href);
   </script>
-  <noscript>Enable JavaScript to use Harmoneasy.</noscript>
 </body>
 </html>
 `
