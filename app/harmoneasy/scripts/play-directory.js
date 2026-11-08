@@ -14,6 +14,32 @@ const escapeHtml = (value) =>
 			})[char]
 	)
 
+export function playArtistEntries(songs) {
+	const groups = new Map()
+	for (const song of songs) {
+		if (!song.artist || song.artist === "Not specified") {
+			continue
+		}
+		const key = song.artist.toLowerCase()
+		if (!groups.has(key)) {
+			groups.set(key, {
+				name: song.artist,
+				artist: song.artist,
+				category: song.category,
+				categories: [],
+				count: 0,
+				route: `play/${encodeURIComponent(key.replace(/\s+/g, "-"))}`
+			})
+		}
+		const group = groups.get(key)
+		group.count++
+		if (!group.categories.includes(song.category)) {
+			group.categories.push(song.category)
+		}
+	}
+	return [...groups.values()]
+}
+
 export function playDirectoryCatalogue(songs) {
 	const artists = [...new Set(songs.map((song) => song.artist))].sort()
 	const categories = [...new Set(songs.map((song) => song.category))].sort()
@@ -64,7 +90,11 @@ export async function loadPlayDirectory(root, url, fetcher = fetch) {
 			}
 			select.value = selected
 		}
-		mountPlayDirectory(root, songs, data.artistOrder)
+		mountPlayDirectory(
+			root,
+			root.dataset.view === "artists" ? playArtistEntries(songs) : songs,
+			root.dataset.view === "artists" ? undefined : data.artistOrder
+		)
 		const retry = root.querySelector(".retry")
 		if (retry) {
 			retry.hidden = true
@@ -115,18 +145,18 @@ export function mountPlayDirectory(root, songs, artistOrder) {
 				const card = document.createElement("article")
 				const tag = document.createElement("span")
 				tag.className = "tag"
-				tag.textContent = song.category
+				tag.textContent = song.count ? `${song.count} tracks` : song.category
 				const heading = document.createElement("h2")
 				const link = document.createElement("a")
 				link.href = `${root.dataset.base}${song.route}/`
 				link.textContent = song.name
 				heading.append(link)
 				const credit = document.createElement("p")
-				credit.textContent = song.artist
+				credit.textContent = song.count ? song.categories.join(" · ") : song.artist
 				const open = document.createElement("a")
 				open.className = "open"
 				open.href = link.href
-				open.textContent = "Play this track →"
+				open.textContent = song.count ? "Browse songs →" : "Play this track →"
 				card.append(tag, heading, credit, open)
 				list.append(card)
 			}
@@ -141,7 +171,7 @@ export function mountPlayDirectory(root, songs, artistOrder) {
 		}
 		const count = matches.length
 		root.querySelector('[role="status"]').textContent =
-			`${count.toLocaleString()} ${count === 1 ? "track" : "tracks"}`
+			`${count.toLocaleString()} ${root.dataset.view === "artists" ? (count === 1 ? "artist" : "artists") : count === 1 ? "track" : "tracks"}`
 		root.querySelector(".empty").hidden = count !== 0
 		const previous = root.querySelector(".previous")
 		const next = root.querySelector(".next")
@@ -158,12 +188,14 @@ export function mountPlayDirectory(root, songs, artistOrder) {
 			(song) =>
 				words.every((word) => searchText.get(song).includes(word)) &&
 				(!artist.value || artist.value === song.artist) &&
-				(!category.value || category.value === song.category)
+				(!category.value ||
+					category.value === song.category ||
+					song.categories?.includes(category.value))
 		)
 		page = 0
 		render()
 		const more = root.querySelector(".more")
-		more.hidden = !search.value.trim()
+		more.hidden = root.dataset.view === "artists" || !search.value.trim()
 		more.href = `${root.dataset.base}play/${encodeURIComponent(search.value.trim().replace(/\s+/g, "-"))}/`
 	}
 	form.oninput = update
@@ -202,13 +234,14 @@ export function playDirectoryHtml(songs, base, catalogueUrl = `${base}play/catal
 			.sort()
 			.map((value) => `<option>${escapeHtml(value)}</option>`)
 			.join("")
-	const cards = songs
+	const artists = playArtistEntries(songs).sort((a, b) => a.name.localeCompare(b.name))
+	const cards = artists
 		.slice(0, 60)
 		.map(
 			(
 				song
 			) => `<article data-title="${escapeHtml(song.name)}" data-search="${escapeHtml(`${song.name} ${song.artist} ${song.category}`.toLowerCase())}" data-artist="${escapeHtml(song.artist)}" data-category="${escapeHtml(song.category)}">
-<span class="tag">${escapeHtml(song.category)}</span><h2><a href="${escapeHtml(`${base}${song.route}/`)}">${escapeHtml(song.name)}</a></h2><p>${escapeHtml(song.artist)}</p><a class="open" href="${escapeHtml(`${base}${song.route}/`)}">Play this track →</a></article>`
+<span class="tag">${song.count} tracks</span><h2><a href="${escapeHtml(`${base}${song.route}/`)}">${escapeHtml(song.name)}</a></h2><p>${escapeHtml(song.artist)}</p><a class="open" href="${escapeHtml(`${base}${song.route}/`)}">Browse songs →</a></article>`
 		)
 		.join("\n")
 	return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Play a melody · Harmoneasy</title>
@@ -216,10 +249,11 @@ export function playDirectoryHtml(songs, base, catalogueUrl = `${base}play/catal
 <style>${tokens}
 *{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;background:var(--col-bg);color:var(--col-fg);font:16px/1.5 system-ui,sans-serif}main,header{max-width:1100px;margin:auto;padding:24px}header{display:flex;justify-content:space-between;border-bottom:1px solid var(--col-line-strong)}a{color:var(--col-accent);text-underline-offset:4px}h1{font-size:clamp(32px,5vw,56px);line-height:1.1;margin:20px 0}h2{font-size:22px;line-height:1.3}h2 a{color:var(--col-fg);text-decoration:none}p,.tag{color:var(--col-muted)}form{display:grid;grid-template-columns:2fr repeat(3,1fr);gap:12px;margin:28px 0 16px}label{display:grid;gap:6px}input,select,button{font:inherit;background:var(--col-surface);color:var(--col-fg);border:1px solid var(--col-line-strong);border-radius:8px;padding:12px;min-width:0}button{cursor:pointer}.bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.tracks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}article{display:flex;flex-direction:column;border:1px solid var(--col-line-strong);background:var(--col-surface);border-radius:12px;padding:24px}article p{margin-top:0}.open{margin-top:auto;padding-top:20px}.tag{font-size:13px}.empty{padding:32px 0}:focus-visible{outline:2px solid var(--col-accent);outline-offset:4px}.more{display:inline-block;margin-top:24px}@media(max-width:760px){form{grid-template-columns:1fr 1fr}.tracks{grid-template-columns:1fr 1fr}label:first-child{grid-column:1/-1}}@media(max-width:480px){.tracks{grid-template-columns:1fr}main,header{padding:18px}}
 </style></head><body><header><a href="${base}">Harmoneasy</a><a href="${base}presets/">All presets</a></header>
-<main data-base="${escapeHtml(base)}"><h1>Play a melody.</h1><p>Pick a track, then press any playing key to advance its melody. You set the rhythm. Browse ${songs.length.toLocaleString()} tracks; BitMidi tracks download when you open them.</p>
-<form role="search"><label>Search tracks<input type="search" name="q" placeholder="Song title or artist…" autocomplete="off"></label><label>Artist<select name="artist"><option value="">All artists</option>${options("artist")}</select></label><label>Collection<select name="category"><option value="">All collections</option>${options("category")}</select></label><label>Sort by<select name="sort"><option value="title">Title</option><option value="artist">Artist</option></select></label></form>
-<div class="bar"><span role="status" aria-live="polite">${songs.length.toLocaleString()} tracks</span><button type="button">Clear filters</button></div><div class="tracks">${cards}</div><nav aria-label="Track pages" class="bar"><button class="previous" type="button">Previous</button><span class="page-number"></span><button class="next" type="button">Next</button></nav><button type="button" class="retry" hidden>Retry loading catalogue</button><p class="empty" hidden>No tracks match. Try another search or clear the filters.</p><a class="more" hidden>Find more matching songs on BitMidi →</a><noscript><p>Enable JavaScript to search and filter. The first 60 track links work without it; enable JavaScript to browse the full catalogue.</p></noscript></main>
-<script type="module">${mountPlayDirectory.toString()}
+<main data-base="${escapeHtml(base)}" data-view="artists"><h1>Find an artist.</h1><p>Browse artists, choose a song, then play its melody one note at a time. Explore ${songs.length.toLocaleString()} tracks.</p>
+<form role="search"><label><span class="search-label">Search artists</span><input type="search" name="q" placeholder="Song title or artist…" autocomplete="off"></label><label class="artist-filter" hidden>Artist<select name="artist"><option value="">All artists</option>${options("artist")}</select></label><label>Collection<select name="category"><option value="">All collections</option>${options("category")}</select></label><label>Sort by<select name="sort"><option value="title">Title</option><option value="artist">Artist</option></select></label></form>
+<div class="bar"><span role="status" aria-live="polite">${artists.length.toLocaleString()} artists</span><button type="button">Clear filters</button></div><div class="tracks">${cards}</div><nav aria-label="Track pages" class="bar"><button class="previous" type="button">Previous</button><span class="page-number"></span><button class="next" type="button">Next</button></nav><button type="button" class="retry" hidden>Retry loading catalogue</button><p class="empty" hidden>No results match. Try another search or clear the filters.</p><a class="more" hidden>Find more matching songs on BitMidi →</a><noscript><p>Enable JavaScript to search and filter. The first 60 track links work without it; enable JavaScript to browse the full catalogue.</p></noscript></main>
+<script type="module">${playArtistEntries.toString()}
+${mountPlayDirectory.toString()}
 ${loadPlayDirectory.toString()}
 const root = document.querySelector("main");
 const playPath = ${JSON.stringify(`${base}play/`)};
@@ -227,6 +261,9 @@ const artistPath = new URLSearchParams(location.search).get("play") || (location
 const artistSegments = artistPath.split("/").filter(Boolean);
 if (artistSegments.length === 1 && artistSegments[0] !== "index.html") {
  const artist = decodeURIComponent(artistSegments[0]).replace(/[-_+]+/g," ");
+ root.dataset.view = "tracks";
+ root.querySelector(".search-label").textContent = "Search tracks";
+ root.querySelector(".artist-filter").hidden = false;
  root.querySelector('[name="q"]').value = artist;
  root.querySelector("h1").textContent = "Songs matching “" + artist + "”";
  document.title = "Songs matching " + artist + " · Harmoneasy";

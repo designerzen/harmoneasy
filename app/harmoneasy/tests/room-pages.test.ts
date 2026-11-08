@@ -2,9 +2,55 @@ import { describe, expect, it, vi } from "vitest"
 import { runInNewContext } from "node:vm"
 import { roomFallbackHtml, roomPagesPlugin } from "../scripts/room-pages.js"
 import { playDirectoryHtml } from "../scripts/play-directory.js"
+import { Window } from "happy-dom"
 import { readFileSync } from "node:fs"
 
 describe("static room pages", () => {
+	it.each(["/harmoneasy/play/", "/harmoneasy/play/abba/", "/harmoneasy/play/?play=abba"])(
+		"renders the artist directory or actual song links at %s without starting the app",
+		async (path) => {
+			const plugin = roomPagesPlugin()
+			plugin.configResolved({ base: "/harmoneasy/" })
+			const assets = new Map<string, string>()
+			plugin.generateBundle.call(
+				{
+					emitFile(asset: any) {
+						assets.set(asset.fileName, asset.source)
+					}
+				},
+				{},
+				{ "index.html": { type: "asset", source: "APP START SCREEN" } }
+			)
+			const html = assets.get("play/index.html")!
+			const window = new Window({ url: `https://example.test${path}` })
+			window.document.body.innerHTML = html
+			const script = html.match(/<script type="module">([\s\S]*?)<\/script>/)![1]
+			runInNewContext(script, {
+				document: window.document,
+				location: window.location,
+				URLSearchParams,
+				fetch: async (url: string) =>
+					Response.json(JSON.parse(assets.get(url.replace("/harmoneasy/", ""))!))
+			})
+			await vi.waitFor(() =>
+				expect(window.document.querySelector('[role="status"]')?.textContent).not.toBe(
+					"Loading full catalogue…"
+				)
+			)
+			const links = [...window.document.querySelectorAll<HTMLAnchorElement>("h2 a")]
+			expect(links.length).toBeGreaterThan(0)
+			if (path === "/harmoneasy/play/") {
+				expect(window.document.querySelector("h1")?.textContent).toBe("Find an artist.")
+				expect(links.some((link) => link.textContent === "ABBA")).toBe(true)
+			} else {
+				expect(links.every((link) => link.href.includes("/play/bitmidi/"))).toBe(true)
+				expect(links.some((link) => /dancing/i.test(link.textContent ?? ""))).toBe(true)
+			}
+			expect(html).not.toContain("APP START SCREEN")
+			await window.happyDOM.close()
+		}
+	)
+
 	it("ships thousands of distinct real BitMidi records with exact play links", () => {
 		const catalogue = JSON.parse(readFileSync("public/midi/bitmidi-catalogue.json", "utf8"))
 		expect(catalogue.songs.length).toBeGreaterThanOrEqual(9000)
@@ -34,7 +80,7 @@ describe("static room pages", () => {
 		const response = { setHeader: vi.fn(), end: vi.fn() }
 		const next = vi.fn()
 		handler({ url: "/harmoneasy/play/" }, response, next)
-		expect(response.end).toHaveBeenCalledWith(expect.stringContaining("Play this track"))
+		expect(response.end).toHaveBeenCalledWith(expect.stringContaining("Browse songs"))
 		handler({ url: "/harmoneasy/play/?play=abba" }, response, next)
 		handler({ url: "/harmoneasy/play/abba/" }, response, next)
 		expect(next).not.toHaveBeenCalled()
@@ -67,7 +113,7 @@ describe("static room pages", () => {
 		expect(emitFile).toHaveBeenCalledWith({
 			type: "asset",
 			fileName: "play/index.html",
-			source: expect.stringContaining("Search tracks")
+			source: expect.stringContaining("Search artists")
 		})
 		const assets = emitFile.mock.calls.map(([asset]) => asset)
 		const catalogue = assets.find((asset) =>

@@ -45,7 +45,11 @@ export function roomPagesPlugin() {
 		const catalogue = JSON.parse(remoteJson)
 		const songs = catalogue.songs.map((song) => ({
 			name: song.name.replace(/\.(mid|midi)$/i, ""),
-			artist: song.name.includes(" - ") ? song.name.split(" - ")[0] : "Not specified",
+			artist: /^abba[-_. ]/i.test(song.name)
+				? "ABBA"
+				: song.name.includes(" - ")
+					? song.name.split(" - ")[0]
+					: "Not specified",
 			category: "BitMidi catalogue",
 			route: `play/bitmidi/${song.slug}`
 		}))
@@ -82,14 +86,22 @@ export function roomPagesPlugin() {
 					response.end(assets.json)
 					return
 				}
-    const playRoot = `${base}play/`
-    const suffix = url.pathname.startsWith(playRoot) ? url.pathname.slice(playRoot.length).replace(/\/$/, "") : ""
-    const indexPath = [`${base}play`, playRoot, `${playRoot}index.html`].includes(url.pathname)
-    const artistPath = url.pathname.startsWith(playRoot) && suffix && !suffix.includes("/") && suffix !== "index.html"
-    const redirected = url.searchParams.get("play")?.split("/").filter(Boolean) ?? []
-    if ((!indexPath && !artistPath) || redirected.length > 1) {
-     return next()
-    }
+				const playRoot = `${base}play/`
+				const suffix = url.pathname.startsWith(playRoot)
+					? url.pathname.slice(playRoot.length).replace(/\/$/, "")
+					: ""
+				const indexPath = [`${base}play`, playRoot, `${playRoot}index.html`].includes(
+					url.pathname
+				)
+				const artistPath =
+					url.pathname.startsWith(playRoot) &&
+					suffix &&
+					!suffix.includes("/") &&
+					suffix !== "index.html"
+				const redirected = url.searchParams.get("play")?.split("/").filter(Boolean) ?? []
+				if ((!indexPath && !artistPath) || redirected.length > 1) {
+					return next()
+				}
 				response.setHeader("Content-Type", "text/html; charset=utf-8")
 				response.end(directory().html)
 			})
