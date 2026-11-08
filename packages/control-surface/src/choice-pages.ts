@@ -54,6 +54,7 @@ export function createChoicePages(
 		columns = 1,
 		rows = choices.length || 1,
 		height = 160,
+		available = 160,
 		gap = 11,
 		revision = 0,
 		selected = -1
@@ -152,6 +153,7 @@ export function createChoicePages(
 		apply(choices[target].value)
 	})
 	const resize = (width: number, availableHeight: number, scale: number) => {
+		available = availableHeight
 		const nextGap = 11 / scale,
 			target = 44 / scale
 		const nextColumns = Math.max(
@@ -192,10 +194,12 @@ export function createChoicePages(
 		}
 		show()
 	}
+	// Only width is observed: until the GPU layer is ready the panel's height is its own grid
+	// plus a gap, so feeding it back grew the grid by one gap every frame.
 	const observer = new ResizeObserver(() => {
 		const width = element.clientWidth
 		if (width) {
-			resize(width, element.clientHeight, element.getBoundingClientRect().width / width || 1)
+			resize(width, available, element.getBoundingClientRect().width / width || 1)
 		}
 	})
 	show()
