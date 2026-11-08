@@ -1370,6 +1370,9 @@ export class ControlSurface {
 			"Layout arranged to reduce empty space and keep related controls together"
 	}
 	private layout(): void {
+		// Detached, the stage would measure the whole window and stretch every gadget for a
+		// frame. Keep the last page height; the frame loop measures again once attached.
+		const attached = this.element.isConnected
 		this.pointerRect = undefined
 		const width = this.stage.clientWidth || 640,
 			screenWidth = Math.min(this.stage.getBoundingClientRect().width || width, innerWidth),
@@ -1384,7 +1387,7 @@ export class ControlSurface {
 			this.toolbar.getBoundingClientRect().width / this.toolbar.offsetWidth || 1
 		this.layoutScale = scale
 		this.layoutToolbarScale = toolbarScale
-		this.layoutViewportHeight = innerHeight
+		this.layoutViewportHeight = attached ? innerHeight : -1
 		this.element.style.setProperty("--cs-target", `${44 / scale}px`)
 		this.element.style.setProperty("--cs-gap", `${11 / scale}px`)
 		this.element.style.setProperty("--cs-pager", `${55 / scale}px`)
@@ -1392,13 +1395,13 @@ export class ControlSurface {
 		this.toolbar.style.setProperty("--cs-gap", `${11 / toolbarScale}px`)
 		// Measure the actual footer and panel boundary instead of discarding a
 		// percentage of the display. Explicitly bounded hosts can be smaller than it.
+		// A fixed overlay already covers the page, so the body's footer padding does not apply.
 		const bodyStyle = getComputedStyle(document.body)
-		let bottom =
-			innerHeight -
-			(parseFloat(bodyStyle.paddingBottom) || 0) -
-			(parseFloat(bodyStyle.marginBottom) || 0)
+		let bottom = innerHeight,
+			overlay = false
 		for (let host = this.element.parentElement; host; host = host.parentElement) {
 			const style = getComputedStyle(host)
+			overlay ||= style.position === "fixed"
 			if (
 				[style.overflowY, style.overflow].some((value) =>
 					["hidden", "clip", "auto", "scroll"].includes(value)
@@ -1421,27 +1424,37 @@ export class ControlSurface {
 				}
 			}
 		}
+		if (!overlay) {
+			bottom -=
+				(parseFloat(bodyStyle.paddingBottom) || 0) + (parseFloat(bodyStyle.marginBottom) || 0)
+		}
 		this.pageNavigation.hidden = false
 		const footer = this.pageNavigation.getBoundingClientRect().height || 44
 		const padding = parseFloat(getComputedStyle(this.element).paddingBottom) || 0
 		const keyHeight = this.sourceKey.getBoundingClientRect().height
 		const statusHeight = this.status.getBoundingClientRect().height
-		this.pageHeight = Math.max(
-			1,
-			(bottom -
-				Math.max(0, stageRect.top) -
-				padding * scale -
-				keyHeight -
-				(keyHeight ? 8 * scale : 0) -
-				statusHeight -
-				(statusHeight ? 6 * scale : 0)) /
-				scale
-		)
+		if (attached) {
+			this.pageHeight = Math.max(
+				1,
+				(bottom -
+					Math.max(0, stageRect.top) -
+					padding * scale -
+					keyHeight -
+					(keyHeight ? 8 * scale : 0) -
+					statusHeight -
+					(statusHeight ? 6 * scale : 0)) /
+					scale
+			)
+		}
 		const widgets = this.layoutItems()
-		let layout = layoutWidgets(widgets, width, screenWidth, this.pageHeight, scale)
+		let pageHeight = this.pageHeight
+		let layout = layoutWidgets(widgets, width, screenWidth, pageHeight, scale)
 		if (layout.pages > 1) {
-			this.pageHeight = Math.max(1, this.pageHeight - footer / scale - 8)
-			layout = layoutWidgets(widgets, width, screenWidth, this.pageHeight, scale)
+			pageHeight = Math.max(1, pageHeight - footer / scale - 8)
+			layout = layoutWidgets(widgets, width, screenWidth, pageHeight, scale)
+		}
+		if (attached) {
+			this.pageHeight = pageHeight
 		}
 		this.pageNavigation.hidden = layout.pages === 1
 		this.pageCount = layout.pages

@@ -1145,6 +1145,16 @@ describe("surface interaction and bindings", () => {
 		expect(relative.write.mock.calls.map(([value]) => value)).toHaveLength(2)
 		expect(relative.write.mock.lastCall![0]).toEqual([])
 	})
+	it("does not stretch gadgets to the whole window before the surface is attached", async () => {
+		const binding = bind("a"),
+			saved = state()
+		saved.widgets = [{ key: binding.key }]
+		const surface = new ControlSurface({ state: saved, bindings: [binding], change: vi.fn() })
+		views.push(surface)
+		await settle()
+		expect((surface as any).entries[0].visual.height).toBeLessThan(innerHeight / 2)
+		expect((surface as any).layoutViewportHeight).toBe(-1)
+	})
 	it("moves focus out of text fields when a gadget is played so note keys keep working", async () => {
 		const relative = bind("r", createRelativeKeysControl({ id: "r", label: "Relative" }), []),
 			saved = state()
