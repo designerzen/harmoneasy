@@ -321,6 +321,16 @@ fn chassis(distance:f32,top:f32,pressed:f32)->vec4f {
  return surfaceEffect(vec4f(rgb,max(clamp(intensity,0.0,1.0),material.a)*i.color.a),i.uv,frame.time);
 }`
 
+/** Printable ASCII plus the punctuation, music and accented letters labels commonly use. */
+const GLYPHS = [
+	...Array.from({ length: 95 }, (_, i) => String.fromCharCode(32 + i)),
+	..."·•…–—‘’“”°×÷±♯♭→←↑↓µéèêáàâüöäñçß"
+]
+const GLYPH_INDEX = new Map(GLYPHS.map((glyph, index) => [glyph, index]))
+const GLYPH_FALLBACK = GLYPH_INDEX.get("?")!
+const ATLAS_ROWS = Math.ceil(GLYPHS.length / 16)
+const glyphIndex = (character: string) => GLYPH_INDEX.get(character) ?? GLYPH_FALLBACK
+
 /** One instanced pipeline for widget geometry and atlas text. No per-widget GPU objects. */
 export class GpuSurfaceRenderer {
 	private buffer: GPUBuffer
@@ -340,7 +350,7 @@ export class GpuSurfaceRenderer {
 	private instanceCount = 0
 	private building: number[] = []
 	private cache = new Map<WidgetVisual, CachedWidget>()
-	private advances = new Float32Array(96)
+	private advances = new Float32Array(GLYPHS.length)
 	private epoch = 0
 	private frameData = new Float32Array(24)
 	private postData = new Float32Array(4)
@@ -381,14 +391,12 @@ export class GpuSurfaceRenderer {
 		})
 		const atlas = document.createElement("canvas")
 		atlas.width = 512
-		atlas.height = 192
+		atlas.height = ATLAS_ROWS * 32
 		const ctx = atlas.getContext("2d")!
 		ctx.font = `700 24px ${getComputedStyle(canvas).fontFamily}`
 		ctx.fillStyle = "white"
 		ctx.textBaseline = "top"
-		for (let code = 32; code < 128; code++) {
-			const n = code - 32
-			const glyph = String.fromCharCode(code)
+		for (const [n, glyph] of GLYPHS.entries()) {
 			this.advances[n] = ctx.measureText(glyph).width * 0.75
 			ctx.fillText(glyph, (n % 16) * 32 + 2, Math.floor(n / 16) * 32 + 2)
 		}
@@ -623,16 +631,14 @@ export class GpuSurfaceRenderer {
 		const count = reserve ? Math.max(text.length, Math.floor(width / (4 * scale))) : text.length
 		let advance = 0
 		for (let i = 0; i < count; i++) {
-			const char = text[i] ?? " "
-			const code = char.charCodeAt(0),
-				n = (code >= 32 && code < 128 ? code : 63) - 32
+			const n = glyphIndex(text[i] ?? " ")
 			const step = this.advances[n] * scale
 			const visible = i < text.length && advance + step <= width + 0.01
 			this.quad(x + advance, y, size, size, 9, 0, 0, 0, 0, visible ? alpha : 0, [
 				((n % 16) * 32) / 512,
-				(Math.floor(n / 16) * 32) / 192,
+				(Math.floor(n / 16) * 32) / (ATLAS_ROWS * 32),
 				32 / 512,
-				32 / 192
+				32 / (ATLAS_ROWS * 32)
 			])
 			if (i < text.length) {
 				advance += step
@@ -642,10 +648,59 @@ export class GpuSurfaceRenderer {
 	private textWidth(text: string): number {
 		let width = 0
 		for (const character of text) {
-			const code = character.charCodeAt(0)
-			width += this.advances[(code >= 32 && code < 128 ? code : 63) - 32]
+			width += this.advances[glyphIndex(character)]
 		}
 		return width
+	}
+	/** Wraps at spaces into whichever line count gives the largest text, centred in the box. */
+	private wrappedText(
+		text: string,
+		x: number,
+		y: number,
+		width: number,
+		height: number,
+		alpha: number,
+		scale = 1
+	): void {
+		const words = text.split(/\s+/).filter(Boolean),
+			line = 24
+		let best = { lines: [text], fitted: 0 }
+		for (let count = 1; count <= Math.min(4, words.length || 1); count++) {
+			// Greedy fill against an even share of the total width keeps lines balanced.
+			const target = this.textWidth(text) / count,
+				lines: string[] = []
+			for (const word of words) {
+				const last = lines.at(-1)
+				if (
+					last !== undefined &&
+					(lines.length >= count || this.textWidth(`${last} ${word}`) <= target * 1.15)
+				) {
+					lines[lines.length - 1] = `${last} ${word}`
+				} else {
+					lines.push(word)
+				}
+			}
+			const fitted = Math.min(
+				scale,
+				width / Math.max(1, ...lines.map((l) => this.textWidth(l))),
+				height / (lines.length * line)
+			)
+			if (fitted > best.fitted * 1.05) {
+				best = { lines, fitted }
+			}
+		}
+		const top = y + (height - best.lines.length * line * best.fitted) / 2
+		for (const [index, text] of best.lines.entries()) {
+			this.centeredText(
+				text,
+				x,
+				top + index * line * best.fitted,
+				width,
+				alpha,
+				false,
+				best.fitted
+			)
+		}
 	}
 	/** Strokes reuse the segment primitive so icons share the face's glow, rotation and theme. */
 	private icon(name: string, x: number, y: number, size: number, alpha: number): void {
@@ -1362,15 +1417,33 @@ export class GpuSurfaceRenderer {
 								)
 							}
 						}
-						this.centeredText(
-							option.label,
-							left + 4,
-							points || (glyph && ch >= 52) ? top + ch - 28 : top + (ch - 24) / 2,
-							cw - 14,
-							alpha,
-							false,
-							0.75
-						)
+						// The selected cell is filled with the accent, so its label needs dark ink.
+						const accent = this.drawingColor
+						if (sameValue(option.value, v)) {
+							this.drawingColor = [0.06, 0.06, 0.08]
+						}
+						if (points || (glyph && ch >= 52)) {
+							this.centeredText(
+								option.label,
+								left + 4,
+								top + ch - 28,
+								cw - 14,
+								alpha,
+								false,
+								0.75
+							)
+						} else {
+							this.wrappedText(
+								option.label,
+								left + 6,
+								top + 6,
+								cw - 18,
+								ch - 12,
+								alpha,
+								0.75
+							)
+						}
+						this.drawingColor = accent
 					}
 				}
 				if (
