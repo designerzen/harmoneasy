@@ -111,6 +111,11 @@ export interface SurfaceOptions {
 	notice?: string
 	/** Copy a link that recreates this surface elsewhere; resolves to a status message. */
 	share?(): Promise<string>
+	/**
+	 * Fill the visible window height (default). Set false inside a zoomable canvas such as
+	 * the graph, where fitting to the window and zoom would feed back into the node size.
+	 */
+	fitHeight?: boolean
 	/** Resolve with the next key press or MIDI note/CC, for assigning hardware triggers. */
 	learnTrigger?(signal: AbortSignal): Promise<SurfaceTrigger>
 	change(state: SurfaceState): void
@@ -135,6 +140,8 @@ export class ControlSurface {
 	private pageHeight = 400
 	private layoutMode = ""
 	private layoutScale = 1
+	/** Scale that gadget sizes compensate for; 1 inside a zoomable host. */
+	private sizingScale = 1
 	private stageLayoutWidth = 640
 	private layoutToolbarScale = 1
 	private layoutViewportHeight = 0
@@ -1483,7 +1490,7 @@ export class ControlSurface {
 			// Editing needs an action row, its navigation and a separate resize grip. Keep the
 			// saved playing size, so even a 44px gadget can always be resized again.
 			height: this.editing
-				? Math.max(this.preferredHeight(e), 4 + 154 / this.layoutScale)
+				? Math.max(this.preferredHeight(e), 4 + 154 / this.sizingScale)
 				: this.preferredHeight(e)
 		}))
 	}
@@ -1506,21 +1513,26 @@ export class ControlSurface {
 	private layout(): void {
 		// Detached, the stage would measure the whole window and stretch every gadget for a
 		// frame. Keep the last page height; the frame loop measures again once attached.
-		const attached = this.element.isConnected
+		const attached = this.element.isConnected,
+			fit = this.options.fitHeight !== false
 		this.pointerRect = undefined
+		// Without fitting, sizes are in the host's own units so zooming never resizes gadgets.
 		const width = this.stage.clientWidth || 640,
-			screenWidth = Math.min(this.stage.getBoundingClientRect().width || width, innerWidth),
+			screenWidth = fit
+				? Math.min(this.stage.getBoundingClientRect().width || width, innerWidth)
+				: width,
 			profile = playingLayout(width, screenWidth)
 		const mode = `${profile.hands}:${profile.columns}`
 		this.layoutMode = mode
 		this.element.dataset.hands = String(profile.hands)
 		const stageRect = this.stage.getBoundingClientRect()
 		this.stageLayoutWidth = parseFloat(getComputedStyle(this.stage).width) || width
-		const scale = stageRect.width / this.stageLayoutWidth || 1
-		const toolbarScale =
+		this.layoutScale = stageRect.width / this.stageLayoutWidth || 1
+		const scale = fit ? this.layoutScale : 1
+		this.sizingScale = scale
+		this.layoutToolbarScale =
 			this.toolbar.getBoundingClientRect().width / this.toolbar.offsetWidth || 1
-		this.layoutScale = scale
-		this.layoutToolbarScale = toolbarScale
+		const toolbarScale = fit ? this.layoutToolbarScale : 1
 		this.layoutViewportHeight = attached ? innerHeight : -1
 		this.element.style.setProperty("--cs-target", `${44 / scale}px`)
 		this.element.style.setProperty("--cs-gap", `${11 / scale}px`)
@@ -1568,7 +1580,9 @@ export class ControlSurface {
 		const padding = parseFloat(getComputedStyle(this.element).paddingBottom) || 0
 		const keyHeight = this.sourceKey.getBoundingClientRect().height
 		const statusHeight = this.status.getBoundingClientRect().height
-		if (attached) {
+		if (!fit) {
+			this.pageHeight = Infinity
+		} else if (attached) {
 			this.pageHeight = Math.max(
 				1,
 				(bottom -

@@ -560,6 +560,159 @@
 	}
 }
 
+// MIDI File Player: one source mode at a time, then the loaded song and settings.
+.node-transformer .transformer-controls.midi-file-player {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--gap);
+	min-width: 0;
+
+	[hidden] {
+		display: none !important;
+	}
+
+	small,
+	.midi-file-player-link {
+		font-size: var(--text-xs);
+		color: var(--col-muted);
+	}
+
+	.midi-file-player-modes {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		padding: 3px;
+		border: var(--border);
+		border-radius: 8px;
+		background: var(--col-surface-sunken);
+
+		> button {
+			min-height: 2rem;
+			border: 0;
+			border-radius: 6px;
+			background: none;
+			color: var(--col-muted);
+			font-weight: 600;
+
+			&[aria-selected="true"] {
+				background: var(--col-accent-selected);
+				color: var(--col-fg);
+			}
+		}
+	}
+
+	.midi-file-player-panel {
+		display: grid;
+		gap: 0.5rem;
+		min-width: 0;
+	}
+
+	.midi-file-player-search {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		gap: 0.5rem;
+
+		> button {
+			width: auto;
+		}
+	}
+
+	.midi-file-player-results {
+		display: grid;
+		max-height: 12rem;
+		margin: 0;
+		padding: 0;
+		overflow-y: auto;
+		list-style: none;
+		border: var(--border);
+		border-radius: 6px;
+
+		&:empty {
+			display: none;
+		}
+
+		button {
+			display: block;
+			padding: 0.375rem 0.625rem;
+			border: 0;
+			border-radius: 0;
+			background: none;
+			color: inherit;
+			text-align: left;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+
+			&:hover {
+				background: var(--col-hover);
+			}
+
+			&[aria-current] {
+				background: var(--col-accent-selected);
+			}
+		}
+	}
+
+	.midi-file-player-drop {
+		min-height: 4.5rem;
+		border: 1px dashed var(--col-line-strong);
+		background: var(--col-surface-sunken);
+
+		&.is-dragging {
+			border-color: var(--col-accent);
+			background: var(--col-accent-soft);
+		}
+	}
+
+	.midi-file-player-status {
+		margin: 0;
+		padding: 0.5rem 0.625rem;
+		border-radius: 6px;
+		background: var(--col-surface-sunken);
+		font-size: var(--text-sm);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+
+		&.is-error {
+			color: var(--col-danger);
+			background: var(--col-danger-soft);
+			white-space: normal;
+		}
+	}
+
+	.midi-file-player-settings {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+		align-items: end;
+		gap: 0.5rem;
+	}
+
+	.midi-file-player-field {
+		display: grid;
+		gap: 0.25rem;
+		min-width: 0;
+
+		> span {
+			font-size: var(--text-xs);
+			font-weight: 600;
+			color: var(--col-muted);
+		}
+	}
+
+	.midi-file-player-check {
+		display: flex;
+		align-items: center;
+		gap: 0.375rem;
+		min-height: 2rem;
+		font-size: var(--text-sm);
+
+		input {
+			width: auto;
+			margin: 0;
+		}
+	}
+}
+
 .node-start,
 .node-add-transformer,
 .node-end {

@@ -57,8 +57,10 @@ export function mountHarmonyWorkspace(
 		},
 		status
 	)
-	const parent = document.getElementById("btn-settings")?.parentElement ?? document.body
-	parent.append(open)
+	open.classList.add("btn-harmony")
+	const settings = document.getElementById("btn-settings")
+	if (settings) settings.before(open)
+	else document.body.append(open)
 	document.body.append(dialog)
 	const close = action("", () => dialog.close(), status)
 	close.className = "close-icon tertiary"

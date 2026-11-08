@@ -36,8 +36,9 @@ export function createMixer(manager: IOChainManager, master: GainNode, root: Doc
 	const header = element("header")
 	const title = element("h2", "Mixer")
 	title.id = "mixer-title"
-	const close = element("button", "Close")
+	const close = element("button")
 	close.type = "button"
+	close.className = "btn-close"
 	close.setAttribute("aria-label", "Close Mixer")
 	header.append(title, close)
 	const channels = element("div")

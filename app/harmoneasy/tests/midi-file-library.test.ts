@@ -84,7 +84,10 @@ describe("MIDI file library and uploads", () => {
 		const transformer = player()
 		transformer.setConfig("trackIndex", 24)
 		const gui = await transformer.createGui()
-		expect(gui.querySelector("button")?.textContent).toBe("Upload MIDI file")
+		expect(gui.querySelector(".midi-file-player-drop")?.textContent).toBe("Upload MIDI file")
+		expect(
+			[...gui.querySelectorAll('[role="tab"]')].map((tab) => tab.textContent)
+		).toEqual(["Library", "Search", "Upload"])
 		expect(gui.querySelector<HTMLInputElement>('input[type="file"]')?.accept).toContain(".midi")
 		const select = gui.querySelector<HTMLSelectElement>(
 			'select[aria-label="Local MIDI songs"]'

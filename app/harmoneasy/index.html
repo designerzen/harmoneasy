@@ -12,6 +12,9 @@
 		<meta name="apple-mobile-web-app-title" content="Harmoneasy" />
 		<link rel="manifest" href="/site.webmanifest" />
 		<script>
+			if (new URLSearchParams(location.search).get("start") === "1") {
+				document.documentElement.setAttribute("data-direct-preset", "")
+			}
 			try {
 				const theme = JSON.parse(localStorage.getItem("harmoneasy.theme"))
 				if (typeof theme?.hue === "number") {
@@ -22,6 +25,9 @@
 				}
 			} catch {}
 		</script>
+		<style>
+			[data-direct-preset] #start-dialog:not(:modal) { display: none; }
+		</style>
 	</head>
 
 	<body>
@@ -235,10 +241,9 @@
 				Upload
 			</button>
 			<button id="btn-export" class="btn-export" type="button">Export</button>
-			<a href="%BASE_URL%play/">Play songs</a>
-			<button id="btn-settings" class="btn-settings" type="button">Settings</button>
 			<button
 				id="btn-command-palette"
+				class="btn-command-palette"
 				type="button"
 				aria-haspopup="dialog"
 				aria-controls="command-palette"
@@ -247,9 +252,16 @@
 			>
 				Commands <kbd>Ctrl/Cmd+K</kbd>
 			</button>
-			<button id="btn-midi" type="button" aria-haspopup="dialog" aria-controls="midi-dialog">
+			<button
+				id="btn-midi"
+				class="btn-midi"
+				type="button"
+				aria-haspopup="dialog"
+				aria-controls="midi-dialog"
+			>
 				MIDI
 			</button>
+			<button id="btn-settings" class="btn-settings" type="button">Settings</button>
 			<button id="btn-kill-switch" class="btn-kill-switch btn-panic" type="button">
 				Panic
 			</button>
@@ -830,6 +842,13 @@
 						instruments and explore what your notes can become.
 					</p>
 					<nav class="about-links" aria-label="Harmoneasy project">
+						<a
+							class="btn-play-songs"
+							href="%BASE_URL%play/"
+							target="_blank"
+							rel="noopener noreferrer"
+							>Play songs <span aria-hidden="true">↗</span></a
+						>
 						<a
 							href="https://github.com/designerzen/harmoneasy#readme"
 							target="_blank"

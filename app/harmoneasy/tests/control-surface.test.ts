@@ -1213,6 +1213,30 @@ describe("surface interaction and bindings", () => {
 			.click()
 		expect(saved.widgets[0].trigger).toBeUndefined()
 	})
+	it("keeps natural gadget sizes inside a zoomable host so zoom cannot grow the node", async () => {
+		const binding = bind("a"),
+			saved = state()
+		saved.widgets = [{ key: binding.key }]
+		const surface = new ControlSurface({
+			state: saved,
+			bindings: [binding],
+			change: vi.fn(),
+			fitHeight: false
+		})
+		views.push(surface)
+		document.body.append(surface.element)
+		const stage = surface.element.querySelector<HTMLElement>(".cs-stage")!
+		const heights = [1, 0.25, 0.05].map((zoom) => {
+			stage.getBoundingClientRect = () =>
+				({ left: 0, top: 2000, width: 640 * zoom, height: 100, bottom: 2100 }) as DOMRect
+			;(surface as any).layout()
+			return [(surface as any).entries[0].visual.height, (surface as any).height]
+		})
+		expect(heights[1]).toEqual(heights[0])
+		expect(heights[2]).toEqual(heights[0])
+		expect(heights[0][1]).toBeGreaterThan(1)
+		expect((surface as any).pageCount).toBe(1)
+	})
 	it("does not stretch gadgets to the whole window before the surface is attached", async () => {
 		const binding = bind("a"),
 			saved = state()

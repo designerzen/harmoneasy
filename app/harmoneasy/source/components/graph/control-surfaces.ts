@@ -285,7 +285,9 @@ export function mountControlSurface(
 	chain: IOChain,
 	surfaceId: string,
 	toolbarHost?: HTMLElement,
-	menuActions?: () => SurfaceMenuAction[]
+	menuActions?: () => SurfaceMenuAction[],
+	/** False inside the zoomable graph; the expanded view fills the window. */
+	fitHeight = true
 ): { destroy(): void } {
 	const noteSource = surfaceNoteSource(chain)
 	let audioSources: ReturnType<typeof surfaceAudioSources> | undefined
@@ -370,6 +372,7 @@ export function mountControlSurface(
 			editing,
 			menuActions,
 			notice,
+			fitHeight,
 			learnTrigger: learnSurfaceTrigger,
 			fillControls() {
 				notice = undefined

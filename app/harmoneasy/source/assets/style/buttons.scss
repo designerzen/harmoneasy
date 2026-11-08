@@ -175,12 +175,44 @@ dialog .btn-close {
 	}
 }
 
-.btn-import::before {
-	content: "\2191" / "";
+// Masked line icons share one size so the action bar reads as a single set.
+.btn-import,
+.btn-export,
+.btn-settings,
+.btn-command-palette,
+.btn-midi,
+.btn-harmony,
+.btn-play-songs {
+	&::before {
+		content: "";
+		display: inline-block;
+		width: 1.125rem;
+		height: 1.125rem;
+		flex: none;
+		background-color: currentColor;
+		mask: var(--icon) center / contain no-repeat;
+	}
 }
-
-.btn-export::before {
-	content: "\2193" / "";
+.btn-import {
+	--icon: url("../icons/upload.svg");
+}
+.btn-export {
+	--icon: url("../icons/download.svg");
+}
+.btn-settings {
+	--icon: url("../icons/settings.svg");
+}
+.btn-command-palette {
+	--icon: url("../icons/command.svg");
+}
+.btn-midi {
+	--icon: url("../icons/midi.svg");
+}
+.btn-harmony {
+	--icon: url("../icons/harmony.svg");
+}
+.btn-play-songs {
+	--icon: url("../icons/play.svg");
 }
 
 .btn-add::before {

@@ -13,7 +13,15 @@ export function ControlSurfaceNode({ id, data }: any) {
 		if (!host.current) {
 			return
 		}
-		const view = mountControlSurface(host.current, chain, data.surface.id)
+		// Graph zoom must not resize gadgets, or fitting the view grows the node forever.
+		const view = mountControlSurface(
+			host.current,
+			chain,
+			data.surface.id,
+			undefined,
+			undefined,
+			false
+		)
 		return () => view.destroy()
 	}, [chain, data.surface.id])
 	return (

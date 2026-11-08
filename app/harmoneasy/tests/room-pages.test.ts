@@ -37,11 +37,13 @@ describe("static room pages", () => {
 					"Loading full catalogue…"
 				)
 			)
-			const links = [...window.document.querySelectorAll<HTMLAnchorElement>("h2 a")]
+			const links = [...window.document.querySelectorAll<HTMLAnchorElement>(".card-action")]
 			expect(links.length).toBeGreaterThan(0)
 			if (path === "/harmoneasy/play/") {
 				expect(window.document.querySelector("h1")?.textContent).toBe("Find an artist.")
-				expect(links.some((link) => link.textContent === "ABBA")).toBe(true)
+				expect(links.some((link) => link.querySelector("h2")?.textContent === "ABBA")).toBe(
+					true
+				)
 			} else {
 				expect(links.every((link) => link.href.includes("/play/bitmidi/"))).toBe(true)
 				expect(links.some((link) => /dancing/i.test(link.textContent ?? ""))).toBe(true)
@@ -91,9 +93,9 @@ describe("static room pages", () => {
 	it("passes static song redirects through to the application with their query and hash", () => {
 		const html = playDirectoryHtml([], "/harmoneasy/")
 		const script = html.match(/<script>([\s\S]*?)<\/script>/)![1]
-		const location = { search: "?play=abba%2Fsos", hash: "#setup", replace: vi.fn() }
+		const location = { search: "?play=abba%2Fsos&start=1", hash: "#setup", replace: vi.fn() }
 		runInNewContext(script, { URLSearchParams, location })
-		expect(location.replace).toHaveBeenCalledWith("/harmoneasy/?play=abba%2Fsos#setup")
+		expect(location.replace).toHaveBeenCalledWith("/harmoneasy/?play=abba%2Fsos&start=1#setup")
 	})
 	it("publishes the application at /room/ with the same built asset URLs", () => {
 		const plugin = roomPagesPlugin()

@@ -49,12 +49,17 @@
 		font-size: var(--text-xs);
 		color: var(--col-muted);
 	}
+	// Settings sits at the far right, beside the always-reachable panic button.
+	> .btn-settings {
+		order: 98;
+		margin-left: auto;
+	}
 	// Always reachable: stays pinned at the end however the bar scrolls.
 	> .btn-kill-switch {
 		position: sticky;
 		right: 0;
 		order: 99;
-		margin-left: auto;
+		margin-left: 0.25rem;
 		padding-inline: 1rem;
 	}
 	@media (max-width: 900px) {

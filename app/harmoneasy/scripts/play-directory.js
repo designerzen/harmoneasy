@@ -160,16 +160,16 @@ export function mountPlayDirectory(root, songs, artistOrder) {
 				tag.textContent = song.count ? `${song.count} tracks` : song.category
 				const heading = document.createElement("h2")
 				const link = document.createElement("a")
-				link.href = `${root.dataset.base}${song.route}/`
-				link.textContent = song.name
-				heading.append(link)
+				link.className = "card-action"
+				link.href = `${root.dataset.base}${song.route}/${song.count ? "" : "?start=1"}`
+				heading.textContent = song.name
 				const credit = document.createElement("p")
 				credit.textContent = song.count ? song.categories.join(" · ") : song.artist
-				const open = document.createElement("a")
+				const open = document.createElement("span")
 				open.className = "open"
-				open.href = link.href
 				open.textContent = song.count ? "Browse songs →" : "Play this track →"
-				card.append(tag, heading, credit, open)
+				link.append(tag, heading, credit, open)
+				card.append(link)
 				list.append(card)
 			}
 		} else {
@@ -285,13 +285,13 @@ export function playDirectoryHtml(songs, base, catalogueUrl = `${base}play/catal
 			(
 				song
 			) => `<article data-title="${escapeHtml(song.name)}" data-search="${escapeHtml(`${song.name} ${song.artist} ${song.category}`.toLowerCase())}" data-artist="${escapeHtml(song.artist)}" data-category="${escapeHtml(song.category)}">
-<span class="tag">${song.count} tracks</span><h2><a href="${escapeHtml(`${base}${song.route}/`)}">${escapeHtml(song.name)}</a></h2><p>${escapeHtml(song.artist)}</p><a class="open" href="${escapeHtml(`${base}${song.route}/`)}">Browse songs →</a></article>`
+<a class="card-action" href="${escapeHtml(`${base}${song.route}/`)}"><span class="tag">${song.count} tracks</span><h2>${escapeHtml(song.name)}</h2><p>${escapeHtml(song.artist)}</p><span class="open">Browse songs →</span></a></article>`
 		)
 		.join("\n")
 	return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Play a melody · Harmoneasy</title>
 <script>const requestedPlay = new URLSearchParams(location.search).get("play");if(requestedPlay && requestedPlay.split("/").filter(Boolean).length > 1){location.replace(${JSON.stringify(base)}+location.search+location.hash)}</script>
 <style>${tokens}
-*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;background:var(--col-bg);color:var(--col-fg);font:16px/1.5 system-ui,sans-serif}main,header{max-width:1100px;margin:auto;padding:24px}header{display:flex;justify-content:space-between;border-bottom:1px solid var(--col-line-strong)}a{color:var(--col-accent);text-underline-offset:4px}h1{font-size:clamp(32px,5vw,56px);line-height:1.1;margin:20px 0}h2{font-size:22px;line-height:1.3}h2 a{color:var(--col-fg);text-decoration:none}p,.tag{color:var(--col-muted)}form{display:grid;grid-template-columns:2fr repeat(3,1fr);gap:12px;margin:28px 0 16px}label{display:grid;gap:6px}input,select,button{font:inherit;background:var(--col-surface);color:var(--col-fg);border:1px solid var(--col-line-strong);border-radius:8px;padding:12px;min-width:0}button{cursor:pointer}.bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.tracks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}article{display:flex;flex-direction:column;border:1px solid var(--col-line-strong);background:var(--col-surface);border-radius:12px;padding:24px}article p{margin-top:0}.open{margin-top:auto;padding-top:20px}.tag{font-size:13px}.empty{padding:32px 0}:focus-visible{outline:2px solid var(--col-accent);outline-offset:4px}.artist-alphabet{display:flex;flex-wrap:wrap;gap:6px;margin-top:24px}.artist-alphabet a{padding:6px 10px;border:1px solid var(--col-line-strong);border-radius:6px;text-decoration:none}.artist-alphabet [aria-current]{background:var(--col-accent);color:var(--col-bg)}.more{display:inline-block;margin-top:24px}@media(max-width:760px){form{grid-template-columns:1fr 1fr}.tracks{grid-template-columns:1fr 1fr}label:first-child{grid-column:1/-1}}@media(max-width:480px){.tracks{grid-template-columns:1fr}main,header{padding:18px}}
+*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;background:var(--col-bg);color:var(--col-fg);font:16px/1.5 system-ui,sans-serif}main,header{max-width:1100px;margin:auto;padding:24px}header{display:flex;justify-content:space-between;border-bottom:1px solid var(--col-line-strong)}a{color:var(--col-accent);text-underline-offset:4px}h1{font-size:clamp(32px,5vw,56px);line-height:1.1;margin:20px 0}h2{font-size:22px;line-height:1.3}h2 a{color:var(--col-fg);text-decoration:none}p,.tag{color:var(--col-muted)}form{display:grid;grid-template-columns:2fr repeat(3,1fr);gap:12px;margin:28px 0 16px}label{display:grid;gap:6px}input,select,button{font:inherit;background:var(--col-surface);color:var(--col-fg);border:1px solid var(--col-line-strong);border-radius:8px;padding:12px;min-width:0}button{cursor:pointer}.bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.tracks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}article{display:flex;flex-direction:column;border:1px solid var(--col-line-strong);background:var(--col-surface);border-radius:12px;overflow:hidden}.card-action{display:flex;flex-direction:column;flex:1;padding:24px;color:var(--col-fg);text-decoration:none}.card-action:hover{background:var(--col-surface-raised)}.card-action:focus-visible{outline-offset:-4px}.card-action .open{color:var(--col-accent)}article p{margin-top:0}.open{margin-top:auto;padding-top:20px}.tag{font-size:13px}.empty{padding:32px 0}:focus-visible{outline:2px solid var(--col-accent);outline-offset:4px}.artist-alphabet{display:flex;flex-wrap:wrap;gap:6px;margin-top:24px}.artist-alphabet a{padding:6px 10px;border:1px solid var(--col-line-strong);border-radius:6px;text-decoration:none}.artist-alphabet [aria-current]{background:var(--col-accent);color:var(--col-bg)}.more{display:inline-block;margin-top:24px}@media(max-width:760px){form{grid-template-columns:1fr 1fr}.tracks{grid-template-columns:1fr 1fr}label:first-child{grid-column:1/-1}}@media(max-width:480px){.tracks{grid-template-columns:1fr}main,header{padding:18px}}
 </style></head><body><header><a href="${base}">Harmoneasy</a><a href="${base}play/">Artists A–Z</a><a href="${base}play/?tracks=1">Browse all tracks</a><a href="${base}presets/">All presets</a></header>
 <main data-base="${escapeHtml(base)}" data-view="artists"><h1>Find an artist.</h1><p>Browse artists, choose a song, then play its melody one note at a time. Explore ${songs.length.toLocaleString()} tracks.</p>
 <nav class="artist-alphabet" aria-label="Artists by letter">${["", "#", ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ"].map((letter) => `<a data-letter="${letter}" href="${base}play/${letter ? `?letter=${encodeURIComponent(letter)}` : ""}">${letter || "All"}</a>`).join("")}</nav>

@@ -1,100 +1,72 @@
+// Colour, type, buttons and sliders come from the shared dialog, button and range styles.
 .mixer-dialog {
-	position: fixed;
-	inset: auto 16px 16px auto;
+	inset: auto var(--pad) var(--pad) auto;
 	margin: 0;
-	z-index: 100;
-	width: min(960px, 94vw);
-	max-height: 90dvh;
+	width: min(960px, calc(100vw - 2rem));
 	padding: 0;
-	border: 1px solid #49515d;
-	border-radius: 10px;
-	color: #e6eaf0;
-	background: #171c23;
-	box-shadow: 0 24px 80px #0009;
 	> header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 14px 20px;
-		border-bottom: 1px solid #3a424e;
+		margin: 0;
+		padding: 0.5rem 3rem 0.5rem 1.25rem;
+		border-bottom: var(--border);
 	}
 	h2 {
 		margin: 0;
-		font-size: 18px;
-	}
-	button {
-		color: #e6eaf0;
-		background: #353d49;
-		border: 1px solid #535e6c;
-		border-radius: 4px;
-		padding: 6px 14px;
 	}
 }
 .mixer-channels {
 	display: flex;
 	overflow-x: auto;
-	padding: 18px;
-	gap: 2px;
+	padding: var(--pad);
+	gap: 0.25rem;
 }
 .mixer-channel {
 	flex: 0 0 116px;
-	padding: 12px 10px;
-	box-sizing: border-box;
+	padding: var(--gap) 0.5rem;
 	text-align: center;
-	background: linear-gradient(#303741, #242b34);
-	border: 1px solid #414a57;
-	border-radius: 5px;
+	background: var(--col-surface-raised);
+	border: var(--border);
+	border-radius: var(--radius-sm);
 	h3 {
-		font: 600 12px/1.4 system-ui;
-		height: 34px;
+		height: 2.5em;
 		overflow: hidden;
-		margin: 0 0 8px;
+		margin: 0 0 0.5rem;
+		font-size: var(--text-xs);
 		overflow-wrap: anywhere;
 	}
 	.mixer-gain-value {
 		display: block;
-		font: 11px/22px monospace;
-		color: #c8d7e6;
-		background: #14191f;
-		border-radius: 3px;
+		font: var(--text-xs) / 1.8 var(--font-mono);
+		font-variant-numeric: tabular-nums;
+		color: var(--col-muted);
+		background: var(--col-surface-sunken);
+		border-radius: var(--radius-sm);
 	}
-	button.mixer-mute {
-		display: block;
-		margin: 16px auto 0;
-		min-width: 38px;
+	.mixer-mute {
+		margin-top: var(--pad);
 		font-weight: 700;
-	}
-	button.mixer-mute[aria-pressed="true"] {
-		background: #e0a62c;
-		color: #171c23;
-		border-color: #ffd36b;
-	}
-	:focus-visible {
-		outline: 2px solid #8ed2ff;
-		outline-offset: 3px;
 	}
 }
 .mixer-master {
 	position: sticky;
-	right: -18px;
-	margin-left: 12px;
-	border-color: #6a879e;
-	background: linear-gradient(#354555, #263441);
-	box-shadow: -8px 0 18px #0005;
+	right: calc(-1 * var(--pad));
+	margin-left: var(--gap);
+	border-color: var(--col-accent);
+	background: var(--col-accent-soft);
+	box-shadow: var(--shadow-md);
 }
 .mixer-fader-body {
 	display: flex;
 	height: 220px;
 	align-items: stretch;
 	justify-content: center;
-	gap: 8px;
-	margin: 18px 0 0;
+	gap: 0.5rem;
+	margin-top: var(--pad);
 }
 .mixer-scale {
 	position: relative;
 	width: 22px;
-	font: 9px monospace;
-	color: #acb6c4;
+	font: 9px var(--font-mono);
+	color: var(--col-muted);
 	span {
 		position: absolute;
 		right: 0;
@@ -102,56 +74,10 @@
 	}
 }
 .mixer-fader {
-	appearance: none;
 	writing-mode: vertical-lr;
 	direction: rtl;
 	width: 24px;
 	height: 100%;
-	min-width: 24px;
-	padding: 0;
-	margin: 0;
-	border: 0;
-	border-radius: 3px;
-	background: linear-gradient(
-		to right,
-		transparent 10px,
-		#090d12 10px,
-		#090d12 14px,
-		transparent 14px
-	);
-	&::-webkit-slider-thumb {
-		appearance: none;
-		width: 24px;
-		height: 30px;
-		border: 1px solid #8a98a8;
-		border-radius: 3px;
-		background: linear-gradient(
-			#cbd4df,
-			#8493a5 46%,
-			#25303b 47%,
-			#25303b 53%,
-			#a4b0bf 54%,
-			#76869a
-		);
-		box-shadow: 0 3px 5px #0009;
-	}
-	&::-moz-range-thumb {
-		width: 24px;
-		height: 30px;
-		border: 1px solid #8a98a8;
-		border-radius: 3px;
-		background: linear-gradient(
-			#cbd4df,
-			#8493a5 46%,
-			#25303b 47%,
-			#25303b 53%,
-			#a4b0bf 54%,
-			#76869a
-		);
-	}
-	&:disabled {
-		opacity: 0.35;
-	}
 }
 .mixer-meter {
 	display: flex;
@@ -159,9 +85,9 @@
 	width: 16px;
 	min-width: 16px;
 	gap: 2px;
-	border: 1px solid #080d12;
+	border: var(--border);
 	border-radius: 2px;
-	background: #090f12;
+	background: var(--col-surface-sunken);
 }
 .mixer-meter-lane {
 	position: relative;
@@ -172,30 +98,32 @@
 	position: absolute;
 	inset: 0;
 	background: linear-gradient(
-		to top,
-		#19b95c 0%,
-		#49d56c 68%,
-		#dce044 80%,
-		#ffaf32 90%,
-		#f04438 96%,
-		#ff2929 100%
+		to top in oklch,
+		var(--col-success) 0% 68%,
+		var(--col-warning) 85%,
+		var(--col-danger-solid) 96%
 	);
 	clip-path: inset(100% 0 0);
 }
+// Gaps between segments are cut from the fill so the meter reads as LEDs.
 .mixer-meter-lane::after {
 	content: "";
 	position: absolute;
 	inset: 0;
-	background: repeating-linear-gradient(to top, transparent 0 4px, #10151b99 4px 6px);
+	background: repeating-linear-gradient(
+		to top,
+		transparent 0 4px,
+		var(--col-surface-sunken) 4px 6px
+	);
 	pointer-events: none;
 }
 .mixer-meter-peak {
 	position: absolute;
 	left: 0;
 	right: 0;
-	height: 2px;
-	background: #eaf5ff;
 	bottom: 0;
+	height: 2px;
+	background: var(--col-fg);
 	z-index: 1;
 }
 .mixer-meter.is-clipping::before {
@@ -206,13 +134,13 @@
 	top: -7px;
 	height: 4px;
 	border-radius: 1px;
-	background: #ff3030;
-	box-shadow: 0 0 6px #ff3030;
+	background: var(--col-danger-solid);
+	box-shadow: 0 0 6px var(--col-danger-solid);
 }
 .mixer-hint {
 	margin: 0;
-	padding: 12px 20px;
-	color: #a5b2c1;
-	font-size: 11px;
-	border-top: 1px solid #3a424e;
+	padding: var(--gap) 1.25rem;
+	color: var(--col-muted);
+	font-size: var(--text-xs);
+	border-top: var(--border);
 }
