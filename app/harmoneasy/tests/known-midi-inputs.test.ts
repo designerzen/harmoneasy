@@ -285,6 +285,35 @@ describe("known MIDI instrument profiles", () => {
 		expect(chain.inputs).toHaveLength(1)
 		expect(chain.inputs[0]).not.toBe(input)
 	})
+	it("asks which chains a hot-plugged device joins, honours Ignore until replugged and keeps startup devices automatic", async () => {
+		midi.inputs = [port("digit-cmpsr")]
+		const { manager, chain } = workspace()
+		const second = new IOChain({ now: 1, BPM: 120 } as any)
+		manager.addChain(second)
+		const choices: IOChain[][] = [[], [chain, second]]
+		const onDeviceConnected = vi.fn(async () => choices.shift() ?? [])
+		stops.push(await startKnownMidiInputs(manager, { onDeviceConnected }))
+		expect(onDeviceConnected).not.toHaveBeenCalled()
+		expect(manager.activeChain!.inputs.map((input) => input.name)).toEqual(["DIGIT CMPSR"])
+		midi.inputs = [port("digit-cmpsr"), port("keyboard")]
+		await refresh()
+		await refresh()
+		expect(onDeviceConnected).toHaveBeenCalledExactlyOnceWith(
+			expect.objectContaining({ id: "keyboard", name: "keyboard", transport: "webmidi" })
+		)
+		expect([...chain.inputs, ...second.inputs].map((input) => input.name)).not.toContain(
+			"keyboard"
+		)
+		midi.inputs = [port("digit-cmpsr")]
+		await refresh()
+		midi.inputs = [port("digit-cmpsr"), port("keyboard")]
+		await refresh()
+		expect(onDeviceConnected).toHaveBeenCalledTimes(2)
+		const keyboard = chain.inputs.find((input) => input.name === "keyboard")
+		expect(keyboard).toBeDefined()
+		expect(second.inputs).toContain(keyboard)
+		expect(keyboard!.isConnected).toBe(true)
+	})
 	it("updates documented CC controls without echo and sends slider performance into the chain", async () => {
 		const device = port("digit-cmpsr")
 		midi.inputs = [device]

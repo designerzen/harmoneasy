@@ -1166,6 +1166,26 @@
 			</div>
 		</template>
 
+		<!-- MIDI device hot-plug -->
+		<template id="midi-device-connected-template">
+			<dialog closedby="any" aria-labelledby="midi-device-connected-title" data-midi-ignore>
+				<header>
+					<h5 id="midi-device-connected-title">MIDI device connected</h5>
+				</header>
+				<p class="midi-device-connected-message"></p>
+				<!-- Shows a button per chain plus Ignore -->
+				<menu></menu>
+				<form method="dialog">
+					<button
+						class="btn-close close-icon"
+						type="submit"
+						formmethod="dialog"
+						aria-label="Ignore"
+					></button>
+				</form>
+			</dialog>
+		</template>
+
 		<template id="error-overlay-template">
 			<dialog
 				hidden

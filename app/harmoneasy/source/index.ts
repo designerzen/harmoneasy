@@ -23,6 +23,7 @@ import { PLAY_REDIRECT_KEY, playRoute, playUrl } from "./services/play-page"
 import { createMidiControlPanel } from "./services/midi-control-panel"
 import { startKnownMidiInputs } from "audiobus/midi/hardware/known-midi-inputs"
 import { showMidiDeviceDisconnected } from "./services/midi-device-errors"
+import { chooseChainsForMidiDevice } from "./services/midi-device-connected-dialog"
 import { createMidiDevicesDialog } from "./services/midi-devices-dialog"
 import { createMixer } from "./services/mixer"
 import { createRecordingControls } from "./services/recording-dialog"
@@ -607,7 +608,8 @@ const initialiseApplication = async (
 		(serialized) => state.set("midiControls", serialized)
 	)
 	void startKnownMidiInputs(ioManager, {
-		onDeviceDisconnected: (loss) => showMidiDeviceDisconnected(ui, loss)
+		onDeviceDisconnected: (loss) => showMidiDeviceDisconnected(ui, loss),
+		onDeviceConnected: (device) => chooseChainsForMidiDevice(ioManager, device)
 	}).catch((error) => console.warn("MIDI instrument discovery unavailable", error))
 
 	// start the clock going

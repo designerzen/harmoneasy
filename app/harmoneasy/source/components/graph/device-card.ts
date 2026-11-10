@@ -228,7 +228,7 @@ export const OUTPUT_GUIDANCE: Record<OutputId, Guidance> = {
 	"song-tree": guide(
 		"Tree",
 		"Grow a tree from incoming notes and chords.",
-		"Held notes grow separate vertical lanes with curved forks; releases stop growth. Select a branch to inspect it.",
+		"Each note arcs from the trunk and grows upwards while held; chord notes branch from their root and a release ends the branch with a leaf. Select a branch to inspect it.",
 		"Open the output view. Start transport to synchronize the falling droplet with the beat."
 	),
 	"harmony-sampler": guide(
