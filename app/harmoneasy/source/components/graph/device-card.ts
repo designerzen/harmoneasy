@@ -279,6 +279,13 @@ export const OUTPUT_GUIDANCE: Record<OutputId, Guidance> = {
 			)
 		])
 	),
+	"chromatic-sampler": guide(
+		"Smp",
+		"Play up to four sample layers on each mapped key.",
+		"Trim and loop samples, shape their envelopes and filters, and blend layers by velocity.",
+		audio +
+			" AudioWorklet support. Load samples in the output editor; samples save with your workspace."
+	),
 	"drum-accompaniment": guide(
 		"Dr",
 		"Add a steady drum break alongside your instrument.",
