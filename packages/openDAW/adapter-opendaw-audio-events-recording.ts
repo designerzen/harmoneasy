@@ -1,6 +1,6 @@
-import type RecorderAudioEvent from "audiobus/audio-event-recorder.ts"
-import { NOTE_OFF, NOTE_ON } from "audiobus/commands"
-import type { IAudioCommand } from "audiobus/audio-command-interface.ts"
+import type RecorderAudioEvent from "audiobus/events/audio-event-recorder.ts"
+import { NOTE_OFF, NOTE_ON } from "audiobus/commands/commands"
+import type { IAudioCommand } from "audiobus/commands/audio-command-interface.ts"
 
 // OpenDAW uses 960 pulses per quarter note; netronome uses 3840.
 const OPENDAW_PPQ = 960
