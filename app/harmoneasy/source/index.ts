@@ -804,6 +804,9 @@ try {
 	const play = playRoute(window.location.href, import.meta.env.BASE_URL)
 	if (play && new URLSearchParams(window.location.search).has(PLAY_REDIRECT_KEY)) {
 		const url = playUrl(play, import.meta.env.BASE_URL, window.location.origin)
+		const options = new URLSearchParams(window.location.search)
+		options.delete(PLAY_REDIRECT_KEY)
+		url.search = options.toString()
 		url.hash = window.location.hash
 		history.replaceState(history.state, "", url)
 	}

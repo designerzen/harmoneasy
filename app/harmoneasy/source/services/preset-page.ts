@@ -5,6 +5,7 @@ import { parseMusicTools } from "audiobus/io/music-tools"
 import { isRoomSetup } from "./room-url"
 import { loadPlayPage, playRoute } from "./play-page"
 import { validBinding, type MidiBinding } from "./midi-controls"
+import { OUTPUT_DEFINITIONS } from "audiobus/io/output-definitions"
 import type { PresetSetup } from "audiobus/io/preset-library"
 
 export interface PresetPage {
@@ -186,17 +187,119 @@ export async function loadPresetPage(
 	base: string,
 	fetcher = fetch
 ): Promise<PresetPage | undefined> {
-	const play = playRoute(location, base)
-	if (play) {
-		return loadPlayPage(play, base, new URL(location).origin, fetcher)
+	const link = new URL(location)
+	// Fragments take precedence so shared links can be customised without changing their route.
+	const options = new URLSearchParams(link.search)
+	const fragment = new URLSearchParams(link.hash.slice(1))
+	for (const key of ["midi", "outputs"]) {
+		if (fragment.has(key)) {
+			options.delete(key)
+			for (const value of fragment.getAll(key)) {
+				options.append(key, value)
+			}
+		}
 	}
+	const midi = options.get("midi")
+	let midiUrl: URL | undefined
+	if (midi !== null) {
+		if (!midi.trim()) {
+			throw new Error("The midi option needs a MIDI file URL.")
+		}
+		midiUrl = new URL(midi, new URL(base, link))
+		if (!["http:", "https:"].includes(midiUrl.protocol)) {
+			throw new Error("MIDI links must use HTTP or HTTPS.")
+		}
+	}
+	const outputs = [
+		...new Set(
+			options
+				.getAll("outputs")
+				.flatMap((value) => value.split(","))
+				.map((value) => value.trim())
+				.filter(Boolean)
+		)
+	]
+	for (const type of outputs) {
+		if (!Object.hasOwn(OUTPUT_DEFINITIONS, type)) {
+			throw new Error(`Unknown output: ${type}`)
+		}
+	}
+	const play = playRoute(location, base)
 	const url = presetPageUrl(location, base)
-	if (!url) {
+	const root = new URL(base, link)
+	const isRoot = link.pathname === root.pathname || link.pathname === `${root.pathname}index.html`
+	if (!url && !play && !(isRoot && midiUrl)) {
 		return
 	}
-	const response = await fetcher(url.href)
-	if (!response.ok) {
-		throw new Error(`Could not load preset (${response.status})`)
+	let page: PresetPage
+	if (play && !midiUrl) {
+		page = await loadPlayPage(play, base, link.origin, fetcher)
+	} else {
+		const response = await fetcher(
+			(url ?? new URL("presets/songs/twinkle-twinkle-little-star/preset.json", root)).href
+		)
+		if (!response.ok) {
+			throw new Error(`Could not load preset (${response.status})`)
+		}
+		page = parsePresetPage(await response.text())
 	}
-	return parsePresetPage(await response.text())
+	if (midiUrl) {
+		let players = 0
+		for (const chain of page.workspace.chains) {
+			chain.transformers = JSON.stringify(
+				JSON.parse(chain.transformers).map((step: string) => {
+					const config = JSON.parse(step)
+					if (config.type !== "MIDI-File-Player") {
+						return step
+					}
+					players++
+					return JSON.stringify({
+						...config,
+						midiFileUrl: midiUrl.href,
+						midiFileName: "",
+						searchQuery: "",
+						trackIndex: -1
+					})
+				})
+			)
+		}
+		if (!players) {
+			throw new Error("This preset has no MIDI File Player to load the midi option.")
+		}
+		page.name = `${decodeURIComponent(midiUrl.pathname.split("/").pop() || "MIDI file")} — One-key melody`
+		page.description =
+			"Press a playing key to play the next MIDI melody note. Release to end the note. Choose another file in the MIDI File Player."
+		for (const chain of page.workspace.chains) {
+			chain.options.name = page.name
+		}
+		delete (page as PresetPage & { source?: unknown }).source
+	}
+	for (const type of outputs) {
+		let device = page.workspace.devices.find(
+			(entry: any) =>
+				entry.direction === "output" &&
+				entry.definition.factory === "output" &&
+				entry.definition.type === type
+		)
+		if (!device) {
+			let id = `url-output-${type}`
+			while (page.workspace.devices.some((entry: any) => entry.id === id)) {
+				id += "-added"
+			}
+			device = { id, direction: "output", definition: { factory: "output", type } }
+			page.workspace.devices.push(device)
+		}
+		for (const chain of page.workspace.chains) {
+			if (!chain.outputs.includes(device.id)) {
+				chain.outputs.push(device.id)
+			}
+			chain.disabledOutputs = (chain.disabledOutputs ?? []).filter(
+				(id: string) => id !== device.id
+			)
+		}
+	}
+	if (midiUrl || outputs.length) {
+		delete page.catalogue
+	}
+	return parsePresetPage(JSON.stringify(page))
 }
