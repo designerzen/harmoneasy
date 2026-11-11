@@ -1,7 +1,6 @@
 import { createReverbImpulseResponse } from "audiobus/effects/reverb"
 import { connectCLAPMixer } from "audiobus/instruments/clap/clap-mixer"
 import { setAudioDestination } from "audiobus/audio-destination"
-import { EVENT_POINTER_DOWN, EVENT_KEY_DOWN } from "audiobus/event-constants"
 
 export default class AudioBus extends EventTarget {
 	#audioContext: AudioContext
@@ -35,7 +34,7 @@ export default class AudioBus extends EventTarget {
 		this.#output.gain.value = Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0
 	}
 
-	constructor(initialVolume: number = 1, waitForActivation: boolean = true) {
+	constructor(initialVolume: number = 1) {
 		super()
 
 		// Create AudioContext - only called after user interaction
@@ -70,24 +69,7 @@ export default class AudioBus extends EventTarget {
 
 		// Resume if suspended (required by browser autoplay policy)
 		// This must complete before AudioWorklet can be used
-		if (waitForActivation) {
-			this.loaded = this.resumeContext()
-		} else {
-			// Direct preset links can build their UI before the browser permits sound.
-			// The first playing gesture resumes the context without another start dialog.
-			const unlock = () => {
-				void this.resumeContext().then(() => {
-					if (context.state === "running") {
-						document.removeEventListener(EVENT_POINTER_DOWN, unlock, true)
-						document.removeEventListener(EVENT_KEY_DOWN, unlock, true)
-					}
-				})
-			}
-			document.addEventListener(EVENT_POINTER_DOWN, unlock, true)
-			document.addEventListener(EVENT_KEY_DOWN, unlock, true)
-			unlock()
-			this.loaded = Promise.resolve()
-		}
+		this.loaded = this.resumeContext()
 	}
 
 	private async resumeContext(): Promise<void> {

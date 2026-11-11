@@ -12,9 +12,6 @@
 		<meta name="apple-mobile-web-app-title" content="Harmoneasy" />
 		<link rel="manifest" href="/site.webmanifest" />
 		<script>
-			if (new URLSearchParams(location.search).get("start") === "1") {
-				document.documentElement.setAttribute("data-direct-preset", "")
-			}
 			try {
 				const theme = JSON.parse(localStorage.getItem("harmoneasy.theme"))
 				if (typeof theme?.hue === "number") {
@@ -25,9 +22,6 @@
 				}
 			} catch {}
 		</script>
-		<style>
-			[data-direct-preset] #start-dialog:not(:modal) { display: none; }
-		</style>
 	</head>
 
 	<body>
@@ -58,6 +52,7 @@
 					<span id="start-title">Harmoneasy</span>
 				</button>
 				<section id="start-preset-context" hidden aria-labelledby="start-preset-name">
+					<p id="start-preset-label" class="start-preset-label">Ready to start</p>
 					<h1 id="start-preset-name"></h1>
 					<p id="start-preset-description"></p>
 				</section>
@@ -115,6 +110,7 @@
 					</button>
 					<a href="%BASE_URL%presets/">Browse preset pages</a>
 					<a href="%BASE_URL%play/">Play songs</a>
+					<a data-start-song-back href="%BASE_URL%play/" hidden>Choose another song</a>
 				</div>
 			</header>
 			<form id="start-form" method="dialog"></form>

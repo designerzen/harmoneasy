@@ -532,6 +532,41 @@
 			overflow-wrap: anywhere;
 		}
 
+		.component-control:has(> input[type="checkbox"]) {
+			grid-template-columns: minmax(0, 1fr) auto;
+			align-items: center;
+		}
+
+		.component-control > input[type="checkbox"] {
+			appearance: none;
+			position: relative;
+			width: 2.25rem;
+			height: 1.25rem;
+			border: var(--border);
+			border-radius: 999px;
+			background: var(--col-surface-sunken);
+			transition: background-color 120ms;
+
+			&::after {
+				content: "";
+				position: absolute;
+				inset: 2px auto 2px 2px;
+				aspect-ratio: 1;
+				border-radius: 50%;
+				background: var(--col-muted);
+				transition: translate 120ms;
+			}
+
+			&:checked {
+				background: var(--col-accent);
+
+				&::after {
+					background: var(--col-on-accent);
+					translate: 1rem 0;
+				}
+			}
+		}
+
 		:is(input:not([type="checkbox"]), select, button, textarea) {
 			width: 100%;
 			margin: 0;

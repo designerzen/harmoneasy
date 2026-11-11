@@ -7,7 +7,7 @@ import type { ControlBinding, ControlDescriptor } from "control-surface/types"
 import { createRequire } from "node:module"
 import { resolve } from "node:path"
 import { TransformerMIDIFilePlayer } from "audiobus/io/transformers/transformer-midi-file-player"
-import { subscribeControlSchema } from "audiobus/io/component-ui"
+import { componentBindings, subscribeControlSchema } from "audiobus/io/component-ui"
 
 const descriptor: ControlDescriptor = {
 	id: "channel",
@@ -144,4 +144,20 @@ it("publishes Auto and actual playable MIDI tracks when a file loads", async () 
 		unsubscribe()
 		source.destroy()
 	}
+})
+
+it("shows off and on choices as one switch while keeping saved 0/1 values", async () => {
+	const transformer = new TransformerMIDIFilePlayer({ loop: 1 as unknown as boolean })
+	const bindings = await componentBindings(transformer, "player")
+	const loop = bindings.find((binding) => binding.descriptor.id === "loop")!
+	expect(loop.descriptor.widget).toBe("toggle")
+	expect(loop.descriptor.choices).toBeUndefined()
+	expect(widgetChoices(loop.descriptor)).toEqual(["toggle"])
+	expect(loop.read()).toBe(true)
+	await loop.write(false)
+	expect(transformer.options.loop).toBe(0)
+	expect(loop.read()).toBe(false)
+	const playback = bindings.find((binding) => binding.descriptor.id === "playbackMode")!
+	expect(playback.descriptor.widget).not.toBe("toggle")
+	transformer.destroy()
 })

@@ -90,8 +90,6 @@ import OPFSStorage, { hasOPFS } from "audiobus/storage/opfs-storage.ts"
 // Types
 import type { IAudioCommand } from "audiobus/audio-command-interface.ts"
 
-const directPresetLaunch = new URLSearchParams(window.location.search).get("start") === "1"
-
 createThemeControls(document)
 createAboutDialog(document)
 createCommandPalette(document)
@@ -471,7 +469,7 @@ const initialiseApplication = async (
 	const initialVolumePercent: number = volumeState ? parseFloat(volumeState as string) : 50
 	const initialVolume: number = Math.max(0, Math.min(1, initialVolumePercent / 100))
 
-	bus = new AudioBus(initialVolume, !directPresetLaunch)
+	bus = new AudioBus(initialVolume)
 	await bus.loaded
 
 	timer = new AudioTimer(bus.audioContext, bus.hasAudioWorklets)
@@ -806,9 +804,6 @@ try {
 	const play = playRoute(window.location.href, import.meta.env.BASE_URL)
 	if (play && new URLSearchParams(window.location.search).has(PLAY_REDIRECT_KEY)) {
 		const url = playUrl(play, import.meta.env.BASE_URL, window.location.origin)
-		if (directPresetLaunch) {
-			url.searchParams.set("start", "1")
-		}
 		url.hash = window.location.hash
 		history.replaceState(history.state, "", url)
 	}
@@ -847,19 +842,7 @@ const wizardButton = startDialog.querySelector<HTMLButtonElement>("#start-wizard
 createSetupWizard(wizardButton, (setup) => {
 	void startApplication(wizardButton, setup)
 })
-if (directPresetLaunch) {
-	void presetPageResult.then(({ preset, error }) => {
-		if (preset && !error) {
-			void startApplication(
-				startDialog.querySelector<HTMLButtonElement>(".btn-continue-session")!
-			)
-		} else {
-			startDialog.showModal()
-		}
-	})
-} else {
-	startDialog.showModal()
-}
+startDialog.showModal()
 startDialog.addEventListener("cancel", (event) => event.preventDefault())
 async function startApplication(button: HTMLButtonElement, setup?: PresetSetup) {
 	if (startDialog.inert) {

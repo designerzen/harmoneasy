@@ -3,6 +3,7 @@ import { presetSetup } from "../components/graph/preset-catalogue"
 import type { PresetSetup } from "audiobus/io/preset-library"
 import { EVENT_CLICK } from "audiobus/event-constants"
 import type { PresetPage } from "./preset-page"
+import { configurationSteps } from "audiobus/io/preset-library"
 export * from "./start-context-catalogue"
 
 export function createStartContexts(
@@ -52,12 +53,28 @@ export function createStartContexts(
 		getSetup: () => selected,
 		setPresetPage(preset: PresetPage) {
 			hasPagePreset = true
+			const song = preset.workspace.chains.some((chain: { transformers: string }) =>
+				configurationSteps(chain.transformers).some(
+					(step) => step.type === "MIDI-File-Player"
+				)
+			)
+			root.setAttribute("aria-labelledby", "start-preset-name")
+			root.dataset.startContext = song ? "song" : "preset"
+			root.querySelector<HTMLElement>("#start-preset-label")!.textContent = song
+				? "Ready to play"
+				: "Ready to start"
 			root.querySelector<HTMLElement>("#start-preset-context")!.hidden = false
 			root.querySelector<HTMLElement>("#start-preset-name")!.textContent = preset.name
 			root.querySelector<HTMLElement>("#start-preset-description")!.textContent =
 				preset.description
-			root.querySelector<HTMLElement>(".btn-continue-session span")!.textContent =
-				"Start preset"
+			root.querySelector<HTMLElement>(".btn-continue-session span")!.textContent = song
+				? "Start playing"
+				: "Start this preset"
+			root.querySelector<HTMLElement>("#start-wizard")!.hidden = song
+			toggle.hidden = song
+			for (const item of root.querySelectorAll<HTMLElement>(".start-footer > *")) {
+				item.hidden = item.hasAttribute("data-start-song-back") ? !song : song
+			}
 			if (host.hidden) {
 				toggleLabel.textContent = "Load another preset"
 			}

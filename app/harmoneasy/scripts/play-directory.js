@@ -161,7 +161,7 @@ export function mountPlayDirectory(root, songs, artistOrder) {
 				const heading = document.createElement("h2")
 				const link = document.createElement("a")
 				link.className = "card-action"
-				link.href = `${root.dataset.base}${song.route}/${song.count ? "" : "?start=1"}`
+				link.href = `${root.dataset.base}${song.route}/`
 				heading.textContent = song.name
 				const credit = document.createElement("p")
 				credit.textContent = song.count ? song.categories.join(" · ") : song.artist

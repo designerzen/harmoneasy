@@ -354,6 +354,12 @@ body:has(dialog:modal) {
 			margin: 0;
 			color: var(--col-muted);
 		}
+		.start-preset-label {
+			margin-bottom: 0.625rem;
+			color: var(--col-accent);
+			font-size: var(--text-sm);
+			font-weight: 600;
+		}
 	}
 	.start-actions {
 		display: grid;

@@ -11,6 +11,7 @@ import {
 } from "../source/components/graph/preset-catalogue"
 import startPage from "../index.html?raw"
 import arcanaPreset from "../presets/hardware/arcana/strum.json?raw"
+import songPreset from "../presets/songs/twinkle-twinkle-little-star.json?raw"
 import { parsePresetPage } from "../source/services/preset-page"
 import { DEFAULT_PRESET_LIBRARY } from "../../../packages/audiobus/io/transformer-presets"
 import { parsePresetLibrary } from "../../../packages/audiobus/io/preset-library"
@@ -100,7 +101,7 @@ it("preloads URL presets as the main start choice and keeps other presets availa
 	expect(root.querySelector("#start-preset-name")!.textContent).toBe(preset.name)
 	expect(root.querySelector("#start-preset-description")!.textContent).toBe(preset.description)
 	const start = root.querySelector<HTMLButtonElement>(".btn-continue-session")!
-	expect(start.textContent?.trim()).toBe("Start preset")
+	expect(start.textContent?.trim()).toBe("Start this preset")
 	expect(start.disabled).toBe(false)
 	const submit = vi.fn((event: Event) => event.preventDefault())
 	start.form!.addEventListener(EVENT_SUBMIT, submit)
@@ -108,7 +109,7 @@ it("preloads URL presets as the main start choice and keeps other presets availa
 	expect(submit).toHaveBeenCalledOnce()
 	expect(onStart).not.toHaveBeenCalled()
 	const toggle = root.querySelector<HTMLButtonElement>("#show-start-presets")!
-	expect(toggle.textContent).toBe("Load another preset")
+	expect(toggle.textContent?.trim()).toBe("Load another preset")
 	toggle.click()
 	expect(root.querySelector<HTMLElement>("#start-presets-content")!.hidden).toBe(false)
 	const another = [...root.querySelectorAll<HTMLButtonElement>("nav button")].find((button) =>
@@ -121,10 +122,32 @@ it("preloads URL presets as the main start choice and keeps other presets availa
 	expect(onStart).toHaveBeenCalledExactlyOnceWith(picker.getSetup())
 	expect(picker.getSetup()?.id).toBe("drum-and-bass")
 	toggle.click()
-	expect(toggle.textContent).toBe("Load another preset")
+	expect(toggle.textContent?.trim()).toBe("Load another preset")
 	expect(root.querySelector<HTMLAnchorElement>(".start-footer a")!.getAttribute("href")).toBe(
 		"%BASE_URL%presets/"
 	)
+})
+
+it("presents the selected song as a focused click-to-start page", () => {
+	document.body.innerHTML = startPage.match(/<dialog id="start-dialog"[\s\S]*?<\/dialog>/)![0]
+	const root = document.querySelector<HTMLElement>("#start-dialog")!
+	const onStart = vi.fn()
+	const picker = mountStartContexts(root, onStart)
+	const song = parsePresetPage(songPreset)
+	picker.setPresetPage(song)
+	expect(root.dataset.startContext).toBe("song")
+	expect(root.getAttribute("aria-labelledby")).toBe("start-preset-name")
+	expect(root.querySelector("#start-preset-name")?.textContent).toBe(song.name)
+	expect(root.querySelector("#start-preset-label")?.textContent).toBe("Ready to play")
+	expect(root.querySelector(".btn-continue-session span")?.textContent).toBe("Start playing")
+	expect(root.querySelector<HTMLElement>("#start-wizard")?.hidden).toBe(true)
+	expect(root.querySelector<HTMLElement>("#show-start-presets")?.hidden).toBe(true)
+	const choices = [...root.querySelectorAll<HTMLElement>(".start-footer > *")].filter(
+		(item) => !item.hidden
+	)
+	expect(choices).toHaveLength(1)
+	expect(choices[0].textContent).toBe("Choose another song")
+	expect(onStart).not.toHaveBeenCalled()
 })
 
 it("covers the percussion genres with valid grooves and connected sound outputs", () => {
@@ -295,17 +318,17 @@ it("hides the browser until Presets is clicked and retains session actions", asy
 	const content = dialog.querySelector<HTMLElement>("#start-presets-content")!
 	const toggle = dialog.querySelector<HTMLButtonElement>("#show-start-presets")!
 	expect(content.hidden).toBe(true)
-	expect(toggle.textContent).toBe("Presets")
+	expect(toggle.textContent?.trim()).toBe("Presets")
 	expect(toggle.getAttribute("aria-expanded")).toBe("false")
 	expect(toggle.type).toBe("button")
 	toggle.click()
 	expect(content.hidden).toBe(false)
-	expect(toggle.textContent).toBe("Close presets")
+	expect(toggle.textContent?.trim()).toBe("Close presets")
 	expect(toggle.getAttribute("aria-expanded")).toBe("true")
 	expect(document.activeElement).toBe(dialog.querySelector(".preset-search input"))
 	toggle.click()
 	expect(content.hidden).toBe(true)
-	expect(toggle.textContent).toBe("Presets")
+	expect(toggle.textContent?.trim()).toBe("Presets")
 	expect(dialog.querySelector("#start-contexts")).toBeNull()
 	expect(dialog.querySelector(".preset-browse")).toBeNull()
 	expect(dialog.querySelector(".start-preset-actions")).toBeNull()
@@ -323,7 +346,7 @@ it("hides the browser until Presets is clicked and retains session actions", asy
 	expect(session.hidden).toBe(false)
 	expect(session.closest("[hidden], details")).toBeNull()
 	const wizard = dialog.querySelector<HTMLButtonElement>("#start-wizard")!
-	expect(wizard.textContent).toBe("Setup wizard")
+	expect(wizard.textContent?.trim()).toBe("Setup wizard")
 	expect(wizard.closest("[hidden], details")).toBeNull()
 	expect(dialog.querySelector(".start-footer a")?.textContent).toBe("Browse preset pages")
 	expect(empty.form?.id).toBe("start-form")

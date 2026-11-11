@@ -73,7 +73,7 @@ describe("play directory", () => {
 			expect(root.querySelector("h2")?.textContent).toBe("Bohemian Rhapsody")
 		)
 		expect(root.querySelector(".card-action")?.getAttribute("href")).toBe(
-			"/harmoneasy/play/bitmidi/queen-bohemian-rhapsody-mid/?start=1"
+			"/harmoneasy/play/bitmidi/queen-bohemian-rhapsody-mid/"
 		)
 		expect(root.querySelectorAll("article")).toHaveLength(1)
 		expect(fetcher).toHaveBeenLastCalledWith("/harmoneasy/play/catalogue-abc.json", {
@@ -100,7 +100,7 @@ describe("play directory", () => {
 		search.dispatchEvent(new Event(EVENT_INPUT, { bubbles: true }))
 		expect(root.querySelectorAll("article")).toHaveLength(1)
 		expect(root.querySelector(".card-action")?.getAttribute("href")).toBe(
-			"/harmoneasy/play/bitmidi/track-9999-mid/?start=1"
+			"/harmoneasy/play/bitmidi/track-9999-mid/"
 		)
 		expect(root.querySelector(".page-number")?.textContent).toBe("Page 1 of 1")
 	})
