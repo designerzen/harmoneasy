@@ -15,17 +15,23 @@ export function createSharedDevices(
 		search = "",
 		selection = "",
 		disabled = false,
-		onSelect
+		onSelect,
+		filterDevice
 	}: {
 		direction: "input" | "output"
 		search?: string
 		selection?: string
 		disabled?: boolean
+		filterDevice?: (device: any) => boolean
 		onSelect?: (device: any) => void
 	}
 ) {
 	const available = manager.devices.filter((entry) => {
-		if (entry.direction !== direction || entry.chains.has(chainId)) {
+		if (
+			entry.direction !== direction ||
+			entry.chains.has(chainId) ||
+			(filterDevice && !filterDevice(entry.device))
+		) {
 			return false
 		}
 		try {

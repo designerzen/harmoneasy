@@ -67,6 +67,7 @@ const INPUT_ICONS: Partial<Record<InputId, string>> = {
 }
 
 const OUTPUT_ICONS: Record<OutputId, string> = {
+	"impulse-response": "spectrum",
 	sion: "synth",
 	"303": "synth",
 	"drum-kit": "drums",

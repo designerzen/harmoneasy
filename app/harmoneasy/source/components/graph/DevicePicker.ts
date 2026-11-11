@@ -42,11 +42,13 @@ export function createDevicePicker(
 	{
 		direction,
 		replacing,
+		audioProcessorsOnly = false,
 		dialog = false,
 		filterHeader,
 		onAdded
 	}: {
 		direction: "input" | "output"
+		audioProcessorsOnly?: boolean
 		replacing?: AbstractInput | IAudioOutput
 		dialog?: boolean
 		filterHeader?: HTMLElement | null
@@ -249,14 +251,20 @@ export function createDevicePicker(
 			),
 			...connectedChoices
 		]
-		const filtered = availableChoices.filter((choice) =>
-			choiceMatches(choice, search.value, classification)
+		const filtered = availableChoices.filter(
+			(choice) =>
+				(!audioProcessorsOnly ||
+					(choice.type === "audio" && choice.subtype === "effect")) &&
+				choiceMatches(choice, search.value, classification)
 		)
 		filter.update(availableChoices)
 		host.setAttribute("aria-busy", String(loading || busy))
 		results.replaceChildren(
 			createSharedDevices(context, {
 				direction,
+				filterDevice: audioProcessorsOnly
+					? (device) => Boolean(device.audioInput)
+					: undefined,
 				search: search.value,
 				selection: classification,
 				disabled: busy,

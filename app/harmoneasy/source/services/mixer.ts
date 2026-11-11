@@ -156,7 +156,9 @@ export function createMixer(manager: IOChainManager, master: GainNode, root: Doc
 				node: outputNode(device)
 			}))
 		for (const { device, node } of outputs) {
-			mixChannels.get(device, node, true)
+			if (!manager.getOutputChannel?.(device)) {
+				mixChannels.get(device, node, true)
+			}
 		}
 		if (
 			strips.length &&
@@ -175,7 +177,8 @@ export function createMixer(manager: IOChainManager, master: GainNode, root: Doc
 		strips = []
 		channels.replaceChildren()
 		for (const { device, name } of outputs) {
-			const mixed = () => mixChannels.get(device, outputNode(device))
+			const mixed = () =>
+				manager.getOutputChannel?.(device) ?? mixChannels.get(device, outputNode(device))
 			const node = mixed()
 			strip(
 				device,

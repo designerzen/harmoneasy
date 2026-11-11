@@ -99,14 +99,18 @@ export function OutputNode(props: any) {
 			<DeviceGui device={output} expanded={isFullscreen} />
 
 			{!isFullscreen && (
-				<Handle type="target" position={isVertical ? Position.Top : Position.Left} />
+				<Handle
+					type="target"
+					id={output.audioInput ? "audio-in" : undefined}
+					position={isVertical ? Position.Top : Position.Left}
+				/>
 			)}
 			{!isFullscreen && (
 				<Handle
 					type="source"
 					id={AUDIO_HANDLE}
 					position={isVertical ? Position.Bottom : Position.Right}
-					isConnectable={false}
+					isConnectable={true}
 					// Always mounted so the speaker edge finds it if an engine gains audio later.
 					style={{ visibility: hasAudibleOutput(output) ? undefined : "hidden" }}
 					aria-label={`${output.name} audio out`}

@@ -225,6 +225,13 @@ onMidiDeviceProfilesChanged(() => {
 })
 
 export const OUTPUT_GUIDANCE: Record<OutputId, Guidance> = {
+	"impulse-response": guide(
+		"IR",
+		"Filter upstream audio through an impulse response.",
+		"Chain reverbs, spaces and speaker cabinets before the speakers.",
+		audio +
+			" Choose from 26 openly licensed presets or load an audio impulse response up to 4 MB; adjust Wet mix."
+	),
 	"song-tree": guide(
 		"Tree",
 		"Grow a tree from incoming notes and chords.",

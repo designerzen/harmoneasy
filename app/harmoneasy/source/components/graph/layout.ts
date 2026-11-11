@@ -117,35 +117,63 @@ export const getStructure = (
 	if (!outputs.length) {
 		previous.forEach((source) => connect(source, end))
 	}
-	outputs.forEach((output, index) => {
+	const processors = outputs.filter((output) => output.audioInput)
+	const sources = outputs.filter((output) => !output.audioInput)
+	for (const output of outputs) {
+		const processorIndex = processors.indexOf(output)
 		const node = addNode(
 			"node-output-" + deviceId(output),
 			"output",
-			transformerColumn + 1,
-			index,
+			transformerColumn + 1 + (output.audioInput ? processorIndex + 1 : 0),
+			output.audioInput ? 0 : sources.indexOf(output),
 			{ label: output.name, output }
 		)
-		previous.forEach((source) => connect(source, node))
-	})
-	const audible = outputs.filter(hasAudibleOutput)
-	if (audible.length) {
-		const speaker = addNode("node-speaker", NOTE_TYPE.speaker, transformerColumn + 2, 0, {
-			label: "Speakers",
-			outputs: audible
-		})
-		for (const output of audible) {
+		if (!output.audioInput) {
+			previous.forEach((source) => connect(source, node))
+		}
+	}
+	const enabled = (output: (typeof outputs)[number]) =>
+		chain.isActive !== false && chain.outputManager?.isEnabled(output) !== false
+	const activeProcessors = processors.filter(enabled)
+	const audible = sources.filter((output) => enabled(output) && hasAudibleOutput(output))
+	if (audible.length || processors.length) {
+		const terminal = activeProcessors.length ? activeProcessors.slice(-1) : audible
+		const speaker = addNode(
+			"node-speaker",
+			NOTE_TYPE.speaker,
+			transformerColumn + 2 + processors.length,
+			0,
+			{
+				label: "Speakers",
+				outputs: terminal
+			}
+		)
+		const audioEdge = (
+			output: (typeof outputs)[number],
+			target: string,
+			targetHandle?: string
+		) => {
 			const source = prefix("node-output-" + deviceId(output))
 			edges.push({
-				id: `audio:${source}->${speaker.id}`,
+				id: `audio:${source}->${target}`,
 				source,
-				target: speaker.id,
+				target,
 				sourceHandle: AUDIO_HANDLE,
+				targetHandle,
 				type: EDGE_TYPE.audio,
 				deletable: false,
 				selectable: false,
 				data: { output }
 			})
 		}
+		let upstream = audible
+		for (const processor of activeProcessors) {
+			upstream.forEach((output) =>
+				audioEdge(output, prefix("node-output-" + deviceId(processor)), "audio-in")
+			)
+			upstream = [processor]
+		}
+		upstream.forEach((output) => audioEdge(output, speaker.id))
 	}
 	for (const [index, surface] of (chain.options.controlSurfaces ?? []).entries()) {
 		const node = addNode(

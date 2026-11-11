@@ -58,9 +58,11 @@ export function createDeviceDialog(
 	{
 		direction,
 		replacing,
+		audioProcessorsOnly = false,
 		onClose
 	}: {
 		direction: "input" | "output"
+		audioProcessorsOnly?: boolean
 		replacing?: AbstractInput | IAudioOutput
 		onClose: () => void
 	}
@@ -74,6 +76,7 @@ export function createDeviceDialog(
 			createDevicePicker(context, {
 				direction,
 				replacing,
+				audioProcessorsOnly,
 				dialog: true,
 				filterHeader: header,
 				onAdded: close

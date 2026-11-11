@@ -277,6 +277,15 @@ function FlowComponent({ isFront, focusRequest }: { isFront: boolean; focusReque
 				(source?.data.input || source?.data.output || source?.data.element)
 			)
 		}
+		if (connection.sourceHandle === "audio-out" || connection.targetHandle === "audio-in") {
+			return Boolean(
+				connection.sourceHandle === "audio-out" &&
+				connection.targetHandle === "audio-in" &&
+				source?.data.output &&
+				target?.data.output?.audioInput &&
+				source !== target
+			)
+		}
 		return Boolean(
 			source &&
 			target &&
@@ -308,6 +317,10 @@ function FlowComponent({ isFront, focusRequest }: { isFront: boolean; focusReque
 					)
 				)
 			}
+			return
+		}
+		if (connection.sourceHandle === "audio-out" && source?.data.output && target?.data.output) {
+			chain.outputManager.moveAfter(target.data.output, source.data.output)
 			return
 		}
 		if (source?.data.input) {

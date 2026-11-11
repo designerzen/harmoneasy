@@ -1,7 +1,8 @@
-import React, { useEffect, useRef } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { Handle, Position } from "@xyflow/react"
 import { deviceId } from "audiobus/io/device-definition"
 import type { IAudioOutput } from "audiobus/io/outputs/output-interface"
+import { DeviceDialog } from "../GraphDialogs"
 import { watchOutputLevel } from "../audio-levels"
 
 export function SpeakerNode({
@@ -10,6 +11,7 @@ export function SpeakerNode({
 	data: { layoutMode?: string; outputs: IAudioOutput[] }
 	id?: string
 }) {
+	const [open, setOpen] = useState(false)
 	const root = useRef<HTMLDivElement>(null)
 	const outputs = data.outputs
 	const outputKey = outputs.map(deviceId).join()
@@ -30,7 +32,7 @@ export function SpeakerNode({
 		<div
 			ref={root}
 			className="node-speaker graph-node"
-			role="img"
+			role="group"
 			aria-label={label}
 			title={label}
 		>
@@ -47,6 +49,21 @@ export function SpeakerNode({
 					<circle className="speaker-cap" cx="60" cy="40" r="9" />
 				</g>
 			</svg>
+			<button
+				type="button"
+				className="cta btn-add nodrag nopan"
+				onClick={() => setOpen(true)}
+				aria-label="Add Output before speakers"
+			>
+				Output
+			</button>
+			{open && (
+				<DeviceDialog
+					direction="output"
+					audioProcessorsOnly
+					onClose={() => setOpen(false)}
+				/>
+			)}
 			<Handle
 				type="target"
 				position={data.layoutMode === "vertical" ? Position.Top : Position.Left}
