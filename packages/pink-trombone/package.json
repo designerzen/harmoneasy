@@ -5,7 +5,8 @@
 	"type": "module",
 	"main": "index.ts",
 	"exports": {
-		".": "./index.ts"
+		".": "./index.ts",
+		"./pink-trombone.js": "./pink-trombone.js"
 	},
 	"scripts": {
 		"dev": "echo 'No dev server for this package'",
@@ -17,8 +18,7 @@
 		"*.wasm"
 	],
 	"dependencies": {
-		"@harmoneasy/shared-config": "workspace:^",
-		"audiobus": "workspace:^"
+		"@harmoneasy/shared-config": "workspace:^"
 	},
 	"devDependencies": {
 		"typescript": "~5.9.3"
