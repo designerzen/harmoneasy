@@ -1,1 +1,0 @@
-export default function registerSynth303Processor(definitions: Record<string, object>): void

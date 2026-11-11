@@ -1,1 +1,0 @@
-export function getEmojiForScaleAndMode(scale: string, mode: number | string): string

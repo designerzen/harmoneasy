@@ -1,5 +1,0 @@
-export { UI_COMPONENTS, loadUIComponent } from "./components.ts"
-export { UI_INPUT_COMPONENTS, type UIInputId } from "./input-components.ts"
-export { bindAudioControllers } from "./interfaces/audio-controller-binding.ts"
-export { bindAudioVisualisers } from "./interfaces/audio-visualiser-binding.ts"
-export { registerAudioContextOutput } from "./interfaces/audio-context-output.ts"

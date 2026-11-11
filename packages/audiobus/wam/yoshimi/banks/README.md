@@ -1,1 +1,0 @@
-copy presets from repository root **banks** folder here, retaining its directory structure.
