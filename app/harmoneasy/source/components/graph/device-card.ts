@@ -295,7 +295,7 @@ export const OUTPUT_GUIDANCE: Record<OutputId, Guidance> = {
 	),
 	rompler: guide(
 		"Rom",
-		"Play any of the 128 General MIDI instruments.",
+		"Play any of the 128 General MIDI instruments from the OpenGM24 soundfont.",
 		"Samples stream in around the notes you play, so sound starts almost immediately and switching instruments cancels the old download.",
 		audio + " AudioWorklet support and an internet connection to fetch the soundfont."
 	),

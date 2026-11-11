@@ -3,6 +3,7 @@ import { afterEach, expect, it, vi } from "vitest"
 import { readFileSync } from "fs"
 import Rompler from "../../../packages/audiobus/io/outputs/rompler/output-rompler"
 import {
+	ROMPLER_HOST,
 	noteName,
 	sampleGrid,
 	sampleUrl
@@ -23,7 +24,10 @@ afterEach(() => {
 })
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0))
 
-const fixture = (options: Record<string, any> = {}) => {
+const fixture = (
+	options: Record<string, any> = {},
+	audio = { sampleRate: 48000, data: new Float32Array([0, 0.5, 1, -1]) }
+) => {
 	const nodes: any[] = []
 	const requests: { url: string; signal: AbortSignal; resolve: () => void }[] = []
 	vi.stubGlobal(
@@ -59,10 +63,10 @@ const fixture = (options: Record<string, any> = {}) => {
 		resume: vi.fn(async () => {}),
 		createGain: () => ({ gain: { value: 1 }, connect: vi.fn(), disconnect: vi.fn() }),
 		decodeAudioData: vi.fn(async () => ({
-			length: 4,
-			sampleRate: 48000,
+			length: audio.data.length,
+			sampleRate: audio.sampleRate,
 			numberOfChannels: 2,
-			getChannelData: () => new Float32Array([0, 0.5, 1, -1])
+			getChannelData: () => audio.data
 		}))
 	}
 	const output = new Rompler({ ...options, audioContext: context })
@@ -74,24 +78,25 @@ const cmd = (type: string, number = 60, value = 0) =>
 const notes = (requests: { url: string }[]) =>
 	requests.map(({ url }) => url.slice(url.lastIndexOf("/") + 1, -4))
 
-it("maps the GM catalogue onto midi-js-soundfonts URLs", () => {
+it("maps the GM catalogue onto OpenGM24 URLs", () => {
 	expect(noteName(21)).toBe("A0")
 	expect(noteName(61)).toBe("Db4")
 	expect(noteName(108)).toBe("C8")
 	expect(sampleGrid(1)).toHaveLength(88)
 	expect(sampleGrid(3)).toContain(60)
-	expect(sampleUrl("https://host/", "FluidR3_GM", 24, 60)).toBe(
-		"https://host/FluidR3_GM/acoustic_guitar_nylon-mp3/C4.mp3"
+	expect(sampleUrl(ROMPLER_HOST, 24, 60)).toBe(
+		"https://designerzen.github.io/Open-GeneralMIDI-SoundFont/OpenGM24/acoustic_guitar_nylon-mp3/C4.mp3"
 	)
 })
 
 it("registers, persists its preset and downloads nothing until requested", async () => {
-	const { output, requests } = fixture({ preset: 40, spacing: 2, pack: "MusyngKite" })
+	const { output, requests } = fixture({ preset: 40, spacing: 2 })
 	const { OUTPUT_FACTORIES } = await import("../../../packages/audiobus/io/output-factory")
 	expect(OUTPUT_FACTORIES.find((factory) => factory.id === "rompler")?.isAvailable()).toBe(true)
 	defineDevice(output, { factory: "output", type: "rompler" })
 	const saved = JSON.parse(JSON.stringify(deviceDefinition(output)))
-	expect(saved.options).toMatchObject({ preset: 40, spacing: 2, pack: "MusyngKite" })
+	expect(saved.options).toMatchObject({ preset: 40, spacing: 2 })
+	expect(saved.options.pack).toBeUndefined()
 	expect(saved.options.audioContext).toBeUndefined()
 	await output.createGui()
 	expect(requests).toHaveLength(0)
@@ -115,9 +120,31 @@ it("loads outward from the played register with bounded concurrency", async () =
 	)
 	// Identical stereo collapses to mono 16-bit PCM and is transferred, not copied
 	expect(message.note).toBe(72)
-	expect(Array.from(message.channels[0])).toEqual([0, 16383, 32767, -32767])
+	// Scaled by the end fade, so one-shots never click off
+	expect(Array.from(message.channels[0])).toEqual([0, 102, 136, -68])
+	expect(message.loopEnd).toBeUndefined()
 	expect(transfer).toEqual([message.channels[0].buffer])
 	expect(requests).toHaveLength(7)
+})
+
+it("loops sustained presets with the crossfade baked into the sample", async () => {
+	const sampleRate = 8000
+	const data = new Float32Array(Math.round(3.13 * sampleRate)).map((_, i) =>
+		Math.sin((i * 2 * Math.PI) / 100)
+	)
+	const { output, nodes, requests } = fixture({ preset: 48 }, { sampleRate, data })
+	await output.connect()
+	requests[0].resolve()
+	await flush()
+	const [message] = nodes[0].port.postMessage.mock.calls.find(
+		([data]: any[]) => data.type === "sample"
+	)
+	const [pcm] = message.channels
+	expect(message.loopStart).toBe(sampleRate)
+	// The end lands on the cycle that best continues the loop start
+	expect((message.loopEnd - message.loopStart) % 100).toBe(0)
+	expect(pcm).toHaveLength(message.loopEnd)
+	expect(pcm[pcm.length - 1] / 32767).toBeCloseTo(data[message.loopStart - 1], 2)
 })
 
 it("switches presets by cancelling downloads and keeps old samples until new ones land", async () => {
@@ -180,6 +207,21 @@ it("plays held notes once the first sample arrives, pitched from the nearest key
 	send({ type: "sample", note: 60, channels: [new Int16Array(48000).fill(16384)] })
 	expect(processor.voices[0].rate).toBeCloseTo(2 ** (2 / 12))
 	expect(render()[127]).toBeCloseTo(0.5, 2)
+	// Looped voices outlast their sample until released
+	send({
+		type: "sample",
+		note: 64,
+		channels: [new Int16Array(200).fill(16384)],
+		loopStart: 100,
+		loopEnd: 200
+	})
+	send({ type: "on", channel: 0, note: 64, velocity: 1 })
+	for (let i = 0; i < 4; i++) {
+		render()
+	}
+	expect(processor.voices.map(({ note }: any) => note)).toEqual([62, 64])
+	expect(processor.voices[1].position).toBeLessThan(200)
+	send({ type: "off", channel: 0, note: 64 })
 	send({ type: "off", channel: 0, note: 62 })
 	send({ type: "release", value: 0.001 })
 	render()
