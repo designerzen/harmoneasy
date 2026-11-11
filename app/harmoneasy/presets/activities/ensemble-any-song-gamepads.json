@@ -1,0 +1,107 @@
+{
+	"format": "harmoneasy-preset",
+	"version": 1,
+	"name": "Play any MIDI together — Gamepad channels",
+	"description": "Upload any MIDI file or enter its URL on the control surface. A labelled Input and surface pad are created for every playable MIDI channel. Each channel has its own gamepad; press any button. Surface pads work even without a controller. Presses unlock eight beats of that part at the shared song position. Turn on assistance for quieter automatic backing parts. Changing the song rebuilds the controls automatically.",
+	"clock": {
+		"bpm": 120,
+		"swing": 0,
+		"divisions": 24,
+		"bars": 4
+	},
+	"midiControls": {
+		"enabled": true,
+		"bindings": []
+	},
+	"workspace": {
+		"version": 2,
+		"activeChainId": "ensemble-any-song-gamepads",
+		"devices": [
+			{
+				"id": "ensemble-voices",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "sion",
+					"options": {
+						"volume": 0.65,
+						"receiveChannels": [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16]
+					}
+				}
+			},
+			{
+				"id": "ensemble-drums",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "drum-kit",
+					"options": {
+						"volume": 0.6,
+						"channel": 10,
+						"receiveChannels": [10]
+					}
+				}
+			}
+		],
+		"chains": [
+			{
+				"id": "ensemble-any-song-gamepads",
+				"options": {
+					"name": "Play any MIDI together — Gamepad channels",
+					"active": true,
+					"graphLayout": "horizontal",
+					"controlSurfaces": [
+						{
+							"id": "ensemble-ensemble-any-song-gamepads",
+							"name": "Play song channels",
+							"theme": "neon",
+							"connections": [
+								{
+									"componentId": "transformer:ensemble-any-song-gamepads",
+									"controlIds": [
+										"uploadSong",
+										"midiFileUrl",
+										"autoInputs",
+										"assist",
+										"mode"
+									]
+								}
+							],
+							"widgets": [
+								{
+									"key": "[\"transformer:ensemble-any-song-gamepads\",\"uploadSong\"]"
+								},
+								{
+									"key": "[\"transformer:ensemble-any-song-gamepads\",\"midiFileUrl\"]"
+								},
+								{
+									"key": "[\"transformer:ensemble-any-song-gamepads\",\"autoInputs\"]"
+								},
+								{
+									"key": "[\"transformer:ensemble-any-song-gamepads\",\"assist\"]"
+								},
+								{
+									"key": "[\"transformer:ensemble-any-song-gamepads\",\"mode\"]"
+								}
+							]
+						}
+					],
+					"mainSurfaceId": "ensemble-ensemble-any-song-gamepads"
+				},
+				"inputs": [],
+				"outputs": ["ensemble-voices", "ensemble-drums"],
+				"transformers": "[\"{\\\"type\\\":\\\"Ensemble\\\",\\\"midiControlId\\\":\\\"ensemble-any-song-gamepads\\\",\\\"enabled\\\":true,\\\"midiFileUrl\\\":\\\"\\\",\\\"midiFileName\\\":\\\"\\\",\\\"autoInputs\\\":\\\"gamepads\\\",\\\"autoJoin\\\":false,\\\"assist\\\":false,\\\"activityBeats\\\":8,\\\"loop\\\":true,\\\"mode\\\":\\\"assisted\\\",\\\"players\\\":[]}\"]",
+				"disabledInputs": [],
+				"disabledOutputs": []
+			}
+		]
+	},
+	"catalogue": {
+		"id": "ensemble:ensemble-any-song-gamepads",
+		"category": "Activities · Together",
+		"kind": "workspace",
+		"order": 105,
+		"tags": ["ensemble", "multiplayer", "midi", "gamepads"],
+		"useCase": "Upload any MIDI file or enter its URL on the control surface. A labelled Input and surface pad are created for every playable MIDI channel. Each channel has its own gamepad; press any button. Surface pads work even without a controller. Presses unlock eight beats of that part at the shared song position. Turn on assistance for quieter automatic backing parts. Changing the song rebuilds the controls automatically."
+	}
+}

@@ -286,6 +286,12 @@ export const OUTPUT_GUIDANCE: Record<OutputId, Guidance> = {
 		audio +
 			" AudioWorklet support. Load samples in the output editor; samples save with your workspace."
 	),
+	rompler: guide(
+		"Rom",
+		"Play any of the 128 General MIDI instruments.",
+		"Samples stream in around the notes you play, so sound starts almost immediately and switching instruments cancels the old download.",
+		audio + " AudioWorklet support and an internet connection to fetch the soundfont."
+	),
 	"drum-accompaniment": guide(
 		"Dr",
 		"Add a steady drum break alongside your instrument.",

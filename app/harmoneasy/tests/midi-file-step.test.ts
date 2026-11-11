@@ -111,7 +111,11 @@ describe("MIDI file melody stepping", () => {
 	})
 	it("preserves the original whole-file playback mode", async () => {
 		const transformer = await setup({ playbackMode: "file" })
-		expect(transformer.transform([command(NOTE_ON)], timer)).toHaveLength(10)
+		const output = transformer.transform([command(NOTE_ON)], timer)
+		expect(output.filter((c) => c.type === NOTE_ON || c.type === NOTE_OFF)).toHaveLength(10)
+		expect(output.filter((c) => c.type === NOTE_ON).map((c) => c.channel)).toEqual([
+			1, 2, 10, 2, 2
+		])
 	})
 	it("still releases held melody notes when bypassed", async () => {
 		const transformer = await setup()

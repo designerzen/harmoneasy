@@ -1,0 +1,513 @@
+{
+	"format": "harmoneasy-preset",
+	"version": 1,
+	"name": "Never Gonna Give You Up — Channel keys",
+	"description": "The song is ready to play. A labelled Input and surface pad are created for every playable MIDI channel. Each channel has its own QWERTY key (A, S, D, F, …). Presses unlock eight beats of that part at the shared song position. Turn on assistance for quieter automatic backing parts. Changing the song rebuilds the controls automatically.",
+	"clock": {
+		"bpm": 114.00125401379415,
+		"swing": 0,
+		"divisions": 24,
+		"bars": 4
+	},
+	"midiControls": {
+		"enabled": true,
+		"bindings": []
+	},
+	"workspace": {
+		"version": 2,
+		"activeChainId": "ensemble-never-gonna-keyboard",
+		"devices": [
+			{
+				"id": "ensemble-never-gonna-keyboard-channel-1",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "channel-trigger",
+					"options": {
+						"ensembleId": "ensemble-never-gonna-keyboard",
+						"songChannel": 1,
+						"label": "Channel 1 · E.PIANO 2",
+						"key": "a",
+						"gamepadIndex": -1
+					}
+				}
+			},
+			{
+				"id": "ensemble-never-gonna-keyboard-channel-2",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "channel-trigger",
+					"options": {
+						"ensembleId": "ensemble-never-gonna-keyboard",
+						"songChannel": 2,
+						"label": "Channel 2 · SYN BASS 2",
+						"key": "s",
+						"gamepadIndex": -1
+					}
+				}
+			},
+			{
+				"id": "ensemble-never-gonna-keyboard-channel-3",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "channel-trigger",
+					"options": {
+						"ensembleId": "ensemble-never-gonna-keyboard",
+						"songChannel": 3,
+						"label": "Channel 3 · CLEAN GTR",
+						"key": "d",
+						"gamepadIndex": -1
+					}
+				}
+			},
+			{
+				"id": "ensemble-never-gonna-keyboard-channel-4",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "channel-trigger",
+					"options": {
+						"ensembleId": "ensemble-never-gonna-keyboard",
+						"songChannel": 4,
+						"label": "Channel 4 · MELODY",
+						"key": "f",
+						"gamepadIndex": -1
+					}
+				}
+			},
+			{
+				"id": "ensemble-never-gonna-keyboard-channel-5",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "channel-trigger",
+					"options": {
+						"ensembleId": "ensemble-never-gonna-keyboard",
+						"songChannel": 5,
+						"label": "Channel 5 · PICCOLO",
+						"key": "g",
+						"gamepadIndex": -1
+					}
+				}
+			},
+			{
+				"id": "ensemble-never-gonna-keyboard-channel-6",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "channel-trigger",
+					"options": {
+						"ensembleId": "ensemble-never-gonna-keyboard",
+						"songChannel": 6,
+						"label": "Channel 6 · SYNTH DRUM",
+						"key": "h",
+						"gamepadIndex": -1
+					}
+				}
+			},
+			{
+				"id": "ensemble-never-gonna-keyboard-channel-7",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "channel-trigger",
+					"options": {
+						"ensembleId": "ensemble-never-gonna-keyboard",
+						"songChannel": 7,
+						"label": "Channel 7 · SYNTH DRUM",
+						"key": "j",
+						"gamepadIndex": -1
+					}
+				}
+			},
+			{
+				"id": "ensemble-never-gonna-keyboard-channel-8",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "channel-trigger",
+					"options": {
+						"ensembleId": "ensemble-never-gonna-keyboard",
+						"songChannel": 8,
+						"label": "Channel 8 · SAW WAVE",
+						"key": "k",
+						"gamepadIndex": -1
+					}
+				}
+			},
+			{
+				"id": "ensemble-never-gonna-keyboard-channel-9",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "channel-trigger",
+					"options": {
+						"ensembleId": "ensemble-never-gonna-keyboard",
+						"songChannel": 9,
+						"label": "Channel 9 · SOPRAN SAX",
+						"key": "l",
+						"gamepadIndex": -1
+					}
+				}
+			},
+			{
+				"id": "ensemble-never-gonna-keyboard-channel-10",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "channel-trigger",
+					"options": {
+						"ensembleId": "ensemble-never-gonna-keyboard",
+						"songChannel": 10,
+						"label": "Channel 10 · DRUMS",
+						"key": "q",
+						"gamepadIndex": -1
+					}
+				}
+			},
+			{
+				"id": "ensemble-never-gonna-keyboard-channel-11",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "channel-trigger",
+					"options": {
+						"ensembleId": "ensemble-never-gonna-keyboard",
+						"songChannel": 11,
+						"label": "Channel 11 · STRINGS",
+						"key": "w",
+						"gamepadIndex": -1
+					}
+				}
+			},
+			{
+				"id": "ensemble-never-gonna-keyboard-channel-12",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "channel-trigger",
+					"options": {
+						"ensembleId": "ensemble-never-gonna-keyboard",
+						"songChannel": 12,
+						"label": "Channel 12 · TRUMPET",
+						"key": "e",
+						"gamepadIndex": -1
+					}
+				}
+			},
+			{
+				"id": "ensemble-never-gonna-keyboard-channel-13",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "channel-trigger",
+					"options": {
+						"ensembleId": "ensemble-never-gonna-keyboard",
+						"songChannel": 13,
+						"label": "Channel 13 · BRASS 1",
+						"key": "r",
+						"gamepadIndex": -1
+					}
+				}
+			},
+			{
+				"id": "ensemble-never-gonna-keyboard-channel-14",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "channel-trigger",
+					"options": {
+						"ensembleId": "ensemble-never-gonna-keyboard",
+						"songChannel": 14,
+						"label": "Channel 14 · WHISTLE",
+						"key": "t",
+						"gamepadIndex": -1
+					}
+				}
+			},
+			{
+				"id": "ensemble-never-gonna-keyboard-channel-15",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "channel-trigger",
+					"options": {
+						"ensembleId": "ensemble-never-gonna-keyboard",
+						"songChannel": 15,
+						"label": "Channel 15 · MUTED GTR",
+						"key": "y",
+						"gamepadIndex": -1
+					}
+				}
+			},
+			{
+				"id": "ensemble-voices",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "sion",
+					"options": {
+						"volume": 0.65,
+						"receiveChannels": [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16]
+					}
+				}
+			},
+			{
+				"id": "ensemble-drums",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "drum-kit",
+					"options": {
+						"volume": 0.6,
+						"channel": 10,
+						"receiveChannels": [10]
+					}
+				}
+			}
+		],
+		"chains": [
+			{
+				"id": "ensemble-never-gonna-keyboard",
+				"options": {
+					"name": "Never Gonna Give You Up — Channel keys",
+					"active": true,
+					"graphLayout": "horizontal",
+					"controlSurfaces": [
+						{
+							"id": "ensemble-ensemble-never-gonna-keyboard",
+							"name": "Play song channels",
+							"theme": "neon",
+							"connections": [
+								{
+									"componentId": "ensemble-never-gonna-keyboard-channel-1",
+									"controlIds": ["trigger"]
+								},
+								{
+									"componentId": "ensemble-never-gonna-keyboard-channel-2",
+									"controlIds": ["trigger"]
+								},
+								{
+									"componentId": "ensemble-never-gonna-keyboard-channel-3",
+									"controlIds": ["trigger"]
+								},
+								{
+									"componentId": "ensemble-never-gonna-keyboard-channel-4",
+									"controlIds": ["trigger"]
+								},
+								{
+									"componentId": "ensemble-never-gonna-keyboard-channel-5",
+									"controlIds": ["trigger"]
+								},
+								{
+									"componentId": "ensemble-never-gonna-keyboard-channel-6",
+									"controlIds": ["trigger"]
+								},
+								{
+									"componentId": "ensemble-never-gonna-keyboard-channel-7",
+									"controlIds": ["trigger"]
+								},
+								{
+									"componentId": "ensemble-never-gonna-keyboard-channel-8",
+									"controlIds": ["trigger"]
+								},
+								{
+									"componentId": "ensemble-never-gonna-keyboard-channel-9",
+									"controlIds": ["trigger"]
+								},
+								{
+									"componentId": "ensemble-never-gonna-keyboard-channel-10",
+									"controlIds": ["trigger"]
+								},
+								{
+									"componentId": "ensemble-never-gonna-keyboard-channel-11",
+									"controlIds": ["trigger"]
+								},
+								{
+									"componentId": "ensemble-never-gonna-keyboard-channel-12",
+									"controlIds": ["trigger"]
+								},
+								{
+									"componentId": "ensemble-never-gonna-keyboard-channel-13",
+									"controlIds": ["trigger"]
+								},
+								{
+									"componentId": "ensemble-never-gonna-keyboard-channel-14",
+									"controlIds": ["trigger"]
+								},
+								{
+									"componentId": "ensemble-never-gonna-keyboard-channel-15",
+									"controlIds": ["trigger"]
+								},
+								{
+									"componentId": "transformer:ensemble-never-gonna-keyboard",
+									"controlIds": [
+										"uploadSong",
+										"midiFileUrl",
+										"autoInputs",
+										"assist",
+										"mode"
+									]
+								}
+							],
+							"widgets": [
+								{
+									"key": "[\"ensemble-never-gonna-keyboard-channel-1\",\"trigger\"]",
+									"widget": "pad",
+									"trigger": {
+										"key": "a"
+									}
+								},
+								{
+									"key": "[\"ensemble-never-gonna-keyboard-channel-2\",\"trigger\"]",
+									"widget": "pad",
+									"trigger": {
+										"key": "s"
+									}
+								},
+								{
+									"key": "[\"ensemble-never-gonna-keyboard-channel-3\",\"trigger\"]",
+									"widget": "pad",
+									"trigger": {
+										"key": "d"
+									}
+								},
+								{
+									"key": "[\"ensemble-never-gonna-keyboard-channel-4\",\"trigger\"]",
+									"widget": "pad",
+									"trigger": {
+										"key": "f"
+									}
+								},
+								{
+									"key": "[\"ensemble-never-gonna-keyboard-channel-5\",\"trigger\"]",
+									"widget": "pad",
+									"trigger": {
+										"key": "g"
+									}
+								},
+								{
+									"key": "[\"ensemble-never-gonna-keyboard-channel-6\",\"trigger\"]",
+									"widget": "pad",
+									"trigger": {
+										"key": "h"
+									}
+								},
+								{
+									"key": "[\"ensemble-never-gonna-keyboard-channel-7\",\"trigger\"]",
+									"widget": "pad",
+									"trigger": {
+										"key": "j"
+									}
+								},
+								{
+									"key": "[\"ensemble-never-gonna-keyboard-channel-8\",\"trigger\"]",
+									"widget": "pad",
+									"trigger": {
+										"key": "k"
+									}
+								},
+								{
+									"key": "[\"ensemble-never-gonna-keyboard-channel-9\",\"trigger\"]",
+									"widget": "pad",
+									"trigger": {
+										"key": "l"
+									}
+								},
+								{
+									"key": "[\"ensemble-never-gonna-keyboard-channel-10\",\"trigger\"]",
+									"widget": "pad",
+									"trigger": {
+										"key": "q"
+									}
+								},
+								{
+									"key": "[\"ensemble-never-gonna-keyboard-channel-11\",\"trigger\"]",
+									"widget": "pad",
+									"trigger": {
+										"key": "w"
+									}
+								},
+								{
+									"key": "[\"ensemble-never-gonna-keyboard-channel-12\",\"trigger\"]",
+									"widget": "pad",
+									"trigger": {
+										"key": "e"
+									}
+								},
+								{
+									"key": "[\"ensemble-never-gonna-keyboard-channel-13\",\"trigger\"]",
+									"widget": "pad",
+									"trigger": {
+										"key": "r"
+									}
+								},
+								{
+									"key": "[\"ensemble-never-gonna-keyboard-channel-14\",\"trigger\"]",
+									"widget": "pad",
+									"trigger": {
+										"key": "t"
+									}
+								},
+								{
+									"key": "[\"ensemble-never-gonna-keyboard-channel-15\",\"trigger\"]",
+									"widget": "pad",
+									"trigger": {
+										"key": "y"
+									}
+								},
+								{
+									"key": "[\"transformer:ensemble-never-gonna-keyboard\",\"uploadSong\"]"
+								},
+								{
+									"key": "[\"transformer:ensemble-never-gonna-keyboard\",\"midiFileUrl\"]"
+								},
+								{
+									"key": "[\"transformer:ensemble-never-gonna-keyboard\",\"autoInputs\"]"
+								},
+								{
+									"key": "[\"transformer:ensemble-never-gonna-keyboard\",\"assist\"]"
+								},
+								{
+									"key": "[\"transformer:ensemble-never-gonna-keyboard\",\"mode\"]"
+								}
+							]
+						}
+					],
+					"mainSurfaceId": "ensemble-ensemble-never-gonna-keyboard"
+				},
+				"inputs": [
+					"ensemble-never-gonna-keyboard-channel-1",
+					"ensemble-never-gonna-keyboard-channel-2",
+					"ensemble-never-gonna-keyboard-channel-3",
+					"ensemble-never-gonna-keyboard-channel-4",
+					"ensemble-never-gonna-keyboard-channel-5",
+					"ensemble-never-gonna-keyboard-channel-6",
+					"ensemble-never-gonna-keyboard-channel-7",
+					"ensemble-never-gonna-keyboard-channel-8",
+					"ensemble-never-gonna-keyboard-channel-9",
+					"ensemble-never-gonna-keyboard-channel-10",
+					"ensemble-never-gonna-keyboard-channel-11",
+					"ensemble-never-gonna-keyboard-channel-12",
+					"ensemble-never-gonna-keyboard-channel-13",
+					"ensemble-never-gonna-keyboard-channel-14",
+					"ensemble-never-gonna-keyboard-channel-15"
+				],
+				"outputs": ["ensemble-voices", "ensemble-drums"],
+				"transformers": "[\"{\\\"type\\\":\\\"Ensemble\\\",\\\"midiControlId\\\":\\\"ensemble-never-gonna-keyboard\\\",\\\"enabled\\\":true,\\\"midiFileUrl\\\":\\\"midi/never-gonna-give-you-up.mid\\\",\\\"midiFileName\\\":\\\"Never Gonna Give You Up\\\",\\\"autoInputs\\\":\\\"keyboard\\\",\\\"autoJoin\\\":false,\\\"assist\\\":false,\\\"activityBeats\\\":8,\\\"loop\\\":true,\\\"mode\\\":\\\"assisted\\\",\\\"players\\\":[{\\\"source\\\":\\\"input:ensemble-never-gonna-keyboard-channel-1\\\",\\\"channels\\\":[1]},{\\\"source\\\":\\\"input:ensemble-never-gonna-keyboard-channel-2\\\",\\\"channels\\\":[2]},{\\\"source\\\":\\\"input:ensemble-never-gonna-keyboard-channel-3\\\",\\\"channels\\\":[3]},{\\\"source\\\":\\\"input:ensemble-never-gonna-keyboard-channel-4\\\",\\\"channels\\\":[4]},{\\\"source\\\":\\\"input:ensemble-never-gonna-keyboard-channel-5\\\",\\\"channels\\\":[5]},{\\\"source\\\":\\\"input:ensemble-never-gonna-keyboard-channel-6\\\",\\\"channels\\\":[6]},{\\\"source\\\":\\\"input:ensemble-never-gonna-keyboard-channel-7\\\",\\\"channels\\\":[7]},{\\\"source\\\":\\\"input:ensemble-never-gonna-keyboard-channel-8\\\",\\\"channels\\\":[8]},{\\\"source\\\":\\\"input:ensemble-never-gonna-keyboard-channel-9\\\",\\\"channels\\\":[9]},{\\\"source\\\":\\\"input:ensemble-never-gonna-keyboard-channel-10\\\",\\\"channels\\\":[10]},{\\\"source\\\":\\\"input:ensemble-never-gonna-keyboard-channel-11\\\",\\\"channels\\\":[11]},{\\\"source\\\":\\\"input:ensemble-never-gonna-keyboard-channel-12\\\",\\\"channels\\\":[12]},{\\\"source\\\":\\\"input:ensemble-never-gonna-keyboard-channel-13\\\",\\\"channels\\\":[13]},{\\\"source\\\":\\\"input:ensemble-never-gonna-keyboard-channel-14\\\",\\\"channels\\\":[14]},{\\\"source\\\":\\\"input:ensemble-never-gonna-keyboard-channel-15\\\",\\\"channels\\\":[15]}]}\"]",
+				"disabledInputs": [],
+				"disabledOutputs": []
+			}
+		]
+	},
+	"catalogue": {
+		"id": "ensemble:ensemble-never-gonna-keyboard",
+		"category": "Songs",
+		"kind": "workspace",
+		"order": 195,
+		"tags": ["ensemble", "multiplayer", "midi", "keyboard"],
+		"useCase": "The song is ready to play. A labelled Input and surface pad are created for every playable MIDI channel. Each channel has its own QWERTY key (A, S, D, F, …). Presses unlock eight beats of that part at the shared song position. Turn on assistance for quieter automatic backing parts. Changing the song rebuilds the controls automatically."
+	}
+}

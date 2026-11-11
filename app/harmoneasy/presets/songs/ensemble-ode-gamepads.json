@@ -1,0 +1,252 @@
+{
+	"format": "harmoneasy-preset",
+	"version": 1,
+	"name": "Ode to Joy — One gamepad per channel",
+	"description": "The song is ready to play. A labelled Input and surface pad are created for every playable MIDI channel. Each channel has its own gamepad; press any button. Surface pads work even without a controller. Presses unlock eight beats of that part at the shared song position. Turn on assistance for quieter automatic backing parts. Changing the song rebuilds the controls automatically.",
+	"clock": {
+		"bpm": 160,
+		"swing": 0,
+		"divisions": 24,
+		"bars": 4
+	},
+	"midiControls": {
+		"enabled": true,
+		"bindings": []
+	},
+	"workspace": {
+		"version": 2,
+		"activeChainId": "ensemble-ode-gamepads",
+		"devices": [
+			{
+				"id": "ensemble-ode-gamepads-channel-1",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "channel-trigger",
+					"options": {
+						"ensembleId": "ensemble-ode-gamepads",
+						"songChannel": 1,
+						"label": "Channel 1 · STRINGS",
+						"key": "",
+						"gamepadIndex": 0
+					}
+				}
+			},
+			{
+				"id": "ensemble-ode-gamepads-channel-2",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "channel-trigger",
+					"options": {
+						"ensembleId": "ensemble-ode-gamepads",
+						"songChannel": 2,
+						"label": "Channel 2 · string ensemble 1",
+						"key": "",
+						"gamepadIndex": 1
+					}
+				}
+			},
+			{
+				"id": "ensemble-ode-gamepads-channel-3",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "channel-trigger",
+					"options": {
+						"ensembleId": "ensemble-ode-gamepads",
+						"songChannel": 3,
+						"label": "Channel 3 · string ensemble 1",
+						"key": "",
+						"gamepadIndex": 2
+					}
+				}
+			},
+			{
+				"id": "ensemble-ode-gamepads-channel-4",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "channel-trigger",
+					"options": {
+						"ensembleId": "ensemble-ode-gamepads",
+						"songChannel": 4,
+						"label": "Channel 4 · string ensemble 1",
+						"key": "",
+						"gamepadIndex": 3
+					}
+				}
+			},
+			{
+				"id": "ensemble-ode-gamepads-channel-5",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "channel-trigger",
+					"options": {
+						"ensembleId": "ensemble-ode-gamepads",
+						"songChannel": 5,
+						"label": "Channel 5 · bassoon",
+						"key": "",
+						"gamepadIndex": 4
+					}
+				}
+			},
+			{
+				"id": "ensemble-ode-gamepads-channel-6",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "channel-trigger",
+					"options": {
+						"ensembleId": "ensemble-ode-gamepads",
+						"songChannel": 6,
+						"label": "Channel 6 · string ensemble 1",
+						"key": "",
+						"gamepadIndex": 5
+					}
+				}
+			},
+			{
+				"id": "ensemble-voices",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "sion",
+					"options": {
+						"volume": 0.65,
+						"receiveChannels": [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16]
+					}
+				}
+			},
+			{
+				"id": "ensemble-drums",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "drum-kit",
+					"options": {
+						"volume": 0.6,
+						"channel": 10,
+						"receiveChannels": [10]
+					}
+				}
+			}
+		],
+		"chains": [
+			{
+				"id": "ensemble-ode-gamepads",
+				"options": {
+					"name": "Ode to Joy — One gamepad per channel",
+					"active": true,
+					"graphLayout": "horizontal",
+					"controlSurfaces": [
+						{
+							"id": "ensemble-ensemble-ode-gamepads",
+							"name": "Play song channels",
+							"theme": "neon",
+							"connections": [
+								{
+									"componentId": "ensemble-ode-gamepads-channel-1",
+									"controlIds": ["trigger"]
+								},
+								{
+									"componentId": "ensemble-ode-gamepads-channel-2",
+									"controlIds": ["trigger"]
+								},
+								{
+									"componentId": "ensemble-ode-gamepads-channel-3",
+									"controlIds": ["trigger"]
+								},
+								{
+									"componentId": "ensemble-ode-gamepads-channel-4",
+									"controlIds": ["trigger"]
+								},
+								{
+									"componentId": "ensemble-ode-gamepads-channel-5",
+									"controlIds": ["trigger"]
+								},
+								{
+									"componentId": "ensemble-ode-gamepads-channel-6",
+									"controlIds": ["trigger"]
+								},
+								{
+									"componentId": "transformer:ensemble-ode-gamepads",
+									"controlIds": [
+										"uploadSong",
+										"midiFileUrl",
+										"autoInputs",
+										"assist",
+										"mode"
+									]
+								}
+							],
+							"widgets": [
+								{
+									"key": "[\"ensemble-ode-gamepads-channel-1\",\"trigger\"]",
+									"widget": "pad"
+								},
+								{
+									"key": "[\"ensemble-ode-gamepads-channel-2\",\"trigger\"]",
+									"widget": "pad"
+								},
+								{
+									"key": "[\"ensemble-ode-gamepads-channel-3\",\"trigger\"]",
+									"widget": "pad"
+								},
+								{
+									"key": "[\"ensemble-ode-gamepads-channel-4\",\"trigger\"]",
+									"widget": "pad"
+								},
+								{
+									"key": "[\"ensemble-ode-gamepads-channel-5\",\"trigger\"]",
+									"widget": "pad"
+								},
+								{
+									"key": "[\"ensemble-ode-gamepads-channel-6\",\"trigger\"]",
+									"widget": "pad"
+								},
+								{
+									"key": "[\"transformer:ensemble-ode-gamepads\",\"uploadSong\"]"
+								},
+								{
+									"key": "[\"transformer:ensemble-ode-gamepads\",\"midiFileUrl\"]"
+								},
+								{
+									"key": "[\"transformer:ensemble-ode-gamepads\",\"autoInputs\"]"
+								},
+								{
+									"key": "[\"transformer:ensemble-ode-gamepads\",\"assist\"]"
+								},
+								{
+									"key": "[\"transformer:ensemble-ode-gamepads\",\"mode\"]"
+								}
+							]
+						}
+					],
+					"mainSurfaceId": "ensemble-ensemble-ode-gamepads"
+				},
+				"inputs": [
+					"ensemble-ode-gamepads-channel-1",
+					"ensemble-ode-gamepads-channel-2",
+					"ensemble-ode-gamepads-channel-3",
+					"ensemble-ode-gamepads-channel-4",
+					"ensemble-ode-gamepads-channel-5",
+					"ensemble-ode-gamepads-channel-6"
+				],
+				"outputs": ["ensemble-voices", "ensemble-drums"],
+				"transformers": "[\"{\\\"type\\\":\\\"Ensemble\\\",\\\"midiControlId\\\":\\\"ensemble-ode-gamepads\\\",\\\"enabled\\\":true,\\\"midiFileUrl\\\":\\\"midi/ode-to-joy.mid\\\",\\\"midiFileName\\\":\\\"Ode to Joy\\\",\\\"autoInputs\\\":\\\"gamepads\\\",\\\"autoJoin\\\":false,\\\"assist\\\":false,\\\"activityBeats\\\":8,\\\"loop\\\":true,\\\"mode\\\":\\\"assisted\\\",\\\"players\\\":[{\\\"source\\\":\\\"input:ensemble-ode-gamepads-channel-1\\\",\\\"channels\\\":[1]},{\\\"source\\\":\\\"input:ensemble-ode-gamepads-channel-2\\\",\\\"channels\\\":[2]},{\\\"source\\\":\\\"input:ensemble-ode-gamepads-channel-3\\\",\\\"channels\\\":[3]},{\\\"source\\\":\\\"input:ensemble-ode-gamepads-channel-4\\\",\\\"channels\\\":[4]},{\\\"source\\\":\\\"input:ensemble-ode-gamepads-channel-5\\\",\\\"channels\\\":[5]},{\\\"source\\\":\\\"input:ensemble-ode-gamepads-channel-6\\\",\\\"channels\\\":[6]}]}\"]",
+				"disabledInputs": [],
+				"disabledOutputs": []
+			}
+		]
+	},
+	"catalogue": {
+		"id": "ensemble:ensemble-ode-gamepads",
+		"category": "Songs",
+		"kind": "workspace",
+		"order": 195,
+		"tags": ["ensemble", "multiplayer", "midi", "gamepads"],
+		"useCase": "The song is ready to play. A labelled Input and surface pad are created for every playable MIDI channel. Each channel has its own gamepad; press any button. Surface pads work even without a controller. Presses unlock eight beats of that part at the shared song position. Turn on assistance for quieter automatic backing parts. Changing the song rebuilds the controls automatically."
+	}
+}

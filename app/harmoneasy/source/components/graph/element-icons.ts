@@ -74,6 +74,7 @@ const OUTPUT_ICONS: Record<OutputId, string> = {
 	"song-tree": "visualizer",
 	"sample-player": "synth",
 	"chromatic-sampler": "synth",
+	rompler: "synth",
 	"harmony-sampler": "synth",
 	"event-recorder": "clock",
 	osc: "midi",

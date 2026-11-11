@@ -1,0 +1,107 @@
+{
+	"format": "harmoneasy-preset",
+	"version": 1,
+	"name": "Play any MIDI together — Keyboard channels",
+	"description": "Upload any MIDI file or enter its URL on the control surface. A labelled Input and surface pad are created for every playable MIDI channel. Each channel has its own QWERTY key (A, S, D, F, …). Presses unlock eight beats of that part at the shared song position. Turn on assistance for quieter automatic backing parts. Changing the song rebuilds the controls automatically.",
+	"clock": {
+		"bpm": 120,
+		"swing": 0,
+		"divisions": 24,
+		"bars": 4
+	},
+	"midiControls": {
+		"enabled": true,
+		"bindings": []
+	},
+	"workspace": {
+		"version": 2,
+		"activeChainId": "ensemble-any-song",
+		"devices": [
+			{
+				"id": "ensemble-voices",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "sion",
+					"options": {
+						"volume": 0.65,
+						"receiveChannels": [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16]
+					}
+				}
+			},
+			{
+				"id": "ensemble-drums",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "drum-kit",
+					"options": {
+						"volume": 0.6,
+						"channel": 10,
+						"receiveChannels": [10]
+					}
+				}
+			}
+		],
+		"chains": [
+			{
+				"id": "ensemble-any-song",
+				"options": {
+					"name": "Play any MIDI together — Keyboard channels",
+					"active": true,
+					"graphLayout": "horizontal",
+					"controlSurfaces": [
+						{
+							"id": "ensemble-ensemble-any-song",
+							"name": "Play song channels",
+							"theme": "neon",
+							"connections": [
+								{
+									"componentId": "transformer:ensemble-any-song",
+									"controlIds": [
+										"uploadSong",
+										"midiFileUrl",
+										"autoInputs",
+										"assist",
+										"mode"
+									]
+								}
+							],
+							"widgets": [
+								{
+									"key": "[\"transformer:ensemble-any-song\",\"uploadSong\"]"
+								},
+								{
+									"key": "[\"transformer:ensemble-any-song\",\"midiFileUrl\"]"
+								},
+								{
+									"key": "[\"transformer:ensemble-any-song\",\"autoInputs\"]"
+								},
+								{
+									"key": "[\"transformer:ensemble-any-song\",\"assist\"]"
+								},
+								{
+									"key": "[\"transformer:ensemble-any-song\",\"mode\"]"
+								}
+							]
+						}
+					],
+					"mainSurfaceId": "ensemble-ensemble-any-song"
+				},
+				"inputs": [],
+				"outputs": ["ensemble-voices", "ensemble-drums"],
+				"transformers": "[\"{\\\"type\\\":\\\"Ensemble\\\",\\\"midiControlId\\\":\\\"ensemble-any-song\\\",\\\"enabled\\\":true,\\\"midiFileUrl\\\":\\\"\\\",\\\"midiFileName\\\":\\\"\\\",\\\"autoInputs\\\":\\\"keyboard\\\",\\\"autoJoin\\\":false,\\\"assist\\\":false,\\\"activityBeats\\\":8,\\\"loop\\\":true,\\\"mode\\\":\\\"assisted\\\",\\\"players\\\":[]}\"]",
+				"disabledInputs": [],
+				"disabledOutputs": []
+			}
+		]
+	},
+	"catalogue": {
+		"id": "ensemble:ensemble-any-song",
+		"category": "Activities · Together",
+		"kind": "workspace",
+		"order": 105,
+		"tags": ["ensemble", "multiplayer", "midi", "keyboard"],
+		"useCase": "Upload any MIDI file or enter its URL on the control surface. A labelled Input and surface pad are created for every playable MIDI channel. Each channel has its own QWERTY key (A, S, D, F, …). Presses unlock eight beats of that part at the shared song position. Turn on assistance for quieter automatic backing parts. Changing the song rebuilds the controls automatically."
+	}
+}

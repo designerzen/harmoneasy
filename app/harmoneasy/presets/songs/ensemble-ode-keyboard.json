@@ -1,0 +1,270 @@
+{
+	"format": "harmoneasy-preset",
+	"version": 1,
+	"name": "Ode to Joy — Everyone plays a channel",
+	"description": "The song is ready to play. A labelled Input and surface pad are created for every playable MIDI channel. Each channel has its own QWERTY key (A, S, D, F, …). Presses unlock eight beats of that part at the shared song position. Turn on assistance for quieter automatic backing parts. Changing the song rebuilds the controls automatically.",
+	"clock": {
+		"bpm": 160,
+		"swing": 0,
+		"divisions": 24,
+		"bars": 4
+	},
+	"midiControls": {
+		"enabled": true,
+		"bindings": []
+	},
+	"workspace": {
+		"version": 2,
+		"activeChainId": "ensemble-ode-keyboard",
+		"devices": [
+			{
+				"id": "ensemble-ode-keyboard-channel-1",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "channel-trigger",
+					"options": {
+						"ensembleId": "ensemble-ode-keyboard",
+						"songChannel": 1,
+						"label": "Channel 1 · STRINGS",
+						"key": "a",
+						"gamepadIndex": -1
+					}
+				}
+			},
+			{
+				"id": "ensemble-ode-keyboard-channel-2",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "channel-trigger",
+					"options": {
+						"ensembleId": "ensemble-ode-keyboard",
+						"songChannel": 2,
+						"label": "Channel 2 · string ensemble 1",
+						"key": "s",
+						"gamepadIndex": -1
+					}
+				}
+			},
+			{
+				"id": "ensemble-ode-keyboard-channel-3",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "channel-trigger",
+					"options": {
+						"ensembleId": "ensemble-ode-keyboard",
+						"songChannel": 3,
+						"label": "Channel 3 · string ensemble 1",
+						"key": "d",
+						"gamepadIndex": -1
+					}
+				}
+			},
+			{
+				"id": "ensemble-ode-keyboard-channel-4",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "channel-trigger",
+					"options": {
+						"ensembleId": "ensemble-ode-keyboard",
+						"songChannel": 4,
+						"label": "Channel 4 · string ensemble 1",
+						"key": "f",
+						"gamepadIndex": -1
+					}
+				}
+			},
+			{
+				"id": "ensemble-ode-keyboard-channel-5",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "channel-trigger",
+					"options": {
+						"ensembleId": "ensemble-ode-keyboard",
+						"songChannel": 5,
+						"label": "Channel 5 · bassoon",
+						"key": "g",
+						"gamepadIndex": -1
+					}
+				}
+			},
+			{
+				"id": "ensemble-ode-keyboard-channel-6",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "channel-trigger",
+					"options": {
+						"ensembleId": "ensemble-ode-keyboard",
+						"songChannel": 6,
+						"label": "Channel 6 · string ensemble 1",
+						"key": "h",
+						"gamepadIndex": -1
+					}
+				}
+			},
+			{
+				"id": "ensemble-voices",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "sion",
+					"options": {
+						"volume": 0.65,
+						"receiveChannels": [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16]
+					}
+				}
+			},
+			{
+				"id": "ensemble-drums",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "drum-kit",
+					"options": {
+						"volume": 0.6,
+						"channel": 10,
+						"receiveChannels": [10]
+					}
+				}
+			}
+		],
+		"chains": [
+			{
+				"id": "ensemble-ode-keyboard",
+				"options": {
+					"name": "Ode to Joy — Everyone plays a channel",
+					"active": true,
+					"graphLayout": "horizontal",
+					"controlSurfaces": [
+						{
+							"id": "ensemble-ensemble-ode-keyboard",
+							"name": "Play song channels",
+							"theme": "neon",
+							"connections": [
+								{
+									"componentId": "ensemble-ode-keyboard-channel-1",
+									"controlIds": ["trigger"]
+								},
+								{
+									"componentId": "ensemble-ode-keyboard-channel-2",
+									"controlIds": ["trigger"]
+								},
+								{
+									"componentId": "ensemble-ode-keyboard-channel-3",
+									"controlIds": ["trigger"]
+								},
+								{
+									"componentId": "ensemble-ode-keyboard-channel-4",
+									"controlIds": ["trigger"]
+								},
+								{
+									"componentId": "ensemble-ode-keyboard-channel-5",
+									"controlIds": ["trigger"]
+								},
+								{
+									"componentId": "ensemble-ode-keyboard-channel-6",
+									"controlIds": ["trigger"]
+								},
+								{
+									"componentId": "transformer:ensemble-ode-keyboard",
+									"controlIds": [
+										"uploadSong",
+										"midiFileUrl",
+										"autoInputs",
+										"assist",
+										"mode"
+									]
+								}
+							],
+							"widgets": [
+								{
+									"key": "[\"ensemble-ode-keyboard-channel-1\",\"trigger\"]",
+									"widget": "pad",
+									"trigger": {
+										"key": "a"
+									}
+								},
+								{
+									"key": "[\"ensemble-ode-keyboard-channel-2\",\"trigger\"]",
+									"widget": "pad",
+									"trigger": {
+										"key": "s"
+									}
+								},
+								{
+									"key": "[\"ensemble-ode-keyboard-channel-3\",\"trigger\"]",
+									"widget": "pad",
+									"trigger": {
+										"key": "d"
+									}
+								},
+								{
+									"key": "[\"ensemble-ode-keyboard-channel-4\",\"trigger\"]",
+									"widget": "pad",
+									"trigger": {
+										"key": "f"
+									}
+								},
+								{
+									"key": "[\"ensemble-ode-keyboard-channel-5\",\"trigger\"]",
+									"widget": "pad",
+									"trigger": {
+										"key": "g"
+									}
+								},
+								{
+									"key": "[\"ensemble-ode-keyboard-channel-6\",\"trigger\"]",
+									"widget": "pad",
+									"trigger": {
+										"key": "h"
+									}
+								},
+								{
+									"key": "[\"transformer:ensemble-ode-keyboard\",\"uploadSong\"]"
+								},
+								{
+									"key": "[\"transformer:ensemble-ode-keyboard\",\"midiFileUrl\"]"
+								},
+								{
+									"key": "[\"transformer:ensemble-ode-keyboard\",\"autoInputs\"]"
+								},
+								{
+									"key": "[\"transformer:ensemble-ode-keyboard\",\"assist\"]"
+								},
+								{
+									"key": "[\"transformer:ensemble-ode-keyboard\",\"mode\"]"
+								}
+							]
+						}
+					],
+					"mainSurfaceId": "ensemble-ensemble-ode-keyboard"
+				},
+				"inputs": [
+					"ensemble-ode-keyboard-channel-1",
+					"ensemble-ode-keyboard-channel-2",
+					"ensemble-ode-keyboard-channel-3",
+					"ensemble-ode-keyboard-channel-4",
+					"ensemble-ode-keyboard-channel-5",
+					"ensemble-ode-keyboard-channel-6"
+				],
+				"outputs": ["ensemble-voices", "ensemble-drums"],
+				"transformers": "[\"{\\\"type\\\":\\\"Ensemble\\\",\\\"midiControlId\\\":\\\"ensemble-ode-keyboard\\\",\\\"enabled\\\":true,\\\"midiFileUrl\\\":\\\"midi/ode-to-joy.mid\\\",\\\"midiFileName\\\":\\\"Ode to Joy\\\",\\\"autoInputs\\\":\\\"keyboard\\\",\\\"autoJoin\\\":false,\\\"assist\\\":false,\\\"activityBeats\\\":8,\\\"loop\\\":true,\\\"mode\\\":\\\"assisted\\\",\\\"players\\\":[{\\\"source\\\":\\\"input:ensemble-ode-keyboard-channel-1\\\",\\\"channels\\\":[1]},{\\\"source\\\":\\\"input:ensemble-ode-keyboard-channel-2\\\",\\\"channels\\\":[2]},{\\\"source\\\":\\\"input:ensemble-ode-keyboard-channel-3\\\",\\\"channels\\\":[3]},{\\\"source\\\":\\\"input:ensemble-ode-keyboard-channel-4\\\",\\\"channels\\\":[4]},{\\\"source\\\":\\\"input:ensemble-ode-keyboard-channel-5\\\",\\\"channels\\\":[5]},{\\\"source\\\":\\\"input:ensemble-ode-keyboard-channel-6\\\",\\\"channels\\\":[6]}]}\"]",
+				"disabledInputs": [],
+				"disabledOutputs": []
+			}
+		]
+	},
+	"catalogue": {
+		"id": "ensemble:ensemble-ode-keyboard",
+		"category": "Songs",
+		"kind": "workspace",
+		"order": 195,
+		"tags": ["ensemble", "multiplayer", "midi", "keyboard"],
+		"useCase": "The song is ready to play. A labelled Input and surface pad are created for every playable MIDI channel. Each channel has its own QWERTY key (A, S, D, F, …). Presses unlock eight beats of that part at the shared song position. Turn on assistance for quieter automatic backing parts. Changing the song rebuilds the controls automatically."
+	}
+}
