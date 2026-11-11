@@ -5,7 +5,7 @@ import {
 	EVENT_CHAIN_ACTIVE_CHANGED,
 	EVENT_KEY_DOWN,
 	EVENT_CHANGE
-} from "audiobus/event-constants"
+} from "audiobus/events/event-constants"
 import { createChainWorkspace, type GraphView } from "../source/components/graph/chain-workspace"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
 import { readPresets } from "../source/components/graph/saved-presets"

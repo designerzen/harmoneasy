@@ -1,4 +1,4 @@
-import { EVENT_CLOSE, EVENT_KEY_DOWN } from "audiobus/event-constants"
+import { EVENT_CLOSE, EVENT_KEY_DOWN } from "audiobus/events/event-constants"
 import { createDevicePicker } from "./DevicePicker"
 import { createTransformerPicker } from "./Transformers"
 import type AbstractInput from "audiobus/io/inputs/abstract-input"

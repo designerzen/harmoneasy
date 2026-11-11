@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, it, vi } from "vitest"
 import AudioBus from "../source/audio"
-import { getAudioDestination } from "../../../packages/audiobus/audio-destination"
+import { getAudioDestination } from "../../../packages/audiobus/io/audio-destination"
 import { insertCLAPEffect } from "../../../packages/audiobus/instruments/clap/clap-mixer"
 
 afterEach(() => vi.unstubAllGlobals())

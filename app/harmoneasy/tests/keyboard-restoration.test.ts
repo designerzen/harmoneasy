@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from "vitest"
 import InputOnScreenKeyboard from "../../../packages/audiobus/io/inputs/input-onscreen-keyboard"
-import NoteModel from "../../../packages/audiobus/note-model"
+import NoteModel from "../../../packages/audiobus/models/note-model"
 import { defineDevice, deviceDefinition } from "../../../packages/audiobus/io/device-definition"
 import { restoreDevice } from "../../../packages/audiobus/io/workspace-devices"
 import InputKeyboard from "../../../packages/audiobus/io/inputs/input-keyboard"
 import OutputManager from "../../../packages/audiobus/io/output-manager"
-import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands"
+import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands/commands"
 
 vi.mock("../../../packages/audiobus/hardware/keyboard/keyboard", () => ({
 	addKeyboardDownEvents: () => () => {}

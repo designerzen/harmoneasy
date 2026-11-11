@@ -12,7 +12,7 @@ import {
 	EVENT_MIDI_CHANNELS_CHANGED,
 	EVENT_READY,
 	EVENT_VISIBILITY_CHANGE
-} from "audiobus/event-constants"
+} from "audiobus/events/event-constants"
 
 const mock = vi.hoisted(() => ({
 	service: Object.assign(new EventTarget(), {

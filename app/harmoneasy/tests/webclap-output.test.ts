@@ -14,7 +14,7 @@ import {
 import { webclapOutputId } from "../../../packages/audiobus/io/outputs/output-types"
 import { OUTPUT_DEFINITIONS } from "../../../packages/audiobus/io/output-definitions"
 import { deviceDefinition } from "../../../packages/audiobus/io/device-definition"
-import { CONTROL_CHANGE, PITCH_BEND, NOTE_ON } from "../../../packages/audiobus/commands"
+import { CONTROL_CHANGE, PITCH_BEND, NOTE_ON } from "../../../packages/audiobus/commands/commands"
 import CLAPInstrument from "../../../packages/audiobus/instruments/clap/clap-instrument"
 
 vi.mock("../../../packages/audiobus/instruments/clap/clap-host", async (importOriginal) => ({

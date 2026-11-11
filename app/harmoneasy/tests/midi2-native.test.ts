@@ -12,7 +12,7 @@ import {
 	umpToCommand,
 	commandToUmp
 } from "../../../packages/audiobus/midi/ump-codec"
-import { NOTE_OFF, NOTE_ON } from "../../../packages/audiobus/commands"
+import { NOTE_OFF, NOTE_ON } from "../../../packages/audiobus/commands/commands"
 
 afterEach(() => vi.unstubAllGlobals())
 

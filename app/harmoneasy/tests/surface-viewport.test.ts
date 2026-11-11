@@ -7,7 +7,7 @@ import {
 	EVENT_CONTROL_SURFACE_EXPAND,
 	EVENT_CONTROL_SURFACE_MINIMISE,
 	EVENT_KEY_DOWN
-} from "audiobus/event-constants"
+} from "audiobus/events/event-constants"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
 
 vi.mock("../source/components/graph/control-surfaces", () => ({

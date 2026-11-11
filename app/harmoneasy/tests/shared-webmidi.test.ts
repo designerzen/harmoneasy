@@ -19,8 +19,8 @@ import {
 	EVENT_DISCONNECTED,
 	EVENT_CHANGE,
 	INPUT_EVENT
-} from "../../../packages/audiobus/event-constants"
-import { NOTE_OFF } from "../../../packages/audiobus/commands"
+} from "../../../packages/audiobus/events/event-constants"
+import { NOTE_OFF } from "../../../packages/audiobus/commands/commands"
 import { showMidiDeviceDisconnected } from "../source/services/midi-device-errors"
 
 const midi = vi.hoisted(() => ({

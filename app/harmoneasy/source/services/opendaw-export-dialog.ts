@@ -1,4 +1,4 @@
-import { EVENT_CLICK } from "audiobus/event-constants"
+import { EVENT_CLICK } from "audiobus/events/event-constants"
 
 export function createOpenDAWExportDialog(root: Document, signal: AbortSignal) {
 	const dialog = root.querySelector<HTMLDialogElement>("#opendaw-export-dialog")!

@@ -1,8 +1,8 @@
 import { afterEach, expect, it, vi } from "vitest"
 import OPFSStorage from "../../../packages/audiobus/storage/opfs-storage"
-import { encodeAudioCommand } from "../../../packages/audiobus/audio-command-encoder"
-import { createAudioCommand } from "../../../packages/audiobus/audio-command-factory"
-import { NOTE_ON } from "../../../packages/audiobus/commands"
+import { encodeAudioCommand } from "../../../packages/audiobus/commands/audio-command-encoder"
+import { createAudioCommand } from "../../../packages/audiobus/commands/audio-command-factory"
+import { NOTE_ON } from "../../../packages/audiobus/commands/commands"
 import { OPFS_MESSAGE_TYPE_READ } from "../../../packages/audiobus/storage/opfs-constants"
 
 afterEach(() => {

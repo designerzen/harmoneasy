@@ -8,7 +8,7 @@ import {
 	EVENT_POINTER_MOVE,
 	EVENT_POINTER_UP,
 	EVENT_POINTER_CANCEL
-} from "../../../packages/audiobus/event-constants"
+} from "../../../packages/audiobus/events/event-constants"
 
 afterEach(() => document.body.replaceChildren())
 

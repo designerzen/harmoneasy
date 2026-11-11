@@ -7,7 +7,7 @@ import {
 	readSyncBundle
 } from "../source/services/netronome-link"
 import { readRoomUrl } from "../source/services/room-url"
-import { EVENT_TRANSPORT_CHANGED } from "../../../packages/audiobus/event-constants"
+import { EVENT_TRANSPORT_CHANGED } from "../../../packages/audiobus/events/event-constants"
 
 const identity = {
 	protocol: "harmoneasy-room/1",

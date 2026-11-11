@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import OutputRecorder from "../../../packages/audiobus/io/outputs/output-recorder"
 import type IOChainManager from "../../../packages/audiobus/io/IO-chain-manager"
-import { EVENT_CHAINS_UPDATED } from "../../../packages/audiobus/event-constants"
+import { EVENT_CHAINS_UPDATED } from "../../../packages/audiobus/events/event-constants"
 import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
 import { afterEach, beforeEach, expect, it, vi } from "vitest"

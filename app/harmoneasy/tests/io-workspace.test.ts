@@ -13,7 +13,7 @@ import {
 	NOTE_ON,
 	NOTE_OFF as _NOTE_OFF,
 	PLAYBACK_TOGGLE
-} from "../../../packages/audiobus/commands"
+} from "../../../packages/audiobus/commands/commands"
 import { getStructure } from "../source/components/graph/layout"
 import {
 	configurationUpdate,
@@ -22,7 +22,7 @@ import {
 import {
 	EVENT_CHAINS_UPDATED,
 	EVENT_OUTPUTS_UPDATED
-} from "../../../packages/audiobus/event-constants"
+} from "../../../packages/audiobus/events/event-constants"
 
 class Input extends AbstractInput {
 	destroy = vi.fn()

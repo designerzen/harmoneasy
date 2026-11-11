@@ -1,4 +1,4 @@
-import { EVENT_CHANGE, EVENT_CLICK, EVENT_INPUT } from "audiobus/event-constants"
+import { EVENT_CHANGE, EVENT_CLICK, EVENT_INPUT } from "audiobus/events/event-constants"
 
 export const THEME_STORAGE_KEY = "harmoneasy.theme"
 export const THEME_PRESETS = [

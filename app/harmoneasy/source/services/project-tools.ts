@@ -1,6 +1,6 @@
 import type IOChainManager from "audiobus/io/IO-chain-manager"
-import type AudioEventRecorder from "audiobus/audio-event-recorder"
-import AudioEvent from "audiobus/audio-event"
+import type AudioEventRecorder from "audiobus/events/audio-event-recorder"
+import AudioEvent from "audiobus/models/audio-event"
 import {
 	createProjectBundle,
 	readProjectBundle,

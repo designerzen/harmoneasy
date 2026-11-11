@@ -1,7 +1,7 @@
 import { useChain } from "../ChainContext"
 import { Handle, Position } from "@xyflow/react"
 import React, { useCallback, useEffect, useState, useSyncExternalStore } from "react"
-import { EVENT_CONFIGURATION_CHANGED } from "audiobus/event-constants"
+import { EVENT_CONFIGURATION_CHANGED } from "audiobus/events/event-constants"
 import { elementDescription, elementIcon } from "../element-icons"
 import { ElementIcon } from "../ElementIcon"
 import { NodeHeader } from "../NodeHeader"

@@ -1,7 +1,7 @@
 import { createRoomConnection, ROOM_PROTOCOL } from "./room-connection"
 import { RoomWorkspace } from "./room-workspace"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
-import { EVENT_CLICK, EVENT_PAGE_HIDE, EVENT_TRANSPORT_CHANGED } from "audiobus/event-constants"
+import { EVENT_CLICK, EVENT_PAGE_HIDE, EVENT_TRANSPORT_CHANGED } from "audiobus/events/event-constants"
 import { selectField } from "./music-tools-dom"
 import QRCode from "qrcode"
 import LZString from "lz-string"

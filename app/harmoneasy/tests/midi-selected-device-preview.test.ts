@@ -5,7 +5,7 @@ import {
 	type MidiInputDeviceOption
 } from "audiobus/io/inputs/midi-input-controls"
 import * as registry from "audiobus/midi/hardware/device-profiles"
-import { EVENT_CHANGE } from "audiobus/event-constants"
+import { EVENT_CHANGE } from "audiobus/events/event-constants"
 
 const controls: ReturnType<typeof createMidiInputControls>[] = []
 beforeEach(() => {

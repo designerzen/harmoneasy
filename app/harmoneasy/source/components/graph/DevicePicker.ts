@@ -20,7 +20,7 @@ import {
 	EVENT_DEVICE_LIST_CHANGED,
 	EVENT_READY,
 	EVENT_CHAINS_UPDATED
-} from "audiobus/event-constants"
+} from "audiobus/events/event-constants"
 import type AbstractInput from "audiobus/io/inputs/abstract-input"
 import type { IAudioInput } from "audiobus/io/inputs/input-interface"
 import type { IAudioOutput } from "audiobus/io/outputs/output-interface"

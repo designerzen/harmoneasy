@@ -7,7 +7,7 @@ import {
 	EVENT_VISIBILITY_CHANGE,
 	EVENT_CANCEL,
 	EVENT_CLOSE
-} from "audiobus/event-constants"
+} from "audiobus/events/event-constants"
 
 let dispose: () => void
 let hidden = false

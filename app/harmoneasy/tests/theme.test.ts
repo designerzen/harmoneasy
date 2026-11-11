@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { readdirSync, readFileSync } from "node:fs"
 import { Storage } from "happy-dom"
-import { EVENT_CHANGE, EVENT_CLICK, EVENT_INPUT } from "../../../packages/audiobus/event-constants"
+import { EVENT_CHANGE, EVENT_CLICK, EVENT_INPUT } from "../../../packages/audiobus/events/event-constants"
 import { createThemeControls, THEME_PRESETS, THEME_STORAGE_KEY } from "../source/services/theme"
 
 let dispose: (() => void) | undefined

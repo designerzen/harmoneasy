@@ -5,7 +5,7 @@ import {
 	EVENT_DRAG_END,
 	EVENT_DROP,
 	EVENT_ABORT
-} from "audiobus/event-constants"
+} from "audiobus/events/event-constants"
 
 /** Capture file drops even over graph nodes, while leaving internal drags alone. */
 export function installMediaDrop(

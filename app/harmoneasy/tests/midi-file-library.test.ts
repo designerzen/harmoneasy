@@ -8,9 +8,9 @@ import {
 	TransformerMIDIFilePlayer,
 	searchBitMidi
 } from "audiobus/io/transformers/transformer-midi-file-player"
-import AudioCommand from "audiobus/audio-command"
-import { NOTE_ON } from "audiobus/commands"
-import { EVENT_CHANGE } from "audiobus/event-constants"
+import AudioCommand from "audiobus/commands/audio-command"
+import { NOTE_ON } from "audiobus/commands/commands"
+import { EVENT_CHANGE } from "audiobus/events/event-constants"
 import { readPresetFiles } from "../scripts/preset-files.js"
 
 const { Midi } = createRequire(resolve("../../packages/audiobus/package.json"))("@tonejs/midi")

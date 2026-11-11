@@ -6,7 +6,7 @@ import { defineDevice } from "../../../packages/audiobus/io/device-definition"
 import IOChain from "../../../packages/audiobus/io/IO-chain"
 import IOChainManager from "../../../packages/audiobus/io/IO-chain-manager"
 import AbstractInput from "../../../packages/audiobus/io/inputs/abstract-input"
-import AudioEventRecorder from "../../../packages/audiobus/audio-event-recorder"
+import AudioEventRecorder from "../../../packages/audiobus/events/audio-event-recorder"
 import { TransformerVelocityShaper } from "../../../packages/audiobus/io/transformers/transformer-velocity-shaper"
 import { TransformerChordTrack } from "../../../packages/audiobus/io/transformers/transformer-chord-track"
 import { TransformerProbabilityGate } from "../../../packages/audiobus/io/transformers/transformer-probability-gate"
@@ -14,9 +14,9 @@ import {
 	EVENT_INPUT,
 	EVENT_CHANGE,
 	EVENT_WORKSPACE_RESTORED
-} from "../../../packages/audiobus/event-constants"
-import { EVENT_PROCESSOR_ACTIVITY } from "../../../packages/audiobus/event-constants"
-import { NOTE_ON, NOTE_OFF, INPUT_EVENT } from "../../../packages/audiobus/commands"
+} from "../../../packages/audiobus/events/event-constants"
+import { EVENT_PROCESSOR_ACTIVITY } from "../../../packages/audiobus/events/event-constants"
+import { NOTE_ON, NOTE_OFF, INPUT_EVENT } from "../../../packages/audiobus/commands/commands"
 import { musicalCommand } from "../../../packages/audiobus/io/event-clip"
 import {
 	createMusicalFeatureControls,

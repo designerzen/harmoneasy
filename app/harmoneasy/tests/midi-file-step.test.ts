@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { createRequire } from "node:module"
-import AudioCommand from "audiobus/audio-command"
-import { NOTE_ON, NOTE_OFF, CONTROL_CHANGE } from "audiobus/commands"
+import AudioCommand from "audiobus/commands/audio-command"
+import { NOTE_ON, NOTE_OFF, CONTROL_CHANGE } from "audiobus/commands/commands"
 import { TransformerMIDIFilePlayer } from "audiobus/io/transformers/transformer-midi-file-player"
 
 const timer = {} as any

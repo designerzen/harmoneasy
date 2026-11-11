@@ -2,7 +2,7 @@ import { GraphControls } from "./GraphControls"
 import {
 	EVENT_CONFIGURATION_CHANGED,
 	EVENT_CONTROL_SURFACE_MINIMISE
-} from "audiobus/event-constants"
+} from "audiobus/events/event-constants"
 import { isConfigurationUpdate } from "audiobus/io/configuration-events"
 import { ChainContext, useChain } from "./ChainContext"
 import type IOChainManager from "audiobus/io/IO-chain-manager"

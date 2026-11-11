@@ -28,7 +28,7 @@ import { createMidiDevicesDialog } from "./services/midi-devices-dialog"
 import { createMixer } from "./services/mixer"
 import { createRecordingControls } from "./services/recording-dialog"
 import { createMusicalFeatureControls } from "./services/musical-feature-controls"
-import { EVENT_HARMONY_CHANGED, EVENT_HARMONY_SETTINGS_CHANGED } from "audiobus/event-constants"
+import { EVENT_HARMONY_CHANGED, EVENT_HARMONY_SETTINGS_CHANGED } from "audiobus/events/event-constants"
 import { createClockSourceControls } from "./services/clock-source-controls"
 import { createMediaImporter } from "./services/media-import"
 import { isClockSource, clockMidiPorts, type ClockSourceController } from "./services/clock-source"
@@ -75,11 +75,11 @@ import { AudioTimer, TIMER_TYPES } from "netronome"
 
 // Audio
 import AudioBus from "./audio.ts"
-import "audiobus/audio-event.ts"
-import AudioEventRecorder from "audiobus/audio-event-recorder.ts"
+import "audiobus/models/audio-event.ts"
+import AudioEventRecorder from "audiobus/events/audio-event-recorder.ts"
 import IOChainManager from "audiobus/io/IO-chain-manager.ts"
 import OutputMetronome from "audiobus/io/outputs/output-metronome.ts"
-import * as Commands from "audiobus/commands"
+import * as Commands from "audiobus/commands/commands"
 
 // IAudioInputs
 import { ALL_KEYBOARD_NOTES } from "audiobus/io/inputs/input-onscreen-keyboard.ts"
@@ -88,7 +88,7 @@ import { ALL_KEYBOARD_NOTES } from "audiobus/io/inputs/input-onscreen-keyboard.t
 import OPFSStorage, { hasOPFS } from "audiobus/storage/opfs-storage.ts"
 
 // Types
-import type { IAudioCommand } from "audiobus/audio-command-interface.ts"
+import type { IAudioCommand } from "audiobus/commands/audio-command-interface.ts"
 
 createThemeControls(document)
 createAboutDialog(document)

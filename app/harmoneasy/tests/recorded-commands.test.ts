@@ -2,8 +2,8 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
 import { readFileSync } from "node:fs"
 import { SongVisualiserUI } from "../../../packages/audiobus/ui/song-visualiser-ui"
-import { NOTE_ON, NOTE_OFF, CONTROL_CHANGE } from "../../../packages/audiobus/commands"
-import type { IAudioCommand } from "../../../packages/audiobus/audio-command-interface"
+import { NOTE_ON, NOTE_OFF, CONTROL_CHANGE } from "../../../packages/audiobus/commands/commands"
+import type { IAudioCommand } from "../../../packages/audiobus/commands/audio-command-interface"
 import type OPFSStorage from "../../../packages/audiobus/storage/opfs-storage"
 
 vi.mock("../../../packages/audiobus/ui/song-visualiser-worker.ts?worker", () => ({

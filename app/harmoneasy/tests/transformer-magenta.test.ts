@@ -8,8 +8,8 @@ import {
 	MAGENTA_GENERATE,
 	MAGENTA_RESULT
 } from "../../../packages/audiobus/io/transformers/magenta-messages"
-import { NOTE_ON, NOTE_OFF, CONTROL_CHANGE } from "../../../packages/audiobus/commands"
-import { createAudioCommand } from "../../../packages/audiobus/audio-command-factory"
+import { NOTE_ON, NOTE_OFF, CONTROL_CHANGE } from "../../../packages/audiobus/commands/commands"
+import { createAudioCommand } from "../../../packages/audiobus/commands/audio-command-factory"
 import { tranformerFactory, TRANSFORMERS } from "../../../packages/audiobus/io/transformer-factory"
 import TransformerManagerWorker from "../../../packages/audiobus/io/transformer-manager-worker"
 

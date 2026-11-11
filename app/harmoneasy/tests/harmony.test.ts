@@ -21,7 +21,7 @@ import {
 import { TransformerChordTrack } from "../../../packages/audiobus/io/transformers/transformer-chord-track"
 import { TransformerVoiceLeader } from "../../../packages/audiobus/io/transformers/transformer-voice-leader"
 import { musicalCommand } from "../../../packages/audiobus/io/event-clip"
-import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands"
+import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands/commands"
 
 const command = (number: number, type = NOTE_ON, startAt = 0) =>
 	musicalCommand({

@@ -11,7 +11,7 @@ import {
 import {
 	getAudioDestination,
 	setAudioDestination
-} from "../../../packages/audiobus/audio-destination"
+} from "../../../packages/audiobus/io/audio-destination"
 import OutputMetronome from "../../../packages/audiobus/io/outputs/output-metronome"
 
 afterEach(() => {

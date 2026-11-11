@@ -5,7 +5,7 @@ import {
 	EVENT_CLOSE,
 	EVENT_CHANGE,
 	EVENT_INPUT
-} from "audiobus/event-constants"
+} from "audiobus/events/event-constants"
 import { browserAI, promptBrowserAI } from "audiobus/io/browser-ai"
 import {
 	designSetup,

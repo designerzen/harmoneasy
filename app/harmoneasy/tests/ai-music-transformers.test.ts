@@ -13,8 +13,8 @@ import {
 import { tranformerFactory, TRANSFORMERS } from "../../../packages/audiobus/io/transformer-factory"
 import { TRANSFORMER_DEFINITIONS } from "../../../packages/audiobus/io/transformer-definitions"
 import { advanceTransformers } from "../../../packages/audiobus/io/transformer-pipeline"
-import { NOTE_ON, NOTE_OFF, CONTROL_CHANGE } from "../../../packages/audiobus/commands"
-import { createAudioCommand } from "../../../packages/audiobus/audio-command-factory"
+import { NOTE_ON, NOTE_OFF, CONTROL_CHANGE } from "../../../packages/audiobus/commands/commands"
+import { createAudioCommand } from "../../../packages/audiobus/commands/audio-command-factory"
 import type { Timer } from "netronome"
 
 const workers: FakeWorker[] = [],

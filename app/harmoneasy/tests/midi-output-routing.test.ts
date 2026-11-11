@@ -8,7 +8,7 @@ import {
 	commandToMidi
 } from "../../../packages/audiobus/midi/midi-command-conversion"
 import { BleMidiDecoder } from "../../../packages/audiobus/midi/midi-ble/ble-midi-decoder"
-import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands"
+import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands/commands"
 
 const midi = vi.hoisted(() => ({
 	inputs: [] as any[],

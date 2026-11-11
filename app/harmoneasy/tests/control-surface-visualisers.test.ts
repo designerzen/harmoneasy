@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { surfaceNoteSource } from "../source/components/graph/control-surface-notes"
-import { EVENT_CONTROL_SURFACE_NOTES } from "audiobus/event-constants"
-import { NOTE_ON, NOTE_OFF } from "audiobus/commands"
+import { EVENT_CONTROL_SURFACE_NOTES } from "audiobus/events/event-constants"
+import { NOTE_ON, NOTE_OFF } from "audiobus/commands/commands"
 import type IOChain from "audiobus/io/IO-chain"
 import { describe, expect, it, vi } from "vitest"
 import { VisualiserFrame, historySource } from "../../../packages/control-surface/src/visualiser"

@@ -1,7 +1,7 @@
 import { DeviceGui } from "../DeviceGui"
 import { deviceDescription } from "../element-icons"
 import { DeviceTitleBar } from "../DeviceTitleBar"
-import { EVENT_CONFIGURATION_CHANGED } from "audiobus/event-constants"
+import { EVENT_CONFIGURATION_CHANGED } from "audiobus/events/event-constants"
 import { deviceId } from "audiobus/io/device-definition"
 import { useChain } from "../ChainContext"
 import { Handle, Position } from "@xyflow/react"

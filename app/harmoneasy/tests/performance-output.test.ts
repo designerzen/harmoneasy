@@ -3,8 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import OutputPerformance from "../../../packages/audiobus/io/outputs/output-performance"
 import IOChain from "../../../packages/audiobus/io/IO-chain"
 import IOChainManager from "../../../packages/audiobus/io/IO-chain-manager"
-import { NOTE_ON, CONTROL_CHANGE } from "../../../packages/audiobus/commands"
-import { EVENT_VISIBILITY_CHANGE } from "../../../packages/audiobus/event-constants"
+import { NOTE_ON, CONTROL_CHANGE } from "../../../packages/audiobus/commands/commands"
+import { EVENT_VISIBILITY_CHANGE } from "../../../packages/audiobus/events/event-constants"
 import { PERFORMANCE_HISTORY_LIMIT } from "../../../packages/audiobus/io/outputs/performance-metrics"
 import {
 	createOutputById,

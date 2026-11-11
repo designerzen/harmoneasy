@@ -16,7 +16,7 @@ import {
 	PITCH_BEND,
 	CONTROL_CHANGE,
 	PROGRAM_CHANGE
-} from "../../../packages/audiobus/commands"
+} from "../../../packages/audiobus/commands/commands"
 import {
 	dispatchInstrumentEvent,
 	noteDetail

@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import KeyboardDisplayManager from "../../../packages/audiobus/ui/keyboard-display-manager"
 import { addKeyboardDownEvents } from "../../../packages/audiobus/hardware/keyboard/keyboard"
-import { NOTE_ON, NOTE_OFF, TEMPO_TAP, PLAYBACK_TOGGLE } from "../../../packages/audiobus/commands"
+import { NOTE_ON, NOTE_OFF, TEMPO_TAP, PLAYBACK_TOGGLE } from "../../../packages/audiobus/commands/commands"
 import {
 	EVENT_KEY_DOWN,
 	EVENT_KEY_UP,
@@ -12,7 +12,7 @@ import {
 	EVENT_BLUR,
 	EVENT_VISIBILITY_CHANGE,
 	EVENT_LOST_POINTER_CAPTURE
-} from "../../../packages/audiobus/event-constants"
+} from "../../../packages/audiobus/events/event-constants"
 
 const cleanup: (() => void)[] = []
 function setup() {

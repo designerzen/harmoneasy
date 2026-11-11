@@ -8,7 +8,7 @@ import {
 } from "../../../packages/audiobus/io/project-bundle"
 import { defaultMusicTools } from "../../../packages/audiobus/io/music-tools"
 import { parseEventClip, musicalCommand } from "../../../packages/audiobus/io/event-clip"
-import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands"
+import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands/commands"
 import IOChainManager from "../../../packages/audiobus/io/IO-chain-manager"
 import IOChain from "../../../packages/audiobus/io/IO-chain"
 import { TransformerChordTrack } from "../../../packages/audiobus/io/transformers/transformer-chord-track"

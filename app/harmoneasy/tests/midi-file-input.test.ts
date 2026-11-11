@@ -4,7 +4,7 @@ import InputMIDIFile from "../../../packages/audiobus/io/inputs/input-midi-file"
 import IOChainManager from "../../../packages/audiobus/io/IO-chain-manager"
 import { createInputById } from "../../../packages/audiobus/io/input-factory"
 import { deviceDefinition } from "../../../packages/audiobus/io/device-definition"
-import { INPUT_EVENT, NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands"
+import { INPUT_EVENT, NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands/commands"
 import { importMIDIFile } from "../../../packages/audiobus/importers/import-midi-file"
 const { Midi } = createRequire(new URL("../../../packages/audiobus/package.json", import.meta.url))(
 	"@tonejs/midi"

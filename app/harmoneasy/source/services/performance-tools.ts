@@ -7,10 +7,10 @@ import {
 	EVENT_CONFIGURATION_CHANGED,
 	EVENT_SIGNAL_ACTIVITY,
 	EVENT_PROCESSOR_ACTIVITY
-} from "audiobus/event-constants"
+} from "audiobus/events/event-constants"
 import { macroValue, type MusicToolsState } from "audiobus/io/music-tools"
 import { musicalCommand } from "audiobus/io/event-clip"
-import { CONTROL_CHANGE } from "audiobus/commands"
+import { CONTROL_CHANGE } from "audiobus/commands/commands"
 import type { MidiControls } from "./midi-controls"
 import { element, action, field, numberField, selectField, onChange } from "./music-tools-dom"
 

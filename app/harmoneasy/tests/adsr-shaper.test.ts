@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { AdsrShaper } from "../../../packages/audiobus/ui/controls/adsr-shaper/adsr-shaper.ts"
-import { EVENT_INPUT, EVENT_CHANGE } from "../../../packages/audiobus/event-constants.ts"
+import { EVENT_INPUT, EVENT_CHANGE } from "../../../packages/audiobus/events/event-constants.ts"
 
 afterEach(() => {
 	document.body.replaceChildren()

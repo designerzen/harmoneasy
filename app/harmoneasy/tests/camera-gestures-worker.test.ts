@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { EVENT_MESSAGE } from "../../../packages/audiobus/event-constants"
+import { EVENT_MESSAGE } from "../../../packages/audiobus/events/event-constants"
 
 const vision = vi.hoisted(() => ({
 	forVisionTasks: vi.fn(),

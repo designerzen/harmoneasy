@@ -1,11 +1,11 @@
 import { useChain } from "./ChainContext"
 import React, { useEffect, useRef } from "react"
 import { BaseEdge, getSmoothStepPath, type EdgeProps } from "@xyflow/react"
-import { INPUT_EVENT, NOTE_ON } from "audiobus/commands"
+import { INPUT_EVENT, NOTE_ON } from "audiobus/commands/commands"
 import { convertNoteNumberToColour } from "audiobus/conversion/note-to-colour"
 import { NOTE_TYPE } from "./layout"
 
-import type { IAudioCommand } from "audiobus/audio-command-interface"
+import type { IAudioCommand } from "audiobus/commands/audio-command-interface"
 
 export function AnimatedSVGEdge({
 	id,

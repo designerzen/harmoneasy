@@ -1,5 +1,5 @@
-import type { IAudioCommand } from "audiobus/audio-command-interface"
-import { CONTROL_CHANGE } from "audiobus/commands"
+import type { IAudioCommand } from "audiobus/commands/audio-command-interface"
+import { CONTROL_CHANGE } from "audiobus/commands/commands"
 
 export interface MidiTarget {
 	id: string

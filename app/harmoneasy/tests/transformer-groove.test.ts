@@ -6,8 +6,8 @@ import {
 	ID_GROOVE
 } from "../../../packages/audiobus/io/transformers/transformer-groove"
 import { tranformerFactory } from "../../../packages/audiobus/io/transformer-factory"
-import { createAudioCommand } from "../../../packages/audiobus/audio-command-factory"
-import { NOTE_ON, NOTE_OFF, CONTROL_CHANGE } from "../../../packages/audiobus/commands"
+import { createAudioCommand } from "../../../packages/audiobus/commands/audio-command-factory"
+import { NOTE_ON, NOTE_OFF, CONTROL_CHANGE } from "../../../packages/audiobus/commands/commands"
 import IOChain from "../../../packages/audiobus/io/IO-chain"
 
 const clock = (now: number, BPM = 120, startTime = 0) => ({ now, BPM, startTime }) as Timer

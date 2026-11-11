@@ -26,10 +26,10 @@ import { TransformerLegato } from "../../../packages/audiobus/io/transformers/tr
 import { TransformerCCMapper } from "../../../packages/audiobus/io/transformers/transformer-cc-mapper"
 import TransformerManager from "../../../packages/audiobus/io/transformer-manager-worker"
 import { TransformerChordifier } from "../../../packages/audiobus/io/transformers/transformer-chordifier"
-import { createAudioCommand } from "../../../packages/audiobus/audio-command-factory"
-import { NOTE_ON, NOTE_OFF, CONTROL_CHANGE } from "../../../packages/audiobus/commands"
+import { createAudioCommand } from "../../../packages/audiobus/commands/audio-command-factory"
+import { NOTE_ON, NOTE_OFF, CONTROL_CHANGE } from "../../../packages/audiobus/commands/commands"
 import { commandToMidi } from "../../../packages/audiobus/midi/midi-command-conversion"
-import type { IAudioCommand } from "../../../packages/audiobus/audio-command-interface"
+import type { IAudioCommand } from "../../../packages/audiobus/commands/audio-command-interface"
 import type { ITimerControl as Timer } from "netronome"
 
 const clock = (now = 0, bpm = 120) => ({ now, bpm, BPM: bpm }) as Timer

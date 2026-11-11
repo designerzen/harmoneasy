@@ -1,7 +1,7 @@
 import { compressToBase64 } from "lz-string"
 import type IOChain from "audiobus/io/IO-chain"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
-import { EVENT_PRESET_LIBRARY_UPDATED } from "audiobus/event-constants"
+import { EVENT_PRESET_LIBRARY_UPDATED } from "audiobus/events/event-constants"
 import { DEFAULT_PRESET_LIBRARY } from "audiobus/io/transformer-presets"
 import { parsePresetPage, presetPageSetup } from "../../services/preset-page"
 import {

@@ -14,7 +14,7 @@ import {
 	NOTE_OFF,
 	PROGRAM_CHANGE,
 	CONTROL_CHANGE
-} from "../../../packages/audiobus/commands"
+} from "../../../packages/audiobus/commands/commands"
 
 const outputs: Rompler[] = []
 afterEach(() => {

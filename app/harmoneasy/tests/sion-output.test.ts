@@ -13,9 +13,9 @@ import {
 	CONTROL_CHANGE,
 	PITCH_BEND,
 	PROGRAM_CHANGE
-} from "../../../packages/audiobus/commands"
-import { EVENT_CHANGE, EVENT_INPUT } from "../../../packages/audiobus/event-constants"
-import { setAudioDestination } from "../../../packages/audiobus/audio-destination"
+} from "../../../packages/audiobus/commands/commands"
+import { EVENT_CHANGE, EVENT_INPUT } from "../../../packages/audiobus/events/event-constants"
+import { setAudioDestination } from "../../../packages/audiobus/io/audio-destination"
 
 const mock = vi.hoisted(() => ({ create: vi.fn() }))
 vi.mock("../../../packages/sion/SiON.js", () => ({ createSiONSession: mock.create }))

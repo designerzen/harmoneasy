@@ -9,7 +9,7 @@ import {
 	EVENT_MESSAGE,
 	EVENT_HARMONY_CHANGED,
 	EVENT_HARMONY_SETTINGS_CHANGED
-} from "audiobus/event-constants"
+} from "audiobus/events/event-constants"
 import { action, element, field } from "./music-tools-dom"
 
 export function mountDawBridge(

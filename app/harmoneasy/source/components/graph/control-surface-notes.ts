@@ -2,8 +2,8 @@ import {
 	EVENT_CONTROL_SURFACE_NOTES,
 	EVENT_OUTPUTS_UPDATED,
 	OUTPUT_EVENT
-} from "audiobus/event-constants"
-import { NOTE_ON, NOTE_OFF, CONTROL_CHANGE } from "audiobus/commands"
+} from "audiobus/events/event-constants"
+import { NOTE_ON, NOTE_OFF, CONTROL_CHANGE } from "audiobus/commands/commands"
 import type IOChain from "audiobus/io/IO-chain"
 import type { VisualiserSource } from "control-surface/types"
 import { PadLight } from "control-surface"

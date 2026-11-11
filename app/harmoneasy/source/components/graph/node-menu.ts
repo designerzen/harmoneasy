@@ -1,6 +1,6 @@
 import { createDropdown, menuIcon } from "control-surface/dropdown"
 import "control-surface/dropdown.css"
-import { EVENT_CLICK, EVENT_CLOSE, EVENT_SUBMIT } from "audiobus/event-constants"
+import { EVENT_CLICK, EVENT_CLOSE, EVENT_SUBMIT } from "audiobus/events/event-constants"
 import { button, element } from "./dom"
 
 export interface NodeMenuAction {

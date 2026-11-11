@@ -8,7 +8,7 @@ import {
 	EVENT_CONFIGURATION_CHANGED,
 	EVENT_INPUT,
 	EVENT_OUTPUTS_UPDATED
-} from "../../../packages/audiobus/event-constants.ts"
+} from "../../../packages/audiobus/events/event-constants.ts"
 import { defineDevice, deviceDefinition } from "../../../packages/audiobus/io/device-definition.ts"
 import OutputManager from "../../../packages/audiobus/io/output-manager.ts"
 import { componentBindings } from "../../../packages/audiobus/io/component-ui"

@@ -1,4 +1,4 @@
-import { EVENT_ENDED } from "audiobus/event-constants"
+import { EVENT_ENDED } from "audiobus/events/event-constants"
 /** Tap/reference tempo disambiguates offbeats and half/double-time interpretations. */
 export class AcousticTempoTracker {
 	private last?: number

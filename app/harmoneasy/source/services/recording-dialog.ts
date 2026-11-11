@@ -5,7 +5,7 @@ import {
 	EVENT_CHAINS_UPDATED,
 	EVENT_RECORDER_TOGGLE,
 	EVENT_RECORDER_REVIEW
-} from "audiobus/event-constants"
+} from "audiobus/events/event-constants"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
 import OutputRecorder from "audiobus/io/outputs/output-recorder"
 import { AudioRecording } from "./audio-recording"

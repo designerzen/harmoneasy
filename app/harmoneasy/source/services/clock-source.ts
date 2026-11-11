@@ -1,5 +1,5 @@
-import * as Commands from "audiobus/commands"
-import type { IAudioCommand } from "audiobus/audio-command-interface"
+import * as Commands from "audiobus/commands/commands"
+import type { IAudioCommand } from "audiobus/commands/audio-command-interface"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
 import { acceptsMidiInput } from "audiobus/io/inputs/midi-input-controls"
 

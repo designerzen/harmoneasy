@@ -4,7 +4,7 @@ import { createRoot } from "react-dom/client"
 import { expect, it, vi } from "vitest"
 import { AnimatedSVGEdge } from "../source/components/graph/AnimatedSVGEdge"
 import { ChainContext } from "../source/components/graph/ChainContext"
-import { INPUT_EVENT, NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands"
+import { INPUT_EVENT, NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands/commands"
 
 vi.mock("@xyflow/react", () => ({
 	BaseEdge: () => null,

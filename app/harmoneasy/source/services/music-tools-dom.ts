@@ -1,4 +1,4 @@
-import { EVENT_CLICK, EVENT_CHANGE } from "audiobus/event-constants"
+import { EVENT_CLICK, EVENT_CHANGE } from "audiobus/events/event-constants"
 export function element<K extends keyof HTMLElementTagNameMap>(
 	tag: K,
 	text = ""

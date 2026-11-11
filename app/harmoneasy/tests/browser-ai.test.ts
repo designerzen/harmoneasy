@@ -13,9 +13,9 @@ import {
 	TransformerBrowserAI
 } from "../../../packages/audiobus/io/transformers/transformer-browser-ai"
 import { tranformerFactory } from "../../../packages/audiobus/io/transformer-factory"
-import { INPUT_EVENT } from "../../../packages/audiobus/event-constants"
-import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands"
-import { createAudioCommand } from "../../../packages/audiobus/audio-command-factory"
+import { INPUT_EVENT } from "../../../packages/audiobus/events/event-constants"
+import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands/commands"
+import { createAudioCommand } from "../../../packages/audiobus/commands/audio-command-factory"
 
 const session = { prompt: vi.fn(), destroy: vi.fn() }
 const api = { availability: vi.fn(), create: vi.fn() }

@@ -1,6 +1,6 @@
 import { createReverbImpulseResponse } from "audiobus/effects/reverb"
 import { connectCLAPMixer } from "audiobus/instruments/clap/clap-mixer"
-import { setAudioDestination } from "audiobus/audio-destination"
+import { setAudioDestination } from "audiobus/io/audio-destination"
 
 export default class AudioBus extends EventTarget {
 	#audioContext: AudioContext

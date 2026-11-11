@@ -6,13 +6,13 @@ import { deviceDefinition } from "../../../packages/audiobus/io/device-definitio
 import {
 	INPUT_EVENT,
 	EVENT_CONFIGURATION_CHANGED
-} from "../../../packages/audiobus/event-constants"
+} from "../../../packages/audiobus/events/event-constants"
 import {
 	CONTROL_CHANGE,
 	NOTE_OFF,
 	NOTE_ON,
 	PLAYBACK_TOGGLE
-} from "../../../packages/audiobus/commands"
+} from "../../../packages/audiobus/commands/commands"
 
 const devices: InputCosmoDots[] = []
 function setup(options = {}) {

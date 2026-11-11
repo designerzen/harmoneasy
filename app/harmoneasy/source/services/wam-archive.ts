@@ -1,6 +1,6 @@
 import { WAM_ARCHIVE_CACHE, WAM_ARCHIVE_DIRECTORY } from "audiobus/wam/archive-files.js"
 import { safeArchivePath } from "audiobus/importers/dropped-media"
-import { EVENT_CONTROLLER_CHANGE, EVENT_STATE_CHANGE } from "audiobus/event-constants"
+import { EVENT_CONTROLLER_CHANGE, EVENT_STATE_CHANGE } from "audiobus/events/event-constants"
 
 const mimeTypes: Record<string, string> = {
 	js: "text/javascript",

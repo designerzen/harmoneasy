@@ -20,7 +20,7 @@ import { sourceTheme } from "../../../packages/control-surface/src/themes"
 import { createDomGui, createDomControl } from "control-surface/dom"
 import { contactPressure } from "../../../packages/control-surface/src/pressure"
 import { addKeyboardDownEvents } from "../../../packages/audiobus/hardware/keyboard/keyboard"
-import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands"
+import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands/commands"
 import {
 	EVENT_BLUR,
 	EVENT_KEY_DOWN,

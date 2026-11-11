@@ -14,7 +14,7 @@ import {
 import { mapPitchSet, pitchClasses } from "audiobus/tuning/pitch-class-set"
 import { TransformerChordTrack } from "audiobus/io/transformers/transformer-chord-track"
 import { musicalCommand } from "audiobus/io/event-clip"
-import { INPUT_EVENT, NOTE_ON, NOTE_OFF } from "audiobus/commands"
+import { INPUT_EVENT, NOTE_ON, NOTE_OFF } from "audiobus/commands/commands"
 import {
 	EVENT_CHANGE,
 	EVENT_CLOSE,
@@ -24,7 +24,7 @@ import {
 	EVENT_POINTER_DOWN,
 	EVENT_POINTER_MOVE,
 	EVENT_POINTER_UP
-} from "audiobus/event-constants"
+} from "audiobus/events/event-constants"
 import {
 	action,
 	download,

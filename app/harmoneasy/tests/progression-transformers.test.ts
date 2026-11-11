@@ -25,9 +25,9 @@ import TransformerManager from "../../../packages/audiobus/io/transformer-manage
 import { TransformerTransposer } from "../../../packages/audiobus/io/transformers/transformer-transposer"
 import IOChain from "../../../packages/audiobus/io/IO-chain"
 import { createTransformerPicker } from "../source/components/graph/Transformers"
-import { createAudioCommand } from "../../../packages/audiobus/audio-command-factory"
-import { NOTE_ON, NOTE_OFF, CONTROL_CHANGE } from "../../../packages/audiobus/commands"
-import type { IAudioCommand } from "../../../packages/audiobus/audio-command-interface"
+import { createAudioCommand } from "../../../packages/audiobus/commands/audio-command-factory"
+import { NOTE_ON, NOTE_OFF, CONTROL_CHANGE } from "../../../packages/audiobus/commands/commands"
+import type { IAudioCommand } from "../../../packages/audiobus/commands/audio-command-interface"
 import type { PerformanceTransformer } from "../../../packages/audiobus/io/transformers/performance-transformer"
 
 const clock = (now = 0, bpm = 120) => ({ now, bpm, BPM: bpm }) as never

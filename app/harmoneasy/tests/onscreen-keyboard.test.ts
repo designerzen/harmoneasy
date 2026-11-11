@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import SVGKeyboard from "../../../packages/audiobus/ui/keyboard-svg"
 import InputOnScreenKeyboard from "../../../packages/audiobus/io/inputs/input-onscreen-keyboard"
-import NoteModel from "../../../packages/audiobus/note-model"
+import NoteModel from "../../../packages/audiobus/models/note-model"
 
 const keyboards: SVGKeyboard[] = []
 function setup(numbers = [60, 61, 62]) {

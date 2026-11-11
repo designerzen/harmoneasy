@@ -14,8 +14,8 @@ import { INPUT_GUIDANCE, OUTPUT_GUIDANCE } from "../source/components/graph/devi
 import { elementIcon } from "../source/components/graph/element-icons"
 import IOChainManager from "../../../packages/audiobus/io/IO-chain-manager"
 import OutputManager from "../../../packages/audiobus/io/output-manager"
-import { INPUT_EVENT } from "../../../packages/audiobus/event-constants"
-import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands"
+import { INPUT_EVENT } from "../../../packages/audiobus/events/event-constants"
+import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands/commands"
 
 const managers: IOChainManager[] = []
 afterEach(() => {

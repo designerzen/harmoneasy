@@ -1,4 +1,4 @@
-import { EVENT_CONNECTION_CHANGED } from "audiobus/event-constants"
+import { EVENT_CONNECTION_CHANGED } from "audiobus/events/event-constants"
 
 /** A separate mix gain preserves the engine's own gain, envelopes and calibration. */
 export function createMixerChannels(destinations: AudioNode[]) {

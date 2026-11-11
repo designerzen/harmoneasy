@@ -4,8 +4,8 @@ import { encodeOSC, decodeOSC, oscToCommand, commandToOSC } from "../../../packa
 import { OscConnection } from "../../../packages/audiobus/io/osc-connection"
 import InputOSC from "../../../packages/audiobus/io/inputs/input-osc"
 import OutputOSC from "../../../packages/audiobus/io/outputs/output-osc"
-import { INPUT_EVENT } from "../../../packages/audiobus/event-constants"
-import { NOTE_OFF, NOTE_ON, CONTROL_CHANGE, PITCH_BEND } from "../../../packages/audiobus/commands"
+import { INPUT_EVENT } from "../../../packages/audiobus/events/event-constants"
+import { NOTE_OFF, NOTE_ON, CONTROL_CHANGE, PITCH_BEND } from "../../../packages/audiobus/commands/commands"
 import { musicalCommand } from "../../../packages/audiobus/io/event-clip"
 
 class FakeSocket extends EventTarget {

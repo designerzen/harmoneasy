@@ -12,7 +12,7 @@ import {
 } from "../../../packages/audiobus/tuning/chords/chords.ts"
 import { Ticks } from "../../../packages/audiobus/timing/index.ts"
 import IOChain from "../../../packages/audiobus/io/IO-chain.ts"
-import { DVS_CLOCK, MIDI_CLOCK } from "../../../packages/audiobus/commands.ts"
+import { DVS_CLOCK, MIDI_CLOCK } from "../../../packages/audiobus/commands/commands.ts"
 
 afterEach(() => vi.restoreAllMocks())
 

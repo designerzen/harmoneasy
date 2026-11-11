@@ -2,13 +2,13 @@
 import { afterEach, expect, it, vi } from "vitest"
 import InputKeyboard from "../../../packages/audiobus/io/inputs/input-keyboard"
 import { keyboardConfiguration } from "../../../packages/audiobus/hardware/keyboard/keyboard-configuration"
-import { NOTE_ON, NOTE_OFF, PLAYBACK_TOGGLE, TEMPO_TAP } from "../../../packages/audiobus/commands"
+import { NOTE_ON, NOTE_OFF, PLAYBACK_TOGGLE, TEMPO_TAP } from "../../../packages/audiobus/commands/commands"
 import {
 	EVENT_KEY_DOWN,
 	EVENT_KEY_UP,
 	EVENT_BLUR,
 	EVENT_TOGGLE
-} from "../../../packages/audiobus/event-constants"
+} from "../../../packages/audiobus/events/event-constants"
 import { defineDevice, deviceDefinition } from "../../../packages/audiobus/io/device-definition"
 
 const inputs: InputKeyboard[] = []

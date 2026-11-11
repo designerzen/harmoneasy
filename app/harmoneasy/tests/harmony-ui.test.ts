@@ -4,7 +4,7 @@ import IOChainManager from "../../../packages/audiobus/io/IO-chain-manager"
 import IOChain from "../../../packages/audiobus/io/IO-chain"
 import { mountHarmonyWorkspace } from "../source/services/harmony-workspace"
 import { mountDawBridge } from "../source/services/harmony-daw"
-import { INPUT_EVENT, NOTE_ON } from "../../../packages/audiobus/commands"
+import { INPUT_EVENT, NOTE_ON } from "../../../packages/audiobus/commands/commands"
 import { encodeOSC, decodeOSC } from "../../../packages/audiobus/io/osc"
 import { defaultMusicTools } from "../../../packages/audiobus/io/music-tools"
 

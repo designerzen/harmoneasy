@@ -3,8 +3,8 @@ import IOChain from "../../../packages/audiobus/io/IO-chain"
 import IOChainManager from "../../../packages/audiobus/io/IO-chain-manager"
 import AbstractInput from "../../../packages/audiobus/io/inputs/abstract-input"
 import InputAudioEvent from "../../../packages/audiobus/io/events/input-audio-event"
-import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands"
-import { EVENT_CHAINS_UPDATED } from "../../../packages/audiobus/event-constants"
+import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands/commands"
+import { EVENT_CHAINS_UPDATED } from "../../../packages/audiobus/events/event-constants"
 import {
 	RoomWorkspace,
 	packRoomCommand,

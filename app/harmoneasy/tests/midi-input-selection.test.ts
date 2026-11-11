@@ -4,7 +4,7 @@ import {
 	acceptsMidiInput,
 	UNAVAILABLE_MIDI_DEVICE
 } from "../../../packages/audiobus/io/inputs/midi-input-controls"
-import { NOTE_OFF, NOTE_ON } from "../../../packages/audiobus/commands"
+import { NOTE_OFF, NOTE_ON } from "../../../packages/audiobus/commands/commands"
 
 const midi = vi.hoisted(() => ({
 	inputs: [] as any[],

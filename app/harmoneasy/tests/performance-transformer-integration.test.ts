@@ -19,12 +19,12 @@ import { componentBindings } from "../../../packages/audiobus/io/component-ui"
 import { performanceBindings } from "../../../packages/audiobus/io/performance-controls"
 import { TRANSFORMER_DEFINITIONS } from "../../../packages/audiobus/io/transformer-definitions"
 import { createTransformerPicker } from "../source/components/graph/Transformers"
-import { createAudioCommand } from "../../../packages/audiobus/audio-command-factory"
+import { createAudioCommand } from "../../../packages/audiobus/commands/audio-command-factory"
 import {
 	midiToCommand,
 	commandToMidi
 } from "../../../packages/audiobus/midi/midi-command-conversion"
-import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands"
+import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands/commands"
 
 const chains: IOChain[] = []
 afterEach(() => {

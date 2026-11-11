@@ -10,7 +10,7 @@ import OutputOnscreenKeyboard from "../../../packages/audiobus/io/outputs/output
 import OutputManager from "../../../packages/audiobus/io/output-manager"
 import { deviceDefinition, defineDevice } from "../../../packages/audiobus/io/device-definition"
 import { musicalCommand, parseEventClip } from "../../../packages/audiobus/io/event-clip"
-import { NOTE_OFF, NOTE_ON, CONTROL_CHANGE } from "../../../packages/audiobus/commands"
+import { NOTE_OFF, NOTE_ON, CONTROL_CHANGE } from "../../../packages/audiobus/commands/commands"
 
 const outputs: Array<{ destroy(): void }> = []
 afterEach(() => {

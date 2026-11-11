@@ -7,7 +7,7 @@ import {
 	EVENT_CHAINS_UPDATED,
 	EVENT_WORKSPACE_RESTORED,
 	EVENT_CONFIGURATION_CHANGED
-} from "audiobus/event-constants"
+} from "audiobus/events/event-constants"
 import { element, field } from "./music-tools-dom"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
 import type { Transformer } from "audiobus/io/transformers/abstract-transformer"

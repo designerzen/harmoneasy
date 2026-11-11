@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it, vi } from "vitest"
-import { EVENT_INPUT, EVENT_CHANGE } from "audiobus/event-constants"
+import { EVENT_INPUT, EVENT_CHANGE } from "audiobus/events/event-constants"
 import {
 	mountPlayDirectory,
 	loadPlayDirectory,

@@ -9,7 +9,7 @@ import {
 	EVENT_KEY_DOWN,
 	EVENT_KEY_UP,
 	EVENT_SUBMIT
-} from "audiobus/event-constants"
+} from "audiobus/events/event-constants"
 import {
 	commandSearchField,
 	commandSearchScore,

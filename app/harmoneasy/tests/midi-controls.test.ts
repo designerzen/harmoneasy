@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from "vitest"
 import React, { act } from "react"
-import { EVENT_INPUT, EVENT_CLOSE } from "audiobus/event-constants"
+import { EVENT_INPUT, EVENT_CLOSE } from "audiobus/events/event-constants"
 import { createRoot } from "react-dom/client"
 import { MidiControls, scaleMidiValue } from "../source/services/midi-controls"
 import { createMidiControlPanel, domMidiTargets } from "../source/services/midi-control-panel"

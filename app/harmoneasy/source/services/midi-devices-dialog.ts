@@ -16,7 +16,7 @@ import {
 	EVENT_OPENED,
 	EVENT_READY,
 	EVENT_VISIBILITY_CHANGE
-} from "audiobus/event-constants"
+} from "audiobus/events/event-constants"
 
 interface PortStatusEvents {
 	addListener(event: typeof EVENT_OPENED | typeof EVENT_CLOSED, callback: () => void): unknown

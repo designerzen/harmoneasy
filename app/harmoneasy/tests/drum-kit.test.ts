@@ -14,8 +14,8 @@ import {
 	CONTROL_CHANGE,
 	MIDI_STOP,
 	PLAYBACK_STOP
-} from "../../../packages/audiobus/commands.ts"
-import { setAudioDestination } from "../../../packages/audiobus/audio-destination.ts"
+} from "../../../packages/audiobus/commands/commands.ts"
+import { setAudioDestination } from "../../../packages/audiobus/io/audio-destination.ts"
 
 const devices: OutputDrumKit[] = []
 function setup() {

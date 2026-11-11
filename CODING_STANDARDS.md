@@ -2,7 +2,7 @@
 
 ## Events
 
-Use shared exported constants with `UPPERCASE_NAMES` for event names. Reuse constants from `packages/audiobus/event-constants.ts` where applicable. Uppercase applies to constant identifiers, not event string values.
+Use shared exported constants with `UPPERCASE_NAMES` for event names. Reuse constants from `packages/audiobus/events/event-constants.ts` where applicable. Uppercase applies to constant identifiers, not event string values.
 
 ## Application UI
 

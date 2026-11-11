@@ -11,7 +11,7 @@ import {
 	harmonicRoutes
 } from "../../../packages/audiobus/io/music-tools"
 import { musicalCommand, parseEventClip } from "../../../packages/audiobus/io/event-clip"
-import { NOTE_ON, NOTE_OFF, CONTROL_CHANGE } from "../../../packages/audiobus/commands"
+import { NOTE_ON, NOTE_OFF, CONTROL_CHANGE } from "../../../packages/audiobus/commands/commands"
 import {
 	TransformerChordTrack,
 	ID_CHORD_TRACK

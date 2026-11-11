@@ -3,7 +3,7 @@ import { afterEach, expect, it, vi } from "vitest"
 import OutputSampler from "../../../packages/audiobus/io/outputs/output-chromatic-sampler"
 import { defineDevice, deviceDefinition } from "../../../packages/audiobus/io/device-definition"
 import { musicalCommand } from "../../../packages/audiobus/io/event-clip"
-import { NOTE_ON, NOTE_OFF, PITCH_BEND, CONTROL_CHANGE } from "../../../packages/audiobus/commands"
+import { NOTE_ON, NOTE_OFF, PITCH_BEND, CONTROL_CHANGE } from "../../../packages/audiobus/commands/commands"
 
 const outputs: OutputSampler[] = []
 afterEach(() => {

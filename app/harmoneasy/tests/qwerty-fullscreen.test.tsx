@@ -5,8 +5,8 @@ import { createPortal } from "react-dom"
 import { expect, it, vi } from "vitest"
 import { DeviceGui } from "../source/components/graph/DeviceGui"
 import InputKeyboard from "../../../packages/audiobus/io/inputs/input-keyboard"
-import { NOTE_ON, NOTE_OFF, TEMPO_TAP } from "../../../packages/audiobus/commands"
-import { EVENT_POINTER_DOWN, EVENT_POINTER_UP } from "../../../packages/audiobus/event-constants"
+import { NOTE_ON, NOTE_OFF, TEMPO_TAP } from "../../../packages/audiobus/commands/commands"
+import { EVENT_POINTER_DOWN, EVENT_POINTER_UP } from "../../../packages/audiobus/events/event-constants"
 
 it("keeps all key labels and input working when moving into and out of fullscreen", async () => {
 	globalThis.IS_REACT_ACT_ENVIRONMENT = true

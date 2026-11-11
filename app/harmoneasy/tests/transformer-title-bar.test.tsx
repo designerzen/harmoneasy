@@ -6,7 +6,7 @@ import { TransformerNode } from "../source/components/graph/nodes/TransformerNod
 import { ChainContext } from "../source/components/graph/ChainContext"
 import { TransformerHarmoniser } from "../../../packages/audiobus/io/transformers/transformer-harmoniser"
 import { componentBindings } from "../../../packages/audiobus/io/component-ui"
-import { EVENT_CONFIGURATION_CHANGED } from "../../../packages/audiobus/event-constants"
+import { EVENT_CONFIGURATION_CHANGED } from "../../../packages/audiobus/events/event-constants"
 
 vi.mock("@xyflow/react", () => ({ Handle: () => null, Position: {} }))
 vi.mock("../source/components/graph/GraphDialogs", () => ({ TransformerDialog: () => null }))

@@ -1,4 +1,4 @@
-import { EVENT_CLICK } from "audiobus/event-constants"
+import { EVENT_CLICK } from "audiobus/events/event-constants"
 import { version, author } from "../../../../package.json"
 import { getPackagesListHTML } from "./packages-service"
 

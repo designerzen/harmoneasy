@@ -11,7 +11,7 @@ import {
 import OutputSongTree from "../../../packages/audiobus/io/outputs/output-song-tree"
 import { createTreeRenderer } from "../../../packages/audiobus/io/outputs/tree-renderer"
 import { musicalCommand } from "../../../packages/audiobus/io/event-clip"
-import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands"
+import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands/commands"
 
 afterEach(() => {
 	vi.restoreAllMocks()

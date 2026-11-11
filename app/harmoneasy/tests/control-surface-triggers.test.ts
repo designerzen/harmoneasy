@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, it, vi } from "vitest"
-import { CONTROL_CHANGE, NOTE_OFF, NOTE_ON } from "audiobus/commands"
-import { EVENT_KEY_DOWN, EVENT_KEY_UP } from "audiobus/event-constants"
+import { CONTROL_CHANGE, NOTE_OFF, NOTE_ON } from "audiobus/commands/commands"
+import { EVENT_KEY_DOWN, EVENT_KEY_UP } from "audiobus/events/event-constants"
 import { triggerLabel, validSurfaces } from "control-surface/model"
 import type { SurfaceState, SurfaceTrigger } from "control-surface/types"
 import {

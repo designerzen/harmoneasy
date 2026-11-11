@@ -14,7 +14,7 @@ import {
 	EVENT_KEY_DOWN,
 	EVENT_KEY_UP,
 	EVENT_SUBMIT
-} from "../../../packages/audiobus/event-constants"
+} from "../../../packages/audiobus/events/event-constants"
 
 const markup = readFileSync(resolve("index.html"), "utf8")
 let lifetime: AbortController

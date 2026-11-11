@@ -24,7 +24,7 @@ import {
 	EVENT_TRANSFORMERS_UPDATED,
 	EVENT_KEY_DOWN,
 	EVENT_SUBMIT
-} from "audiobus/event-constants"
+} from "audiobus/events/event-constants"
 import type IOChain from "audiobus/io/IO-chain"
 
 /** Interpolate only up to the next transport tick, so delayed ticks cannot create a free-running cue. */

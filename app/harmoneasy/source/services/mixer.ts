@@ -10,7 +10,7 @@ import {
 	EVENT_DESTROYED,
 	EVENT_PAGE_HIDE,
 	EVENT_KEY_DOWN
-} from "audiobus/event-constants"
+} from "audiobus/events/event-constants"
 import { createMixerChannels } from "./mixer-channel"
 import { createMixerMeter } from "./mixer-meter"
 import { element } from "./music-tools-dom"

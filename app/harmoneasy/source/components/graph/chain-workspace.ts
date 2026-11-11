@@ -6,7 +6,7 @@ import {
 	EVENT_CHAINS_UPDATED,
 	EVENT_CHAIN_ACTIVE_CHANGED,
 	EVENT_KEY_DOWN
-} from "audiobus/event-constants"
+} from "audiobus/events/event-constants"
 import { DEFAULT_LAYOUT_MODE } from "./options"
 import { createIOChainManagerUI } from "./IOChainManagerUI"
 import { createPresets } from "./Presets"

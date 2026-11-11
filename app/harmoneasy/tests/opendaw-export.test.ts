@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest"
-import { NOTE_OFF, NOTE_ON } from "../../../packages/audiobus/commands"
-import type { IAudioCommand } from "../../../packages/audiobus/audio-command-interface"
+import { NOTE_OFF, NOTE_ON } from "../../../packages/audiobus/commands/commands"
+import type { IAudioCommand } from "../../../packages/audiobus/commands/audio-command-interface"
 import { createOpenDAWProjectFromAudioEventRecording } from "../../../packages/openDAW/adapter-opendaw-audio-events-recording"
 
 const command = (

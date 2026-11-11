@@ -9,7 +9,7 @@ import {
 import { deviceDefinition } from "../../../packages/audiobus/io/device-definition"
 import InputProfiledMidiDevice from "../../../packages/audiobus/io/inputs/input-profiled-midi-device"
 import { musicalCommand } from "../../../packages/audiobus/io/event-clip"
-import { NOTE_ON, NOTE_OFF, CONTROL_CHANGE } from "../../../packages/audiobus/commands"
+import { NOTE_ON, NOTE_OFF, CONTROL_CHANGE } from "../../../packages/audiobus/commands/commands"
 import {
 	INPUT_EVENT,
 	EVENT_BLUR,
@@ -18,7 +18,7 @@ import {
 	EVENT_KEY_UP,
 	EVENT_POINTER_DOWN,
 	EVENT_POINTER_UP
-} from "../../../packages/audiobus/event-constants"
+} from "../../../packages/audiobus/events/event-constants"
 
 const cleanups: (() => void | Promise<void>)[] = []
 afterEach(async () => {

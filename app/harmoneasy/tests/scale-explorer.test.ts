@@ -25,9 +25,9 @@ import {
 	EVENT_CHANGE,
 	EVENT_KEY_DOWN,
 	INPUT_EVENT
-} from "../../../packages/audiobus/event-constants"
+} from "../../../packages/audiobus/events/event-constants"
 import { musicalCommand } from "../../../packages/audiobus/io/event-clip"
-import { NOTE_ON, NOTE_OFF, CONTROL_CHANGE } from "../../../packages/audiobus/commands"
+import { NOTE_ON, NOTE_OFF, CONTROL_CHANGE } from "../../../packages/audiobus/commands/commands"
 
 afterEach(() => {
 	vi.useRealTimers()

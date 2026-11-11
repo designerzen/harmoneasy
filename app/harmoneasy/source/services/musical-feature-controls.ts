@@ -1,7 +1,7 @@
 import type IOChainManager from "audiobus/io/IO-chain-manager"
-import type AudioEventRecorder from "audiobus/audio-event-recorder"
-import type { IAudioCommand } from "audiobus/audio-command-interface"
-import { NOTE_ON, NOTE_OFF, INPUT_EVENT } from "audiobus/commands"
+import type AudioEventRecorder from "audiobus/events/audio-event-recorder"
+import type { IAudioCommand } from "audiobus/commands/audio-command-interface"
+import { NOTE_ON, NOTE_OFF, INPUT_EVENT } from "audiobus/commands/commands"
 import {
 	EVENT_CLOSE,
 	EVENT_PAGE_HIDE,
@@ -12,7 +12,7 @@ import {
 	EVENT_CLICK,
 	EVENT_WORKSPACE_RESTORED,
 	EVENT_VISIBILITY_CHANGE
-} from "audiobus/event-constants"
+} from "audiobus/events/event-constants"
 import {
 	clipCommand,
 	musicalCommand,

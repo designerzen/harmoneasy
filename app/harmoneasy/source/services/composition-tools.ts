@@ -11,7 +11,7 @@ import type InputScaleExplorer from "audiobus/io/inputs/input-scale-explorer"
 import type InputEventLoop from "audiobus/io/inputs/input-event-loop"
 import { allPitchSetClasses, pitchClasses } from "audiobus/tuning/pitch-class-set"
 import { effectiveScaleSet } from "audiobus/io/scale-explorer-controls"
-import { EVENT_CHAINS_UPDATED } from "audiobus/event-constants"
+import { EVENT_CHAINS_UPDATED } from "audiobus/events/event-constants"
 import {
 	element,
 	action,

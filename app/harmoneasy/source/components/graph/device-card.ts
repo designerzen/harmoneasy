@@ -5,7 +5,7 @@ import type { ClassifiedChoice } from "./device-filters"
 import { OUTPUT_DEFINITIONS } from "audiobus/io/output-definitions"
 import { INPUT_DEFINITIONS } from "audiobus/io/input-definitions"
 import { AI_MODELS, type AIInputId } from "audiobus/io/inputs/ai-model-catalogue"
-import { EVENT_ERROR } from "audiobus/event-constants"
+import { EVENT_ERROR } from "audiobus/events/event-constants"
 import {
 	MIDI_DEVICE_PROFILES,
 	onMidiDeviceProfilesChanged

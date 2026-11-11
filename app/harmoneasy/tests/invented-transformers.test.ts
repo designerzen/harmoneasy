@@ -20,11 +20,11 @@ import {
 	createPresetTransformers
 } from "../../../packages/audiobus/io/transformer-presets"
 import { parsePresetLibrary } from "../../../packages/audiobus/io/preset-library"
-import { createAudioCommand } from "../../../packages/audiobus/audio-command-factory"
+import { createAudioCommand } from "../../../packages/audiobus/commands/audio-command-factory"
 import { createTransformerPicker } from "../source/components/graph/Transformers"
 import IOChain from "../../../packages/audiobus/io/IO-chain"
-import { NOTE_ON, NOTE_OFF, CONTROL_CHANGE } from "../../../packages/audiobus/commands"
-import type { IAudioCommand } from "../../../packages/audiobus/audio-command-interface"
+import { NOTE_ON, NOTE_OFF, CONTROL_CHANGE } from "../../../packages/audiobus/commands/commands"
+import type { IAudioCommand } from "../../../packages/audiobus/commands/audio-command-interface"
 
 const clock = (now = 0, bpm = 120) => ({ now, bpm, BPM: bpm }) as never
 const note = (number = 60, at = 0, channel = 1, from = "keys", velocity = 100) =>

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import InputMusicMouse from "../../../packages/audiobus/io/inputs/input-music-mouse"
-import { NOTE_OFF, NOTE_ON } from "../../../packages/audiobus/commands"
+import { NOTE_OFF, NOTE_ON } from "../../../packages/audiobus/commands/commands"
 
 afterEach(() => vi.unstubAllGlobals())
 

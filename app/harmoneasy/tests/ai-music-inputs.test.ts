@@ -14,8 +14,8 @@ import { deviceDefinition } from "../../../packages/audiobus/io/device-definitio
 import {
 	INPUT_EVENT,
 	EVENT_CONFIGURATION_CHANGED
-} from "../../../packages/audiobus/event-constants"
-import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands"
+} from "../../../packages/audiobus/events/event-constants"
+import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands/commands"
 
 const workers: FakeWorker[] = [],
 	devices: InputAIMusic[] = []

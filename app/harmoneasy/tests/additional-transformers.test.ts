@@ -27,7 +27,7 @@ import {
 } from "../../../packages/audiobus/io/transformer-presets"
 import IOChain from "../../../packages/audiobus/io/IO-chain"
 import { createTransformerPicker } from "../source/components/graph/Transformers"
-import { createAudioCommand } from "../../../packages/audiobus/audio-command-factory"
+import { createAudioCommand } from "../../../packages/audiobus/commands/audio-command-factory"
 import { commandToMidi } from "../../../packages/audiobus/midi/midi-command-conversion"
 import {
 	NOTE_ON,
@@ -35,8 +35,8 @@ import {
 	CONTROL_CHANGE,
 	PITCH_BEND,
 	MIDI_CLOCK
-} from "../../../packages/audiobus/commands"
-import type { IAudioCommand } from "../../../packages/audiobus/audio-command-interface"
+} from "../../../packages/audiobus/commands/commands"
+import type { IAudioCommand } from "../../../packages/audiobus/commands/audio-command-interface"
 
 const clock = (now = 0, bpm = 120) => ({ now, bpm, BPM: bpm }) as never
 const note = (number = 60, at = 0, channel = 1, from = "keyboard", velocity = 100) =>

@@ -5,7 +5,7 @@ import {
 	EVENT_MESSAGE,
 	EVENT_BUFFERED_AMOUNT_LOW,
 	EVENT_ICE_GATHERING_STATE_CHANGE
-} from "audiobus/event-constants"
+} from "audiobus/events/event-constants"
 
 export const ROOM_PROTOCOL = "harmoneasy-room/1"
 const FRAME_SIZE = 12000

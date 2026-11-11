@@ -8,7 +8,7 @@ import InputCosmoDots from "audiobus/io/inputs/input-cosmo-dots"
 import OutputYoshimi from "audiobus/io/outputs/output-yoshimi"
 import { componentBindings } from "audiobus/io/component-ui"
 import { controlComponents, removeSurface } from "../source/components/graph/control-surfaces"
-import { EVENT_CONTROL_SURFACE_EXPAND } from "audiobus/event-constants"
+import { EVENT_CONTROL_SURFACE_EXPAND } from "audiobus/events/event-constants"
 import { createChainWorkspace } from "../source/components/graph/chain-workspace"
 
 vi.mock("../../../packages/audiobus/wam/yoshimi-assets", () => ({

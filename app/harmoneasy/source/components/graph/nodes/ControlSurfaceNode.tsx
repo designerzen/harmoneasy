@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react"
 import { Handle, Position } from "@xyflow/react"
 import { useChain } from "../ChainContext"
 import { mountControlSurface, removeSurface, SURFACE_HANDLE } from "../control-surfaces"
-import { EVENT_CONTROL_SURFACE_EXPAND } from "audiobus/event-constants"
+import { EVENT_CONTROL_SURFACE_EXPAND } from "audiobus/events/event-constants"
 import { NodeHeader } from "../NodeHeader"
 import { MinimiseButton } from "../MinimiseButton"
 

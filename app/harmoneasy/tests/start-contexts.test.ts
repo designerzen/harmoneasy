@@ -2,7 +2,7 @@ import { PUBLISHED_PRESETS } from "../source/services/preset-files"
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
 import { runUI } from "./native-ui"
-import { EVENT_SUBMIT } from "audiobus/event-constants"
+import { EVENT_SUBMIT } from "audiobus/events/event-constants"
 import { createStateURL } from "../source/libs/location"
 import {
 	completePresets,

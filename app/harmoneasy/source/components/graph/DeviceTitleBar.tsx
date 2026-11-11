@@ -1,5 +1,5 @@
 import React, { useState, useSyncExternalStore } from "react"
-import { EVENT_INPUTS_UPDATED, EVENT_OUTPUTS_UPDATED } from "audiobus/event-constants"
+import { EVENT_INPUTS_UPDATED, EVENT_OUTPUTS_UPDATED } from "audiobus/events/event-constants"
 import type AbstractInput from "audiobus/io/inputs/abstract-input"
 import type { IAudioOutput } from "audiobus/io/outputs/output-interface"
 import { useChain } from "./ChainContext"

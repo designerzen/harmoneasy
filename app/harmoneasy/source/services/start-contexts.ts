@@ -1,7 +1,7 @@
 import { createPresetBrowser } from "../components/graph/PresetBrowser"
 import { presetSetup } from "../components/graph/preset-catalogue"
 import type { PresetSetup } from "audiobus/io/preset-library"
-import { EVENT_CLICK } from "audiobus/event-constants"
+import { EVENT_CLICK } from "audiobus/events/event-constants"
 import type { PresetPage } from "./preset-page"
 import { configurationSteps } from "audiobus/io/preset-library"
 export * from "./start-context-catalogue"

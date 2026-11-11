@@ -7,7 +7,7 @@ import { createDeviceDialog } from "../source/components/graph/DeviceDialog"
 import { createSharedDevices } from "../source/components/graph/SharedDevices"
 import { defineDevice } from "audiobus/io/device-definition"
 import "./midi-profile-runtime-setup"
-import { EVENT_DEVICE_LIST_CHANGED } from "audiobus/event-constants"
+import { EVENT_DEVICE_LIST_CHANGED } from "audiobus/events/event-constants"
 
 const mocks = vi.hoisted(() => ({
 	input: vi.fn(),

@@ -23,8 +23,8 @@ import {
 	EVENT_DISCONNECTED,
 	EVENT_INPUT,
 	EVENT_CHANGE
-} from "../../../packages/audiobus/event-constants"
-import { CONTROL_CHANGE, NOTE_OFF, NOTE_ON } from "../../../packages/audiobus/commands"
+} from "../../../packages/audiobus/events/event-constants"
+import { CONTROL_CHANGE, NOTE_OFF, NOTE_ON } from "../../../packages/audiobus/commands/commands"
 import { domMidiTargets } from "../source/services/midi-control-panel"
 
 const midi = vi.hoisted(() => ({

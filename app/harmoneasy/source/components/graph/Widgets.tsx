@@ -1,6 +1,6 @@
 import { useChain } from "./ChainContext"
 import React, { memo, useCallback, useId, useState } from "react"
-import { EVENT_CONFIGURATION_CHANGED } from "audiobus/event-constants"
+import { EVENT_CONFIGURATION_CHANGED } from "audiobus/events/event-constants"
 
 /**
  * ConfigField component - memoized to prevent unnecessary re-renders

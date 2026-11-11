@@ -3,8 +3,8 @@ import { describe, expect, it, vi } from "vitest"
 import InputManager from "../../../packages/audiobus/io/input-manager"
 import AbstractInput from "../../../packages/audiobus/io/inputs/abstract-input"
 import OutputManager from "../../../packages/audiobus/io/output-manager"
-import { INPUT_EVENT } from "../../../packages/audiobus/event-constants"
-import { NOTE_ON } from "../../../packages/audiobus/commands"
+import { INPUT_EVENT } from "../../../packages/audiobus/events/event-constants"
+import { NOTE_ON } from "../../../packages/audiobus/commands/commands"
 
 class Input extends AbstractInput {
 	destroy() {}

@@ -1,6 +1,6 @@
 import { RoomConnection } from "../source/services/room-connection"
 import { RoomWorkspace } from "../source/services/room-workspace"
-import { NOTE_ON, NOTE_OFF } from "audiobus/commands"
+import { NOTE_ON, NOTE_OFF } from "audiobus/commands/commands"
 
 // Real Chromium WebRTC and AudioWorklet clocks, with silent instrument/test workspace adapters.
 export async function createMachine(role: "leader" | "follower") {

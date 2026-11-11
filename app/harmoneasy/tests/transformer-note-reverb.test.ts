@@ -4,8 +4,8 @@ import {
 	ID_NOTE_REVERB
 } from "../../../packages/audiobus/io/transformers/transformer-note-reverb"
 import { tranformerFactory } from "../../../packages/audiobus/io/transformer-factory"
-import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands"
-import type { IAudioCommand } from "../../../packages/audiobus/audio-command-interface"
+import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands/commands"
+import type { IAudioCommand } from "../../../packages/audiobus/commands/audio-command-interface"
 
 const note = (type = NOTE_ON, velocity = 100) =>
 	({

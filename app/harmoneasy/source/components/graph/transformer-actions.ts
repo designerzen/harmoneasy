@@ -1,7 +1,7 @@
 import type IOChain from "audiobus/io/IO-chain"
 import type { Transformer } from "audiobus/io/transformers/abstract-transformer"
 import { tranformerFactory } from "audiobus/io/transformer-factory"
-import { EVENT_CONFIGURATION_CHANGED } from "audiobus/event-constants"
+import { EVENT_CONFIGURATION_CHANGED } from "audiobus/events/event-constants"
 import { editNodeValue, type NodeMenuAction } from "./node-menu"
 
 export function transformerActions(chain: IOChain, transformer: Transformer): NodeMenuAction[] {

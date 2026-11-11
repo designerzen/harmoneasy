@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest"
 import TransformerManager from "../../../packages/audiobus/io/transformer-manager-worker"
-import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands"
+import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands/commands"
 
 afterEach(() => vi.unstubAllGlobals())
 

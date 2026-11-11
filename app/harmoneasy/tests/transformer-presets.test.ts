@@ -3,8 +3,8 @@ import {
 	PRESETS,
 	createPresetTransformers
 } from "../../../packages/audiobus/io/transformer-presets"
-import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands"
-import { createAudioCommand } from "../../../packages/audiobus/audio-command-factory"
+import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands/commands"
+import { createAudioCommand } from "../../../packages/audiobus/commands/audio-command-factory"
 
 const play = (name: string, number: number) =>
 	createPresetTransformers(PRESETS.find((preset) => preset.name === name)!).reduce(
