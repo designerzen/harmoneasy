@@ -119,7 +119,8 @@ export function elementIcon(kind: ElementKind, id: string): string {
 						kind === "input"
 							? (INPUT_ICONS[id as InputId] ?? "input")
 							: kind === "output"
-								? (OUTPUT_ICONS[id as keyof typeof OUTPUT_ICONS] ?? "output")
+								? (OUTPUT_ICONS[id as keyof typeof OUTPUT_ICONS] ??
+									(id.startsWith("effect:") ? "spectrum" : "output"))
 								: "instrument"
 					}.svg`
 	return `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`

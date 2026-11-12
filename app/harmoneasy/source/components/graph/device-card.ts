@@ -1,5 +1,6 @@
 import type { InputId } from "audiobus/io/inputs/input-types"
-import type { OutputId } from "audiobus/io/outputs/output-types"
+import { effectOutputId, type OutputId } from "audiobus/io/outputs/output-types"
+import { EFFECT_REGISTRY } from "audiobus/effects/effect-registry"
 import type { PINK_TROMBONE_OUTPUT_ID } from "audiobus-output-pink-trombone"
 import { elementDescription, elementIcon } from "./element-icons"
 import type { ClassifiedChoice } from "./device-filters"
@@ -226,13 +227,6 @@ onMidiDeviceProfilesChanged(() => {
 })
 
 export const OUTPUT_GUIDANCE: Record<OutputId | typeof PINK_TROMBONE_OUTPUT_ID, Guidance> = {
-	"impulse-response": guide(
-		"IR",
-		"Filter upstream audio through an impulse response.",
-		"Chain reverbs, spaces and speaker cabinets before the speakers.",
-		audio +
-			" Choose from 26 openly licensed presets or load an audio impulse response up to 4 MB; adjust Wet mix."
-	),
 	"song-tree": guide(
 		"Tree",
 		"Grow a tree from incoming notes and chords.",
@@ -286,6 +280,24 @@ export const OUTPUT_GUIDANCE: Record<OutputId | typeof PINK_TROMBONE_OUTPUT_ID, 
 					: audio + " The plugin engine and any samples must be available."
 			)
 		])
+	),
+	...Object.fromEntries(
+		EFFECT_REGISTRY.map((effect) => [
+			effectOutputId(effect.id),
+			guide(
+				"FX",
+				effect.description + ".",
+				"Shaping instruments and other effects before the speakers; add it with FX on the speakers.",
+				audio
+			)
+		])
+	),
+	"impulse-response": guide(
+		"FX",
+		"Filter upstream audio through an impulse response.",
+		"Placing instruments in reverbs, spaces and speaker cabinets before the speakers.",
+		audio +
+			" Choose from 26 openly licensed presets or load an audio impulse response up to 4 MB; adjust Wet mix."
 	),
 	"chromatic-sampler": guide(
 		"Smp",

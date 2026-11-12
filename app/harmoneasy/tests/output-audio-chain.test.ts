@@ -1,6 +1,6 @@
 import { expect, it, vi } from "vitest"
 import { OutputAudioRouting } from "../../../packages/audiobus/io/output-audio-routing"
-import OutputImpulseResponse from "../../../packages/audiobus/io/outputs/output-impulse-response"
+import OutputImpulseResponse from "../../../packages/audiobus/effects/effect-impulse-response"
 import OutputManager from "../../../packages/audiobus/io/output-manager"
 import { defineDevice, deviceDefinition } from "../../../packages/audiobus/io/device-definition"
 import { EVENT_CONNECTION_CHANGED } from "../../../packages/audiobus/events/event-constants"
@@ -13,7 +13,7 @@ function audio() {
 		const result: any = {
 			context,
 			targets,
-			gain: { value: 1 },
+			gain: { value: 1, setTargetAtTime() {} },
 			connect(target: any) {
 				targets.add(target)
 				return target
@@ -138,7 +138,12 @@ it("persists and restores the impulse and wet mix, and retains the previous filt
 	output.setMix(0.75)
 	await output.loadImpulse("AQID", "cabinet.wav")
 	const saved = deviceDefinition(output)
-	expect(saved.options).toEqual({ mix: 0.75, impulse: "AQID", filename: "cabinet.wav" })
+	expect(saved.options).toEqual({
+		mix: 0.75,
+		impulse: "AQID",
+		filename: "cabinet.wav",
+		preset: ""
+	})
 	const restored = await OutputImpulseResponse.create({ ...saved.options, audioContext: context })
 	expect(restored.options).toEqual(saved.options)
 	context.decodeAudioData.mockRejectedValueOnce(new Error("Invalid audio"))

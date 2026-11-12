@@ -3,19 +3,19 @@ import { afterEach, expect, it, vi } from "vitest"
 import { readFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
-import OutputImpulseResponse from "../../../packages/audiobus/io/outputs/output-impulse-response"
+import OutputImpulseResponse from "../../../packages/audiobus/effects/effect-impulse-response"
 import { deviceDefinition, defineDevice } from "../../../packages/audiobus/io/device-definition"
 import { EVENT_CHANGE } from "../../../packages/audiobus/events/event-constants"
 import {
 	BUILTIN_ROOM_PRESET,
 	IMPULSE_RESPONSE_PRESETS
-} from "../../../packages/audiobus/io/outputs/impulse-response-presets"
+} from "../../../packages/audiobus/effects/impulse-response-presets"
 
 afterEach(() => vi.unstubAllGlobals())
 
 function setup() {
 	const node = (): any => ({
-		gain: { value: 1 },
+		gain: { value: 1, setTargetAtTime() {} },
 		connect(target: any) {
 			return target
 		},
@@ -69,7 +69,7 @@ it("loads presets on demand and persists their ID without embedding bundled audi
 	expect(fetcher).not.toHaveBeenCalled()
 	await output.loadImpulse("AQID", "custom.wav")
 	await output.loadPreset("InsidePiano")
-	expect(output.options).toEqual({ mix: 0.5, preset: "InsidePiano" })
+	expect(output.options).toEqual({ mix: 0.5, preset: "InsidePiano", impulse: "", filename: "" })
 	const saved = deviceDefinition(
 		defineDevice(output, { factory: "output", type: "impulse-response" })
 	)
@@ -77,8 +77,29 @@ it("loads presets on demand and persists their ID without embedding bundled audi
 	expect(restored.options).toEqual(output.options)
 	expect(fetcher).toHaveBeenCalledTimes(2)
 	await restored.loadPreset(BUILTIN_ROOM_PRESET)
-	expect(restored.options).toEqual({ mix: 0.5 })
+	expect(restored.options).toEqual({
+		mix: 0.5,
+		preset: BUILTIN_ROOM_PRESET,
+		impulse: "",
+		filename: ""
+	})
 	await output.destroy()
+	await restored.destroy()
+})
+
+it("saves a cleared selection over the options the effect was restored from", async () => {
+	const { context } = setup()
+	const options = { mix: 0.5, impulse: "AQID", filename: "cabinet.wav" }
+	const restored = defineDevice(
+		await OutputImpulseResponse.create({ ...options, audioContext: context }),
+		{ factory: "output", type: "impulse-response", options }
+	)
+	await restored.loadPreset("InsidePiano")
+	const saved = deviceDefinition(restored).options!
+	expect(saved).toMatchObject({ preset: "InsidePiano", impulse: "" })
+	const reopened = await OutputImpulseResponse.create({ ...saved, audioContext: context })
+	expect(reopened.options.preset).toBe("InsidePiano")
+	await reopened.destroy()
 	await restored.destroy()
 })
 
@@ -110,7 +131,7 @@ it("ignores a slow preset decode after a newer selection or custom upload", asyn
 	finish({ duration: 10 })
 	await pending
 	expect(output.options.filename).toBe("new.wav")
-	expect(output.options.preset).toBeUndefined()
+	expect(output.options.preset).toBe("")
 	const count = fetcher.mock.calls.length
 	await expect(output.loadPreset("unknown")).rejects.toThrow("Unknown impulse response preset")
 	expect(fetcher).toHaveBeenCalledTimes(count)

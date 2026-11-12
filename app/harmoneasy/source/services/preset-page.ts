@@ -245,14 +245,23 @@ export async function loadPresetPage(
 	}
 	if (midiUrl) {
 		let players = 0
+		let ensembles = 0
 		for (const chain of page.workspace.chains) {
 			chain.transformers = JSON.stringify(
 				JSON.parse(chain.transformers).map((step: string) => {
 					const config = JSON.parse(step)
-					if (config.type !== "MIDI-File-Player") {
+					if (config.type !== "MIDI-File-Player" && config.type !== "Ensemble") {
 						return step
 					}
 					players++
+					if (config.type === "Ensemble") {
+						ensembles++
+						return JSON.stringify({
+							...config,
+							midiFileUrl: midiUrl.href,
+							midiFileName: ""
+						})
+					}
 					return JSON.stringify({
 						...config,
 						midiFileUrl: midiUrl.href,
@@ -264,11 +273,15 @@ export async function loadPresetPage(
 			)
 		}
 		if (!players) {
-			throw new Error("This preset has no MIDI File Player to load the midi option.")
+			throw new Error(
+				"This preset has no MIDI File Player or Ensemble to load the midi option."
+			)
 		}
-		page.name = `${decodeURIComponent(midiUrl.pathname.split("/").pop() || "MIDI file")} — One-key melody`
-		page.description =
-			"Press a playing key to play the next MIDI melody note. Release to end the note. Choose another file in the MIDI File Player."
+		const title = decodeURIComponent(midiUrl.pathname.split("/").pop() || "MIDI file")
+		page.name = `${title} — ${ensembles ? "Play channels together" : "One-key melody"}`
+		page.description = ensembles
+			? "The selected MIDI is analysed automatically. Each playable channel gets a labelled Input and surface pad with its keyboard key or gamepad assignment. Choose another song on the surface to rebuild this same setup."
+			: "Press a playing key to play the next MIDI melody note. Release to end the note. Choose another file in the MIDI File Player."
 		for (const chain of page.workspace.chains) {
 			chain.options.name = page.name
 		}

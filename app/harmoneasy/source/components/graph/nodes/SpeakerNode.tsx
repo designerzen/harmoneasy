@@ -53,9 +53,10 @@ export function SpeakerNode({
 				type="button"
 				className="cta btn-add nodrag nopan"
 				onClick={() => setOpen(true)}
-				aria-label="Add Output before speakers"
+				aria-label="Add effect before speakers"
+				title="Add an effect before the speakers"
 			>
-				Output
+				FX
 			</button>
 			{open && (
 				<DeviceDialog

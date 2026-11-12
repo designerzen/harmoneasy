@@ -7,6 +7,36 @@ const template = pages.get("presets/songs/never-gonna-give-you-up")!
 const player = (page: any) => JSON.parse(JSON.parse(page.workspace.chains[0].transformers)[0])
 
 describe("composable MIDI and output links", () => {
+	it.each(["ensemble-any-song", "ensemble-any-song-gamepads"])(
+		"loads different songs through the same dynamic preset URL: %s",
+		async (preset) => {
+			const source = pages.get(`presets/activities/${preset}`)!
+			const fetcher = vi.fn(async () => Response.json(source))
+			for (const song of ["never-gonna-give-you-up.mid", "ode-to-joy.mid"]) {
+				const page = await loadPresetPage(
+					`https://example.test/harmoneasy/presets/activities/${preset}/?midi=midi/${song}`,
+					"/harmoneasy/",
+					fetcher
+				)
+				expect(player(page)).toMatchObject({
+					type: "Ensemble",
+					midiFileUrl: `https://example.test/harmoneasy/midi/${song}`,
+					autoInputs: preset.endsWith("gamepads") ? "gamepads" : "keyboard",
+					players: []
+				})
+				expect(player(page)).not.toHaveProperty("trackIndex")
+				expect(page!.name).toContain("Play channels together")
+				expect(page!.description).toContain("Each playable channel")
+				expect(page!.workspace.chains[0].inputs).toEqual([])
+			}
+			expect(fetcher.mock.calls.map(([url]) => url)).toEqual(
+				Array(2).fill(
+					`https://example.test/harmoneasy/presets/activities/${preset}/preset.json`
+				)
+			)
+			expect(player(source).midiFileUrl).toBe("")
+		}
+	)
 	it.each(["?outputs=speech-synthesis", "#outputs=speech-synthesis"])(
 		"adds speech to any song preset through %s without changing its MIDI or instrument",
 		async (options) => {
