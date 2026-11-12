@@ -142,6 +142,9 @@ importers:
       audiobus:
         specifier: workspace:^
         version: link:../../packages/audiobus
+      audiobus-output-pink-trombone:
+        specifier: workspace:^
+        version: link:../../packages/audiobus-output-pink-trombone
       audiotool:
         specifier: workspace:^
         version: link:../../packages/audiotool
@@ -172,9 +175,6 @@ importers:
       partysocket:
         specifier: 1.1.16
         version: 1.1.16(react@19.2.4)
-      pink-trombone:
-        specifier: workspace:^
-        version: link:../../packages/pink-trombone
       pitfalls:
         specifier: workspace:^
         version: link:../../packages/pitfalls
@@ -269,6 +269,9 @@ importers:
       '@opendaw/lib-dsp':
         specifier: 0.0.77
         version: 0.0.77
+      '@opendaw/lib-midi':
+        specifier: 0.0.59
+        version: 0.0.59
       '@opendaw/studio-adapters':
         specifier: 0.0.99
         version: 0.0.99
@@ -305,9 +308,6 @@ importers:
       netronome:
         specifier: workspace:^
         version: link:../netronome
-      pink-trombone:
-        specifier: workspace:^
-        version: link:../pink-trombone
       pitfalls:
         specifier: workspace:^
         version: link:../pitfalls
@@ -339,6 +339,12 @@ importers:
       vitest:
         specifier: ^4.1.11
         version: 4.1.11(@types/node@22.19.11)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(happy-dom@20.14.5)(vite@8.3.1(@types/node@22.19.11)(esbuild@0.27.3)(jiti@2.6.1)(sass-embedded@1.98.0)(sass@1.98.0)(terser@5.51.2))
+
+  packages/audiobus-output-pink-trombone:
+    devDependencies:
+      typescript:
+        specifier: ~5.9.3
+        version: 5.9.3
 
   packages/audiotool:
     dependencies:
@@ -462,16 +468,6 @@ importers:
       vitest:
         specifier: 4.1.0
         version: 4.1.0(@types/node@22.19.11)(@vitest/ui@4.1.11)(happy-dom@20.14.5)(vite@8.0.1(@types/node@22.19.11)(esbuild@0.27.3)(jiti@2.6.1)(sass-embedded@1.98.0)(sass@1.98.0)(terser@5.51.2))
-
-  packages/pink-trombone:
-    dependencies:
-      '@harmoneasy/shared-config':
-        specifier: workspace:^
-        version: link:../shared-config
-    devDependencies:
-      typescript:
-        specifier: ~5.9.3
-        version: 5.9.3
 
   packages/pitfalls:
     dependencies:
@@ -1206,6 +1202,9 @@ packages:
 
   '@opendaw/lib-fusion@0.0.85':
     resolution: {integrity: sha512-lOMX+6KlooXFYvrMQ6MQESukr/Amc57EFiL/sxWMI2ZLnLFdnkRT8VHc3EgAv9QKJ13o+rVCO2n/9fgIrQqo2w==}
+
+  '@opendaw/lib-midi@0.0.59':
+    resolution: {integrity: sha512-d3qqI6Efzlycn44uSpgFAakxnYJ8iiQEOp5yfZLVqdgQUZYmLaMMkHmmJQ/EfcrmHmms11v9QQEw4u9tg0cl4g==}
 
   '@opendaw/lib-runtime@0.0.73':
     resolution: {integrity: sha512-ODLklutmUGdkrtpBq8ZYBq89QtsaTfT5yva2W2knCq7dKk/S3F8TBepkQxM6J0RdAVqugvXyD7+q3meZLJ8TNA==}
@@ -5699,6 +5698,11 @@ snapshots:
       '@opendaw/lib-runtime': 0.0.73
       '@opendaw/lib-std': 0.0.72
 
+  '@opendaw/lib-midi@0.0.59':
+    dependencies:
+      '@opendaw/lib-dsp': 0.0.77
+      '@opendaw/lib-std': 0.0.72
+
   '@opendaw/lib-runtime@0.0.73':
     dependencies:
       '@opendaw/lib-std': 0.0.72
@@ -6469,7 +6473,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.1.1
-      vitest: 4.1.11(@types/node@25.9.8)(@vitest/coverage-v8@4.1.11)(@vitest/ui@4.1.11)(vite@8.3.1(@types/node@25.9.8)(esbuild@0.27.3)(jiti@2.6.1)(sass-embedded@1.98.0)(sass@1.98.0)(terser@5.51.2))
+      vitest: 4.1.11(@types/node@22.19.11)(@vitest/ui@4.1.11)(happy-dom@20.14.5)(vite@8.0.1(@types/node@22.19.11)(esbuild@0.27.3)(jiti@2.6.1)(sass-embedded@1.98.0)(sass@1.98.0)(terser@5.51.2))
 
   '@vitest/utils@4.1.0':
     dependencies:

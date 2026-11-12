@@ -4,6 +4,7 @@ import { getOutputDefinition } from "audiobus/io/output-definitions"
 import { getTransformerDefinition, getTransformerIcon } from "audiobus/io/transformer-definitions"
 import type { InputId } from "audiobus/io/inputs/input-types"
 import type { OutputId } from "audiobus/io/outputs/output-types"
+import type { PINK_TROMBONE_OUTPUT_ID } from "audiobus-output-pink-trombone"
 import { MIDI_DEVICE_PROFILES } from "audiobus/midi/hardware/device-profiles"
 
 export type ElementKind = "input" | "output" | "instrument" | "transformer"
@@ -66,7 +67,7 @@ const INPUT_ICONS: Partial<Record<InputId, string>> = {
 	"dvs-control-vinyl": "vinyl"
 }
 
-const OUTPUT_ICONS: Record<OutputId, string> = {
+const OUTPUT_ICONS: Record<OutputId | typeof PINK_TROMBONE_OUTPUT_ID, string> = {
 	"impulse-response": "spectrum",
 	sion: "synth",
 	"303": "synth",
@@ -118,7 +119,7 @@ export function elementIcon(kind: ElementKind, id: string): string {
 						kind === "input"
 							? (INPUT_ICONS[id as InputId] ?? "input")
 							: kind === "output"
-								? (OUTPUT_ICONS[id as OutputId] ?? "output")
+								? (OUTPUT_ICONS[id as keyof typeof OUTPUT_ICONS] ?? "output")
 								: "instrument"
 					}.svg`
 	return `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`

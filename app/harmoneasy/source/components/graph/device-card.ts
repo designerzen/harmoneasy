@@ -1,5 +1,6 @@
 import type { InputId } from "audiobus/io/inputs/input-types"
 import type { OutputId } from "audiobus/io/outputs/output-types"
+import type { PINK_TROMBONE_OUTPUT_ID } from "audiobus-output-pink-trombone"
 import { elementDescription, elementIcon } from "./element-icons"
 import type { ClassifiedChoice } from "./device-filters"
 import { OUTPUT_DEFINITIONS } from "audiobus/io/output-definitions"
@@ -224,7 +225,7 @@ onMidiDeviceProfilesChanged(() => {
 	}
 })
 
-export const OUTPUT_GUIDANCE: Record<OutputId, Guidance> = {
+export const OUTPUT_GUIDANCE: Record<OutputId | typeof PINK_TROMBONE_OUTPUT_ID, Guidance> = {
 	"impulse-response": guide(
 		"IR",
 		"Filter upstream audio through an impulse response.",
@@ -471,7 +472,7 @@ function deviceGuidance(factory: DeviceChoice, direction: "input" | "output" | "
 		(direction === "input"
 			? INPUT_GUIDANCE[factory.id as InputId]
 			: direction === "output"
-				? OUTPUT_GUIDANCE[factory.id as OutputId]
+				? OUTPUT_GUIDANCE[factory.id as keyof typeof OUTPUT_GUIDANCE]
 				: undefined) ??
 		(factory.id.startsWith("webclap:")
 			? guide(

@@ -1,8 +1,8 @@
 {
 	"format": "harmoneasy-preset",
 	"version": 1,
-	"name": "Play any MIDI together — Gamepad channels",
-	"description": "Upload any MIDI file or enter its URL on the control surface. A labelled Input and surface pad are created for every playable MIDI channel. Each channel has its own gamepad; press any button. Surface pads work even without a controller. Presses unlock eight beats of that part at the shared song position. Turn on assistance for quieter automatic backing parts. Changing the song rebuilds the controls automatically.",
+	"name": "Any song — Gamepad channel players",
+	"description": "Choose any MIDI file, a library song or a MIDI URL on the control surface. The setup detects the song channels and generates a player Input and playable pad for each. Each gamepad controls a different part; onscreen pads also work. Load another song to rebuild the same setup automatically.",
 	"clock": {
 		"bpm": 120,
 		"swing": 0,
@@ -47,7 +47,7 @@
 			{
 				"id": "ensemble-any-song-gamepads",
 				"options": {
-					"name": "Play any MIDI together — Gamepad channels",
+					"name": "Any song — Gamepad channel players",
 					"active": true,
 					"graphLayout": "horizontal",
 					"controlSurfaces": [
@@ -60,6 +60,7 @@
 									"componentId": "transformer:ensemble-any-song-gamepads",
 									"controlIds": [
 										"uploadSong",
+										"songLibrary",
 										"midiFileUrl",
 										"autoInputs",
 										"assist",
@@ -70,6 +71,9 @@
 							"widgets": [
 								{
 									"key": "[\"transformer:ensemble-any-song-gamepads\",\"uploadSong\"]"
+								},
+								{
+									"key": "[\"transformer:ensemble-any-song-gamepads\",\"songLibrary\"]"
 								},
 								{
 									"key": "[\"transformer:ensemble-any-song-gamepads\",\"midiFileUrl\"]"
@@ -98,10 +102,10 @@
 	},
 	"catalogue": {
 		"id": "ensemble:ensemble-any-song-gamepads",
-		"category": "Activities · Together",
+		"category": "Dynamic song setups",
 		"kind": "workspace",
-		"order": 105,
-		"tags": ["ensemble", "multiplayer", "midi", "gamepads"],
-		"useCase": "Upload any MIDI file or enter its URL on the control surface. A labelled Input and surface pad are created for every playable MIDI channel. Each channel has its own gamepad; press any button. Surface pads work even without a controller. Presses unlock eight beats of that part at the shared song position. Turn on assistance for quieter automatic backing parts. Changing the song rebuilds the controls automatically."
+		"order": 2,
+		"tags": ["dynamic", "any song", "ensemble", "multiplayer", "midi", "gamepad"],
+		"useCase": "Choose any MIDI file, a library song or a MIDI URL on the control surface. The setup detects the song channels and generates a player Input and playable pad for each. Each gamepad controls a different part; onscreen pads also work. Load another song to rebuild the same setup automatically."
 	}
 }

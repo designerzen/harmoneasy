@@ -149,6 +149,47 @@ describe("per-channel input", () => {
 })
 
 describe("automatic song setup", () => {
+	it("selects arbitrary songs from the surface library and rebuilds the same setup", async () => {
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async (url) =>
+				String(url).endsWith("index.json")
+					? new Response(
+							JSON.stringify([
+								{ name: "First song", file: "first.mid" },
+								{ name: "Second song", file: "second.mid" }
+							])
+						)
+					: new Response(file(String(url).endsWith("second.mid") ? [1, 9] : [0, 2]))
+			)
+		)
+		const { m, timer } = manager()
+		const chain = new IOChain(timer)
+		const t = new TransformerEnsemble({ autoInputs: "keyboard", autoJoin: false })
+		chain.setTransformers([t])
+		m.addChain(chain)
+		await t.loadSongLibrary()
+		expect(chain.inputs).toHaveLength(0)
+		const binding = (await componentBindings(t, `transformer:${t.midiControlId}`)).find(
+			(b) => b.descriptor.id === "songLibrary"
+		)!
+		expect(binding.descriptor.choices?.map((choice) => choice.label)).toContain("Second song")
+		await binding.write("midi/first.mid")
+		await vi.waitFor(() =>
+			expect(t.automaticParts?.map((part) => part.channel)).toEqual([1, 3])
+		)
+		expect(chain.inputs).toHaveLength(2)
+		await binding.write("midi/second.mid")
+		await vi.waitFor(() =>
+			expect(t.automaticParts?.map((part) => part.channel)).toEqual([2, 10])
+		)
+		expect(
+			chain.inputs.map((input) => (input as InputChannelTrigger).options.songChannel)
+		).toEqual([2, 10])
+		expect(
+			chain.options.controlSurfaces![0].widgets.slice(0, 2).map((w) => JSON.parse(w.key)[1])
+		).toEqual(["uploadSong", "songLibrary"])
+	})
 	it("creates one labelled input and surface pad for every playable channel, including drums", async () => {
 		const { chain, t } = await ensemble()
 		expect(chain.inputs.map((i) => i.name)).toEqual([

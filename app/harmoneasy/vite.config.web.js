@@ -85,7 +85,7 @@ export default defineConfig({
 		}
 	},
 	test: {
-		setupFiles: ["./tests/midi-profile-runtime-setup.ts"],
+		setupFiles: ["./tests/midi-profile-runtime-setup.ts", "./tests/audiobus-host-setup.ts"],
 		globals: true,
 		environment: "node"
 	},

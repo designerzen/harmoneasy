@@ -10,7 +10,6 @@ import {
 import { createDropdown, menuIcon } from "../src/dropdown"
 import "../src/style.css"
 import type { ControlBinding, ControlDescriptor, ControlValue } from "../src/types"
-import { addKeyboardDownEvents } from "../../audiobus/hardware/keyboard/keyboard"
 
 const values: Record<string, ControlValue> = {
 	cutoff: 650,
@@ -120,7 +119,6 @@ Object.assign(window, {
 		values,
 		ControlSurface,
 		createPanControl,
-		createRotationControl,
-		addKeyboardDownEvents
+		createRotationControl
 	}
 })

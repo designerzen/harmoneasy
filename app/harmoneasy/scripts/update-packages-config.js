@@ -23,7 +23,7 @@ const PACKAGES = [
 	{ name: "flodjs", dir: "flodjs" },
 	{ name: "midi-ble", dir: "midi-ble" },
 	{ name: "opendaw", dir: "openDAW" },
-	{ name: "pink-trombone", dir: "pink-trombone" },
+	{ name: "audiobus-output-pink-trombone", dir: "audiobus-output-pink-trombone" },
 	{ name: "pitfalls", dir: "pitfalls" }
 ]
 
@@ -46,9 +46,10 @@ async function generateConfigFile() {
 			version: pkg.version,
 			description: pkg.description,
 			repo:
-				name === "netronome"
-					? pkg.repository?.url || "https://github.com/designerzen/netronome"
-					: "https://github.com/designerzen/harmoneasy"
+				pkg.repository?.url ||
+				(name === "netronome"
+					? "https://github.com/designerzen/netronome"
+					: "https://github.com/designerzen/harmoneasy")
 		}
 	})
 

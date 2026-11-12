@@ -26,6 +26,7 @@ import { showMidiDeviceDisconnected } from "./services/midi-device-errors"
 import { chooseChainsForMidiDevice } from "./services/midi-device-connected-dialog"
 import { createMidiDevicesDialog } from "./services/midi-devices-dialog"
 import { createMixer } from "./services/mixer"
+import { configureAudiobus } from "./audiobus-host"
 import { createRecordingControls } from "./services/recording-dialog"
 import { createMusicalFeatureControls } from "./services/musical-feature-controls"
 import { EVENT_HARMONY_CHANGED, EVENT_HARMONY_SETTINGS_CHANGED } from "audiobus/events/event-constants"
@@ -89,6 +90,8 @@ import OPFSStorage, { hasOPFS } from "audiobus/storage/opfs-storage.ts"
 
 // Types
 import type { IAudioCommand } from "audiobus/commands/audio-command-interface.ts"
+
+configureAudiobus()
 
 createThemeControls(document)
 createAboutDialog(document)

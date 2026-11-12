@@ -49,10 +49,10 @@ export const PACKAGES: PackageInfo[] = [
 		repo: "https://github.com/designerzen/harmoneasy"
 	},
 	{
-		name: "pink-trombone",
-		version: "0.3.0",
-		description: "Pink Trombone speech synthesis integration for HarmonEasy",
-		repo: "https://github.com/designerzen/harmoneasy"
+		name: "audiobus-output-pink-trombone",
+		version: "0.4.0",
+		description: "Pink Trombone vocal synthesis as an audiobus output",
+		repo: "https://github.com/designerzen/audiobus-output-pink-trombone.git"
 	},
 	{
 		name: "pitfalls",

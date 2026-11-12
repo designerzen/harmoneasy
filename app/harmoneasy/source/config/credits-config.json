@@ -1,47 +1,5 @@
 [
 	{
-		"name": "@audio/aac-decode",
-		"version": "1.0.2",
-		"authors": ["audiojs"],
-		"license": "GPL-2.0",
-		"url": "https://github.com/audiojs/aac-decode#readme"
-	},
-	{
-		"name": "@audio/aiff-decode",
-		"version": "1.0.0",
-		"authors": ["audiojs"],
-		"license": "MIT",
-		"url": "https://github.com/audiojs/aiff-decode#readme"
-	},
-	{
-		"name": "@audio/amr-decode",
-		"version": "1.0.0",
-		"authors": ["audiojs"],
-		"license": "Apache-2.0",
-		"url": "https://github.com/audiojs/amr-decode#readme"
-	},
-	{
-		"name": "@audio/caf-decode",
-		"version": "1.0.0",
-		"authors": ["audiojs"],
-		"license": "MIT",
-		"url": "https://github.com/audiojs/caf-decode#readme"
-	},
-	{
-		"name": "@audio/webm-decode",
-		"version": "1.0.0",
-		"authors": ["audiojs"],
-		"license": "MIT",
-		"url": "https://github.com/audiojs/webm-decode#readme"
-	},
-	{
-		"name": "@audio/wma-decode",
-		"version": "1.0.0",
-		"authors": ["audiojs"],
-		"license": "GPL-2.0-or-later",
-		"url": "https://github.com/audiojs/wma-decode#readme"
-	},
-	{
 		"name": "@audiotool/nexus",
 		"version": "0.0.19",
 		"authors": ["Audiotool Inc."],
@@ -84,25 +42,11 @@
 		"url": "https://github.com/connectrpc/connect-es.git"
 	},
 	{
-		"name": "@eshaz/web-worker",
-		"version": "1.2.2",
-		"authors": [],
-		"license": "Apache-2.0",
-		"url": "https://github.com/eshaz/web-worker"
-	},
-	{
 		"name": "@fastify/busboy",
 		"version": "2.1.1",
 		"authors": ["Brian White", "Igor Savin", "Aras Abbasi"],
 		"license": "MIT",
 		"url": "git+https://github.com/fastify/busboy.git"
-	},
-	{
-		"name": "@grame/faustwasm",
-		"version": "0.15.7",
-		"authors": ["Grame-CNCM"],
-		"license": "LGPL-3.0",
-		"url": "https://github.com/grame-cncm/faustwasm#readme"
 	},
 	{
 		"name": "@huggingface/jinja",
@@ -196,20 +140,6 @@
 		"url": ""
 	},
 	{
-		"name": "@opendaw/lib-jsx",
-		"version": "0.0.77",
-		"authors": [],
-		"license": "LGPL-3.0-or-later",
-		"url": ""
-	},
-	{
-		"name": "@opendaw/lib-midi",
-		"version": "0.0.59",
-		"authors": [],
-		"license": "LGPL-3.0-or-later",
-		"url": ""
-	},
-	{
 		"name": "@opendaw/lib-runtime",
 		"version": "0.0.73",
 		"authors": [],
@@ -264,13 +194,6 @@
 		"authors": [],
 		"license": "LGPL-3.0-or-later",
 		"url": ""
-	},
-	{
-		"name": "@opendaw/studio-sdk",
-		"version": "0.0.128",
-		"authors": [],
-		"license": "LGPL-3.0-or-later",
-		"url": "https://github.com/andremichelle/opendaw"
 	},
 	{
 		"name": "@protobufjs/aspromise",
@@ -465,13 +388,6 @@
 		"url": "https://thi.ng/binary"
 	},
 	{
-		"name": "@thi.ng/bitstream",
-		"version": "2.4.44",
-		"authors": ["Karsten Schmidt (https://thi.ng)"],
-		"license": "Apache-2.0",
-		"url": "https://thi.ng/bitstream"
-	},
-	{
 		"name": "@thi.ng/checks",
 		"version": "3.8.4",
 		"authors": [
@@ -485,13 +401,6 @@
 	{
 		"name": "@thi.ng/errors",
 		"version": "2.6.3",
-		"authors": ["Karsten Schmidt (https://thi.ng)"],
-		"license": "Apache-2.0",
-		"url": "https://thi.ng/errors"
-	},
-	{
-		"name": "@thi.ng/errors",
-		"version": "2.6.6",
 		"authors": ["Karsten Schmidt (https://thi.ng)"],
 		"license": "Apache-2.0",
 		"url": "https://thi.ng/errors"
@@ -731,34 +640,6 @@
 		"url": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/wicg-file-system-access"
 	},
 	{
-		"name": "@wasm-audio-decoders/common",
-		"version": "9.0.7",
-		"authors": ["Ethan Halsall"],
-		"license": "MIT",
-		"url": "https://github.com/eshaz/wasm-audio-decoders/tree/master/src/common"
-	},
-	{
-		"name": "@wasm-audio-decoders/flac",
-		"version": "0.2.10",
-		"authors": ["Ethan Halsall"],
-		"license": "MIT",
-		"url": "https://github.com/eshaz/wasm-audio-decoders/tree/main/src/flac"
-	},
-	{
-		"name": "@wasm-audio-decoders/ogg-vorbis",
-		"version": "0.1.20",
-		"authors": ["Ethan Halsall"],
-		"license": "MIT",
-		"url": "https://github.com/eshaz/wasm-audio-decoders/tree/main/src/ogg-vorbis"
-	},
-	{
-		"name": "@wasm-audio-decoders/opus-ml",
-		"version": "0.0.2",
-		"authors": ["Ethan Halsall"],
-		"license": "MIT",
-		"url": "https://github.com/eshaz/wasm-audio-decoders/tree/main/src/opus-ml"
-	},
-	{
 		"name": "@webgpu/types",
 		"version": "0.1.16",
 		"authors": [],
@@ -857,25 +738,18 @@
 		"url": "https://github.com/alexindigo/asynckit#readme"
 	},
 	{
-		"name": "audio-decode",
-		"version": "3.3.0",
-		"authors": ["ΔY"],
-		"license": "MIT",
-		"url": "https://github.com/audiojs/audio-decode#readme"
-	},
-	{
-		"name": "audio-type",
-		"version": "2.4.0",
-		"authors": ["Hemanth.HM"],
-		"license": "MIT",
-		"url": "audiojs/audio-type"
-	},
-	{
 		"name": "audiobus",
 		"version": "3.2.1",
 		"authors": [],
 		"license": "",
 		"url": ""
+	},
+	{
+		"name": "audiobus-output-pink-trombone",
+		"version": "0.4.0",
+		"authors": [],
+		"license": "",
+		"url": "https://github.com/designerzen/audiobus-output-pink-trombone.git"
 	},
 	{
 		"name": "audiotool",
@@ -1022,13 +896,6 @@
 		"authors": ["Ben Coe"],
 		"license": "ISC",
 		"url": "yargs/cliui"
-	},
-	{
-		"name": "codec-parser",
-		"version": "2.5.0",
-		"authors": ["Ethan Halsall"],
-		"license": "LGPL-3.0-or-later",
-		"url": "https://github.com/eshaz/codec-parser#readme"
 	},
 	{
 		"name": "coi-serviceworker",
@@ -1935,13 +1802,6 @@
 		"url": "git+https://github.com/isaacs/minizlib.git"
 	},
 	{
-		"name": "mpg123-decoder",
-		"version": "1.0.3",
-		"authors": ["Ethan Halsall"],
-		"license": "MIT",
-		"url": "https://github.com/eshaz/wasm-audio-decoders/tree/main/src/mpg123-decoder"
-	},
-	{
 		"name": "napi-macros",
 		"version": "2.0.0",
 		"authors": ["Mathias Buus (@mafintosh)"],
@@ -2012,13 +1872,6 @@
 		"url": "https://github.com/prebuild/node-gyp-build"
 	},
 	{
-		"name": "node-wav",
-		"version": "0.0.2",
-		"authors": ["Andreas Gal"],
-		"license": "MIT",
-		"url": "https://github.com/andreasgal/node-wav"
-	},
-	{
 		"name": "object-inspect",
 		"version": "0.4.0",
 		"authors": ["James Halliday"],
@@ -2038,13 +1891,6 @@
 		"authors": ["Jordan Harband", "Raynos", "Nathan Rajlich", "Ivan Starkov", "Gary Katsevman"],
 		"license": "MIT",
 		"url": "git://github.com/ljharb/object-keys.git"
-	},
-	{
-		"name": "ogg-opus-decoder",
-		"version": "1.7.3",
-		"authors": ["Ethan Halsall"],
-		"license": "MIT",
-		"url": "https://github.com/eshaz/wasm-audio-decoders/tree/main/src/ogg-opus-decoder"
 	},
 	{
 		"name": "onnxruntime-common",
@@ -2080,13 +1926,6 @@
 		"authors": [],
 		"license": "",
 		"url": ""
-	},
-	{
-		"name": "opus-decoder",
-		"version": "0.7.11",
-		"authors": ["Ethan Halsall"],
-		"license": "MIT",
-		"url": "https://github.com/eshaz/wasm-audio-decoders/tree/main/src/opus-decoder"
 	},
 	{
 		"name": "p-limit",
@@ -2143,13 +1982,6 @@
 		"authors": ["Xenova"],
 		"license": "Apache-2.0",
 		"url": "https://github.com/xenova/phonemizer.js#readme"
-	},
-	{
-		"name": "pink-trombone",
-		"version": "0.3.0",
-		"authors": [],
-		"license": "",
-		"url": ""
 	},
 	{
 		"name": "pitfalls",
@@ -2212,13 +2044,6 @@
 		"authors": ["Rod Vagg (https://github.com/rvagg)"],
 		"license": "MIT",
 		"url": "https://github.com/rvagg/prr"
-	},
-	{
-		"name": "qoa-format",
-		"version": "1.0.1",
-		"authors": ["Matt DesLauriers"],
-		"license": "MIT",
-		"url": "https://github.com/mattdesl/qoa-format"
 	},
 	{
 		"name": "qrcode",
@@ -2513,13 +2338,6 @@
 		],
 		"license": "Apache-2.0",
 		"url": "https://sharp.pixelplumbing.com"
-	},
-	{
-		"name": "simple-yenc",
-		"version": "1.0.4",
-		"authors": ["Ethan Halsall"],
-		"license": "MIT",
-		"url": "https://github.com/eshaz/simple-yenc#readme"
 	},
 	{
 		"name": "sion",
@@ -3040,13 +2858,6 @@
 		"authors": ["VexFlow Authors"],
 		"license": "MIT",
 		"url": "https://vexflow.com/"
-	},
-	{
-		"name": "wam-community",
-		"version": "0.4.9",
-		"authors": ["Various"],
-		"license": "",
-		"url": "https://github.com/boourns/wam-community#readme"
 	},
 	{
 		"name": "webidl-conversions",

@@ -10,7 +10,7 @@ import TonePluck from "../../../packages/audiobus/instruments/tone/tone-pluck-st
 import OutputMetronome from "../../../packages/audiobus/io/outputs/output-metronome"
 import { PercussionSynth } from "../../../packages/audiobus/instruments/percussion/percussion-synth"
 
-import OutputPinkTrombone from "../../../packages/audiobus/io/outputs/output-pink-trombone"
+import OutputPinkTrombone from "audiobus-output-pink-trombone/output"
 import OutputSuperSonic from "../../../packages/audiobus/io/outputs/output-supersonic"
 import OutputSiON from "../../../packages/audiobus/io/outputs/output-sion"
 import Output303 from "../../../packages/audiobus/io/outputs/output-303"
@@ -104,7 +104,7 @@ export async function measureOutputs(includeSharedMemory = true, only = "") {
 	}
 	const vaporisateur = new OpenDAWVaporisateur(context)
 	vaporisateur.output.connect(bus.mixer)
-	const pink = new OutputPinkTrombone({ audioContext: context })
+	const pink = new OutputPinkTrombone({ audioContext: context, destination: bus.mixer })
 	const outputs = [
 		oscillator,
 		...instruments,

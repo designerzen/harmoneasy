@@ -5,3 +5,7 @@
 	path = packages/audiobus
 	url = https://github.com/designerzen/audiobus.git
 	branch = main
+[submodule "packages/audiobus-output-pink-trombone"]
+	path = packages/audiobus-output-pink-trombone
+	url = https://github.com/designerzen/audiobus-output-pink-trombone.git
+	branch = main
