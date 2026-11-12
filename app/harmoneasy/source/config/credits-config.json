@@ -140,6 +140,13 @@
 		"url": ""
 	},
 	{
+		"name": "@opendaw/lib-midi",
+		"version": "0.0.59",
+		"authors": [],
+		"license": "LGPL-3.0-or-later",
+		"url": ""
+	},
+	{
 		"name": "@opendaw/lib-runtime",
 		"version": "0.0.73",
 		"authors": [],
