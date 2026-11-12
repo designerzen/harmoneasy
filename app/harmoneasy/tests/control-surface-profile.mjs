@@ -1,29 +1,25 @@
 import { createRequire } from "node:module"
-import { chromium } from "playwright"
-import { mkdtemp, writeFile, readFile } from "node:fs/promises"
+import { mkdtemp, writeFile, readFile, readdir } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join, resolve, relative } from "node:path"
 import { execFileSync } from "node:child_process"
-import { fileURLToPath, pathToFileURL } from "node:url"
+import { fileURLToPath } from "node:url"
+import { build } from "vite"
 
-const root = fileURLToPath(new URL("../", import.meta.url)),
+const app = fileURLToPath(new URL("../", import.meta.url)),
 	output = await mkdtemp(join(tmpdir(), "harmoneasy-surface-profile-"))
-const { build } = await import(
-	pathToFileURL(
-		createRequire(new URL("../../../app/harmoneasy/package.json", import.meta.url)).resolve(
-			"vite"
-		)
-	).href
-)
+const { chromium } = createRequire(
+	new URL("../../../packages/control-surface/package.json", import.meta.url)
+)("playwright")
 await build({
-	root,
+	root: app,
 	plugins: process.env.SURFACE_PROFILE_REVISION
 		? [
 				{
 					name: "profile-revision",
 					enforce: "pre",
 					transform(code, id) {
-						const repository = resolve(root, "../..")
+						const repository = resolve(app, "../..")
 						const path = relative(repository, id.split("?")[0]).replaceAll("\\", "/")
 						if (
 							[
@@ -50,19 +46,21 @@ await build({
 	build: {
 		outDir: output,
 		emptyOutDir: false,
+		copyPublicDir: false,
 		minify: false,
 		lib: {
-			entry: resolve(root, "tests/performance-entry.ts"),
+			entry: resolve(app, "tests/control-surface-profile-entry.ts"),
 			name: "ProfileSurface",
 			formats: ["iife"],
 			fileName: () => "profile.js"
 		}
 	}
 })
+const css = (await readdir(output)).find((name) => name.endsWith(".css"))
 const html = join(output, "index.html")
 await writeFile(
 	html,
-	'<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="control-surface.css"><script defer src="profile.js"></script>'
+	`<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="${css}"><script defer src="profile.js"></script>`
 )
 const software = process.env.SURFACE_SOFTWARE_GPU === "1"
 const browser = await chromium.launch({
