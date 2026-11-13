@@ -16,7 +16,6 @@ const STYLES: Record<string, string> = {
 	Arpeggiator: "Arpeggios",
 	Strummer: "Strummed",
 	Harp: "Strummed",
-	"Chord-Arp": "Arpeggios",
 	"Chord-Pattern": "Rhythmic",
 	Harmoniser: "In key",
 	"Note-Reverb": "Echoes",

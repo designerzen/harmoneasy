@@ -5,7 +5,7 @@ import {
 } from "../../../packages/audiobus/io/transformer-factory"
 import { TransformerHarp } from "../../../packages/audiobus/io/transformers/transformer-harp"
 import { TransformerSlop } from "../../../packages/audiobus/io/transformers/transformer-slop"
-import { TransformerChordArp } from "../../../packages/audiobus/io/transformers/transformer-chord-arp"
+import { TransformerArpeggiator } from "../../../packages/audiobus/io/transformers/transformer-arpeggiator"
 import {
 	TransformerChordPattern,
 	CHORD_PATTERNS
@@ -49,7 +49,6 @@ describe("chord performance Transformers", () => {
 		for (const type of [
 			TRANSFORMER_TYPE.ID_HARP,
 			TRANSFORMER_TYPE.ID_SLOP,
-			TRANSFORMER_TYPE.ID_CHORD_ARP,
 			TRANSFORMER_TYPE.ID_CHORD_PATTERN
 		]) {
 			expect(tranformerFactory(type, {}).type).toBe(type)
@@ -129,7 +128,7 @@ describe("chord performance Transformers", () => {
 	})
 
 	it("runs the arp continuously, with more notes making a longer sequence at the same speed", () => {
-		const effect = new TransformerChordArp({ collect: 0, gate: 50 })
+		const effect = new TransformerArpeggiator({ collect: 0, repeat: 1, gate: 50 })
 		const output = effect.transform([on(60), on(64)], clock())
 		output.push(...effect.tick(0.49, clock(0.49)))
 		expect(pitches(output)).toEqual([60, 64, 60, 64])
@@ -146,7 +145,7 @@ describe("chord performance Transformers", () => {
 		expect(times(output)).toEqual([500, 625, 750, 875])
 	})
 	it("stops the arp on release and restarts the next chord from its first note", () => {
-		const effect = new TransformerChordArp({ collect: 0 })
+		const effect = new TransformerArpeggiator({ collect: 0, repeat: 1 })
 		const output = effect.transform([on(60), on(64), on(67)], clock())
 		output.push(...effect.tick(0.2, clock(0.2)))
 		expect(pitches(output)).toEqual([60, 64])
@@ -157,20 +156,99 @@ describe("chord performance Transformers", () => {
 		expect(pitches(effect.transform([on(62, 1.1), on(65, 1.1)], clock(1.1)))).toEqual([62])
 	})
 	it("plays up and down across two octaves", () => {
-		const effect = new TransformerChordArp({ collect: 0, direction: "up-down", octaves: 2 })
+		const effect = new TransformerArpeggiator({
+			collect: 0,
+			repeat: 1,
+			pattern: "up-down",
+			octaves: 2
+		})
 		const output = effect.transform([on(60), on(64)], clock())
 		output.push(...effect.tick(0.99, clock(0.99)))
 		expect(pitches(output)).toEqual([60, 64, 72, 76, 72, 64, 60, 64])
 		expect(times(output).slice(0, 3)).toEqual([0, 125, 250])
 	})
 	it("silences the arp on all notes off", () => {
-		const effect = new TransformerChordArp({ collect: 0 })
+		const effect = new TransformerArpeggiator({ collect: 0, repeat: 1 })
 		const output = effect.transform([on(60), on(64)], clock())
 		const panic = Object.assign(command(CONTROL_CHANGE, 123, 0.1), { value: 0 })
 		output.push(...effect.transform([panic], clock(0.1)))
 		output.push(...effect.tick(2, clock(2)))
 		expect(pitches(output)).toEqual([60])
 		expect(sounding(output)).toEqual([])
+	})
+
+	it("plays the arp once and holds its notes when repeat is off", () => {
+		const effect = new TransformerArpeggiator({ collect: 0, pattern: "up-down" })
+		const output = effect.transform([on(60), on(64), on(67)], clock())
+		output.push(...effect.tick(2, clock(2)))
+		expect(pitches(output)).toEqual([60, 64, 67, 64, 60])
+		expect(times(output)).toEqual([0, 125, 250, 375, 500])
+		expect(sounding(output).sort()).toEqual([60, 64, 67])
+		output.push(...effect.transform([off(60, 3), off(64, 3), off(67, 3)], clock(3)))
+		expect(sounding(output)).toEqual([])
+	})
+	it("finishes a once-only arp after an early release, then lets go", () => {
+		const effect = new TransformerArpeggiator({ collect: 0, rate: "1/8" })
+		const output = effect.transform([on(60), on(64), on(67)], clock())
+		expect(
+			effect.transform([off(60, 0.05), off(64, 0.05), off(67, 0.05)], clock(0.05))
+		).toEqual([])
+		output.push(...effect.tick(0.6, clock(0.6)))
+		expect(pitches(output)).toEqual([60, 64, 67])
+		expect(times(output)).toEqual([0, 250, 500])
+		expect(sounding(output).sort()).toEqual([60, 64, 67])
+		output.push(...effect.tick(0.75, clock(0.75)))
+		expect(sounding(output)).toEqual([])
+		// The next chord is a new phrase.
+		expect(pitches(effect.transform([on(62, 1), on(65, 1)], clock(1)))).toEqual([62])
+	})
+	it("cuts a once-only arp short when the next chord arrives", () => {
+		const effect = new TransformerArpeggiator({ collect: 0, rate: "1/4" })
+		const output = effect.transform([on(60), on(64), on(67)], clock())
+		output.push(...effect.transform([off(60, 0.1), off(64, 0.1), off(67, 0.1)], clock(0.1)))
+		output.push(...effect.transform([on(62, 0.2), on(65, 0.2)], clock(0.2)))
+		output.push(...effect.tick(3, clock(3)))
+		expect(pitches(output)).toEqual([60, 62, 65])
+		expect(sounding(output).sort()).toEqual([62, 65])
+	})
+	it("orders notes by every pattern", () => {
+		const played = (pattern: string, repeat = 0) => {
+			const effect = new TransformerArpeggiator({ collect: 0, pattern, repeat })
+			const output = effect.transform([on(60), on(64), on(67), on(71)], clock())
+			output.push(...effect.tick(0.99, clock(0.99)))
+			return pitches(output)
+		}
+		expect(played("down")).toEqual([71, 67, 64, 60])
+		expect(played("down-up")).toEqual([71, 67, 64, 60, 64, 67, 71])
+		expect(played("down-up", 1)).toEqual([71, 67, 64, 60, 64, 67, 71, 67])
+		expect(played("converge")).toEqual([60, 71, 64, 67])
+		expect(played("diverge")).toEqual([67, 64, 71, 60])
+		expect(played("chord")).toEqual([60, 64, 67, 71])
+		expect(played("chord", 1)).toHaveLength(32)
+		const random = played("random", 1)
+		expect(random).toHaveLength(8)
+		expect(random.some((pitch, index) => pitch === random[index - 1])).toBe(false)
+	})
+	it("swings pairs of steps and accents the start of each pass", () => {
+		const effect = new TransformerArpeggiator({
+			collect: 0,
+			repeat: 1,
+			rate: "1/8",
+			swing: 20,
+			accent: 120
+		})
+		const output = effect.transform([on(60), on(64)], clock())
+		output.push(...effect.tick(0.99, clock(0.99)))
+		expect(times(output)).toEqual([0, 300, 500, 800])
+		expect(ons(output).map((command) => command.velocity)).toEqual([120, 100, 120, 100])
+	})
+	it("accepts the settings of presets saved before repeat existed", () => {
+		const effect = tranformerFactory(TRANSFORMER_TYPE.ID_ARPEGGIATOR, {
+			pattern: "up",
+			rate: "triplet",
+			octaves: 2
+		})
+		expect(effect.options).toMatchObject({ repeat: 0, rate: "triplet", octaves: 2 })
 	})
 
 	it("offers thirty patterns, each a whole number of beats of known symbols", () => {

@@ -5,13 +5,14 @@ import { NOTE_ON } from "../../../packages/audiobus/commands/commands"
 
 const noteOn = (number: number) =>
 	musicalCommand({ type: NOTE_ON, number, velocity: 100, channel: 1, from: "keys", startAt: 0 })
-const clock = { now: 0, BPM: 120 } as never
+const clock = (now = 0) => ({ now, BPM: 120 }) as never
 
 const playedNotes = (config: Record<string, unknown>) => {
-	const arpeggiator = new TransformerArpeggiator({ rate: "1/16", ...config })
-	arpeggiator.transform([noteOn(60)], clock)
-	return arpeggiator
-		.transform([noteOn(64)], clock)
+	const arpeggiator = new TransformerArpeggiator({ rate: "1/16", collect: 0, ...config })
+	return [
+		...arpeggiator.transform([noteOn(60), noteOn(64)], clock()),
+		...arpeggiator.tick(2, clock(2))
+	]
 		.filter((command) => command.type === NOTE_ON)
 		.map((command) => command.number)
 }

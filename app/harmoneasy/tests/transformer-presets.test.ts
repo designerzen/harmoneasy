@@ -5,12 +5,27 @@ import {
 } from "../../../packages/audiobus/io/transformer-presets"
 import { NOTE_ON, NOTE_OFF } from "../../../packages/audiobus/commands/commands"
 import { createAudioCommand } from "../../../packages/audiobus/commands/audio-command-factory"
+import type { IAudioCommand } from "../../../packages/audiobus/commands/audio-command-interface"
 
-const play = (name: string, number: number) =>
-	createPresetTransformers(PRESETS.find((preset) => preset.name === name)!).reduce(
-		(commands, transformer) => transformer.transform(commands, { BPM: 120, bpm: 120 } as any),
-		[createAudioCommand(NOTE_ON, number, 1)]
-	)
+const play = (name: string, number: number) => {
+	const transformers = createPresetTransformers(PRESETS.find((preset) => preset.name === name)!)
+	// Clock-driven Transformers release their notes over the passes that follow the key press.
+	const pass = (input: IAudioCommand[], now: number) => {
+		const timer = { BPM: 120, bpm: 120, now } as any
+		return transformers.reduce(
+			(commands, transformer) => [
+				...(commands.length || now === 1 ? transformer.transform(commands, timer) : []),
+				...(now > 1 ? (transformer.tick?.(now, timer) ?? []) : [])
+			],
+			input
+		)
+	}
+	const output = pass([createAudioCommand(NOTE_ON, number, 1)], 1)
+	for (let step = 1; step <= 40; step++) {
+		output.push(...pass([], 1 + step / 20))
+	}
+	return output
+}
 
 describe("musical preset settings", () => {
 	it("creates independent configured instances without changing the catalogue", () => {
