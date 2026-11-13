@@ -58,7 +58,7 @@ These are the built-in input factory IDs, plus the hardware profiles registered 
 | PromptAI Generator | `prompt-ai` | Generate note sequences from text via an external AI API; requires an API key configured in input options, network access and a supported model. |
 | PromptAI Speech | `prompt-ai-speech` | Speech-recognised prompts for AI note generation; additionally requires browser speech recognition. |
 | MIDI Transport Clock | `midi-transport-clock` | MIDI clock/transport input, using 24 clock pulses per quarter note. |
-| DVS Control Vinyl | `dvs-control-vinyl` | Estimate relative speed from a microphone/audio-input pilot tone and generate DVS or MIDI clock. Does not decode direction or absolute record position. |
+| DVS Control Vinyl | `dvs-control-vinyl` | Track the 1 kHz pilot tone of a Serato v2 control vinyl/CD and emit 24 musical ticks per beat of a reference BPM (at normal speed) plus start/stop. Select "DVS control vinyl" in the clock source to let the platter drive the transport clock; speed changes follow the tempo. Does not decode direction or absolute record position. |
 
 ### Hardware-specific MIDI inputs
 
