@@ -1,5 +1,5 @@
 import type IOChainManager from "audiobus/io/IO-chain-manager"
-import { ClockSourceController, clockMidiPorts, type ClockSource } from "./clock-source"
+import { ClockSourceController, clockDvsInputs, clockMidiPorts, type ClockSource } from "./clock-source"
 
 export function createClockSourceControls(
 	timer: ConstructorParameters<typeof ClockSourceController>[0],
@@ -7,11 +7,14 @@ export function createClockSourceControls(
 	link: ConstructorParameters<typeof ClockSourceController>[2],
 	persist: (source: ClockSource, device: string) => void,
 	playingChanged: () => void,
-	followMicrophone: (enabled: boolean) => Promise<void> = async () => {}
+	followMicrophone: (enabled: boolean) => Promise<void> = async () => {},
+	persistReferenceBPM: (bpm: number) => void = () => {}
 ) {
 	const select = document.getElementById("clock-source") as HTMLSelectElement
 	const device = document.getElementById("clock-midi-device") as HTMLSelectElement
 	const deviceLabel = document.getElementById("clock-midi-label")!
+	const dvsLabel = document.getElementById("clock-dvs-label")!
+	const dvsBpm = document.getElementById("clock-dvs-bpm") as HTMLInputElement
 	const tick = document.getElementById("btn-clock-tick") as HTMLButtonElement
 	const status = document.getElementById("clock-source-status")!
 	let ready = false
@@ -39,6 +42,25 @@ export function createClockSourceControls(
 			midi.disabled = false
 			midi.textContent = "MIDI transport / clock"
 		}
+		const dvsConnected = clockDvsInputs(manager).length > 0
+		let dvs = select.querySelector<HTMLOptionElement>('option[value="dvs"]')
+		if (dvsConnected && !dvs) {
+			dvs = document.createElement("option")
+			dvs.value = "dvs"
+			dvs.textContent = "DVS control vinyl"
+			select.insertBefore(dvs, select.querySelector('option[value="manual"]'))
+		}
+		if (!dvsConnected && dvs) {
+			if (source === "dvs") {
+				dvs.disabled = true
+				dvs.textContent = "DVS control vinyl (disconnected)"
+			} else {
+				dvs.remove()
+			}
+		} else if (dvs) {
+			dvs.disabled = false
+			dvs.textContent = "DVS control vinyl"
+		}
 		if (source !== "internal" && microphone) {
 			microphone = false
 			void followMicrophone(false).catch(error)
@@ -62,7 +84,17 @@ export function createClockSourceControls(
 		}
 		device.value = selectedDevice
 		deviceLabel.hidden = source !== "midi"
-		tick.hidden = source !== "manual"
+		dvsLabel.hidden = source !== "dvs"
+		// render() first runs inside the controller constructor, before `ready`
+		if (ready && document.activeElement !== dvsBpm) {
+			dvsBpm.value = String(controller.dvsReferenceBPM)
+		}
+		tick.hidden = source !== "manual" && source !== "dvs"
+		tick.textContent = source === "dvs" ? "Downbeat" : "Tick"
+		tick.title =
+			source === "dvs"
+				? "Make the next platter tick the first beat of bar 1"
+				: "Advance one clock tick (24 ticks per beat); keyboard shortcut: Space"
 		for (const id of [
 			"tempo",
 			"swing",
@@ -83,7 +115,7 @@ export function createClockSourceControls(
 		for (const id of ["btn-transport-start", "btn-transport-stop", "btn-transport-reset"]) {
 			const control = document.getElementById(id) as HTMLButtonElement | null
 			if (control) {
-				control.disabled = source === "shared" || source === "midi"
+				control.disabled = source === "shared" || source === "midi" || source === "dvs"
 			}
 		}
 		status.textContent =
@@ -91,11 +123,15 @@ export function createClockSourceControls(
 				? available
 					? "Waiting for MIDI transport and clock ticks."
 					: "MIDI clock disconnected; transport stopped."
-				: source === "manual"
-					? "One tick per press; 24 ticks per beat."
-					: source === "shared"
-						? "Following the host. Open Shared room to join or leave."
-						: ""
+				: source === "dvs"
+					? dvsConnected
+						? "Waiting for the control vinyl signal; the platter starts and stops transport."
+						: "DVS input disconnected; transport stopped."
+					: source === "manual"
+						? "One tick per press; 24 ticks per beat."
+						: source === "shared"
+							? "Following the host. Open Shared room to join or leave."
+							: ""
 		if (ready) {
 			persist(source, selectedDevice)
 			playingChanged()
@@ -127,6 +163,15 @@ export function createClockSourceControls(
 	})
 	device.addEventListener("change", () => {
 		void controller.setMidiDevice(device.value).catch(error)
+	})
+	dvsBpm.addEventListener("change", () => {
+		try {
+			controller.setDvsReferenceBPM(Number(dvsBpm.value))
+			persistReferenceBPM(controller.dvsReferenceBPM)
+		} catch (value) {
+			error(value)
+		}
+		dvsBpm.value = String(controller.dvsReferenceBPM)
 	})
 	tick.addEventListener("click", () => {
 		void controller.manualTick().catch(error)

@@ -4,8 +4,15 @@ import { readFileSync } from "node:fs"
 import IOChain from "../../../packages/audiobus/io/IO-chain"
 import IOChainManager from "../../../packages/audiobus/io/IO-chain-manager"
 import AbstractInput from "../../../packages/audiobus/io/inputs/abstract-input"
+import { DVS_CONTROL_VINYL_INPUT_ID } from "../../../packages/audiobus/io/inputs/input-dvs-control-vinyl"
+import { createAudioCommand } from "../../../packages/audiobus/commands/audio-command-factory"
+import * as Commands from "../../../packages/audiobus/commands/commands"
 import { midiToCommand } from "../../../packages/audiobus/midi/midi-command-conversion"
-import { ClockSourceController, clockMidiPorts } from "../source/services/clock-source"
+import {
+	ClockSourceController,
+	clockDvsInputs,
+	clockMidiPorts
+} from "../source/services/clock-source"
 import { createClockSourceControls } from "../source/services/clock-source-controls"
 import Timer from "../../../packages/netronome/src/timer"
 
@@ -21,12 +28,29 @@ class MidiInput extends AbstractInput {
 		this.dispatch(midiToCommand(bytes, now, from)!, origin)
 	}
 }
+class DvsInput extends AbstractInput {
+	referenceBPM = 120
+	setReferenceBPM = vi.fn((bpm: number) => {
+		this.referenceBPM = bpm
+	})
+	get name() {
+		return DVS_CONTROL_VINYL_INPUT_ID
+	}
+	send(type: string, audioTime?: number) {
+		const command = createAudioCommand(type, 0, 0, this.name)
+		command.audioTime = audioTime
+		this.dispatch(command)
+	}
+}
 const dispose: (() => void)[] = []
 afterEach(() => {
 	dispose.splice(0).forEach((cleanup) => cleanup())
 	document.body.replaceChildren()
 })
-function setup(connected = true) {
+function setup<T extends AbstractInput = MidiInput>(
+	connected = true,
+	input: T = new MidiInput() as unknown as T
+) {
 	const timer = {
 		now: 0,
 		BPM: 120,
@@ -52,7 +76,6 @@ function setup(connected = true) {
 			}
 		})
 	}
-	const input = new MidiInput()
 	if (connected) {
 		input.setAsConnected()
 	}
@@ -75,7 +98,7 @@ function setup(connected = true) {
 	})
 	const send = (bytes: number[], time = timer.now, from = "clock", origin = {}) => {
 		timer.now = time
-		input.send(bytes, time, from, origin)
+		;(input as unknown as MidiInput).send(bytes, time, from, origin)
 	}
 	return { timer, manager, chain, id, input, clock, link, changed, error, send }
 }
@@ -283,7 +306,130 @@ describe("Main clock source", () => {
 	})
 })
 
+describe("DVS clock source", () => {
+	const dvsSetup = () => setup(true, new DvsInput())
+	it("is rejected unless a connected DVS input exists", async () => {
+		await expect(setup(false, new DvsInput()).clock.setSource("dvs")).rejects.toThrow(
+			"Connect a DVS control vinyl input"
+		)
+		await expect(setup().clock.setSource("dvs")).rejects.toThrow("Connect a DVS")
+		expect(clockDvsInputs(dvsSetup().manager)).toHaveLength(1)
+	})
+	it("pulses the timer from DVS_CLOCK using the audio time, starting on DVS_START without rewinding later", async () => {
+		const { clock, timer, input } = dvsSetup()
+		await clock.setSource("dvs")
+		expect(timer.bypassed).toBe(true)
+		expect(timer.isRunning).toBe(false)
+		timer.start.mockClear()
+		input.send(Commands.DVS_START, 5)
+		for (let i = 0; i < 24; i++) {
+			input.send(Commands.DVS_CLOCK, 5 + i / 48)
+		}
+		await clock.settled()
+		// timer.now never moved: tempo comes from the worklet's audio time
+		expect(timer.now).toBe(0)
+		expect(timer.isRunning).toBe(true)
+		expect(timer.start).toHaveBeenCalledTimes(1)
+		expect(timer.resetTimer).toHaveBeenCalledTimes(1)
+		expect(timer.ticks).toBe(24)
+		expect(timer.externalTrigger.mock.calls[0]).toEqual([false])
+		expect(timer.BPM).toBeCloseTo(120)
+	})
+	it("starts on the first tick when the platter was already spinning, and swallows local transport", async () => {
+		const { clock, timer, input } = dvsSetup()
+		await clock.setSource("dvs")
+		input.send(Commands.DVS_CLOCK, 1)
+		await clock.settled()
+		expect(timer.isRunning).toBe(true)
+		input.send(Commands.PLAYBACK_STOP)
+		await clock.settled()
+		expect(timer.isRunning).toBe(true)
+		input.send(Commands.DVS_STOP, 2)
+		await clock.settled()
+		expect(timer.isRunning).toBe(false)
+		input.send(Commands.PLAYBACK_START)
+		await clock.settled()
+		expect(timer.isRunning).toBe(false)
+	})
+	it("does not pulse or touch transport from DVS commands in other modes", async () => {
+		const { clock, timer, input } = dvsSetup()
+		for (const source of ["internal", "manual"] as const) {
+			await clock.setSource(source)
+			timer.start.mockClear()
+			timer.stop.mockClear()
+			timer.externalTrigger.mockClear()
+			input.send(Commands.DVS_START, 1)
+			input.send(Commands.DVS_CLOCK, 1)
+			input.send(Commands.DVS_STOP, 2)
+			await clock.settled()
+			expect(timer.externalTrigger).not.toHaveBeenCalled()
+			expect(timer.start).not.toHaveBeenCalled()
+			expect(timer.stop).not.toHaveBeenCalled()
+		}
+	})
+	it("halts transport when the DVS input disconnects", async () => {
+		const { clock, timer, input } = dvsSetup()
+		await clock.setSource("dvs")
+		input.send(Commands.DVS_START, 1)
+		await clock.settled()
+		expect(timer.isRunning).toBe(true)
+		input.setAsDisconnected()
+		await clock.settled()
+		expect(timer.isRunning).toBe(false)
+	})
+	it("re-aligns the downbeat on the manual tick instead of pulsing, and pushes the reference BPM to inputs", async () => {
+		const { clock, timer, input } = dvsSetup()
+		await clock.setSource("dvs")
+		input.send(Commands.DVS_START, 1)
+		input.send(Commands.DVS_CLOCK, 1)
+		await clock.settled()
+		timer.resetTimer.mockClear()
+		timer.externalTrigger.mockClear()
+		await clock.manualTick()
+		expect(timer.resetTimer).toHaveBeenCalledTimes(1)
+		expect(timer.externalTrigger).not.toHaveBeenCalled()
+		input.send(Commands.DVS_CLOCK, 1.02)
+		await clock.settled()
+		expect(timer.externalTrigger).toHaveBeenCalledWith(false)
+		clock.setDvsReferenceBPM(90)
+		expect(input.referenceBPM).toBe(90)
+		expect(() => clock.setDvsReferenceBPM(0)).toThrow(RangeError)
+	})
+})
+
 describe("Clock source controls", () => {
+	it("offers DVS control vinyl only while a DVS input is connected, with a reference BPM field", async () => {
+		document.body.innerHTML = readFileSync("index.html", "utf8").replace(
+			/<script\b[^>]*>[\s\S]*?<\/script>/gi,
+			""
+		)
+		const { timer, manager, input } = setup(false, new DvsInput())
+		const persistBpm = vi.fn()
+		const clock = createClockSourceControls(
+			timer,
+			manager,
+			{ setSource: vi.fn(async () => {}) },
+			vi.fn(),
+			vi.fn(),
+			async () => {},
+			persistBpm
+		)
+		dispose.push(() => clock.destroy())
+		const select = document.getElementById("clock-source") as HTMLSelectElement
+		const bpm = document.getElementById("clock-dvs-bpm") as HTMLInputElement
+		expect(select.querySelector('option[value="dvs"]')).toBeNull()
+		input.setAsConnected()
+		expect(select.querySelector('option[value="dvs"]')).not.toBeNull()
+		expect(document.getElementById("clock-dvs-label")!.hidden).toBe(true)
+		await clock.setSource("dvs")
+		expect(document.getElementById("clock-dvs-label")!.hidden).toBe(false)
+		bpm.value = "98"
+		bpm.dispatchEvent(new Event("change"))
+		expect(clock.dvsReferenceBPM).toBe(98)
+		expect(input.referenceBPM).toBe(98)
+		expect(persistBpm).toHaveBeenCalledWith(98)
+		window.dispatchEvent(new Event("pagehide"))
+	})
 	it("starts microphone following from the select and returns to Internal on failure", async () => {
 		document.body.innerHTML = readFileSync("index.html", "utf8").replace(
 			/<script\b[^>]*>[\s\S]*?<\/script>/gi,

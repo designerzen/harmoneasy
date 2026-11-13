@@ -2,10 +2,11 @@ import * as Commands from "audiobus/commands/commands"
 import type { IAudioCommand } from "audiobus/commands/audio-command-interface"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
 import { acceptsMidiInput } from "audiobus/io/inputs/midi-input-controls"
+import { DVS_CONTROL_VINYL_INPUT_ID } from "audiobus/io/inputs/input-dvs-control-vinyl"
 
-export type ClockSource = "internal" | "shared" | "midi" | "manual"
+export type ClockSource = "internal" | "shared" | "midi" | "dvs" | "manual"
 export const isClockSource = (value: unknown): value is ClockSource =>
-	["internal", "shared", "midi", "manual"].includes(value as string)
+	["internal", "shared", "midi", "dvs", "manual"].includes(value as string)
 interface ClockTimer {
 	now: number
 	BPM: number
@@ -40,6 +41,16 @@ export function clockMidiPorts(manager: IOChainManager): MidiPort[] {
 	return [...ports.values()]
 }
 
+/** Connected DVS control vinyl inputs; each drives the clock from the platter. */
+export function clockDvsInputs(manager: IOChainManager) {
+	return manager.devices.filter(
+		({ device, direction }) =>
+			direction === "input" &&
+			device.isConnected &&
+			device.name === DVS_CONTROL_VINYL_INPUT_ID
+	)
+}
+
 export class ClockSourceController {
 	source: ClockSource = "internal"
 	midiDevice = ""
@@ -50,8 +61,11 @@ export class ClockSourceController {
 	private initialized = false
 	private firstMidiPulse = false
 	private midiAvailable = false
+	private dvsAvailable = false
 	private subscriptions = new Map<EventTarget, AbortController>()
 	private abort = new AbortController()
+	/** Track tempo at platter speed 1.0, pushed to every connected DVS input */
+	dvsReferenceBPM = 120
 	constructor(
 		private timer: ClockTimer,
 		private manager: IOChainManager,
@@ -85,6 +99,11 @@ export class ClockSourceController {
 		if (source === "midi" && !clockMidiPorts(this.manager).length) {
 			return Promise.reject(new Error("Connect a MIDI input before selecting MIDI clock."))
 		}
+		if (source === "dvs" && !clockDvsInputs(this.manager).length) {
+			return Promise.reject(
+				new Error("Connect a DVS control vinyl input before selecting DVS clock.")
+			)
+		}
 		this.switching = true
 		return this.enqueue(async () => {
 			try {
@@ -98,6 +117,7 @@ export class ClockSourceController {
 				this.midiAvailable = clockMidiPorts(this.manager).some(
 					(port) => port.id === this.midiDevice
 				)
+				this.dvsAvailable = clockDvsInputs(this.manager).length > 0
 				this.initialized = true
 				this.resetPulseTiming()
 				this.firstMidiPulse = false
@@ -124,6 +144,20 @@ export class ClockSourceController {
 			this.resetPulseTiming()
 			this.changed(this.source, id)
 		})
+	}
+	setDvsReferenceBPM(bpm: number): void {
+		if (!Number.isFinite(bpm) || bpm <= 0) {
+			throw new RangeError("Reference BPM must be positive and finite.")
+		}
+		this.dvsReferenceBPM = bpm
+		this.applyDvsReferenceBPM()
+	}
+	private applyDvsReferenceBPM(): void {
+		for (const { device } of clockDvsInputs(this.manager)) {
+			if (device.referenceBPM !== this.dvsReferenceBPM) {
+				device.setReferenceBPM?.(this.dvsReferenceBPM)
+			}
+		}
 	}
 	private resetPulseTiming(): void {
 		this.lastPulse = undefined
@@ -168,7 +202,20 @@ export class ClockSourceController {
 			void this.enqueue(() => this.manager.transport("stop"))
 		}
 		this.midiAvailable = available
+		const dvsAvailable = clockDvsInputs(this.manager).length > 0
+		this.applyDvsReferenceBPM()
+		if (this.source === "dvs" && this.dvsAvailable && !dvsAvailable) {
+			this.resetPulseTiming()
+			void this.enqueue(() => this.manager.transport("stop"))
+		}
+		this.dvsAvailable = dvsAvailable
 		this.changed(this.source, this.midiDevice)
+	}
+	private async restart(): Promise<void> {
+		this.resetPulseTiming()
+		await this.manager.transport("reset")
+		this.firstMidiPulse = true
+		await this.manager.transport("start")
 	}
 	private pulse(timestamp: number): void {
 		if (!this.manager.transportRunning) {
@@ -193,6 +240,13 @@ export class ClockSourceController {
 		this.firstMidiPulse = false
 	}
 	manualTick(): Promise<void> {
+		if (this.source === "dvs" && !this.switching) {
+			// Re-align the downbeat: the next platter tick lands on bar 1
+			return this.enqueue(() => {
+				this.timer.resetTimer()
+				this.firstMidiPulse = true
+			})
+		}
 		if (this.source !== "manual" || this.switching) {
 			return Promise.resolve()
 		}
@@ -214,9 +268,11 @@ export class ClockSourceController {
 		const tempoControl = [
 			Commands.TEMPO_TAP,
 			Commands.TEMPO_INCREASE,
-			Commands.TEMPO_DECREASE,
-			Commands.DVS_CLOCK
+			Commands.TEMPO_DECREASE
 		].includes(command.type)
+		const dvs = [Commands.DVS_CLOCK, Commands.DVS_START, Commands.DVS_STOP].includes(
+			command.type
+		)
 		// Preserve musical notes unless the selected MIDI port is acting as a control surface.
 		const samePort = this.source === "midi" && command.from === this.midiDevice
 		const selected = samePort && this.midiAvailable
@@ -236,7 +292,38 @@ export class ClockSourceController {
 		if (tempoControl && this.source !== "internal") {
 			return true
 		}
-		if (localTransport && (this.source === "shared" || this.source === "midi")) {
+		if (dvs) {
+			if (this.source === "internal" && command.type === Commands.DVS_CLOCK) {
+				// Internal tempo follow happens in the chain
+				return false
+			}
+			if (this.source !== "dvs" || this.switching || !this.dvsAvailable) {
+				return true
+			}
+			const audioTime = command.audioTime
+			void this.enqueue(async () => {
+				if (this.source !== "dvs" || command.from !== DVS_CONTROL_VINYL_INPUT_ID) {
+					return
+				}
+				if (command.type === Commands.DVS_STOP) {
+					this.resetPulseTiming()
+					await this.manager.transport("stop")
+					return
+				}
+				// A platter already spinning when DVS was selected has no start to wait for
+				if (command.type === Commands.DVS_START || !this.manager.transportRunning) {
+					await this.restart()
+				}
+				if (command.type === Commands.DVS_CLOCK) {
+					this.pulse(audioTime ?? this.timer.now)
+				}
+			})
+			return true
+		}
+		if (
+			localTransport &&
+			(this.source === "shared" || this.source === "midi" || this.source === "dvs")
+		) {
 			return true
 		}
 		if (!realTime && !mackie && !mmc) {
@@ -269,12 +356,10 @@ export class ClockSourceController {
 			if (!action) {
 				return
 			}
-			this.resetPulseTiming()
 			if (action === "restart") {
-				await this.manager.transport("reset")
-				this.firstMidiPulse = true
-				await this.manager.transport("start")
+				await this.restart()
 			} else {
+				this.resetPulseTiming()
 				await this.manager.transport(action)
 			}
 		})

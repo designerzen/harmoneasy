@@ -270,7 +270,8 @@
 		flex: none;
 		white-space: nowrap;
 	}
-	#clock-midi-label {
+	#clock-midi-label,
+	#clock-dvs-label {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.375rem;

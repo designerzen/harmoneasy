@@ -145,7 +145,7 @@ export function createNetronomeLink(
 			hideQR()
 		}
 		// Stay in place so the bar does not reflow; these sources cannot share a clock.
-		button.disabled = source === "midi" || source === "manual"
+		button.disabled = source === "midi" || source === "dvs" || source === "manual"
 		button.title = button.disabled ? "Shared rooms need the Internal clock" : buttonTitle
 		regenerate.disabled = busy || source !== "internal"
 	}
@@ -506,7 +506,7 @@ export function createNetronomeLink(
 				} else {
 					showStep("join")
 					status.textContent = ""
-					if (source === "midi" || source === "manual") {
+					if (source === "midi" || source === "dvs" || source === "manual") {
 						dialog.close()
 					}
 				}

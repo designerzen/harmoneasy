@@ -32,7 +32,7 @@ import { createMusicalFeatureControls } from "./services/musical-feature-control
 import { EVENT_HARMONY_CHANGED, EVENT_HARMONY_SETTINGS_CHANGED } from "audiobus/events/event-constants"
 import { createClockSourceControls } from "./services/clock-source-controls"
 import { createMediaImporter } from "./services/media-import"
-import { isClockSource, clockMidiPorts, type ClockSourceController } from "./services/clock-source"
+import { isClockSource, clockDvsInputs, clockMidiPorts, type ClockSourceController } from "./services/clock-source"
 
 // Import Data
 import { importDawProjectFile } from "audiobus/importers/import-dawproject"
@@ -653,13 +653,19 @@ const initialiseApplication = async (
 		() => ui.setPlaying(ioManager.transportRunning),
 		async (enabled) => {
 			await musicalFeatureControls?.followMicrophone(enabled)
-		}
+		},
+		(bpm) => state.set("dvsReferenceBpm", bpm)
 	)
+	const savedDvsBpm = Number(state.get("dvsReferenceBpm"))
+	if (Number.isFinite(savedDvsBpm) && savedDvsBpm > 0) {
+		clockSource.setDvsReferenceBPM(savedDvsBpm)
+	}
 	if (savedClockDevice != null && savedClockDevice !== "") {
 		clockSource.midiDevice = String(savedClockDevice)
 	}
 	await clockSource.setSource(
-		initialClockSource === "midi" && !clockMidiPorts(ioManager).length
+		(initialClockSource === "midi" && !clockMidiPorts(ioManager).length) ||
+			(initialClockSource === "dvs" && !clockDvsInputs(ioManager).length)
 			? "internal"
 			: initialClockSource
 	)
