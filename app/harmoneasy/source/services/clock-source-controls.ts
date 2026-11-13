@@ -8,13 +8,16 @@ export function createClockSourceControls(
 	persist: (source: ClockSource, device: string) => void,
 	playingChanged: () => void,
 	followMicrophone: (enabled: boolean) => Promise<void> = async () => {},
-	persistReferenceBPM: (bpm: number) => void = () => {}
+	persistReferenceBPM: (bpm: number) => void = () => {},
+	persistRestartOnStart: (enabled: boolean) => void = () => {}
 ) {
 	const select = document.getElementById("clock-source") as HTMLSelectElement
 	const device = document.getElementById("clock-midi-device") as HTMLSelectElement
 	const deviceLabel = document.getElementById("clock-midi-label")!
 	const dvsLabel = document.getElementById("clock-dvs-label")!
 	const dvsBpm = document.getElementById("clock-dvs-bpm") as HTMLInputElement
+	const dvsRestartLabel = document.getElementById("clock-dvs-restart-label")!
+	const dvsRestart = document.getElementById("clock-dvs-restart") as HTMLInputElement
 	const tick = document.getElementById("btn-clock-tick") as HTMLButtonElement
 	const status = document.getElementById("clock-source-status")!
 	let ready = false
@@ -85,9 +88,13 @@ export function createClockSourceControls(
 		device.value = selectedDevice
 		deviceLabel.hidden = source !== "midi"
 		dvsLabel.hidden = source !== "dvs"
+		dvsRestartLabel.hidden = source !== "dvs"
 		// render() first runs inside the controller constructor, before `ready`
 		if (ready && document.activeElement !== dvsBpm) {
 			dvsBpm.value = String(controller.dvsReferenceBPM)
+		}
+		if (ready) {
+			dvsRestart.checked = controller.dvsRestartOnStart
 		}
 		tick.hidden = source !== "manual" && source !== "dvs"
 		tick.textContent = source === "dvs" ? "Downbeat" : "Tick"
@@ -172,6 +179,10 @@ export function createClockSourceControls(
 			error(value)
 		}
 		dvsBpm.value = String(controller.dvsReferenceBPM)
+	})
+	dvsRestart.addEventListener("change", () => {
+		controller.dvsRestartOnStart = dvsRestart.checked
+		persistRestartOnStart(dvsRestart.checked)
 	})
 	tick.addEventListener("click", () => {
 		void controller.manualTick().catch(error)

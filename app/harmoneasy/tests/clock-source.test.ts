@@ -321,19 +321,34 @@ describe("DVS clock source", () => {
 		expect(timer.bypassed).toBe(true)
 		expect(timer.isRunning).toBe(false)
 		timer.start.mockClear()
+		timer.BPM = 90
+		// Handling lags the zero crossings; tempo and timing come from the worklet's audio time
+		timer.now = 5.6
 		input.send(Commands.DVS_START, 5)
 		for (let i = 0; i < 24; i++) {
 			input.send(Commands.DVS_CLOCK, 5 + i / 48)
 		}
 		await clock.settled()
-		// timer.now never moved: tempo comes from the worklet's audio time
-		expect(timer.now).toBe(0)
 		expect(timer.isRunning).toBe(true)
 		expect(timer.start).toHaveBeenCalledTimes(1)
 		expect(timer.resetTimer).toHaveBeenCalledTimes(1)
 		expect(timer.ticks).toBe(24)
-		expect(timer.externalTrigger.mock.calls[0]).toEqual([false])
+		expect(timer.externalTrigger.mock.calls[0]).toEqual([
+			false,
+			5,
+			{ scheduledContextTimeSeconds: 5 }
+		])
+		expect(timer.externalTrigger.mock.calls[1][1]).toBeCloseTo(5 + 1 / 48)
 		expect(timer.BPM).toBeCloseTo(120)
+	})
+	it("falls back to the timer clock when the DVS audio time is on a different clock", async () => {
+		const { clock, timer, input } = dvsSetup()
+		await clock.setSource("dvs")
+		timer.now = 42
+		input.send(Commands.DVS_START, 5)
+		input.send(Commands.DVS_CLOCK, 5)
+		await clock.settled()
+		expect(timer.externalTrigger.mock.calls[0]).toEqual([false])
 	})
 	it("starts on the first tick when the platter was already spinning, and swallows local transport", async () => {
 		const { clock, timer, input } = dvsSetup()
@@ -350,6 +365,30 @@ describe("DVS clock source", () => {
 		input.send(Commands.PLAYBACK_START)
 		await clock.settled()
 		expect(timer.isRunning).toBe(false)
+	})
+	it("resumes from the paused position, or rewinds on every start when dvsRestartOnStart is set", async () => {
+		const { clock, timer, input } = dvsSetup()
+		await clock.setSource("dvs")
+		input.send(Commands.DVS_START, 1)
+		input.send(Commands.DVS_CLOCK, 1)
+		input.send(Commands.DVS_STOP, 2)
+		await clock.settled()
+		expect(timer.resetTimer).toHaveBeenCalledTimes(1)
+		timer.externalTrigger.mockClear()
+		input.send(Commands.DVS_START, 3)
+		input.send(Commands.DVS_CLOCK, 3)
+		await clock.settled()
+		expect(timer.isRunning).toBe(true)
+		expect(timer.resetTimer).toHaveBeenCalledTimes(1)
+		expect(timer.externalTrigger).toHaveBeenCalledWith(true)
+		input.send(Commands.DVS_STOP, 4)
+		clock.dvsRestartOnStart = true
+		timer.externalTrigger.mockClear()
+		input.send(Commands.DVS_START, 5)
+		input.send(Commands.DVS_CLOCK, 5)
+		await clock.settled()
+		expect(timer.resetTimer).toHaveBeenCalledTimes(2)
+		expect(timer.externalTrigger).toHaveBeenCalledWith(false)
 	})
 	it("does not pulse or touch transport from DVS commands in other modes", async () => {
 		const { clock, timer, input } = dvsSetup()
@@ -405,6 +444,7 @@ describe("Clock source controls", () => {
 		)
 		const { timer, manager, input } = setup(false, new DvsInput())
 		const persistBpm = vi.fn()
+		const persistRestart = vi.fn()
 		const clock = createClockSourceControls(
 			timer,
 			manager,
@@ -412,7 +452,8 @@ describe("Clock source controls", () => {
 			vi.fn(),
 			vi.fn(),
 			async () => {},
-			persistBpm
+			persistBpm,
+			persistRestart
 		)
 		dispose.push(() => clock.destroy())
 		const select = document.getElementById("clock-source") as HTMLSelectElement
@@ -428,6 +469,13 @@ describe("Clock source controls", () => {
 		expect(clock.dvsReferenceBPM).toBe(98)
 		expect(input.referenceBPM).toBe(98)
 		expect(persistBpm).toHaveBeenCalledWith(98)
+		const restart = document.getElementById("clock-dvs-restart") as HTMLInputElement
+		expect(document.getElementById("clock-dvs-restart-label")!.hidden).toBe(false)
+		expect(restart.checked).toBe(false)
+		restart.checked = true
+		restart.dispatchEvent(new Event("change"))
+		expect(clock.dvsRestartOnStart).toBe(true)
+		expect(persistRestart).toHaveBeenCalledWith(true)
 		window.dispatchEvent(new Event("pagehide"))
 	})
 	it("starts microphone following from the select and returns to Internal on failure", async () => {

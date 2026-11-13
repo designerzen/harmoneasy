@@ -13,7 +13,11 @@ interface ClockTimer {
 	isRunning: boolean
 	lastRecordedExternalTime: number
 	bypass(external: boolean): unknown
-	externalTrigger(advance?: boolean): void
+	externalTrigger(
+		advance?: boolean,
+		timestamp?: number,
+		audioTiming?: { scheduledContextTimeSeconds?: number }
+	): void
 	resetTimer(): void
 }
 interface ClockLink {
@@ -66,6 +70,9 @@ export class ClockSourceController {
 	private abort = new AbortController()
 	/** Track tempo at platter speed 1.0, pushed to every connected DVS input */
 	dvsReferenceBPM = 120
+	/** Rewind to bar 1 on every platter start; otherwise only the first start rewinds and a resume continues */
+	dvsRestartOnStart = false
+	private dvsStarted = false
 	constructor(
 		private timer: ClockTimer,
 		private manager: IOChainManager,
@@ -121,6 +128,7 @@ export class ClockSourceController {
 				this.initialized = true
 				this.resetPulseTiming()
 				this.firstMidiPulse = false
+				this.dvsStarted = false
 				this.manager.externallyControlledTransport = source === "shared"
 				if (source === "internal" || source === "manual") {
 					await this.manager.transport("start")
@@ -217,7 +225,8 @@ export class ClockSourceController {
 		this.firstMidiPulse = true
 		await this.manager.transport("start")
 	}
-	private pulse(timestamp: number): void {
+	/** @param audioTime AudioContext seconds of the pulse, on the timer's own clock */
+	private pulse(timestamp: number, audioTime?: number): void {
 		if (!this.manager.transportRunning) {
 			return
 		}
@@ -236,7 +245,13 @@ export class ClockSourceController {
 			}
 		}
 		this.lastPulse = timestamp
-		this.timer.externalTrigger(!this.firstMidiPulse)
+		if (audioTime === undefined) {
+			this.timer.externalTrigger(!this.firstMidiPulse)
+		} else {
+			this.timer.externalTrigger(!this.firstMidiPulse, audioTime, {
+				scheduledContextTimeSeconds: audioTime
+			})
+		}
 		this.firstMidiPulse = false
 	}
 	manualTick(): Promise<void> {
@@ -312,10 +327,21 @@ export class ClockSourceController {
 				}
 				// A platter already spinning when DVS was selected has no start to wait for
 				if (command.type === Commands.DVS_START || !this.manager.transportRunning) {
-					await this.restart()
+					if (this.dvsRestartOnStart || !this.dvsStarted) {
+						await this.restart()
+					} else {
+						// Resume after a pause keeps the musical position
+						this.resetPulseTiming()
+						await this.manager.transport("start")
+					}
+					this.dvsStarted = true
 				}
 				if (command.type === Commands.DVS_CLOCK) {
-					this.pulse(audioTime ?? this.timer.now)
+					// Only trust the worklet time when it shares the timer's AudioContext clock
+					const now = this.timer.now
+					const sameClock =
+						audioTime !== undefined && audioTime <= now && now - audioTime < 1
+					this.pulse(sameClock ? audioTime : now, sameClock ? audioTime : undefined)
 				}
 			})
 			return true

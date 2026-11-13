@@ -654,8 +654,11 @@ const initialiseApplication = async (
 		async (enabled) => {
 			await musicalFeatureControls?.followMicrophone(enabled)
 		},
-		(bpm) => state.set("dvsReferenceBpm", bpm)
+		(bpm) => state.set("dvsReferenceBpm", bpm),
+		(enabled) => state.set("dvsRestartOnStart", enabled)
 	)
+	const savedDvsRestart = state.get("dvsRestartOnStart")
+	clockSource.dvsRestartOnStart = savedDvsRestart === true || savedDvsRestart === "true"
 	const savedDvsBpm = Number(state.get("dvsReferenceBpm"))
 	if (Number.isFinite(savedDvsBpm) && savedDvsBpm > 0) {
 		clockSource.setDvsReferenceBPM(savedDvsBpm)
