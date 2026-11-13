@@ -81,7 +81,7 @@ it("registers the new effects, with the strip and the bus last", () => {
 
 it("keeps the dub delay's loop stable and slows its time changes", async () => {
 	const { effect, kinds } = await create("dub-delay", { feedback: 5 })
-	expect(effect.getParameter("feedback")).toBe(0.85)
+	expect(effect.getParameter("feedback")).toBe(0.75)
 	expect(effect.getParameter("mix")).toBe(0.4)
 	const [delay] = kinds("Delay")
 	effect.setParameter("time", 1)

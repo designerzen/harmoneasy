@@ -354,6 +354,30 @@ export const OUTPUT_GUIDANCE: Record<OutputId | typeof PINK_TROMBONE_OUTPUT_ID, 
 		"Shaping basses, leads and chords with cutoff, resonance and envelopes.",
 		audio + " Internet access to load the WAM SDK."
 	),
+	fm: guide(
+		"FM",
+		"Play the Photosynth DX7-style FM synthesizer.",
+		"General MIDI electric pianos, bells, basses and brass, or voices from a DX7 file.",
+		audio + " AudioWorklet support."
+	),
+	monotron: guide(
+		"Mono",
+		"Play a resonant low-pass synthesizer with a cutoff LFO.",
+		"Wobbling basses and squelchy leads.",
+		audio
+	),
+	waveguide: guide(
+		"Pluck",
+		"Play noise-excited plucked strings.",
+		"Harp, guitar and koto-like plucks below about F♯4.",
+		audio
+	),
+	"multi-oscillator": guide(
+		"Osc",
+		"Play one to three detuned oscillators with filter, noise and delay.",
+		"Thick leads, pads and sub-octave basses.",
+		audio
+	),
 	tb303: guide(
 		"303",
 		"Play a monophonic TB-303 bass synthesizer.",

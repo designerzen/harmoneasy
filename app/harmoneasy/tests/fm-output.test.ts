@@ -229,20 +229,21 @@ it("loads the worklet lazily from self-contained source and posts notes with the
 
 it("switches patch on program change and per-channel state on control changes", async () => {
 	const { output, messages } = fixture()
-	await output.sendCommand(cmd({ type: PROGRAM_CHANGE, value: 40, number: 0 }))
+	output.loadPreset(40)
 	expect(output.options.preset).toBe(40)
 	await output.sendCommand(cmd({ type: NOTE_ON, number: 64, velocity: 100, channel: 2 }))
 	const patch = messages().find((m: any) => m.type === "patch")
 	expect(patch).toMatchObject({ part: 1 })
 	expect(patch.patch.program).toBe(40)
 	expect(patch.patch.name).toBe(FM_GENERAL_MIDI_PRESETS[40].name)
-	await output.sendCommand(cmd({ type: PROGRAM_CHANGE, value: 41, number: 0 }))
+	// A MIDI program change belongs to its own channel
+	await output.sendCommand(cmd({ type: PROGRAM_CHANGE, value: 41, number: 0, channel: 2 }))
+	expect(output.options.preset).toBe(40)
 	await output.sendCommand(cmd({ type: NOTE_ON, number: 65, velocity: 100, channel: 2 }))
-	expect(
-		messages()
-			.filter((m: any) => m.type === "patch")
-			.at(-1).patch.program
-	).toBe(41)
+	await output.sendCommand(cmd({ type: NOTE_ON, number: 66, velocity: 100 }))
+	const patches = messages().filter((m: any) => m.type === "patch")
+	expect(patches.at(-2)).toMatchObject({ part: 1, patch: { program: 41 } })
+	expect(patches.at(-1)).toMatchObject({ part: 0, patch: { program: 40 } })
 
 	await output.sendCommand(cmd({ type: PITCH_BEND, value: 16383 }))
 	expect(messages().at(-1).value).toBeCloseTo(2 * (8191 / 8192))
@@ -264,6 +265,55 @@ it("switches patch on program change and per-channel state on control changes", 
 
 	await output.sendCommand(cmd({ type: CONTROL_CHANGE, number: 123, value: 0 }))
 	expect(messages().at(-1)).toMatchObject({ type: "panic", part: 0 })
+})
+
+it("keeps a release behind its note while the worklet loads, and drops notes stopped before it is ready", async () => {
+	const first = fixture()
+	const started = first.output.noteOn(60, 100)
+	first.output.noteOff(60)
+	await started
+	expect(first.messages().map((m: any) => m.type)).toEqual(["patch", "on", "off"])
+
+	const second = fixture()
+	const pending = second.output.noteOn(60, 100)
+	second.output.allNotesOff()
+	await pending
+	expect(second.messages().some((m: any) => m.type === "on")).toBe(false)
+})
+
+it("loads a DX7 voice file as the patch bank and renders it", async () => {
+	// A plain two-carrier voice: full output, instant attack, slow release
+	const voice = new Uint8Array(155)
+	for (let op = 0; op < 6; op++) {
+		voice.set([99, 60, 60, 50, 99, 90, 80, 0], op * 21)
+		voice[op * 21 + 16] = 99
+		voice[op * 21 + 18] = 1
+		voice[op * 21 + 20] = 7
+	}
+	voice.set([99, 99, 99, 99, 50, 50, 50, 50], 126)
+	voice[134] = 31
+	voice[144] = 24
+	voice.set(
+		Array.from("E.PIANO 1 ", (letter) => letter.charCodeAt(0)),
+		145
+	)
+	const { output, messages } = fixture()
+	expect(await output.loadDX7File(voice)).toEqual(["E.PIANO 1"])
+	expect(output.presets).toEqual([{ program: 0, name: "E.PIANO 1" }])
+	await output.noteOn(60, 100)
+	const { patch } = messages().find((m: any) => m.type === "patch")
+	expect(patch.name).toBe("E.PIANO 1")
+	await expect(output.loadDX7File(new Uint8Array(10))).rejects.toThrow(/Unsupported/)
+	output.setPresets([])
+	expect(output.presets).toHaveLength(128)
+
+	const { send, render } = processor()
+	render(128)
+	send({ type: "patch", part: 0, patch })
+	send({ type: "on", part: 0, note: 60, velocity: 0.8, time: 128 / RATE })
+	const sound = render(8192)
+	expect(peak(sound)).toBeGreaterThan(0.001)
+	expect(sound.every((sample) => Number.isFinite(sample) && Math.abs(sample) <= 1.5)).toBe(true)
 })
 
 it("panics on stop, ignores commands while disconnected, and closes the port on destroy", async () => {

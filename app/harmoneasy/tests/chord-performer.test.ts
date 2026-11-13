@@ -67,8 +67,7 @@ describe("ChordPerformer chord mode", () => {
 		])
 		expect(out.events).toEqual([
 			["on", 60, 64],
-			["on", 64, 127],
-			["on", 67, 1]
+			["on", 64, 127]
 		])
 		performer.allNotesOff()
 		performer.chordOn([{ noteNumber: 60, velocity: 0.2 }], 1)

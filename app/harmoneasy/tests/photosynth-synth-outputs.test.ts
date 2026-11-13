@@ -191,7 +191,8 @@ for (const Output of [OutputMonotron, OutputWaveguide, OutputMultiOscillator]) {
 			expect(param.setTargetAtTime.mock.calls.length).toBe(before + 1)
 			const frequency = 440 * 2 ** (1 / 12)
 			expect(param.setTargetAtTime.mock.lastCall![0]).toBeCloseTo(
-				Output === OutputWaveguide ? 1 / frequency : frequency,
+				// A delay in a feedback loop cannot be shorter than one 128-frame render block
+				Output === OutputWaveguide ? Math.max(128 / 48000, 1 / frequency) : frequency,
 				10
 			)
 			output.sendCommand(
@@ -199,7 +200,9 @@ for (const Output of [OutputMonotron, OutputWaveguide, OutputMultiOscillator]) {
 			)
 			const next = delays[1]?.delayTime ?? sources[2].frequency
 			expect(next.setValueAtTime.mock.lastCall![0]).toBeCloseTo(
-				Output === OutputWaveguide ? 1 / (frequency * 2) : frequency * 2,
+				Output === OutputWaveguide
+					? Math.max(128 / 48000, 1 / (frequency * 2))
+					: frequency * 2,
 				10
 			)
 		})
