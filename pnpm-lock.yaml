@@ -324,6 +324,9 @@ importers:
         specifier: ^3.3.1
         version: 3.3.1
     devDependencies:
+      '@webgpu/types':
+        specifier: ^0.1.74
+        version: 0.1.74
       typescript:
         specifier: ~5.9.3
         version: 5.9.3
