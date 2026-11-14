@@ -22,7 +22,7 @@ export const PACKAGES: PackageInfo[] = [
 		name: "audiobus",
 		version: "3.2.1",
 		description: "Core audio engine with MIDI processing, synthesis, and audio routing",
-		repo: "https://github.com/designerzen/harmoneasy"
+		repo: "https://github.com/designerzen/audiobus.git"
 	},
 	{
 		name: "audiotool",
@@ -49,6 +49,12 @@ export const PACKAGES: PackageInfo[] = [
 		repo: "https://github.com/designerzen/harmoneasy"
 	},
 	{
+		name: "audiobus-output-opendaw-vaporisateur",
+		version: "0.1.0",
+		description: "openDAW's Vaporisateur synthesiser as an audiobus instrument and output",
+		repo: "https://github.com/designerzen/audiobus-output-opendaw-vaporisateur.git"
+	},
+	{
 		name: "audiobus-output-pink-trombone",
 		version: "0.4.0",
 		description: "Pink Trombone vocal synthesis as an audiobus output",
@@ -58,6 +64,6 @@ export const PACKAGES: PackageInfo[] = [
 		name: "pitfalls",
 		version: "0.1.1",
 		description: "Music theory utilities - scales, intervals, chords, and microtonality (EDO)",
-		repo: "https://github.com/designerzen/harmoneasy"
+		repo: "https://github.com/designerzen/pitfalls.git"
 	}
 ]

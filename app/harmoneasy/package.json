@@ -59,6 +59,7 @@
 		"@harmoneasy/shared-config": "workspace:^",
 		"@xyflow/react": "^12.10.1",
 		"audiobus": "workspace:^",
+		"audiobus-output-opendaw-vaporisateur": "workspace:^",
 		"audiobus-output-pink-trombone": "workspace:^",
 		"audiotool": "workspace:^",
 		"entitree-flex": "^0.4.1",

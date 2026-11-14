@@ -1,5 +1,6 @@
 import { defineConfig } from "vite"
-import { opendawFilesPlugin } from "audiobus/instruments/openDAW/opendaw-files.js"
+import { crossOriginIsolationPlugin } from "audiobus/io/cross-origin-files.js"
+import { opendawFilesPlugin } from "audiobus-output-opendaw-vaporisateur/vite"
 import { createReadStream } from "node:fs"
 import { resolve, sep } from "node:path"
 import { midiDeviceFilesPlugin } from "audiobus/midi/hardware/device-files.js"
@@ -63,6 +64,7 @@ export default defineConfig({
 		webclapBundlesPlugin,
 		midiDeviceFilesPlugin(),
 		supersonicFilesPlugin(),
+		crossOriginIsolationPlugin(),
 		opendawFilesPlugin(),
 		roomPagesPlugin(),
 		presetPagesPlugin()

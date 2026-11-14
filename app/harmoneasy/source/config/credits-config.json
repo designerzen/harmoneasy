@@ -49,6 +49,27 @@
 		"url": "git+https://github.com/fastify/busboy.git"
 	},
 	{
+		"name": "@ffmpeg/ffmpeg",
+		"version": "0.12.15",
+		"authors": ["Jerome Wu"],
+		"license": "MIT",
+		"url": "https://github.com/ffmpegwasm/ffmpeg.wasm#readme"
+	},
+	{
+		"name": "@ffmpeg/types",
+		"version": "0.12.4",
+		"authors": ["Jerome Wu"],
+		"license": "MIT",
+		"url": "https://github.com/ffmpegwasm/ffmpeg.wasm#readme"
+	},
+	{
+		"name": "@ffmpeg/util",
+		"version": "0.12.2",
+		"authors": ["Jerome Wu"],
+		"license": "MIT",
+		"url": "https://github.com/ffmpegwasm/ffmpeg.wasm#readme"
+	},
+	{
 		"name": "@huggingface/jinja",
 		"version": "0.5.10",
 		"authors": ["Hugging Face"],
@@ -92,7 +113,7 @@
 	},
 	{
 		"name": "@mediapipe/tasks-vision",
-		"version": "1.2.0",
+		"version": "1.2.3",
 		"authors": ["mediapipe@google.com"],
 		"license": "Apache-2.0",
 		"url": "http://mediapipe.dev"
@@ -749,7 +770,14 @@
 		"version": "3.2.1",
 		"authors": [],
 		"license": "",
-		"url": ""
+		"url": "https://github.com/designerzen/audiobus.git"
+	},
+	{
+		"name": "audiobus-output-opendaw-vaporisateur",
+		"version": "0.1.0",
+		"authors": [],
+		"license": "",
+		"url": "https://github.com/designerzen/audiobus-output-opendaw-vaporisateur.git"
 	},
 	{
 		"name": "audiobus-output-pink-trombone",
@@ -938,6 +966,13 @@
 		"authors": ["Max Ogden"],
 		"license": "MIT",
 		"url": "http://github.com/maxogden/concat-stream.git"
+	},
+	{
+		"name": "control-surface",
+		"version": "0.1.0",
+		"authors": [],
+		"license": "",
+		"url": "https://github.com/designerzen/audiobus-control-surface.git"
 	},
 	{
 		"name": "core-js",
@@ -1298,7 +1333,7 @@
 	},
 	{
 		"name": "fflate",
-		"version": "0.8.2",
+		"version": "0.8.3",
 		"authors": ["Arjun Barrett"],
 		"license": "MIT",
 		"url": "https://101arrowz.github.io/fflate"
@@ -1995,7 +2030,7 @@
 		"version": "0.1.1",
 		"authors": [],
 		"license": "",
-		"url": ""
+		"url": "https://github.com/designerzen/pitfalls.git"
 	},
 	{
 		"name": "platform",
@@ -2351,7 +2386,7 @@
 		"version": "0.1.0",
 		"authors": [],
 		"license": "",
-		"url": ""
+		"url": "https://github.com/designerzen/SiON.git"
 	},
 	{
 		"name": "soundfont2",
@@ -2875,8 +2910,8 @@
 	},
 	{
 		"name": "webmidi",
-		"version": "3.1.14",
-		"authors": ["Jean-Philippe Côté"],
+		"version": "3.3.1",
+		"authors": ["Jean-Philippe Cô"],
 		"license": "Apache-2.0",
 		"url": "https://webmidijs.org"
 	},
@@ -3061,7 +3096,7 @@
 	},
 	{
 		"name": "zxing-wasm",
-		"version": "3.1.4",
+		"version": "3.1.6",
 		"authors": ["Ze-Zheng Wu"],
 		"license": "MIT",
 		"url": "https://github.com/Sec-ant/zxing-wasm"

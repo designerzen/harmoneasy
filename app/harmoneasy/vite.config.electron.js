@@ -1,5 +1,6 @@
 import { defineConfig } from "vite"
-import { opendawFilesPlugin } from "audiobus/instruments/openDAW/opendaw-files.js"
+import { crossOriginIsolationPlugin } from "audiobus/io/cross-origin-files.js"
+import { opendawFilesPlugin } from "audiobus-output-opendaw-vaporisateur/vite"
 import _path from "path"
 import { midiDeviceFilesPlugin } from "audiobus/midi/hardware/device-files.js"
 import { supersonicFilesPlugin } from "audiobus/io/outputs/supersonic-files.js"
@@ -73,6 +74,7 @@ export default defineConfig({
 		nodeAddonPlugin,
 		midiDeviceFilesPlugin(),
 		supersonicFilesPlugin(),
+		crossOriginIsolationPlugin(),
 		opendawFilesPlugin()
 	],
 	ssr: {

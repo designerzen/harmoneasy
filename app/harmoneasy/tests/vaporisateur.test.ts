@@ -1,11 +1,10 @@
-import { engineGain } from "../../../packages/audiobus/instruments/engine-levels"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 const { createEngine } = vi.hoisted(() => ({ createEngine: vi.fn() }))
-vi.mock("../../../packages/audiobus/instruments/openDAW/vaporisateur-engine.ts", () => ({
+vi.mock("audiobus-output-opendaw-vaporisateur/engine", () => ({
 	createVaporisateurEngine: createEngine
 }))
-import Vaporisateur from "../../../packages/audiobus/instruments/openDAW/opendaw-vaporisateur"
+import Vaporisateur, { VAPORISATEUR_TRIM } from "audiobus-output-opendaw-vaporisateur/instrument"
 import { InstrumentFactory } from "../../../packages/audiobus/instruments/instrument-factory"
 
 function setup() {
@@ -117,7 +116,7 @@ describe("Vaporisateur", () => {
 		await synth.connect()
 		synth.volume = 0.4
 		expect(output.gain.setTargetAtTime).toHaveBeenCalledWith(
-			0.4 * engineGain("opendaw-vaporisateur"),
+			0.4 * VAPORISATEUR_TRIM,
 			2,
 			0.02
 		)

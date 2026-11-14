@@ -26,6 +26,8 @@
 		"paths": {
 			"audiobus": ["../../packages/audiobus"],
 			"audiobus/*": ["../../packages/audiobus/*"],
+			"audiobus-output-opendaw-vaporisateur": ["../../packages/audiobus-output-opendaw-vaporisateur"],
+			"audiobus-output-opendaw-vaporisateur/*": ["../../packages/audiobus-output-opendaw-vaporisateur/*"],
 			"audiobus-output-pink-trombone": ["../../packages/audiobus-output-pink-trombone"],
 			"audiobus-output-pink-trombone/*": ["../../packages/audiobus-output-pink-trombone/*"],
 			"audiotool": ["../../packages/audiotool"],

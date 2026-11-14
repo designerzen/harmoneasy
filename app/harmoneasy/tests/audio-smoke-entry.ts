@@ -15,7 +15,7 @@ import OutputSuperSonic from "../../../packages/audiobus/io/outputs/output-super
 import OutputSiON from "../../../packages/audiobus/io/outputs/output-sion"
 import Output303 from "../../../packages/audiobus/io/outputs/output-303"
 import OutputYoshimi from "../../../packages/audiobus/io/outputs/output-yoshimi"
-import OpenDAWVaporisateur from "../../../packages/audiobus/instruments/openDAW/opendaw-vaporisateur"
+import OpenDAWVaporisateur from "audiobus-output-opendaw-vaporisateur/instrument"
 
 export async function measurePolyphony() {
 	const results = []

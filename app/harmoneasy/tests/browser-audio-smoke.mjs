@@ -4,7 +4,8 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { build, preview } from "vite"
-import { opendawFilesPlugin } from "audiobus/instruments/openDAW/opendaw-files.js"
+import { crossOriginIsolationPlugin } from "audiobus/io/cross-origin-files.js"
+import { opendawFilesPlugin } from "audiobus-output-opendaw-vaporisateur/vite"
 import { supersonicFilesPlugin } from "audiobus/io/outputs/supersonic-files.js"
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const require = createRequire(
@@ -19,7 +20,7 @@ try {
 	)
 	const config = {
 		configFile: false,
-		plugins: [opendawFilesPlugin(), supersonicFilesPlugin()],
+		plugins: [crossOriginIsolationPlugin(), opendawFilesPlugin(), supersonicFilesPlugin()],
 		root: path.resolve(__dirname, ".."),
 		base: "/",
 		logLevel: "error",

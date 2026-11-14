@@ -23,6 +23,7 @@ const PACKAGES = [
 	{ name: "flodjs", dir: "flodjs" },
 	{ name: "midi-ble", dir: "midi-ble" },
 	{ name: "opendaw", dir: "openDAW" },
+	{ name: "audiobus-output-opendaw-vaporisateur", dir: "audiobus-output-opendaw-vaporisateur" },
 	{ name: "audiobus-output-pink-trombone", dir: "audiobus-output-pink-trombone" },
 	{ name: "pitfalls", dir: "pitfalls" }
 ]
