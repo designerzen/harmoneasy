@@ -1,0 +1,91 @@
+// @vitest-environment happy-dom
+import { readFileSync } from "node:fs"
+import path from "node:path"
+import { describe, expect, it } from "vitest"
+import { MIDI_DEVICE_DIRECTORY } from "audiobus/midi/hardware/device-files.js"
+
+const devices = [
+	"arcana-strum",
+	"novation-circuit",
+	"arturia-keystep",
+	"arturia-microfreak",
+	"arturia-drumbrute-impact",
+	"akai-mpc-live",
+	"cyclone-analogic-tt-303",
+	"teenage-engineering-op-1",
+	"roland-s-1",
+	"roland-tb-3"
+]
+
+describe.each(devices)("%s overhead diagrams", (id) => {
+	const folder = path.join(MIDI_DEVICE_DIRECTORY, id)
+	const profile = JSON.parse(readFileSync(path.join(folder, `${id}.json`), "utf8"))
+	const diagram = (asset: string) =>
+		new DOMParser().parseFromString(
+			readFileSync(path.join(folder, `${asset}.svg`), "utf8"),
+			"image/svg+xml"
+		)
+
+	it.each(["panel", "icon"])("%s has addressable, labelled physical controls", (asset) => {
+		const document = diagram(asset)
+		expect(document.querySelector("parsererror")).toBeNull()
+		const ids = [...document.querySelectorAll("[id]")].map((node) => node.id)
+		expect(new Set(ids).size).toBe(ids.length)
+		expect(ids.every((value) => value.startsWith(`${id}-${asset}--`))).toBe(true)
+		expect(document.documentElement.getAttribute("role")).toBe("group")
+		for (const node of document.querySelectorAll("[aria-labelledby], [aria-describedby]")) {
+			for (const attribute of ["aria-labelledby", "aria-describedby"]) {
+				for (const reference of node.getAttribute(attribute)?.split(" ") ?? []) {
+					expect(document.getElementById(reference)?.textContent?.trim()).toBeTruthy()
+				}
+			}
+		}
+		const parts = [...document.querySelectorAll("[data-part]")]
+		expect(parts.length).toBeGreaterThan(profile.surface.elements.length / 2)
+		for (const part of parts) {
+			expect(part.id).toBe(`${id}-${asset}--${part.getAttribute("data-part")}`)
+			expect(part.getAttribute("aria-label")?.trim()).toBeTruthy()
+			expect(part.querySelector("title")?.textContent?.trim()).toBeTruthy()
+			// Standalone artwork has no input handlers; the live surface supplies them.
+			if (part.getAttribute("role") === "button") {
+				expect(part.getAttribute("aria-disabled")).toBe("true")
+				expect(part.getAttribute("tabindex")).toBe("-1")
+			}
+		}
+	})
+
+	it("keeps live MIDI hit areas aligned with the artwork", () => {
+		const document = diagram("panel")
+		const { width, height, elements } = profile.surface
+		expect(document.documentElement.getAttribute("viewBox")).toBe(`0 0 ${width} ${height}`)
+		const regions = [...document.querySelectorAll("[data-surface-control]")]
+		expect(regions).toHaveLength(elements.length)
+		for (const element of elements) {
+			const region = document.getElementById(`${id}-panel--surface--${element.id}`)!
+			expect(region?.getAttribute("data-surface-control")).toBe(element.id)
+			expect(region.closest("[data-part], [data-region]")).not.toBeNull()
+			const rect = region.querySelector("rect")!
+			for (const [attribute, coordinate, scale] of [
+				["x", "x", width],
+				["y", "y", height],
+				["width", "width", width],
+				["height", "height", height]
+			] as const) {
+				expect(Number(rect.getAttribute(attribute))).toBeCloseTo(
+					(element.position[coordinate] * scale) / 100,
+					5
+				)
+			}
+		}
+	})
+
+	it.each(["panel", "icon"])("%s uses outline wireframes without shaded parts", (asset) => {
+		const document = diagram(asset)
+		for (const shape of document.querySelectorAll(
+			"rect, circle, ellipse, path, line, polygon, polyline"
+		)) {
+			expect(shape.getAttribute("fill")).toBe("none")
+			expect(shape.getAttribute("stroke")).toBe("currentColor")
+		}
+	})
+})

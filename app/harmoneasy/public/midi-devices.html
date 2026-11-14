@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="description" content="Browse Harmoneasy MIDI hardware profiles, diagrams, icons, controls and setup guides." />
+		<title>MIDI device catalog · Harmoneasy</title>
+		<style>
+			:root { color-scheme: dark; font-family: system-ui, sans-serif; color: #e5edf5; background: #0b1420; }
+			* { box-sizing: border-box; }
+			body { margin: 0; }
+			a { color: #9cddcf; text-underline-offset: 3px; overflow-wrap: anywhere; }
+			a:hover { color: #d0fff3; }
+			a:focus-visible, summary:focus-visible, button:focus-visible { outline: 3px solid #b8f1df; outline-offset: 5px; }
+			button { font: inherit; font-weight: 650; cursor: pointer; color: #0b1420; background: #9cddcf; border: 0; border-radius: 6px; padding: 0.7rem 1rem; }
+			button:disabled { cursor: default; opacity: 0.6; }
+			article.is-connected { border-color: #9cddcf; box-shadow: 0 0 0 2px #9cddcf; }
+			.connection-status { display: inline-block; font-size: 0.85rem; color: #acbdce; margin-top: 0.6rem; }
+			.is-connected .connection-status { color: #b8f1df; font-weight: 700; }
+			.connection-ports { font-size: 0.85rem; color: #acbdce; overflow-wrap: anywhere; }
+			.skip { position: absolute; left: 1rem; top: -5rem; padding: 1rem; background: #182838; }
+			.skip:focus { top: 1rem; }
+			header, main, footer { max-width: 1400px; margin: auto; padding: 2rem; }
+			nav { display: flex; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 3rem; }
+			h1 { font-size: clamp(2rem, 5vw, 3.5rem); letter-spacing: -0.04em; margin: 0 0 1rem; }
+			header p { color: #b1c0cf; max-width: 65ch; line-height: 1.7; }
+			#status { color: #9cddcf; }
+			main { padding-top: 0; }
+			#catalog { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 540px), 1fr)); gap: 1.5rem; align-items: start; }
+			article { background: #132131; border: 1px solid #304052; border-radius: 14px; padding: 1.5rem; min-width: 0; }
+			.device-heading { display: flex; align-items: center; gap: 1rem; }
+			.icon { width: 64px; height: 64px; object-fit: contain; background: white; border-radius: 8px; padding: 5px; flex-shrink: 0; }
+			h2 { margin: 0; font-size: 1.4rem; }
+			.manufacturer { color: #acbdce; margin: 0.3rem 0 0; }
+			p, li, dd { line-height: 1.65; }
+			.diagram { display: block; width: 100%; height: 300px; object-fit: contain; background: white; border: 1px solid #a3b1bf; border-radius: 6px; margin: 1.5rem 0 1rem; }
+			.asset-links { display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; font-size: 0.9rem; }
+			details { border-top: 1px solid #304052; margin-top: 1.5rem; padding-top: 1rem; }
+			summary { cursor: pointer; color: #c5f0e5; font-weight: 650; }
+			h3 { margin: 1.5rem 0 0.5rem; font-size: 1rem; }
+			ul { padding-left: 1.3rem; margin-top: 0.5rem; }
+			dl { display: grid; grid-template-columns: auto 1fr; gap: 0.6rem 1rem; }
+			dt { color: #acbdce; }
+			dd { margin: 0; overflow-wrap: anywhere; }
+			.table-scroll { overflow-x: auto; }
+			table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+			caption { text-align: left; font-weight: 650; margin: 1.5rem 0 0.75rem; }
+			th, td { text-align: left; padding: 0.65rem 0.6rem; border-bottom: 1px solid #304052; }
+			th { color: #acbdce; }
+			.notice { border-left: 3px solid #9cddcf; padding-left: 1rem; color: #c0d0df; }
+			.error { border-left: 3px solid #f5b49e; padding-left: 1rem; }
+			footer { color: #acbdce; font-size: 0.9rem; }
+			@media (max-width: 600px) { header, main, footer { padding: 1.25rem; } article { padding: 1rem; } .diagram { height: 220px; } dl { grid-template-columns: 1fr; gap: 0.2rem; } dd { margin-bottom: 0.75rem; } }
+			@media print { :root { color-scheme: light; color: black; background: white; } article { background: white; color: black; } a, p, dt, .manufacturer, #status { color: black; } .diagram { height: auto; max-height: 300px; } #catalog { display: block; } article { break-inside: avoid; margin-bottom: 1rem; } }
+		</style>
+	</head>
+	<body>
+		<a class="skip" href="#catalog">Skip to devices</a>
+		<header>
+			<nav aria-label="Site navigation"><a href="./">Harmoneasy</a><a href="./presets/">Preset library</a></nav>
+			<h1>MIDI device catalog</h1>
+			<p>Explore the available hardware profiles, their panel diagrams, MIDI controls and setup guides. Expand any device for its full details.</p>
+			<p id="status" role="status" aria-live="polite">Loading device profiles…</p>
+			<button id="detect-midi" type="button" aria-describedby="midi-status" disabled>Detect connected devices</button>
+			<p id="midi-status" role="status" aria-live="polite">Allow MIDI access to highlight connected hardware. Devices behind a generic MIDI interface may not be identifiable by name.</p>
+		</header>
+		<main>
+			<div id="catalog" aria-label="Available MIDI devices" aria-busy="true"></div>
+			<noscript>Enable JavaScript to load the MIDI device catalog.</noscript>
+		</main>
+		<footer>Diagrams are schematic. MIDI mappings and available features depend on the hardware settings; check each device’s setup notes.</footer>
+		<script type="module">
+			const catalog = document.getElementById("catalog")
+			const status = document.getElementById("status")
+			const detectMidi = document.getElementById("detect-midi")
+			const midiStatus = document.getElementById("midi-status")
+			const deviceCards = new Map()
+			let midiAccess
+			const registry = document.baseURI.startsWith("file:")
+				? new URL("midi-device://registry/")
+				: new URL("midi-devices/", document.baseURI)
+			const element = (tag, text, className) => {
+				const node = document.createElement(tag)
+				if (text !== undefined) node.textContent = text
+				if (className) node.className = className
+				return node
+			}
+			const link = (label, url) => {
+				const node = element("a", label)
+				node.href = url
+				return node
+			}
+			const asset = (folder, name) => {
+				if (typeof name !== "string" || !/^[\w./ -]+\.(svg|png|jpe?g|webp|avif|gif)$/i.test(name) || name.split("/").some((part) => !part || part === "." || part === "..")) return
+				return new URL(name, folder).href
+			}
+			const externalLink = (parent, label, url) => {
+				if (typeof url === "string" && /^https?:\/\//.test(url)) parent.append(link(label, url))
+			}
+			const list = (parent, title, values) => {
+				if (!values?.length) return
+				parent.append(element("h3", title))
+				const items = element("ul")
+				for (const value of values) items.append(element("li", value))
+				parent.append(items)
+			}
+			const read = async (url) => {
+				const response = await fetch(url)
+				if (!response.ok) throw new Error(`Could not load ${url}`)
+				return response.json()
+			}
+			const render = (id, profile) => {
+				const folder = new URL(`${id}/`, registry)
+				const card = element("article")
+				card.id = `device-${id}`
+				card.setAttribute("aria-labelledby", `${id}-name`)
+				const heading = element("div", undefined, "device-heading")
+				const icon = asset(folder, profile.icon)
+				if (icon) {
+					const image = element("img", undefined, "icon")
+					image.src = icon
+					image.alt = `${profile.name} icon`
+					image.loading = "lazy"
+					heading.append(image)
+				}
+				const title = element("div")
+				const name = element("h2", profile.name)
+				name.id = `${id}-name`
+				const connection = element("span", "Connection not checked", "connection-status")
+				const ports = element("p", undefined, "connection-ports")
+				ports.hidden = true
+				title.append(name, element("p", profile.manufacturer, "manufacturer"), connection)
+				heading.append(title)
+				card.append(heading, ports, element("p", profile.description))
+				card.dataset.connected = "unknown"
+				const panel = asset(folder, profile.surface?.src ?? "panel.svg")
+				if (panel) {
+					const image = element("img", undefined, "diagram")
+					image.src = panel
+					image.alt = `${profile.name} hardware panel diagram`
+					image.loading = "lazy"
+					card.append(image)
+				}
+				const assets = element("div", undefined, "asset-links")
+				if (panel) assets.append(link("Panel SVG", panel))
+				if (icon) assets.append(link("Icon", icon))
+				assets.append(link("Profile JSON", new URL(`${id}.json`, folder).href))
+				card.append(assets)
+				list(card, "Capabilities", profile.abilities)
+				const details = element("details")
+				details.append(element("summary", "Setup, controls and documentation"))
+				if (profile.notice) details.append(element("p", profile.notice, "notice"))
+				list(details, "Hardware controls", profile.hardwareControls)
+				const identity = element("dl")
+				for (const [label, value] of [
+					["Profile ID", id],
+					["MIDI IDs", profile.ids?.join(", ") || id],
+					["Port names", profile.portNames?.join(", ") || "Select the profile manually for your MIDI interface."],
+					["Surface elements", String(profile.surface?.elements?.length ?? 0)]
+				]) identity.append(element("dt", label), element("dd", value))
+				details.append(identity)
+				if (profile.controls?.length) {
+					const scroll = element("div", undefined, "table-scroll")
+					const table = element("table")
+					table.append(element("caption", "MIDI control mappings"))
+					const head = element("thead")
+					const row = element("tr")
+					for (const label of ["Control", "Message", "Channel", "Range"]) {
+						const cell = element("th", label)
+						cell.scope = "col"
+						row.append(cell)
+					}
+					head.append(row)
+					const body = element("tbody")
+					for (const control of profile.controls) {
+						const message = control.message ?? { type: "cc", number: control.cc }
+						const row = element("tr")
+						const label = message.type === "cc" ? `CC ${message.number}` : message.type === "note" ? `Note ${message.number}` : message.type
+						for (const value of [control.label, label, message.channel ?? "Selected", `${control.min ?? 0}–${control.max ?? (message.type === "pitchBend" ? 16383 : 127)}`]) row.append(element("td", value))
+						body.append(row)
+					}
+					table.append(head, body)
+					scroll.append(table)
+					details.append(scroll)
+				} else details.append(element("p", "No fixed CC mappings are defined. See the hardware setup notes and profile JSON for note mappings and MIDI learn."))
+				list(details, "Control modes", profile.modes?.map((mode) => `${mode.label}: ${mode.cc.map((number) => `CC ${number}`).join(", ")}`))
+				const docs = element("ul")
+				for (const entry of profile.documentation ?? []) {
+					const item = element("li")
+					externalLink(item, entry.title, entry.url)
+					if (item.childElementCount) docs.append(item)
+				}
+				for (const [label, url] of [["Product page", profile.productUrl], ["Manufacturer website", profile.manufacturerUrl]]) {
+					const item = element("li")
+					externalLink(item, label, url)
+					if (item.childElementCount) docs.append(item)
+				}
+				if (docs.childElementCount) details.append(element("h3", "Documentation"), docs)
+				card.append(details)
+				return card
+			}
+			const normalise = (value) => String(value ?? "").trim().toLowerCase()
+			const updateConnections = () => {
+				if (!midiAccess) return
+				const matches = new Map()
+				const unmatched = new Set()
+				const devices = [...deviceCards.entries()]
+				for (const [direction, ports] of [["Input", midiAccess.inputs], ["Output", midiAccess.outputs]]) {
+					for (const port of ports.values()) {
+						if (port.state !== "connected") continue
+						// Use the registry's exact, case-insensitive IDs and aliases; a
+						// different generation or a similarly named virtual port is not a match.
+						const match = devices.find(([id, { profile }]) =>
+							(profile.ids ?? [id]).some((alias) => normalise(alias) === normalise(port.id))
+						) ?? devices.find(([, { profile }]) =>
+							(profile.portNames ?? []).some((alias) => normalise(alias) === normalise(port.name))
+						)
+						if (!match) {
+							unmatched.add(port.name || "Unnamed MIDI port")
+							continue
+						}
+						const [id] = match
+						if (!matches.has(id)) matches.set(id, new Set())
+						matches.get(id).add(`${direction}: ${port.name || port.id}`)
+					}
+				}
+				for (const [id, { card }] of devices) {
+					const ports = matches.get(id)
+					const connected = !!ports?.size
+					card.classList.toggle("is-connected", connected)
+					card.dataset.connected = String(connected)
+					card.querySelector(".connection-status").textContent = connected ? "Connected" : "Not detected"
+					const description = card.querySelector(".connection-ports")
+					description.hidden = !connected
+					description.textContent = ports ? [...ports].join(" · ") : ""
+				}
+				midiStatus.textContent = `${matches.size} ${matches.size === 1 ? "catalog device" : "catalog devices"} connected. Connections update automatically.${unmatched.size ? ` Unmatched MIDI ports: ${[...unmatched].join(", ")}.` : ""}`
+			}
+			detectMidi.onclick = async () => {
+				detectMidi.disabled = true
+				midiStatus.textContent = "Checking MIDI connections…"
+				try {
+					midiAccess ??= await navigator.requestMIDIAccess({ sysex: false })
+					midiAccess.onstatechange = updateConnections
+					updateConnections()
+					detectMidi.textContent = "Refresh connections"
+				} catch {
+					midiStatus.textContent = "MIDI access was not granted or is unavailable. Allow MIDI access in your browser, then try again."
+				} finally {
+					detectMidi.disabled = false
+				}
+			}
+			try {
+				const index = await read(new URL("index.json", registry))
+				if (!Array.isArray(index)) throw new Error("Invalid device index")
+				const ids = [...new Set(index.filter((id) => typeof id === "string" && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id)))]
+				const results = await Promise.allSettled(ids.map(async (id) => {
+					const profile = await read(new URL(`${id}/${id}.json`, registry))
+					if (profile.schemaVersion !== 1 || typeof profile.name !== "string") throw new Error("Invalid device profile")
+					return { id, profile }
+				}))
+				const loaded = results.filter((result) => result.status === "fulfilled").map((result) => result.value)
+				loaded.sort((a, b) => a.profile.name.localeCompare(b.profile.name))
+				let failed = results.length - loaded.length
+				let count = 0
+				for (const { id, profile } of loaded) {
+					try {
+						const card = render(id, profile)
+						catalog.append(card)
+						deviceCards.set(id, { card, profile })
+						count++
+					} catch { failed++ }
+				}
+				status.textContent = `${count} ${count === 1 ? "device" : "devices"} available.${failed ? ` ${failed} ${failed === 1 ? "profile could" : "profiles could"} not be loaded.` : ""}`
+				if (!ids.length) status.textContent = "No MIDI device profiles are available."
+			} catch {
+				status.textContent = "The MIDI device catalog could not be loaded. Reload the page to try again."
+				status.className = "error"
+			} finally {
+				catalog.setAttribute("aria-busy", "false")
+				if (!isSecureContext) midiStatus.textContent = "MIDI detection requires HTTPS or localhost."
+				else if (typeof navigator.requestMIDIAccess !== "function") midiStatus.textContent = "This browser does not support Web MIDI. The device catalog is still available."
+				else detectMidi.disabled = deviceCards.size === 0
+			}
+		</script>
+	</body>
+</html>
