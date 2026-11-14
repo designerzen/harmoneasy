@@ -53,6 +53,34 @@
 				}
 			},
 			{
+				"id": "output-2",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "effect:dub-delay",
+					"options": {
+						"mix": 0.24,
+						"time": 0.608,
+						"feedback": 0.48,
+						"filter": 1800
+					}
+				}
+			},
+			{
+				"id": "output-3",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "effect:reverb",
+					"options": {
+						"mix": 0.12,
+						"decay": 1.8,
+						"preDelay": 12,
+						"brightness": 5500
+					}
+				}
+			},
+			{
 				"id": "ui",
 				"direction": "output",
 				"definition": {
@@ -101,7 +129,7 @@
 					"mainSurfaceId": "context-chain-performance"
 				},
 				"inputs": ["computer-keyboard", "keyboard"],
-				"outputs": ["synth", "output-1", "ui"],
+				"outputs": ["synth", "output-1", "output-2", "output-3", "ui"],
 				"transformers": "[\"{\\\"root\\\":9,\\\"mode\\\":[0,2,3,5,7,8,10],\\\"type\\\":\\\"Harmoniser\\\"}\",\"{\\\"mode\\\":\\\"aeolian\\\",\\\"root\\\":0,\\\"simultaneous\\\":3,\\\"type\\\":\\\"Chordifier\\\"}\",\"{\\\"useTimeDivision\\\":true,\\\"timeDivision\\\":\\\"1/8\\\",\\\"accumulate\\\":false,\\\"type\\\":\\\"Note-Delay\\\"}\",\"{\\\"duration\\\":\\\"1/16\\\",\\\"type\\\":\\\"Note-Shortener\\\"}\"]",
 				"disabledInputs": [],
 				"disabledOutputs": []

@@ -17,6 +17,7 @@ import { DEFAULT_PRESET_LIBRARY } from "../../../packages/audiobus/io/transforme
 import { parsePresetLibrary } from "../../../packages/audiobus/io/preset-library"
 import { DRUM_GENRES } from "../../../packages/audiobus/io/outputs/drum-accompaniment-settings"
 import { DRUM_GROOVES } from "../../../packages/audiobus/timing/drum-patterns"
+import { EFFECT_REGISTRY } from "../../../packages/audiobus/effects/effect-registry"
 import {
 	createContextSetup,
 	createEmptySetup,
@@ -26,6 +27,40 @@ import {
 } from "../source/services/start-contexts"
 
 const views: ReturnType<typeof createStartContexts>[] = []
+it("loads every Write genre with connected effects and supported parameter values", () => {
+	for (const context of START_CONTEXTS.filter((context) => context.name.startsWith("Write "))) {
+		const setup = createContextSetup(context)
+		const effects = setup.devices.filter((device) =>
+			device.definition.type?.startsWith("effect:")
+		)
+		expect(effects.length, context.name).toBeGreaterThan(0)
+		for (const device of effects) {
+			const effect = EFFECT_REGISTRY.find(
+				(effect) => `effect:${effect.id}` === device.definition.type
+			)!
+			expect(effect, context.name).toBeDefined()
+			expect(setup.chains[0].outputs).toContain(device.id)
+			for (const [id, value] of Object.entries(device.definition.options!)) {
+				if (id === "mix") {
+					expect(value).toBeGreaterThan(0)
+					expect(value).toBeLessThanOrEqual(1)
+					continue
+				}
+				const parameter = effect.parameters.find((parameter) => parameter.id === id)!
+				expect(parameter, `${context.name}: ${id}`).toBeDefined()
+				if (parameter.choices) {
+					expect(parameter.choices.map((choice) => choice.value)).toContain(value)
+				} else {
+					expect(value).toBeGreaterThanOrEqual(parameter.min!)
+					expect(value).toBeLessThanOrEqual(parameter.max!)
+				}
+			}
+		}
+		const published = ACTIVITY_PRESETS.find((preset) => preset.id === `activity:${context.id}`)!
+		expect(presetSetup(published).devices).toEqual(setup.devices)
+	}
+})
+
 const mountStartContexts: typeof createStartContexts = (...args) => {
 	const view = createStartContexts(...args)
 	views.push(view)

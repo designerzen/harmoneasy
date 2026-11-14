@@ -9,6 +9,7 @@
 	"start": "./source/index.ts",
 	"main": "electron/electron-main.js",
 	"scripts": {
+		"install": "node -e \"console.log('Native MIDI addon is built explicitly with pnpm run build-native or pnpm run build:electron')\"",
 		"setup": "pnpm install --allow-build=electron",
 		"install:electron": "pnpm approve-builds && npm run build-native",
 		"test": "vitest --config vite.config.web.js",

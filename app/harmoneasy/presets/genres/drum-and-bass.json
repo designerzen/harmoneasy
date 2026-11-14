@@ -55,6 +55,19 @@
 				}
 			},
 			{
+				"id": "output-2",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "effect:saturator",
+					"options": {
+						"mix": 0.3,
+						"drive": 4,
+						"level": -2
+					}
+				}
+			},
+			{
 				"id": "ui",
 				"direction": "output",
 				"definition": {
@@ -103,7 +116,7 @@
 					"mainSurfaceId": "context-chain-performance"
 				},
 				"inputs": ["computer-keyboard", "keyboard"],
-				"outputs": ["synth", "output-1", "ui"],
+				"outputs": ["synth", "output-1", "output-2", "ui"],
 				"transformers": "[\"{\\\"root\\\":9,\\\"mode\\\":[0,2,3,5,7,8,10],\\\"type\\\":\\\"Harmoniser\\\"}\",\"{\\\"distance\\\":-12,\\\"type\\\":\\\"Transposer\\\"}\",\"{\\\"duration\\\":\\\"1/8\\\",\\\"type\\\":\\\"Note-Shortener\\\"}\"]",
 				"disabledInputs": [],
 				"disabledOutputs": []

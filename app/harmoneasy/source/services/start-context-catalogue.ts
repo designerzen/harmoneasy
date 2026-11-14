@@ -165,6 +165,16 @@ export const START_CONTEXTS: StartContext[] = [
 				factory: "output",
 				type: DRUM_ACCOMPANIMENT,
 				options: { genre: "electronic", groove: "disco" }
+			},
+			{
+				factory: "output",
+				type: "effect:saturator",
+				options: { mix: 0.3, drive: 5, level: -2 }
+			},
+			{
+				factory: "output",
+				type: "effect:delay",
+				options: { mix: 0.12, time: 0.357, feedback: 0.22, tone: 3500 }
 			}
 		]
 	},
@@ -181,6 +191,16 @@ export const START_CONTEXTS: StartContext[] = [
 				factory: "output",
 				type: DRUM_ACCOMPANIMENT,
 				options: { genre: "electronic", groove: "disco" }
+			},
+			{
+				factory: "output",
+				type: "effect:saturator",
+				options: { mix: 0.3, drive: 4, level: -2 }
+			},
+			{
+				factory: "output",
+				type: "effect:reverb",
+				options: { mix: 0.08, decay: 0.6, preDelay: 12, brightness: 5500 }
 			}
 		]
 	},
@@ -197,6 +217,16 @@ export const START_CONTEXTS: StartContext[] = [
 				factory: "output",
 				type: DRUM_ACCOMPANIMENT,
 				options: { genre: "reggae", groove: "reggae" }
+			},
+			{
+				factory: "output",
+				type: "effect:dub-delay",
+				options: { mix: 0.24, time: 0.608, feedback: 0.48, filter: 1800 }
+			},
+			{
+				factory: "output",
+				type: "effect:reverb",
+				options: { mix: 0.12, decay: 1.8, preDelay: 12, brightness: 5500 }
 			}
 		]
 	},
@@ -213,6 +243,11 @@ export const START_CONTEXTS: StartContext[] = [
 				factory: "output",
 				type: DRUM_ACCOMPANIMENT,
 				options: { genre: "electronic", groove: "disco" }
+			},
+			{
+				factory: "output",
+				type: "effect:reverb",
+				options: { mix: 0.12, decay: 0.9, preDelay: 12, brightness: 5500 }
 			}
 		]
 	},
@@ -230,6 +265,11 @@ export const START_CONTEXTS: StartContext[] = [
 				factory: "output",
 				type: DRUM_ACCOMPANIMENT,
 				options: { genre: "breaks", groove: "amen", energy: 0.75, density: 0.65 }
+			},
+			{
+				factory: "output",
+				type: "effect:saturator",
+				options: { mix: 0.3, drive: 4, level: -2 }
 			}
 		]
 	},
@@ -246,6 +286,16 @@ export const START_CONTEXTS: StartContext[] = [
 				factory: "output",
 				type: DRUM_ACCOMPANIMENT,
 				options: { genre: "funk", groove: "funky-drummer" }
+			},
+			{
+				factory: "output",
+				type: "effect:saturator",
+				options: { mix: 0.3, drive: 2, level: -2 }
+			},
+			{
+				factory: "output",
+				type: "effect:reverb",
+				options: { mix: 0.08, decay: 0.5, preDelay: 12, brightness: 5500 }
 			}
 		]
 	},
@@ -262,6 +312,11 @@ export const START_CONTEXTS: StartContext[] = [
 				factory: "output",
 				type: DRUM_ACCOMPANIMENT,
 				options: { genre: "funk", groove: "motown" }
+			},
+			{
+				factory: "output",
+				type: "effect:reverb",
+				options: { mix: 0.16, decay: 1.3, preDelay: 12, brightness: 5500 }
 			}
 		]
 	},
@@ -278,6 +333,16 @@ export const START_CONTEXTS: StartContext[] = [
 				factory: "output",
 				type: DRUM_ACCOMPANIMENT,
 				options: { genre: "breaks", groove: "apache-break" }
+			},
+			{
+				factory: "output",
+				type: "effect:saturator",
+				options: { mix: 0.3, drive: 3, level: -2 }
+			},
+			{
+				factory: "output",
+				type: "effect:reverb",
+				options: { mix: 0.08, decay: 0.6, preDelay: 12, brightness: 5500 }
 			}
 		]
 	},
@@ -294,6 +359,16 @@ export const START_CONTEXTS: StartContext[] = [
 				factory: "output",
 				type: DRUM_ACCOMPANIMENT,
 				options: { genre: "electronic", groove: "electro" }
+			},
+			{
+				factory: "output",
+				type: "effect:saturator",
+				options: { mix: 0.3, drive: 3, level: -2 }
+			},
+			{
+				factory: "output",
+				type: "effect:delay",
+				options: { mix: 0.08, time: 0.24, feedback: 0.22, tone: 3500 }
 			}
 		]
 	},
@@ -310,6 +385,16 @@ export const START_CONTEXTS: StartContext[] = [
 				factory: "output",
 				type: DRUM_ACCOMPANIMENT,
 				options: { genre: "electronic", groove: "uk-garage" }
+			},
+			{
+				factory: "output",
+				type: "effect:reverb",
+				options: { mix: 0.13, decay: 0.8, preDelay: 12, brightness: 5500 }
+			},
+			{
+				factory: "output",
+				type: "effect:delay",
+				options: { mix: 0.09, time: 0.341, feedback: 0.22, tone: 3500 }
 			}
 		]
 	},
@@ -326,6 +411,11 @@ export const START_CONTEXTS: StartContext[] = [
 				factory: "output",
 				type: DRUM_ACCOMPANIMENT,
 				options: { genre: "electronic", groove: "dubstep" }
+			},
+			{
+				factory: "output",
+				type: "effect:saturator",
+				options: { mix: 0.3, drive: 6, level: -2 }
 			}
 		]
 	},
@@ -342,6 +432,16 @@ export const START_CONTEXTS: StartContext[] = [
 				factory: "output",
 				type: DRUM_ACCOMPANIMENT,
 				options: { genre: "electronic", groove: "trap" }
+			},
+			{
+				factory: "output",
+				type: "effect:saturator",
+				options: { mix: 0.3, drive: 3, level: -2 }
+			},
+			{
+				factory: "output",
+				type: "effect:reverb",
+				options: { mix: 0.08, decay: 0.6, preDelay: 12, brightness: 5500 }
 			}
 		]
 	},
@@ -358,6 +458,11 @@ export const START_CONTEXTS: StartContext[] = [
 				factory: "output",
 				type: DRUM_ACCOMPANIMENT,
 				options: { genre: "electronic", groove: "footwork" }
+			},
+			{
+				factory: "output",
+				type: "effect:reverb",
+				options: { mix: 0.08, decay: 0.4, preDelay: 12, brightness: 5500 }
 			}
 		]
 	},
@@ -374,6 +479,11 @@ export const START_CONTEXTS: StartContext[] = [
 				factory: "output",
 				type: DRUM_ACCOMPANIMENT,
 				options: { genre: "latin", groove: "samba" }
+			},
+			{
+				factory: "output",
+				type: "effect:reverb",
+				options: { mix: 0.1, decay: 0.7, preDelay: 12, brightness: 5500 }
 			}
 		]
 	},
@@ -390,6 +500,11 @@ export const START_CONTEXTS: StartContext[] = [
 				factory: "output",
 				type: DRUM_ACCOMPANIMENT,
 				options: { genre: "latin", groove: "bossa-nova" }
+			},
+			{
+				factory: "output",
+				type: "effect:reverb",
+				options: { mix: 0.12, decay: 0.9, preDelay: 12, brightness: 5500 }
 			}
 		]
 	},
@@ -406,6 +521,11 @@ export const START_CONTEXTS: StartContext[] = [
 				factory: "output",
 				type: DRUM_ACCOMPANIMENT,
 				options: { genre: "latin", groove: "salsa-mambo" }
+			},
+			{
+				factory: "output",
+				type: "effect:reverb",
+				options: { mix: 0.1, decay: 0.7, preDelay: 12, brightness: 5500 }
 			}
 		]
 	},
@@ -422,6 +542,11 @@ export const START_CONTEXTS: StartContext[] = [
 				factory: "output",
 				type: DRUM_ACCOMPANIMENT,
 				options: { genre: "latin", groove: "cumbia" }
+			},
+			{
+				factory: "output",
+				type: "effect:reverb",
+				options: { mix: 0.12, decay: 0.8, preDelay: 12, brightness: 5500 }
 			}
 		]
 	},
@@ -438,6 +563,11 @@ export const START_CONTEXTS: StartContext[] = [
 				factory: "output",
 				type: DRUM_ACCOMPANIMENT,
 				options: { genre: "jazz", groove: "jazz-swing" }
+			},
+			{
+				factory: "output",
+				type: "effect:reverb",
+				options: { mix: 0.14, decay: 1.1, preDelay: 12, brightness: 5500 }
 			}
 		]
 	},
@@ -466,6 +596,11 @@ export const START_CONTEXTS: StartContext[] = [
 				factory: "output",
 				type: DRUM_ACCOMPANIMENT,
 				options: { genre: "rock", groove: "punk-rock" }
+			},
+			{
+				factory: "output",
+				type: "effect:distortion",
+				options: { mix: 0.18, curve: "soft", drive: 12, tone: 4500, level: -8 }
 			}
 		]
 	},
@@ -482,6 +617,16 @@ export const START_CONTEXTS: StartContext[] = [
 				factory: "output",
 				type: DRUM_ACCOMPANIMENT,
 				options: { genre: "reggae", groove: "afrobeat" }
+			},
+			{
+				factory: "output",
+				type: "effect:saturator",
+				options: { mix: 0.3, drive: 2, level: -2 }
+			},
+			{
+				factory: "output",
+				type: "effect:reverb",
+				options: { mix: 0.09, decay: 0.7, preDelay: 12, brightness: 5500 }
 			}
 		]
 	},
@@ -521,6 +666,17 @@ export const START_CONTEXTS: StartContext[] = [
 					filterResonance: 0.7,
 					filterOverdrive: 1
 				}
+			},
+			{ factory: "output", type: "effect:chorus", options: { mix: 0.22, rate: 0.3 } },
+			{
+				factory: "output",
+				type: "effect:delay",
+				options: { mix: 0.2, time: 0.703, feedback: 0.22, tone: 3500 }
+			},
+			{
+				factory: "output",
+				type: "effect:reverb",
+				options: { mix: 0.38, decay: 6, preDelay: 12, brightness: 5500 }
 			}
 		]
 	},
@@ -633,7 +789,26 @@ export const START_CONTEXTS: StartContext[] = [
 		description:
 			"Build A minor chords from single root notes for a reflective verse or chorus.",
 		next: "Try a slow sequence of roots and listen for a progression you want to keep.",
-		presets: ["minor-chord-diary"]
+		presets: ["minor-chord-diary"],
+		outputs: [
+			{
+				factory: "polyphonic",
+				options: {
+					shape: "triangle",
+					volume: 0.4,
+					attack: 0.003,
+					decay: 0.25,
+					sustain: 0.12,
+					release: 0.2,
+					filterCutOff: 4200
+				}
+			},
+			{
+				factory: "output",
+				type: "effect:reverb",
+				options: { mix: 0.2, decay: 2, preDelay: 18, brightness: 4500 }
+			}
+		]
 	},
 	{
 		id: "melody-hook",
@@ -658,7 +833,26 @@ export const START_CONTEXTS: StartContext[] = [
 		category: "Writing",
 		description: "Create descending A minor figures that can fill the gaps between sung lines.",
 		next: "Play a root note in a gap in your vocal idea and listen to the descending chord tones.",
-		presets: ["falling-minor-arp"]
+		presets: ["falling-minor-arp"],
+		outputs: [
+			{
+				factory: "polyphonic",
+				options: {
+					shape: "sine",
+					volume: 0.35,
+					attack: 0.002,
+					decay: 0.8,
+					sustain: 0.05,
+					release: 1.4,
+					filterCutOff: 6500
+				}
+			},
+			{
+				factory: "output",
+				type: "effect:delay",
+				options: { mix: 0.16, time: 0.375, feedback: 0.25, tone: 4000 }
+			}
+		]
 	},
 	{
 		id: "sparkle-hook",
@@ -667,7 +861,26 @@ export const START_CONTEXTS: StartContext[] = [
 		description:
 			"Move a C major melody up an octave and shorten its notes for a light, high part.",
 		next: "Play a simple motif in the middle of the keyboard. The chain raises and shortens it.",
-		presets: ["upper-octave-sparkle"]
+		presets: ["upper-octave-sparkle"],
+		outputs: [
+			{
+				factory: "polyphonic",
+				options: {
+					shape: "square",
+					volume: 0.22,
+					attack: 0.04,
+					decay: 0.2,
+					sustain: 0.45,
+					release: 0.18,
+					filterCutOff: 1700
+				}
+			},
+			{
+				factory: "output",
+				type: "effect:reverb",
+				options: { mix: 0.18, decay: 1.6, preDelay: 12, brightness: 7500 }
+			}
+		]
 	},
 	{
 		id: "offbeat",

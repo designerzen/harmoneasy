@@ -53,6 +53,33 @@
 				}
 			},
 			{
+				"id": "output-2",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "effect:saturator",
+					"options": {
+						"mix": 0.3,
+						"drive": 5,
+						"level": -2
+					}
+				}
+			},
+			{
+				"id": "output-3",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "effect:delay",
+					"options": {
+						"mix": 0.12,
+						"time": 0.357,
+						"feedback": 0.22,
+						"tone": 3500
+					}
+				}
+			},
+			{
 				"id": "ui",
 				"direction": "output",
 				"definition": {
@@ -101,7 +128,7 @@
 					"mainSurfaceId": "context-chain-performance"
 				},
 				"inputs": ["computer-keyboard", "keyboard"],
-				"outputs": ["synth", "output-1", "ui"],
+				"outputs": ["synth", "output-1", "output-2", "output-3", "ui"],
 				"transformers": "[\"{\\\"root\\\":9,\\\"mode\\\":[0,2,3,5,7,8,10],\\\"type\\\":\\\"Harmoniser\\\"}\",\"{\\\"mode\\\":\\\"aeolian\\\",\\\"root\\\":0,\\\"simultaneous\\\":3,\\\"type\\\":\\\"Chordifier\\\"}\",\"{\\\"distance\\\":-12,\\\"type\\\":\\\"Transposer\\\"}\",\"{\\\"pattern\\\":\\\"up\\\",\\\"rate\\\":\\\"1/16\\\",\\\"octaves\\\":1,\\\"type\\\":\\\"Arpeggiator\\\"}\",\"{\\\"duration\\\":\\\"1/32\\\",\\\"type\\\":\\\"Note-Shortener\\\"}\"]",
 				"disabledInputs": [],
 				"disabledOutputs": []

@@ -53,6 +53,20 @@
 				}
 			},
 			{
+				"id": "output-2",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "effect:reverb",
+					"options": {
+						"mix": 0.1,
+						"decay": 0.7,
+						"preDelay": 12,
+						"brightness": 5500
+					}
+				}
+			},
+			{
 				"id": "ui",
 				"direction": "output",
 				"definition": {
@@ -101,7 +115,7 @@
 					"mainSurfaceId": "context-chain-performance"
 				},
 				"inputs": ["computer-keyboard", "keyboard"],
-				"outputs": ["synth", "output-1", "ui"],
+				"outputs": ["synth", "output-1", "output-2", "ui"],
 				"transformers": "[\"{\\\"root\\\":0,\\\"mode\\\":[0,2,4,5,7,9,11],\\\"type\\\":\\\"Harmoniser\\\"}\",\"{\\\"mode\\\":\\\"ionian\\\",\\\"root\\\":3,\\\"simultaneous\\\":3,\\\"type\\\":\\\"Chordifier\\\"}\"]",
 				"disabledInputs": [],
 				"disabledOutputs": []
