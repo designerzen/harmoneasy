@@ -277,8 +277,8 @@ importers:
         specifier: ^2.0.28
         version: 2.0.28
       audiobus-protocol:
-        specifier: git+https://github.com/designerzen/audiobus-protocol.git#19fea437b398473c6c7921416941fa0689cd6260
-        version: https://codeload.github.com/designerzen/audiobus-protocol/tar.gz/19fea437b398473c6c7921416941fa0689cd6260
+        specifier: git+https://github.com/designerzen/audiobus-protocol.git#83637433b919b7a0652787b1561a5e51fbe15801
+        version: https://codeload.github.com/designerzen/audiobus-protocol/tar.gz/83637433b919b7a0652787b1561a5e51fbe15801
       butterchurn:
         specifier: ^2.6.7
         version: 2.6.7
@@ -2328,8 +2328,8 @@ packages:
     resolution: {integrity: sha512-+q/t7Ekv1EDY2l6Gda6LLiX14rU9TV20Wa3ofeQmwPFZbOMo9DXrLbOjFaaclkXKWidIaopwAObQDqwWtGUjqg==}
     engines: {node: '>= 4.0.0'}
 
-  audiobus-protocol@https://codeload.github.com/designerzen/audiobus-protocol/tar.gz/19fea437b398473c6c7921416941fa0689cd6260:
-    resolution: {gitHosted: true, integrity: sha512-zXwk4RIz6qM8Dn7A+LwxBGDWUiq9YyhilZWB2kYljmOSdIgKrHr68c9WiASj9pPJhT9JOlMNNOOTwiB6cuZSfQ==, tarball: https://codeload.github.com/designerzen/audiobus-protocol/tar.gz/19fea437b398473c6c7921416941fa0689cd6260}
+  audiobus-protocol@https://codeload.github.com/designerzen/audiobus-protocol/tar.gz/83637433b919b7a0652787b1561a5e51fbe15801:
+    resolution: {gitHosted: true, integrity: sha512-a+bhDzMbniFBU8tLSyIUruAPlu5Ln84jIrrVhu6rCJKmjfcvQJqf7/Tr+YN3i7Tq9pPvoQWcDPw0vMUmJH4oRw==, tarball: https://codeload.github.com/designerzen/audiobus-protocol/tar.gz/83637433b919b7a0652787b1561a5e51fbe15801}
     version: 0.3.0
 
   automation-events@7.1.15:
@@ -6789,7 +6789,7 @@ snapshots:
 
   at-least-node@1.0.0: {}
 
-  audiobus-protocol@https://codeload.github.com/designerzen/audiobus-protocol/tar.gz/19fea437b398473c6c7921416941fa0689cd6260: {}
+  audiobus-protocol@https://codeload.github.com/designerzen/audiobus-protocol/tar.gz/83637433b919b7a0652787b1561a5e51fbe15801: {}
 
   automation-events@7.1.15:
     dependencies:
