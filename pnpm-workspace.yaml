@@ -3,6 +3,7 @@ packages:
     - "packages/*"
 
 allowBuilds:
+    "audiobus-protocol@https://codeload.github.com/designerzen/audiobus-protocol/tar.gz/19fea437b398473c6c7921416941fa0689cd6260": true
     "@parcel/watcher": false
     core-js: false
     electron: false
