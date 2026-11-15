@@ -25,3 +25,7 @@
 	path = packages/audiobus-output-opendaw-vaporisateur
 	url = https://github.com/designerzen/audiobus-output-opendaw-vaporisateur.git
 	branch = main
+[submodule "packages/midi-devices"]
+	path = packages/midi-devices
+	url = https://github.com/designerzen/midi-devices.git
+	branch = main

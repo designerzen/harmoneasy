@@ -24,3 +24,4 @@ overrides:
     netronome: "workspace:*"
     pitfalls: "workspace:*"
     sion: "workspace:*"
+    midi-devices: "workspace:*"
