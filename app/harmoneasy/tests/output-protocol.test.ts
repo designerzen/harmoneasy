@@ -19,6 +19,7 @@ import {
 	EVENT_PROTOCOL_EVENT,
 	EVENT_PROTOCOL_PATCH,
 	EVENT_CHANGE,
+	EVENT_INPUT,
 	EVENT_SUBMIT
 } from "audiobus/events/event-constants"
 import { musicalCommand } from "audiobus/io/event-clip"
@@ -34,7 +35,7 @@ afterEach(() => {
 	vi.restoreAllMocks()
 })
 
-function pair(options: Record<string, any> = {}, ump = false) {
+function pair(options: Record<string, any> = {}, ump = false, remoteOptions = {}) {
 	const listeners = [new Set<(message: unknown) => void>(), new Set<(message: unknown) => void>()]
 	const frames: string[] = []
 	const transport = (index: number) => ({
@@ -64,7 +65,8 @@ function pair(options: Record<string, any> = {}, ump = false) {
 		getPatch: () => patch,
 		setPatch: (value) => {
 			patch = value
-		}
+		},
+		...remoteOptions
 	})
 	const output = new OutputProtocol(options)
 	output.attachTransport(transport(0))
@@ -404,4 +406,77 @@ it("treats MIDI 2 zero-velocity Note On as a held note and preserves transformed
 	await p.output.disconnect()
 	await flush()
 	expect(p.words).toEqual([[0x40903c00, 0], [0x23944050], [0x40803c00, 0], [0x23844000]])
+})
+it("presents a destination's pairing code without saving it", async () => {
+	const p = pair({}, false, { requirePairingCode: "ABCD2345" })
+	await expect(p.output.connect()).rejects.toMatchObject({ code: "unauthorized" })
+	expect(p.output.isConnected).toBe(false)
+	const panel = await p.output.createGui()
+	const code = panel.querySelector<HTMLInputElement>('input[placeholder="ABCD-EFGH"]')!
+	code.value = "abcd-2345"
+	code.dispatchEvent(new Event(EVENT_INPUT))
+	await p.output.connect()
+	expect(p.output.isConnected).toBe(true)
+	expect(p.remote.isAuthorized).toBe(true)
+	expect(JSON.stringify(p.output.options)).not.toMatch(/ABCD|abcd/)
+})
+
+it("subscribes to retained destination state atomically", async () => {
+	const p = pair()
+	let bpm = 120
+	p.registry.retain("transport.changed", () => ({ bpm }))
+	const events: unknown[] = []
+	p.output.addEventListener(EVENT_PROTOCOL_EVENT, (event) =>
+		events.push((event as CustomEvent).detail)
+	)
+	await p.output.connect()
+	expect(await p.output.subscribeState("transport.changed")).toEqual({
+		retained: true,
+		state: { bpm: 120 }
+	})
+	bpm = 128
+	p.registry.publish("transport.changed", { bpm })
+	await flush()
+	expect(events).toEqual([{ topic: "transport.changed", data: { bpm: 128 } }])
+	expect(await p.output.subscribeState("other.topic")).toEqual({ retained: false })
+})
+
+it("keeps a property read answered after an older change event", async () => {
+	const p = pair()
+	let bpm = 120
+	p.registry.registerProperty({
+		id: "transport.tempo",
+		title: "Tempo",
+		description: "BPM",
+		unit: "BPM",
+		schema: { type: "number", minimum: 10, maximum: 303 },
+		get: () => bpm,
+		set: (value) => {
+			bpm = value as number
+		}
+	})
+	const panel = await p.output.createGui()
+	document.body.append(panel)
+	await p.output.connect()
+	await flush()
+	const read = [...panel.querySelectorAll<HTMLButtonElement>("button")].find(
+		(button) => button.textContent === "Read property"
+	)!
+	// The read request is sent first; an event published before it executes arrives before
+	// its response and carries an older value.
+	read.click()
+	p.registry.publish("properties.changed", { id: "transport.tempo", value: 130 })
+	bpm = 140
+	await flush()
+	await flush()
+	expect(panel.querySelector("fieldset output")!.textContent).toContain("140 BPM")
+})
+it("refuses a pairing code in legacy WebMidiLink mode instead of dropping MIDI silently", async () => {
+	const p = pair({ mode: "webmidilink" })
+	p.output.setPairingCode("ABCD-2345")
+	await expect(p.output.connect()).rejects.toThrow("audioBus Protocol mode")
+	expect(p.output.isConnected).toBe(false)
+	p.output.setPairingCode("")
+	await p.output.connect()
+	expect(p.output.isConnected).toBe(true)
 })

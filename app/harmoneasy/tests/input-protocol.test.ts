@@ -132,3 +132,72 @@ it("receives UMP intact, isolates groups, gates SysEx and dispatches grouped rel
 		remote.close()
 	}
 })
+it("requires the displayed pairing code before accepting MIDI, patches or requests", async () => {
+	const registry = new CommandRegistry()
+	registry.register({
+		id: "test.name",
+		title: "Name",
+		description: "",
+		inputSchema: EMPTY_SCHEMA,
+		execute: () => "Harmoneasy"
+	})
+	const getPatch = vi.fn(() => "patch")
+	const input = new InputProtocol({ registry, getPatch })
+	const commands: any[] = []
+	input.addEventListener(INPUT_EVENT, (event) => commands.push((event as CustomEvent).detail))
+	const origin = "https://opener.example"
+	const listeners = new Set<(message: unknown) => void>()
+	const target = {
+		postMessage: (message: string) =>
+			queueMicrotask(() => listeners.forEach((fn) => fn(message)))
+	} as unknown as Window
+	const transport = {
+		send: (message: string) =>
+			queueMicrotask(() =>
+				window.dispatchEvent(
+					new MessageEvent(EVENT_MESSAGE, { data: message, source: target, origin })
+				)
+			),
+		listen: (receive: (message: unknown) => void) => {
+			listeners.add(receive)
+			return () => {
+				listeners.delete(receive)
+			}
+		}
+	}
+	const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 0))
+	expect(() => input.attach(target, origin, { requirePairingCode: "--" })).toThrow("letters")
+	input.attach(target, origin, { requirePairingCode: "abcd 2345" })
+	expect(input.pairingCode).toBe("ABCD-2345")
+	const opener = new Peer(transport, { identity: { name: "Opener", version: "1" } })
+	let paired: Peer | undefined
+	try {
+		// The Input may connect first; that must not authorize the opener.
+		await input.connect()
+		expect(input.isConnected).toBe(true)
+		expect(input.connection!.isAuthorized).toBe(false)
+		opener.sendMidi([0x90, 60, 100])
+		opener.requestPatch()
+		await settle()
+		expect(commands).toEqual([])
+		expect(getPatch).not.toHaveBeenCalled()
+		await expect(opener.call("test.name")).rejects.toMatchObject({ code: "unauthorized" })
+		await expect(opener.connect()).rejects.toMatchObject({ code: "unauthorized" })
+		opener.close()
+		paired = new Peer(transport, {
+			identity: { name: "Opener", version: "1" },
+			pairingCode: input.pairingCode
+		})
+		await paired.connect()
+		expect(input.connection!.isAuthorized).toBe(true)
+		expect(await paired.call("test.name")).toBe("Harmoneasy")
+		paired.sendMidi([0x90, 60, 100])
+		await settle()
+		expect(commands.map((command) => command.type)).toEqual([NOTE_ON])
+	} finally {
+		input.destroy()
+		expect(input.pairingCode).toBeUndefined()
+		opener.close()
+		paired?.close()
+	}
+})

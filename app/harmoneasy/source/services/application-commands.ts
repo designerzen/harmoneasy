@@ -74,6 +74,8 @@ export function registerApplicationCommands(
 		})
 	]
 	unregister.push(
+		// Subscribers receive current transport state with the subscription, then changes.
+		registry.retain(TOPIC_TRANSPORT_CHANGED, () => host.getTransport()),
 		registry.registerProperty({
 			id: "transport.tempo",
 			title: "Tempo",

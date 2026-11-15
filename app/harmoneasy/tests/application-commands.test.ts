@@ -49,6 +49,9 @@ it("shares transport handlers, validates tempo, observes local changes and unreg
 	expect(running).toBe(false)
 	await registry.call("app.panic")
 	expect(panic).toHaveBeenCalledOnce()
+	expect(registry.readRetained("transport.changed")).toEqual({
+		value: { bpm: 135, running: false, clockSource: "internal" }
+	})
 	internal = false
 	await vi.advanceTimersByTimeAsync(100)
 	expect(events).toContain("transport.changed")
@@ -66,5 +69,6 @@ it("shares transport handlers, validates tempo, observes local changes and unreg
 	expect(registry.list()).toEqual([])
 	expect(registry.listProperties()).toEqual([])
 	expect(registry.listBundles()).toEqual([])
+	expect(registry.readRetained("transport.changed")).toBeUndefined()
 	expect(vi.getTimerCount()).toBe(0)
 })

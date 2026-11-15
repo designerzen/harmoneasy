@@ -28,7 +28,7 @@ Harmoneasy registers these commands after its clock and transport are initialize
 
 Tempo is restricted to 10–303 BPM and is available only when the internal clock is locally controlled. Start/stop are unavailable while following shared, MIDI, or DVS transport, matching the local transport controls. Calls use application services, not simulated button clicks. The palette includes registered commands alongside its existing visible UI controls; argument forms are generated from the command schemas. Remote calls use the same registry and validation. Additional graph, preset, and device commands can be registered using this pattern; they are not yet implemented.
 
-Subscribe to `transport.changed` for changes. Calls publish immediately; local controls, external clocks and room changes are observed every 100 ms. `commands.changed` tells clients to refresh discovery, including availability. Subscriptions are exact topics, with no initial retained state; subscribe then call `transport.get`.
+Subscribe to `transport.changed` for changes. Calls publish immediately; local controls, external clocks and room changes are observed every 100 ms. `commands.changed` tells clients to refresh discovery, including availability. `transport.changed` is retained: `subscribeState('transport.changed')` returns the current `{bpm, running, clockSource}` in the subscription response, captured atomically with it, so no separate `transport.get` is needed and no change can fall between the two.
 
 ## Pair another application
 
@@ -59,9 +59,9 @@ Add **audioBus Protocol** from the Output picker to send a chain's transformed M
 
 Choose **audioBus Protocol** for version negotiation and symmetric command control. Choose **WebMidiLink (MIDI and patches)** for existing synths that do not implement the command handshake. Legacy mode does not expose Harmoneasy's command registry. Both modes release tracked notes and sustain before disconnecting, replacing the destination, or destroying the Output.
 
-For a working destination, build the protocol repository and serve its `examples/receiver.html` over HTTP(S). Enter that URL in the Output and open it. In the receiver, enter Harmoneasy's exact origin and click **Accept opening application**, then press **Connect** in the Output. Click **Enable sound** in the receiver to hear notes. The Output discovers the receiver's tempo and panic commands automatically; these are demonstrations, not an OpenDAW implementation. Browser isolation policies must permit the popup relationship; otherwise use a cooperating iframe or custom transport.
+For a working destination, build the protocol repository and serve its `examples/receiver.html` over HTTP(S). Enter that URL in the Output and open it. In the receiver, enter Harmoneasy's exact origin and click **Accept opening application**. Copy the pairing code it shows into the Output's **Pairing code** field, then press **Connect** in the Output. Click **Enable sound** in the receiver to hear notes. The Output discovers the receiver's tempo and panic commands automatically; these are demonstrations, not an OpenDAW implementation. Browser isolation policies must permit the popup relationship; otherwise use a cooperating iframe or custom transport.
 
-To connect two Harmoneasy windows, add the Output in the opening window and an Input in the destination window. In the Input panel, enter the opening application's URL and choose **Pair with opening application**, then press Connect on both sides within five seconds. Initialization retries while the listener is being installed; application commands are never retried. The Input routes received notes through its own chain, while both peers expose their application's commands. Keep routing directional to avoid MIDI feedback.
+To connect two Harmoneasy windows, add the Output in the opening window and an Input in the destination window. In the Input panel, enter the opening application's URL and choose **Pair with opening application**. The Input shows a pairing code; enter it in the Output's **Pairing code** field, then press Connect on both sides within five seconds. Until the Output presents that code, the Input ignores its MIDI and patches and rejects its commands, even if the Input connected first. Five incorrect attempts lock the pairing; choose **Pair with opening application** again for a new code. Codes are never saved with the project. Initialization retries while the listener is being installed; application commands are never retried. The Input routes received notes through its own chain, while both peers expose their application's commands. Keep routing directional to avoid MIDI feedback.
 
 ```ts
 import OutputProtocol from 'audiobus/io/outputs/output-protocol'
@@ -71,7 +71,7 @@ const output = new OutputProtocol({ applicationName: 'Harmoneasy' })
 output.attach(iframe.contentWindow!, new URL(iframe.src).origin)
 await output.connect()
 console.log(await output.discover()) // Validated, typed command descriptors
-await output.subscribe('transport.changed')
+const { state } = await output.subscribeState('transport.changed') // current state, when retained
 output.addEventListener(EVENT_PROTOCOL_EVENT, event => console.log((event as CustomEvent).detail))
 await output.call('transport.setTempo', { bpm: 128 })
 output.noteOn(60, 100, 2)
