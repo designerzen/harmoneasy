@@ -89,7 +89,9 @@ export default defineConfig({
 	test: {
 		setupFiles: ["./tests/midi-profile-runtime-setup.ts", "./tests/audiobus-host-setup.ts"],
 		globals: true,
-		environment: "node"
+		environment: "node",
+		// Audio-rendering and dev-server tests time out when every core runs a worker.
+		maxWorkers: 6
 	},
 	resolve: {
 		conditions: ["browser", "import"]

@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import { engineGain } from "../../../packages/audiobus/instruments/engine-levels"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import SynthOscillator from "../../../packages/audiobus/instruments/oscillators/synth-oscillator"

@@ -45,7 +45,8 @@ describe("optional native MIDI imports in the web dev server", () => {
 			} else if (file.includes("midi2-native")) {
 				expect(code).toContain("native-midi-bridge")
 			} else {
-				expect(code).toContain("/@id/__x00__web-native-addon-unavailable")
+				expect(code).toContain("native-midi-addon")
+				expect(code).not.toContain("/@id/__x00__web-native-addon-unavailable")
 			}
 			expect(code).not.toContain("build/Release/midi2-native.node")
 		},

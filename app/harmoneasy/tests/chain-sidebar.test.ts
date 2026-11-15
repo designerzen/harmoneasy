@@ -250,8 +250,8 @@ it.each(["input", "output"] as const)(
 		expect(dialog.querySelectorAll(".choice-group")).toHaveLength(1)
 		const cards = dialog.querySelectorAll<HTMLButtonElement>(".device-choice-card")
 		expect(cards).toHaveLength(direction === "input" ? 1 : 2)
-		expect(cards[0].querySelector(".device-choice-detail")).not.toBeNull()
-		expect(cards[0].querySelector(".item-classification")?.textContent).toContain(
+		expect(cards[0].closest("li")!.querySelector(".device-choice-info")).not.toBeNull()
+		expect(dialog.querySelector(".choice-group .section-title")?.textContent).toContain(
 			direction === "input" ? "Keyboard" : "Instruments"
 		)
 		await runUI(async () => cards[0].click())
@@ -292,9 +292,11 @@ it.each(["input", "output"] as const)(
 			(button) => button.querySelector(".item-name")?.textContent === expectedName
 		)!
 		expect(card).toBeDefined()
-		expect(card.textContent).toContain(direction === "input" ? "input-id" : "output-id")
+		expect(card.closest("li")!.textContent).toContain(
+			direction === "input" ? "input-id" : "output-id"
+		)
 		expect(card.querySelector<HTMLElement>(".item-icon")!.style.maskImage).toContain(
-			direction === "input" ? "arturia-minilab-3/icon.svg" : "yamaha-reface-cs/icon.svg"
+			direction === "input" ? "arturia/minilab-3/icon.svg" : "yamaha/reface-cs/icon.svg"
 		)
 		expect(dialog.textContent).not.toContain("WebMIDI Device")
 		expect(dialog.textContent).not.toContain("Offline registry device")
@@ -351,8 +353,8 @@ it.each(["input", "output"] as const)(
 			(button) => button.querySelector(".item-name")?.textContent === "Controller"
 		)
 		expect(cards).toHaveLength(2)
-		expect(cards[0].textContent).toContain("MIDI ID: a")
-		expect(cards[1].textContent).toContain("MIDI ID: b")
+		expect(cards[0].closest("li")!.textContent).toContain("MIDI ID: a")
+		expect(cards[1].closest("li")!.textContent).toContain("MIDI ID: b")
 		const all = [...dialog.querySelectorAll<HTMLButtonElement>(".grid-item")].find(
 			(button) => button.querySelector(".item-name")?.textContent === `All MIDI ${direction}s`
 		)!

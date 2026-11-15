@@ -11,7 +11,10 @@ import type IOChainManager from "audiobus/io/IO-chain-manager"
 import { DEFAULT_PRESET_LIBRARY } from "../../../packages/audiobus/io/transformer-presets"
 import { completePresets } from "../source/components/graph/preset-catalogue"
 import { writeLibrary } from "../source/components/graph/saved-presets"
-import { defineDevice } from "../../../packages/audiobus/io/device-definition"
+import {
+	defineDevice,
+	type DeviceDefinition
+} from "../../../packages/audiobus/io/device-definition"
 
 let root: { element: HTMLElement; destroy(): void }
 let host: HTMLElement
@@ -276,7 +279,12 @@ it.each([
 		setName: vi.fn()
 	}
 	const manager = {
-		createChainWithSounds: vi.fn().mockResolvedValue("activity-chain"),
+		createChainWithSounds: vi.fn(async (definitions: DeviceDefinition[]) => {
+			chain.outputs = definitions.map((definition, index) =>
+				defineDevice({}, definition, `test-output-${index}`)
+			)
+			return "activity-chain"
+		}),
 		createDefaultChain: vi.fn(),
 		getChain: vi.fn(() => chain),
 		setActiveChain: vi.fn()
@@ -291,7 +299,8 @@ it.each([
 	await runUI(async () =>
 		document.querySelector<HTMLButtonElement>(".preset-apply-button")!.click()
 	)
-	expect(manager.createChainWithSounds).toHaveBeenCalledWith([
+	const [outputs] = manager.createChainWithSounds.mock.calls[0]
+	expect(outputs.slice(0, 2)).toEqual([
 		{ factory: "output", type: instrument },
 		{
 			factory: "output",
@@ -299,6 +308,9 @@ it.each([
 			options: expect.objectContaining({ genre, groove })
 		}
 	])
+	expect(
+		outputs.slice(2).every((output: { type: string }) => output.type.startsWith("effect:"))
+	).toBe(true)
 	expect(manager.createDefaultChain).not.toHaveBeenCalled()
 	expect(chain.setName).toHaveBeenCalledWith(name)
 	expect(manager.setActiveChain).toHaveBeenCalledWith("activity-chain")
