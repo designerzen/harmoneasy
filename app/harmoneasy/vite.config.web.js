@@ -7,6 +7,7 @@ import { midiDeviceFilesPlugin } from "audiobus/hardware/midi-devices/device-fil
 import { supersonicFilesPlugin } from "audiobus/io/outputs/supersonic-files.js"
 import { roomPagesPlugin } from "./scripts/room-pages.js"
 import { presetPagesPlugin } from "./scripts/preset-pages.js"
+import { cloudflareAssetsPlugin } from "./scripts/cloudflare-assets.js"
 
 // Vite's static middleware emits an empty MIME type for .tar.gz bundles.
 // Serve WCLAP archives explicitly so browser fetch does not treat them as downloads.
@@ -67,7 +68,8 @@ export default defineConfig({
 		crossOriginIsolationPlugin(),
 		opendawFilesPlugin(),
 		roomPagesPlugin(),
-		presetPagesPlugin()
+		presetPagesPlugin(),
+		cloudflareAssetsPlugin()
 	],
 	worker: { format: "es" },
 	// Resolve through the workspace package and bundle Nexus's CommonJS dependencies
