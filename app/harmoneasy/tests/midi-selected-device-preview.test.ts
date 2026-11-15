@@ -4,7 +4,7 @@ import {
 	createMidiInputControls,
 	type MidiInputDeviceOption
 } from "audiobus/io/inputs/midi-input-controls"
-import * as registry from "audiobus/midi/hardware/device-profiles"
+import * as registry from "audiobus/hardware/midi-devices/device-profiles"
 import { EVENT_CHANGE } from "audiobus/events/event-constants"
 
 const controls: ReturnType<typeof createMidiInputControls>[] = []
@@ -47,7 +47,7 @@ it.each(["input", "output"] as const)(
 		choose("digit-cmpsr")
 		const first = gui.element.querySelector<HTMLElement>("figure")!
 		expect(first.dataset.midiProfile).toBe("digit-cmpsr")
-		expect(first.querySelector("img")!.src).toContain("/digit-cmpsr/panel.svg")
+		expect(first.querySelector("img")!.src).toContain("/digit-music/cmpsr/panel.svg")
 		expect(first.textContent).toContain(
 			registry.MIDI_DEVICE_PROFILES["digit-cmpsr"].description
 		)
@@ -61,7 +61,7 @@ it.each(["input", "output"] as const)(
 		expect(gui.element.querySelector<HTMLElement>("figure")!.dataset.midiProfile).toBe(
 			"arturia-minilab-3"
 		)
-		expect(gui.element.querySelector("img")!.src).toContain("/arturia-minilab-3/panel.svg")
+		expect(gui.element.querySelector("img")!.src).toContain("/arturia/minilab-3/panel.svg")
 		choose("unknown")
 		expect(gui.element.querySelector("figure")).toBeNull()
 		choose("digit-cmpsr")
@@ -89,7 +89,7 @@ it("uses the hardware registry ID independently of native routing indexes and cl
 	)
 	devices = [{ id: "3", registryId: "yamaha-reface-cs", name: "Custom port name" }]
 	gui.refresh()
-	expect(gui.element.querySelector("img")!.src).toContain("/yamaha-reface-cs/panel.svg")
+	expect(gui.element.querySelector("img")!.src).toContain("/yamaha/reface-cs/panel.svg")
 })
 
 it("refreshes when a matching profile arrives later and stops registry updates after GUI destruction", () => {

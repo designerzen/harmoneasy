@@ -93,6 +93,8 @@
 	--hue-timing: calc(var(--theme-hue) - 35);
 	--hue-transformer: calc(var(--theme-hue) - 10);
 	--hue-output: calc(var(--theme-hue) + 50);
+	--hue-effect: calc(var(--theme-hue) + 110);
+	--hue-control: calc(var(--theme-hue) + 170);
 
 	/* Graph signals. */
 	--col-edge: light-dark(
@@ -100,8 +102,8 @@
 		oklch(62% var(--neutral-chroma) var(--theme-hue))
 	);
 	--col-control: light-dark(
-		oklch(46% var(--accent-chroma) var(--hue-input)),
-		oklch(78% var(--accent-chroma) var(--hue-input))
+		oklch(46% var(--accent-chroma) var(--hue-control)),
+		oklch(78% var(--accent-chroma) var(--hue-control))
 	);
 
 	/* Piano keys read as physical objects in both modes. */

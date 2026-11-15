@@ -11,8 +11,10 @@ import State from "./libs/state.ts"
 import UI from "./ui.ts"
 import { createAboutDialog } from "./services/about-dialog"
 import { createCommandPalette } from "./services/command-palette"
+import { registerApplicationCommands } from "./services/application-commands"
 import { createThemeControls } from "./services/theme"
 import { createEmptySetup, createStartContexts } from "./services/start-contexts"
+import { nextPaint, setButtonBusy, showLoadingVeil } from "./libs/loader"
 import { createSetupWizard } from "./services/setup-wizard"
 import { applySetup } from "./components/graph/saved-presets"
 import type { PresetSetup } from "audiobus/io/preset-library"
@@ -21,7 +23,7 @@ import { readRoomUrl } from "./services/room-url"
 import { loadPresetPage, presetWorkspace } from "./services/preset-page"
 import { PLAY_REDIRECT_KEY, playRoute, playUrl } from "./services/play-page"
 import { createMidiControlPanel } from "./services/midi-control-panel"
-import { startKnownMidiInputs } from "audiobus/midi/hardware/known-midi-inputs"
+import { startKnownMidiInputs } from "audiobus/hardware/midi-devices/known-midi-inputs"
 import { showMidiDeviceDisconnected } from "./services/midi-device-errors"
 import { chooseChainsForMidiDevice } from "./services/midi-device-connected-dialog"
 import { createMidiDevicesDialog } from "./services/midi-devices-dialog"
@@ -29,10 +31,19 @@ import { createMixer } from "./services/mixer"
 import { configureAudiobus } from "./audiobus-host"
 import { createRecordingControls } from "./services/recording-dialog"
 import { createMusicalFeatureControls } from "./services/musical-feature-controls"
-import { EVENT_HARMONY_CHANGED, EVENT_HARMONY_SETTINGS_CHANGED } from "audiobus/events/event-constants"
+import {
+	EVENT_HARMONY_CHANGED,
+	EVENT_PAGE_HIDE,
+	EVENT_HARMONY_SETTINGS_CHANGED
+} from "audiobus/events/event-constants"
 import { createClockSourceControls } from "./services/clock-source-controls"
 import { createMediaImporter } from "./services/media-import"
-import { isClockSource, clockDvsInputs, clockMidiPorts, type ClockSourceController } from "./services/clock-source"
+import {
+	isClockSource,
+	clockDvsInputs,
+	clockMidiPorts,
+	type ClockSourceController
+} from "./services/clock-source"
 
 // Import Data
 import { importDawProjectFile } from "audiobus/importers/import-dawproject"
@@ -673,6 +684,33 @@ const initialiseApplication = async (
 			: initialClockSource
 	)
 	await netronomeLink.initialize()
+	const removeApplicationCommands = registerApplicationCommands({
+		getTransport: () => ({
+			bpm: timer.BPM,
+			running: ioManager.transportRunning,
+			clockSource: clockSource?.source ?? "internal"
+		}),
+		canSetTempo: () => clockSource?.source === "internal" && !netronomeLink?.isFollower,
+		setTempo: bpm => {
+			timer.BPM = bpm
+			ui.setTempo(bpm)
+			state.set("tempo", bpm)
+			netronomeLink?.tempoChanged()
+		},
+		transport: async (action) => {
+			await ioManager.transport(action)
+			ui.setPlaying(ioManager.transportRunning)
+		},
+		panic: () => {
+			netronomeLink?.silence()
+			ioManager.chains.forEach((chain) => chain.allNotesOff())
+		}
+	})
+	window.addEventListener(EVENT_PAGE_HIDE, (event) => {
+		if (!event.persisted) {
+			removeApplicationCommands()
+		}
+	})
 	ui.setPlaying(ioManager.transportRunning)
 	musicalFeatureControls = createMusicalFeatureControls({
 		manager: ioManager,
@@ -871,12 +909,20 @@ async function startApplication(button: HTMLButtonElement, setup?: PresetSetup) 
 		button.disabled = true
 	})
 	button.textContent = "Starting…"
+	setButtonBusy(button, true)
 	const errorMessage = startDialog.querySelector<HTMLElement>("#start-error")!
 	errorMessage.hidden = true
+	// Paint the veil before initialisation blocks the main thread, and keep it
+	// until the graph has rendered and the application responds to input.
+	const veil = await showLoadingVeil("Starting Harmoneasy…")
 	try {
 		await initialiseApplication(onTick, false, setup)
 		startDialog.close()
+		await nextPaint()
+		veil.hide()
 	} catch (error) {
+		veil.hide()
+		setButtonBusy(button, false)
 		startDialog.inert = false
 		if (!startDialog.open) {
 			startDialog.showModal()

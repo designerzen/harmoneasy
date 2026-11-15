@@ -5,7 +5,7 @@ import { getTransformerDefinition, getTransformerIcon } from "audiobus/io/transf
 import type { InputId } from "audiobus/io/inputs/input-types"
 import type { OutputId } from "audiobus/io/outputs/output-types"
 import type { PINK_TROMBONE_OUTPUT_ID } from "audiobus-output-pink-trombone"
-import { MIDI_DEVICE_PROFILES } from "audiobus/midi/hardware/device-profiles"
+import { MIDI_DEVICE_PROFILES } from "audiobus/hardware/midi-devices/device-profiles"
 
 export type ElementKind = "input" | "output" | "instrument" | "transformer"
 
@@ -68,6 +68,7 @@ const INPUT_ICONS: Partial<Record<InputId, string>> = {
 }
 
 const OUTPUT_ICONS: Record<OutputId | typeof PINK_TROMBONE_OUTPUT_ID, string> = {
+	protocol: "midi",
 	"impulse-response": "spectrum",
 	sion: "synth",
 	"303": "synth",

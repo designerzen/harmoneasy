@@ -29,6 +29,7 @@ import { StartNode } from "./nodes/StartNode.tsx"
 import { EndNode } from "./nodes/EndNode.tsx"
 import { SpeakerNode } from "./nodes/SpeakerNode.tsx"
 import { AudioSignalEdge } from "./AudioSignalEdge.tsx"
+import { SectionDividers } from "./SectionDividers.tsx"
 import { InputNode } from "./nodes/InputNode.tsx"
 import { OutputNode } from "./nodes/OutputNode.tsx"
 import { TransformerNode } from "./nodes/TransformerNode.tsx"
@@ -434,6 +435,7 @@ function FlowComponent({ isFront, focusRequest }: { isFront: boolean; focusReque
 				}
 			>
 				<GraphControls layoutMode={layoutMode} />
+				<SectionDividers layoutMode={layoutMode} />
 				{selectedNode &&
 					ExpandedNode &&
 					createPortal(

@@ -58,7 +58,7 @@ export function OutputNode(props: any) {
 	return (
 		<div
 			data-midi-scope={`${chainId}:output:${deviceId(output)}`}
-			className={`node-output graph-node can-remove ${hasControls ? "has-controls" : "no-controls"} ${isFullscreen ? "is-fullscreen" : ""} ${isCompact ? "is-compact" : ""}`}
+			className={`node-output graph-node can-remove ${output.audioInput ? "is-effect" : ""} ${hasControls ? "has-controls" : "no-controls"} ${isFullscreen ? "is-fullscreen" : ""} ${isCompact ? "is-compact" : ""}`}
 			title={deviceDescription(output, "output")}
 		>
 			<DeviceTitleBar

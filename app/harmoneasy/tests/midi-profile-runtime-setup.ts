@@ -2,11 +2,11 @@ import path from "node:path"
 import {
 	createMidiDeviceStore,
 	MIDI_DEVICE_DIRECTORY
-} from "audiobus/midi/hardware/device-files.js"
+} from "audiobus/hardware/midi-devices/device-files.js"
 import {
 	refreshMidiDeviceProfiles,
 	setMidiDeviceProfileSource
-} from "../../../packages/audiobus/midi/hardware/device-profiles"
+} from "../../../packages/audiobus/hardware/midi-devices/device-profiles"
 
 export const bundledMidiDevices = MIDI_DEVICE_DIRECTORY
 export function useTestMidiProfileFiles(roots = [bundledMidiDevices]) {

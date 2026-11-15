@@ -3,8 +3,9 @@ import { readFileSync } from "node:fs"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import {
 	createMidiDeviceStore,
-	MIDI_DEVICE_DIRECTORY
-} from "audiobus/midi/hardware/device-files.js"
+	MIDI_DEVICE_DIRECTORY,
+	midiDeviceFolders
+} from "audiobus/hardware/midi-devices/device-files.js"
 
 const html = readFileSync("public/midi-devices.html", "utf8")
 const script = /<script type="module">([\s\S]*?)<\/script>/.exec(html)![1]
@@ -54,17 +55,18 @@ describe("standalone MIDI device catalog", () => {
 		)
 		expect(document.getElementById("catalog")?.getAttribute("aria-busy")).toBe("false")
 		for (const id of ids) {
+			const devicePath = midiDeviceFolders().find((entry) => entry.id === id)!.path
 			const card = document.getElementById(`device-${id}`)!
 			expect(card.querySelector("h2")?.textContent).toBeTruthy()
 			expect(card.querySelector(".icon")?.getAttribute("src")).toBe(
-				`https://example.test/harmoneasy/midi-devices/${id}/icon.svg`
+				`https://example.test/harmoneasy/midi-devices/${devicePath}/icon.svg`
 			)
 			expect(card.querySelector(".diagram")?.getAttribute("src")).toBe(
-				`https://example.test/harmoneasy/midi-devices/${id}/panel.svg`
+				`https://example.test/harmoneasy/midi-devices/${devicePath}/panel.svg`
 			)
 			expect(card.querySelector("details")?.textContent).toContain(id)
 			expect(card.querySelector(".asset-links a:last-child")?.getAttribute("href")).toBe(
-				`https://example.test/harmoneasy/midi-devices/${id}/${id}.json`
+				`https://example.test/harmoneasy/midi-devices/${devicePath}/${id}.json`
 			)
 		}
 		const microfreak = document.getElementById("device-arturia-microfreak")!
@@ -78,7 +80,12 @@ describe("standalone MIDI device catalog", () => {
 
 	it("keeps available devices visible when another profile fails", async () => {
 		const fetcher = await catalog({
-			"index.json": ["arcana-strum", "missing-device", "../escape", "arcana-strum"],
+			"index.json": [
+				{ id: "arcana-strum", path: "arcana/strum" },
+				"missing-device",
+				"../escape",
+				{ id: "arcana-strum", path: "arcana/strum" }
+			],
 			"missing-device/missing-device.json": null
 		})
 		expect(document.querySelectorAll("article")).toHaveLength(1)

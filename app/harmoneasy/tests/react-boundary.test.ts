@@ -21,6 +21,7 @@ it("restricts React imports to graph rendering and its node integration", () => 
 		"components/graph/GraphDialogs.tsx",
 		"components/graph/AnimatedSVGEdge.tsx",
 		"components/graph/AudioSignalEdge.tsx",
+		"components/graph/SectionDividers.tsx",
 		"components/graph/DeviceGui.tsx",
 		"components/graph/DeviceTitleBar.tsx",
 		"components/graph/ElementIcon.tsx",
@@ -35,7 +36,8 @@ it("restricts React imports to graph rendering and its node integration", () => 
 		"components/graph/nodes/OutputNode.tsx",
 		"components/graph/nodes/StartNode.tsx",
 		"components/graph/nodes/TransformerNode.tsx",
-		"components/graph/nodes/ControlSurfaceNode.tsx"
+		"components/graph/nodes/ControlSurfaceNode.tsx",
+		"components/graph/nodes/AddControlSurfaceNode.tsx"
 	])
 	const violations = files(source)
 		.filter((file) =>

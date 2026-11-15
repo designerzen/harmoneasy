@@ -4,10 +4,10 @@ import { describe, expect, it } from "vitest"
 import {
 	MIDI_DEVICE_PROFILES,
 	matchMidiDeviceProfile
-} from "audiobus/midi/hardware/device-profiles"
-import { parseMidiDeviceProfile } from "audiobus/midi/hardware/device-profile-schema"
+} from "audiobus/hardware/midi-devices/device-profiles"
+import { parseMidiDeviceProfile } from "audiobus/hardware/midi-devices/device-profile-schema"
 import { INPUT_FACTORIES } from "audiobus/io/input-factory"
-import { MIDI_DEVICE_DIRECTORY } from "audiobus/midi/hardware/device-files.js"
+import { midiDeviceDirectory } from "audiobus/hardware/midi-devices/device-files.js"
 
 const devices = [
 	["akai-mpk-mini-mk3", "MPK mini 3"],
@@ -23,7 +23,7 @@ describe("documented instrument registry folders", () => {
 	it.each(devices)(
 		"loads %s with its own matching JSON, artwork, documentation and input factory",
 		(id, name) => {
-			const folder = path.join(MIDI_DEVICE_DIRECTORY, id)
+			const folder = midiDeviceDirectory(id)
 			const raw = JSON.parse(readFileSync(path.join(folder, `${id}.json`), "utf8"))
 			const profile = parseMidiDeviceProfile(id, raw, (asset) =>
 				existsSync(path.join(folder, asset)) ? `/${id}/${asset}` : undefined

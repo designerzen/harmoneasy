@@ -14,7 +14,7 @@ import {
 	matchMidiDeviceProfile,
 	MIDI_DEVICE_PROFILES,
 	onMidiDeviceProfilesChanged
-} from "audiobus/midi/hardware/device-profiles"
+} from "audiobus/hardware/midi-devices/device-profiles"
 import { sharedWebMidi } from "audiobus/midi/shared-webmidi"
 import {
 	EVENT_DEVICE_LIST_CHANGED,
@@ -27,6 +27,7 @@ import type { IAudioOutput } from "audiobus/io/outputs/output-interface"
 
 import type { ChainUIContext } from "./chain-ui-context"
 import { createSharedDevices } from "./SharedDevices"
+import { createLoader } from "../../libs/loader"
 import { element, button, icon, searchReset } from "./dom"
 
 type Choice = ClassifiedChoice & {
@@ -293,6 +294,7 @@ export function createDevicePicker(
 		}
 		if (loading) {
 			status(`Loading ${direction}s…`)
+			results.lastElementChild!.prepend(createLoader(), " ")
 			return
 		}
 		if (filtered.length) {

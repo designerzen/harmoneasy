@@ -3,7 +3,7 @@ import { crossOriginIsolationPlugin } from "audiobus/io/cross-origin-files.js"
 import { opendawFilesPlugin } from "audiobus-output-opendaw-vaporisateur/vite"
 import { createReadStream } from "node:fs"
 import { resolve, sep } from "node:path"
-import { midiDeviceFilesPlugin } from "audiobus/midi/hardware/device-files.js"
+import { midiDeviceFilesPlugin } from "audiobus/hardware/midi-devices/device-files.js"
 import { supersonicFilesPlugin } from "audiobus/io/outputs/supersonic-files.js"
 import { roomPagesPlugin } from "./scripts/room-pages.js"
 import { presetPagesPlugin } from "./scripts/preset-pages.js"
@@ -75,7 +75,7 @@ export default defineConfig({
 	optimizeDeps: {
 		include: ["audiotool > @audiotool/nexus", "audiotool > @audiotool/nexus/utils"]
 	},
-	base: process.env.NODE_ENV === "production" ? "/harmoneasy/" : "/",
+	base: process.env.NODE_ENV === "production" && process.env.CF_PAGES !== "1" ? "/harmoneasy/" : "/",
 	server: {
 		port: 1999
 	},

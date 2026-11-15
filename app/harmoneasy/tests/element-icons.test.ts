@@ -16,7 +16,7 @@ import { CLAP_PATCHES } from "../../../packages/audiobus/instruments/clap/clap-c
 import { OUTPUT_DEFINITIONS } from "../../../packages/audiobus/io/output-definitions"
 import { webclapOutputId } from "../../../packages/audiobus/io/outputs/output-types"
 import { choiceMatches } from "../source/components/graph/device-filters"
-import { MIDI_DEVICE_DIRECTORY } from "audiobus/midi/hardware/device-files.js"
+import { MIDI_DEVICE_DIRECTORY } from "audiobus/hardware/midi-devices/device-files.js"
 
 const assetExists = (src: string) => {
 	const pathname = new URL(src, "http://localhost").pathname

@@ -1,6 +1,6 @@
 import type IOChain from "audiobus/io/IO-chain"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
-import type { MidiDeviceArrival } from "audiobus/midi/hardware/known-midi-inputs"
+import type { MidiDeviceArrival } from "audiobus/hardware/midi-devices/known-midi-inputs"
 import { createDialogFromTemplate, showDialog } from "../libs/dialog-utils"
 
 const chainName = (chain: IOChain, index: number) => chain.options.name ?? `Chain ${index + 1}`

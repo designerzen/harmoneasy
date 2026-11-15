@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest"
 import {
 	MIDI_DEVICE_PROFILES,
 	matchMidiDeviceProfile
-} from "audiobus/midi/hardware/device-profiles"
-import { MIDI_DEVICE_DIRECTORY } from "audiobus/midi/hardware/device-files.js"
+} from "audiobus/hardware/midi-devices/device-profiles"
+import { midiDeviceDirectory } from "audiobus/hardware/midi-devices/device-files.js"
 
 const volcas = ["bass", "beats", "keys", "kick", "nubass", "fm", "fm2", "sample", "sample2", "drum"]
 const boutiques = [
@@ -41,7 +41,7 @@ describe("Volca and Roland Boutique families", () => {
 		expect(profile).toBeDefined()
 		expect(profile.documentation.length).toBeGreaterThan(0)
 		for (const asset of ["icon.svg", "panel.svg", `${id}.json`]) {
-			expect(existsSync(path.join(MIDI_DEVICE_DIRECTORY, id, asset))).toBe(true)
+			expect(existsSync(path.join(midiDeviceDirectory(id), asset))).toBe(true)
 		}
 		expect(matchMidiDeviceProfile({ id })).toBe(id)
 		for (const name of profile.portNames) {
@@ -62,8 +62,9 @@ describe("Volca and Roland Boutique families", () => {
 			["JP-08", "roland-jp-08"],
 			["JUPITER-08", "roland-jupiter-08"],
 			["n/vision", "roland-n-vision"]
-		])
+		]) {
 			expect(matchMidiDeviceProfile({ name })).toBe(id)
+		}
 		for (const name of [
 			"volca mix",
 			"volca modular",

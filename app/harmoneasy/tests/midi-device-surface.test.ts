@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { MIDI_DEVICE_PROFILES } from "../../../packages/audiobus/midi/hardware/device-profiles"
-import { createProfiledMidiGui } from "../../../packages/audiobus/midi/hardware/profiled-midi-gui"
+import { MIDI_DEVICE_PROFILES } from "../../../packages/audiobus/hardware/midi-devices/device-profiles"
+import { createProfiledMidiGui } from "../../../packages/audiobus/hardware/midi-devices/profiled-midi-gui"
 import {
 	createInputById,
 	getAvailableInputFactories

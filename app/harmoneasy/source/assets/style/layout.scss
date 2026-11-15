@@ -277,6 +277,11 @@ song-explorer-ui {
 }
 
 /* Export Overlay */
+.import-overlay-content .loader,
+.export-overlay-content .loader {
+	margin-bottom: 1rem;
+}
+
 .export-overlay {
 	position: fixed;
 	inset: 0;
@@ -361,17 +366,6 @@ song-explorer-ui {
 	a {
 		font-size: var(--text-sm);
 	}
-}
-
-/* Spinner Animation */
-.spinner {
-	width: 3rem;
-	height: 3rem;
-	margin: 0 auto 1rem;
-	border: 4px solid var(--col-line);
-	border-top-color: var(--col-accent);
-	border-radius: 50%;
-	animation: spin 1s linear infinite;
 }
 
 // Overlays

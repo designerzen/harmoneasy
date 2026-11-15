@@ -1,0 +1,113 @@
+/*
+ * Loader: the shared "working" motif, four equaliser bars that bounce in turn.
+ * Bars animate transform only, so they keep moving while the main thread is busy.
+ * Markup comes from libs/loader.ts; the size follows font-size, colour follows currentColor.
+ */
+.loader {
+	--loader-size: 1em;
+	display: inline-flex;
+	align-items: center;
+	gap: calc(var(--loader-size) * 0.12);
+	height: var(--loader-size);
+	flex: none;
+	vertical-align: middle;
+
+	i {
+		width: calc(var(--loader-size) * 0.16);
+		height: 100%;
+		border-radius: 999px;
+		background: currentColor;
+		transform: scaleY(0.3);
+		animation: loader-bar 0.9s var(--ease-in-out, ease-in-out) infinite;
+
+		&:nth-child(2) {
+			animation-delay: 0.12s;
+		}
+		&:nth-child(3) {
+			animation-delay: 0.24s;
+		}
+		&:nth-child(4) {
+			animation-delay: 0.36s;
+		}
+	}
+
+	&.loader-large {
+		--loader-size: 3rem;
+		color: var(--col-accent);
+	}
+}
+
+@keyframes loader-bar {
+	0%,
+	100% {
+		transform: scaleY(0.3);
+	}
+	40% {
+		transform: scaleY(1);
+	}
+}
+
+button[aria-busy="true"] {
+	cursor: progress;
+	gap: 0.5em;
+}
+
+/* Full-screen veil shown in the top layer while the application gets ready. */
+.loading-veil {
+	position: fixed;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	max-width: none;
+	max-height: none;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	display: none;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 1rem;
+	background: var(--col-backdrop);
+	backdrop-filter: blur(5px);
+	color: var(--col-fg);
+	cursor: progress;
+
+	&:popover-open {
+		display: flex;
+		animation: loading-veil-in 0.2s ease-out both;
+	}
+
+	p {
+		margin: 0;
+		font-size: var(--text-sm);
+		color: var(--col-muted);
+	}
+}
+
+@keyframes loading-veil-in {
+	from {
+		opacity: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.loader i {
+		animation: loader-pulse 1.6s ease-in-out infinite;
+		transform: none;
+
+		&:nth-child(odd) {
+			transform: scaleY(0.6);
+		}
+	}
+
+	.loading-veil:popover-open {
+		animation: none;
+	}
+}
+
+@keyframes loader-pulse {
+	50% {
+		opacity: 0.4;
+	}
+}

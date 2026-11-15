@@ -23,6 +23,7 @@ import {
 	writeLibrary
 } from "./saved-presets"
 import { element, button, option, searchReset } from "./dom"
+import { setButtonBusy } from "../../libs/loader"
 
 export interface PresetBrowserOptions {
 	manager?: IOChainManager
@@ -828,6 +829,7 @@ export function createPresetBrowser({
 					: createChain
 						? `Create ${preset?.name} chain`
 						: `Apply ${preset?.name}`
+		setButtonBusy(apply, busy)
 	}
 	const refresh = () => {
 		try {

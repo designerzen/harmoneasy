@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
 import { createMidiDevicesDialog } from "../source/services/midi-devices-dialog"
-import * as registry from "audiobus/midi/hardware/device-profiles"
+import * as registry from "audiobus/hardware/midi-devices/device-profiles"
 import {
 	EVENT_CANCEL,
 	EVENT_CLOSE,
@@ -141,7 +141,7 @@ it("previews registry artwork and product links for matching IDs and exact port 
 		"korg-minilogue",
 		"yamaha-reface-cs"
 	])
-	expect(previews[0].querySelector("img")!.src).toContain("/digit-cmpsr/panel.svg")
+	expect(previews[0].querySelector("img")!.src).toContain("/digit-music/cmpsr/panel.svg")
 	expect(previews[1].querySelector("img")!.alt).toContain("illustration")
 	expect([...previews[1].querySelectorAll("a")].map((link) => link.textContent)).toEqual([
 		"Manufacturer",

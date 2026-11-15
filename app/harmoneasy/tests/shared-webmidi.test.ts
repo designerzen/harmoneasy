@@ -12,7 +12,7 @@ import { createOutputById } from "../../../packages/audiobus/io/output-factory"
 import {
 	startKnownMidiInputs,
 	type MidiInputDiscovery
-} from "../../../packages/audiobus/midi/hardware/known-midi-inputs"
+} from "../../../packages/audiobus/hardware/midi-devices/known-midi-inputs"
 import { UNAVAILABLE_MIDI_DEVICE } from "../../../packages/audiobus/io/inputs/midi-input-controls"
 import {
 	EVENT_CONNECTED,

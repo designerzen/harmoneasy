@@ -4,7 +4,7 @@ import { app, BrowserWindow, Menu, ipcMain, session, systemPreferences, protocol
 import {
 	createMidiDeviceStore,
 	MIDI_DEVICE_DIRECTORY
-} from "audiobus/midi/hardware/device-files.js"
+} from "audiobus/hardware/midi-devices/device-files.js"
 import { mkdir } from "node:fs/promises"
 import { fileURLToPath } from "url"
 import { createRequire } from "module"

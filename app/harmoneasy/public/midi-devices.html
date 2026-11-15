@@ -109,8 +109,8 @@
 				if (!response.ok) throw new Error(`Could not load ${url}`)
 				return response.json()
 			}
-			const render = (id, profile) => {
-				const folder = new URL(`${id}/`, registry)
+			const render = (id, profile, devicePath) => {
+				const folder = new URL(`${devicePath}/`, registry)
 				const card = element("article")
 				card.id = `device-${id}`
 				card.setAttribute("aria-labelledby", `${id}-name`)
@@ -253,19 +253,24 @@
 			try {
 				const index = await read(new URL("index.json", registry))
 				if (!Array.isArray(index)) throw new Error("Invalid device index")
-				const ids = [...new Set(index.filter((id) => typeof id === "string" && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id)))]
+				const entries = new Map()
+                for (const item of index) {
+                    const entry = typeof item === "string" ? { id: item, path: item } : item
+                    if (entry && typeof entry.id === "string" && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(entry.id) && typeof entry.path === "string" && /^[a-z0-9-]+(?:\/[a-z0-9-]+)?$/.test(entry.path)) entries.set(entry.id, entry)
+                }
+                const ids = [...entries.keys()]
 				const results = await Promise.allSettled(ids.map(async (id) => {
-					const profile = await read(new URL(`${id}/${id}.json`, registry))
+					const profile = await read(new URL(`${entries.get(id).path}/${id}.json`, registry))
 					if (profile.schemaVersion !== 1 || typeof profile.name !== "string") throw new Error("Invalid device profile")
-					return { id, profile }
+					return { id, profile, devicePath: entries.get(id).path }
 				}))
 				const loaded = results.filter((result) => result.status === "fulfilled").map((result) => result.value)
 				loaded.sort((a, b) => a.profile.name.localeCompare(b.profile.name))
 				let failed = results.length - loaded.length
 				let count = 0
-				for (const { id, profile } of loaded) {
+				for (const { id, profile, devicePath } of loaded) {
 					try {
-						const card = render(id, profile)
+						const card = render(id, profile, devicePath)
 						catalog.append(card)
 						deviceCards.set(id, { card, profile })
 						count++

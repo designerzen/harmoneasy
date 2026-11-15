@@ -1,14 +1,15 @@
 // @vitest-environment happy-dom
+import { midiDeviceFolders } from "audiobus/hardware/midi-devices/device-files.js"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import {
 	loadMidiDeviceProfiles,
 	MIDI_DEVICE_PROFILES
-} from "../../../packages/audiobus/midi/hardware/device-profiles"
+} from "../../../packages/audiobus/hardware/midi-devices/device-profiles"
 import {
 	parseMidiDeviceProfile,
 	profileMessageBytes
-} from "../../../packages/audiobus/midi/hardware/device-profile-schema"
-import { createProfiledMidiGui } from "../../../packages/audiobus/midi/hardware/profiled-midi-gui"
+} from "../../../packages/audiobus/hardware/midi-devices/device-profile-schema"
+import { createProfiledMidiGui } from "../../../packages/audiobus/hardware/midi-devices/profiled-midi-gui"
 import { midiToCommand } from "../../../packages/audiobus/midi/midi-command-conversion"
 import {
 	EVENT_CHANGE,
@@ -124,14 +125,14 @@ const fixture = () => ({
 	}
 })
 const assets = {
-	"./devices/folder-instrument/images/icon.svg": "/emitted/icon.svg",
-	"./devices/folder-instrument/images/panel.svg": "/emitted/panel.svg"
+	"./example/folder-instrument/images/icon.svg": "/emitted/icon.svg",
+	"./example/folder-instrument/images/panel.svg": "/emitted/panel.svg"
 }
 function profile(raw: unknown = fixture()) {
 	return parseMidiDeviceProfile(
 		"folder-instrument",
 		raw,
-		(path) => assets[`./devices/folder-instrument/${path}` as keyof typeof assets]
+		(path) => assets[`./example/folder-instrument/${path}` as keyof typeof assets]
 	)
 }
 afterEach(() => document.body.replaceChildren())
@@ -141,9 +142,9 @@ describe("device folders and declarative GUIs", () => {
 		const report = vi.fn()
 		const loaded = loadMidiDeviceProfiles(
 			{
-				"./devices/folder-instrument/folder-instrument.json": fixture(),
-				"./devices/broken-instrument/broken-instrument.json": { schemaVersion: 99 },
-				"./devices/profile.schema.json": {}
+				"./example/folder-instrument/folder-instrument.json": fixture(),
+				"./example/broken-instrument/broken-instrument.json": { schemaVersion: 99 },
+				"./profile.schema.json": {}
 			},
 			assets,
 			report
@@ -167,9 +168,11 @@ describe("device folders and declarative GUIs", () => {
 			const gui = createProfiledMidiGui(device, {}, vi.fn(), vi.fn())
 			expect(gui.element.dataset.deviceProfile).toBe(device.id)
 			expect(gui.element.querySelector("img")?.getAttribute("src")).toContain(
-				`/midi-devices/${device.id}/panel.svg`
+				`/midi-devices/${midiDeviceFolders().find((entry) => entry.id === device.id)!.path}/panel.svg`
 			)
-			expect(device.icon).toContain(`/midi-devices/${device.id}/icon.svg`)
+			expect(device.icon).toContain(
+				`/midi-devices/${midiDeviceFolders().find((entry) => entry.id === device.id)!.path}/icon.svg`
+			)
 			gui.destroy()
 		}
 	})

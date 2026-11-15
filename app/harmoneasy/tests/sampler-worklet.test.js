@@ -2,8 +2,7 @@ import { test, expect } from "vitest"
 import { readFileSync } from "fs"
 import {
 	createSamplerLayer,
-	normaliseSamplerLayer,
-	samplerVelocityGain
+	normaliseSamplerLayer
 } from "../../../packages/audiobus/io/outputs/sampler/sampler-state.js"
 
 const source = readFileSync(
@@ -13,7 +12,6 @@ const source = readFileSync(
 const fixture = () => {
 	const clock = { time: 0 }
 	const Processor = new Function(
-		"samplerVelocityGain",
 		"AudioWorkletProcessor",
 		"sampleRate",
 		"clock",
@@ -22,7 +20,6 @@ const fixture = () => {
 			.replace(/\bcurrentTime\b/g, "clock.time")
 			.replace(/registerProcessor\([^\n]+/, "return LayeredSamplerProcessor")
 	)(
-		samplerVelocityGain,
 		class {
 			port = {}
 		},

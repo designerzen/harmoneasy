@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import {
 	createMidiDeviceStore,
 	midiDeviceFilesPlugin
-} from "audiobus/midi/hardware/device-files.js"
+} from "audiobus/hardware/midi-devices/device-files.js"
 import { useTestMidiProfileFiles, bundledMidiDevices } from "./midi-profile-runtime-setup"
 import {
 	ensureMidiDeviceProfile,
@@ -14,7 +14,7 @@ import {
 	MIDI_DEVICE_PROFILES,
 	refreshMidiDeviceProfiles,
 	setMidiDeviceProfileSource
-} from "../../../packages/audiobus/midi/hardware/device-profiles"
+} from "../../../packages/audiobus/hardware/midi-devices/device-profiles"
 import { INPUT_FACTORIES, createInputById } from "../../../packages/audiobus/io/input-factory"
 import { INPUT_DEFINITIONS } from "../../../packages/audiobus/io/input-definitions"
 import { INPUT_GUIDANCE } from "../source/components/graph/device-card"
@@ -56,7 +56,7 @@ async function root() {
 	return folder
 }
 async function add(folder: string, id: string, filename = `${id}.json`) {
-	const device = path.join(folder, id)
+	const device = path.join(folder, "example", id)
 	await mkdir(device, { recursive: true })
 	await writeFile(path.join(device, filename), JSON.stringify(definition(id)))
 	for (const image of ["icon.svg", "panel.svg"]) {
@@ -73,7 +73,7 @@ describe("runtime device folders", () => {
 		const response = { setHeader: vi.fn(), end: vi.fn(), statusCode: 200 }
 		const next = vi.fn()
 		await use.mock.calls[0][0](
-			{ url: "/test/midi-devices/digit-cmpsr/digit-cmpsr.json", method: "GET" },
+			{ url: "/test/midi-devices/digit-music/cmpsr/digit-cmpsr.json", method: "GET" },
 			response,
 			next
 		)
@@ -84,15 +84,22 @@ describe("runtime device folders", () => {
 		expect(await built.list()).toEqual(
 			await createMidiDeviceStore(() => [bundledMidiDevices]).list()
 		)
-		expect((await built.read("digit-cmpsr/panel.svg"))?.type).toBe("image/svg+xml")
+		expect((await built.read("digit-music/cmpsr/panel.svg"))?.type).toBe("image/svg+xml")
 		expect((await built.read("profile.schema.json"))?.type).toBe("application/json")
-		expect(JSON.parse((await built.read("index.json"))!.bytes.toString())).toContain(
-			"roland-tb-3"
-		)
+		expect(await built.read("device-profiles.ts")).toBeNull()
+		for (const entry of await built.entries()) {
+			expect((await built.read(`${entry.path}/${entry.id}.json`))?.type).toBe(
+				"application/json"
+			)
+		}
+		expect(JSON.parse((await built.read("index.json"))!.bytes.toString())).toContainEqual({
+			id: "roland-tb-3",
+			path: "roland/tb-3"
+		})
 		plugin.configurePreviewServer({ middlewares: { use } })
 		response.end.mockClear()
 		await use.mock.calls[1][0](
-			{ url: "/test/midi-devices/digit-cmpsr/digit-cmpsr.json", method: "GET" },
+			{ url: "/test/midi-devices/digit-music/cmpsr/digit-cmpsr.json", method: "GET" },
 			response,
 			next
 		)
@@ -108,7 +115,7 @@ describe("runtime device folders", () => {
 		expect(MIDI_DEVICE_PROFILES["runtime-controller"].name).toBe("Runtime instrument")
 		expect(INPUT_FACTORIES.some((factory) => factory.id === "runtime-controller")).toBe(true)
 		expect(INPUT_DEFINITIONS["runtime-controller"].icon).toContain(
-			"/runtime-controller/icon.svg"
+			"/example/runtime-controller/icon.svg"
 		)
 		expect(INPUT_GUIDANCE["runtime-controller"].requirements).toContain("Runtime instrument")
 		Object.defineProperty(navigator, "requestMIDIAccess", {
@@ -145,9 +152,9 @@ describe("runtime device folders", () => {
 		const id = "static-known-controller"
 		const fetcher = vi.fn(async (url: string) => {
 			if (url.endsWith("/index.json")) {
-				return new Response(JSON.stringify([id]))
+				return new Response(JSON.stringify([{ id, path: "example/known-controller" }]))
 			}
-			if (url.endsWith(`/${id}/${id}.json`)) {
+			if (url.endsWith(`/example/known-controller/${id}.json`)) {
 				return new Response(
 					JSON.stringify({ ...definition(id), portNames: ["Known Controller"] })
 				)
@@ -155,6 +162,7 @@ describe("runtime device folders", () => {
 			return new Response(null, { status: 404 })
 		})
 		setMidiDeviceProfileSource("https://static.example/midi-devices/", fetcher as typeof fetch)
+		await ensureMidiDeviceProfile(id)
 		await loadMidiProfilesForPorts([{ id: "opaque-os-port", name: "Known Controller" }])
 		expect(MIDI_DEVICE_PROFILES[id].portNames).toEqual(["Known Controller"])
 		expect(INPUT_FACTORIES.some((factory) => factory.id === id)).toBe(true)
@@ -173,9 +181,9 @@ describe("runtime device folders", () => {
 		const folder = await root()
 		await add(folder, "arcana-strum")
 		const store = createMidiDeviceStore(() => [folder, bundledMidiDevices])
-		const file = await store.read("arcana-strum/arcana-strum.json")
+		const file = await store.read("example/arcana-strum/arcana-strum.json")
 		expect(JSON.parse(file!.bytes.toString()).name).toBe("Runtime instrument")
-		expect((await store.read("arcana-strum/panel.svg"))?.type).toBe("image/svg+xml")
+		expect((await store.read("example/arcana-strum/panel.svg"))?.type).toBe("image/svg+xml")
 		expect(await ensureMidiDeviceProfile("../../secret")).toBeUndefined()
 	})
 })

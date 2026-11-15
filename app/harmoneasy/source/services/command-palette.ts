@@ -15,10 +15,17 @@ import {
 	commandSearchScore,
 	normalizeCommandSearch
 } from "../libs/command-search"
+import {
+	getProtocolRegistry,
+	type CommandDescriptor,
+	type Params
+} from "audiobus/io/protocol-registry"
 
 type ValueControl = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
 type Command = {
-	element: HTMLElement
+	element?: HTMLElement
+	descriptor?: CommandDescriptor
+	propertyId?: string
 	label: string
 	context: string
 	fields: ReturnType<typeof commandSearchField>[]
@@ -169,7 +176,11 @@ function currentValue(element: HTMLElement): string {
 	return pressed === null ? "Run" : pressed === "true" ? "On" : "Off"
 }
 
-export function createCommandPalette(root: Document, signal?: AbortSignal) {
+export function createCommandPalette(
+	root: Document,
+	signal?: AbortSignal,
+	registry = getProtocolRegistry()
+) {
 	const dialog = root.querySelector<HTMLDialogElement>("#command-palette")!
 	const search = dialog.querySelector<HTMLInputElement>("#command-search")!
 	const results = dialog.querySelector<HTMLElement>("#command-results")!
@@ -183,6 +194,7 @@ export function createCommandPalette(root: Document, signal?: AbortSignal) {
 	let active = 0
 	let selected: Command | undefined
 	let editor: ValueControl | undefined
+	const argumentEditors = new Map<string, ValueControl>()
 	let previousFocus: HTMLElement | null = null
 	let sourceDialog: HTMLDialogElement | null = null
 
@@ -212,11 +224,53 @@ export function createCommandPalette(root: Document, signal?: AbortSignal) {
 				}
 			})
 			.filter((command) => command.label)
+		commands.push(
+			...registry
+				.list()
+				.filter((command) => command.available)
+				.map((descriptor) => ({
+					descriptor,
+					label: descriptor.title,
+					context: "Application commands",
+					fields: [descriptor.title, descriptor.id, descriptor.description].map(
+						commandSearchField
+					)
+				}))
+		)
+		commands.push(
+			...registry
+				.listProperties()
+				.filter((property) => property.available && !property.readOnly)
+				.map((property) => ({
+					propertyId: property.id,
+					descriptor: {
+						id: property.id,
+						title: `Set ${property.title}`,
+						description: property.description,
+						available: true,
+						inputSchema: {
+							type: "object" as const,
+							properties: { value: property.schema },
+							required: ["value"],
+							additionalProperties: false as const
+						}
+					},
+					label: `Set ${property.title}${property.unit ? ` (${property.unit})` : ""}`,
+					context: "Application properties",
+					fields: [
+						property.title,
+						property.id,
+						property.description,
+						property.unit ?? ""
+					].map(commandSearchField)
+				}))
+		)
 	}
 
 	const resetEditor = () => {
 		selected = undefined
 		editor = undefined
+		argumentEditors.clear()
 		editorPanel.hidden = true
 		results.hidden = false
 		search.setAttribute("aria-expanded", "true")
@@ -257,7 +311,7 @@ export function createCommandPalette(root: Document, signal?: AbortSignal) {
 				text.append(label, context)
 				const value = root.createElement("span")
 				value.className = "command-current-value"
-				value.textContent = currentValue(command.element)
+				value.textContent = command.element ? currentValue(command.element) : "Run"
 				row.append(text, value)
 				row.addEventListener(EVENT_CLICK, () => choose(command), options)
 				return row
@@ -270,8 +324,79 @@ export function createCommandPalette(root: Document, signal?: AbortSignal) {
 	}
 
 	function choose(command: Command) {
+		if (command.descriptor) {
+			const descriptor = command.descriptor
+			if (!Object.keys(descriptor.inputSchema.properties).length) {
+				status.textContent = `Running ${descriptor.title}…`
+				void registry
+					.call(descriptor.id)
+					.then(() => dialog.close())
+					.catch((error) => {
+						status.textContent = error.message
+					})
+				return
+			}
+			selected = command
+			argumentEditors.clear()
+			editorHost.replaceChildren()
+			for (const [name, parameter] of Object.entries(descriptor.inputSchema.properties)) {
+				const label = root.createElement("label")
+				label.textContent = parameter.description ?? name
+				let control: HTMLInputElement | HTMLSelectElement
+				if (parameter.enum || parameter.type === "boolean") {
+					control = root.createElement("select")
+					for (const choice of parameter.enum ?? [true, false]) {
+						const option = root.createElement("option")
+						option.value = String(choice)
+						option.textContent = String(choice)
+						control.append(option)
+					}
+				} else {
+					control = root.createElement("input")
+					control.type = parameter.type === "string" ? "text" : "number"
+					if (control.type === "number") {
+						control.step = parameter.type === "integer" ? "1" : "any"
+						if (parameter.minimum !== undefined) {
+							control.min = String(parameter.minimum)
+						}
+						if (parameter.maximum !== undefined) {
+							control.max = String(parameter.maximum)
+						}
+					}
+				}
+				control.required =
+					command.propertyId && parameter.type === "string"
+						? false
+						: (descriptor.inputSchema.required?.includes(name) ?? false)
+				control.id = `command-argument-${name}`
+				label.append(control)
+				editorHost.append(label)
+				argumentEditors.set(name, control)
+			}
+			editorLabel.textContent = descriptor.title
+			editorLabel.removeAttribute("for")
+			results.hidden = true
+			editorPanel.hidden = false
+			search.setAttribute("aria-expanded", "false")
+			search.removeAttribute("aria-activedescendant")
+			status.textContent = descriptor.description
+			if (command.propertyId) {
+				void registry
+					.getProperty(command.propertyId)
+					.then((value) => {
+						if (selected === command) {
+							status.textContent = `${descriptor.description}. Current value: ${value}`
+						}
+					})
+					.catch((error) => {
+						status.textContent = error.message
+					})
+			}
+			argumentEditors.values().next().value?.focus()
+			return
+		}
 		const element = command.element
-		if (!available(element)) {
+		if (!element || !available(element)) {
 			collect()
 			render()
 			return
@@ -311,6 +436,7 @@ export function createCommandPalette(root: Document, signal?: AbortSignal) {
 		}
 		editor.value = element.value
 		editorLabel.textContent = command.label
+		editorLabel.htmlFor = "command-value"
 		editorHost.replaceChildren(editor)
 		results.hidden = true
 		editorPanel.hidden = false
@@ -393,6 +519,7 @@ export function createCommandPalette(root: Document, signal?: AbortSignal) {
 		EVENT_CANCEL,
 		(event) => {
 			event.preventDefault()
+
 			dialog.close()
 		},
 		options
@@ -449,6 +576,40 @@ export function createCommandPalette(root: Document, signal?: AbortSignal) {
 		EVENT_SUBMIT,
 		(event) => {
 			event.preventDefault()
+			if (selected?.descriptor) {
+				const descriptor = selected.descriptor
+				const args: Params = {}
+				for (const [name, control] of argumentEditors) {
+					if (!control.reportValidity()) {
+						return
+					}
+					if (control.value === "" && !control.required && !selected.propertyId) {
+						continue
+					}
+					const type = descriptor.inputSchema.properties[name].type
+					args[name] =
+						type === "boolean"
+							? control.value === "true"
+							: type === "string"
+								? control.value
+								: Number(control.value)
+				}
+				const request = selected.propertyId
+					? registry.setProperty(selected.propertyId, args.value)
+					: registry.call(descriptor.id, args)
+				void request
+					.then(() => {
+						resetEditor()
+						collect()
+						render()
+						status.textContent = `${descriptor.title} completed.`
+						search.focus()
+					})
+					.catch((error) => {
+						status.textContent = error.message
+					})
+				return
+			}
 			if (!selected || !editor) {
 				return
 			}

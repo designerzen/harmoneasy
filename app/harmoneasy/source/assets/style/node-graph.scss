@@ -173,6 +173,8 @@
 	gap: var(--gap);
 	padding: var(--pad);
 	border: 1px solid color-mix(in oklch, var(--node-accent) 45%, var(--col-line));
+	// A solid base in the category colour tells each kind of component apart at a glance.
+	border-bottom: 4px solid var(--node-accent);
 	border-radius: var(--radius-md);
 	background: var(--col-surface);
 	color: var(--col-fg);
@@ -815,7 +817,8 @@
 	--hue-accent: var(--hue-output);
 }
 
-.node-add-control-surface {
+.node-add-control-surface,
+.node-control-surface {
 	--node-accent: var(--col-control);
 }
 
@@ -851,6 +854,10 @@
 .node-output {
 	--hue-accent: var(--hue-output);
 	min-width: 18rem;
+}
+
+.node-output.is-effect {
+	--hue-accent: var(--hue-effect);
 }
 
 .node-speaker {
@@ -905,6 +912,39 @@
 		animation: audio-signal-flow 0.6s linear infinite;
 		@media (prefers-reduced-motion: reduce) {
 			animation: none;
+		}
+	}
+}
+
+// Section dividers sit in the viewport behind the nodes and never take pointer input.
+#graph .react-flow__viewport-portal {
+	z-index: -1;
+}
+.graph-section {
+	position: absolute;
+	top: 0;
+	left: 0;
+	pointer-events: none;
+	color: var(--col-muted);
+	font-size: var(--text-md);
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	white-space: nowrap;
+	&.is-vertical {
+		border-left: 2px dotted var(--col-line-strong);
+		span {
+			position: absolute;
+			top: 0;
+			left: 0.5rem;
+		}
+	}
+	&.is-horizontal {
+		border-top: 2px dotted var(--col-line-strong);
+		span {
+			position: absolute;
+			top: 0.25rem;
+			left: 0;
 		}
 	}
 }

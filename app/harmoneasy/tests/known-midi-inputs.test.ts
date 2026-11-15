@@ -8,7 +8,7 @@ import InputProfiledMidiDevice from "../../../packages/audiobus/io/inputs/input-
 import {
 	startKnownMidiInputs,
 	type MidiInputDiscovery
-} from "../../../packages/audiobus/midi/hardware/known-midi-inputs"
+} from "../../../packages/audiobus/hardware/midi-devices/known-midi-inputs"
 import { createInputById } from "../../../packages/audiobus/io/input-factory"
 import { deviceDefinition, deviceId } from "../../../packages/audiobus/io/device-definition"
 import { restoreDevice } from "../../../packages/audiobus/io/workspace-devices"
@@ -16,7 +16,7 @@ import {
 	MIDI_DEVICE_PROFILES,
 	matchMidiDeviceProfile,
 	isMidiProfilePortClaimed
-} from "../../../packages/audiobus/midi/hardware/device-profiles"
+} from "../../../packages/audiobus/hardware/midi-devices/device-profiles"
 import {
 	INPUT_EVENT,
 	EVENT_CONNECTED,
@@ -361,7 +361,7 @@ describe("known MIDI instrument profiles", () => {
 		const gui = await input.createGui()
 		expect(gui.querySelector("img")?.alt.toLowerCase()).toContain("strum")
 		expect(gui.querySelector("img")?.getAttribute("src")).toContain(
-			"/midi-devices/arcana-strum/panel.svg"
+			"/midi-devices/arcana/strum/panel.svg"
 		)
 		expect(gui.querySelectorAll('input[type="range"]')).toHaveLength(0)
 		expect(gui.textContent).toContain("do not specify CC or SysEx")

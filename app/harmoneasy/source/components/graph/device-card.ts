@@ -11,7 +11,7 @@ import { EVENT_ERROR } from "audiobus/events/event-constants"
 import {
 	MIDI_DEVICE_PROFILES,
 	onMidiDeviceProfilesChanged
-} from "audiobus/midi/hardware/device-profiles"
+} from "audiobus/hardware/midi-devices/device-profiles"
 
 type Guidance = { icon: string; usedFor: string; usefulFor: string; requirements: string }
 const guide = (
@@ -227,6 +227,12 @@ onMidiDeviceProfilesChanged(() => {
 })
 
 export const OUTPUT_GUIDANCE: Record<OutputId | typeof PINK_TROMBONE_OUTPUT_ID, Guidance> = {
+	protocol: guide(
+		"Link",
+		"Send notes and application commands to another music application.",
+		"Pair a destination, discover its commands and run them from the output controls.",
+		"A cooperating audioBus Protocol application, or a WebMidiLink synth in legacy mode. Open and pair the destination, then connect when ready."
+	),
 	"song-tree": guide(
 		"Tree",
 		"Grow a tree from incoming notes and chords.",

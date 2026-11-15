@@ -4,8 +4,8 @@ import {
 	matchMidiDeviceProfile,
 	MIDI_DEVICE_PROFILES,
 	onMidiDeviceProfilesChanged
-} from "audiobus/midi/hardware/device-profiles"
-import { createMidiDevicePreview } from "audiobus/midi/hardware/device-preview"
+} from "audiobus/hardware/midi-devices/device-profiles"
+import { createMidiDevicePreview } from "audiobus/hardware/midi-devices/device-preview"
 import {
 	EVENT_CANCEL,
 	EVENT_CLICK,
