@@ -65,6 +65,8 @@ Add the **audioBus Protocol** Input to a graph chain. Its panel can open a peer 
 
 Tick **Accept control from any window without pairing** in the Input panel, or set the Input option `acceptUnpaired: true`, then press Connect. The Input then accepts protocol messages from any window that can message it, such as a page that opened or embeds Harmoneasy, without pairing or a code. Each sending window gets its own session and replies go only to that window's origin. Windows with an opaque origin, such as `file://` pages, are ignored, and at most eight windows may connect at once. A paired application can still be attached alongside. The setting is saved with the project and is off by default. Turn it on only for pages you trust: an unpaired window can play notes and, through the interface commands, press any control.
 
+The [remote control demo](https://designerzen.github.io/audiobus-protocol/api/remote-control.html) opens or embeds Harmoneasy and drives it this way: a keyboard, pitch bend, modulation and aftertouch, transport controls, and a browser for every palette control. Deployments that send `Cross-Origin-Opener-Policy: same-origin`, such as the Cloudflare Pages build, cut the link to an opening window, so embed those instead. The **Never Gonna Give You Up — Jam with everything** song preset includes an audioBus Protocol input ready to be controlled.
+
 Embedding hosts can pair programmatically instead:
 
 ```ts

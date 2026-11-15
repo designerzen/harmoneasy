@@ -17,13 +17,23 @@ const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 0))
 const cleanups: (() => void)[] = []
 afterEach(() => cleanups.splice(0).forEach((clean) => clean()))
 
-/** A remote window whose messages reach this window with the given origin. */
-function remoteWindow(origin: string, timeoutMs?: number) {
-	const listeners = new Set<(message: unknown) => void>()
-	const source = {
-		postMessage: (message: string) =>
-			queueMicrotask(() => listeners.forEach((fn) => fn(message)))
-	} as unknown as Window
+/**
+ * A remote window whose messages reach this window with the given origin. Pass `window` to reuse
+ * one sending window, for example after it navigates to another origin.
+ */
+function remoteWindow(
+	origin: string,
+	timeoutMs?: number,
+	existing?: { source: Window; listeners: Set<(message: unknown) => void> }
+) {
+	const listeners = existing?.listeners ?? new Set<(message: unknown) => void>()
+	const source =
+		existing?.source ??
+		({
+			closed: false,
+			postMessage: (message: string) =>
+				queueMicrotask(() => listeners.forEach((fn) => fn(message)))
+		} as unknown as Window)
 	const peer = new Peer(
 		{
 			send: (message) =>
@@ -42,7 +52,7 @@ function remoteWindow(origin: string, timeoutMs?: number) {
 		{ identity: { name: "Controller", version: "1" }, timeoutMs }
 	)
 	cleanups.push(() => peer.close())
-	return { source, peer }
+	return { source, peer, listeners }
 }
 
 function createInput(options: Record<string, any> = {}) {
@@ -167,4 +177,53 @@ it("limits how many unpaired windows may connect", async () => {
 		MAX_UNPAIRED_PEERS
 	)
 	expect(input.unpairedConnections).toHaveLength(MAX_UNPAIRED_PEERS)
+})
+it("starts a fresh session when a window navigates, releasing only that session's notes", async () => {
+	const { input, commands } = createInput({ acceptUnpaired: true })
+	await input.connect()
+	const before = remoteWindow("https://before.example")
+	const other = remoteWindow("https://other.example")
+	await before.peer.connect()
+	await other.peer.connect()
+	await before.peer.call("midi.noteOn", { note: 60 })
+	other.peer.sendMidi([0x90, 72, 100])
+	await settle()
+	before.peer.close()
+	const after = remoteWindow("https://after.example", undefined, before)
+	await after.peer.connect()
+	expect(input.unpairedConnections).toHaveLength(2)
+	const released = commands.slice(2)
+	expect(released.map((command) => [command.type, command.number])).toEqual([[NOTE_OFF, 60]])
+	expect(await after.peer.call("app.name")).toBe("Harmoneasy")
+})
+
+it("frees the slots of closed windows before applying the limit", async () => {
+	const { input } = createInput({ acceptUnpaired: true })
+	await input.connect()
+	const remotes = Array.from({ length: MAX_UNPAIRED_PEERS }, (_, index) =>
+		remoteWindow(`https://window-${index}.example`)
+	)
+	await Promise.all(remotes.map((remote) => remote.peer.connect()))
+	;(remotes[0].source as { closed: boolean }).closed = true
+	const late = remoteWindow("https://late.example", 50)
+	await late.peer.connect()
+	expect(input.unpairedConnections).toHaveLength(MAX_UNPAIRED_PEERS)
+})
+
+it("cancels the settings reconnect when the input is destroyed first", async () => {
+	const { input } = createInput({ acceptUnpaired: true })
+	const paired = remoteWindow("https://paired.example")
+	input.attach(paired.source, "https://paired.example")
+	await input.connect()
+	const panel = await input.createGui()
+	const checkbox = panel.querySelector<HTMLInputElement>('input[type="checkbox"]')!
+	checkbox.checked = false
+	checkbox.dispatchEvent(new Event("change"))
+	input.destroy()
+	await settle()
+	await settle()
+	expect(input.isConnected).toBe(false)
+	const stranger = remoteWindow("https://stranger.example", 30)
+	await expect(stranger.peer.connect()).rejects.toMatchObject({ code: "timeout" })
+	expect(input.unpairedConnections).toHaveLength(0)
 })

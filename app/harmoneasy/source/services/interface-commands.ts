@@ -43,18 +43,38 @@ const slug = (text: string) =>
 		.replace(/[^a-z0-9]+/g, "-")
 		.replace(/^-|-$/g, "")
 
-/** IDs derive from context and label, so they stay stable while the interface is unchanged. */
-function identify(root: Document): Map<string, PaletteControl> {
-	const controls = new Map<string, PaletteControl>()
-	for (const control of paletteControls(root, root.getElementById("command-palette"))) {
+/**
+ * IDs derive from context and label. Each element keeps its ID while it is on the page, so a
+ * stale ID never moves to another control when one is hidden, disabled or reordered; an ID is
+ * only reused once its element has been removed, such as when a panel is re-rendered.
+ */
+function createIdentities(root: Document) {
+	const byElement = new WeakMap<HTMLElement, string>()
+	const byId = new Map<string, WeakRef<HTMLElement>>()
+	const assign = (control: PaletteControl): string => {
 		const base = [slug(control.context), slug(control.label)].filter(Boolean).join("/")
 		let id = base
-		for (let index = 2; controls.has(id); index++) {
+		for (let index = 2; ; index++) {
+			const holder = byId.get(id)?.deref()
+			if (!holder || !holder.isConnected) {
+				if (holder) {
+					byElement.delete(holder)
+				}
+				break
+			}
 			id = `${base}~${index}`
 		}
-		controls.set(id, control)
+		byElement.set(control.element, id)
+		byId.set(id, new WeakRef(control.element))
+		return id
 	}
-	return controls
+	return (): Map<string, PaletteControl> => {
+		const controls = new Map<string, PaletteControl>()
+		for (const control of paletteControls(root, root.getElementById("command-palette"))) {
+			controls.set(byElement.get(control.element) ?? assign(control), control)
+		}
+		return controls
+	}
 }
 
 function describe(id: string, { element, label, context }: PaletteControl): Json {
@@ -73,16 +93,18 @@ function describe(id: string, { element, label, context }: PaletteControl): Json
 	}
 	if (element instanceof HTMLInputElement && type === "number") {
 		for (const bound of ["min", "max", "step"] as const) {
-			if (element[bound] !== "") {
-				description[bound] = Number(element[bound])
+			// Only finite metadata is valid JSON; `step="any"` is omitted.
+			const value = Number(element[bound])
+			if (element[bound] !== "" && Number.isFinite(value)) {
+				description[bound] = value
 			}
 		}
 	}
 	return description
 }
 
-function find(root: Document, id: string): PaletteControl {
-	const control = identify(root).get(id)
+function find(identify: () => Map<string, PaletteControl>, id: string): PaletteControl {
+	const control = identify().get(id)
 	if (!control || !available(control.element)) {
 		throw new ProtocolError(
 			"unavailable",
@@ -98,6 +120,7 @@ function find(root: Document, id: string): PaletteControl {
  * pickers or audio start, may still need local interaction.
  */
 export function registerInterfaceCommands(root: Document, registry = getProtocolRegistry()) {
+	const identify = createIdentities(root)
 	const string = (description: string) => ({ type: "string" as const, description })
 	const removals = [
 		registry.register({
@@ -114,7 +137,7 @@ export function registerInterfaceCommands(root: Document, registry = getProtocol
 			},
 			execute: ({ query }: Params) => {
 				const needle = typeof query === "string" ? query.toLowerCase().trim() : ""
-				return [...identify(root)]
+				return [...identify()]
 					.filter(([, { label, context }]) =>
 						`${context} ${label}`.toLowerCase().includes(needle)
 					)
@@ -132,7 +155,7 @@ export function registerInterfaceCommands(root: Document, registry = getProtocol
 				additionalProperties: false
 			},
 			execute: ({ id }: Params) => {
-				const control = find(root, id as string)
+				const control = find(identify, id as string)
 				if (!["action", "toggle"].includes(kind(control.element))) {
 					throw new ProtocolError(
 						"invalid_params",
@@ -158,7 +181,7 @@ export function registerInterfaceCommands(root: Document, registry = getProtocol
 				additionalProperties: false
 			},
 			execute: ({ id, value }: Params) => {
-				const control = find(root, id as string)
+				const control = find(identify, id as string)
 				const element = control.element
 				if (!isValueControl(element) || ["action", "toggle"].includes(kind(element))) {
 					throw new ProtocolError(

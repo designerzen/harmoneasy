@@ -84,3 +84,40 @@ it("rejects unknown controls, wrong operations, disabled choices and out-of-rang
 	remove()
 	expect(registry.list()).toEqual([])
 })
+it("never moves an ID to another control, and lists fields with step any", async () => {
+	document.body.innerHTML = `
+		<section data-midi-label="Tracks">
+			<button type="button" id="first">Delete</button>
+			<button type="button" id="second">Delete</button>
+			<label>Gain <input type="number" step="any" value="0.5"></label>
+		</section>`
+	const registry = new CommandRegistry()
+	registerInterfaceCommands(document, registry)
+	const controls = (await registry.call("ui.list")) as any[]
+	expect(controls.map((control) => control.id)).toEqual([
+		"tracks/delete",
+		"tracks/delete~2",
+		"tracks/gain"
+	])
+	expect(controls[2]).not.toHaveProperty("step")
+	const clicked: string[] = []
+	for (const id of ["first", "second"]) {
+		document.getElementById(id)!.addEventListener(EVENT_CLICK, () => clicked.push(id))
+	}
+	;(document.getElementById("first") as HTMLButtonElement).disabled = true
+	await expect(registry.call("ui.activate", { id: "tracks/delete" })).rejects.toMatchObject({
+		code: "unavailable"
+	})
+	expect(clicked).toEqual([])
+	await registry.call("ui.activate", { id: "tracks/delete~2" })
+	expect(clicked).toEqual(["second"])
+	// Once removed from the page, an ID may pass to a re-rendered control of the same name.
+	document.getElementById("first")!.remove()
+	const replacement = document.createElement("button")
+	replacement.type = "button"
+	replacement.textContent = "Delete"
+	document.querySelector("section")!.prepend(replacement)
+	expect(
+		((await registry.call("ui.list", { query: "delete" })) as any[]).map((c) => c.id)
+	).toEqual(["tracks/delete", "tracks/delete~2"])
+})
