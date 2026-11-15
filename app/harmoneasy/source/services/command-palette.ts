@@ -21,7 +21,12 @@ import {
 	type Params
 } from "audiobus/io/protocol-registry"
 
-type ValueControl = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+export type ValueControl = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+export interface PaletteControl {
+	element: HTMLElement
+	label: string
+	context: string
+}
 type Command = {
 	element?: HTMLElement
 	descriptor?: CommandDescriptor
@@ -47,7 +52,7 @@ const TEXT_TYPES = new Set([
 	"week"
 ])
 
-function isValueControl(element: HTMLElement): element is ValueControl {
+export function isValueControl(element: HTMLElement): element is ValueControl {
 	return (
 		element instanceof HTMLInputElement ||
 		element instanceof HTMLSelectElement ||
@@ -118,7 +123,7 @@ function controlContext(element: HTMLElement): string {
 	return names.join(" / ")
 }
 
-function available(element: HTMLElement): boolean {
+export function available(element: HTMLElement): boolean {
 	if (
 		!element.isConnected ||
 		element.matches(':disabled, [aria-disabled="true"]') ||
@@ -162,7 +167,7 @@ function available(element: HTMLElement): boolean {
 	return true
 }
 
-function currentValue(element: HTMLElement): string {
+export function currentValue(element: HTMLElement): string {
 	if (element instanceof HTMLSelectElement) {
 		return element.selectedOptions[0]?.textContent ?? ""
 	}
@@ -175,6 +180,41 @@ function currentValue(element: HTMLElement): string {
 	const pressed = element.getAttribute("aria-pressed")
 	return pressed === null ? "Run" : pressed === "true" ? "On" : "Off"
 }
+
+/** The visible controls the palette offers, in document order. Remote commands use the same list. */
+export function paletteControls(scope: ParentNode, exclude?: Element | null): PaletteControl[] {
+	return [...scope.querySelectorAll<HTMLElement>(CONTROL_SELECTOR)]
+		.filter(
+			(element) =>
+				!exclude?.contains(element) &&
+				element.id !== "btn-command-palette" &&
+				available(element)
+		)
+		.map((element) => ({
+			element,
+			label: controlLabel(element),
+			context: controlContext(element)
+		}))
+		.filter((control) => control.label)
+}
+
+/** Set a value as a person would, bypassing React's value tracker, with the original UI's events. */
+export function applyControlValue(target: ValueControl, value: string): void {
+	const prototype =
+		target instanceof HTMLSelectElement
+			? HTMLSelectElement.prototype
+			: target instanceof HTMLTextAreaElement
+				? HTMLTextAreaElement.prototype
+				: HTMLInputElement.prototype
+	Object.getOwnPropertyDescriptor(prototype, "value")!.set!.call(target, value)
+	target.dispatchEvent(new Event(EVENT_INPUT, { bubbles: true }))
+	target.dispatchEvent(new Event(EVENT_CHANGE, { bubbles: true }))
+	target.dispatchEvent(new FocusEvent(EVENT_BLUR))
+	target.dispatchEvent(new FocusEvent(EVENT_FOCUS_OUT, { bubbles: true }))
+}
+
+/** Remote interface commands drive the palette's own controls, so the palette does not list them. */
+export const REMOTE_INTERFACE_COMMAND_PREFIX = "ui."
 
 export function createCommandPalette(
 	root: Document,
@@ -200,34 +240,27 @@ export function createCommandPalette(
 
 	const collect = () => {
 		const scope = sourceDialog ?? root
-		commands = [...scope.querySelectorAll<HTMLElement>(CONTROL_SELECTOR)]
-			.filter(
-				(element) =>
-					!dialog.contains(element) &&
-					element.id !== "btn-command-palette" &&
-					available(element)
-			)
-			.map((element) => {
-				const label = controlLabel(element)
-				const context = controlContext(element)
-				const choices =
-					element instanceof HTMLSelectElement
-						? [...element.options].map((option) => option.text).join(" ")
-						: ""
-				return {
-					element,
-					label,
-					context,
-					fields: [label, context, `${element.title} ${element.id} ${choices}`].map(
-						commandSearchField
-					)
-				}
-			})
-			.filter((command) => command.label)
+		commands = paletteControls(scope, dialog).map(({ element, label, context }) => {
+			const choices =
+				element instanceof HTMLSelectElement
+					? [...element.options].map((option) => option.text).join(" ")
+					: ""
+			return {
+				element,
+				label,
+				context,
+				fields: [label, context, `${element.title} ${element.id} ${choices}`].map(
+					commandSearchField
+				)
+			}
+		})
 		commands.push(
 			...registry
 				.list()
-				.filter((command) => command.available)
+				.filter(
+					(command) =>
+						command.available && !command.id.startsWith(REMOTE_INTERFACE_COMMAND_PREFIX)
+				)
 				.map((descriptor) => ({
 					descriptor,
 					label: descriptor.title,
@@ -636,18 +669,7 @@ export function createCommandPalette(
 				status.textContent = "This choice is no longer available. Search again."
 				return
 			}
-			// Bypass React's value tracker, then use the same events as the original UI.
-			const prototype =
-				target instanceof HTMLSelectElement
-					? HTMLSelectElement.prototype
-					: target instanceof HTMLTextAreaElement
-						? HTMLTextAreaElement.prototype
-						: HTMLInputElement.prototype
-			Object.getOwnPropertyDescriptor(prototype, "value")!.set!.call(target, editor.value)
-			target.dispatchEvent(new Event(EVENT_INPUT, { bubbles: true }))
-			target.dispatchEvent(new Event(EVENT_CHANGE, { bubbles: true }))
-			target.dispatchEvent(new FocusEvent(EVENT_BLUR))
-			target.dispatchEvent(new FocusEvent(EVENT_FOCUS_OUT, { bubbles: true }))
+			applyControlValue(target, editor.value)
 			const label = selected.label
 			resetEditor()
 			collect()

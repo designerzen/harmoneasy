@@ -1,0 +1,170 @@
+// @vitest-environment happy-dom
+import { afterEach, expect, it } from "vitest"
+import InputProtocol, { MAX_UNPAIRED_PEERS } from "audiobus/io/inputs/input-protocol"
+import { Peer, CommandRegistry, EMPTY_SCHEMA } from "audiobus/io/protocol-registry"
+import {
+	INPUT_EVENT,
+	NOTE_ON,
+	NOTE_OFF,
+	PITCH_BEND,
+	CONTROL_CHANGE,
+	PROGRAM_CHANGE
+} from "audiobus/commands/commands"
+import { POLYPHONIC_PRESSURE, CHANNEL_PRESSURE } from "audiobus/midi/midi-command-conversion"
+import { EVENT_MESSAGE } from "audiobus/events/event-constants"
+
+const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 0))
+const cleanups: (() => void)[] = []
+afterEach(() => cleanups.splice(0).forEach((clean) => clean()))
+
+/** A remote window whose messages reach this window with the given origin. */
+function remoteWindow(origin: string, timeoutMs?: number) {
+	const listeners = new Set<(message: unknown) => void>()
+	const source = {
+		postMessage: (message: string) =>
+			queueMicrotask(() => listeners.forEach((fn) => fn(message)))
+	} as unknown as Window
+	const peer = new Peer(
+		{
+			send: (message) =>
+				queueMicrotask(() =>
+					window.dispatchEvent(
+						new MessageEvent(EVENT_MESSAGE, { data: message, origin, source })
+					)
+				),
+			listen: (receive) => {
+				listeners.add(receive)
+				return () => {
+					listeners.delete(receive)
+				}
+			}
+		},
+		{ identity: { name: "Controller", version: "1" }, timeoutMs }
+	)
+	cleanups.push(() => peer.close())
+	return { source, peer }
+}
+
+function createInput(options: Record<string, any> = {}) {
+	const registry = new CommandRegistry()
+	registry.register({
+		id: "app.name",
+		title: "Name",
+		description: "",
+		inputSchema: EMPTY_SCHEMA,
+		execute: () => "Harmoneasy"
+	})
+	const input = new InputProtocol({ registry, ...options })
+	const commands: any[] = []
+	input.addEventListener(INPUT_EVENT, (event) => commands.push((event as CustomEvent).detail))
+	cleanups.push(() => input.destroy())
+	return { input, commands }
+}
+
+it("offers discoverable MIDI commands alongside application commands and plays them into its chain", async () => {
+	const { input, commands } = createInput()
+	const remote = remoteWindow("https://paired.example")
+	input.attach(remote.source, "https://paired.example")
+	await input.connect()
+	const ids = (await remote.peer.discover()).map((command) => command.id)
+	expect(ids).toEqual(
+		expect.arrayContaining([
+			"app.name",
+			"midi.noteOn",
+			"midi.noteOff",
+			"midi.polyAftertouch",
+			"midi.channelAftertouch",
+			"midi.pitchBend",
+			"midi.controlChange",
+			"midi.programChange",
+			"midi.allNotesOff"
+		])
+	)
+	expect((await remote.peer.listBundles()).map((bundle) => bundle.id)).toContain(
+		"org.audiobus.midi"
+	)
+	expect(await remote.peer.call("app.name")).toBe("Harmoneasy")
+	await remote.peer.call("midi.noteOn", { note: 60, velocity: 90, channel: 2 })
+	await remote.peer.call("midi.polyAftertouch", { note: 60, pressure: 70, channel: 2 })
+	await remote.peer.call("midi.channelAftertouch", { pressure: 40, channel: 2 })
+	await remote.peer.call("midi.pitchBend", { value: 8191, channel: 2 })
+	await remote.peer.call("midi.controlChange", { controller: 1, value: 64 })
+	await remote.peer.call("midi.programChange", { program: 5 })
+	await remote.peer.call("midi.noteOff", { note: 60, channel: 2 })
+	await expect(remote.peer.call("midi.noteOn", { note: 128 })).rejects.toMatchObject({
+		code: "invalid_params"
+	})
+	expect(commands.map((command) => command.type)).toEqual([
+		NOTE_ON,
+		POLYPHONIC_PRESSURE,
+		CHANNEL_PRESSURE,
+		PITCH_BEND,
+		CONTROL_CHANGE,
+		PROGRAM_CHANGE,
+		NOTE_OFF
+	])
+	expect(commands[0]).toMatchObject({ number: 60, velocity: 90, channel: 2 })
+	// A held note started by a command is released on disconnect, like WebMidiLink MIDI.
+	await remote.peer.call("midi.noteOn", { note: 64 })
+	await input.disconnect()
+	expect(commands.at(-1)).toMatchObject({ type: NOTE_OFF, number: 64 })
+})
+
+it("ignores unpaired windows unless unpaired control is accepted", async () => {
+	const { input } = createInput()
+	await expect(input.connect()).rejects.toThrow("Pair an application")
+	const remote = remoteWindow("https://anyone.example", 30)
+	await expect(remote.peer.connect()).rejects.toMatchObject({ code: "timeout" })
+	expect(input.unpairedConnections).toHaveLength(0)
+})
+
+it("accepts control from any window when unpaired control is enabled, one session per window", async () => {
+	const { input, commands } = createInput({ acceptUnpaired: true })
+	await input.connect()
+	expect(input.isConnected).toBe(true)
+	const first = remoteWindow("https://one.example")
+	const second = remoteWindow("https://two.example")
+	await first.peer.connect()
+	await second.peer.connect()
+	expect(input.unpairedConnections).toHaveLength(2)
+	expect(await second.peer.call("app.name")).toBe("Harmoneasy")
+	await first.peer.call("midi.noteOn", { note: 62 })
+	first.peer.sendMidi([0x90, 67, 100])
+	await settle()
+	expect(commands.map((command) => command.number)).toEqual([62, 67])
+	// Opaque origins cannot be answered without broadcasting, so they are ignored.
+	window.dispatchEvent(
+		new MessageEvent(EVENT_MESSAGE, {
+			data: "midi,90,40,64",
+			origin: "null",
+			source: {} as Window
+		})
+	)
+	await settle()
+	expect(commands).toHaveLength(2)
+	expect(input.unpairedConnections).toHaveLength(2)
+	await input.disconnect()
+	expect(input.unpairedConnections).toHaveLength(0)
+	expect(commands.slice(2).map((command) => [command.type, command.number])).toEqual(
+		expect.arrayContaining([
+			[NOTE_OFF, 62],
+			[NOTE_OFF, 67]
+		])
+	)
+	first.peer.sendMidi([0x90, 69, 100])
+	await settle()
+	expect(commands.some((command) => command.number === 69)).toBe(false)
+})
+
+it("limits how many unpaired windows may connect", async () => {
+	const { input } = createInput({ acceptUnpaired: true })
+	await input.connect()
+	const remotes = Array.from({ length: MAX_UNPAIRED_PEERS + 1 }, (_, index) =>
+		remoteWindow(`https://window-${index}.example`, 30)
+	)
+	const results = await Promise.allSettled(remotes.map((remote) => remote.peer.connect()))
+	expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(
+		MAX_UNPAIRED_PEERS
+	)
+	expect(input.unpairedConnections).toHaveLength(MAX_UNPAIRED_PEERS)
+})

@@ -26,13 +26,44 @@ Harmoneasy registers these commands after its clock and transport are initialize
 | `transport.stop` | `{}` | updated transport state |
 | `app.panic` | `{}` | `null` |
 
-Tempo is restricted to 10–303 BPM and is available only when the internal clock is locally controlled. Start/stop are unavailable while following shared, MIDI, or DVS transport, matching the local transport controls. Calls use application services, not simulated button clicks. The palette includes registered commands alongside its existing visible UI controls; argument forms are generated from the command schemas. Remote calls use the same registry and validation. Additional graph, preset, and device commands can be registered using this pattern; they are not yet implemented.
+Tempo is restricted to 10–303 BPM and is available only when the internal clock is locally controlled. Start/stop are unavailable while following shared, MIDI, or DVS transport, matching the local transport controls. Calls use application services, not simulated button clicks. The palette includes registered commands alongside its existing visible UI controls; argument forms are generated from the command schemas. Remote calls use the same registry and validation.
+
+### Interface controls
+
+Everything else the command palette offers is available remotely through three commands. They use the palette's own discovery, so a control is listed exactly when the palette would offer it: visible, enabled and outside closed dialogs.
+
+| ID | Arguments | Result |
+| --- | --- | --- |
+| `ui.list` | `{query?: string}` | `[{id, label, context, kind, value, options?, min?, max?, step?}]` |
+| `ui.activate` | `{id}` | the control after pressing it |
+| `ui.setValue` | `{id, value: string}` | the control after setting it |
+
+IDs combine the control's context and label, such as `transport/play`, with `~2` added to repeated names. They stay stable while the interface is unchanged; list again after opening a dialog or adding a device. `kind` is `action` or `toggle` for `ui.activate`, and `choice`, `number` or `text` for `ui.setValue`. Choices accept an option's text or value; numbers are checked against the control's range. Values are applied with the same events as a person editing the control. Controls that need a browser user gesture, such as file pickers or starting audio, may still need local interaction. The palette does not list the `ui.*` commands themselves.
+
+### MIDI commands
+
+Each audioBus Protocol Input also offers discoverable MIDI commands, grouped as the `org.audiobus.midi` version 1 bundle. They play into that Input's chain exactly like WebMidiLink MIDI from the same peer, so held notes are released on disconnect.
+
+| ID | Arguments |
+| --- | --- |
+| `midi.noteOn` | `note`, `velocity?` (1–127, default 100), `channel?` (1–16, default 1) |
+| `midi.noteOff` | `note`, `velocity?`, `channel?` |
+| `midi.polyAftertouch` | `note`, `pressure`, `channel?` |
+| `midi.channelAftertouch` | `pressure`, `channel?` |
+| `midi.pitchBend` | `value` (−8192 to 8191, 0 is centre), `channel?` |
+| `midi.controlChange` | `controller`, `value`, `channel?` |
+| `midi.programChange` | `program`, `channel?` |
+| `midi.allNotesOff` | `channel?` |
 
 Subscribe to `transport.changed` for changes. Calls publish immediately; local controls, external clocks and room changes are observed every 100 ms. `commands.changed` tells clients to refresh discovery, including availability. `transport.changed` is retained: `subscribeState('transport.changed')` returns the current `{bpm, running, clockSource}` in the subscription response, captured atomically with it, so no separate `transport.get` is needed and no change can fall between the two.
 
 ## Pair another application
 
-Add the **audioBus Protocol** Input to a graph chain. Its panel can open a peer application's HTTP(S) URL, retaining its window reference and exact origin. Once that application has installed its listener, press Connect. The peer application must implement audioBus Protocol; existing OpenDAW does not gain support simply by opening its URL. There is no automatic acceptance of arbitrary message senders.
+Add the **audioBus Protocol** Input to a graph chain. Its panel can open a peer application's HTTP(S) URL, retaining its window reference and exact origin. Once that application has installed its listener, press Connect. The peer application must implement audioBus Protocol; existing OpenDAW does not gain support simply by opening its URL. By default there is no automatic acceptance of arbitrary message senders.
+
+### Unpaired control
+
+Tick **Accept control from any window without pairing** in the Input panel, or set the Input option `acceptUnpaired: true`, then press Connect. The Input then accepts protocol messages from any window that can message it, such as a page that opened or embeds Harmoneasy, without pairing or a code. Each sending window gets its own session and replies go only to that window's origin. Windows with an opaque origin, such as `file://` pages, are ignored, and at most eight windows may connect at once. A paired application can still be attached alongside. The setting is saved with the project and is off by default. Turn it on only for pages you trust: an unpaired window can play notes and, through the interface commands, press any control.
 
 Embedding hosts can pair programmatically instead:
 
