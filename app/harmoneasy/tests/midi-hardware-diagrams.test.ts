@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { readFileSync } from "node:fs"
+import { readFileSync, readdirSync } from "node:fs"
 import path from "node:path"
 import { describe, expect, it } from "vitest"
 import { MIDI_DEVICE_DIRECTORY } from "audiobus/midi/hardware/device-files.js"
@@ -14,7 +14,14 @@ const devices = [
 	"cyclone-analogic-tt-303",
 	"teenage-engineering-op-1",
 	"roland-s-1",
-	"roland-tb-3"
+	"roland-tb-3",
+	...readdirSync(MIDI_DEVICE_DIRECTORY).filter(
+		(id) =>
+			id.startsWith("korg-volca-") ||
+			/^roland-(?:a-01|jp-08|ju-06|jx-03|vp-03|tb-03|tr-09|se-02|sh-01a|d-05|tr-08|ju-06a|tr-06|jd-08|jx-08|jupiter-08|n-vision)$/.test(
+				id
+			)
+	)
 ]
 
 describe.each(devices)("%s overhead diagrams", (id) => {

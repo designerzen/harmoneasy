@@ -64,7 +64,6 @@ describe("documented instrument registry folders", () => {
 			"Launchkey Mini MK4",
 			"Launchkey Mini MK3 DAW",
 			"TB-303",
-			"TB-03",
 			"TB-3 virtual copy"
 		]) {
 			expect(matchMidiDeviceProfile({ id: "opaque", name })).toBeUndefined()
