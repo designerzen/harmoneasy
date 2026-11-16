@@ -77,10 +77,14 @@ export function roomFallbackHtml(roomPath, playPath) {
   </main>
   <script>
     const play = ${play};
+    const root = play.slice(0, -5);
+    const parts = location.pathname.startsWith(root) && location.pathname.slice(root.length).split("/").includes("parts");
     const playing = location.pathname.startsWith(play);
-    const destination = new URL(playing ? play : ${target}, location.origin);
+    const destination = new URL(parts ? root : playing ? play : ${target}, location.origin);
     destination.search = location.search;
-    if (playing) {
+    if (parts) {
+      destination.searchParams.set("parts-route", location.pathname.slice(root.length));
+    } else if (playing) {
       // The app restores the readable /play/{artist}/{title} address.
       destination.searchParams.set("play", location.pathname.slice(play.length));
     }
@@ -177,6 +181,7 @@ export function roomPagesPlugin() {
 				throw new Error("Missing Harmoneasy HTML entry point")
 			}
 			this.emitFile({ type: "asset", fileName: "room/index.html", source: entry.source })
+			this.emitFile({ type: "asset", fileName: "parts/v1/index.html", source: entry.source })
 			const assets = directory()
 			this.emitFile({ type: "asset", fileName: "play/index.html", source: assets.html })
 			this.emitFile({ type: "asset", fileName: assets.fileName, source: assets.json })

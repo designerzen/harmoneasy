@@ -6,6 +6,8 @@
 
 [Live app](https://designerzen.github.io/harmoneasy/) · [Issues](https://github.com/designerzen/harmoneasy/issues) · [Discussions](https://github.com/designerzen/harmoneasy/discussions)
 
+[Preset URL API guide](docs/preset-url-api.md): build and share custom setups with `/parts/v1/`, extend any preset, or supply a complete workspace through query parameters. Includes clickable examples for MIDI, speech, ensembles and multi-chain setups.
+
 HarmonEasy connects musical inputs to instruments, MIDI devices, notation, speech and haptics through editable transformation chains. Use it to harmonise live playing, build chord and arpeggio patterns, remix imported notes, explore alternative controllers, make accessible musical feedback, or play together in a shared room.
 
 ## Getting started

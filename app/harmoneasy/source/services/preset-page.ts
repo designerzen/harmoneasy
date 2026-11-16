@@ -7,6 +7,7 @@ import { loadPlayPage, playRoute } from "./play-page"
 import { validBinding, type MidiBinding } from "./midi-controls"
 import { OUTPUT_DEFINITIONS } from "audiobus/io/output-definitions"
 import type { PresetSetup } from "audiobus/io/preset-library"
+import { loadPartsPage, parsePartsUrl } from "./parts-url"
 
 export interface PresetPage {
 	format: "harmoneasy-preset"
@@ -183,6 +184,20 @@ export function presetPageUrl(location: string, base: string): URL | undefined {
 }
 
 export async function loadPresetPage(
+	location: string,
+	base: string,
+	fetcher = fetch
+): Promise<PresetPage | undefined> {
+	const parts = parsePartsUrl(location, base)
+	if (parts) {
+		return loadPartsPage(parts, base, (source, root) =>
+			loadLegacyPresetPage(source, root, fetcher)
+		)
+	}
+	return loadLegacyPresetPage(location, base, fetcher)
+}
+
+async function loadLegacyPresetPage(
 	location: string,
 	base: string,
 	fetcher = fetch

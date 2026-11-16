@@ -23,6 +23,7 @@ import { createNetronomeLink } from "./services/netronome-link"
 import { readRoomUrl } from "./services/room-url"
 import { loadPresetPage, presetWorkspace } from "./services/preset-page"
 import { PLAY_REDIRECT_KEY, playRoute, playUrl } from "./services/play-page"
+import { restorePartsUrl } from "./services/parts-url"
 import { createMidiControlPanel } from "./services/midi-control-panel"
 import { startKnownMidiInputs } from "audiobus/hardware/midi-devices/known-midi-inputs"
 import { showMidiDeviceDisconnected } from "./services/midi-device-errors"
@@ -853,6 +854,10 @@ const startContexts = createStartContexts(startDialog, (setup) =>
 	startApplication(startDialog.querySelector<HTMLButtonElement>(".preset-apply-button")!, setup)
 )
 try {
+	const restored = restorePartsUrl(window.location.href, import.meta.env.BASE_URL)
+	if (restored.href !== window.location.href) {
+		history.replaceState(history.state, "", restored)
+	}
 	const play = playRoute(window.location.href, import.meta.env.BASE_URL)
 	if (play && new URLSearchParams(window.location.search).has(PLAY_REDIRECT_KEY)) {
 		const url = playUrl(play, import.meta.env.BASE_URL, window.location.origin)
