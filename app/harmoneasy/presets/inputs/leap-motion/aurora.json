@@ -2,7 +2,7 @@
 	"format": "harmoneasy-preset",
 	"version": 1,
 	"name": "Leap Motion Aurora",
-	"description": "Hand position blooms into a slow minor pad while an independent bell voice remembers earlier gestures. Connect Leap Motion with its browser SDK available. Move left/right for pitch and lift your hand for velocity; leave space for the bloom and echoes.",
+	"description": "Hand position blooms into a slow minor pad while an independent bell voice remembers earlier gestures. Connect a Leap Motion, or switch on the camera, and set the input to Theremin glide. Move left/right for pitch and lift your hand for velocity; leave space for the bloom and echoes.",
 	"clock": {
 		"bpm": 68,
 		"swing": 0,
@@ -241,7 +241,7 @@
 	"catalogue": {
 		"id": "performance:leap-motion/aurora",
 		"category": "Performance instruments",
-		"useCase": "Connect Leap Motion with its browser SDK available. Move left/right for pitch and lift your hand for velocity; leave space for the bloom and echoes.",
+		"useCase": "Connect a Leap Motion, or switch on the camera, and set the input to Theremin glide. Move left/right for pitch and lift your hand for velocity; leave space for the bloom and echoes.",
 		"order": 174,
 		"kind": "workspace",
 		"stepSummaries": [
