@@ -277,8 +277,8 @@ importers:
         specifier: ^2.0.28
         version: 2.0.28
       audiobus-protocol:
-        specifier: git+https://github.com/designerzen/audiobus-protocol.git#83637433b919b7a0652787b1561a5e51fbe15801
-        version: https://codeload.github.com/designerzen/audiobus-protocol/tar.gz/83637433b919b7a0652787b1561a5e51fbe15801
+        specifier: git+https://github.com/designerzen/audiobus-protocol.git#main
+        version: https://codeload.github.com/designerzen/audiobus-protocol/tar.gz/4946ba64298404e745fcfe8b98914d51de05a09f
       butterchurn:
         specifier: ^2.6.7
         version: 2.6.7
@@ -2496,8 +2496,8 @@ packages:
     resolution: {integrity: sha512-+q/t7Ekv1EDY2l6Gda6LLiX14rU9TV20Wa3ofeQmwPFZbOMo9DXrLbOjFaaclkXKWidIaopwAObQDqwWtGUjqg==}
     engines: {node: '>= 4.0.0'}
 
-  audiobus-protocol@https://codeload.github.com/designerzen/audiobus-protocol/tar.gz/83637433b919b7a0652787b1561a5e51fbe15801:
-    resolution: {gitHosted: true, integrity: sha512-a+bhDzMbniFBU8tLSyIUruAPlu5Ln84jIrrVhu6rCJKmjfcvQJqf7/Tr+YN3i7Tq9pPvoQWcDPw0vMUmJH4oRw==, tarball: https://codeload.github.com/designerzen/audiobus-protocol/tar.gz/83637433b919b7a0652787b1561a5e51fbe15801}
+  audiobus-protocol@https://codeload.github.com/designerzen/audiobus-protocol/tar.gz/4946ba64298404e745fcfe8b98914d51de05a09f:
+    resolution: {gitHosted: true, integrity: sha512-tQQtxx23/RGzS3djQYL+rByXFnIIvU4rtXtfN5XBd393t6Zlcdm3WYTUUctz86FdL3SBl7nGlK41lDhVuivu+w==, tarball: https://codeload.github.com/designerzen/audiobus-protocol/tar.gz/4946ba64298404e745fcfe8b98914d51de05a09f}
     version: 0.3.0
 
   automation-events@7.1.15:
@@ -7143,7 +7143,7 @@ snapshots:
 
   at-least-node@1.0.0: {}
 
-  audiobus-protocol@https://codeload.github.com/designerzen/audiobus-protocol/tar.gz/83637433b919b7a0652787b1561a5e51fbe15801: {}
+  audiobus-protocol@https://codeload.github.com/designerzen/audiobus-protocol/tar.gz/4946ba64298404e745fcfe8b98914d51de05a09f: {}
 
   automation-events@7.1.15:
     dependencies:

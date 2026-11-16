@@ -121,7 +121,7 @@ it("offers discoverable MIDI commands alongside application commands and plays t
 })
 
 it("ignores unpaired windows unless unpaired control is accepted", async () => {
-	const { input } = createInput()
+	const { input } = createInput({ acceptUnpaired: false })
 	await expect(input.connect()).rejects.toThrow("Pair an application")
 	const remote = remoteWindow("https://anyone.example", 30)
 	await expect(remote.peer.connect()).rejects.toMatchObject({ code: "timeout" })
@@ -260,7 +260,7 @@ it("shares unpaired sessions between Inputs so each application command executes
 	expect(second.commands.at(-1)).toMatchObject({ type: NOTE_OFF, number: 61 })
 })
 
-it("only a connection attempt takes a session slot; closing the sender releases its notes", async () => {
+it("malformed traffic takes no session slot; closing the sender releases its notes", async () => {
 	const { input, commands } = createInput({ acceptUnpaired: true })
 	await input.connect()
 	for (let index = 0; index < MAX_UNPAIRED_PEERS; index++) {
@@ -273,7 +273,7 @@ it("only a connection attempt takes a session slot; closing the sender releases 
 		)
 		window.dispatchEvent(
 			new MessageEvent(EVENT_MESSAGE, {
-				data: `midi,90,3c,64`,
+				data: `midi,invalid`,
 				origin: `https://midi-${index}.example`,
 				source: { closed: false } as Window
 			})
@@ -292,4 +292,50 @@ it("only a connection attempt takes a session slot; closing the sender releases 
 		[NOTE_ON, 65],
 		[NOTE_OFF, 65]
 	])
+})
+it("listens by default and receives legacy MIDI without a handshake", async () => {
+	const { input, commands } = createInput()
+	expect(input.isConnected).toBe(true)
+	expect(input.requiresConnectionControl).toBe(false)
+	const panel = await input.createGui()
+	expect(panel.querySelector("details")?.open).toBe(false)
+	expect(panel.querySelector<HTMLInputElement>('input[type="url"]')?.closest("div")?.hidden).toBe(
+		true
+	)
+	const source = { postMessage: () => {}, closed: false } as unknown as Window
+	window.dispatchEvent(
+		new MessageEvent(EVENT_MESSAGE, {
+			data: "midi,90,3c,64",
+			origin: "https://legacy.example",
+			source
+		})
+	)
+	await settle()
+	expect(commands[0]).toMatchObject({ type: NOTE_ON, number: 60 })
+	await input.disconnect()
+	expect(commands.at(-1)).toMatchObject({ type: NOTE_OFF, number: 60 })
+})
+it("applies optional pairing and resumes open listening from advanced settings", async () => {
+	const { input } = createInput()
+	const panel = await input.createGui()
+	const checkbox = panel.querySelector<HTMLInputElement>('input[type="checkbox"]')!
+	checkbox.checked = false
+	checkbox.dispatchEvent(new Event("change"))
+	await settle()
+	expect(input.isConnected).toBe(false)
+	const stranger = remoteWindow("https://optional.example", 30)
+	await expect(stranger.peer.connect()).rejects.toMatchObject({ code: "timeout" })
+	checkbox.checked = true
+	checkbox.dispatchEvent(new Event("change"))
+	await settle()
+	expect(input.isConnected).toBe(true)
+	await stranger.peer.connect()
+	expect(await stranger.peer.call("app.name")).toBe("Harmoneasy")
+})
+
+it("allows programmatic lifecycle control without automatic listening", async () => {
+	const { input } = createInput({ autoConnect: false })
+	expect(input.isConnected).toBe(false)
+	await input.connect()
+	expect(input.isConnected).toBe(true)
 })

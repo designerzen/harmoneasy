@@ -7,8 +7,8 @@ import { EVENT_MESSAGE } from "audiobus/events/event-constants"
 
 afterEach(() => vi.restoreAllMocks())
 
-it("requires explicit pairing", async () => {
-	const input = new InputProtocol()
+it("requires explicit pairing when open connections are disabled", async () => {
+	const input = new InputProtocol({ acceptUnpaired: false })
 	await expect(input.connect()).rejects.toThrow("Pair an application")
 	expect(() => input.attach(window, "*")).toThrow("exact")
 	input.destroy()
