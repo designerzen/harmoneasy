@@ -341,6 +341,24 @@ describe("DVS clock source", () => {
 		expect(timer.externalTrigger.mock.calls[1][1]).toBeCloseTo(5 + 1 / 48)
 		expect(timer.BPM).toBeCloseTo(120)
 	})
+	it("keeps the tempo across a reverse hold instead of counting the gap", async () => {
+		const { clock, timer, input } = dvsSetup()
+		await clock.setSource("dvs")
+		timer.now = 5.5
+		input.send(Commands.DVS_START, 5)
+		for (let i = 0; i < 12; i++) {
+			input.send(Commands.DVS_CLOCK, 5 + i / 48)
+		}
+		await clock.settled()
+		// held for about a second, then forward again
+		timer.now = 7
+		for (let i = 0; i < 3; i++) {
+			input.send(Commands.DVS_CLOCK, 6.5 + i / 48)
+		}
+		await clock.settled()
+		expect(timer.ticks).toBe(15)
+		expect(timer.BPM).toBeCloseTo(120)
+	})
 	it("falls back to the timer clock when the DVS audio time is on a different clock", async () => {
 		const { clock, timer, input } = dvsSetup()
 		await clock.setSource("dvs")

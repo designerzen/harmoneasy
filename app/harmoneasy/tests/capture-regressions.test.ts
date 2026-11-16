@@ -76,7 +76,12 @@ describe("capture regressions", () => {
 		sampleRate: number,
 		processorOptions: Record<string, unknown>,
 		seconds: number,
-		setup?: (processor: any) => void
+		setup?: (processor: any) => void,
+		// Pilot phase in radians at time t; stereo adds the lagging quadrature channel
+		{
+			phase = (t: number) => 2 * Math.PI * 1000 * t,
+			secondary
+		}: { phase?: (t: number) => number; secondary?: (angle: number) => number } = {}
 	) => {
 		const source = readFileSync(
 			new URL(
@@ -103,14 +108,19 @@ describe("capture regressions", () => {
 		setup?.(processor)
 		for (let frame = 0; frame < sampleRate * seconds; frame += 128) {
 			globals.currentTime = frame / sampleRate
-			const samples = Float32Array.from(
-				{ length: 128 },
-				(_, i) => 0.5 * Math.sin((2 * Math.PI * 1000 * (frame + i)) / sampleRate)
-			)
-			processor.process([[samples]])
+			const angles = Array.from({ length: 128 }, (_, i) => phase((frame + i) / sampleRate))
+			const channels = [Float32Array.from(angles, (angle) => 0.5 * Math.sin(angle))]
+			if (secondary) {
+				channels.push(Float32Array.from(angles, (angle) => 0.5 * secondary(angle)))
+			}
+			processor.process([channels])
 		}
-		return messages.filter((message) => message.type === "tick")
+		return Object.assign(
+			messages.filter((message) => message.type === "tick"),
+			{ status: messages.filter((message) => message.type === "status") }
+		)
 	}
+	const quadrature = (angle: number) => Math.sin(angle - Math.PI / 2)
 
 	it.each([44100, 48000, 96000])(
 		"emits 24 musical ticks per beat of referenceBPM at %i Hz without render-block tick bursts",
@@ -133,6 +143,41 @@ describe("capture regressions", () => {
 		// 60 BPM = 24 ticks per second
 		expect(ticks.length).toBeGreaterThanOrEqual(46)
 		expect(ticks.length).toBeLessThanOrEqual(48)
+	})
+
+	it("reads direction from the stereo quadrature and holds the clock in reverse", () => {
+		const forward = simulateWorklet(48000, {}, 1, undefined, { secondary: quadrature })
+		expect(forward.length).toBeGreaterThanOrEqual(46)
+		expect(forward.status.at(-1).direction).toBe(1)
+		const reverse = simulateWorklet(48000, {}, 1, undefined, {
+			phase: (t) => -2 * Math.PI * 1000 * t,
+			secondary: quadrature
+		})
+		expect(reverse.length).toBeLessThanOrEqual(1)
+		expect(reverse.status.at(-1).direction).toBe(-1)
+		const inverted = simulateWorklet(48000, { invertDirection: true }, 1, undefined, {
+			secondary: quadrature
+		})
+		expect(inverted.status.at(-1).direction).toBe(-1)
+	})
+
+	it("resumes ticking where it held after a backspin", () => {
+		// 1 s forward, 1 s back, 1 s forward with a continuous pilot phase
+		const w = 2 * Math.PI * 1000
+		const ticks = simulateWorklet(48000, {}, 3, undefined, {
+			phase: (t) => (t < 1 ? w * t : t < 2 ? w * (2 - t) : w * (t - 2)),
+			secondary: quadrature
+		})
+		expect(ticks.length).toBeGreaterThanOrEqual(92)
+		expect(ticks.length).toBeLessThanOrEqual(98)
+		expect(ticks.some((tick: any) => tick.timestamp > 1.05 && tick.timestamp < 2)).toBe(false)
+		expect(ticks.at(-1).direction).toBe(1)
+	})
+
+	it("treats an unclear second channel as unknown direction and keeps ticking", () => {
+		const ticks = simulateWorklet(48000, {}, 1, undefined, { secondary: Math.sin })
+		expect(ticks.length).toBeGreaterThanOrEqual(46)
+		expect(ticks.status.at(-1).direction).toBe(0)
 	})
 
 	it("rejects unsafe clock options", () => {
@@ -194,6 +239,14 @@ describe("capture regressions", () => {
 		// signal lost stops immediately
 		status(false, 11.1)
 		expect(commands.at(-1).type).toBe(DVS_STOP)
+		// reverse play holds: no stop while the record runs backwards
+		port.onmessage({ data: { type: "tick", timestamp: 12, speed: 1, direction: 1 } })
+		expect(commands.at(-1).text).toBe("forward")
+		const held = commands.length
+		port.onmessage({
+			data: { type: "status", hasSignal: true, timestamp: 13, speed: 1, direction: -1 }
+		})
+		expect(commands.length).toBe(held)
 		await input.disconnect()
 		vi.unstubAllGlobals()
 	})

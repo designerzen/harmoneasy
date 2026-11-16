@@ -341,7 +341,12 @@ export class ClockSourceController {
 					const now = this.timer.now
 					const sameClock =
 						audioTime !== undefined && audioTime <= now && now - audioTime < 1
-					this.pulse(sameClock ? audioTime : now, sameClock ? audioTime : undefined)
+					const timestamp = sameClock ? audioTime : now
+					// A held (reversed) platter leaves a gap that is not tempo
+					if (this.lastPulse !== undefined && timestamp - this.lastPulse > 0.5) {
+						this.resetPulseTiming()
+					}
+					this.pulse(timestamp, sameClock ? audioTime : undefined)
 				}
 			})
 			return true
