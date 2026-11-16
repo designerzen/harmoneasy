@@ -181,6 +181,7 @@ dialog .btn-close {
 .btn-settings,
 .btn-command-palette,
 .btn-midi,
+.btn-remote-control,
 .btn-harmony,
 .btn-play-songs {
 	&::before {
@@ -207,6 +208,9 @@ dialog .btn-close {
 }
 .btn-midi {
 	--icon: url("../icons/midi.svg");
+}
+.btn-remote-control {
+	--icon: url("../icons/remote.svg");
 }
 .btn-harmony {
 	--icon: url("../icons/harmony.svg");

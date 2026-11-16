@@ -8,6 +8,8 @@
 
 [Preset URL API guide](docs/preset-url-api.md): build and share custom setups with `/parts/v1/`, extend any preset, or supply a complete workspace through query parameters. Includes clickable examples for MIDI, speech, ensembles and multi-chain setups.
 
+[audioBus Protocol guide](docs/audiobus-protocol.md): play and control HarmonEasy from another web page or application: notes, transport, presets and every on-screen control. Try it in the [remote control demo](https://designerzen.github.io/harmoneasy/protocol-remote.html).
+
 HarmonEasy connects musical inputs to instruments, MIDI devices, notation, speech and haptics through editable transformation chains. Use it to harmonise live playing, build chord and arpeggio patterns, remix imported notes, explore alternative controllers, make accessible musical feedback, or play together in a shared room.
 
 ## Getting started
@@ -60,6 +62,7 @@ These are the built-in input factory IDs, plus the hardware profiles registered 
 | PromptAI Generator | `prompt-ai` | Generate note sequences from text via an external AI API; requires an API key configured in input options, network access and a supported model. |
 | PromptAI Speech | `prompt-ai-speech` | Speech-recognised prompts for AI note generation; additionally requires browser speech recognition. |
 | MIDI Transport Clock | `midi-transport-clock` | MIDI clock/transport input, using 24 clock pulses per quarter note. |
+| audioBus Protocol | `protocol` | Receive notes and commands from other web pages and applications; see [Remote control](#remote-control-audiobus-protocol). |
 | DVS Control Vinyl | `dvs-control-vinyl` | Track the 1 kHz pilot tone of a Serato v2 control vinyl/CD and emit 24 musical ticks per beat of a reference BPM (at normal speed) plus start/stop. Select "DVS control vinyl" in the clock source to let the platter drive the transport clock; speed changes follow the tempo. Does not decode direction or absolute record position. |
 
 ### Hardware-specific MIDI inputs
@@ -113,6 +116,7 @@ All built-in output types are listed here. Plugin-specific outputs follow in the
 
 | Output | ID | Capability and requirements |
 | --- | --- | --- |
+| audioBus Protocol | `protocol` | Send the chain's MIDI to a paired application, and optionally to every page controlling HarmonEasy; see [Remote control](#remote-control-audiobus-protocol). |
 | Recorder | `recorder` | Record and review the app's master audio, then export WAV. All Recorder outputs share one recording session. |
 | Moog | `moog` | Photosynth MoogFF ladder synthesizer with MIDI and WAM2 controls. |
 | TB-303 | `tb303` | Monophonic acid bass with nonlinear diode ladder, pitch slide and accents. |
@@ -215,6 +219,21 @@ Connected rooms use WebRTC data channels and Netronome session timing to share n
 
 Clock sources are **Internal** (local timer), **Shared** (room timing), **MIDI** (follow a connected MIDI input's clock/transport) and **Manual** (external/manual triggering). Connect a MIDI input before selecting MIDI clock. Room connections depend on peer connectivity and network conditions; this is musical-event collaboration rather than streamed remote audio, and latency-free playback is not guaranteed.
 
+## Remote control (audioBus Protocol)
+
+Any web page or application can play and control HarmonEasy through [audioBus Protocol](docs/audiobus-protocol.md): MIDI notes and controllers, the transport and tempo, loading presets, and every button, switch, choice and slider the command palette can reach. Add an **audioBus Protocol** input to a chain to accept control; add an **audioBus Protocol** output with **Also send to applications connected to this window** to send the chain's notes back to those pages.
+
+Press **Remote** in the toolbar to open the remote control demo in a window connected to the running app, or open the demo pages directly:
+
+| Demo | Local development | What to try |
+| --- | --- | --- |
+| Remote control | [`/protocol-remote.html`](http://localhost:1999/protocol-remote.html) | Embeds HarmonEasy and drives it: Next note, keyboard, drum pads, controllers, transport, presets and every interface control. Notes HarmonEasy sends back appear under *Sent by Harmoneasy*. |
+| Step through a song | [`/presets/protocol/step-song/`](http://localhost:1999/presets/protocol/step-song/) | Any key, the *Next note* pad, a MIDI controller, gamepad 1 or a remote note plays the next note of the song, which is also sent back to connected pages. |
+| Remote control playground | [`/presets/protocol/remote-playground/`](http://localhost:1999/presets/protocol/remote-playground/) | A lead synth with Harmoniser and Chordifier controls, plus drums on channel 10, made to be changed remotely. |
+| Jam with everything | [`/presets/songs/never-gonna-jam-everything/`](http://localhost:1999/presets/songs/never-gonna-jam-everything/) | A song with every input, including audioBus Protocol, playing along in A♭ major. |
+
+To test: run `pnpm --dir app/harmoneasy run dev`, open the remote control demo, press **Start** inside the embedded app, and wait for the status to turn green. Press **Next note** and you will hear the song step and see the note arrive back. The demo reconnects by itself after preset changes and reloads. The live demo uses `https://designerzen.github.io/harmoneasy/` in place of `http://localhost:1999/`.
+
 ## Browser and desktop requirements
 
 Use a current browser with Web Audio support and start audio through a user gesture. Features are detected at runtime; support differs by browser, OS, permissions and hardware.
@@ -251,6 +270,7 @@ The web app's configured development port is **1999**: `http://localhost:1999`. 
 | `pnpm --dir app/harmoneasy run preview` | Preview the web app's production build. |
 | `pnpm test` | Run workspace test tasks. |
 | `pnpm --dir app/harmoneasy exec vitest run` | Run app tests once. |
+| `pnpm --dir app/harmoneasy exec vitest run tests/protocol-presets.test.ts tests/output-protocol.test.ts tests/input-protocol.test.ts tests/application-commands.test.ts` | Run the audioBus Protocol tests; then try the [demo pages](#remote-control-audiobus-protocol). |
 | `pnpm run type-check` | Run declared workspace type-check tasks. |
 | `pnpm run lint` | Run declared workspace lint tasks. |
 | `pnpm --dir app/harmoneasy run dev:electron` | Start Vite and Electron together. |

@@ -131,6 +131,17 @@ const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve,
 const noteName = (note: number) => `${NAMES[note % 12]}${Math.floor(note / 12) - 1}`
 const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error))
 
+/** Set when Harmoneasy opened this page with `?target=opener`: control that window. */
+const opener: Window | null =
+	new URLSearchParams(location.search).get("target") === "opener" ? window.opener : null
+/** The opener's origin: readable when same-origin, otherwise taken from the referrer. */
+function openerOrigin(): string {
+	try {
+		return opener!.location.origin
+	} catch {
+		return document.referrer ? new URL(document.referrer).origin : location.origin
+	}
+}
 let target: Window | null = null
 let origin = ""
 let peer: Peer | undefined
@@ -189,6 +200,14 @@ function open(address: string) {
 	}
 	origin = url.origin
 	$<HTMLInputElement>("#address").value = url.href
+	if (opener) {
+		// Opened from Harmoneasy: change the window that opened this page instead of embedding one.
+		opener.location.href = url.href
+		target = opener
+		status("Harmoneasy is reloading. Press Start in it; this page reconnects automatically.", "waiting")
+		void connect()
+		return
+	}
 	const embed = $<HTMLInputElement>("#embed").checked
 	const stage = $("#stage")
 	if (embed) {
@@ -263,6 +282,10 @@ async function connect() {
 		} catch (error) {
 			attempt.close()
 			if (current !== generation) {
+				return
+			}
+			if (target.closed) {
+				status("The Harmoneasy window was closed. Open it again to continue.")
 				return
 			}
 			status(
@@ -1062,8 +1085,8 @@ buildTransport()
 buildPresets()
 buildInterface()
 enable(false)
-const initial = new URLSearchParams(location.search).get("open")
-$<HTMLInputElement>("#address").value = presetUrl(initial ?? REMOTE_PRESETS[0].route)
+const parameters = new URLSearchParams(location.search)
+$<HTMLInputElement>("#address").value = presetUrl(parameters.get("open") ?? REMOTE_PRESETS[0].route)
 $("#open-form").addEventListener(EVENT_SUBMIT, (event) => {
 	event.preventDefault()
 	open($<HTMLInputElement>("#address").value)
@@ -1073,4 +1096,12 @@ for (const preset of REMOTE_PRESETS) {
 }
 $("#reconnect").addEventListener(EVENT_CLICK, () => void connect())
 $("#clear-log").addEventListener(EVENT_CLICK, () => $("#log").replaceChildren())
-open($<HTMLInputElement>("#address").value)
+if (opener) {
+	document.body.classList.add("opener-mode")
+	target = opener
+	origin = openerOrigin()
+	status("Connecting to the Harmoneasy window that opened this page…", "waiting")
+	void connect()
+} else {
+	open($<HTMLInputElement>("#address").value)
+}

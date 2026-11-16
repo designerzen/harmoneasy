@@ -143,6 +143,12 @@
 			#log .log-in { color: var(--accent); }
 			#log .log-info { color: var(--warn); }
 			#last-note { font-weight: 700; color: var(--accent); }
+			/* Opened from Harmoneasy: it controls that window, so nothing is embedded here. */
+			.opener-only { display: none; }
+			body.opener-mode .opener-only { display: block; }
+			body.opener-mode .embed-only { display: none; }
+			body.opener-mode main { grid-template-columns: minmax(0, 1fr); }
+			body.opener-mode #app-column { position: static; }
 		</style>
 	</head>
 	<body data-connection="idle">
@@ -165,15 +171,18 @@
 					<legend>Harmoneasy</legend>
 					<form id="open-form" class="row">
 						<input id="address" type="url" aria-label="Harmoneasy address" style="flex: 1 1 18rem" />
-						<label><input id="embed" type="checkbox" checked /> Embed</label>
+						<label class="embed-only"><input id="embed" type="checkbox" checked /> Embed</label>
 						<button class="primary" type="submit">Open</button>
 					</form>
 					<div class="row" id="quick-open"></div>
+					<p class="hint opener-only">
+						Controlling the Harmoneasy window that opened this page. Opening an address or preset here reloads that window.
+					</p>
 					<p class="hint">
 						Press <strong>Start</strong> inside Harmoneasy to enable sound. The page reconnects by itself after every reload or
 						preset change, as long as the preset has an audioBus Protocol input.
 					</p>
-					<div id="stage"></div>
+					<div id="stage" class="embed-only"></div>
 				</fieldset>
 			</div>
 
