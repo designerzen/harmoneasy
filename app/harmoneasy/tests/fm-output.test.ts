@@ -360,3 +360,14 @@ it("serialises options, dispatches configuration changes and builds a gui", asyn
 	await output.destroyGui()
 	expect(gui.isConnected).toBe(false)
 })
+it("plays commands at their audio time, never earlier than now", async () => {
+	const { output, messages } = fixture()
+	await output.sendCommand(cmd({ type: NOTE_ON, number: 60, velocity: 100, audioTime: 2 }))
+	await output.sendCommand(cmd({ type: NOTE_OFF, number: 60, audioTime: 2.5 }))
+	await output.sendCommand(cmd({ type: NOTE_ON, number: 62, velocity: 100, audioTime: 0.5 }))
+	expect(messages().filter((m: any) => m.type !== "patch")).toEqual([
+		expect.objectContaining({ type: "on", note: 60, time: 2 }),
+		expect.objectContaining({ type: "off", note: 60, time: 2.5 }),
+		expect.objectContaining({ type: "on", note: 62, time: 1.5 })
+	])
+})

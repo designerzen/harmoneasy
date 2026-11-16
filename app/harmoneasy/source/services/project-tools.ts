@@ -11,7 +11,7 @@ import {
 } from "audiobus/io/project-bundle"
 import type { EventClip } from "audiobus/io/event-clip"
 import { validBinding, type MidiControls } from "./midi-controls"
-import type { AudioRecording } from "./audio-recording"
+import type { AudioRecording } from "audiobus/io/recording/audio-recording"
 import { element, action, field, onChange, download } from "./music-tools-dom"
 import { parsePresetPage } from "./preset-page"
 

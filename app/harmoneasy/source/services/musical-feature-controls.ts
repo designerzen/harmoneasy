@@ -20,7 +20,7 @@ import {
 	supportsClipCommand,
 	type EventClip
 } from "audiobus/io/event-clip"
-import type { AudioRecording } from "./audio-recording"
+import type { AudioRecording } from "audiobus/io/recording/audio-recording"
 import type { MidiControls } from "./midi-controls"
 import { AcousticTempoFollower } from "./acoustic-tempo"
 import { mountPerformanceControls, mountDiagnostics } from "./performance-tools"

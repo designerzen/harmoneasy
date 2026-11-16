@@ -5,11 +5,11 @@ import { EVENT_CHAINS_UPDATED } from "../../../packages/audiobus/events/event-co
 import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
-import { RECORDING_STATE_CHANGED } from "../source/services/recording-format"
+import { RECORDING_STATE_CHANGED } from "../../../packages/audiobus/io/recording/recording-format"
 import { createRecordingControls } from "../source/services/recording-dialog"
 
-vi.mock("../source/services/audio-recording", () => ({
-	AudioRecording: class extends EventTarget {
+vi.mock("../../../packages/audiobus/io/recording/audio-recording", () => ({
+	getAudioRecording: () => new (class extends EventTarget {
 		state = "idle"
 		frames = 0
 		sampleRate = 48000
@@ -34,7 +34,7 @@ vi.mock("../source/services/audio-recording", () => ({
 			this.change()
 		}
 		wave = vi.fn(async () => new Blob(["audio"], { type: "audio/wav" }))
-	}
+	})()
 }))
 
 const button = (id: string) => document.querySelector<HTMLButtonElement>(`#${id}`)!

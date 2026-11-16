@@ -8,8 +8,8 @@ import {
 } from "audiobus/events/event-constants"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
 import OutputRecorder from "audiobus/io/outputs/output-recorder"
-import { AudioRecording } from "./audio-recording"
-import { RECORDING_STATE_CHANGED, type RecordingBits } from "./recording-format"
+import { getAudioRecording } from "audiobus/io/recording/audio-recording"
+import { RECORDING_STATE_CHANGED, type RecordingBits } from "audiobus/io/recording/recording-format"
 
 export function createRecordingControls(
 	context: AudioContext,
@@ -17,7 +17,7 @@ export function createRecordingControls(
 	root: Document = document,
 	manager?: IOChainManager
 ) {
-	const recording = new AudioRecording(context, source)
+	const recording = getAudioRecording(context, source)
 	const recorders = new Set<OutputRecorder>()
 	const button = root.querySelector<HTMLButtonElement>("#btn-record")!
 	const review = root.querySelector<HTMLButtonElement>("#btn-recording-review")!
@@ -153,13 +153,18 @@ export function createRecordingControls(
 		dialog.close()
 		await recording.start()
 	}
-	const toggleRecorder = () => {
+	// Cancelling the Recorder outputs' events keeps them from driving the take themselves.
+	const toggleRecorder = (event: Event) => {
+		event.preventDefault()
 		void toggle()
 	}
-	const reviewRecorder = () => {
+	const reviewRecorder = (event: Event) => {
+		event.preventDefault()
 		void show()
 	}
-	button.addEventListener(EVENT_CLICK, toggleRecorder)
+	button.addEventListener(EVENT_CLICK, () => {
+		void toggle()
+	})
 	review.addEventListener(EVENT_CLICK, () => {
 		void show()
 	})

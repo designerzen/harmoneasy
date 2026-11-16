@@ -180,7 +180,8 @@ it("holds sustained notes until the pedal lifts", async () => {
 	expect(port).toHaveBeenCalledWith({ type: "off", channel: 0, note: 60 })
 })
 
-it("plays held notes once the first sample arrives, pitched from the nearest key", () => {
+const worklet = () => {
+	const clock = { time: 0 }
 	const source = readFileSync(
 		"../../packages/audiobus/io/outputs/rompler/rompler.worklet.js",
 		"utf8"
@@ -188,20 +189,30 @@ it("plays held notes once the first sample arrives, pitched from the nearest key
 	const Processor = new Function(
 		"AudioWorkletProcessor",
 		"sampleRate",
-		source.replace(/registerProcessor\([^\n]+/, "return RomplerProcessor")
+		"clock",
+		source
+			.replace(/\bcurrentTime\b/g, "clock.time")
+			.replace(/registerProcessor\([^\n]+/, "return RomplerProcessor")
 	)(
 		class {
 			port = {}
 		},
-		48000
+		48000,
+		clock
 	)
 	const processor = new Processor()
 	const send = (data: object) => processor.port.onmessage({ data })
 	const render = () => {
 		const outputs = [[new Float32Array(128), new Float32Array(128)]]
 		processor.process([], outputs)
+		clock.time += 128 / 48000
 		return outputs[0][0]
 	}
+	return { processor, send, render, clock }
+}
+
+it("plays held notes once the first sample arrives, pitched from the nearest key", () => {
+	const { processor, send, render } = worklet()
 	send({ type: "on", channel: 0, note: 62, velocity: 1 })
 	expect(render().some(Boolean)).toBe(false)
 	send({ type: "sample", note: 60, channels: [new Int16Array(48000).fill(16384)] })
@@ -227,4 +238,32 @@ it("plays held notes once the first sample arrives, pitched from the nearest key
 	render()
 	render()
 	expect(processor.voices).toHaveLength(0)
+})
+it("holds notes and releases timed for later until the worklet reaches them, and panic drops them", async () => {
+	const { processor, send, render, clock } = worklet()
+	send({ type: "sample", note: 60, channels: [new Int16Array(48000).fill(16384)] })
+	send({ type: "on", channel: 0, note: 60, velocity: 1, time: 0.01 })
+	send({ type: "off", channel: 0, note: 60, time: 0.02 })
+	expect(render().some(Boolean)).toBe(false)
+	while (clock.time < 0.01) {
+		render()
+	}
+	expect(render().some(Boolean)).toBe(true)
+	expect(processor.voices[0].releasing).toBe(false)
+	while (clock.time < 0.02) {
+		render()
+	}
+	render()
+	expect(processor.voices[0].releasing).toBe(true)
+	send({ type: "on", channel: 0, note: 62, velocity: 1, time: 1 })
+	send({ type: "panic" })
+	expect(processor.events).toHaveLength(0)
+
+	const { output, nodes } = fixture()
+	await output.sendCommand(
+		musicalCommand({ type: NOTE_ON, number: 60, velocity: 127, channel: 1, audioTime: 2 })
+	)
+	expect(nodes[0].port.postMessage).toHaveBeenLastCalledWith(
+		expect.objectContaining({ type: "on", note: 60, time: 2 })
+	)
 })
