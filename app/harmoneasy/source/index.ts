@@ -707,6 +707,35 @@ const initialiseApplication = async (
 		panic: () => {
 			netronomeLink?.silence()
 			ioManager.chains.forEach((chain) => chain.allNotesOff())
+		},
+		presets: async () => {
+			const { PUBLISHED_PRESETS } = await import("./services/preset-files")
+			return PUBLISHED_PRESETS.map(({ preset, page }) => ({
+				id: preset.id,
+				name: preset.name,
+				category: preset.category,
+				description: preset.useCase,
+				// Loading a preset without a protocol Input ends remote control.
+				remote: page.workspace.devices.some(
+					(device: { direction?: string; definition?: { type?: string } }) =>
+						device.direction === "input" && device.definition?.type === "protocol"
+				)
+			}))
+		},
+		loadPreset: async (id) => {
+			const { publishedPreset } = await import("./services/preset-files")
+			const entry = publishedPreset(id)
+			if (!entry) {
+				return
+			}
+			if (clockSource?.source === "internal" && !netronomeLink?.isFollower) {
+				timer.BPM = entry.page.clock.bpm
+				ui.setTempo(entry.page.clock.bpm)
+				state.set("tempo", entry.page.clock.bpm)
+				netronomeLink?.tempoChanged()
+			}
+			await ioManager.restoreWorkspace(presetWorkspace(entry.page))
+			state.set("io", ioManager.exportWorkspace())
 		}
 	})
 	window.addEventListener(EVENT_PAGE_HIDE, (event) => {

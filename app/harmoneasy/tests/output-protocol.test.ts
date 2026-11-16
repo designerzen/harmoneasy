@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, it, vi } from "vitest"
 import OutputProtocol from "audiobus/io/outputs/output-protocol"
+import InputProtocol from "audiobus/io/inputs/input-protocol"
 import { Peer, CommandRegistry, EMPTY_SCHEMA } from "audiobus/io/protocol-registry"
 import {
 	NOTE_ON,
@@ -20,7 +21,8 @@ import {
 	EVENT_PROTOCOL_PATCH,
 	EVENT_CHANGE,
 	EVENT_INPUT,
-	EVENT_SUBMIT
+	EVENT_SUBMIT,
+	EVENT_MESSAGE
 } from "audiobus/events/event-constants"
 import { musicalCommand } from "audiobus/io/event-clip"
 import { umpToCommand } from "audiobus/midi/ump-codec"
@@ -479,4 +481,52 @@ it("refuses a pairing code in legacy WebMidiLink mode instead of dropping MIDI s
 	p.output.setPairingCode("")
 	await p.output.connect()
 	expect(p.output.isConnected).toBe(true)
+})
+
+it("also sends MIDI to applications connected without pairing when enabled", async () => {
+	const input = new InputProtocol()
+	const origin = "https://controller.example"
+	const listeners = new Set<(message: unknown) => void>()
+	const target = {
+		postMessage: (message: string) =>
+			queueMicrotask(() => listeners.forEach((receive) => receive(message)))
+	} as unknown as Window
+	const received: number[][] = []
+	const controller = new Peer(
+		{
+			send: (message) =>
+				queueMicrotask(() =>
+					window.dispatchEvent(
+						new MessageEvent(EVENT_MESSAGE, { data: message, source: target, origin })
+					)
+				),
+			listen: (receive) => {
+				listeners.add(receive)
+				return () => {
+					listeners.delete(receive)
+				}
+			}
+		},
+		{ identity: { name: "Controller", version: "1" }, onMidi: (data) => received.push([...data]) }
+	)
+	const silent = new OutputProtocol()
+	const output = new OutputProtocol({ sendToConnectedApplications: true })
+	cleanups.push(() => {
+		silent.destroy()
+		output.destroy()
+		controller.close()
+		input.destroy()
+	})
+	await controller.connect()
+	silent.noteOn(61, 100, 1)
+	output.noteOn(60, 100, 2)
+	await flush()
+	expect(output.isConnected).toBe(false)
+	expect(received).toEqual([[0x91, 60, 100]])
+	output.destroy()
+	await flush()
+	expect(received).toEqual([
+		[0x91, 60, 100],
+		[0x81, 60, 0]
+	])
 })

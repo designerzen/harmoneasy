@@ -23,7 +23,9 @@ it("shares transport handlers, validates tempo, observes local changes and unreg
 			transport: async (action) => {
 				running = action === "start"
 			},
-			panic
+			panic,
+			presets: async () => [],
+			loadPreset: async () => {}
 		},
 		registry
 	)
@@ -71,4 +73,43 @@ it("shares transport handlers, validates tempo, observes local changes and unreg
 	expect(registry.listBundles()).toEqual([])
 	expect(registry.readRetained("transport.changed")).toBeUndefined()
 	expect(vi.getTimerCount()).toBe(0)
+})
+
+it("lists and loads published presets, replying before the workspace is replaced", async () => {
+	vi.useFakeTimers()
+	const registry = new CommandRegistry()
+	const loadPreset = vi.fn(async () => {})
+	const presets = [
+		{
+			id: "protocol-step-song",
+			name: "audioBus Protocol — Step through a song",
+			category: "audioBus Protocol",
+			description: "Step through a song",
+			remote: true
+		},
+		{ id: "ode-to-joy", name: "Ode to Joy", category: "Songs", description: "", remote: false }
+	]
+	const remove = registerApplicationCommands(
+		{
+			getTransport: () => ({ bpm: 120, running: false, clockSource: "internal" }),
+			canSetTempo: () => true,
+			setTempo: () => {},
+			transport: async () => {},
+			panic: () => {},
+			presets: async () => presets,
+			loadPreset
+		},
+		registry
+	)
+	expect(await registry.call("presets.list")).toEqual(presets)
+	expect(await registry.call("presets.list", { query: "protocol STEP" })).toEqual([presets[0]])
+	await expect(registry.call("presets.load", { id: "missing" })).rejects.toMatchObject({
+		code: "invalid_params"
+	})
+	expect(await registry.call("presets.load", { id: "ode-to-joy" })).toEqual(presets[1])
+	expect(loadPreset).not.toHaveBeenCalled()
+	await vi.advanceTimersByTimeAsync(0)
+	expect(loadPreset).toHaveBeenCalledWith("ode-to-joy")
+	remove()
+	expect(registry.list().some((command) => command.id.startsWith("presets."))).toBe(false)
 })

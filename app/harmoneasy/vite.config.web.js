@@ -85,7 +85,11 @@ export default defineConfig({
 		outDir: "dist",
 		emptyOutDir: false,
 		rollupOptions: {
-			external: ["url", "path"]
+			external: ["url", "path"],
+			input: {
+				main: resolve(import.meta.dirname, "index.html"),
+				"protocol-remote": resolve(import.meta.dirname, "protocol-remote.html")
+			}
 		}
 	},
 	test: {

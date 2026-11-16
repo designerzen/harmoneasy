@@ -1181,19 +1181,46 @@
 
 		<!-- MIDI device hot-plug -->
 		<template id="midi-device-connected-template">
-			<dialog closedby="any" aria-labelledby="midi-device-connected-title" data-midi-ignore>
+			<dialog
+				class="midi-connected-dialog"
+				closedby="any"
+				aria-labelledby="midi-device-connected-title"
+				aria-describedby="midi-device-connected-help"
+				data-midi-ignore
+			>
 				<header>
 					<h5 id="midi-device-connected-title">MIDI device connected</h5>
 				</header>
-				<p class="midi-device-connected-message"></p>
-				<!-- Shows a button per chain plus Ignore -->
+				<div class="midi-connected-device">
+					<span class="midi-connected-icon" aria-hidden="true"></span>
+					<div>
+						<strong class="midi-connected-name"></strong
+						><small>Connected · MIDI input</small>
+					</div>
+				</div>
+				<p id="midi-device-connected-help">
+					Choose one or more chains to receive notes and controls from this device.
+				</p>
+				<fieldset>
+					<legend>Add device to chains</legend>
+					<div class="midi-chain-toolbar">
+						<label class="midi-chain-all"
+							><input type="checkbox" /> Select all chains</label
+						>
+						<span class="midi-chain-status" role="status"></span>
+					</div>
+					<div class="midi-chain-list"></div>
+				</fieldset>
+				<p class="midi-connected-hint">
+					Ignore for now skips this device until you plug it in again.
+				</p>
 				<menu></menu>
 				<form method="dialog">
 					<button
 						class="btn-close close-icon"
 						type="submit"
 						formmethod="dialog"
-						aria-label="Ignore"
+						aria-label="Ignore device for now and close"
 					></button>
 				</form>
 			</dialog>

@@ -1,6 +1,7 @@
 import {
 	EMPTY_SCHEMA,
 	getProtocolRegistry,
+	ProtocolError,
 	TOPIC_COMMANDS_CHANGED,
 	TOPIC_PROPERTIES_CHANGED,
 	TOPIC_PROPERTIES_LIST_CHANGED,
@@ -13,6 +14,17 @@ export interface ApplicationCommandHost {
 	setTempo(bpm: number): void
 	transport(action: "start" | "stop"): Promise<void>
 	panic(): void
+	presets(): Promise<ApplicationPreset[]>
+	loadPreset(id: string): Promise<void>
+}
+
+export interface ApplicationPreset {
+	id: string
+	name: string
+	category: string
+	description: string
+	/** Whether the preset has an audioBus Protocol Input, so remote control continues after loading. */
+	remote: boolean
 }
 
 /** Both the palette and remote inputs invoke these application service handlers. */
@@ -70,6 +82,54 @@ export function registerApplicationCommands(
 			execute: () => {
 				host.panic()
 				return null
+			}
+		}),
+		registry.register({
+			id: "presets.list",
+			title: "List presets",
+			description:
+				"Published presets that presets.load applies, optionally filtered by a search",
+			inputSchema: {
+				type: "object",
+				properties: { query: { type: "string", description: "Name, category or text" } },
+				additionalProperties: false
+			},
+			execute: async ({ query }) => {
+				const words = String(query ?? "")
+					.toLowerCase()
+					.split(/\s+/)
+					.filter(Boolean)
+				return (await host.presets())
+					.filter((preset) => {
+						const text = Object.values(preset).join(" ").toLowerCase()
+						return words.every((word) => text.includes(word))
+					})
+					.map((preset) => ({ ...preset }))
+			}
+		}),
+		registry.register({
+			id: "presets.load",
+			title: "Load a preset",
+			description:
+				"Replace the workspace with a published preset from presets.list. Connections close while it loads; reconnect afterwards",
+			inputSchema: {
+				type: "object",
+				properties: { id: { type: "string", description: "Preset ID from presets.list" } },
+				required: ["id"],
+				additionalProperties: false
+			},
+			execute: async ({ id }) => {
+				const preset = (await host.presets()).find((item) => item.id === id)
+				if (!preset) {
+					throw new ProtocolError("invalid_params", `Unknown preset: ${id}`)
+				}
+				// Reply first: replacing the workspace replaces the Input this request arrived on.
+				setTimeout(() => {
+					host.loadPreset(preset.id).catch((error) =>
+						console.error("Failed to load preset remotely:", error)
+					)
+				}, 0)
+				return { ...preset }
 			}
 		})
 	]
