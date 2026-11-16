@@ -6,8 +6,8 @@ import {
 } from "audiobus/io/protocol-registry"
 import {
 	applyControlValue,
-	available,
 	currentValue,
+	describeControl,
 	isValueControl,
 	paletteControls,
 	REMOTE_INTERFACE_COMMAND_PREFIX,
@@ -68,14 +68,31 @@ function createIdentities(root: Document) {
 		byId.set(id, new WeakRef(control.element))
 		return id
 	}
-	return (): Map<string, PaletteControl> => {
-		const controls = new Map<string, PaletteControl>()
-		for (const control of paletteControls(root, root.getElementById("command-palette"))) {
-			controls.set(byElement.get(control.element) ?? assign(control), control)
+	return {
+		list(): Map<string, PaletteControl> {
+			const controls = new Map<string, PaletteControl>()
+			for (const control of paletteControls(root, root.getElementById("command-palette"))) {
+				controls.set(byElement.get(control.element) ?? assign(control), control)
+			}
+			return controls
+		},
+		/**
+		 * One control by ID. IDs that ui.list handed out resolve without scanning the page; an ID
+		 * nobody listed yet, such as one derived by a caller, is looked up with one scan.
+		 */
+		get(id: string): PaletteControl | undefined {
+			const element = byId.get(id)?.deref()
+			if (element?.isConnected && byElement.get(element) === id) {
+				return describeControl(element)
+			}
+			// A removed or never-seen holder may have a replacement on the page.
+			return element?.isConnected ? undefined : this.list().get(id)
 		}
-		return controls
 	}
 }
+type Identities = ReturnType<typeof createIdentities>
+/** A plain decimal number, as a person would type it; no hexadecimal or Infinity. */
+const DECIMAL = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/
 
 function describe(id: string, { element, label, context }: PaletteControl): Json {
 	const type = kind(element)
@@ -103,9 +120,9 @@ function describe(id: string, { element, label, context }: PaletteControl): Json
 	return description
 }
 
-function find(identify: () => Map<string, PaletteControl>, id: string): PaletteControl {
-	const control = identify().get(id)
-	if (!control || !available(control.element)) {
+function find(identify: Identities, id: string): PaletteControl {
+	const control = identify.get(id)
+	if (!control) {
 		throw new ProtocolError(
 			"unavailable",
 			`Unknown or unavailable control: ${id}. Call ui.list again.`
@@ -137,7 +154,7 @@ export function registerInterfaceCommands(root: Document, registry = getProtocol
 			},
 			execute: ({ query }: Params) => {
 				const needle = typeof query === "string" ? query.toLowerCase().trim() : ""
-				return [...identify()]
+				return [...identify.list()]
 					.filter(([, { label, context }]) =>
 						`${context} ${label}`.toLowerCase().includes(needle)
 					)
@@ -208,17 +225,28 @@ export function registerInterfaceCommands(root: Document, registry = getProtocol
 					}
 					next = option.value
 				} else if (kind(element) === "number") {
+					next = next.trim()
 					const number = Number(next)
 					const input = element as HTMLInputElement
+					const step = input.step === "" ? 1 : Number(input.step)
+					const base = input.min === "" ? 0 : Number(input.min)
+					// Off-step values are rejected rather than silently snapped, as the field would.
+					const offStep =
+						input.step !== "any" &&
+						Number.isFinite(step) &&
+						step > 0 &&
+						Math.abs(Math.round((number - base) / step) * step + base - number) >
+							step * 1e-9
 					if (
-						next.trim() === "" ||
+						!DECIMAL.test(next) ||
 						!Number.isFinite(number) ||
 						(input.min !== "" && number < Number(input.min)) ||
-						(input.max !== "" && number > Number(input.max))
+						(input.max !== "" && number > Number(input.max)) ||
+						offStep
 					) {
 						throw new ProtocolError(
 							"invalid_params",
-							`${control.label} needs a number${input.min !== "" ? ` from ${input.min}` : ""}${input.max !== "" ? ` to ${input.max}` : ""}`
+							`${control.label} needs a number${input.min !== "" ? ` from ${input.min}` : ""}${input.max !== "" ? ` to ${input.max}` : ""}${input.step !== "" && input.step !== "any" ? ` in steps of ${input.step}` : ""}`
 						)
 					}
 				}

@@ -123,7 +123,36 @@ function controlContext(element: HTMLElement): string {
 	return names.join(" / ")
 }
 
-export function available(element: HTMLElement): boolean {
+/** True when an ancestor's computed style hides the element; results are shared across one scan. */
+function hiddenByStyle(element: HTMLElement, cache?: Map<Element, boolean>): boolean {
+	const chain: HTMLElement[] = []
+	let hidden = false
+	for (let ancestor: HTMLElement | null = element; ancestor; ancestor = ancestor.parentElement) {
+		const known = cache?.get(ancestor)
+		if (known !== undefined) {
+			hidden = known
+			break
+		}
+		chain.push(ancestor)
+		const style = getComputedStyle(ancestor)
+		if (style.display === "none" || style.visibility === "hidden") {
+			hidden = true
+			break
+		}
+	}
+	if (cache) {
+		for (const ancestor of chain) {
+			cache.set(ancestor, hidden)
+		}
+	}
+	return hidden
+}
+
+/**
+ * True when a person could use the control now. Pass one `cache` to repeated calls within a scan
+ * so shared ancestors are style-checked once.
+ */
+export function available(element: HTMLElement, cache?: Map<Element, boolean>): boolean {
 	if (
 		!element.isConnected ||
 		element.matches(':disabled, [aria-disabled="true"]') ||
@@ -159,12 +188,8 @@ export function available(element: HTMLElement): boolean {
 		) {
 			return false
 		}
-		const style = getComputedStyle(ancestor)
-		if (style.display === "none" || style.visibility === "hidden") {
-			return false
-		}
 	}
-	return true
+	return !hiddenByStyle(element, cache)
 }
 
 export function currentValue(element: HTMLElement): string {
@@ -181,21 +206,32 @@ export function currentValue(element: HTMLElement): string {
 	return pressed === null ? "Run" : pressed === "true" ? "On" : "Off"
 }
 
+/** One control's label and context, when it is available. */
+export function describeControl(
+	element: HTMLElement,
+	cache?: Map<Element, boolean>
+): PaletteControl | undefined {
+	if (!available(element, cache)) {
+		return
+	}
+	const label = controlLabel(element)
+	return label ? { element, label, context: controlContext(element) } : undefined
+}
+
 /** The visible controls the palette offers, in document order. Remote commands use the same list. */
 export function paletteControls(scope: ParentNode, exclude?: Element | null): PaletteControl[] {
-	return [...scope.querySelectorAll<HTMLElement>(CONTROL_SELECTOR)]
-		.filter(
-			(element) =>
-				!exclude?.contains(element) &&
-				element.id !== "btn-command-palette" &&
-				available(element)
-		)
-		.map((element) => ({
-			element,
-			label: controlLabel(element),
-			context: controlContext(element)
-		}))
-		.filter((control) => control.label)
+	const cache = new Map<Element, boolean>()
+	const controls: PaletteControl[] = []
+	for (const element of scope.querySelectorAll<HTMLElement>(CONTROL_SELECTOR)) {
+		if (exclude?.contains(element) || element.id === "btn-command-palette") {
+			continue
+		}
+		const control = describeControl(element, cache)
+		if (control) {
+			controls.push(control)
+		}
+	}
+	return controls
 }
 
 /** Set a value as a person would, bypassing React's value tracker, with the original UI's events. */

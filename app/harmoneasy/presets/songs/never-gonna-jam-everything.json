@@ -69,7 +69,10 @@
 				"direction": "input",
 				"definition": {
 					"factory": "input",
-					"type": "protocol"
+					"type": "protocol",
+					"options": {
+						"acceptUnpaired": true
+					}
 				}
 			},
 			{

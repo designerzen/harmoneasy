@@ -227,3 +227,69 @@ it("cancels the settings reconnect when the input is destroyed first", async () 
 	await expect(stranger.peer.connect()).rejects.toMatchObject({ code: "timeout" })
 	expect(input.unpairedConnections).toHaveLength(0)
 })
+it("shares unpaired sessions between Inputs so each application command executes once", async () => {
+	const registry = new CommandRegistry()
+	let executed = 0
+	registry.register({
+		id: "app.count",
+		title: "Count",
+		description: "",
+		inputSchema: EMPTY_SCHEMA,
+		execute: () => ++executed
+	})
+	const first = createInput({ registry, acceptUnpaired: true })
+	const second = createInput({ registry, acceptUnpaired: true })
+	await first.input.connect()
+	await second.input.connect()
+	const remote = remoteWindow("https://shared.example")
+	await remote.peer.connect()
+	expect(await remote.peer.call("app.count")).toBe(1)
+	expect(executed).toBe(1)
+	expect(first.input.unpairedConnections).toHaveLength(1)
+	expect(second.input.unpairedConnections).toHaveLength(1)
+	// MIDI plays into every Input's chain, and each releases its own copy of the note.
+	await remote.peer.call("midi.noteOn", { note: 61 })
+	expect(first.commands.map((command) => command.number)).toEqual([61])
+	expect(second.commands.map((command) => command.number)).toEqual([61])
+	await first.input.disconnect()
+	expect(first.commands.at(-1)).toMatchObject({ type: NOTE_OFF, number: 61 })
+	expect(second.commands).toHaveLength(1)
+	// The session outlives the first Input while another still accepts it.
+	expect(await remote.peer.call("app.count")).toBe(2)
+	await second.input.disconnect()
+	expect(second.commands.at(-1)).toMatchObject({ type: NOTE_OFF, number: 61 })
+})
+
+it("only a connection attempt takes a session slot; closing the sender releases its notes", async () => {
+	const { input, commands } = createInput({ acceptUnpaired: true })
+	await input.connect()
+	for (let index = 0; index < MAX_UNPAIRED_PEERS; index++) {
+		window.dispatchEvent(
+			new MessageEvent(EVENT_MESSAGE, {
+				data: "control,request,%bad",
+				origin: `https://junk-${index}.example`,
+				source: { closed: false } as Window
+			})
+		)
+		window.dispatchEvent(
+			new MessageEvent(EVENT_MESSAGE, {
+				data: `midi,90,3c,64`,
+				origin: `https://midi-${index}.example`,
+				source: { closed: false } as Window
+			})
+		)
+	}
+	await settle()
+	expect(input.unpairedConnections).toHaveLength(0)
+	expect(commands).toHaveLength(0)
+	const remote = remoteWindow("https://real.example")
+	await remote.peer.connect()
+	await remote.peer.call("midi.noteOn", { note: 65 })
+	remote.peer.close()
+	await settle()
+	expect(input.unpairedConnections).toHaveLength(0)
+	expect(commands.map((command) => [command.type, command.number])).toEqual([
+		[NOTE_ON, 65],
+		[NOTE_OFF, 65]
+	])
+})

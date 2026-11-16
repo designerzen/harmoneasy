@@ -121,3 +121,24 @@ it("never moves an ID to another control, and lists fields with step any", async
 		((await registry.call("ui.list", { query: "delete" })) as any[]).map((c) => c.id)
 	).toEqual(["tracks/delete", "tracks/delete~2"])
 })
+it("rejects off-step and non-decimal numbers and finds controls by ID without rescanning", async () => {
+	const { registry } = setup()
+	const tempo = document.getElementById("tempo") as HTMLInputElement
+	tempo.step = "0.5"
+	await registry.call("ui.list")
+	const set = (value: string) => registry.call("ui.setValue", { id: "transport/tempo", value })
+	for (const value of ["0x10", "Infinity", "1e400", "120.25", "", " "]) {
+		await expect(set(value)).rejects.toMatchObject({ code: "invalid_params" })
+	}
+	expect(await set(" 120.5 ")).toMatchObject({ value: "120.5" })
+	tempo.step = "any"
+	expect(await set("120.25")).toMatchObject({ value: "120.25" })
+	// A control hidden since the last listing is unavailable until it is shown again.
+	tempo.closest("label")!.hidden = true
+	await expect(set("100")).rejects.toMatchObject({ code: "unavailable" })
+	tempo.closest("label")!.hidden = false
+	expect(await set("100")).toMatchObject({ id: "transport/tempo", value: "100" })
+	await expect(registry.call("ui.activate", { id: "never/listed" })).rejects.toMatchObject({
+		code: "unavailable"
+	})
+})
