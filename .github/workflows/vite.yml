@@ -23,10 +23,11 @@ jobs:
             NODE_OPTIONS: --max-old-space-size=8192
 
         steps:
-            - name: Check out repository and pinned submodules
+            - name: Check out repository
               uses: actions/checkout@v7.0.1
-              with:
-                  submodules: recursive
+
+            - name: Check out latest submodule branches
+              run: git submodule update --init --remote --recursive
 
             - name: Install pnpm
               uses: pnpm/action-setup@v6.1.0
@@ -41,7 +42,9 @@ jobs:
 
             # Skip native Electron builds and the root postinstall, which updates submodules.
             - name: Install dependencies
-              run: pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
+              run: |
+                  pnpm install --no-frozen-lockfile --prefer-offline --ignore-scripts
+                  pnpm run upgrade:git-dependencies
               timeout-minutes: 40
 
             - name: Build Netronome library and workers
