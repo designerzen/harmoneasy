@@ -212,6 +212,12 @@ export const INPUT_GUIDANCE: Record<InputId, Guidance> = {
 		"Estimate relative playback speed from a control-vinyl tone.",
 		"Driving timing from a turntable; not absolute position or direction.",
 		"Control vinyl, a turntable connected to an audio input, and microphone permission."
+	),
+	"device-motion": guide(
+		"📱",
+		"Tilt, strike and turn a phone to play melodies, drums and chords, or to move control-surface gadgets.",
+		"Performing away from the screen and adding movement to any control surface.",
+		"A phone or tablet with motion sensors and an HTTPS page; iOS asks for motion permission. On a computer, drag on the pad to try it."
 	)
 }
 
@@ -335,6 +341,12 @@ export const OUTPUT_GUIDANCE: Record<OutputId | typeof PINK_TROMBONE_OUTPUT_ID, 
 		"Play your own audio sample across MIDI notes.",
 		"Custom instruments, found sounds and pitched samples.",
 		audio + " Load an audio file up to 4 MB; set its original MIDI pitch."
+	),
+	"loop-player": guide(
+		"Loop",
+		"Loop your audio in time with the global transport.",
+		"Set the region and its length in beats, then choose granular, slice or varispeed stretching.",
+		audio + " Load an audio file up to 4 MB. Granular mode requires AudioWorklet support."
 	),
 	"event-recorder": guide(
 		"Loop",

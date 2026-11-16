@@ -319,7 +319,8 @@ export function mountControlSurface(
 	// Shown until the performer edits the surface.
 	let notice = takeSurfaceNotice(surfaceId)
 	const unregisterTriggers = registerTriggerView(surfaceId, {
-		trigger: (key, pressed) => surface?.trigger(key, pressed) ?? false
+		trigger: (key, pressed) => surface?.trigger(key, pressed) ?? false,
+		follow: (key, axis, position) => surface?.follow(key, axis, position) ?? false
 	})
 	const refresh = async () => {
 		const state = chain.options.controlSurfaces?.find((s) => s.id === surfaceId)

@@ -114,3 +114,102 @@ it("validates and describes saved triggers", () => {
 		"Key Space · MIDI note 36 ch 10"
 	)
 })
+
+it("lets any input's CC follow dials and both axes of an XY pad", () => {
+	const X = JSON.stringify(["synth", "cutoff"]),
+		Y = JSON.stringify(["synth", "resonance"])
+	const surface: SurfaceState = {
+		id: "surface",
+		name: "Live",
+		connections: [{ componentId: "synth", controlIds: ["go", "cutoff", "resonance"] }],
+		widgets: [
+			{
+				key: KEY,
+				widget: "dial",
+				trigger: { midi: { type: "cc", number: 16, channel: 0 } }
+			},
+			{
+				key: X,
+				yKey: Y,
+				widget: "xy",
+				trigger: { midi: { type: "cc", number: 16, channel: 0 } },
+				yTrigger: { midi: { type: "cc", number: 17, channel: 0 } }
+			}
+		]
+	}
+	const manager = {
+		entries: [["chain-1", { options: { controlSurfaces: [surface] } }]],
+		triggerHandler: undefined as undefined | ((command: any) => boolean)
+	}
+	const view = { trigger: vi.fn(() => false), follow: vi.fn(() => true) }
+	cleanup.push(installSurfaceTriggers(manager as never), registerTriggerView("surface", view))
+	const handle = manager.triggerHandler!
+	expect(
+		handle({
+			type: CONTROL_CHANGE,
+			number: 16,
+			channel: 5,
+			value: 127,
+			from: "phone"
+		})
+	).toBe(true)
+	expect(
+		handle({
+			type: CONTROL_CHANGE,
+			number: 17,
+			channel: 5,
+			value: 0,
+			from: "phone"
+		})
+	).toBe(true)
+	expect(
+		handle({
+			type: CONTROL_CHANGE,
+			number: 18,
+			channel: 5,
+			value: 0,
+			from: "phone"
+		})
+	).toBe(false)
+	expect(view.follow.mock.calls).toEqual([
+		[KEY, "x", 1],
+		[X, "x", 1],
+		[X, "y", 0]
+	])
+	expect(validSurfaces([surface])).toBe(true)
+	expect(
+		validSurfaces([
+			{
+				...surface,
+				widgets: [{ key: X, yKey: Y, yTrigger: { midi: {} } }]
+			}
+		])
+	).toBe(false)
+})
+
+it("learns any CC value for continuous gadgets but ignores notes and keys", async () => {
+	const { manager, instrument } = setup({ key: "q" })
+	const learning = learnSurfaceTrigger(new AbortController().signal, "cc")
+	press("w")
+	expect(instrument).toHaveBeenCalledTimes(1)
+	expect(
+		manager.triggerHandler!({
+			type: NOTE_ON,
+			number: 36,
+			channel: 1,
+			velocity: 90
+		})
+	).toBe(true)
+	// A small move that never crosses the press threshold is still learned.
+	expect(
+		manager.triggerHandler!({
+			type: CONTROL_CHANGE,
+			number: 17,
+			channel: 2,
+			value: 3
+		})
+	).toBe(true)
+	expect(await learning).toEqual({
+		midi: { type: "cc", number: 17, channel: 2 }
+	})
+})

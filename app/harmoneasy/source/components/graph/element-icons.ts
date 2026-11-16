@@ -64,7 +64,8 @@ const INPUT_ICONS: Partial<Record<InputId, string>> = {
 	"midi-transport-clock": "clock",
 	"music-mouse": "mouse",
 	"microphone-pitch": "microphone",
-	"dvs-control-vinyl": "vinyl"
+	"dvs-control-vinyl": "vinyl",
+	"device-motion": "motion"
 }
 
 const OUTPUT_ICONS: Record<OutputId | typeof PINK_TROMBONE_OUTPUT_ID, string> = {
@@ -76,6 +77,7 @@ const OUTPUT_ICONS: Record<OutputId | typeof PINK_TROMBONE_OUTPUT_ID, string> = 
 	"note-monitor": "piano",
 	"song-tree": "visualizer",
 	"sample-player": "synth",
+	"loop-player": "synth",
 	"chromatic-sampler": "synth",
 	rompler: "synth",
 	"harmony-sampler": "synth",

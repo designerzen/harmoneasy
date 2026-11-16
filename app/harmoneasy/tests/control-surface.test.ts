@@ -1214,6 +1214,64 @@ describe("surface interaction and bindings", () => {
 			.click()
 		expect(saved.widgets[0].trigger).toBeUndefined()
 	})
+	it("learns the CCs a dial or XY pad follows and moves them from any input", async () => {
+		const level = bind("level", { min: 0, max: 10 }),
+			x = bind("x"),
+			y = bind("y"),
+			saved = state()
+		saved.widgets = [{ key: level.key }, { key: x.key, yKey: y.key, widget: "xy" }]
+		let cc = 16
+		const learnTrigger = vi.fn(async () => ({
+			midi: { type: "cc" as const, number: cc++, channel: 0 }
+		}))
+		const surface = new ControlSurface({
+			state: saved,
+			bindings: [level, x, y],
+			change: vi.fn(),
+			editing: true,
+			learnTrigger
+		})
+		views.push(surface)
+		document.body.append(surface.element)
+		await settle()
+		HTMLDialogElement.prototype.showModal ??= function (this: HTMLDialogElement) {
+			this.open = true
+		}
+		const buttons = () => [...document.querySelectorAll<HTMLButtonElement>("button")]
+		const learn = async (label: string) => {
+			buttons()
+				.find((b) => b.textContent === label)!
+				.click()
+			await settle()
+		}
+		buttons()
+			.find((b) => b.getAttribute("aria-label") === "Control level")!
+			.click()
+		await learn("Learn")
+		expect(learnTrigger).toHaveBeenLastCalledWith(expect.any(AbortSignal), "cc")
+		expect(saved.widgets[0].trigger).toEqual({
+			midi: { type: "cc", number: 16, channel: 0 }
+		})
+		document.querySelector<HTMLDialogElement>(".cs-trigger-dialog")!.close()
+		buttons()
+			.find((b) => b.getAttribute("aria-label") === "Control x / y")!
+			.click()
+		await learn("Learn X")
+		await learn("Learn Y")
+		expect(saved.widgets[1].trigger?.midi?.number).toBe(17)
+		expect(saved.widgets[1].yTrigger?.midi?.number).toBe(18)
+		expect(document.querySelector(".cs-trigger-dialog [role=status]")!.textContent).toBe(
+			"X: MIDI CC 17 · Y: MIDI CC 18"
+		)
+		document.querySelector<HTMLDialogElement>(".cs-trigger-dialog")!.close()
+		await settle()
+		expect(surface.follow(level.key, "x", 0.5)).toBe(true)
+		expect(surface.follow(x.key, "y", 1)).toBe(true)
+		expect(surface.follow("missing", "x", 1)).toBe(false)
+		await settle()
+		expect(level.write).toHaveBeenLastCalledWith(5)
+		expect(y.write).toHaveBeenLastCalledWith(1)
+	})
 	it("keeps natural gadget sizes inside a zoomable host so zoom cannot grow the node", async () => {
 		const binding = bind("a"),
 			saved = state()

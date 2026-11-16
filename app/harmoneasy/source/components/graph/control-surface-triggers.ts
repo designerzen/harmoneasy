@@ -1,25 +1,33 @@
 import { CONTROL_CHANGE, NOTE_OFF, NOTE_ON } from "audiobus/commands/commands"
-import { EVENT_ABORT, EVENT_BLUR, EVENT_KEY_DOWN, EVENT_KEY_UP } from "audiobus/events/event-constants"
+import {
+	EVENT_ABORT,
+	EVENT_BLUR,
+	EVENT_KEY_DOWN,
+	EVENT_KEY_UP
+} from "audiobus/events/event-constants"
 import type { IAudioCommand } from "audiobus/commands/audio-command-interface"
 import { componentBindings } from "audiobus/io/component-ui"
 import type IOChain from "audiobus/io/IO-chain"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
-import { TRIGGER_WIDGETS, denormalize, triggerKey } from "control-surface/model"
+import { FOLLOW_WIDGETS, TRIGGER_WIDGETS, denormalize, triggerKey } from "control-surface/model"
 import type { SurfaceTrigger } from "control-surface/types"
 import { controlComponents } from "./control-surfaces"
 
 interface TriggerView {
 	trigger(key: string, pressed: boolean): boolean
+	follow?(key: string, axis: "x" | "y", position: number): boolean
 }
 interface Match {
 	chain: IOChain
 	surfaceId: string
 	key: string
+	/** XY pads follow one CC per axis and are never pressed. */
+	axis?: "x" | "y"
 }
 type Input = Required<Pick<SurfaceTrigger, "key">> | Required<Pick<SurfaceTrigger, "midi">>
 
 const views = new Map<string, Set<TriggerView>>()
-let learner: ((trigger: SurfaceTrigger) => void) | undefined
+let learner: { kind: "press" | "cc"; done(trigger: SurfaceTrigger): void } | undefined
 
 /** Mounted surfaces play their own gadgets, so hardware gets the same flash and pressed states. */
 export function registerTriggerView(surfaceId: string, view: TriggerView): () => void {
@@ -33,18 +41,27 @@ export function registerTriggerView(surfaceId: string, view: TriggerView): () =>
 	}
 }
 
-/** The next key press or MIDI note/CC press is captured instead of playing anything. */
-export function learnSurfaceTrigger(signal: AbortSignal): Promise<SurfaceTrigger> {
+/**
+ * The next key press or MIDI note/CC press is captured instead of playing anything.
+ * With "cc", the next CC of any value from any input is captured, for gadgets that follow it.
+ */
+export function learnSurfaceTrigger(
+	signal: AbortSignal,
+	kind: "press" | "cc" = "press"
+): Promise<SurfaceTrigger> {
 	return new Promise((resolve, reject) => {
-		const done = (trigger: SurfaceTrigger) => {
-			learner = undefined
-			resolve(trigger)
+		const current = {
+			kind,
+			done(trigger: SurfaceTrigger) {
+				learner = undefined
+				resolve(trigger)
+			}
 		}
-		learner = done
+		learner = current
 		signal.addEventListener(
 			EVENT_ABORT,
 			() => {
-				if (learner === done) {
+				if (learner === current) {
 					learner = undefined
 				}
 				reject(signal.reason)
@@ -75,8 +92,18 @@ function findMatches(manager: IOChainManager, input: Input): Match[] {
 	for (const [, chain] of manager.entries) {
 		for (const surface of chain.options.controlSurfaces ?? []) {
 			for (const widget of surface.widgets) {
-				if (!widget.yKey && triggerMatches(widget.trigger, input)) {
-					matches.push({ chain, surfaceId: surface.id, key: widget.key })
+				const match = { chain, surfaceId: surface.id, key: widget.key }
+				if (!widget.yKey) {
+					if (triggerMatches(widget.trigger, input)) {
+						matches.push(match)
+					}
+				} else if ("midi" in input && input.midi.type === "cc") {
+					if (triggerMatches(widget.trigger, input)) {
+						matches.push({ ...match, axis: "x" })
+					}
+					if (triggerMatches(widget.yTrigger, input)) {
+						matches.push({ ...match, axis: "y" })
+					}
 				}
 			}
 		}
@@ -102,6 +129,45 @@ async function writeDirect({ chain, surfaceId, key }: Match, pressed: boolean): 
 		await binding.write(denormalize(d, pressed ? 1 : 0))
 	} else if (pressed) {
 		await binding.write(widget === "button" ? (d.defaultValue ?? 1) : !(await binding.read()))
+	}
+}
+
+/** Without a visible surface, a followed CC writes straight to the component control. */
+async function followDirect(
+	{ chain, surfaceId, key, axis }: Match,
+	position: number
+): Promise<void> {
+	const widget = chain.options.controlSurfaces
+		?.find((s) => s.id === surfaceId)
+		?.widgets.find((w) => w.key === key)
+	const controlKey = axis === "y" ? widget?.yKey : key
+	if (!widget || !controlKey) {
+		return
+	}
+	const [componentId] = JSON.parse(controlKey) as [string, string]
+	const component = controlComponents(chain).get(componentId)
+	if (!component) {
+		return
+	}
+	const binding = (await componentBindings(component, componentId)).find(
+		(b) => b.key === controlKey
+	)
+	const type = widget.yKey ? "xy" : (widget.widget ?? binding?.descriptor.widget)
+	if (binding && type && FOLLOW_WIDGETS.includes(type)) {
+		await binding.write(denormalize(binding.descriptor, position))
+	}
+}
+
+function follow(matches: Match[], position: number): void {
+	for (const match of matches) {
+		const played = [...(views.get(match.surfaceId) ?? [])].some((view) =>
+			view.follow?.(match.key, match.axis ?? "x", position)
+		)
+		if (!played) {
+			void followDirect(match, position).catch((error) =>
+				console.warn("Surface control failed", error)
+			)
+		}
 	}
 }
 
@@ -144,10 +210,10 @@ export function installSurfaceTriggers(manager: IOChainManager): () => void {
 			}
 			const key = triggerKey(event.key)
 			if (learner) {
-				if (key !== "Escape" && key !== "Tab") {
+				if (learner.kind === "press" && key !== "Escape" && key !== "Tab") {
 					event.preventDefault()
 					event.stopImmediatePropagation()
-					learner({ key })
+					learner.done({ key })
 				}
 				return
 			}
@@ -218,18 +284,23 @@ export function installSurfaceTriggers(manager: IOChainManager): () => void {
 						: undefined
 		}
 		if (learner) {
-			if (pressed) {
-				learner({ midi: { type, number: command.number, channel: command.channel || 0 } })
+			if (learner.kind === "cc" ? type === "cc" : pressed) {
+				learner.done({
+					midi: { type, number: command.number, channel: command.channel || 0 }
+				})
 			}
 			return true
 		}
-		const matches =
-			heldControls.get(id) ??
-			findMatches(manager, {
-				midi: { type, number: command.number, channel: command.channel }
-			})
+		const all = findMatches(manager, {
+			midi: { type, number: command.number, channel: command.channel }
+		})
+		if (type === "cc" && all.length) {
+			// Each view ignores gadgets of the other kind, so a CC both follows and presses.
+			follow(all, Math.max(0, Math.min(127, command.value)) / 127)
+		}
+		const matches = heldControls.get(id) ?? all.filter((match) => !match.axis)
 		if (!matches.length) {
-			return false
+			return all.length > 0
 		}
 		if (pressed && !heldControls.has(id)) {
 			heldControls.set(id, matches)
