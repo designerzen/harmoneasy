@@ -3,7 +3,7 @@ packages:
     - "packages/*"
 
 allowBuilds:
-    audiobus-protocol: true
+    "audiobus-protocol@git+https://github.com/designerzen/audiobus-protocol.git": true
     "@parcel/watcher": false
     core-js: false
     electron: false
