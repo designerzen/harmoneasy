@@ -63,7 +63,7 @@ These are the built-in input factory IDs, plus the hardware profiles registered 
 | PromptAI Speech | `prompt-ai-speech` | Speech-recognised prompts for AI note generation; additionally requires browser speech recognition. |
 | MIDI Transport Clock | `midi-transport-clock` | MIDI clock/transport input, using 24 clock pulses per quarter note. |
 | audioBus Protocol | `protocol` | Receive notes and commands from other web pages and applications; see [Remote control](#remote-control-audiobus-protocol). |
-| DVS Control Vinyl | `dvs-control-vinyl` | Track the 1 kHz pilot tone of a Serato v2 control vinyl/CD and emit 24 musical ticks per beat of a reference BPM (at normal speed) plus start/stop. Select "DVS control vinyl" in the clock source to let the platter drive the transport clock; speed changes follow the tempo. Does not decode direction or absolute record position. |
+| DVS Control Vinyl | `dvs-control-vinyl` | Track the 1 kHz pilot tone of a Serato v2 control vinyl/CD and emit 24 musical ticks per beat of a reference BPM (at normal speed) plus start/stop. Select "DVS control vinyl" in the clock source to let the platter drive the transport clock; speed changes follow the tempo. With a stereo input, reverse play holds the clock (`invertDirection` swaps forward and reverse). Does not decode absolute record position. |
 
 ### Hardware-specific MIDI inputs
 

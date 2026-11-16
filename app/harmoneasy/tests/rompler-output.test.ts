@@ -44,11 +44,11 @@ const fixture = (
 	vi.stubGlobal(
 		"fetch",
 		vi.fn(
-			(url: string, { signal }: RequestInit) =>
+			(url: string, init?: RequestInit) =>
 				new Promise((resolve) =>
 					requests.push({
 						url,
-						signal: signal!,
+						signal: init?.signal as AbortSignal,
 						resolve: () =>
 							resolve({ ok: true, arrayBuffer: async () => new ArrayBuffer(4) })
 					})
@@ -99,7 +99,32 @@ it("registers, persists its preset and downloads nothing until requested", async
 	expect(saved.options.pack).toBeUndefined()
 	expect(saved.options.audioContext).toBeUndefined()
 	await output.createGui()
-	expect(requests).toHaveLength(0)
+	expect(requests.filter(({ url }) => url.endsWith(".mp3"))).toHaveLength(0)
+})
+
+it("browses instruments from the catalogue and lights keys as samples land", async () => {
+	const { output, requests } = fixture({ spacing: 1 })
+	const gui = await output.createGui()
+	const items = [...gui.querySelectorAll<HTMLButtonElement>(".rompler-item")]
+	expect(items).toHaveLength(128)
+	expect(gui.querySelector(".rompler-title")?.textContent).toBe("Acoustic Grand Piano")
+	const search = gui.querySelector<HTMLInputElement>(".rompler-search")!
+	search.value = "bass"
+	search.dispatchEvent(new Event("input"))
+	const shown = items.filter((item) => !item.hidden)
+	expect(shown.length).toBeGreaterThan(0)
+	expect(shown.every((item) => /bass/i.test(item.textContent!))).toBe(true)
+	shown[0].click()
+	expect(output.options.preset).toBe(32)
+	expect(gui.querySelector(".rompler-title")?.textContent).toBe("Acoustic Bass")
+	expect(items[32].getAttribute("aria-pressed")).toBe("true")
+	await output.sendCommand(cmd(NOTE_ON, 72))
+	expect(gui.querySelector('[data-note="72"]')?.classList.contains("playing")).toBe(true)
+	requests.find(({ url }) => url.endsWith("/C5.mp3"))!.resolve()
+	await flush()
+	expect(gui.querySelector('[data-note="72"]')?.classList.contains("loaded")).toBe(true)
+	await output.sendCommand(cmd(NOTE_OFF, 72))
+	expect(gui.querySelector('[data-note="72"]')?.classList.contains("playing")).toBe(false)
 })
 
 it("loads outward from the played register with bounded concurrency", async () => {
