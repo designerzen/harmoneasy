@@ -18,6 +18,8 @@ The protocol is published as the standalone [`audiobus-protocol`](https://github
 
 ## Try it in two minutes
 
+The [protocol-site remote](https://designerzen.github.io/audiobus-protocol/api/remote-control.html) provides the full HarmonEasy controller using the standalone SDK. It embeds the live app by default; [target a local build](https://designerzen.github.io/audiobus-protocol/api/remote-control.html?app=http://localhost:1999/) when testing changes. Both versions discover commands and controls from the running setup and reconnect after preset changes.
+
 ```sh
 pnpm --dir app/harmoneasy run dev
 ```
