@@ -10,6 +10,17 @@
 
 [audioBus Protocol guide](docs/audiobus-protocol.md): play and control HarmonEasy from another web page or application: notes, transport, presets and every on-screen control. Try it in the [remote control demo](https://designerzen.github.io/harmoneasy/protocol-remote.html).
 
+### Test remote control
+
+| Live page | What to try |
+| --- | --- |
+| [Protocol-site HarmonEasy remote](https://designerzen.github.io/audiobus-protocol/api/remote-control.html) | Press Start inside the embedded app; the remote connects automatically. Play keyboard/drums, change tempo, load presets, and edit discovered commands, properties and palette controls. |
+| [Step through a song](https://designerzen.github.io/harmoneasy/presets/protocol/step-song/) | Any incoming note advances the song; its configured Protocol Output sends resulting notes back. |
+| [Remote playground](https://designerzen.github.io/harmoneasy/presets/protocol/remote-playground/) | Test MIDI through a ready-made instrument chain. |
+| [Protocol demo catalogue](https://designerzen.github.io/audiobus-protocol/demos.html) | Test symmetric commands, optional pairing, legacy MIDI, MIDI 2 UMP and properties. |
+
+For your current setup, add an **audioBus Protocol** Input to the desired chain and press the toolbar's **Remote** button. Open connections are the default; pairing lives in advanced settings. The remote discovers what your current setup exposes. For local development, use [the protocol-site remote targeting localhost](https://designerzen.github.io/audiobus-protocol/api/remote-control.html?app=http://localhost:1999/).
+
 HarmonEasy connects musical inputs to instruments, MIDI devices, notation, speech and haptics through editable transformation chains. Use it to harmonise live playing, build chord and arpeggio patterns, remix imported notes, explore alternative controllers, make accessible musical feedback, or play together in a shared room.
 
 ## Getting started
