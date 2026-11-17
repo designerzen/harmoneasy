@@ -461,3 +461,48 @@ it("falls back to the phrase reading when AI fails or is skipped", async () => {
 	expect(prompt).toHaveBeenCalledTimes(2)
 	expect(ui.title()).toBe("Your setup is ready to create")
 })
+
+it("adds held speech to the description and stops listening when the dialog closes", () => {
+	const recognition = {
+		start: vi.fn(),
+		stop: vi.fn(() => recognition.onend?.()),
+		abort: vi.fn(),
+		onresult: null as ((event: unknown) => void) | null,
+		onend: null as (() => void) | null
+	}
+	vi.stubGlobal(
+		"webkitSpeechRecognition",
+		class {
+			constructor() {
+				return recognition
+			}
+		}
+	)
+	const ui = mount()
+	const speak = [...ui.dialog.querySelectorAll("button")].find(
+		(button) => button.textContent === "Hold to speak"
+	)!
+	expect(speak.hidden).toBe(false)
+	const textarea = ui.dialog.querySelector("textarea")!
+	textarea.value = "Fast jazz"
+	textarea.dispatchEvent(new Event("input"))
+	speak.dispatchEvent(new PointerEvent("pointerdown", { button: 0, pointerId: 1 }))
+	recognition.onresult!({
+		resultIndex: 0,
+		results: [{ isFinal: true, 0: { transcript: "with my game controller" } }]
+	})
+	speak.dispatchEvent(new PointerEvent("pointerup", { button: 0, pointerId: 1 }))
+	expect(textarea.value).toBe("Fast jazz with my game controller")
+	expect(ui.dialog.querySelector(".wizard-status")!.textContent).toContain("Speech added")
+	speak.dispatchEvent(new PointerEvent("pointerdown", { button: 0, pointerId: 2 }))
+	ui.dialog.querySelector<HTMLButtonElement>("header button")!.click()
+	expect(recognition.abort).toHaveBeenCalled()
+	vi.stubGlobal("webkitSpeechRecognition", undefined)
+	ui.trigger.click()
+	expect(
+		[...ui.dialog.querySelectorAll("button")].find(
+			(button) => button.textContent === "Hold to speak"
+		)!.hidden
+	).toBe(true)
+	expect(ui.dialog.querySelector("textarea")!.value).toBe("Fast jazz with my game controller")
+})

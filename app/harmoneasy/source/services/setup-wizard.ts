@@ -20,6 +20,7 @@ import {
 	WIZARD_PACES,
 	type WizardAnswers
 } from "./setup-designer"
+import { createPushToTalk, speechRecognitionAvailable } from "../libs/push-to-talk"
 import {
 	interpretationHints,
 	interpretSetupDescription,
@@ -131,6 +132,7 @@ export function createSetupWizard(
 	let request: AbortController | undefined
 	let description = ""
 	let useAI = true
+	let speech: ReturnType<typeof createPushToTalk> | undefined
 	let interpretation: SetupInterpretation | undefined
 	const steps = (): Step[] => [
 		"goal",
@@ -213,6 +215,7 @@ export function createSetupWizard(
 		question.append(fieldset)
 	}
 	const cancelRequest = () => {
+		speech?.abort()
 		request?.abort()
 		request = undefined
 		const build = dialog.querySelector<HTMLButtonElement>("[data-describe]")
@@ -227,6 +230,8 @@ export function createSetupWizard(
 	const render = () => {
 		const sequence = steps()
 		const step = sequence[position]
+		speech?.abort()
+		speech = undefined
 		question.replaceChildren()
 		status.textContent = ""
 		updateProgress()
@@ -297,6 +302,33 @@ export function createSetupWizard(
 				description = input.value
 			})
 			label.append(input)
+			const speak = document.createElement("button")
+			speak.type = "button"
+			speak.className = "secondary"
+			speak.textContent = "Hold to speak"
+			speak.hidden = !speechRecognitionAvailable()
+			if (!speak.hidden) {
+				help.append(
+					' Hold the "Hold to speak" button while you talk instead of typing. Speech recognition may use your browser’s online service.'
+				)
+				let typed = ""
+				speech = createPushToTalk(speak, {
+					onStart: () => {
+						typed = input.value.trim()
+					},
+					onText: (text, final) => {
+						input.value = typed ? `${typed} ${text}` : text
+						description = input.value
+						if (final) {
+							status.textContent =
+								"Speech added. Check the text, then choose Build from description."
+						}
+					},
+					onStatus: (message) => {
+						status.textContent = message
+					}
+				})
+			}
 			const aiToggle = document.createElement("label")
 			const aiCheckbox = document.createElement("input")
 			aiCheckbox.type = "checkbox"
@@ -407,7 +439,7 @@ export function createSetupWizard(
 			})
 			const actions = document.createElement("div")
 			actions.className = "wizard-describe-actions"
-			actions.append(build, stop, aiToggle)
+			actions.append(speak, build, stop, aiToggle)
 			details.append(summary, help, label, actions)
 			question.append(details)
 		} else if (step === "recipe") {
