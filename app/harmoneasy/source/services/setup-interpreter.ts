@@ -47,10 +47,14 @@ interface Match {
 export interface SetupInterpretation {
 	/** False when nothing in the description matched a supported choice. */
 	matched: boolean
+	/** "ai" when local AI chose the answers and the phrase rules only checked them. */
+	source: "rules" | "ai"
+	/** The AI's own short account of its answers. */
+	summary?: string
 	answers: WizardAnswers
 	confidence: "high" | "medium" | "low"
 	reasons: { topic: Topic; text: string }[]
-	notes: string[]
+	notes: { topic: Topic; text: string }[]
 	alternatives: { label: string; answers: WizardAnswers }[]
 }
 
@@ -740,11 +744,17 @@ export function interpretSetupDescription(description: string): SetupInterpretat
 	const text = normalise(description)
 	const matches = findMatches(text)
 	const positive = matches.filter((match) => !match.negated)
-	const notes = [
-		...new Set(
-			matches.flatMap((match) => (match.rule.note && !match.negated ? [match.rule.note] : []))
-		)
-	]
+	const notes: SetupInterpretation["notes"] = []
+	const note = (topic: Topic, text: string) => {
+		if (!notes.some((item) => item.text === text)) {
+			notes.push({ topic, text })
+		}
+	}
+	for (const match of positive) {
+		if (match.rule.note) {
+			note(topics(match.rule)[0] as Topic, match.rule.note)
+		}
+	}
 
 	// Activity: every phrase adds to the recipes it suggests and its goal adds to the whole group.
 	const scores = new Map(CANDIDATES.map(({ context }) => [context.id, 0]))
@@ -818,7 +828,8 @@ export function interpretSetupDescription(description: string): SetupInterpretat
 					? "text"
 					: "sound"
 	if (top.goal !== "access" && cues.has("sound") && ["spoken", "notation"].includes(feedback)) {
-		notes.push(
+		note(
+			"feedback",
 			`"${WIZARD_FEEDBACK.find((item) => item.id === feedback)!.label}" replaces the instrument sound. Use Back to choose "Sound and written note names" if you want to hear the music.`
 		)
 	}
@@ -834,7 +845,7 @@ export function interpretSetupDescription(description: string): SetupInterpretat
 		const most = Math.max(...counts)
 		pace = paceVotes[counts.lastIndexOf(most)]
 		if (new Set(paceVotes).size > 1) {
-			notes.push(`The description mentions more than one speed, so "${pace}" was used.`)
+			note("pace", `The description mentions more than one speed, so "${pace}" was used.`)
 		}
 	}
 	const tempo = /(\d{2,3})\s*(?:bpm|beats? (?:per|a) minute)/.exec(text)
@@ -848,7 +859,8 @@ export function interpretSetupDescription(description: string): SetupInterpretat
 			pace = (Object.keys(PACE_BPM) as Pace[]).reduce((a, b) =>
 				Math.abs(PACE_BPM[b] - bpm) < Math.abs(PACE_BPM[a] - bpm) ? b : a
 			)
-			notes.push(
+			note(
+				"pace",
 				`The closest available speed to ${bpm} BPM is ${PACE_BPM[pace]} BPM. You can set the exact tempo after starting.`
 			)
 		}
@@ -874,13 +886,15 @@ export function interpretSetupDescription(description: string): SetupInterpretat
 				: `${top.context.name}, as a starting point`
 	})
 	if (best <= 0) {
-		notes.push(
+		note(
+			"activity",
 			"The description did not mention an activity, so the wizard's first activity was used."
 		)
 	}
 	if (top.goal === "file") {
 		if (inputs.length) {
-			notes.push(
+			note(
+				"inputs",
 				"File setups play your imported notes, so the instruments you mentioned are not added."
 			)
 		}
@@ -900,7 +914,7 @@ export function interpretSetupDescription(description: string): SetupInterpretat
 	}
 	if (paceEvidence.length) {
 		if (answers.goal === "file" || answers.goal === "access") {
-			notes.push("Speed is not used for this kind of setup, so it was left as suggested.")
+			note("pace", "Speed is not used for this kind of setup, so it was left as suggested.")
 		} else {
 			reasons.push({
 				topic: "pace",
@@ -923,10 +937,77 @@ export function interpretSetupDescription(description: string): SetupInterpretat
 
 	return {
 		matched: matches.some((match) => !match.negated) || tempo !== null,
+		source: "rules",
 		answers,
 		confidence,
 		reasons,
 		notes,
 		alternatives
+	}
+}
+
+const contextName = (answers: WizardAnswers) =>
+	wizardContexts(answers.goal).find((context) => context.id === answers.contextId)!.name
+
+/** A compact account of the phrase reading, given to local AI as a hint it may overrule. */
+export function interpretationHints(result: SetupInterpretation) {
+	if (!result.matched) {
+		return "A keyword reader found no known phrases, so rely on the description alone."
+	}
+	return [
+		"A keyword reader, which can miss context, suggested:",
+		JSON.stringify(result.answers),
+		...result.reasons.map((reason) => `${reason.topic}: ${reason.text}`),
+		...(result.alternatives.length
+			? [
+					`Other possible contexts: ${result.alternatives.map((item) => item.answers.contextId).join(", ")}`
+				]
+			: []),
+		...result.notes.map((item) => `Note: ${item.text}`)
+	].join("\n")
+}
+
+/**
+ * Prefers a valid AI answer, keeping the phrase evidence and notes for every topic both readings
+ * agree on, and offering the phrase reading's activities as alternatives. Throws when the AI
+ * answer is not a supported setup so the caller can fall back to the phrase reading.
+ */
+export function withAISuggestion(local: SetupInterpretation, value: unknown): SetupInterpretation {
+	const answers = validateWizardAnswers(value)
+	const explanation = (value as { explanation?: unknown }).explanation
+	const agrees: Record<Topic, boolean> = {
+		activity: local.matched && local.answers.contextId === answers.contextId,
+		inputs: local.answers.inputs.join() === answers.inputs.join(),
+		feedback: local.answers.feedback === answers.feedback,
+		pace: local.answers.pace === answers.pace
+	}
+	const reasons = local.matched ? local.reasons.filter((reason) => agrees[reason.topic]) : []
+	if (!agrees.activity) {
+		reasons.unshift({ topic: "activity", text: `${contextName(answers)}, chosen by local AI` })
+	}
+	const alternatives: SetupInterpretation["alternatives"] = []
+	for (const option of [
+		...(local.matched ? [{ label: contextName(local.answers), answers: local.answers }] : []),
+		...local.alternatives
+	]) {
+		if (
+			option.answers.contextId !== answers.contextId &&
+			!alternatives.some((item) => item.answers.contextId === option.answers.contextId)
+		) {
+			alternatives.push(option)
+		}
+	}
+	return {
+		matched: true,
+		source: "ai",
+		summary:
+			typeof explanation === "string" && explanation.trim()
+				? explanation.trim().slice(0, 300)
+				: undefined,
+		answers,
+		confidence: agrees.activity ? "high" : "medium",
+		reasons,
+		notes: local.notes.filter((item) => agrees[item.topic]),
+		alternatives: alternatives.slice(0, 3)
 	}
 }

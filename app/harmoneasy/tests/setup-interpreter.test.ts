@@ -51,7 +51,7 @@ it("lets the more specific phrase win over the words inside it", () => {
 	const result = read("Drum and bass on my computer keyboard")
 	expect(result.answers.contextId).toBe("drum-and-bass")
 	expect(result.answers.inputs).toEqual(["screen"])
-	expect(result.notes.join(" ")).not.toContain("music keyboard")
+	expect(result.notes.map((note) => note.text).join(" ")).not.toContain("music keyboard")
 })
 
 it("honours negation without losing the rest of the request", () => {
@@ -87,21 +87,27 @@ it("separates words about the player from words about the music", () => {
 it("explains ambiguous and unsupported parts of the request", () => {
 	const keyboard = read("Write a song on my keyboard")
 	expect(keyboard.answers.inputs).toEqual(["midi"])
-	expect(keyboard.notes.join(" ")).toContain("computer")
-	expect(read("Remix my MP3").notes.join(" ")).toContain("cannot be imported")
+	expect(keyboard.notes.map((note) => note.text).join(" ")).toContain("computer")
+	expect(
+		read("Remix my MP3")
+			.notes.map((note) => note.text)
+			.join(" ")
+	).toContain("cannot be imported")
 	const file = read("Convert my MIDI file using a gamepad")
 	expect(file.answers.inputs).toEqual(["screen"])
-	expect(file.notes.join(" ")).toContain("not added")
-	expect(read("Sheet music for techno, and I want to hear it").notes.join(" ")).toContain(
-		"replaces the instrument sound"
-	)
+	expect(file.notes.map((note) => note.text).join(" ")).toContain("not added")
+	expect(
+		read("Sheet music for techno, and I want to hear it")
+			.notes.map((note) => note.text)
+			.join(" ")
+	).toContain("replaces the instrument sound")
 })
 
 it("maps tempo numbers to the activity's own speed or the closest available speed", () => {
 	expect(read("Techno at 135 bpm").answers.pace).toBe("suggested")
 	const slow = read("Techno at 80 BPM")
 	expect(slow.answers.pace).toBe("slow")
-	expect(slow.notes.join(" ")).toContain("closest available speed")
+	expect(slow.notes.map((note) => note.text).join(" ")).toContain("closest available speed")
 	expect(read("Read my MIDI file aloud quickly").answers.pace).toBe("suggested")
 })
 

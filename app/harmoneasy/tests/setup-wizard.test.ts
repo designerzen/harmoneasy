@@ -263,8 +263,13 @@ it("keeps manual setup available when local AI is unsupported", () => {
 	expect(ui.dialog.textContent).toContain("Local AI is not available")
 	expect(
 		[...ui.dialog.querySelectorAll("button")].find(
-			(button) => button.textContent === "Suggest answers"
+			(button) => button.textContent === "Build from description"
 		)?.disabled
+	).toBe(false)
+	expect(
+		ui.dialog
+			.querySelector<HTMLInputElement>(".wizard-describe-actions input")!
+			.closest("label")!.hidden
 	).toBe(true)
 	ui.choose("together")
 	ui.next()
@@ -312,7 +317,7 @@ it("reviews AI suggestions and destroys the local model session", async () => {
 	textarea.value = "A slow bass line"
 	textarea.dispatchEvent(new Event("input"))
 	;[...ui.dialog.querySelectorAll("button")]
-		.find((button) => button.textContent === "Suggest answers")!
+		.find((button) => button.textContent === "Build from description")!
 		.click()
 	await vi.waitFor(() => expect(ui.title()).toBe("Your setup is ready to create"))
 	expect(ui.start).not.toHaveBeenCalled()
@@ -341,7 +346,7 @@ it("ignores AI results after closing and lets the questions recover from invalid
 	textarea.dispatchEvent(new Event("input"))
 	const suggest = () =>
 		[...ui.dialog.querySelectorAll("button")]
-			.find((button) => button.textContent === "Suggest answers")!
+			.find((button) => button.textContent === "Build from description")!
 			.click()
 	suggest()
 	await vi.waitFor(() => expect(prompt).toHaveBeenCalledOnce())
@@ -384,4 +389,75 @@ it("builds a reviewed setup from a description without local AI", () => {
 	expect(ui.start).toHaveBeenCalledOnce()
 	expect(ui.start.mock.calls[0][0].id).toBe("wizard:samba")
 	expect(ui.start.mock.calls[0][0].chains[0].inputs).toContain("wizard-gamepad")
+})
+
+function describe(ui: ReturnType<typeof mount>, text: string) {
+	const textarea = ui.dialog.querySelector("textarea")!
+	textarea.value = text
+	textarea.dispatchEvent(new Event("input"))
+	;[...ui.dialog.querySelectorAll("button")]
+		.find((button) => button.textContent === "Build from description")!
+		.click()
+}
+
+it("asks local AI with the phrase reading as a hint and keeps agreeing evidence", async () => {
+	const prompt = vi.fn().mockResolvedValue(
+		JSON.stringify({
+			goal: "genre",
+			contextId: "samba",
+			inputs: ["gamepad"],
+			feedback: "sound",
+			pace: "medium",
+			explanation: "Samba suits a Brazilian carnival feel."
+		})
+	)
+	vi.stubGlobal("LanguageModel", {
+		availability: vi.fn().mockResolvedValue("available"),
+		create: vi.fn().mockResolvedValue({ prompt, destroy: vi.fn() })
+	})
+	const ui = mount()
+	describe(ui, "Latin carnival music on my game controller, not too fast")
+	await vi.waitFor(() => expect(ui.title()).toBe("Your setup is ready to create"))
+	const sent = prompt.mock.calls[0][0] as string
+	expect(sent).toContain("keyword reader")
+	expect(sent).toContain('"microphone-pitch"')
+	expect(sent).toContain("carnival music")
+	expect(ui.dialog.textContent).toContain("Local AI read your description")
+	expect(ui.dialog.textContent).toContain("Samba suits a Brazilian carnival feel.")
+	expect(ui.dialog.textContent).toContain('"game controller"')
+	ui.next()
+	expect(ui.start.mock.calls[0][0].id).toBe("wizard:samba")
+})
+
+it("falls back to the phrase reading when AI fails or is skipped", async () => {
+	const prompt = vi
+		.fn()
+		.mockResolvedValue(JSON.stringify({ goal: "write", contextId: "invented" }))
+	vi.stubGlobal("LanguageModel", {
+		availability: vi.fn().mockResolvedValue("available"),
+		create: vi.fn().mockResolvedValue({ prompt, destroy: vi.fn() })
+	})
+	const ui = mount()
+	describe(ui, "Write a bass line")
+	await vi.waitFor(() => expect(ui.title()).toBe("Your setup is ready to create"))
+	expect(ui.dialog.textContent).toContain("Local AI could not help")
+	expect(ui.dialog.querySelector("h4")!.textContent).toBe("Build a bass line")
+
+	prompt.mockImplementation(() => new Promise(() => {}))
+	ui.dialog.querySelector<HTMLButtonElement>("header button")!.click()
+	ui.trigger.click()
+	describe(ui, "Some dnb please")
+	await vi.waitFor(() => expect(prompt).toHaveBeenCalledTimes(2))
+	;[...ui.dialog.querySelectorAll("button")]
+		.find((button) => button.textContent === "Skip AI")!
+		.click()
+	expect(ui.title()).toBe("Your setup is ready to create")
+	expect(ui.dialog.querySelector("h4")!.textContent).toBe("Write drum and bass")
+
+	ui.dialog.querySelector<HTMLButtonElement>("header button")!.click()
+	ui.trigger.click()
+	ui.dialog.querySelector<HTMLInputElement>(".wizard-describe-actions input")!.click()
+	describe(ui, "Some dnb please")
+	expect(prompt).toHaveBeenCalledTimes(2)
+	expect(ui.title()).toBe("Your setup is ready to create")
 })

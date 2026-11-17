@@ -9,10 +9,9 @@ import {
 import { browserAI, promptBrowserAI } from "audiobus/io/browser-ai"
 import {
 	designSetup,
-	validateWizardAnswers,
 	wizardAIPrompt,
 	wizardContexts,
-	WIZARD_ANSWERS_SCHEMA,
+	WIZARD_AI_SCHEMA,
 	WIZARD_FEEDBACK,
 	WIZARD_GOALS,
 	WIZARD_INPUTS,
@@ -21,7 +20,12 @@ import {
 	WIZARD_PACES,
 	type WizardAnswers
 } from "./setup-designer"
-import { interpretSetupDescription, type SetupInterpretation } from "./setup-interpreter"
+import {
+	interpretationHints,
+	interpretSetupDescription,
+	withAISuggestion,
+	type SetupInterpretation
+} from "./setup-interpreter"
 
 type Step =
 	| "goal"
@@ -126,7 +130,7 @@ export function createSetupWizard(
 	let position = 0
 	let request: AbortController | undefined
 	let description = ""
-	let aiNotice = ""
+	let useAI = true
 	let interpretation: SetupInterpretation | undefined
 	const steps = (): Step[] => [
 		"goal",
@@ -211,10 +215,10 @@ export function createSetupWizard(
 	const cancelRequest = () => {
 		request?.abort()
 		request = undefined
-		const suggest = dialog.querySelector<HTMLButtonElement>("[data-ai-suggest]")
+		const build = dialog.querySelector<HTMLButtonElement>("[data-describe]")
 		const stop = dialog.querySelector<HTMLButtonElement>("[data-ai-stop]")
-		if (suggest) {
-			suggest.disabled = !browserAI()
+		if (build) {
+			build.disabled = false
 		}
 		if (stop) {
 			stop.hidden = true
@@ -279,12 +283,9 @@ export function createSetupWizard(
 			summary.prepend(wizardIcon("sparkles"))
 			details.open = Boolean(description)
 			const help = document.createElement("p")
-			help.textContent =
-				"Describe what you want to play, make or practise, what you will play with and how you want to follow the notes. Your words are read on this device and fill in the questions; you will check them before creating anything."
-			const aiHelp = document.createElement("p")
-			aiHelp.textContent = browserAI()
-				? "Local AI can also suggest answers. It runs on this device without an API key, but first use may download a large model."
-				: "Local AI is not available in this browser, so AI suggestions are off. A browser with the built-in LanguageModel API is needed for them."
+			help.textContent = browserAI()
+				? "Describe what you want to play, make or practise, what you will play with and how you want to follow the notes. Local AI reads it on this device without an API key, and a phrase reader checks its answers. First use may download a large model. You will check the answers before creating anything."
+				: "Describe what you want to play, make or practise, what you will play with and how you want to follow the notes. A phrase reader on this device fills in the questions for you to check. Local AI is not available in this browser; a browser with the built-in LanguageModel API understands descriptions better."
 			const label = document.createElement("label")
 			label.textContent = "What would you like to make?"
 			const input = document.createElement("textarea")
@@ -296,70 +297,77 @@ export function createSetupWizard(
 				description = input.value
 			})
 			label.append(input)
+			const aiToggle = document.createElement("label")
+			const aiCheckbox = document.createElement("input")
+			aiCheckbox.type = "checkbox"
+			aiCheckbox.checked = useAI
+			aiCheckbox.addEventListener(EVENT_CHANGE, () => {
+				useAI = aiCheckbox.checked
+			})
+			aiToggle.append(aiCheckbox, "Use local AI")
+			aiToggle.hidden = !browserAI()
 			const build = document.createElement("button")
 			build.type = "button"
 			build.className = "secondary"
+			build.dataset.describe = ""
 			build.textContent = "Build from description"
-			build.addEventListener(EVENT_CLICK, () => {
-				if (!description.trim()) {
-					status.textContent = "Please describe what you would like to make."
-					input.focus()
-					return
-				}
-				cancelRequest()
-				const result = interpretSetupDescription(description)
-				if (!result.matched) {
-					status.textContent =
-						"That description did not match a setup. Try naming what you want to do, a style such as jazz, or what you will play with. You can also use the questions."
-					input.focus()
-					return
-				}
-				answers = result.answers
-				interpretation = result
-				aiNotice = ""
-				selectedGoal = true
-				position = steps().length - 1
-				render()
-			})
-			const suggest = document.createElement("button")
-			suggest.type = "button"
-			suggest.className = "secondary"
-			suggest.dataset.aiSuggest = ""
-			suggest.textContent = "Suggest answers"
-			suggest.disabled = !browserAI()
 			const stop = document.createElement("button")
 			stop.type = "button"
 			stop.className = "tertiary"
 			stop.dataset.aiStop = ""
-			stop.textContent = "Stop AI"
+			stop.textContent = "Skip AI"
 			stop.hidden = true
+			let fallback: SetupInterpretation | undefined
+			const showInterpretation = (result: SetupInterpretation) => {
+				answers = result.answers
+				interpretation = result
+				selectedGoal = true
+				position = steps().length - 1
+				render()
+			}
+			const unmatched =
+				"That description did not match a setup. Try naming what you want to do, a style such as jazz, or what you will play with. You can also use the questions."
 			stop.addEventListener(EVENT_CLICK, () => {
+				const local = fallback
 				cancelRequest()
-				suggest.disabled = false
-				stop.hidden = true
-				status.textContent = "AI stopped. You can use the questions."
+				if (local?.matched) {
+					showInterpretation(local)
+				} else {
+					status.textContent = "AI stopped. You can use the questions."
+				}
 			})
-			suggest.addEventListener(EVENT_CLICK, async () => {
+			build.addEventListener(EVENT_CLICK, async () => {
 				if (!description.trim()) {
 					status.textContent = "Please describe what you would like to make."
 					input.focus()
 					return
 				}
 				cancelRequest()
+				const local = interpretSetupDescription(description)
+				if (!browserAI() || !useAI) {
+					if (local.matched) {
+						showInterpretation(local)
+					} else {
+						status.textContent = unmatched
+						input.focus()
+					}
+					return
+				}
 				const controller = new AbortController()
 				request = controller
-				suggest.disabled = true
+				fallback = local
+				build.disabled = true
 				stop.hidden = false
 				try {
-					const result = await promptBrowserAI(
-						wizardAIPrompt(description),
-						WIZARD_ANSWERS_SCHEMA,
+					const value = await promptBrowserAI(
+						wizardAIPrompt(description, interpretationHints(local)),
+						WIZARD_AI_SCHEMA,
 						controller.signal,
 						(message) => {
 							if (!controller.signal.aborted) {
 								status.textContent =
 									message === "Generating music…"
-										? "Choosing answers for your setup…"
+										? "Reading your description…"
 										: message
 							}
 						}
@@ -367,29 +375,40 @@ export function createSetupWizard(
 					if (controller.signal.aborted || !dialog.open) {
 						return
 					}
-					answers = validateWizardAnswers(result)
-					selectedGoal = true
-					interpretation = undefined
-					aiNotice =
-						"AI suggested these answers. Use Back to check or change them before creating your setup."
-					position = steps().length - 1
-					render()
+					showInterpretation(withAISuggestion(local, value))
 				} catch (error) {
-					if (!controller.signal.aborted) {
-						status.textContent = `${error instanceof Error ? error.message : "AI could not suggest a setup."} You can continue with the questions.`
+					if (controller.signal.aborted || !dialog.open) {
+						return
+					}
+					const reason =
+						error instanceof Error ? error.message : "AI could not suggest a setup."
+					if (local.matched) {
+						showInterpretation({
+							...local,
+							notes: [
+								{
+									topic: "activity",
+									text: `Local AI could not help (${reason}), so the phrase reader chose these answers.`
+								},
+								...local.notes
+							]
+						})
+					} else {
+						status.textContent = `${reason} ${unmatched}`
 					}
 				} finally {
 					if (request === controller) {
 						request = undefined
-						suggest.disabled = false
+						fallback = undefined
+						build.disabled = false
 						stop.hidden = true
 					}
 				}
 			})
 			const actions = document.createElement("div")
 			actions.className = "wizard-describe-actions"
-			actions.append(build, suggest, stop)
-			details.append(summary, help, label, actions, aiHelp)
+			actions.append(build, stop, aiToggle)
+			details.append(summary, help, label, actions)
 			question.append(details)
 		} else if (step === "recipe") {
 			choices(
@@ -449,9 +468,6 @@ export function createSetupWizard(
 			)
 		} else {
 			const { setup, instructions } = designSetup(answers)
-			if (aiNotice) {
-				paragraph(aiNotice)
-			}
 			if (interpretation) {
 				describeInterpretation(interpretation)
 			}
@@ -509,8 +525,11 @@ export function createSetupWizard(
 	}
 	const describeInterpretation = (result: SetupInterpretation) => {
 		paragraph(
-			`This setup was read from your description as ${CONFIDENCE_LABELS[result.confidence]}. Use Back to check or change any answer.`
+			`${result.source === "ai" ? "Local AI read your description" : "This setup was read from your description"} as ${CONFIDENCE_LABELS[result.confidence]}. Use Back to check or change any answer.`
 		)
+		if (result.summary) {
+			paragraph(result.summary)
+		}
 		const context = wizardContexts(answers.goal).find((item) => item.id === answers.contextId)!
 		const list = document.createElement("ul")
 		list.className = "wizard-interpretation"
@@ -534,7 +553,7 @@ export function createSetupWizard(
 		}
 		question.append(list)
 		result.notes.forEach((note) => {
-			paragraph(note)
+			paragraph(note.text)
 			question.lastElementChild!.className = "wizard-note"
 		})
 		const options = [
