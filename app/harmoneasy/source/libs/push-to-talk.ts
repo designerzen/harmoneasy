@@ -7,43 +7,7 @@ import {
 	EVENT_POINTER_DOWN,
 	EVENT_POINTER_UP
 } from "audiobus/events/event-constants"
-
-interface SpeechRecognitionLike {
-	lang: string
-	continuous: boolean
-	interimResults: boolean
-	onresult: ((event: SpeechResultEvent) => void) | null
-	onerror: ((event: { error: string }) => void) | null
-	onend: (() => void) | null
-	start(): void
-	stop(): void
-	abort(): void
-}
-
-interface SpeechResultEvent {
-	resultIndex: number
-	results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }>
-}
-
-type SpeechRecognitionConstructor = new () => SpeechRecognitionLike
-
-const SPEECH_ERRORS: Record<string, string> = {
-	"not-allowed": "Microphone access was blocked. Allow it in your browser to speak your idea.",
-	"service-not-allowed": "Speech recognition is turned off in this browser.",
-	"audio-capture": "No microphone was found.",
-	"no-speech": "No speech was heard. Hold the button while you speak.",
-	network: "Speech recognition needs a network connection in this browser."
-}
-
-function speechRecognition(): SpeechRecognitionConstructor | undefined {
-	const scope = globalThis as typeof globalThis & {
-		SpeechRecognition?: SpeechRecognitionConstructor
-		webkitSpeechRecognition?: SpeechRecognitionConstructor
-	}
-	return scope.SpeechRecognition ?? scope.webkitSpeechRecognition
-}
-
-export const speechRecognitionAvailable = () => Boolean(speechRecognition())
+import type { SpeechRecogniser, SpeechSession } from "./speech-recognisers"
 
 /**
  * Records speech while the button is held with a pointer, Space or Enter. A click that arrives
@@ -53,73 +17,65 @@ export const speechRecognitionAvailable = () => Boolean(speechRecognition())
 export function createPushToTalk(
 	button: HTMLButtonElement,
 	{
+		recogniser,
 		onStart,
 		onText,
 		onStatus
 	}: {
+		recogniser: () => SpeechRecogniser | undefined
 		onStart: () => void
 		onText: (text: string, final: boolean) => void
 		onStatus: (message: string) => void
 	}
 ) {
-	const Recognition = speechRecognition()
 	const idleLabel = button.textContent ?? ""
-	let recognition: SpeechRecognitionLike | undefined
+	let session: SpeechSession | undefined
+	let listening = false
 	let pressed = false
-	let transcript = ""
 
-	const setListening = (listening: boolean) => {
+	const show = (state: "idle" | "listening" | "working") => {
+		listening = state === "listening"
 		button.setAttribute("aria-pressed", String(listening))
-		button.textContent = listening ? "Listening… release to stop" : idleLabel
+		button.textContent =
+			state === "listening"
+				? "Listening… release to stop"
+				: state === "working"
+					? "Working…"
+					: idleLabel
 	}
 	const start = () => {
-		if (!Recognition || recognition) {
+		const chosen = recogniser()
+		if (!chosen || session) {
 			return
 		}
-		const current = new Recognition()
-		recognition = current
-		transcript = ""
-		current.lang = navigator.language?.startsWith("en") ? navigator.language : "en-US"
-		current.continuous = true
-		current.interimResults = true
-		current.onresult = (event) => {
-			let interim = ""
-			for (let index = event.resultIndex; index < event.results.length; index++) {
-				const result = event.results[index]
-				if (result.isFinal) {
-					transcript = `${transcript} ${result[0].transcript}`.trim()
-				} else {
-					interim += result[0].transcript
+		onStart()
+		show("listening")
+		let ended = false
+		const current = chosen.start({
+			onText,
+			onStatus,
+			onEnd: () => {
+				ended = true
+				if (session && session === current) {
+					session = undefined
+					show("idle")
 				}
 			}
-			onText(`${transcript} ${interim}`.trim(), false)
-		}
-		current.onerror = (event) => {
-			if (event.error !== "aborted") {
-				onStatus(SPEECH_ERRORS[event.error] ?? "Speech recognition stopped unexpectedly.")
-			}
-		}
-		current.onend = () => {
-			if (recognition === current) {
-				recognition = undefined
-				setListening(false)
-				if (transcript) {
-					onText(transcript, true)
-				}
-			}
-		}
-		try {
-			current.start()
-			onStart()
-			setListening(true)
-			onStatus("Listening… release the button, or press it again, when you finish speaking.")
-		} catch {
-			recognition = undefined
-			onStatus("Speech recognition could not start. Please try again.")
+		})
+		// A recogniser can finish before it returns, for example when it needs a download first.
+		if (ended) {
+			show("idle")
+		} else {
+			session = current
 		}
 	}
 	// Stopping lets the recogniser deliver its last words before it ends.
-	const stop = () => recognition?.stop()
+	const stop = () => {
+		if (session && listening) {
+			show("working")
+			session.stop()
+		}
+	}
 
 	button.addEventListener(EVENT_POINTER_DOWN, (event) => {
 		if (event.button !== 0) {
@@ -152,20 +108,20 @@ export function createPushToTalk(
 	button.addEventListener(EVENT_CLICK, () => {
 		if (pressed) {
 			pressed = false
-		} else if (recognition) {
+		} else if (session) {
 			stop()
 		} else {
 			start()
 		}
 	})
-	setListening(false)
+	show("idle")
 	return {
 		/** Discards anything still being heard; the button keeps working afterwards. */
 		abort: () => {
-			const current = recognition
-			recognition = undefined
+			const current = session
+			session = undefined
 			current?.abort()
-			setListening(false)
+			show("idle")
 		}
 	}
 }

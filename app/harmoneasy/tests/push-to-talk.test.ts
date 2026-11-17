@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, it, vi } from "vitest"
-import { createPushToTalk, speechRecognitionAvailable } from "../source/libs/push-to-talk"
+import { createPushToTalk } from "../source/libs/push-to-talk"
+import { browserSpeechRecogniser } from "../source/libs/speech-recognisers"
 
 class FakeRecognition {
 	static instances: FakeRecognition[] = []
@@ -38,7 +39,12 @@ function setup() {
 	const onStart = vi.fn()
 	const onText = vi.fn()
 	const onStatus = vi.fn()
-	const talk = createPushToTalk(button, { onStart, onText, onStatus })
+	const talk = createPushToTalk(button, {
+		recogniser: () => browserSpeechRecogniser(false),
+		onStart,
+		onText,
+		onStatus
+	})
 	const pointer = (type: string) =>
 		button.dispatchEvent(new PointerEvent(type, { button: 0, pointerId: 1, bubbles: true }))
 	const key = (type: string, key = " ") =>
@@ -48,7 +54,6 @@ function setup() {
 
 it("records only while the button is held and reports the settled transcript", () => {
 	const ui = setup()
-	expect(speechRecognitionAvailable()).toBe(true)
 	ui.pointer("pointerdown")
 	const recognition = FakeRecognition.instances[0]
 	expect(recognition.start).toHaveBeenCalledOnce()

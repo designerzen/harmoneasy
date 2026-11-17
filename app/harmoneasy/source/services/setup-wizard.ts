@@ -20,7 +20,12 @@ import {
 	WIZARD_PACES,
 	type WizardAnswers
 } from "./setup-designer"
-import { createPushToTalk, speechRecognitionAvailable } from "../libs/push-to-talk"
+import { createPushToTalk } from "../libs/push-to-talk"
+import {
+	listSpeechRecognisers,
+	type SpeechRecogniser,
+	type SpeechRecogniserId
+} from "../libs/speech-recognisers"
 import {
 	interpretationHints,
 	interpretSetupDescription,
@@ -133,6 +138,8 @@ export function createSetupWizard(
 	let description = ""
 	let useAI = true
 	let speech: ReturnType<typeof createPushToTalk> | undefined
+	let speechOptions: Promise<SpeechRecogniser[]> | undefined
+	let speechChoice: SpeechRecogniserId | undefined
 	let interpretation: SetupInterpretation | undefined
 	const steps = (): Step[] => [
 		"goal",
@@ -306,29 +313,58 @@ export function createSetupWizard(
 			speak.type = "button"
 			speak.className = "secondary"
 			speak.textContent = "Hold to speak"
-			speak.hidden = !speechRecognitionAvailable()
-			if (!speak.hidden) {
-				help.append(
-					' Hold the "Hold to speak" button while you talk instead of typing. Speech recognition may use your browser’s online service.'
-				)
-				let typed = ""
-				speech = createPushToTalk(speak, {
-					onStart: () => {
-						typed = input.value.trim()
-					},
-					onText: (text, final) => {
-						input.value = typed ? `${typed} ${text}` : text
-						description = input.value
-						if (final) {
-							status.textContent =
-								"Speech added. Check the text, then choose Build from description."
-						}
-					},
-					onStatus: (message) => {
-						status.textContent = message
+			speak.hidden = true
+			const speechLabel = document.createElement("label")
+			speechLabel.textContent = "Speech recognition"
+			speechLabel.hidden = true
+			const speechSelect = document.createElement("select")
+			speechSelect.addEventListener(EVENT_CHANGE, () => {
+				speechChoice = speechSelect.value as SpeechRecogniserId
+			})
+			speechLabel.append(speechSelect)
+			let recognisers: SpeechRecogniser[] = []
+			let typed = ""
+			speech = createPushToTalk(speak, {
+				recogniser: () => recognisers.find((item) => item.id === speechChoice),
+				onStart: () => {
+					typed = input.value.trim()
+				},
+				onText: (text, final) => {
+					input.value = typed ? `${typed} ${text}` : text
+					description = input.value
+					if (final) {
+						status.textContent =
+							"Speech added. Check the text, then choose Build from description."
 					}
-				})
-			}
+				},
+				onStatus: (message) => {
+					status.textContent = message
+				}
+			})
+			speechOptions ??= listSpeechRecognisers()
+			void speechOptions.then((list) => {
+				if (!speak.isConnected || !list.length) {
+					return
+				}
+				recognisers = list
+				if (!list.some((item) => item.id === speechChoice)) {
+					speechChoice = list[0].id
+				}
+				speechSelect.replaceChildren(
+					...list.map((item) => {
+						const option = document.createElement("option")
+						option.value = item.id
+						option.textContent = item.label
+						option.selected = item.id === speechChoice
+						return option
+					})
+				)
+				speak.hidden = false
+				speechLabel.hidden = false
+				help.append(
+					' Or hold the "Hold to speak" button while you talk. The on-device options keep your voice on this device after a one-time download.'
+				)
+			})
 			const aiToggle = document.createElement("label")
 			const aiCheckbox = document.createElement("input")
 			aiCheckbox.type = "checkbox"
@@ -440,7 +476,7 @@ export function createSetupWizard(
 			const actions = document.createElement("div")
 			actions.className = "wizard-describe-actions"
 			actions.append(speak, build, stop, aiToggle)
-			details.append(summary, help, label, actions)
+			details.append(summary, help, label, speechLabel, actions)
 			question.append(details)
 		} else if (step === "recipe") {
 			choices(
@@ -643,6 +679,8 @@ export function createSetupWizard(
 		}
 	})
 	const open = () => {
+		// A browser speech pack may have finished installing since the wizard was last open.
+		speechOptions = undefined
 		position = 0
 		dialog.showModal()
 		render()

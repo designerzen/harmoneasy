@@ -462,7 +462,7 @@ it("falls back to the phrase reading when AI fails or is skipped", async () => {
 	expect(ui.title()).toBe("Your setup is ready to create")
 })
 
-it("adds held speech to the description and stops listening when the dialog closes", () => {
+it("adds held speech to the description and stops listening when the dialog closes", async () => {
 	const recognition = {
 		start: vi.fn(),
 		stop: vi.fn(() => recognition.onend?.()),
@@ -482,7 +482,10 @@ it("adds held speech to the description and stops listening when the dialog clos
 	const speak = [...ui.dialog.querySelectorAll("button")].find(
 		(button) => button.textContent === "Hold to speak"
 	)!
-	expect(speak.hidden).toBe(false)
+	await vi.waitFor(() => expect(speak.hidden).toBe(false))
+	const select = ui.dialog.querySelector<HTMLSelectElement>("select")!
+	expect([...select.options].map((option) => option.value)).toEqual(["browser-online"])
+	expect(select.selectedOptions[0].textContent).toContain("sends your voice")
 	const textarea = ui.dialog.querySelector("textarea")!
 	textarea.value = "Fast jazz"
 	textarea.dispatchEvent(new Event("input"))
@@ -499,6 +502,7 @@ it("adds held speech to the description and stops listening when the dialog clos
 	expect(recognition.abort).toHaveBeenCalled()
 	vi.stubGlobal("webkitSpeechRecognition", undefined)
 	ui.trigger.click()
+	await new Promise((resolve) => setTimeout(resolve))
 	expect(
 		[...ui.dialog.querySelectorAll("button")].find(
 			(button) => button.textContent === "Hold to speak"

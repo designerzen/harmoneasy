@@ -56,13 +56,14 @@
 		"ws": "^8.22.0"
 	},
 	"dependencies": {
-		"control-surface": "workspace:^",
 		"@harmoneasy/shared-config": "workspace:^",
+		"@huggingface/transformers": "3.8.1",
 		"@xyflow/react": "^12.10.1",
 		"audiobus": "workspace:^",
 		"audiobus-output-opendaw-vaporisateur": "workspace:^",
 		"audiobus-output-pink-trombone": "workspace:^",
 		"audiotool": "workspace:^",
+		"control-surface": "workspace:^",
 		"entitree-flex": "^0.4.1",
 		"flodjs": "workspace:^",
 		"jzz": "^1.9.6",
