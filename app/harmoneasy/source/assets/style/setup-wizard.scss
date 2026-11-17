@@ -122,6 +122,28 @@
 			gap: 0.75rem;
 		}
 	}
+	.wizard-describe-actions,
+	.wizard-alternatives {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem;
+		margin-block: 0.75rem;
+		p {
+			flex-basis: 100%;
+			margin: 0;
+		}
+	}
+	.wizard-interpretation {
+		padding-left: 1.25rem;
+		li {
+			margin-block: 0.25rem;
+		}
+	}
+	.wizard-note {
+		color: var(--col-muted);
+		font-size: var(--text-sm);
+	}
 	button.primary {
 		background: var(--col-accent);
 		color: var(--col-on-accent);

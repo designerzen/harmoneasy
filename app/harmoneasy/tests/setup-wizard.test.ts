@@ -359,3 +359,29 @@ it("ignores AI results after closing and lets the questions recover from invalid
 	ui.next()
 	expect(ui.title()).toBe("What would you like to try?")
 })
+
+it("builds a reviewed setup from a description without local AI", () => {
+	vi.stubGlobal("LanguageModel", undefined)
+	const ui = mount()
+	const textarea = ui.dialog.querySelector("textarea")!
+	const button = (text: string) =>
+		[...ui.dialog.querySelectorAll("button")].find((item) => item.textContent === text)!
+	textarea.value = "Something nobody could match"
+	textarea.dispatchEvent(new Event("input"))
+	button("Build from description").click()
+	expect(ui.dialog.querySelector(".wizard-status")!.textContent).toContain("did not match")
+	textarea.value = "Latin music on my game controller, not too fast"
+	textarea.dispatchEvent(new Event("input"))
+	button("Build from description").click()
+	expect(ui.title()).toBe("Your setup is ready to create")
+	expect(ui.dialog.textContent).toContain("Write salsa")
+	expect(ui.dialog.textContent).toContain('"game controller"')
+	expect(ui.dialog.textContent).toContain("110 beats per minute")
+	button("Write samba").click()
+	expect(ui.dialog.querySelector("h4")!.textContent).toBe("Write samba")
+	expect(ui.dialog.textContent).toContain("chosen instead")
+	ui.next()
+	expect(ui.start).toHaveBeenCalledOnce()
+	expect(ui.start.mock.calls[0][0].id).toBe("wizard:samba")
+	expect(ui.start.mock.calls[0][0].chains[0].inputs).toContain("wizard-gamepad")
+})

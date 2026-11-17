@@ -21,6 +21,7 @@ import {
 	WIZARD_PACES,
 	type WizardAnswers
 } from "./setup-designer"
+import { interpretSetupDescription, type SetupInterpretation } from "./setup-interpreter"
 
 type Step =
 	| "goal"
@@ -69,6 +70,11 @@ const CHOICE_ICONS: Record<string, string> = {
 	"remix-bass": "synth",
 	"midi-to-score": "notation",
 	convert: "input"
+}
+const CONFIDENCE_LABELS: Record<SetupInterpretation["confidence"], string> = {
+	high: "a close match",
+	medium: "a likely match",
+	low: "a best guess"
 }
 const STEP_LABELS: Record<Step, string> = {
 	goal: "Your goal",
@@ -121,6 +127,7 @@ export function createSetupWizard(
 	let request: AbortController | undefined
 	let description = ""
 	let aiNotice = ""
+	let interpretation: SetupInterpretation | undefined
 	const steps = (): Step[] => [
 		"goal",
 		"recipe",
@@ -180,6 +187,7 @@ export function createSetupWizard(
 			radio.checked = typeof value === "string" ? value === item.id : value.includes(item.id)
 			radio.addEventListener(EVENT_CHANGE, () => {
 				cancelRequest()
+				interpretation = undefined
 				change(item.id)
 				updateProgress()
 				next.disabled = name === "wizard-input" && answers.inputs.length === 0
@@ -267,12 +275,16 @@ export function createSetupWizard(
 			})
 			const details = document.createElement("details")
 			const summary = document.createElement("summary")
-			summary.textContent = "Or describe your idea with AI (optional)"
+			summary.textContent = "Or describe your idea in your own words (optional)"
 			summary.prepend(wizardIcon("sparkles"))
+			details.open = Boolean(description)
 			const help = document.createElement("p")
-			help.textContent = browserAI()
-				? "Describe what you want in English. AI runs on this device without an API key. First use may download a large model. You will check its answers before creating anything."
-				: "Local AI is not available in this browser. You can still build every setup using the questions above. A browser with the built-in LanguageModel API is needed for AI suggestions."
+			help.textContent =
+				"Describe what you want to play, make or practise, what you will play with and how you want to follow the notes. Your words are read on this device and fill in the questions; you will check them before creating anything."
+			const aiHelp = document.createElement("p")
+			aiHelp.textContent = browserAI()
+				? "Local AI can also suggest answers. It runs on this device without an API key, but first use may download a large model."
+				: "Local AI is not available in this browser, so AI suggestions are off. A browser with the built-in LanguageModel API is needed for them."
 			const label = document.createElement("label")
 			label.textContent = "What would you like to make?"
 			const input = document.createElement("textarea")
@@ -284,6 +296,31 @@ export function createSetupWizard(
 				description = input.value
 			})
 			label.append(input)
+			const build = document.createElement("button")
+			build.type = "button"
+			build.className = "secondary"
+			build.textContent = "Build from description"
+			build.addEventListener(EVENT_CLICK, () => {
+				if (!description.trim()) {
+					status.textContent = "Please describe what you would like to make."
+					input.focus()
+					return
+				}
+				cancelRequest()
+				const result = interpretSetupDescription(description)
+				if (!result.matched) {
+					status.textContent =
+						"That description did not match a setup. Try naming what you want to do, a style such as jazz, or what you will play with. You can also use the questions."
+					input.focus()
+					return
+				}
+				answers = result.answers
+				interpretation = result
+				aiNotice = ""
+				selectedGoal = true
+				position = steps().length - 1
+				render()
+			})
 			const suggest = document.createElement("button")
 			suggest.type = "button"
 			suggest.className = "secondary"
@@ -332,6 +369,7 @@ export function createSetupWizard(
 					}
 					answers = validateWizardAnswers(result)
 					selectedGoal = true
+					interpretation = undefined
 					aiNotice =
 						"AI suggested these answers. Use Back to check or change them before creating your setup."
 					position = steps().length - 1
@@ -348,7 +386,10 @@ export function createSetupWizard(
 					}
 				}
 			})
-			details.append(summary, help, label, suggest, stop)
+			const actions = document.createElement("div")
+			actions.className = "wizard-describe-actions"
+			actions.append(build, suggest, stop)
+			details.append(summary, help, label, actions, aiHelp)
 			question.append(details)
 		} else if (step === "recipe") {
 			choices(
@@ -411,6 +452,9 @@ export function createSetupWizard(
 			if (aiNotice) {
 				paragraph(aiNotice)
 			}
+			if (interpretation) {
+				describeInterpretation(interpretation)
+			}
 			const name = document.createElement("h4")
 			name.textContent = setup.name
 			question.append(name)
@@ -462,6 +506,67 @@ export function createSetupWizard(
 			)
 		}
 		heading.focus()
+	}
+	const describeInterpretation = (result: SetupInterpretation) => {
+		paragraph(
+			`This setup was read from your description as ${CONFIDENCE_LABELS[result.confidence]}. Use Back to check or change any answer.`
+		)
+		const context = wizardContexts(answers.goal).find((item) => item.id === answers.contextId)!
+		const list = document.createElement("ul")
+		list.className = "wizard-interpretation"
+		const topics = {
+			activity: "Activity",
+			inputs: "Play with",
+			feedback: "Follow notes",
+			pace: "Speed"
+		}
+		for (const reason of result.reasons) {
+			const li = document.createElement("li")
+			const topic = document.createElement("strong")
+			topic.textContent = `${topics[reason.topic]}: `
+			// A chosen alternative replaces the activity the description pointed to.
+			const text =
+				reason.topic === "activity" && answers.contextId !== result.answers.contextId
+					? `${context.name}, chosen instead`
+					: reason.text
+			li.append(topic, text)
+			list.append(li)
+		}
+		question.append(list)
+		result.notes.forEach((note) => {
+			paragraph(note)
+			question.lastElementChild!.className = "wizard-note"
+		})
+		const options = [
+			{
+				label: wizardContexts(result.answers.goal).find(
+					(item) => item.id === result.answers.contextId
+				)!.name,
+				answers: result.answers
+			},
+			...result.alternatives
+		].filter((option) => option.answers.contextId !== answers.contextId)
+		if (options.length) {
+			const group = document.createElement("div")
+			group.className = "wizard-alternatives"
+			group.setAttribute("role", "group")
+			group.setAttribute("aria-label", "Other ways to read your description")
+			const title = document.createElement("p")
+			title.textContent = "Your description could also mean:"
+			group.append(title)
+			for (const option of options) {
+				const button = document.createElement("button")
+				button.type = "button"
+				button.className = "tertiary"
+				button.textContent = option.label
+				button.addEventListener(EVENT_CLICK, () => {
+					answers = structuredClone(option.answers)
+					render()
+				})
+				group.append(button)
+			}
+			question.append(group)
+		}
 	}
 	const close = () => {
 		cancelRequest()
