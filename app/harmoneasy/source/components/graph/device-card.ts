@@ -540,7 +540,8 @@ function deviceGuidance(factory: DeviceChoice, direction: "input" | "output" | "
 					audio +
 						" WebAssembly and AudioWorklet support. Native interfaces require HTTPS or localhost."
 				)
-			: direction !== "instrument"
+			: direction !== "instrument" &&
+				  !(factory.type === "engine" && factory.subtype === "instrument")
 				? guide(
 						"",
 						factory.description,

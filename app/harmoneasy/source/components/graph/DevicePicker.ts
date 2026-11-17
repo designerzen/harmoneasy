@@ -31,7 +31,8 @@ import { createLoader } from "../../libs/loader"
 import { element, button, icon, searchReset } from "./dom"
 
 type Choice = ClassifiedChoice & {
-	kind: "input" | "output" | "instrument"
+	kind: "input" | "output"
+	instrumentId?: string
 	factoryId?: string
 	midiOptions?: Record<string, any>
 	midiPortId?: string
@@ -163,8 +164,8 @@ export function createDevicePicker(
 				const options = manager.outputMixer
 					? { mixer: manager.outputMixer, audioContext }
 					: undefined
-				if (choice.kind === "instrument") {
-					select(await createInstrumentById(audioContext, choice.id, options))
+				if (choice.instrumentId) {
+					select(await createInstrumentById(audioContext, choice.instrumentId, options))
 				} else {
 					const { createOutputById } = await import("audiobus/io/output-factory")
 					select(
@@ -394,10 +395,13 @@ export function createDevicePicker(
 				}
 				error = [
 					outputs.status === "rejected" ? "Outputs could not be loaded." : "",
-					instruments.status === "rejected" ? "Instruments could not be loaded." : ""
+					instruments.status === "rejected" ? "Some outputs could not be loaded." : ""
 				]
 					.filter(Boolean)
 					.join(" ")
+				const outputIds = new Set(
+					outputs.status === "fulfilled" ? outputs.value.map((factory) => factory.id) : []
+				)
 				choices = [
 					...(outputs.status === "fulfilled"
 						? outputs.value.map((factory) => ({
@@ -411,10 +415,13 @@ export function createDevicePicker(
 							}))
 						: []),
 					...(instruments.status === "fulfilled"
-						? instruments.value.map((factory) => ({
-								...factory,
-								kind: "instrument" as const
-							}))
+						? instruments.value
+								.filter((factory) => !outputIds.has(factory.id))
+								.map((factory) => ({
+									...factory,
+									kind: "output" as const,
+									instrumentId: factory.id
+								}))
 						: [])
 				]
 			}
