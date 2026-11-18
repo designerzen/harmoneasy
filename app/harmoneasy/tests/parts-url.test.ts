@@ -80,6 +80,22 @@ describe("versioned parts URLs", () => {
 		expect(steps(page)[0].type).toBe("Transposer")
 	})
 
+	it("names and describes a setup built from scratch by what it plays", async () => {
+		const page = await load(
+			"parts/v1/inputs/keyboard,onscreen-keyboard/outputs/moog,speech-synthesis/transformers/Harmoniser/"
+		)
+		expect(page!.name).toBe("Moog and Speech Synthesis through Harmoniser")
+		expect(page!.description).toBe(
+			"Play with the Keyboard and Onscreen Keyboard. Harmoniser: Snap incoming notes into a chosen key and scale, or filter out-of-scale notes. You hear the result on the Moog and Speech Synthesis."
+		)
+		const song = await load("parts/v1/?midi=midi/my%20song.mid&playback=step")
+		expect(song!.description).toContain(
+			"Every note you play steps my song.mid forward by one note"
+		)
+		const custom = await load("parts/v1/inputs/keyboard/?description=Just+play")
+		expect(custom!.description).toBe("Just play")
+	})
+
 	it("extends every published preset through the same path grammar", async () => {
 		for (const [route, source] of pages) {
 			const page = await load(`${route}/parts/v1/outputs/speech-synthesis/`)
