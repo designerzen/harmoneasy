@@ -788,7 +788,7 @@
 	},
 	{
 		"name": "audiobus-protocol",
-		"version": "0.1.0",
+		"version": "0.3.0",
 		"authors": [],
 		"license": "",
 		"url": "https://github.com/designerzen/audiobus-protocol.git"
@@ -1801,6 +1801,13 @@
 		"url": ""
 	},
 	{
+		"name": "midi-devices",
+		"version": "1.0.0",
+		"authors": [],
+		"license": "",
+		"url": "https://designerzen.github.io/midi-devices/"
+	},
+	{
 		"name": "midi-file",
 		"version": "1.2.4",
 		"authors": ["Carter Thaxton"],
@@ -2659,6 +2666,13 @@
 		"authors": ["Isaac Z. Schlueter"],
 		"license": "BlueOak-1.0.0",
 		"url": "https://github.com/isaacs/node-tar.git"
+	},
+	{
+		"name": "theremid",
+		"version": "2.0.0",
+		"authors": ["designerzen"],
+		"license": "GPL-2.0",
+		"url": "https://github.com/designerzen/Leap-Motion-Theremin"
 	},
 	{
 		"name": "through2",

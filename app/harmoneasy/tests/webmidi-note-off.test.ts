@@ -64,6 +64,29 @@ async function setup(overlap = false) {
 }
 
 describe("incoming MIDI from another app or tab", () => {
+	it("routes Arcana channel 11 low notes and both captured release formats", async () => {
+		const { output, send } = await setup()
+		// The captured 9A ... 00 messages are releases, just like 8A ... 00.
+		for (const [note, status] of [
+			[24, 0x9a],
+			[16, 0x8a],
+			[15, 0x9a],
+			[26, 0x8a],
+			[25, 0x9a]
+		]) {
+			await send([0x9a, note, 100])
+			await send([status, note, 0])
+		}
+		expect(output.noteOn.mock.calls).toEqual([
+			[24, 100],
+			[16, 100],
+			[15, 100],
+			[26, 100],
+			[25, 100]
+		])
+		expect(output.noteOff.mock.calls).toEqual([[24], [16], [15], [26], [25]])
+	})
+
 	it.each([0x80, 0x90])(
 		"releases normal and velocity-zero note-offs (status %s)",
 		async (status) => {

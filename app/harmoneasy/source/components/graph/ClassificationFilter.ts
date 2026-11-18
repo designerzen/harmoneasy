@@ -1,60 +1,84 @@
-import { choiceFilterOptions, type ClassifiedChoice } from "./device-filters"
+import {
+	choiceFilterOptions,
+	parseChoiceFilters,
+	FILTER_FIELDS,
+	type FilterField,
+	type ClassifiedChoice
+} from "./device-filters"
 import { element, option } from "./dom"
 
 export function createClassificationFilter({
 	choices,
 	value,
 	onChange,
-	label,
-	compact = false
+	label
 }: {
 	choices: ClassifiedChoice[]
 	value: string
 	onChange: (value: string) => void
 	label: string
-	compact?: boolean
 }) {
-	const host = element(
-		"label",
-		`classification-filter${compact ? " classification-filter-compact" : ""}`
-	)
-	const select = element("select")
-	select.setAttribute("aria-label", label)
-	if (!compact) {
-		host.append(element("span", "", label))
-	} else {
-		host.innerHTML =
-			'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h9m4 0h3M4 17h3m4 0h9" /><circle cx="15" cy="7" r="2" /><circle cx="9" cy="17" r="2" /></svg>'
-	}
-	const update = (items: ClassifiedChoice[]) => {
-		const groups = choiceFilterOptions(items)
-		const previous = select.value
-		select.replaceChildren(option("All types and subtypes", ""))
-		for (const group of groups) {
-			const node = element("optgroup")
-			node.label = group.label
-			node.append(...group.options.map((item) => option(item.label, item.value)))
-			select.append(node)
+	const host = element("div", "classification-filter")
+	host.setAttribute("role", "group")
+	host.setAttribute("aria-label", label)
+	const selected = parseChoiceFilters(value)
+	let items = choices
+	let search = ""
+	const controls = new Map<FilterField, { label: HTMLLabelElement; select: HTMLSelectElement }>()
+	const selection = () =>
+		FILTER_FIELDS.filter((field) => selected[field])
+			.map((field) => `${field}:${selected[field]}`)
+			.join("|")
+	for (const field of FILTER_FIELDS) {
+		const wrapper = element("label")
+		const select = element("select")
+		select.onchange = () => {
+			selected[field] = select.value.split(":")[1] || undefined
+			update(items, search)
+			onChange(selection())
 		}
-		select.value = previous
-		host.title = `${label}: ${select.selectedOptions[0]?.textContent ?? "All types and subtypes"}`
-		host.dataset.active = String(Boolean(select.value))
+		wrapper.append(element("span"), select)
+		host.append(wrapper)
+		controls.set(field, { label: wrapper, select })
+	}
+	function update(nextItems: ClassifiedChoice[], nextSearch = "") {
+		items = nextItems
+		search = nextSearch
+		const groups = choiceFilterOptions(items, selection(), search)
+		for (const [field, control] of controls) {
+			const group = groups.find((group) => group.field === field)
+			control.label.hidden = !group
+			if (!group) {
+				continue
+			}
+			control.label.querySelector("span")!.textContent = group.label
+			control.select.setAttribute("aria-label", `${label}: ${group.label}`)
+			const allLabel =
+				field === "category"
+					? "All categories"
+					: field === "subtype"
+						? "All functions"
+						: "All types"
+			control.select.replaceChildren(option(allLabel, ""))
+			for (const item of group.options) {
+				const node = option(`${item.label} (${item.count})`, item.value)
+				node.disabled = item.count === 0 && selected[field] !== item.value.split(":")[1]
+				control.select.append(node)
+			}
+			control.select.value = selected[field] ? `${field}:${selected[field]}` : ""
+			control.select.dataset.active = String(Boolean(selected[field]))
+		}
 	}
 	update(choices)
-	select.value = value
-	const changed = () => {
-		host.dataset.active = String(Boolean(select.value))
-		host.title = `${label}: ${select.selectedOptions[0]?.textContent}`
-		onChange(select.value)
-	}
-	select.onchange = changed
-	host.append(select)
 	return {
 		element: host,
 		update,
 		clear() {
-			select.value = ""
-			changed()
+			for (const field of FILTER_FIELDS) {
+				delete selected[field]
+			}
+			update(items, search)
+			onChange("")
 		}
 	}
 }

@@ -38,7 +38,6 @@ export function createTransformerPicker(
 	const filter = createClassificationFilter({
 		choices,
 		value: "",
-		compact: true,
 		label: "Filter transformers by type",
 		onChange: (value) => {
 			classification = value
@@ -81,6 +80,7 @@ export function createTransformerPicker(
 
 	function render() {
 		updateReset(Boolean(search.value || classification))
+		filter.update(choices, search.value)
 		results.replaceChildren()
 		const filtered = choices.filter((choice) =>
 			choiceMatches(choice, search.value, classification)

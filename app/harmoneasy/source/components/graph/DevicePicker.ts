@@ -80,7 +80,6 @@ export function createDevicePicker(
 	const filter = createClassificationFilter({
 		choices: [],
 		value: "",
-		compact: true,
 		label: `Filter ${direction}s by type`,
 		onChange: (value) => {
 			classification = value
@@ -259,7 +258,13 @@ export function createDevicePicker(
 					(choice.type === "audio" && choice.subtype === "effect")) &&
 				choiceMatches(choice, search.value, classification)
 		)
-		filter.update(availableChoices)
+		filter.update(
+			availableChoices.filter(
+				(choice) =>
+					!audioProcessorsOnly || (choice.type === "audio" && choice.subtype === "effect")
+			),
+			search.value
+		)
 		host.setAttribute("aria-busy", String(loading || busy))
 		results.replaceChildren(
 			createSharedDevices(context, {

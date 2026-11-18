@@ -18,6 +18,9 @@ const LABELS: Record<string, string> = {
 	fm: "FM",
 	eq: "EQ",
 	wam2: "WAM2",
+	webclap: "WebCLAP",
+	engine: "Sound engines",
+	effect: "Effects",
 	supercollider: "SuperCollider",
 	instrument: "Instruments",
 	visualiser: "Visualisers"
@@ -26,7 +29,27 @@ export const classificationLabel = (value: string) =>
 	LABELS[value] ?? value.charAt(0).toUpperCase() + value.slice(1)
 
 function category(choice: ClassifiedChoice): string {
+	if (choice.id === "wam2" || choice.id.startsWith("wam2:")) {
+		return "wam2"
+	}
+	if (choice.id.startsWith("webclap:")) {
+		return "webclap"
+	}
 	return choice.id === "supersonic" ? "supercollider" : (choice.category ?? "").toLowerCase()
+}
+
+export const FILTER_FIELDS = ["type", "subtype", "category"] as const
+export type FilterField = (typeof FILTER_FIELDS)[number]
+
+export function parseChoiceFilters(selection: string): Partial<Record<FilterField, string>> {
+	return Object.fromEntries(
+		selection
+			.split("|")
+			.map((entry) => entry.split(":"))
+			.filter(
+				([field, value]) => FILTER_FIELDS.includes(field as FilterField) && Boolean(value)
+			)
+	)
 }
 
 export function choiceMatches(
@@ -34,14 +57,10 @@ export function choiceMatches(
 	search: string,
 	selection: string
 ): boolean {
-	const [field, value] = selection.split(":")
-	const matchesSelection =
-		!selection ||
-		(field === "category"
-			? category(choice) === value
-			: field === "type"
-				? choice.type === value
-				: choice.subtype === value)
+	const matchesSelection = Object.entries(parseChoiceFilters(selection)).every(
+		([field, value]) =>
+			(field === "category" ? category(choice) : choice[field as FilterField]) === value
+	)
 	return (
 		matchesSelection &&
 		discoveryMatches(
@@ -60,29 +79,46 @@ export function choiceMatches(
 	)
 }
 
-export function choiceFilterOptions(choices: ClassifiedChoice[]) {
-	return (["type", "subtype", "category"] as const)
-		.map((field) => ({
-			label: field === "type" ? "Types" : field === "subtype" ? "Subtypes" : "Categories",
-			options: [
-				...new Set(
-					choices.map((choice) =>
-						field === "category" ? category(choice) : choice[field]
-					)
+export function choiceFilterOptions(choices: ClassifiedChoice[], selection = "", search = "") {
+	const selected = parseChoiceFilters(selection)
+	return FILTER_FIELDS.map((field) => ({
+		field,
+		label: field === "type" ? "Type" : field === "subtype" ? "Function" : "Category",
+		options: [
+			...new Set([
+				selected[field],
+				...choices.map((choice) =>
+					field === "category" ? category(choice) : choice[field]
 				)
-			]
-				.filter(
-					(value) =>
-						value &&
-						(field !== "category" ||
-							!choices.some(
-								(choice) => choice.type === value || choice.subtype === value
-							))
-				)
-				.sort((a, b) => classificationLabel(a).localeCompare(classificationLabel(b)))
-				.map((value) => ({ value: `${field}:${value}`, label: classificationLabel(value) }))
-		}))
-		.filter((group) => group.options.length)
+			])
+		]
+			.filter(
+				(value) =>
+					value &&
+					(field !== "category" ||
+						!choices.some(
+							(choice) => choice.type === value || choice.subtype === value
+						))
+			)
+			.sort((a, b) => classificationLabel(a!).localeCompare(classificationLabel(b!)))
+			.map((value) => {
+				const otherFilters = Object.entries(selected).filter(([key]) => key !== field)
+				return {
+					value: `${field}:${value}`,
+					label: classificationLabel(value!),
+					count: choices.filter((choice) =>
+						choiceMatches(
+							choice,
+							search,
+							[
+								...otherFilters.map(([key, item]) => `${key}:${item}`),
+								`${field}:${value}`
+							].join("|")
+						)
+					).length
+				}
+			})
+	})).filter((group) => group.options.length)
 }
 
 export function groupChoices<T extends ClassifiedChoice>(choices: T[]) {
