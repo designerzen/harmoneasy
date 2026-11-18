@@ -245,7 +245,7 @@ Press **Remote** in the toolbar to open the remote control demo in a window conn
 
 To test: run `pnpm --dir app/harmoneasy run dev`, open the remote control demo, press **Start** inside the embedded app, and wait for the status to turn green. Press **Next note** and you will hear the song step and see the note arrive back. The demo reconnects by itself after preset changes and reloads. The live demo uses `https://designerzen.github.io/harmoneasy/` in place of `http://localhost:1999/`.
 
-The [Cosmo MIDI session links](docs/preset-url-api.md#cosmo-midi-session-links-18-november-2026) collect the Pages URLs for song stepping with audio/MIDI output, quantised harmony, chords, bloom and arpeggios.
+The [Cosmo MIDI session links](docs/preset-url-api.md#cosmo-midi-session-links-18-november-2026) collect the Pages URLs for song stepping with audio/MIDI output, quantised notes, chords, bloom and arpeggios.
 
 ## Browser and desktop requirements
 

@@ -23,6 +23,7 @@ describe("documented Cosmo MIDI session links", () => {
 		const input = page!.workspace.devices.find((device) => device.id === chain.inputs[0])!
 		expect(input.definition).toMatchObject({ type: "cosmo-dots", options: { dotCount: 9 } })
 		const steps = configurationSteps(chain.transformers)
+		expect(steps.some((step) => step.type === "Harmoniser")).toBe(false)
 		const url = new URL(link)
 		const outputTypes = chain.outputs.map(
 			(id) => page!.workspace.devices.find((device) => device.id === id)!.definition.type
