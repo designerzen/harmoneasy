@@ -21,6 +21,35 @@ const steps = (page: any, index = 0) =>
 	configurationSteps(page.workspace.chains[index].transformers)
 
 describe("versioned parts URLs", () => {
+	it("composes Cosmo number keys and any MIDI file through the existing schema", async () => {
+		for (const midi of [
+			"midi/never-gonna-give-you-up.mid",
+			"https://files.example/another.mid"
+		]) {
+			const page = await load(
+				`parts/v1/inputs/cosmo-dots/outputs/moog,webmidi/midi/${encodeURIComponent(midi)}/playback/step/?config=${encodeURIComponent(JSON.stringify({ devices: { "url-input-cosmo-dots": { dotCount: 9 } } }))}`
+			)
+			expect(page!.workspace.chains[0].inputs).toEqual(["url-input-cosmo-dots"])
+			expect(page!.workspace.chains[0].outputs).toEqual([
+				"url-output-moog",
+				"url-output-webmidi"
+			])
+			expect(
+				page!.workspace.devices.find((device: any) => device.id === "url-input-cosmo-dots")
+					.definition.options
+			).toEqual({ dotCount: 9 })
+			expect(steps(page)).toEqual([
+				expect.objectContaining({
+					type: "MIDI-File-Player",
+					config: expect.objectContaining({
+						playbackMode: "step",
+						loop: true,
+						midiFileUrl: new URL(midi, origin + base).href
+					})
+				})
+			])
+		}
+	})
 	it.each(["/", "/harmoneasy/", "/nested/app/"])(
 		"supports deployment base %s, trailing slashes and index.html",
 		async (deployment) => {

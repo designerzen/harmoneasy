@@ -39,6 +39,20 @@ const key = (value: string, options = {}) =>
 	)
 
 describe("Cosmo Dots input", () => {
+	it("supports all nine numeric keys when requested by URL configuration", () => {
+		const { input, receive } = setup({ dotCount: 9 })
+		expect(input.configuration.map((dot) => dot.trigger)).toEqual([..."123456789"])
+		for (const trigger of "123456789") {
+			key(trigger)
+		}
+		expect(receive).toHaveBeenCalledTimes(9)
+		expect(receive).toHaveBeenLastCalledWith(
+			expect.objectContaining({ type: NOTE_ON, number: 68 })
+		)
+		input.setDotCount(8)
+		input.setDotCount(9)
+		expect(input.configuration[8].trigger).toBe("9")
+	})
 	it("keeps SVG pads in every view in sync with the configured count and note activity", async () => {
 		const { input, receive } = setup({
 			dots: [{ trigger: "a", duration: 300, command: { number: 67 } }, { trigger: "s" }]

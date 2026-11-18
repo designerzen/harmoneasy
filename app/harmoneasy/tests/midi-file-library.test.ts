@@ -9,9 +9,14 @@ import {
 	searchBitMidi
 } from "audiobus/io/transformers/transformer-midi-file-player"
 import AudioCommand from "audiobus/commands/audio-command"
-import { NOTE_ON } from "audiobus/commands/commands"
+import { NOTE_ON, NOTE_OFF, INPUT_EVENT } from "audiobus/commands/commands"
 import { EVENT_CHANGE } from "audiobus/events/event-constants"
 import { readPresetFiles } from "../scripts/preset-files.js"
+import { loadPresetPage } from "../source/services/preset-page"
+import { configurationSteps } from "audiobus/io/preset-library"
+import InputCosmoDots from "audiobus/io/inputs/input-cosmo-dots"
+import OutputManager from "audiobus/io/output-manager"
+import { MidiOutputRouting } from "audiobus/io/outputs/midi-output-routing"
 
 const { Midi } = createRequire(resolve("../../packages/audiobus/package.json"))("@tonejs/midi")
 const libraryRoot = pathToFileURL(resolve("public/midi") + "/")
@@ -37,6 +42,65 @@ afterEach(() => {
 })
 
 describe("MIDI file library and uploads", () => {
+	it("loads the schema Rickroll and sends each Cosmo press and release to audio and MIDI", async () => {
+		const page = await loadPresetPage(
+			"https://example.test/harmoneasy/parts/v1/inputs/cosmo-dots/outputs/moog,webmidi/midi/midi%2Fnever-gonna-give-you-up.mid/playback/step/?config=%7B%22devices%22%3A%7B%22url-input-cosmo-dots%22%3A%7B%22dotCount%22%3A9%7D%7D%7D",
+			"/harmoneasy/"
+		)
+		const bytes = await readFile(new NodeURL("never-gonna-give-you-up.mid", libraryRoot))
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async (url: string) =>
+				url.endsWith("index.json") ? Response.json([]) : new Response(bytes)
+			)
+		)
+		const [step] = configurationSteps(page!.workspace.chains[0].transformers)
+		const transformer = new TransformerMIDIFilePlayer(step.config)
+		transformers.push(transformer)
+		const gui = await transformer.createGui()
+		await vi.waitFor(() =>
+			expect(gui.querySelector('[role="status"]')?.textContent).toBe(
+				"Loaded: https://example.test/harmoneasy/midi/never-gonna-give-you-up.mid"
+			)
+		)
+		expect(gui.textContent).not.toContain("Loaded: Choose a song")
+		const input = new InputCosmoDots(
+			page!.workspace.devices.find((device: any) => device.definition.type === "cosmo-dots")
+				.definition.options
+		)
+		const audio = { uuid: "audio", noteOn: vi.fn(), noteOff: vi.fn() } as any
+		const send = vi.fn()
+		const routing = new MidiOutputRouting({}, () => [{ id: "synth", name: "Synth" }], send)
+		const midi = { uuid: "midi", sendCommand: routing.sendCommand.bind(routing) } as any
+		const manager = new OutputManager()
+		manager.add(audio)
+		manager.add(midi)
+		const sends: Promise<unknown>[] = []
+		const notes: any[] = []
+		input.addEventListener(INPUT_EVENT, (event: any) => {
+			const transformed = transformer.transform([event.command], {} as any)
+			notes.push(...transformed)
+			sends.push(manager.triggerAudioCommandsOnOutputs(transformed))
+		})
+		vi.useFakeTimers()
+		try {
+			for (let dot = 0; dot < 9; dot++) {
+				input.activate(dot)
+				vi.advanceTimersByTime(200)
+			}
+			await Promise.all(sends)
+			expect(notes.filter((note) => note.type === NOTE_ON)).toHaveLength(9)
+			expect(notes.filter((note) => note.type === NOTE_OFF)).toHaveLength(9)
+			expect(audio.noteOn).toHaveBeenCalledTimes(9)
+			expect(audio.noteOff).toHaveBeenCalledTimes(9)
+			expect(send).toHaveBeenCalledTimes(18)
+		} finally {
+			input.destroy()
+			manager.destroy()
+			await routing.release()
+			vi.useRealTimers()
+		}
+	})
 	it("publishes a complete song URL for every local file", async () => {
 		const songs = JSON.parse(await readFile(new NodeURL("index.json", libraryRoot), "utf8"))
 		const pages = readPresetFiles("presets")
@@ -85,9 +149,11 @@ describe("MIDI file library and uploads", () => {
 		transformer.setConfig("trackIndex", 24)
 		const gui = await transformer.createGui()
 		expect(gui.querySelector(".midi-file-player-drop")?.textContent).toBe("Upload MIDI file")
-		expect(
-			[...gui.querySelectorAll('[role="tab"]')].map((tab) => tab.textContent)
-		).toEqual(["Library", "Search", "Upload"])
+		expect([...gui.querySelectorAll('[role="tab"]')].map((tab) => tab.textContent)).toEqual([
+			"Library",
+			"Search",
+			"Upload"
+		])
 		expect(gui.querySelector<HTMLInputElement>('input[type="file"]')?.accept).toContain(".midi")
 		const select = gui.querySelector<HTMLSelectElement>(
 			'select[aria-label="Local MIDI songs"]'
