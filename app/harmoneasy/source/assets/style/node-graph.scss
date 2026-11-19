@@ -2937,6 +2937,10 @@ dialog.add-output-dialog {
 	}
 }
 
+.node-viewport-editor.surface-viewport {
+	bottom: var(--onscreen-keyboard-height, 0px);
+}
+
 .node-viewport-editor.surface-viewport > .node-control-surface.graph-node.is-fullscreen {
 	--node-content-padding: 0px;
 	display: flex;
@@ -2945,7 +2949,7 @@ dialog.add-output-dialog {
 	width: 100%;
 	max-width: none;
 	min-width: 0;
-	min-height: 100dvh;
+	min-height: calc(100dvh - var(--onscreen-keyboard-height, 0px));
 	margin: 0;
 	padding: 0;
 	border: 0;
