@@ -44,7 +44,7 @@ describe("registry hardware surfaces", () => {
 		"%s has a validated SVG surface and every documented control appears on it",
 		(id) => {
 			const profile = MIDI_DEVICE_PROFILES[id]
-			expect(profile.surface?.src).toMatch(/interface\.svg$/)
+			expect(profile.surface?.src).toMatch(/panel\.svg$/)
 			expect(profile.surface!.elements.length).toBeGreaterThan(0)
 			for (const control of profile.controls) {
 				expect(

@@ -183,6 +183,7 @@ function reference(hz: number, cutoff: number, resonance: number): Complex {
 }
 
 describe("TB-303 circuit and rendering", () => {
+	// Offline rendering at 96 kHz is slow when the whole suite runs in parallel.
 	it.each([44100, 48000, 96000])("renders audible short Acid House gates at %i Hz", (rate) => {
 		// The preset lowers A3 an octave and emits 1/32 gates at 120 BPM.
 		// Include the application's 50% master volume and 85% dry mix.
@@ -196,7 +197,7 @@ describe("TB-303 circuit and rendering", () => {
 			render(node, Math.round(rate * 0.3))
 			expect(rms(render(node))).toBeLessThan(1e-5)
 		}
-	})
+	}, 20_000)
 	it("preserves oscillator pitch across sample rates and varies pulse width with pitch", () => {
 		for (const rate of [44100, 48000, 96000]) {
 			const node = processor(rate)

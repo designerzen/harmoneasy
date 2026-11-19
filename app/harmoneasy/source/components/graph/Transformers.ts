@@ -6,6 +6,8 @@ import type { Transformer } from "audiobus/io/transformers/abstract-transformer"
 import { tranformerFactory, TRANSFORMERS } from "audiobus/io/transformer-factory"
 import type { ChainUIContext } from "./chain-ui-context"
 import { element, button, icon, searchReset } from "./dom"
+import { deviceAvailability } from "audiobus/io/device-requirements"
+import { createUnavailableSection, markUnavailable } from "./unavailable-choices"
 
 export function createTransformerPicker(
 	{ chain }: ChainUIContext,
@@ -33,7 +35,10 @@ export function createTransformerPicker(
 	searchLabel.innerHTML =
 		'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10" cy="10" r="6" /><path d="m15 15 5 5" /></svg>'
 	searchLabel.append(search)
-	const choices = TRANSFORMERS.map((id) => TRANSFORMER_DEFINITIONS[id])
+	const choices = TRANSFORMERS.map((id) => TRANSFORMER_DEFINITIONS[id]).flatMap((definition) => {
+		const { hidden, missing } = deviceAvailability(definition)
+		return hidden ? [] : [{ ...definition, missing }]
+	})
 	let classification = ""
 	const filter = createClassificationFilter({
 		choices,
@@ -78,13 +83,37 @@ export function createTransformerPicker(
 		}
 	}
 
+	function choiceItem(choice: (typeof choices)[number]) {
+		const item = element("li")
+		const node = button(
+			"",
+			onAdd(choice.id),
+			dialog ? "grid-item transformer-choice" : "element-choice"
+		)
+		node.title = elementDescription("transformer", choice.id, choice.name, choice.description)
+		node.append(
+			icon(elementIcon("transformer", choice.id), node.title),
+			element("span", "", choice.name)
+		)
+		if (dialog) {
+			node.append(element("small", "item-description", choice.description))
+		}
+		if (choice.missing.length) {
+			markUnavailable(node, choice.missing)
+		}
+		item.append(node)
+		return item
+	}
+
 	function render() {
 		updateReset(Boolean(search.value || classification))
 		filter.update(choices, search.value)
 		results.replaceChildren()
-		const filtered = choices.filter((choice) =>
+		const matching = choices.filter((choice) =>
 			choiceMatches(choice, search.value, classification)
 		)
+		const filtered = matching.filter((choice) => !choice.missing.length)
+		const unavailable = matching.filter((choice) => choice.missing.length)
 		const count = element("p", "", `${filtered.length} matching transformers`)
 		count.setAttribute("role", "status")
 		results.append(count)
@@ -94,33 +123,16 @@ export function createTransformerPicker(
 			section.append(element("h6", "section-title", group.label))
 			const list = element("ul", dialog ? "items-grid" : "")
 			list.setAttribute("role", "list")
-			for (const choice of group.items) {
-				const item = element("li")
-				const node = button(
-					"",
-					onAdd(choice.id),
-					dialog ? "grid-item transformer-choice" : "element-choice"
-				)
-				node.title = elementDescription(
-					"transformer",
-					choice.id,
-					choice.name,
-					choice.description
-				)
-				node.append(
-					icon(elementIcon("transformer", choice.id), node.title),
-					element("span", "", choice.name)
-				)
-				if (dialog) {
-					node.append(element("small", "item-description", choice.description))
-				}
-				item.append(node)
-				list.append(item)
-			}
+			list.append(...group.items.map(choiceItem))
 			section.append(list)
 			results.append(section)
 		}
-		if (!filtered.length) {
+		if (unavailable.length) {
+			results.append(
+				createUnavailableSection(unavailable.map(choiceItem), dialog, "transformers")
+			)
+		}
+		if (!filtered.length && !unavailable.length) {
 			results.append(element("p", "", "No transformers match the selected filters"))
 		}
 	}

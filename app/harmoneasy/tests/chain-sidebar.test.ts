@@ -26,8 +26,8 @@ vi.mock("audiobus/midi/shared-webmidi", () => ({ sharedWebMidi: mocks.midi }))
 const context = {
 	chainId: "lead",
 	chain: {
-		inputManager: { getAvailableFactories: mocks.inputs },
-		outputManager: { getAvailableFactories: mocks.outputs },
+		inputManager: { getFactories: mocks.inputs },
+		outputManager: { getFactories: mocks.outputs },
 		transformerManager: { activeTransformers: [] },
 		appendTransformer: mocks.appendTransformer
 	},
@@ -42,12 +42,12 @@ const context = {
 vi.mock("audiobus/io/input-factory", () => ({ createInputById: mocks.input }))
 vi.mock("audiobus/io/output-factory", () => ({ createOutputById: mocks.output }))
 vi.mock("audiobus/instruments/instrument-factory-ui.ts", () => ({
-	getAvailableInstrumentFactories: mocks.instruments,
+	getInstrumentFactories: mocks.instruments,
 	createInstrumentById: mocks.instrument
 }))
 vi.mock("audiobus/io/transformer-factory", async (importOriginal) => ({
 	...(await importOriginal<typeof import("audiobus/io/transformer-factory")>()),
-	TRANSFORMERS: ["Transposer", "Harmoniser"],
+	TRANSFORMERS: ["Transposer", "Chordifier"],
 	tranformerFactory: (type: string) => ({ type })
 }))
 
@@ -140,8 +140,11 @@ afterEach(async () => {
 	vi.restoreAllMocks()
 })
 
+// Type, function and category each have their own select; use the one offering the value.
 const selectFilter = async (host: ParentNode, value: string) => {
-	const select = host.querySelector("select")!
+	const select = [...host.querySelectorAll("select")].find((select) =>
+		[...select.options].some((option) => option.value === value)
+	)!
 	await runUI(async () => {
 		select.value = value
 		select.dispatchEvent(new Event("change", { bubbles: true }))
@@ -191,15 +194,15 @@ it("groups output engines with instruments and combines type, subtype, category 
 	const host = panel()
 	expect(
 		[...host.querySelectorAll(".choice-group h6")].map((heading) => heading.textContent)
-	).toEqual(["Engine / Instruments", "Visual / Visualisers"])
+	).toEqual(["Sound engines / Instruments", "Visual / Visualisers"])
 	expect(
-		host.querySelector('[aria-label="Engine / Instruments"]')!.querySelectorAll("li")
+		host.querySelector('[aria-label="Sound engines / Instruments"]')!.querySelectorAll("li")
 	).toHaveLength(3)
-	expect([...host.querySelectorAll("optgroup")].map((group) => group.label)).toEqual([
-		"Types",
-		"Subtypes",
-		"Categories"
-	])
+	expect(
+		[...host.querySelectorAll(".classification-filter label:not([hidden]) > span")].map(
+			(label) => label.textContent
+		)
+	).toEqual(["Type", "Function", "Category"])
 	await selectFilter(host, "subtype:instrument")
 	expect(host.querySelectorAll(".choice-group li")).toHaveLength(3)
 	expect(host.textContent).not.toContain("Butterchurn")
@@ -416,7 +419,7 @@ it("filters transformer groups in both the sidebar and dialog", async () => {
 	await choose("Transformers")
 	await selectFilter(panel(), "subtype:harmony")
 	expect(panel().querySelectorAll(".choice-group")).toHaveLength(1)
-	expect(panel().querySelector(".choice-group button")?.textContent).toBe("Harmoniser")
+	expect(panel().querySelector(".choice-group button")?.textContent).toBe("Chordifier")
 	await runUI(async () => mount(createTransformerPicker(context, { dialog: true })))
 	await selectFilter(document, "subtype:pitch")
 	expect(document.querySelectorAll(".choice-group")).toHaveLength(1)
@@ -511,8 +514,8 @@ it("filters inputs and adds a device to the current chain using its device optio
 
 it("adds transformers, outputs and instruments through their respective factories", async () => {
 	await choose("Transformers")
-	await add("Harmoniser")
-	expect(mocks.appendTransformer).toHaveBeenCalledWith({ type: "Harmoniser" })
+	await add("Chordifier")
+	expect(mocks.appendTransformer).toHaveBeenCalledWith({ type: "Chordifier" })
 	await choose("Outputs")
 	await add("MIDI output")
 	expect(mocks.output).toHaveBeenCalledWith(
@@ -543,7 +546,7 @@ it("keeps outputs usable when the instrument catalog fails", async () => {
 	})
 	await choose("Outputs")
 	expect(panel().querySelector('[role="alert"]')?.textContent).toBe(
-		"Instruments could not be loaded."
+		"Some outputs could not be loaded."
 	)
 	expect(panel().textContent).not.toContain("No outputs available")
 	await add("MIDI output")
@@ -567,7 +570,7 @@ it("reports catalog failures without claiming no outputs are available", async (
 	})
 	await choose("Outputs")
 	expect(panel().querySelector('[role="alert"]')?.textContent).toBe(
-		"Outputs could not be loaded. Instruments could not be loaded."
+		"Outputs could not be loaded. Some outputs could not be loaded."
 	)
 	expect(panel().textContent).not.toContain("No outputs available")
 })

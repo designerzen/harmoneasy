@@ -11,7 +11,7 @@ const factories = vi.hoisted(() => ({
 	createInstrument: vi.fn()
 }))
 vi.mock("audiobus/instruments/instrument-factory-ui.ts", () => ({
-	getAvailableInstrumentFactories: factories.instruments,
+	getInstrumentFactories: factories.instruments,
 	createInstrumentById: factories.createInstrument
 }))
 vi.mock("audiobus/io/output-factory", () => ({ createOutputById: factories.createOutput }))
@@ -55,7 +55,7 @@ it("lists shared plugins once as outputs and keeps instrument-only outputs playa
 		outputMixer: mixer,
 		addDevice: vi.fn()
 	})
-	const chain = { outputManager: { getAvailableFactories: factories.outputs } }
+	const chain = { outputManager: { getFactories: factories.outputs } }
 	picker = createDevicePicker({ chain, manager } as unknown as ChainUIContext, {
 		direction: "output"
 	})
@@ -86,4 +86,40 @@ it("uses the same instrument icon in the output picker and existing instrument n
 	expect(elementIcon("output", "synth-oscillator")).toBe(
 		elementIcon("instrument", "synth-oscillator")
 	)
+})
+
+it("lists outputs this browser cannot run last, disabled and saying what they need", async () => {
+	const synth = {
+		id: "synth",
+		name: "Synth",
+		description: "",
+		type: "engine",
+		subtype: "instrument"
+	}
+	const bluetooth = {
+		...synth,
+		id: "ble-midi",
+		name: "BLE MIDI",
+		type: "midi",
+		subtype: "device",
+		requires: ["bluetooth"]
+	}
+	factories.outputs.mockResolvedValue([bluetooth, synth])
+	factories.instruments.mockReturnValue([])
+	const manager = Object.assign(new EventTarget(), { devices: [], addDevice: vi.fn() })
+	picker = createDevicePicker(
+		{ chain: { outputManager: { getFactories: factories.outputs } }, manager } as any,
+		{ direction: "output" }
+	)
+	document.body.append(picker.element)
+	await vi.waitFor(() => expect(picker.element.getAttribute("aria-busy")).toBe("false"))
+	const sections = [...picker.element.querySelectorAll("section")]
+	expect(sections.at(-1)!.classList).toContain("unavailable-choices")
+	expect(picker.element.textContent).toContain("1 matching outputs")
+	const disabled = sections.at(-1)!.querySelector<HTMLButtonElement>("button")!
+	expect(disabled.disabled).toBe(true)
+	expect(disabled.textContent).toContain("BLE MIDI")
+	expect(disabled.textContent).toContain("Needs Web Bluetooth")
+	disabled.click()
+	expect(factories.createOutput).not.toHaveBeenCalled()
 })
