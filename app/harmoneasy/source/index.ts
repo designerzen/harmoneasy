@@ -708,7 +708,7 @@ const initialiseApplication = async (
 			clockSource: clockSource?.source ?? "internal"
 		}),
 		canSetTempo: () => clockSource?.source === "internal" && !netronomeLink?.isFollower,
-		setTempo: bpm => {
+		setTempo: (bpm) => {
 			timer.BPM = bpm
 			ui.setTempo(bpm)
 			state.set("tempo", bpm)

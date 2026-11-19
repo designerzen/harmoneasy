@@ -9,32 +9,33 @@ import { RECORDING_STATE_CHANGED } from "../../../packages/audiobus/io/recording
 import { createRecordingControls } from "../source/services/recording-dialog"
 
 vi.mock("../../../packages/audiobus/io/recording/audio-recording", () => ({
-	getAudioRecording: () => new (class extends EventTarget {
-		state = "idle"
-		frames = 0
-		sampleRate = 48000
-		storage = "opfs"
-		error = ""
-		duration = 3
-		ready = Promise.resolve()
-		get hasTake() {
-			return this.frames > 0
-		}
-		change() {
-			this.dispatchEvent(new Event(RECORDING_STATE_CHANGED))
-		}
-		async start() {
-			this.frames = 0
-			this.state = "recording"
-			this.change()
-		}
-		async stop() {
-			this.frames = 144000
-			this.state = "idle"
-			this.change()
-		}
-		wave = vi.fn(async () => new Blob(["audio"], { type: "audio/wav" }))
-	})()
+	getAudioRecording: () =>
+		new (class extends EventTarget {
+			state = "idle"
+			frames = 0
+			sampleRate = 48000
+			storage = "opfs"
+			error = ""
+			duration = 3
+			ready = Promise.resolve()
+			get hasTake() {
+				return this.frames > 0
+			}
+			change() {
+				this.dispatchEvent(new Event(RECORDING_STATE_CHANGED))
+			}
+			async start() {
+				this.frames = 0
+				this.state = "recording"
+				this.change()
+			}
+			async stop() {
+				this.frames = 144000
+				this.state = "idle"
+				this.change()
+			}
+			wave = vi.fn(async () => new Blob(["audio"], { type: "audio/wav" }))
+		})()
 }))
 
 const button = (id: string) => document.querySelector<HTMLButtonElement>(`#${id}`)!

@@ -14,7 +14,9 @@ export function loadEmojiFont(): Promise<EmojiFont> {
 	if (!pending) {
 		pending = (async () => {
 			const response = await fetch(EMOJI_FONT_URL)
-			if (!response.ok) throw new Error(`Unable to load bundled Noto Emoji font (${response.status}).`)
+			if (!response.ok) {
+				throw new Error(`Unable to load bundled Noto Emoji font (${response.status}).`)
+			}
 			const buffer = await response.arrayBuffer()
 			const face = new FontFace(EMOJI_FONT_FAMILY, buffer, { style: "normal", weight: "400" })
 			await face.load()
@@ -25,7 +27,7 @@ export function loadEmojiFont(): Promise<EmojiFont> {
 				binary += String.fromCharCode(...bytes.subarray(offset, offset + 8192))
 			}
 			return { family: EMOJI_FONT_FAMILY, dataUrl: `data:font/ttf;base64,${btoa(binary)}` }
-		})().catch(error => {
+		})().catch((error) => {
 			pending = undefined
 			throw error
 		})

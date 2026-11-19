@@ -55,7 +55,10 @@ export function graphSections(nodes: GraphNode[], mode: string): GraphSection[] 
 		const width = node.measured?.width ?? node.width ?? 0
 		const height = node.measured?.height ?? node.height ?? 0
 		const { x, y } = node.position
-		const box = bounds.get(label) ?? { along: [Infinity, -Infinity], cross: [Infinity, -Infinity] }
+		const box = bounds.get(label) ?? {
+			along: [Infinity, -Infinity],
+			cross: [Infinity, -Infinity]
+		}
 		const [along, alongEnd, cross, crossEnd] = vertical
 			? [y, y + height, x, x + width]
 			: [x, x + width, y, y + height]

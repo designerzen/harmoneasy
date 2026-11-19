@@ -1,15 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
 #netronome-dialog {
 	width: min(36rem, calc(100vw - 2rem));
 	padding: 0;
@@ -119,9 +107,6 @@
 	}
 }
 
-
-
-
 main {
 	--height-graph: calc(100dvh - 3lh);
 	display: grid;
@@ -148,8 +133,6 @@ body > footer {
 	align-items: center;
 	gap: var(--gap);
 }
-
-
 
 #graph-layout-settings {
 	display: grid;
@@ -198,10 +181,6 @@ body > footer {
 	pointer-events: none;
 }
 
-
-
-
-
 song-explorer,
 song-visualiser-ui,
 song-explorer-ui {
@@ -223,8 +202,7 @@ song-explorer-ui {
 	padding: calc(2 * var(--pad));
 	margin-top: 16px;
 	border-radius: var(--radius-sm);
-	border: 1px solid
-		var(--col-line);
+	border: 1px solid var(--col-line);
 	color: light-dark(var(--col-accent), var(--col-on-accent));
 
 	label {
@@ -238,8 +216,7 @@ song-explorer-ui {
 		width: 100%;
 		padding: calc(2 * var(--pad));
 		margin-top: 4px;
-		border: 1px solid
-			var(--col-line);
+		border: 1px solid var(--col-line);
 		border-radius: var(--radius-sm);
 		background: var(--col-surface);
 		color: var(--col-fg);
@@ -328,13 +305,9 @@ song-explorer-ui {
 	position: relative;
 }
 
-
-
 .presets {
 	grid-area: presets;
 }
-
-
 
 .package-item {
 	padding: 1rem;
@@ -472,7 +445,6 @@ song-explorer-ui {
 		pointer-events: none;
 	}
 }
-
 
 #graph > .chains-stacked {
 	padding: 0;

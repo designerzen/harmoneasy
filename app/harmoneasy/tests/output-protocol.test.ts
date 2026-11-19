@@ -507,7 +507,10 @@ it("also sends MIDI to applications connected without pairing when enabled", asy
 				}
 			}
 		},
-		{ identity: { name: "Controller", version: "1" }, onMidi: (data) => received.push([...data]) }
+		{
+			identity: { name: "Controller", version: "1" },
+			onMidi: (data) => received.push([...data])
+		}
 	)
 	const silent = new OutputProtocol()
 	const output = new OutputProtocol({ sendToConnectedApplications: true })

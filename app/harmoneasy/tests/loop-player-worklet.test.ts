@@ -56,7 +56,9 @@ describe("Loop Player WSOLA processor", () => {
 				expect(Number.isFinite(left[frame])).toBe(true)
 				expect(Math.abs(left[frame])).toBeLessThanOrEqual(0.50001)
 				expect(right[frame]).toBeCloseTo(-left[frame], 6)
-				if (frame > rate && left[frame - 1] <= 0 && left[frame] > 0) crossings++
+				if (frame > rate && left[frame - 1] <= 0 && left[frame] > 0) {
+					crossings++
+				}
 			}
 			expect(crossings).toBeGreaterThan(205)
 			expect(crossings).toBeLessThan(235)

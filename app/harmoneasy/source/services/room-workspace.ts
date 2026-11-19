@@ -2,7 +2,13 @@ import type IOChainManager from "audiobus/io/IO-chain-manager"
 import type { IAudioCommand } from "audiobus/commands/audio-command-interface"
 import AudioCommand from "audiobus/commands/audio-command"
 import InputAudioEvent from "audiobus/io/events/input-audio-event"
-import { NOTE_ON, NOTE_OFF, CONTROL_CHANGE, PITCH_BEND, PROGRAM_CHANGE } from "audiobus/commands/commands"
+import {
+	NOTE_ON,
+	NOTE_OFF,
+	CONTROL_CHANGE,
+	PITCH_BEND,
+	PROGRAM_CHANGE
+} from "audiobus/commands/commands"
 import { POLYPHONIC_PRESSURE, CHANNEL_PRESSURE } from "audiobus/midi/midi-command-conversion"
 import {
 	EVENT_CHAINS_UPDATED,

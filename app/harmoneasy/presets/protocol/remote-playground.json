@@ -76,23 +76,7 @@
 						"release": 0.15,
 						"maxPolyphony": 16,
 						"filterCutOff": 3200,
-						"receiveChannels": [
-							1,
-							2,
-							3,
-							4,
-							5,
-							6,
-							7,
-							8,
-							9,
-							11,
-							12,
-							13,
-							14,
-							15,
-							16
-						]
+						"receiveChannels": [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16]
 					}
 				}
 			},
@@ -105,9 +89,7 @@
 					"options": {
 						"volume": 0.7,
 						"channel": 10,
-						"receiveChannels": [
-							10
-						]
+						"receiveChannels": [10]
 					}
 				}
 			},
@@ -148,20 +130,11 @@
 							"connections": [
 								{
 									"componentId": "transformer:remote-harmoniser",
-									"controlIds": [
-										"enabled",
-										"root",
-										"mode"
-									]
+									"controlIds": ["enabled", "root", "mode"]
 								},
 								{
 									"componentId": "transformer:remote-chordifier",
-									"controlIds": [
-										"enabled",
-										"simultaneous",
-										"root",
-										"mode"
-									]
+									"controlIds": ["enabled", "simultaneous", "root", "mode"]
 								},
 								{
 									"componentId": "lead-synth",
@@ -227,11 +200,7 @@
 					"midi-controllers",
 					"remote-lead-input"
 				],
-				"outputs": [
-					"lead-synth",
-					"remote-echo",
-					"ui"
-				],
+				"outputs": ["lead-synth", "remote-echo", "ui"],
 				"disabledInputs": [],
 				"disabledOutputs": []
 			},
@@ -243,12 +212,8 @@
 					"graphLayout": "horizontal"
 				},
 				"transformers": "[]",
-				"inputs": [
-					"remote-drum-input"
-				],
-				"outputs": [
-					"remote-drums"
-				],
+				"inputs": ["remote-drum-input"],
+				"outputs": ["remote-drums"],
 				"disabledInputs": [],
 				"disabledOutputs": []
 			}
@@ -260,12 +225,7 @@
 		"useCase": "Play, switch and adjust every control from another application over audioBus Protocol.",
 		"order": 201,
 		"kind": "workspace",
-		"tags": [
-			"protocol",
-			"remote control",
-			"midi",
-			"drums"
-		],
+		"tags": ["protocol", "remote control", "midi", "drums"],
 		"stepSummaries": [
 			"Harmoniser — keeps remote notes in C major; switch it off or change key remotely.",
 			"Chordifier — turns each note into a chord when switched on."

@@ -191,7 +191,9 @@ describe("loop player clock scheduling", () => {
 	it("triggers the right sixteenth slices, respects the region, wraps and clamps late ticks", async () => {
 		const { context, output } = await player()
 		output.configure({ start: 1, end: 3, loopBeats: 2 })
-		for (let step = 0; step < 10; step++) output.onClockTick(tick(step))
+		for (let step = 0; step < 10; step++) {
+			output.onClockTick(tick(step))
+		}
 		const sources = context.createBufferSource.mock.results.map((result) => result.value)
 		for (let step = 0; step < 10; step++) {
 			expect(sources[step].start).toHaveBeenCalledWith(

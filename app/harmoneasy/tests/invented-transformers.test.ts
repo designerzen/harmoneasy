@@ -332,11 +332,12 @@ describe("invented musical Transformers", () => {
 				restored.activeTransformers.map((effect) => JSON.parse(effect.exportConfig()).type)
 			).toEqual(types)
 			for (const effect of restored.activeTransformers) {
-				for (const field of effect.fields)
+				for (const field of effect.fields) {
 					if (typeof effect.options[field.name] === "number") {
 						effect.setConfig(field.name, String(effect.options[field.name]))
 						expect(typeof effect.options[field.name]).toBe("number")
 					}
+				}
 				effect.setConfig("enabled", "0")
 				const input = note()
 				expect(effect.transform([input], clock())).toEqual([input])
@@ -369,7 +370,9 @@ describe("invented musical Transformers", () => {
 					preset.steps.some((step) => step.type === type)
 				)!
 				expect(preset).toBeDefined()
-				for (const effect of createPresetTransformers(preset)) effect.destroy()
+				for (const effect of createPresetTransformers(preset)) {
+					effect.destroy()
+				}
 			}
 		} finally {
 			picker.destroy()

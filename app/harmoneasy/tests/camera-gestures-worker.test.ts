@@ -7,33 +7,44 @@ const vision = vi.hoisted(() => ({
 	detectForVideo: vi.fn()
 }))
 // Resolve from the package that owns the worker, rather than the app's dependencies.
-vi.mock("../../../packages/audiobus/node_modules/@mediapipe/tasks-vision/vision_bundle.mjs", () => ({
-	FilesetResolver: { forVisionTasks: vision.forVisionTasks },
-	HandLandmarker: { createFromOptions: vision.createFromOptions }
-}))
+vi.mock(
+	"../../../packages/audiobus/node_modules/@mediapipe/tasks-vision/vision_bundle.mjs",
+	() => ({
+		FilesetResolver: { forVisionTasks: vision.forVisionTasks },
+		HandLandmarker: { createFromOptions: vision.createFromOptions }
+	})
+)
 
 describe("camera gestures module worker", () => {
 	let receive: (event: MessageEvent) => Promise<void>
 	const postMessage = vi.fn()
 	beforeEach(async () => {
-		vi.resetModules(); vi.clearAllMocks()
-		vision.forVisionTasks.mockResolvedValue({ wasmLoaderPath: "vision_wasm_module_internal.js" })
+		vi.resetModules()
+		vi.clearAllMocks()
+		vision.forVisionTasks.mockResolvedValue({
+			wasmLoaderPath: "vision_wasm_module_internal.js"
+		})
 		vision.createFromOptions.mockResolvedValue({ detectForVideo: vision.detectForVideo })
 		vision.detectForVideo.mockReturnValue({ landmarks: [] })
 		vi.stubGlobal("self", {
 			postMessage,
 			addEventListener: (type: string, listener: typeof receive) => {
-				if (type === EVENT_MESSAGE) receive = listener
+				if (type === EVENT_MESSAGE) {
+					receive = listener
+				}
 			}
 		})
 		await import("../../../packages/audiobus/io/inputs/camera-gestures.worker")
 	})
-	afterEach(() => { vi.unstubAllGlobals() })
+	afterEach(() => {
+		vi.unstubAllGlobals()
+	})
 
 	it("requests the module-compatible WASM loader before reporting ready", async () => {
 		await receive({ data: { type: "init" } } as MessageEvent)
 		expect(vision.forVisionTasks).toHaveBeenCalledWith(
-			"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.0/wasm", true
+			"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.0/wasm",
+			true
 		)
 		expect(vision.createFromOptions).toHaveBeenCalledWith(
 			{ wasmLoaderPath: "vision_wasm_module_internal.js" },
@@ -53,7 +64,9 @@ describe("camera gestures module worker", () => {
 	})
 	it("reports failed inference and still releases its bitmap", async () => {
 		await receive({ data: { type: "init" } } as MessageEvent)
-		vision.detectForVideo.mockImplementationOnce(() => { throw new Error("Inference failed") })
+		vision.detectForVideo.mockImplementationOnce(() => {
+			throw new Error("Inference failed")
+		})
 		const bitmap = { close: vi.fn() }
 		await receive({ data: { type: "frame", bitmap, timestamp: 123 } } as MessageEvent)
 		expect(postMessage).toHaveBeenLastCalledWith({ type: "error", message: "Inference failed" })

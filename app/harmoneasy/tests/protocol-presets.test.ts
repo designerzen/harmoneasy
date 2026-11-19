@@ -26,11 +26,14 @@ describe("audioBus Protocol demo presets", () => {
 			const devices = page.workspace.devices
 			for (const { definition } of devices) {
 				if (definition.factory === "input") {
-					expect(Object.hasOwn(INPUT_DEFINITIONS, definition.type), definition.type).toBe(true)
-				} else if (definition.factory === "output") {
-					expect(Object.hasOwn(OUTPUT_DEFINITIONS, definition.type), definition.type).toBe(
+					expect(Object.hasOwn(INPUT_DEFINITIONS, definition.type), definition.type).toBe(
 						true
 					)
+				} else if (definition.factory === "output") {
+					expect(
+						Object.hasOwn(OUTPUT_DEFINITIONS, definition.type),
+						definition.type
+					).toBe(true)
 				}
 			}
 			const routed = new Set(

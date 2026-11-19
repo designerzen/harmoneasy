@@ -52,12 +52,17 @@ function sounding(effect: PerformanceTransformer) {
 	return (commands: IAudioCommand[]) => {
 		for (const command of commands) {
 			const key = `${command.from}:${command.channel}:${command.number}`
-			if (command.type === NOTE_ON) held.set(key, (held.get(key) ?? 0) + 1)
+			if (command.type === NOTE_ON) {
+				held.set(key, (held.get(key) ?? 0) + 1)
+			}
 			if (command.type === NOTE_OFF) {
 				const count = (held.get(key) ?? 0) - 1
 				expect(count, `unpaired off ${key} from ${effect.name}`).toBeGreaterThanOrEqual(0)
-				if (count) held.set(key, count)
-				else held.delete(key)
+				if (count) {
+					held.set(key, count)
+				} else {
+					held.delete(key)
+				}
 			}
 		}
 		return [...held.keys()].map((key) => Number(key.split(":").at(-1))).sort((a, b) => a - b)
@@ -257,8 +262,9 @@ describe("live progression Transformers", () => {
 			(pitch) => !offs(change).some((command) => command.number === pitch)
 		)
 		expect(retained.length).toBeGreaterThan(0)
-		for (const pitch of retained)
+		for (const pitch of retained) {
 			expect(ons(change).some((command) => command.number === pitch)).toBe(false)
+		}
 	})
 	it("produces no partial phrase when classical constraints cannot be satisfied", () => {
 		const effect = new TransformerCadenceWeaver({
@@ -382,7 +388,9 @@ describe("live progression Transformers", () => {
 					(preset) => preset.id === `classical-${concept.id}`
 				)!
 				expect(preset).toBeDefined()
-				for (const effect of createPresetTransformers(preset)) effect.destroy()
+				for (const effect of createPresetTransformers(preset)) {
+					effect.destroy()
+				}
 			}
 		} finally {
 			picker.destroy()

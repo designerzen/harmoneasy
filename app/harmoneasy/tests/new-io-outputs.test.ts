@@ -192,8 +192,9 @@ describe("harmony sampler", () => {
 			0
 		)
 		output.stopClock()
-		for (const source of context.createBufferSource.mock.results)
-			{expect(source.value.stop).toHaveBeenCalled()}
+		for (const source of context.createBufferSource.mock.results) {
+			expect(source.value.stop).toHaveBeenCalled()
+		}
 		context.createBufferSource.mockClear()
 		output.options.timelineEnabled = false
 		output.onClockTick({ ...tick, step: 1 })

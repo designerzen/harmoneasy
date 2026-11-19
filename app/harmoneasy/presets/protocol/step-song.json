@@ -532,17 +532,11 @@
 							"connections": [
 								{
 									"componentId": "next-note-pad",
-									"controlIds": [
-										"trigger"
-									]
+									"controlIds": ["trigger"]
 								},
 								{
 									"componentId": "transformer:protocol-step-melody",
-									"controlIds": [
-										"playbackMode",
-										"trackIndex",
-										"loop"
-									]
+									"controlIds": ["playbackMode", "trackIndex", "loop"]
 								},
 								{
 									"componentId": "melody-synth",
@@ -601,11 +595,7 @@
 					"next-note-pad",
 					"remote-application"
 				],
-				"outputs": [
-					"melody-synth",
-					"remote-echo",
-					"ui"
-				],
+				"outputs": ["melody-synth", "remote-echo", "ui"],
 				"disabledInputs": [],
 				"disabledOutputs": []
 			}
@@ -617,15 +607,7 @@
 		"useCase": "Step through a song with any key, pad or remote note, and send every note to connected applications.",
 		"order": 200,
 		"kind": "workspace",
-		"tags": [
-			"protocol",
-			"remote control",
-			"midi",
-			"keyboard",
-			"song"
-		],
-		"stepSummaries": [
-			"MIDI File Player — plays the next melody note for every key press."
-		]
+		"tags": ["protocol", "remote control", "midi", "keyboard", "song"],
+		"stepSummaries": ["MIDI File Player — plays the next melody note for every key press."]
 	}
 }

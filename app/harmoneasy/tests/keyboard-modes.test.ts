@@ -2,7 +2,12 @@
 import { afterEach, expect, it, vi } from "vitest"
 import InputKeyboard from "../../../packages/audiobus/io/inputs/input-keyboard"
 import { keyboardConfiguration } from "../../../packages/audiobus/hardware/keyboard/keyboard-configuration"
-import { NOTE_ON, NOTE_OFF, PLAYBACK_TOGGLE, TEMPO_TAP } from "../../../packages/audiobus/commands/commands"
+import {
+	NOTE_ON,
+	NOTE_OFF,
+	PLAYBACK_TOGGLE,
+	TEMPO_TAP
+} from "../../../packages/audiobus/commands/commands"
 import {
 	EVENT_KEY_DOWN,
 	EVENT_KEY_UP,

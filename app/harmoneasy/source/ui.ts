@@ -3,7 +3,12 @@ import NoteVisualiser from "audiobus/ui/note-visualiser.js"
 import NoteTimelineVisualiser from "audiobus/ui/note-timeline-visualiser"
 import SVGKeyboard from "audiobus/ui/keyboard-svg.ts"
 import { createOpenDAWExportDialog } from "./services/opendaw-export-dialog"
-import { EVENT_CLICK, EVENT_CHANGE, EVENT_ABORT, EVENT_INPUT } from "audiobus/events/event-constants"
+import {
+	EVENT_CLICK,
+	EVENT_CHANGE,
+	EVENT_ABORT,
+	EVENT_INPUT
+} from "audiobus/events/event-constants"
 import { installMediaDrop } from "./services/media-drop"
 
 import type NoteModel from "audiobus/models/note-model.ts"

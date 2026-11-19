@@ -120,9 +120,13 @@ describe("Mutable Instruments inspired Transformers", () => {
 		expect(run({ model: "markov", probability: 20 }).length).toBeGreaterThan(0)
 	})
 	it("reads a topographic map whose corners are its authored patterns", () => {
-		for (const row of TOPOGRAPHIC_MAP)
-			for (const node of row)
-				for (const lane of node) expect(lane).toMatch(new RegExp(`^\\d{${TOPOGRAPHIC_STEPS}}$`))
+		for (const row of TOPOGRAPHIC_MAP) {
+			for (const node of row) {
+				for (const lane of node) {
+					expect(lane).toMatch(new RegExp(`^\\d{${TOPOGRAPHIC_STEPS}}$`))
+				}
+			}
+		}
 		expect(topographicLevel(0, 0, 0, 0)).toBe(255)
 		expect(topographicLevel(0.5, 0, 0, 4)).toBe(255)
 		expect(topographicLevel(0.25, 0, 0, 4)).toBeCloseTo(255 / 2)
@@ -175,7 +179,11 @@ describe("Mutable Instruments inspired Transformers", () => {
 			])
 		}
 		expect(new Set(channels)).toEqual(new Set([1, 2]))
-		const toggle = new TransformerBernoulliGate({ probability: 100, mode: "toggle", channelB: 5 })
+		const toggle = new TransformerBernoulliGate({
+			probability: 100,
+			mode: "toggle",
+			channelB: 5
+		})
 		expect(
 			[0, 1, 2, 3].map((i) => ons(toggle.transform([note(60, i, 3)], clock(i)))[0].channel)
 		).toEqual([5, 3, 5, 3])
@@ -192,11 +200,12 @@ describe("Mutable Instruments inspired Transformers", () => {
 				restored.activeTransformers.map((effect) => JSON.parse(effect.exportConfig()).type)
 			).toEqual(types)
 			for (const effect of restored.activeTransformers) {
-				for (const field of effect.fields)
+				for (const field of effect.fields) {
 					if (typeof effect.options[field.name] === "number") {
 						effect.setConfig(field.name, String(effect.options[field.name]))
 						expect(typeof effect.options[field.name]).toBe("number")
 					}
+				}
 				effect.setConfig("enabled", "0")
 				const input = note()
 				expect(effect.transform([input], clock())).toEqual([input])
@@ -221,7 +230,9 @@ describe("Mutable Instruments inspired Transformers", () => {
 				preset.steps.some((step) => step.type === type)
 			)!
 			expect(preset).toBeDefined()
-			for (const effect of createPresetTransformers(preset)) effect.destroy()
+			for (const effect of createPresetTransformers(preset)) {
+				effect.destroy()
+			}
 		}
 	})
 })

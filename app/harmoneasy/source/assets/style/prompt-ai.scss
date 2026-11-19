@@ -4,7 +4,7 @@
 	border: 1px solid var(--col-line);
 	border-radius: var(--radius-md);
 	background: var(--col-accent-soft);
-	
+
 	.prompt-ai-container {
 		display: flex;
 		flex-direction: column;
@@ -27,7 +27,6 @@
 			font-size: var(--text-md);
 			resize: vertical;
 			min-height: 80px;
-
 
 			&::placeholder {
 				color: var(--col-muted);

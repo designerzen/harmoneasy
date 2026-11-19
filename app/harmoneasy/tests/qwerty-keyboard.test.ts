@@ -2,7 +2,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import KeyboardDisplayManager from "../../../packages/audiobus/ui/keyboard-display-manager"
 import { addKeyboardDownEvents } from "../../../packages/audiobus/hardware/keyboard/keyboard"
-import { NOTE_ON, NOTE_OFF, TEMPO_TAP, PLAYBACK_TOGGLE } from "../../../packages/audiobus/commands/commands"
+import {
+	NOTE_ON,
+	NOTE_OFF,
+	TEMPO_TAP,
+	PLAYBACK_TOGGLE
+} from "../../../packages/audiobus/commands/commands"
 import {
 	EVENT_KEY_DOWN,
 	EVENT_KEY_UP,

@@ -33,7 +33,9 @@ export function deviceDescription(
 	let type = ""
 	try {
 		type = deviceDefinition(device).type ?? ""
-	} catch {}
+	} catch {
+		// Devices created outside a factory have no definition, so no type.
+	}
 	const definition = direction === "input" ? getInputDefinition(type) : getOutputDefinition(type)
 	return elementDescription(
 		direction,

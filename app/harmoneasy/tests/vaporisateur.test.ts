@@ -115,11 +115,7 @@ describe("Vaporisateur", () => {
 		await expect(synth.connect()).rejects.toThrow("worklet unavailable")
 		await synth.connect()
 		synth.volume = 0.4
-		expect(output.gain.setTargetAtTime).toHaveBeenCalledWith(
-			0.4 * VAPORISATEUR_TRIM,
-			2,
-			0.02
-		)
+		expect(output.gain.setTargetAtTime).toHaveBeenCalledWith(0.4 * VAPORISATEUR_TRIM, 2, 0.02)
 		await synth.dispose()
 		expect(output.disconnect).toHaveBeenCalledOnce()
 	})
