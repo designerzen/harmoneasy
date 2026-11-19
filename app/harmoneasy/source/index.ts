@@ -49,16 +49,21 @@ import {
 } from "./services/clock-source"
 
 // Import Data
+import { importABCFile } from "audiobus/importers/import-abc"
+import { importMIDICSVFile } from "audiobus/importers/import-midi-csv"
 import { importDawProjectFile } from "audiobus/importers/import-dawproject"
 import { importMusicXMLFile } from "audiobus/importers/import-musicxml-import"
 import { importMIDIFile } from "audiobus/importers/import-midi-file"
-import { importTrackerFile } from "audiobus/importers/import-tracker-file"
+import { importTrackerFile, TRACKER_EXTENSIONS } from "audiobus/importers/import-tracker-file"
 
 // Integration
 import { captureAudioToolTake, createAudioToolPanel } from "audiotool"
 import { createOpenDAWProjectFromAudioEventRecording } from "opendaw"
 
 // Export Data as a file to another service
+import { createABCFromAudioEventRecording } from "audiobus/exporters/adapter-abc"
+import { createMIDICSVFromAudioEventRecording } from "audiobus/exporters/adapter-midi-csv"
+import { saveScoreToLocalFileSystem } from "audiobus/exporters/download-score"
 import {
 	createMIDIFileFromAudioEventRecording,
 	saveBlobToLocalFileSystem
@@ -73,6 +78,7 @@ import {
 } from "audiobus/exporters/adapter-midi-markdown.ts"
 import {
 	createMusicXMLFromAudioEventRecording,
+	createMXLFromAudioEventRecording,
 	saveBlobToLocalFileSystem as saveMusicXMLBlobToLocalFileSystem
 } from "audiobus/exporters/adapter-musicxml.ts"
 import {
@@ -134,13 +140,20 @@ const importFile = async (
 ): Promise<{ commands: IAudioCommand[]; noteCount: number }> => {
 	const fileName = file.name.toLowerCase()
 
+	if (fileName.endsWith(".abc")) {
+		return importABCFile(file)
+	}
+	if (fileName.endsWith(".csv")) {
+		return importMIDICSVFile(file)
+	}
+
 	// MIDI formats
 	if (fileName.endsWith(".mid") || fileName.endsWith(".midi") || file.type.includes("midi")) {
 		return importMIDIFile(file)
 	}
 
 	// MusicXML formats
-	if (fileName.endsWith(".musicxml") || fileName.endsWith(".xml")) {
+	if (fileName.endsWith(".musicxml") || fileName.endsWith(".xml") || fileName.endsWith(".mxl")) {
 		return importMusicXMLFile(file)
 	}
 
@@ -150,28 +163,12 @@ const importFile = async (
 	}
 
 	// Tracker formats (MOD, XM, IT, S3M, etc.)
-	const trackerExtensions = [
-		".mod",
-		".xm",
-		".it",
-		".s3m",
-		".669",
-		".far",
-		".stm",
-		".ult",
-		".mtm",
-		".dmf",
-		".ptm",
-		".okt",
-		".mptm",
-		".nst"
-	]
-	if (trackerExtensions.some((ext) => fileName.endsWith(ext))) {
+	if (TRACKER_EXTENSIONS.some((ext) => fileName.endsWith(`.${ext}`))) {
 		return importTrackerFile(file)
 	}
 
 	throw new Error(
-		`Unsupported file type: ${file.type || fileName}. Supported formats: MIDI (.mid, .midi), MusicXML (.musicxml, .xml), DawProject (.dawproject), and Tracker formats (.mod, .xm, .it, .s3m, .669, .far, .stm, .ult, .mtm, .dmf, .ptm, .okt, .mptm, .nst)`
+		`Unsupported file type: ${file.type || fileName}. Supported formats: ABC (.abc), MIDI CSV (.csv), MIDI (.mid, .midi), MusicXML (.musicxml, .xml, .mxl), DawProject (.dawproject), and Tracker formats (${TRACKER_EXTENSIONS.map((ext) => `.${ext}`).join(", ")})`
 	)
 }
 
@@ -325,6 +322,21 @@ const initialiseFrontEnd = async (audioBus: AudioBus, initialVolumePercent: numb
 		const markdown = createMIDIMarkdownFromAudioEventRecording(recorder, timer)
 		saveMarkdownToLocalFileSystem(markdown, recorder.name)
 		console.info("Exporting Data to MIDI Markdown", { recorder, markdown })
+	})
+	frontEnd.whenScoreExportRequestedRun(async (format) => {
+		let blob: Blob
+		if (format === "mxl") {
+			blob = await createMXLFromAudioEventRecording(recorder, timer)
+		} else if (format === "abc") {
+			blob = new Blob([createABCFromAudioEventRecording(recorder, timer)], {
+				type: "text/vnd.abc;charset=utf-8"
+			})
+		} else {
+			blob = new Blob([createMIDICSVFromAudioEventRecording(recorder, timer)], {
+				type: "text/csv;charset=utf-8"
+			})
+		}
+		saveScoreToLocalFileSystem(blob, recorder.name, format === "midi-csv" ? "csv" : format)
 	})
 	frontEnd.whenMusicXMLExportRequestedRun(async () => {
 		const blob = await createMusicXMLFromAudioEventRecording(recorder, timer)

@@ -578,7 +578,7 @@ export default class UI implements IAudioOutput {
 		fileInput.multiple = true
 		fileInput.setAttribute("aria-label", "Upload music files or WAM2 plugin bundles")
 		fileInput.accept =
-			".mid,.midi,audio/midi,.zip,.wam,.wam2,.musicxml,.xml,.dawproject,.mod,.xm,.it,.s3m,.669,.far,.stm,.ult,.mtm,.dmf,.ptm,.okt,.mptm,.nst"
+			".mid,.midi,audio/midi,.zip,.wam,.wam2,.abc,.csv,.musicxml,.xml,.mxl,.dawproject,.mod,.xm,.it,.s3m,.669,.far,.stm,.ult,.mtm,.dmf,.ptm,.okt,.mptm,.nst,.med,.amf,.ams,.dbm,.dsm,.mdl,.umx"
 		fileInput.style.display = "none"
 		document.body.appendChild(fileInput)
 		this.abortController.signal.addEventListener(EVENT_ABORT, () => fileInput.remove(), {
@@ -698,6 +698,28 @@ export default class UI implements IAudioOutput {
 	 *
 	 * @param callback
 	 */
+	whenScoreExportRequestedRun(callback: (format: "abc" | "midi-csv" | "mxl") => Promise<void>) {
+		for (const format of ["abc", "midi-csv", "mxl"] as const) {
+			document.getElementById(`btn-${format}-export`)?.addEventListener(
+				EVENT_CLICK,
+				async () => {
+					this.showExportOverlay()
+					try {
+						await callback(format)
+					} catch (error) {
+						this.showError(
+							"Export failed",
+							error instanceof Error ? error.message : String(error)
+						)
+					} finally {
+						this.hideExportOverlay()
+					}
+				},
+				{ signal: this.abortController.signal }
+			)
+		}
+	}
+
 	whenMusicXMLExportRequestedRun(callback: Function) {
 		if (this.elementMusicXMLExportButton) {
 			this.elementMusicXMLExportButton.addEventListener(

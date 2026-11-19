@@ -122,7 +122,9 @@ export function createMediaImporter(
 		const signature = new Uint8Array(await media.slice(0, 2).arrayBuffer())
 		if (
 			isArchiveFile(media) ||
-			(signature[0] === 0x50 && signature[1] === 0x4b && !/\.dawproject$/i.test(media.name))
+			(signature[0] === 0x50 &&
+				signature[1] === 0x4b &&
+				!/\.(dawproject|mxl)$/i.test(media.name))
 		) {
 			const archive = await inspectMediaArchive(new Uint8Array(await media.arrayBuffer()))
 			if (archive.plugins.length) {

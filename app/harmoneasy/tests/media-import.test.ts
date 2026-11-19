@@ -89,3 +89,11 @@ it("rejects misleading MIDI files and page links with useful errors", async () =
 		"documentation or gallery page"
 	)
 })
+it("routes compressed MusicXML and DAWproject archives to score import", async () => {
+	const load = createMediaImporter(manager, score)
+	for (const extension of ["mxl", "dawproject"]) {
+		const file = new File(["PK0000"], `song.${extension}`)
+		await load(file)
+		expect(score).toHaveBeenCalledWith(file)
+	}
+})
