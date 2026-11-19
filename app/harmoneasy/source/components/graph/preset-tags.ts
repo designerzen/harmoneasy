@@ -25,7 +25,10 @@ const STYLES: Record<string, string> = {
 	"Euclidean-Gate": "Rhythmic",
 	"Note-Repeater": "Rhythmic",
 	"Register-Orbit": "Evolving",
+	"Topographic-Drums": "Rhythmic",
 	"Probability-Gate": "Generative",
+	"Random-Sampler": "Generative",
+	"Bernoulli-Gate": "Generative",
 	Randomiser: "Generative"
 }
 

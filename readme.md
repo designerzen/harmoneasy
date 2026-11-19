@@ -100,6 +100,7 @@ The selectable transformer factory provides the following processing types. Thes
 | Transformer | Capability |
 | --- | --- |
 | Arpeggiator | Turn held notes/chords into patterns of individual notes. |
+| Bernoulli Gate | Toss a coin per note or chord to route it to channel A or B, or toggle sides; after Mutable Instruments Branches. |
 | Channeler | Route musical events to a chosen MIDI channel. |
 | Chordifier | Expand individual notes into chords. |
 | Constrictor | Limit notes to a configured pitch range. |
@@ -114,8 +115,10 @@ The selectable transformer factory provides the following processing types. Thes
 | Note Reverb | Repeat notes at intervals with progressively lower velocities. |
 | Note Shortener | Shorten notes for staccato articulation. |
 | Quantise | Lock playback to a rhythmic grid. |
+| Random Sampler | Generate random gates and in-scale pitches around held notes with spread, bias, steps and Déjà vu loops; ported from Mutable Instruments Marbles (MIT). |
 | Randomiser | Add controlled variation to note parameters. |
 | Timing Humaniser | Add timing variation. |
+| Topographic Drums | Hold a note to play kick, snare and hi-hat patterns morphed across an X/Y map with per-voice density and chaos; modelled on Mutable Instruments Grids with an original pattern map. |
 | Transposer | Shift pitches by an interval. |
 | Vibrator | Apply pitch vibrato; distinct from the haptic output. |
 
