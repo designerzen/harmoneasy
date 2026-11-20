@@ -59,7 +59,7 @@ export function installImportMenu(
 	details.append(summary, formats)
 	const scope = root.createElement("p")
 	scope.textContent =
-		"Vocal projects load note pitches and timing. LMMS imports song-level piano-roll patterns at a fixed tempo; Beat/Bassline arrangements, audio, effects and automation are not imported."
+		"Vocal projects load note pitches and timing. LMMS imports song-level piano-roll patterns at a fixed tempo. MuseScore loads written notes without expanding repeats or ornaments. REAPER loads embedded MIDI; slip-edited clips must be glued and items cropped to their active take first. Audio tracks, plugins and effects in projects are not imported."
 	details.append(scope)
 	const actions = root.createElement("menu"),
 		load = root.createElement("button")
