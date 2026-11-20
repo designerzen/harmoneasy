@@ -49,6 +49,8 @@ import {
 } from "./services/clock-source"
 
 // Import Data
+import { importMMLFile } from "audiobus/importers/import-mml"
+import { importRTTTLFile } from "audiobus/importers/import-rtttl"
 import { importABCFile } from "audiobus/importers/import-abc"
 import { importMIDICSVFile } from "audiobus/importers/import-midi-csv"
 import { importDawProjectFile } from "audiobus/importers/import-dawproject"
@@ -61,6 +63,9 @@ import { captureAudioToolTake, createAudioToolPanel } from "audiotool"
 import { createOpenDAWProjectFromAudioEventRecording } from "opendaw"
 
 // Export Data as a file to another service
+import { createMMLFromAudioEventRecording } from "audiobus/exporters/adapter-mml"
+import { createRTTTLFromAudioEventRecording } from "audiobus/exporters/adapter-rtttl"
+import { createLilyPondFromAudioEventRecording } from "audiobus/exporters/adapter-lilypond"
 import { createABCFromAudioEventRecording } from "audiobus/exporters/adapter-abc"
 import { createMIDICSVFromAudioEventRecording } from "audiobus/exporters/adapter-midi-csv"
 import { saveScoreToLocalFileSystem } from "audiobus/exporters/download-score"
@@ -140,6 +145,12 @@ const importFile = async (
 ): Promise<{ commands: IAudioCommand[]; noteCount: number }> => {
 	const fileName = file.name.toLowerCase()
 
+	if (fileName.endsWith(".mml")) {
+		return importMMLFile(file)
+	}
+	if (/\.(rtttl|rtx)$/.test(fileName)) {
+		return importRTTTLFile(file)
+	}
 	if (fileName.endsWith(".abc")) {
 		return importABCFile(file)
 	}
@@ -168,7 +179,7 @@ const importFile = async (
 	}
 
 	throw new Error(
-		`Unsupported file type: ${file.type || fileName}. Supported formats: ABC (.abc), MIDI CSV (.csv), MIDI (.mid, .midi), MusicXML (.musicxml, .xml, .mxl), DawProject (.dawproject), and Tracker formats (${TRACKER_EXTENSIONS.map((ext) => `.${ext}`).join(", ")})`
+		`Unsupported file type: ${file.type || fileName}. Supported formats: MML (.mml), RTTTL (.rtttl, .rtx), ABC (.abc), MIDI CSV (.csv), MIDI (.mid, .midi), MusicXML (.musicxml, .xml, .mxl), DawProject (.dawproject), and Tracker formats (${TRACKER_EXTENSIONS.map((ext) => `.${ext}`).join(", ")})`
 	)
 }
 
@@ -331,12 +342,28 @@ const initialiseFrontEnd = async (audioBus: AudioBus, initialVolumePercent: numb
 			blob = new Blob([createABCFromAudioEventRecording(recorder, timer)], {
 				type: "text/vnd.abc;charset=utf-8"
 			})
+		} else if (format === "mml") {
+			blob = new Blob([createMMLFromAudioEventRecording(recorder, timer)], {
+				type: "text/plain;charset=utf-8"
+			})
+		} else if (format === "rtttl") {
+			blob = new Blob([createRTTTLFromAudioEventRecording(recorder, timer)], {
+				type: "text/plain;charset=utf-8"
+			})
+		} else if (format === "lilypond") {
+			blob = new Blob([createLilyPondFromAudioEventRecording(recorder, timer)], {
+				type: "text/x-lilypond;charset=utf-8"
+			})
 		} else {
 			blob = new Blob([createMIDICSVFromAudioEventRecording(recorder, timer)], {
 				type: "text/csv;charset=utf-8"
 			})
 		}
-		saveScoreToLocalFileSystem(blob, recorder.name, format === "midi-csv" ? "csv" : format)
+		saveScoreToLocalFileSystem(
+			blob,
+			recorder.name,
+			format === "midi-csv" ? "csv" : format === "lilypond" ? "ly" : format
+		)
 	})
 	frontEnd.whenMusicXMLExportRequestedRun(async () => {
 		const blob = await createMusicXMLFromAudioEventRecording(recorder, timer)

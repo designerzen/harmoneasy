@@ -583,7 +583,7 @@ export default class UI implements IAudioOutput {
 		fileInput.multiple = true
 		fileInput.setAttribute("aria-label", "Upload music files or WAM2 plugin bundles")
 		fileInput.accept =
-			".mid,.midi,audio/midi,.zip,.wam,.wam2,.abc,.csv,.musicxml,.xml,.mxl,.dawproject,.mod,.xm,.it,.s3m,.669,.far,.stm,.ult,.mtm,.dmf,.ptm,.okt,.mptm,.nst,.med,.amf,.ams,.dbm,.dsm,.mdl,.umx"
+			".mid,.midi,audio/midi,.zip,.wam,.wam2,.abc,.csv,.mml,.rtttl,.rtx,.musicxml,.xml,.mxl,.dawproject,.mod,.xm,.it,.s3m,.669,.far,.stm,.ult,.mtm,.dmf,.ptm,.okt,.mptm,.nst,.med,.amf,.ams,.dbm,.dsm,.mdl,.umx"
 		fileInput.style.display = "none"
 		document.body.appendChild(fileInput)
 		this.abortController.signal.addEventListener(EVENT_ABORT, () => fileInput.remove(), {
@@ -703,8 +703,12 @@ export default class UI implements IAudioOutput {
 	 *
 	 * @param callback
 	 */
-	whenScoreExportRequestedRun(callback: (format: "abc" | "midi-csv" | "mxl") => Promise<void>) {
-		for (const format of ["abc", "midi-csv", "mxl"] as const) {
+	whenScoreExportRequestedRun(
+		callback: (
+			format: "abc" | "midi-csv" | "mxl" | "mml" | "rtttl" | "lilypond"
+		) => Promise<void>
+	) {
+		for (const format of ["abc", "midi-csv", "mxl", "mml", "rtttl", "lilypond"] as const) {
 			document.getElementById(`btn-${format}-export`)?.addEventListener(
 				EVENT_CLICK,
 				async () => {
