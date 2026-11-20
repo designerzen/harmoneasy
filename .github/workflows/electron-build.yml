@@ -32,8 +32,8 @@ jobs:
         steps:
             - uses: actions/checkout@v7.0.1
 
-            - name: Check out latest submodule branches
-              run: git submodule update --init --remote --recursive
+            - name: Check out recorded submodule commits
+              run: git submodule update --init --recursive
 
             - uses: pnpm/action-setup@v6.1.0
               name: Install pnpm
