@@ -21,6 +21,9 @@ export function installMediaDrop(
 	root.addEventListener(
 		EVENT_DRAG_OVER,
 		(event) => {
+			if ((event.target as Element)?.closest?.("[data-import-menu]")) {
+				return
+			}
 			const media = hasMedia(event)
 			if (!media && !Array.from(event.dataTransfer?.types ?? []).includes("text/plain")) {
 				return
@@ -50,6 +53,9 @@ export function installMediaDrop(
 		EVENT_DROP,
 		(event) => {
 			clear()
+			if ((event.target as Element)?.closest?.("[data-import-menu]")) {
+				return
+			}
 			const transfer = event.dataTransfer
 			if (!transfer) {
 				return

@@ -21,6 +21,13 @@
 		"url": "https://github.com/bufbuild/protobuf-es.git"
 	},
 	{
+		"name": "@coderline/alphatab",
+		"version": "1.9.0",
+		"authors": ["Daniel Kuschny"],
+		"license": "MPL-2.0",
+		"url": "https://alphatab.net"
+	},
+	{
 		"name": "@connectrpc/connect",
 		"version": "1.7.0",
 		"authors": [],
@@ -689,6 +696,20 @@
 		"url": "https://github.com/xyflow/xyflow.git"
 	},
 	{
+		"name": "abcjs",
+		"version": "6.7.3",
+		"authors": [
+			"Paul Rosen (https://abcjs.net)",
+			"Gregory Dyke",
+			"Michael Eskin",
+			"Jean-Yves Mengant",
+			"Todd Brown",
+			"Thomas Chandelle"
+		],
+		"license": "MIT",
+		"url": "https://abcjs.net"
+	},
+	{
 		"name": "abstract-leveldown",
 		"version": "6.2.3",
 		"authors": [],
@@ -903,6 +924,13 @@
 		"authors": [],
 		"license": "MIT",
 		"url": "chalk/chalk"
+	},
+	{
+		"name": "chiptune3",
+		"version": "0.8.10",
+		"authors": ["drsnuggles"],
+		"license": "MIT",
+		"url": "https://github.com/DrSnuggles/chiptune#readme"
 	},
 	{
 		"name": "chownr",
@@ -3047,6 +3075,13 @@
 		"authors": ["Isaac Z. Schlueter (http://blog.izs.me/)"],
 		"license": "BlueOak-1.0.0",
 		"url": "git+https://github.com/isaacs/yallist.git"
+	},
+	{
+		"name": "yaml",
+		"version": "2.8.2",
+		"authors": ["Eemeli Aro"],
+		"license": "ISC",
+		"url": "https://eemeli.org/yaml/"
 	},
 	{
 		"name": "yargs",

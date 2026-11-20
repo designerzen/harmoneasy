@@ -48,16 +48,6 @@ import {
 	type ClockSourceController
 } from "./services/clock-source"
 
-// Import Data
-import { importMMLFile } from "audiobus/importers/import-mml"
-import { importRTTTLFile } from "audiobus/importers/import-rtttl"
-import { importABCFile } from "audiobus/importers/import-abc"
-import { importMIDICSVFile } from "audiobus/importers/import-midi-csv"
-import { importDawProjectFile } from "audiobus/importers/import-dawproject"
-import { importMusicXMLFile } from "audiobus/importers/import-musicxml-import"
-import { importMIDIFile } from "audiobus/importers/import-midi-file"
-import { importTrackerFile, TRACKER_EXTENSIONS } from "audiobus/importers/import-tracker-file"
-
 // Integration
 import { captureAudioToolTake, createAudioToolPanel } from "audiotool"
 import { createOpenDAWProjectFromAudioEventRecording } from "opendaw"
@@ -65,6 +55,11 @@ import { createOpenDAWProjectFromAudioEventRecording } from "opendaw"
 // Export Data as a file to another service
 import { createMMLFromAudioEventRecording } from "audiobus/exporters/adapter-mml"
 import { createRTTTLFromAudioEventRecording } from "audiobus/exporters/adapter-rtttl"
+import { createNoteSequenceFromAudioEventRecording } from "audiobus/exporters/adapter-note-sequence"
+import {
+	INTERCHANGE_EXPORT_FORMATS,
+	exportInterchangeRecording
+} from "audiobus/exporters/adapter-interchange"
 import { createLilyPondFromAudioEventRecording } from "audiobus/exporters/adapter-lilypond"
 import { createABCFromAudioEventRecording } from "audiobus/exporters/adapter-abc"
 import { createMIDICSVFromAudioEventRecording } from "audiobus/exporters/adapter-midi-csv"
@@ -136,52 +131,6 @@ let metronomeEnabled = false
 let netronomeLink: ReturnType<typeof createNetronomeLink> | undefined
 let clockSource: ClockSourceController | undefined
 let musicalFeatureControls: ReturnType<typeof createMusicalFeatureControls> | undefined
-
-/**
- * Universal import handler - routes to appropriate importer based on file type
- */
-const importFile = async (
-	file: File
-): Promise<{ commands: IAudioCommand[]; noteCount: number }> => {
-	const fileName = file.name.toLowerCase()
-
-	if (fileName.endsWith(".mml")) {
-		return importMMLFile(file)
-	}
-	if (/\.(rtttl|rtx)$/.test(fileName)) {
-		return importRTTTLFile(file)
-	}
-	if (fileName.endsWith(".abc")) {
-		return importABCFile(file)
-	}
-	if (fileName.endsWith(".csv")) {
-		return importMIDICSVFile(file)
-	}
-
-	// MIDI formats
-	if (fileName.endsWith(".mid") || fileName.endsWith(".midi") || file.type.includes("midi")) {
-		return importMIDIFile(file)
-	}
-
-	// MusicXML formats
-	if (fileName.endsWith(".musicxml") || fileName.endsWith(".xml") || fileName.endsWith(".mxl")) {
-		return importMusicXMLFile(file)
-	}
-
-	// DawProject format
-	if (fileName.endsWith(".dawproject")) {
-		return importDawProjectFile(file)
-	}
-
-	// Tracker formats (MOD, XM, IT, S3M, etc.)
-	if (TRACKER_EXTENSIONS.some((ext) => fileName.endsWith(`.${ext}`))) {
-		return importTrackerFile(file)
-	}
-
-	throw new Error(
-		`Unsupported file type: ${file.type || fileName}. Supported formats: MML (.mml), RTTTL (.rtttl, .rtx), ABC (.abc), MIDI CSV (.csv), MIDI (.mid, .midi), MusicXML (.musicxml, .xml, .mxl), DawProject (.dawproject), and Tracker formats (${TRACKER_EXTENSIONS.map((ext) => `.${ext}`).join(", ")})`
-	)
-}
 
 /**
  * Create the UI and front end
@@ -335,12 +284,22 @@ const initialiseFrontEnd = async (audioBus: AudioBus, initialVolumePercent: numb
 		console.info("Exporting Data to MIDI Markdown", { recorder, markdown })
 	})
 	frontEnd.whenScoreExportRequestedRun(async (format) => {
+		const interchange = INTERCHANGE_EXPORT_FORMATS.find((entry) => entry.id === format)
+		if (interchange) {
+			const blob = await exportInterchangeRecording(recorder, timer, interchange.id)
+			saveScoreToLocalFileSystem(blob, recorder.name, interchange.extension)
+			return
+		}
 		let blob: Blob
 		if (format === "mxl") {
 			blob = await createMXLFromAudioEventRecording(recorder, timer)
 		} else if (format === "abc") {
 			blob = new Blob([createABCFromAudioEventRecording(recorder, timer)], {
 				type: "text/vnd.abc;charset=utf-8"
+			})
+		} else if (format === "notesequence") {
+			blob = new Blob([createNoteSequenceFromAudioEventRecording(recorder, timer)], {
+				type: "application/json"
 			})
 		} else if (format === "mml") {
 			blob = new Blob([createMMLFromAudioEventRecording(recorder, timer)], {
@@ -362,7 +321,13 @@ const initialiseFrontEnd = async (audioBus: AudioBus, initialVolumePercent: numb
 		saveScoreToLocalFileSystem(
 			blob,
 			recorder.name,
-			format === "midi-csv" ? "csv" : format === "lilypond" ? "ly" : format
+			format === "midi-csv"
+				? "csv"
+				: format === "lilypond"
+					? "ly"
+					: format === "notesequence"
+						? "notes.json"
+						: format
 		)
 	})
 	frontEnd.whenMusicXMLExportRequestedRun(async () => {
@@ -381,11 +346,6 @@ const initialiseFrontEnd = async (audioBus: AudioBus, initialVolumePercent: numb
 		)
 	})
 
-	const importScore = async (file: File) => {
-		const { commands } = await importFile(file)
-		const chain = ioManager.activeChain ?? ioManager.getChain(ioManager.createEmptyChain())!
-		chain.addCommandToFuture(commands, timer, true)
-	}
 	let importMedia: ReturnType<typeof createMediaImporter> | undefined
 	let importQueue = Promise.resolve()
 	const loadMedia = (media: File | string) => {
@@ -399,7 +359,7 @@ const initialiseFrontEnd = async (audioBus: AudioBus, initialVolumePercent: numb
 						"Audio is still starting. Try dropping the file again in a moment."
 					)
 				}
-				importMedia ??= createMediaImporter(ioManager, importScore)
+				importMedia ??= createMediaImporter(ioManager)
 				await importMedia(media)
 			} catch (error) {
 				frontEnd.showError(

@@ -747,6 +747,173 @@
 	}
 }
 
+// Ensemble: live status, song and players, then collapsed timing and help.
+.node-transformer .ensemble-controls {
+	display: grid;
+	gap: var(--gap);
+	min-width: 0;
+	font-size: var(--text-md);
+
+	[hidden] {
+		display: none !important;
+	}
+
+	.ensemble-header {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.5rem 0.5rem 0.5rem 0.75rem;
+		border-radius: var(--radius-sm);
+		background: var(--col-surface-sunken);
+
+		> button {
+			width: auto;
+		}
+	}
+
+	.ensemble-status {
+		margin: 0;
+		font-size: var(--text-sm);
+		font-weight: 600;
+		overflow-wrap: anywhere;
+
+		&.is-error {
+			color: var(--col-danger);
+		}
+	}
+
+	.transformer-controls {
+		> details {
+			grid-column: 1 / -1;
+		}
+
+		fieldset > :is(.ensemble-players, .ensemble-add-player) {
+			grid-column: 1 / -1;
+		}
+
+		.component-control > span:first-child {
+			display: flex;
+			justify-content: space-between;
+			gap: 0.5rem;
+		}
+
+		output {
+			font-weight: 400;
+			font-variant-numeric: tabular-nums;
+			color: var(--col-muted);
+		}
+	}
+
+	details > summary {
+		cursor: pointer;
+		font-size: var(--text-sm);
+		font-weight: 700;
+	}
+
+	.ensemble-timing > fieldset {
+		margin-top: 0.75rem;
+	}
+
+	.ensemble-players {
+		display: grid;
+		gap: 0.375rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.ensemble-empty {
+		font-size: var(--text-sm);
+		color: var(--col-muted);
+	}
+
+	.ensemble-part {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: var(--text-sm);
+
+		kbd {
+			min-width: 1.75rem;
+			padding: 0.125rem 0.375rem;
+			border: var(--border);
+			border-radius: var(--radius-sm);
+			background: var(--col-surface-sunken);
+			font-family: inherit;
+			font-weight: 700;
+			text-align: center;
+		}
+
+		> span {
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		small {
+			color: var(--col-muted);
+		}
+	}
+
+	.ensemble-player {
+		display: grid;
+		gap: 0.375rem;
+		padding: 0.5rem;
+		border: var(--border);
+		border-radius: var(--radius-sm);
+	}
+
+	.ensemble-player-head {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr) auto auto;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: var(--text-sm);
+
+		> button {
+			width: auto;
+		}
+
+		> button[aria-pressed="true"] {
+			background: var(--col-accent-soft);
+		}
+	}
+
+	.ensemble-player-source {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		color: var(--col-muted);
+	}
+
+	.ensemble-player-parts {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem 0.75rem;
+		font-size: var(--text-sm);
+
+		label {
+			display: flex;
+			align-items: center;
+			gap: 0.25rem;
+		}
+
+		input {
+			width: auto;
+			margin: 0;
+		}
+	}
+
+	.ensemble-help ol {
+		margin: 0.5rem 0 0;
+		padding-left: 1.25rem;
+		font-size: var(--text-sm);
+		color: var(--col-muted);
+	}
+}
+
 .node-start,
 .node-add-transformer,
 .node-add-control-surface,

@@ -25,6 +25,10 @@ import { INPUT_EVENT, EVENT_CHANGE } from "audiobus/events/event-constants"
 import InputGamePad from "audiobus/io/inputs/input-gamepad"
 import InputGamePadMusic from "audiobus/io/inputs/input-gamepad-music"
 import { COMMANDS, GAME_PAD_DISCONNECTED, GamePadManager } from "audiobus/hardware/gamepad/gamepad"
+import { setControlRenderer } from "audiobus/io/component-ui"
+import { createDomGui } from "control-surface/dom"
+
+setControlRenderer(createDomGui)
 
 const { Midi } = createRequire(resolve("../../packages/audiobus/package.json"))("@tonejs/midi")
 function score() {
@@ -159,15 +163,17 @@ describe("one shared ensemble performance", () => {
 		})
 		const initial = t.transform([press("a")], { now: 0 } as any)
 		expect(initial.filter((c) => c.type === NOTE_ON).map((c) => c.channel)).toEqual([1, 3])
-		expect(
-			t
-				.transform([Object.assign(press("a", 0.1), { type: NOTE_OFF })], {
-					now: 0.1
-				} as any)
-				.filter((c) => c.type === NOTE_ON || c.type === NOTE_OFF)
-		).toEqual([])
-		const releases = t.tick(0.25, {} as any).filter((c) => c.type === NOTE_OFF)
-		expect(releases.map((c) => c.channel)).toEqual([1, 3])
+		// Releases are sent ahead at the score's own time, never at the button release.
+		const releases = t
+			.transform([Object.assign(press("a", 0.1), { type: NOTE_OFF })], {
+				now: 0.1
+			} as any)
+			.filter((c) => c.type === NOTE_ON || c.type === NOTE_OFF)
+		expect(releases.map((c) => [c.type, c.channel, c.audioTime])).toEqual([
+			[NOTE_OFF, 1, 0.25],
+			[NOTE_OFF, 3, 0.25]
+		])
+		t.tick(0.25, {} as any)
 		t.tick(0.5, {} as any)
 		const joined = t.transform([press("b", 0.75)], { now: 0.75 } as any)
 		expect(joined.filter((c) => c.type === NOTE_ON)).toEqual([])
@@ -185,6 +191,48 @@ describe("one shared ensemble performance", () => {
 		expect(output.find((c) => c.channel === 1)!.velocity).toBeGreaterThan(
 			output.find((c) => c.channel === 2)!.velocity
 		)
+	})
+	it("sends notes ahead at their score time however unevenly the clock ticks", () => {
+		const onsets = (ticks: number[]) => {
+			const performance = session({ lookahead: 0.15 })
+			const sent = [
+				...performance.press(0, 0).map((c) => [0, c] as const),
+				...ticks.flatMap((t) => performance.advance(t).map((c) => [t, c] as const))
+			].filter(([, c]) => c.type === NOTE_ON && c.channel === 1)
+			// Each note reaches the outputs on a tick no later than the moment it should sound.
+			for (const [tick, c] of sent) {
+				expect(tick).toBeLessThanOrEqual(c.audioTime! + 1e-9)
+			}
+			return sent.map(([, c]) => Math.round(c.audioTime! * 1000) / 1000)
+		}
+		const steady = Array.from({ length: 75 }, (_, i) => (i + 1) * 0.02)
+		const uneven = [0.13, 0.2, 0.33, 0.45, 0.58, 0.61, 0.74, 0.88, 1, 1.12, 1.25, 1.39, 1.5]
+		expect(onsets(uneven)).toEqual([0, 0.5, 1, 1.5])
+		expect(onsets(steady)).toEqual([0, 0.5, 1, 1.5])
+	})
+	it("never releases a note sent ahead before it starts", () => {
+		const performance = session({ lookahead: 0.15 })
+		performance.press(0, 0)
+		const ahead = advance(performance, 0, 0.4).find(
+			(c) => c.type === NOTE_ON && c.channel === 1 && c.audioTime === 0.5
+		)
+		expect(ahead?.startAt).toBeLessThanOrEqual(0.4)
+		performance.reset()
+		const release = performance
+			.advance(0.41)
+			.find((c) => c.type === NOTE_OFF && c.channel === 1)
+		expect(release?.audioTime).toBe(0.5)
+	})
+	it("plays a joining part's notes that were skipped ahead at their own time", () => {
+		const performance = session({ assist: false, lookahead: 0.15 })
+		performance.press(0, 0)
+		expect(
+			advance(performance, 0, 0.4).filter((c) => c.type === NOTE_ON && c.channel === 2)
+		).toEqual([])
+		const joined = performance.press(1, 0.42).filter((c) => c.type === NOTE_ON)
+		expect(joined.map((c) => [c.channel, Math.round(c.audioTime! * 1000) / 1000])).toEqual([
+			[2, 0.5]
+		])
 	})
 	it("counts each player once for together steps and holds boundary notes for the next step", () => {
 		const performance = session({ mode: "together", assist: false })
@@ -452,13 +500,48 @@ describe("ensemble registration and unlimited local membership", () => {
 		for (let n = 0; n < 8; n++) {
 			t.addPlayer()
 		}
-		expect(gui.querySelectorAll("fieldset")).toHaveLength(8)
-		;(gui.querySelector("fieldset button") as HTMLButtonElement).click()
+		expect(gui.querySelectorAll(".ensemble-player")).toHaveLength(8)
+		;(gui.querySelector(".ensemble-player button") as HTMLButtonElement).click()
 		t.transform([press("learned-pad")], { now: 0 } as any)
 		expect(t.options.players[0].source).toBe("learned-pad")
-		expect((gui.querySelector("fieldset input") as HTMLInputElement).value).toBe("learned-pad")
+		expect(gui.querySelector(".ensemble-player-source")!.textContent).toBe("learned-pad")
 		t.removePlayer(7)
-		expect(gui.querySelectorAll("fieldset")).toHaveLength(7)
+		expect(gui.querySelectorAll(".ensemble-player")).toHaveLength(7)
+	})
+	it("assigns song parts to a player with checkboxes instead of typed channel numbers", async () => {
+		const t = await transformer({ autoJoin: false })
+		const gui = await t.createGui()
+		t.addPlayer()
+		const boxes = [...gui.querySelectorAll<HTMLInputElement>(".ensemble-player-parts input")]
+		expect(boxes.map((box) => box.parentElement!.textContent)).toEqual([
+			"1 · Part 1",
+			"2 · Part 2",
+			"3 · Part 3"
+		])
+		expect(boxes.map((box) => box.checked)).toEqual([true, false, false])
+		boxes[2].checked = true
+		boxes[2].dispatchEvent(new Event("change"))
+		expect(t.options.players[0].channels).toEqual([1, 3])
+	})
+	it("lists generated part controls read-only and shows only the current mode's timing", async () => {
+		const t = await transformer({ autoInputs: "keyboard" })
+		const gui = await t.createGui()
+		expect(gui.querySelector(".ensemble-add-player")!.hasAttribute("hidden")).toBe(true)
+		expect(
+			[...gui.querySelectorAll(".ensemble-part kbd")].map((key) => key.textContent)
+		).toEqual(["A", "S", "D"])
+		const visible = () =>
+			[...gui.querySelectorAll<HTMLElement>(".ensemble-timing .component-control")]
+				.filter((control) => !control.hidden)
+				.map((control) => control.firstElementChild!.firstChild!.textContent)
+		expect(visible()).toEqual(["Part keeps playing for (beats)", "Pause after silence (beats)"])
+		t.setControlValue("mode", "together")
+		expect(visible()).toEqual([
+			"Step length (beats)",
+			"Players per step",
+			"Assist a step after (seconds)"
+		])
+		expect(gui.querySelector(".ensemble-timing output")!.textContent).toBe("8")
 	})
 	it("keeps distinct input components separate even when their source labels are identical", () => {
 		class Input extends AbstractInput {
@@ -506,8 +589,9 @@ describe("output channel selection", () => {
 			chain.addOutput(output)
 			await chain.transform([press("player")], timer)
 			await chain.triggerAudioCommandsOnDevice(chain.executeQueueAndClearComplete(0))
-			timer.now = 0.1
-			await chain.triggerAudioCommandsOnDevice(chain.updateTimeForCommandQueue(0.1, 1, {}))
+			// Before the score's releases enter the lookahead window, so notes are still held.
+			timer.now = 0.05
+			await chain.triggerAudioCommandsOnDevice(chain.updateTimeForCommandQueue(0.05, 1, {}))
 			output.sendCommand.mockClear()
 			if (action === "stop") {
 				chain.clearNoteCommands()

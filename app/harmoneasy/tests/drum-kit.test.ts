@@ -134,6 +134,17 @@ describe("Playable synthesized drum kit", () => {
 		device.noteOn(36, 254)
 		expect(percussion.trigger.mock.lastCall![0].velocity).toBe(0.55)
 	})
+	it("plays notes sent ahead at their audioTime and late ones immediately", () => {
+		const { device, percussion } = setup()
+		for (const audioTime of [10.12, 9.9, undefined]) {
+			device.sendCommand(
+				Object.assign(musicalCommand({ type: NOTE_ON, number: 36, velocity: 100 }), {
+					audioTime
+				})
+			)
+		}
+		expect(percussion.trigger.mock.calls.map(([hit]) => hit.triggerAt)).toEqual([10.12, 10, 10])
+	})
 	it("accepts all channels by default and filters notes and panic controllers when selected", () => {
 		const { device, percussion } = setup()
 		for (const channel of [1, 10, 16]) {

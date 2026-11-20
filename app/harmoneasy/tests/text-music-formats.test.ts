@@ -235,3 +235,11 @@ it("treats bare RTTTL b4 and d4 as notes rather than tempo or duration controls"
 		[62, 0.5, 1]
 	])
 })
+it("uses the same rounded LilyPond tempo for note lengths and the tempo marking", () => {
+	const text = createLilyPondFromAudioEventRecording(
+		recording([{ number: 60, start: 0, end: 1 }]),
+		{ BPM: 123.4 }
+	)
+	expect(text).toContain("tempo 4 = 123")
+	expect(text).toContain("c'1*41/80")
+})

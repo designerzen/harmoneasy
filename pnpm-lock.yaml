@@ -264,6 +264,9 @@ importers:
 
   packages/audiobus:
     dependencies:
+      '@coderline/alphatab':
+        specifier: 1.9.0
+        version: 1.9.0
       '@magenta/music':
         specifier: ^1.23.1
         version: 1.23.1(@tensorflow/tfjs-core@2.8.6(encoding@0.1.13))(encoding@0.1.13)
@@ -342,6 +345,9 @@ importers:
       webmidi:
         specifier: ^3.3.1
         version: 3.3.1
+      yaml:
+        specifier: 2.8.2
+        version: 2.8.2
     devDependencies:
       '@webgpu/types':
         specifier: ^0.1.74
@@ -604,6 +610,18 @@ packages:
 
   '@cloudflare/workers-types@4.20240718.0':
     resolution: {integrity: sha512-7RqxXIM9HyhjfZ9ztXjITuc7mL0w4s+zXgypqKmMuvuObC3DgXutJ3bOYbQ+Ss5QbywrzWSNMlmGdL/ldg/yZg==}
+
+  '@coderline/alphatab@1.9.0':
+    resolution: {integrity: sha512-pG/Um03DdiTW7i9KR+rPTRRnzIW5oJBWs67altBXtCkxGvUG1RuvkgRTZO3GIaOD2vATjcw+5OevMZl9I2/T+Q==}
+    engines: {node: '>=6.0.0'}
+    peerDependencies:
+      '@coderline/alphatab-vite': ^1.9.0
+      '@coderline/alphatab-webpack': ^1.9.0
+    peerDependenciesMeta:
+      '@coderline/alphatab-vite':
+        optional: true
+      '@coderline/alphatab-webpack':
+        optional: true
 
   '@connectrpc/connect-node@1.7.0':
     resolution: {integrity: sha512-6vaPIkG/NyhxlYgytLoR9KYbPhczEboFB2OYWkA9qvUz1K7efXfeGrlRxoLtpa+r8VxyIOw73w5ktNe743nD+A==}
@@ -5375,6 +5393,11 @@ packages:
     resolution: {integrity: sha512-YgvUTfwqyc7UXVMrB+SImsVYSmTS8X/tSrtdNZMImM+n7+QTriRXyXim0mBrTXNeqzVF0KWGgHPeiyViFFrNDw==}
     engines: {node: '>=18'}
 
+  yaml@2.8.2:
+    resolution: {integrity: sha512-mplynKqc1C2hTVYxd0PU2xQAc22TI1vShAYGksCCfxbn/dFwnHTNi1bvYsBTkhdUNtGIf5xNOg938rrSSYvS9A==}
+    engines: {node: '>= 14.6'}
+    hasBin: true
+
   yargs-parser@18.1.3:
     resolution: {integrity: sha512-o50j0JeToy/4K6OZcaQmW6lyXXKhq7csREXcDwk2omFPJEwUNOVtJKvmDr9EI1fAJZUyZcRF7kxGBWmRXudrCQ==}
     engines: {node: '>=6'}
@@ -5498,6 +5521,8 @@ snapshots:
     optional: true
 
   '@cloudflare/workers-types@4.20240718.0': {}
+
+  '@coderline/alphatab@1.9.0': {}
 
   '@connectrpc/connect-node@1.7.0(@bufbuild/protobuf@1.10.0)(@connectrpc/connect@1.7.0(@bufbuild/protobuf@1.10.0))':
     dependencies:
@@ -6885,7 +6910,7 @@ snapshots:
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 8.0.1(@types/node@22.19.11)(esbuild@0.27.3)(jiti@2.6.1)(sass-embedded@1.98.0)(sass@1.98.0)(terser@5.51.2)
+      vite: 8.0.1(@types/node@22.19.11)(esbuild@0.27.3)(jiti@2.6.1)(sass-embedded@1.98.0)(sass@1.98.0)(terser@5.51.2)(yaml@2.8.2)
 
   '@vitest/mocker@5.1.0(vite@8.3.8(@types/node@26.6.6)(esbuild@0.27.3)(jiti@2.6.1)(sass-embedded@1.98.0)(sass@1.98.0)(terser@5.51.2))':
     dependencies:
@@ -9924,6 +9949,23 @@ snapshots:
       sass-embedded: 1.98.0
       terser: 5.51.2
 
+  vite@8.0.1(@types/node@22.19.11)(esbuild@0.27.3)(jiti@2.6.1)(sass-embedded@1.98.0)(sass@1.98.0)(terser@5.51.2)(yaml@2.8.2):
+    dependencies:
+      lightningcss: 1.32.0
+      picomatch: 4.0.3
+      postcss: 8.5.8
+      rolldown: 1.0.0-rc.10
+      tinyglobby: 0.2.15
+    optionalDependencies:
+      '@types/node': 22.19.11
+      esbuild: 0.27.3
+      fsevents: 2.3.3
+      jiti: 2.6.1
+      sass: 1.98.0
+      sass-embedded: 1.98.0
+      terser: 5.51.2
+      yaml: 2.8.2
+
   vite@8.3.8(@types/node@26.6.6)(esbuild@0.27.3)(jiti@2.6.1)(sass-embedded@1.98.0)(sass@1.98.0)(terser@5.51.2):
     dependencies:
       lightningcss: 1.33.0
@@ -9989,7 +10031,7 @@ snapshots:
       tinyexec: 1.0.2
       tinyglobby: 0.2.17
       tinyrainbow: 3.1.1
-      vite: 8.0.1(@types/node@22.19.11)(esbuild@0.27.3)(jiti@2.6.1)(sass-embedded@1.98.0)(sass@1.98.0)(terser@5.51.2)
+      vite: 8.0.1(@types/node@22.19.11)(esbuild@0.27.3)(jiti@2.6.1)(sass-embedded@1.98.0)(sass@1.98.0)(terser@5.51.2)(yaml@2.8.2)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 22.19.11
@@ -10157,6 +10199,8 @@ snapshots:
   yallist@4.0.0: {}
 
   yallist@5.0.0: {}
+
+  yaml@2.8.2: {}
 
   yargs-parser@18.1.3:
     dependencies:

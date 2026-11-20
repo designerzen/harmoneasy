@@ -3,13 +3,13 @@ import NoteVisualiser from "audiobus/ui/note-visualiser.js"
 import NoteTimelineVisualiser from "audiobus/ui/note-timeline-visualiser"
 import SVGKeyboard from "audiobus/ui/keyboard-svg.ts"
 import { createOpenDAWExportDialog } from "./services/opendaw-export-dialog"
-import {
-	EVENT_CLICK,
-	EVENT_CHANGE,
-	EVENT_ABORT,
-	EVENT_INPUT
-} from "audiobus/events/event-constants"
+import { EVENT_CLICK, EVENT_INPUT } from "audiobus/events/event-constants"
 import { installMediaDrop } from "./services/media-drop"
+import { installImportMenu } from "./services/import-menu"
+import {
+	INTERCHANGE_EXPORT_FORMATS,
+	type InterchangeExportId
+} from "audiobus/exporters/adapter-interchange"
 
 import type NoteModel from "audiobus/models/note-model.ts"
 import type { IAudioOutput } from "audiobus/io/outputs/output-interface.ts"
@@ -575,43 +575,14 @@ export default class UI implements IAudioOutput {
 	 * Upload files through the same importer used for dropped media.
 	 */
 	whenFileImportRequestedRun(callback: (file: File) => void): void {
-		if (!this.elementMidiImportButton) {
-			return
+		if (this.elementMidiImportButton) {
+			installImportMenu(
+				document,
+				this.elementMidiImportButton,
+				callback,
+				this.abortController.signal
+			)
 		}
-		const fileInput = document.createElement("input")
-		fileInput.type = "file"
-		fileInput.multiple = true
-		fileInput.setAttribute("aria-label", "Upload music files or WAM2 plugin bundles")
-		fileInput.accept =
-			".mid,.midi,audio/midi,.zip,.wam,.wam2,.abc,.csv,.mml,.rtttl,.rtx,.musicxml,.xml,.mxl,.dawproject,.mod,.xm,.it,.s3m,.669,.far,.stm,.ult,.mtm,.dmf,.ptm,.okt,.mptm,.nst,.med,.amf,.ams,.dbm,.dsm,.mdl,.umx"
-		fileInput.style.display = "none"
-		document.body.appendChild(fileInput)
-		this.abortController.signal.addEventListener(EVENT_ABORT, () => fileInput.remove(), {
-			once: true
-		})
-
-		// When button is clicked, trigger the file input
-		this.elementMidiImportButton.addEventListener(
-			EVENT_CLICK,
-			() => {
-				fileInput.click()
-			},
-			{ signal: this.abortController.signal }
-		)
-
-		// When file is selected, call the callback
-		fileInput.addEventListener(
-			EVENT_CHANGE,
-			(e) => {
-				const files = (e.target as HTMLInputElement).files
-				for (const file of Array.from(files ?? [])) {
-					callback(file)
-				}
-				// Reset the input so the same file can be selected again
-				fileInput.value = ""
-			},
-			{ signal: this.abortController.signal }
-		)
 	}
 
 	/**
@@ -705,10 +676,27 @@ export default class UI implements IAudioOutput {
 	 */
 	whenScoreExportRequestedRun(
 		callback: (
-			format: "abc" | "midi-csv" | "mxl" | "mml" | "rtttl" | "lilypond"
+			format:
+				| "abc"
+				| "midi-csv"
+				| "mxl"
+				| "mml"
+				| "rtttl"
+				| "lilypond"
+				| "notesequence"
+				| InterchangeExportId
 		) => Promise<void>
 	) {
-		for (const format of ["abc", "midi-csv", "mxl", "mml", "rtttl", "lilypond"] as const) {
+		for (const format of [
+			"abc",
+			"midi-csv",
+			"mxl",
+			"mml",
+			"rtttl",
+			"lilypond",
+			"notesequence",
+			...INTERCHANGE_EXPORT_FORMATS.map((format) => format.id)
+		] as const) {
 			document.getElementById(`btn-${format}-export`)?.addEventListener(
 				EVENT_CLICK,
 				async () => {
