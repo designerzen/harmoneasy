@@ -127,7 +127,7 @@ it("rejects invalid tracker content instead of succeeding with no notes", async 
 	)
 })
 
-function trackerFixture(format: string) {
+function trackerFixture(format: string, channels = 1) {
 	const data = new Uint8Array(1200),
 		view = new DataView(data.buffer)
 	const u16 = (at: number, value: number) => view.setUint16(at, value, true)
@@ -138,14 +138,17 @@ function trackerFixture(format: string) {
 		u16(58, 0x104)
 		u32(60, 276)
 		u16(64, 1)
-		u16(68, 1)
+		u16(68, channels)
 		u16(70, 1)
 		u16(76, 6)
 		u16(78, 125)
 		u32(336, 9)
 		u16(341, 2)
-		u16(343, 10)
-		data.set([49, 0, 0x50, 0, 0, 51, 0, 0x50, 0, 0], 345)
+		u16(343, channels * 10)
+		for (let channel = 0; channel < channels; channel++) {
+			data.set([49, 0, 0x50, 0, 0], 345 + channel * 5)
+			data.set([51, 0, 0x50, 0, 0], 345 + (channels + channel) * 5)
+		}
 	} else if (format === "it") {
 		data.set(strToU8("IMPM"))
 		u16(32, 1)
@@ -209,6 +212,24 @@ for (const format of ["xm", "it", "s3m", "med"]) {
 		expect(notes[1].startAt).toBeGreaterThan(0)
 	})
 }
+it("imports 32-track modules with paired note endings and separate track sources", async () => {
+	const result = await importTrackerFile(file(trackerFixture("xm", 32), "song.xm"))
+	const notes = result.commands.filter((command) => command.type === NOTE_ON)
+	expect(result.noteCount).toBe(64)
+	expect(new Set(notes.map((command) => command.from)).size).toBe(32)
+	expect(notes.every((command) => command.channel >= 1 && command.channel <= 16)).toBe(true)
+	for (const note of notes) {
+		expect(result.commands).toContainEqual(
+			expect.objectContaining({
+				type: NOTE_OFF,
+				from: note.from,
+				channel: note.channel,
+				number: note.number,
+				startAt: note.endAt
+			})
+		)
+	}
+})
 it("applies MusicXML tempo changes and backup voices to note timestamps", async () => {
 	const score = `<score-partwise><part><measure><attributes><divisions>2</divisions></attributes>
 	<direction><sound tempo="120"/><direction-type><dynamics><p/></dynamics></direction-type></direction>
