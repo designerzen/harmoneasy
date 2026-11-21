@@ -31,7 +31,7 @@ export function installImportMenu(
 	header.append(title)
 	const description = root.createElement("p")
 	description.textContent =
-		"Choose or drop files. Their contents determine how they load: music as playable notes, audio as a Loop Player, and WAM2 bundles as instruments. Audio loops can be up to 4 MB; other files up to 64 MB."
+		"Choose or drop files. Their contents determine how they load: music as playable notes, audio as a Loop Player, WAM2 bundles as instruments and soundfonts on Romplers. Audio loops can be up to 4 MB, soundfonts up to 1 GB and other files up to 64 MB."
 	const input = root.createElement("input")
 	input.type = "file"
 	input.multiple = true
@@ -106,7 +106,9 @@ export function installImportMenu(
 						? "Playable notes"
 						: kind === "audio"
 							? "Loop Player"
-							: "MIDI inputs / WAM2 instruments"
+							: kind === "soundfont"
+								? "Rompler soundfont"
+								: "MIDI inputs / WAM2 instruments"
 				row.textContent = `${file.name}: ${detected!.format.label} → ${destination}`
 				ready.push(file)
 			}

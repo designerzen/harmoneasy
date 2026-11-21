@@ -12,6 +12,7 @@ import type IOChainManager from "audiobus/io/IO-chain-manager"
 import type IOChain from "audiobus/io/IO-chain"
 import type { ArchivedPlugin } from "audiobus/importers/dropped-media"
 import { storeWamArchive } from "./wam-archive"
+import { loadSoundFont } from "./soundfont-drop"
 import { EVENT_CLICK, EVENT_CLOSE } from "audiobus/events/event-constants"
 
 async function choosePlugin(plugins: ArchivedPlugin[]): Promise<ArchivedPlugin | undefined> {
@@ -137,6 +138,10 @@ export function createMediaImporter(
 		}
 		if (detected.format.kind === "audio") {
 			await loadAudio(media, chain)
+			return
+		}
+		if (detected.format.kind === "soundfont") {
+			await loadSoundFont(manager, media, chain)
 			return
 		}
 		if (detected.archive) {

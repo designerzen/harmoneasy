@@ -52,44 +52,13 @@ import {
 import { captureAudioToolTake, createAudioToolPanel } from "audiotool"
 import { createOpenDAWProjectFromAudioEventRecording } from "opendaw"
 
-// Export Data as a file to another service
-import { createMMLFromAudioEventRecording } from "audiobus/exporters/adapter-mml"
-import { createRTTTLFromAudioEventRecording } from "audiobus/exporters/adapter-rtttl"
-import { createNoteSequenceFromAudioEventRecording } from "audiobus/exporters/adapter-note-sequence"
-import {
-	INTERCHANGE_EXPORT_FORMATS,
-	exportInterchangeRecording
-} from "audiobus/exporters/adapter-interchange"
-import { createLilyPondFromAudioEventRecording } from "audiobus/exporters/adapter-lilypond"
-import { createABCFromAudioEventRecording } from "audiobus/exporters/adapter-abc"
-import { createMIDICSVFromAudioEventRecording } from "audiobus/exporters/adapter-midi-csv"
-import { saveScoreToLocalFileSystem } from "audiobus/exporters/download-score"
-import {
-	createMIDIFileFromAudioEventRecording,
-	saveBlobToLocalFileSystem
-} from "audiobus/exporters/adapter-midi-file.ts"
-import {
-	createMEDFileFromAudioEventRecording,
-	saveMEDToLocalFileSystem
-} from "audiobus/exporters/adapter-med-file.ts"
-import {
-	createMIDIMarkdownFromAudioEventRecording,
-	saveMarkdownToLocalFileSystem
-} from "audiobus/exporters/adapter-midi-markdown.ts"
-import {
-	createMusicXMLFromAudioEventRecording,
-	createMXLFromAudioEventRecording,
-	saveBlobToLocalFileSystem as saveMusicXMLBlobToLocalFileSystem
-} from "audiobus/exporters/adapter-musicxml.ts"
+// Export recordings through the shared format registry
+import { getExportFormat, type ExportFormat } from "audiobus/exporters/registry"
+import { saveExportToLocalFileSystem } from "audiobus/exporters/download-score"
 import {
 	renderVexFlowToContainer,
-	createVexFlowHTMLFromAudioEventRecording,
-	saveBlobToLocalFileSystem as saveVexFlowBlobToLocalFileSystem
+	createVexFlowHTMLFromAudioEventRecording
 } from "audiobus/exporters/adapter-vexflow.ts"
-import {
-	createDawProjectFromAudioEventRecording,
-	saveDawProjectToLocalFileSystem
-} from "audiobus/exporters/adapter-dawproject.ts"
 
 // Timing
 import { AudioTimer, TIMER_TYPES } from "netronome"
@@ -268,81 +237,31 @@ const initialiseFrontEnd = async (audioBus: AudioBus, initialVolumePercent: numb
 		state.set("volume", newVolume)
 	})
 
-	frontEnd.whenMIDIFileExportRequestedRun(async () => {
-		const blob = await createMIDIFileFromAudioEventRecording(recorder, timer)
-		saveBlobToLocalFileSystem(blob, recorder.name)
-		console.info("Exporting Data to MIDI File", { recorder, blob })
-	})
-	frontEnd.whenMEDExportRequestedRun(async () => {
-		const buffer = await createMEDFileFromAudioEventRecording(recorder, timer)
-		saveMEDToLocalFileSystem(buffer, recorder.name)
-		console.info("Exporting Data to ProTracker MED File", { recorder, buffer })
-	})
-	frontEnd.whenMIDIMarkdownExportRequestedRun(async () => {
-		const markdown = createMIDIMarkdownFromAudioEventRecording(recorder, timer)
-		saveMarkdownToLocalFileSystem(markdown, recorder.name)
-		console.info("Exporting Data to MIDI Markdown", { recorder, markdown })
-	})
-	frontEnd.whenScoreExportRequestedRun(async (format) => {
-		const interchange = INTERCHANGE_EXPORT_FORMATS.find((entry) => entry.id === format)
-		if (interchange) {
-			const blob = await exportInterchangeRecording(recorder, timer, interchange.id)
-			saveScoreToLocalFileSystem(blob, recorder.name, interchange.extension)
-			return
+	const exportOptionsFor = async (_format: ExportFormat): Promise<Parameters<ExportFormat["export"]>[2]> => undefined
+	const exportRecording = async (id: string) => {
+		try {
+			const format = getExportFormat(id)
+			if (!format) {
+				throw new Error(`Unknown export format: ${id}`)
+			}
+			frontEnd.showExportOverlay(`Exporting ${format.label}…`)
+			const options = await exportOptionsFor(format)
+			const blob = await format.export(recorder, timer, options)
+			saveExportToLocalFileSystem(blob, recorder.name, format.extension)
+		} catch (error) {
+			frontEnd.showError("Export failed", error instanceof Error ? error.message : String(error))
+		} finally {
+			frontEnd.hideExportOverlay()
 		}
-		let blob: Blob
-		if (format === "mxl") {
-			blob = await createMXLFromAudioEventRecording(recorder, timer)
-		} else if (format === "abc") {
-			blob = new Blob([createABCFromAudioEventRecording(recorder, timer)], {
-				type: "text/vnd.abc;charset=utf-8"
-			})
-		} else if (format === "notesequence") {
-			blob = new Blob([createNoteSequenceFromAudioEventRecording(recorder, timer)], {
-				type: "application/json"
-			})
-		} else if (format === "mml") {
-			blob = new Blob([createMMLFromAudioEventRecording(recorder, timer)], {
-				type: "text/plain;charset=utf-8"
-			})
-		} else if (format === "rtttl") {
-			blob = new Blob([createRTTTLFromAudioEventRecording(recorder, timer)], {
-				type: "text/plain;charset=utf-8"
-			})
-		} else if (format === "lilypond") {
-			blob = new Blob([createLilyPondFromAudioEventRecording(recorder, timer)], {
-				type: "text/x-lilypond;charset=utf-8"
-			})
-		} else {
-			blob = new Blob([createMIDICSVFromAudioEventRecording(recorder, timer)], {
-				type: "text/csv;charset=utf-8"
-			})
-		}
-		saveScoreToLocalFileSystem(
-			blob,
-			recorder.name,
-			format === "midi-csv"
-				? "csv"
-				: format === "lilypond"
-					? "ly"
-					: format === "notesequence"
-						? "notes.json"
-						: format
-		)
-	})
-	frontEnd.whenMusicXMLExportRequestedRun(async () => {
-		const blob = await createMusicXMLFromAudioEventRecording(recorder, timer)
-		saveMusicXMLBlobToLocalFileSystem(blob, recorder.name)
-		console.info("Exporting Data to MusicXML", { recorder, blob })
-		frontEnd.showInfoDialog("MusicXML File created and saved", "musicxml.org")
-	})
+	}
+	frontEnd.whenExportRequestedRun(exportRecording)
 	frontEnd.whenVexFlowExportRequestedRun(async () => {
 		await frontEnd.renderVexFlowModal(
 			renderVexFlowToContainer,
 			recorder,
 			timer,
 			createVexFlowHTMLFromAudioEventRecording,
-			saveVexFlowBlobToLocalFileSystem
+			(blob: Blob, name: string) => saveExportToLocalFileSystem(blob, name, "html")
 		)
 	})
 
@@ -406,12 +325,6 @@ const initialiseFrontEnd = async (audioBus: AudioBus, initialVolumePercent: numb
 		const script = await createOpenDAWProjectFromAudioEventRecording(recorder, timer)
 		console.info("Exporting Data to OpenDAW", { recorder, script })
 		frontEnd.showOpenDAWExportDialog(script)
-	})
-	frontEnd.whenDawProjectExportRequestedRun(async () => {
-		const blob = await createDawProjectFromAudioEventRecording(recorder, timer)
-		const filename = (recorder.name ?? "project").replace(/\s+/g, "_")
-		await saveDawProjectToLocalFileSystem(blob, filename)
-		console.info("Exporting Data to .dawProject", { recorder, blob })
 	})
 
 	// TODO: Global scale?

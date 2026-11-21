@@ -921,3 +921,38 @@ body:has(dialog:modal) {
 		}
 	}
 }
+#soundfont-dialog {
+	width: min(32rem, calc(100vw - 2rem));
+	fieldset {
+		display: grid;
+		gap: 0.5rem;
+		max-height: 18rem;
+		overflow: auto;
+		padding: 0;
+		border: 0;
+	}
+	legend {
+		padding: 0;
+		margin-bottom: 0.5rem;
+		font-weight: 600;
+	}
+	.soundfont-target {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		align-items: center;
+		column-gap: 0.6rem;
+		padding: 0.5rem 0.75rem;
+		border: 1px solid var(--col-line);
+		border-radius: var(--radius-md);
+		cursor: pointer;
+		small {
+			grid-column: 2;
+			color: var(--col-muted);
+			font-size: var(--text-sm);
+		}
+	}
+	.soundfont-note {
+		color: var(--col-muted);
+		font-size: var(--text-sm);
+	}
+}
