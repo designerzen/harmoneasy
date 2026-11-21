@@ -55,6 +55,8 @@ import { createOpenDAWProjectFromAudioEventRecording } from "opendaw"
 // Export recordings through the shared format registry
 import { getExportFormat, type ExportFormat } from "audiobus/exporters/registry"
 import { saveExportToLocalFileSystem } from "audiobus/exporters/download-score"
+import { recordingNotes } from "audiobus/formats/note-sequence"
+import { captureTrackerSamples } from "audiobus/io/recording/capture-instrument-samples"
 import {
 	renderVexFlowToContainer,
 	createVexFlowHTMLFromAudioEventRecording
@@ -237,19 +239,50 @@ const initialiseFrontEnd = async (audioBus: AudioBus, initialVolumePercent: numb
 		state.set("volume", newVolume)
 	})
 
-	const exportOptionsFor = async (_format: ExportFormat): Promise<Parameters<ExportFormat["export"]>[2]> => undefined
+	// Tracker modules embed a sample of each instrument as it sounds in HarmonEasy
+	const exportOptionsFor = async (
+		format: ExportFormat
+	): Promise<Parameters<ExportFormat["export"]>[2]> => {
+		if (format.kind !== "tracker" || !ioManager) {
+			return undefined
+		}
+		frontEnd.setExportOverlayText(`Sampling instruments for ${format.label}…`)
+		const samples = await captureTrackerSamples({
+			audioContext: audioBus.audioContext,
+			getChain: (chainId) => ioManager.getChain(chainId) ?? undefined,
+			notes: recordingNotes(recorder, { chains: true }),
+			mute: () => {
+				const output = audioBus.output.gain,
+					volume = output.value
+				output.value = 0
+				return () => {
+					output.value = volume
+				}
+			},
+			onProgress: (done, total) =>
+				frontEnd.setExportOverlayText(
+					`Sampling instruments for ${format.label} (${done}/${total})…`
+				)
+		})
+		frontEnd.setExportOverlayText(`Exporting ${format.label}…`)
+		return { samples }
+	}
 	const exportRecording = async (id: string) => {
 		try {
 			const format = getExportFormat(id)
 			if (!format) {
 				throw new Error(`Unknown export format: ${id}`)
 			}
-			frontEnd.showExportOverlay(`Exporting ${format.label}…`)
+			frontEnd.setExportOverlayText(`Exporting ${format.label}…`)
+			frontEnd.showExportOverlay()
 			const options = await exportOptionsFor(format)
 			const blob = await format.export(recorder, timer, options)
 			saveExportToLocalFileSystem(blob, recorder.name, format.extension)
 		} catch (error) {
-			frontEnd.showError("Export failed", error instanceof Error ? error.message : String(error))
+			frontEnd.showError(
+				"Export failed",
+				error instanceof Error ? error.message : String(error)
+			)
 		} finally {
 			frontEnd.hideExportOverlay()
 		}

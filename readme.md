@@ -239,9 +239,10 @@ The Export menu operates on captured musical events. Play imported material thro
 
 | Output format/integration | Result |
 | --- | --- |
-| MIDI | Standard MIDI File for hardware sequencers and DAWs. |
+| MIDI (`.mid`) | Standard MIDI File with one track per channel and program, keeping velocities, programs and tempo. |
 | RIFF MIDI (`.rmi`) | MIDI wrapped in a RIFF container. |
-| MED | Tracker-oriented MED file export. |
+| Tracker modules (`.med`, `.mod`, `.xm`, `.s3m`, `.it`) | OctaMED, ProTracker, FastTracker 2, Scream Tracker 3 and Impulse Tracker modules. Each instrument is sampled from its chain's audio output during export (the mix is muted briefly) and embedded, so the module sounds close to HarmonEasy; instruments that cannot be sampled use a synthesised General MIDI approximation, with separate drum sounds for channel 10. Polyphony is limited to the format's channels (MOD 32, XM/S3M 32, IT/MED 64) and notes outside a format's range are octave-folded. |
+| MuseScore 4 (`.mscx`, `.mscz`) | Measured score with rests and ties in 4/4. |
 | MIDI Markdown | Text representation of the recorded musical events. |
 | MusicXML | Score interchange for notation applications. |
 | Compressed MusicXML (`.mxl`) | ZIP-packaged MusicXML score. |

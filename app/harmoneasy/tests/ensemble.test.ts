@@ -152,7 +152,7 @@ describe("one shared ensemble performance", () => {
 		})
 		expect(song.midi.header.secondsToTicks(1)).toBe(song.midi.header.ppq * 2)
 	})
-	it("gates only the assigned current parts and never lets old button releases cut score notes", async () => {
+	it("plays only requested onsets and never lets button releases cut score notes", async () => {
 		const t = await transformer({
 			assist: false,
 			players: [
@@ -169,20 +169,22 @@ describe("one shared ensemble performance", () => {
 				now: 0.1
 			} as any)
 			.filter((c) => c.type === NOTE_ON || c.type === NOTE_OFF)
-		expect(releases.map((c) => [c.type, c.channel, c.audioTime])).toEqual([
+		expect(
+			releases.map((c) => [c.type, c.channel, Math.round(c.audioTime! * 1000) / 1000])
+		).toEqual([
 			[NOTE_OFF, 1, 0.25],
 			[NOTE_OFF, 3, 0.25]
 		])
 		t.tick(0.25, {} as any)
 		t.tick(0.5, {} as any)
 		const joined = t.transform([press("b", 0.75)], { now: 0.75 } as any)
-		expect(joined.filter((c) => c.type === NOTE_ON)).toEqual([])
+		expect(joined.filter((c) => c.type === NOTE_ON).map((c) => c.channel)).toEqual([2])
 		expect(
 			t
 				.tick(1, {} as any)
 				.filter((c) => c.type === NOTE_ON)
 				.map((c) => c.channel)
-		).toEqual([2])
+		).toEqual([])
 	})
 	it("brings active parts forward while assistance keeps inactive parts audible", () => {
 		const output = session()
@@ -412,6 +414,45 @@ describe("one shared ensemble performance", () => {
 })
 
 describe("ensemble registration and unlimited local membership", () => {
+	it("upgrades saved phrase-gated setups and persists part behaviour overrides", async () => {
+		const t = await transformer({ mode: "assisted" })
+		expect(t.options.mode).toBe("perform")
+		t.setConfig("partRoles", { 1: "groove", 2: "notes", 99: "groove", 3: "invalid" })
+		expect(t.options.partRoles).toEqual({ 1: "groove", 2: "notes" })
+		const restored = new TransformerEnsemble({
+			...JSON.parse(t.exportConfig()),
+			midiFileUrl: ""
+		})
+		transformers.push(restored)
+		expect(restored.options.partRoles).toEqual(t.options.partRoles)
+		expect(restored.options.mode).toBe("perform")
+	})
+	it("offers part roles, live note feedback, and a working explicit groove stop", async () => {
+		const t = await transformer({
+			autoInputs: "keyboard",
+			players: [{ source: "a", channels: [1] }]
+		})
+		const gui = await t.createGui()
+		const role = gui.querySelector<HTMLSelectElement>('[aria-label="Channel 1 behaviour"]')!
+		expect(gui.querySelector(".ensemble-part-status")!.textContent).toContain("Next: C4")
+		role.value = "groove"
+		role.dispatchEvent(new Event("change"))
+		expect(t.options.partRoles[1]).toBe("groove")
+		expect(
+			gui.querySelector<HTMLButtonElement>(
+				'[aria-label="Stop channel 1 groove at next bar"]'
+			)!.hidden
+		).toBe(false)
+		t.transform([press("a")], { now: 0 } as any)
+		expect(gui.querySelector(".ensemble-part-status")!.textContent).toContain("Looping")
+		gui.querySelector<HTMLButtonElement>(
+			'[aria-label="Stop channel 1 groove at next bar"]'
+		)!.click()
+		expect(gui.querySelector(".ensemble-part-status")!.textContent).toContain("Stopping")
+		t.tick(1, {} as any)
+		t.tick(2, {} as any)
+		expect(gui.querySelector(".ensemble-part-status")!.textContent).toBe("Tap to loop")
+	})
 	it("registers in the transformer factory and picker", () => {
 		const t = tranformerFactory(ID_ENSEMBLE) as TransformerEnsemble
 		transformers.push(t)
@@ -440,19 +481,21 @@ describe("ensemble registration and unlimited local membership", () => {
 		expect(t.transform([press("unknown")], { now: 0 } as any)).toEqual([])
 		expect(t.performanceState.running).toBe(false)
 	})
-	it("keeps the playhead and other players' activity when membership is edited", async () => {
+	it("keeps the playhead and surviving note cursors when membership is edited", async () => {
 		const t = await transformer({ assist: false })
 		t.transform([press("a"), press("b")], { now: 0 } as any)
 		t.tick(0.25, {} as any)
 		t.addPlayer()
 		t.removePlayer(0)
 		expect(t.performanceState.position).toBe(0.25)
+		t.transform([Object.assign(press("b", 0.25), { type: NOTE_OFF })], { now: 0.25 } as any)
+		t.transform([press("b", 0.3)], { now: 0.3 } as any)
 		expect(
 			t
 				.tick(0.5, {} as any)
 				.filter((c) => c.type === NOTE_ON)
-				.map((c) => c.channel)
-		).toEqual([2])
+				.map((c) => [c.channel, c.number])
+		).toEqual([[2, 61]])
 	})
 	it("rejects an invalid replacement and ignores an older load finishing later", async () => {
 		const t = await transformer()
@@ -481,17 +524,17 @@ describe("ensemble registration and unlimited local membership", () => {
 		t.destroy()
 		expect(t.transform([press("a")], {} as any)).toEqual([])
 	})
-	it("advances through the clock pipeline even without more button presses", async () => {
+	it("advances unassigned backing through the clock pipeline without autoplaying assigned notes", async () => {
 		const t = await transformer()
 		t.transform([press("a")], { now: 0 } as any)
 		advanceTransformers([t], 0.25, {} as any)
 		expect(
 			advanceTransformers([t], 0.5, {} as any).filter((c) => c.type === NOTE_ON)
-		).toHaveLength(3)
+		).toHaveLength(2)
 		t.setConfig("enabled", false)
 		expect(
 			advanceTransformers([t], 0.6, {} as any).filter((c) => c.type === NOTE_OFF)
-		).toHaveLength(3)
+		).toHaveLength(2)
 		expect(advanceTransformers([t], 0.75, {} as any)).toEqual([])
 	})
 	it("renders dynamic player controls and learns an input without hand-entered IDs", async () => {
@@ -534,14 +577,14 @@ describe("ensemble registration and unlimited local membership", () => {
 			[...gui.querySelectorAll<HTMLElement>(".ensemble-timing .component-control")]
 				.filter((control) => !control.hidden)
 				.map((control) => control.firstElementChild!.firstChild!.textContent)
-		expect(visible()).toEqual(["Part keeps playing for (beats)", "Pause after silence (beats)"])
+		expect(visible()).toEqual(["Rejoin when behind (bars)", "Pause after silence (beats)"])
 		t.setControlValue("mode", "together")
 		expect(visible()).toEqual([
 			"Step length (beats)",
 			"Players per step",
 			"Assist a step after (seconds)"
 		])
-		expect(gui.querySelector(".ensemble-timing output")!.textContent).toBe("8")
+		expect(gui.querySelector(".ensemble-timing output")!.textContent).toBe("2")
 	})
 	it("keeps distinct input components separate even when their source labels are identical", () => {
 		class Input extends AbstractInput {
