@@ -59,31 +59,16 @@ import { captureAudioToolTake, createAudioToolPanel } from "audiotool"
 import { createOpenDAWProjectFromAudioEventRecording } from "opendaw"
 
 // Export Data as a file to another service
-import {
-	createMIDIFileFromAudioEventRecording,
-	saveBlobToLocalFileSystem
-} from "audiobus/exporters/adapter-midi-file.ts"
-import {
-	createMEDFileFromAudioEventRecording,
-	saveMEDToLocalFileSystem
-} from "audiobus/exporters/adapter-med-file.ts"
-import {
-	createMIDIMarkdownFromAudioEventRecording,
-	saveMarkdownToLocalFileSystem
-} from "audiobus/exporters/adapter-midi-markdown.ts"
-import {
-	createMusicXMLFromAudioEventRecording,
-	saveBlobToLocalFileSystem as saveMusicXMLBlobToLocalFileSystem
-} from "audiobus/exporters/adapter-musicxml.ts"
+import { saveScoreToLocalFileSystem } from "audiobus/exporters/download-score.ts"
+import { createMIDIFileFromAudioEventRecording } from "audiobus/exporters/adapter-midi-file.ts"
+import { createMEDFileFromAudioEventRecording } from "audiobus/exporters/adapter-med-file.ts"
+import { createMIDIMarkdownFromAudioEventRecording } from "audiobus/exporters/adapter-midi-markdown.ts"
+import { createMusicXMLFromAudioEventRecording } from "audiobus/exporters/adapter-musicxml.ts"
 import {
 	renderVexFlowToContainer,
-	createVexFlowHTMLFromAudioEventRecording,
-	saveBlobToLocalFileSystem as saveVexFlowBlobToLocalFileSystem
+	createVexFlowHTMLFromAudioEventRecording
 } from "audiobus/exporters/adapter-vexflow.ts"
-import {
-	createDawProjectFromAudioEventRecording,
-	saveDawProjectToLocalFileSystem
-} from "audiobus/exporters/adapter-dawproject.ts"
+import { createDawProjectFromAudioEventRecording } from "audiobus/exporters/adapter-dawproject.ts"
 
 // Timing
 import { AudioTimer, TIMER_TYPES } from "netronome"
@@ -313,22 +298,30 @@ const initialiseFrontEnd = async (audioBus: AudioBus, initialVolumePercent: numb
 
 	frontEnd.whenMIDIFileExportRequestedRun(async () => {
 		const blob = await createMIDIFileFromAudioEventRecording(recorder, timer)
-		saveBlobToLocalFileSystem(blob, recorder.name)
+		saveScoreToLocalFileSystem(blob, recorder.name, "midi")
 		console.info("Exporting Data to MIDI File", { recorder, blob })
 	})
 	frontEnd.whenMEDExportRequestedRun(async () => {
 		const buffer = await createMEDFileFromAudioEventRecording(recorder, timer)
-		saveMEDToLocalFileSystem(buffer, recorder.name)
+		saveScoreToLocalFileSystem(
+			new Blob([buffer], { type: "application/octet-stream" }),
+			recorder.name,
+			"med"
+		)
 		console.info("Exporting Data to ProTracker MED File", { recorder, buffer })
 	})
 	frontEnd.whenMIDIMarkdownExportRequestedRun(async () => {
 		const markdown = createMIDIMarkdownFromAudioEventRecording(recorder, timer)
-		saveMarkdownToLocalFileSystem(markdown, recorder.name)
+		saveScoreToLocalFileSystem(
+			new Blob([markdown], { type: "text/markdown;charset=utf-8" }),
+			recorder.name,
+			"md"
+		)
 		console.info("Exporting Data to MIDI Markdown", { recorder, markdown })
 	})
 	frontEnd.whenMusicXMLExportRequestedRun(async () => {
 		const blob = await createMusicXMLFromAudioEventRecording(recorder, timer)
-		saveMusicXMLBlobToLocalFileSystem(blob, recorder.name)
+		saveScoreToLocalFileSystem(blob, recorder.name, "musicxml")
 		console.info("Exporting Data to MusicXML", { recorder, blob })
 		frontEnd.showInfoDialog("MusicXML File created and saved", "musicxml.org")
 	})
@@ -338,7 +331,7 @@ const initialiseFrontEnd = async (audioBus: AudioBus, initialVolumePercent: numb
 			recorder,
 			timer,
 			createVexFlowHTMLFromAudioEventRecording,
-			saveVexFlowBlobToLocalFileSystem
+			(blob, fileName) => saveScoreToLocalFileSystem(blob, fileName, "html")
 		)
 	})
 
@@ -411,7 +404,7 @@ const initialiseFrontEnd = async (audioBus: AudioBus, initialVolumePercent: numb
 	frontEnd.whenDawProjectExportRequestedRun(async () => {
 		const blob = await createDawProjectFromAudioEventRecording(recorder, timer)
 		const filename = (recorder.name ?? "project").replace(/\s+/g, "_")
-		await saveDawProjectToLocalFileSystem(blob, filename)
+		saveScoreToLocalFileSystem(blob, filename, "dawProject")
 		console.info("Exporting Data to .dawProject", { recorder, blob })
 	})
 
@@ -696,7 +689,7 @@ const initialiseApplication = async (
 			clockSource: clockSource?.source ?? "internal"
 		}),
 		canSetTempo: () => clockSource?.source === "internal" && !netronomeLink?.isFollower,
-		setTempo: bpm => {
+		setTempo: (bpm) => {
 			timer.BPM = bpm
 			ui.setTempo(bpm)
 			state.set("tempo", bpm)
