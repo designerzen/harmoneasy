@@ -3,6 +3,7 @@ import { expect, it } from "vitest"
 import AudioCommand from "audiobus/commands/audio-command"
 import AudioEvent from "audiobus/models/audio-event"
 import { NOTE_ON } from "audiobus/commands/commands"
+import { songFromRecording } from "audiobus/formats/song-source"
 import { existsSync } from "node:fs"
 import { resolve } from "node:path"
 import { EXPORT_FORMATS, getExportFormat } from "audiobus/exporters/registry"
@@ -55,7 +56,7 @@ for (const format of EXPORT_FORMATS) {
 	}
 	it(`exports ${format.id} to a non-empty Blob`, async () => {
 		const original = JSON.stringify(recording)
-		const blob = await format.export(recording, { BPM: 120 })
+		const blob = await format.export(songFromRecording(recording, { BPM: 120 }))
 		expect(blob).toBeInstanceOf(Blob)
 		expect(blob.size).toBeGreaterThan(0)
 		expect(blob.type).toBe(format.mime)

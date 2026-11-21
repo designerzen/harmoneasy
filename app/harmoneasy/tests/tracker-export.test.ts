@@ -8,11 +8,18 @@ import {
 	createTrackerModule,
 	exportTrackerRecording,
 	type TrackerExportId,
-	type TrackerSample
+	type TrackerSample,
+	type TrackerSampleSet
 } from "audiobus/exporters/adapter-tracker"
 import { createMEDFileFromAudioEventRecording } from "audiobus/exporters/adapter-med-file"
 import { importTrackerFile } from "audiobus/importers/import-tracker-file"
-import { foldNote, trackerTiming } from "audiobus/formats/tracker/tracker-grid"
+import { buildTrackerSong, foldNote, trackerTiming } from "audiobus/formats/tracker/tracker-grid"
+import { DRUM_VOICES, drumVoiceOf } from "audiobus/formats/tracker/tracker-drums"
+import {
+	chooseStorageRate,
+	prepareSample,
+	sampleSignature
+} from "audiobus/formats/tracker/tracker-samples"
 import { trackerInstrumentKey } from "audiobus/formats/tracker/tracker-types"
 import { synthesiseTrackerSample, GM_FAMILIES } from "audiobus/formats/tracker/tracker-timbres"
 import { MED_SPEC } from "audiobus/formats/med/med-exporter"
@@ -169,7 +176,13 @@ const recording = {
 		event(number, channel, patch, chain, start, end)
 	)
 }
-const DISTINCT_INSTRUMENTS = 2 + new Set([36, 42, 38, 49]).size
+// The two pitched chains each have an instrument. The drum chain plays four drum voices (kick, closed
+// hat, snare, crash): formats with a keymap hold them as one kit instrument, the others as one each.
+const DRUM_VOICES_PLAYED = new Set([36, 42, 38, 49].map((key) => drumVoiceOf(key).id)).size
+const KEYMAP_FORMATS: readonly TrackerExportId[] = ["xm", "it"]
+const DISTINCT_SAMPLES = 2 + DRUM_VOICES_PLAYED
+const instrumentsFor = (format: TrackerExportId) =>
+	KEYMAP_FORMATS.includes(format) ? 3 : DISTINCT_SAMPLES
 
 const sine = (baseNote: number, name = "Captured sine"): TrackerSample => {
 	// 84 frames per cycle and ten cycles per loop, so the loop is exactly periodic
@@ -187,8 +200,34 @@ const sine = (baseNote: number, name = "Captured sine"): TrackerSample => {
 		loopLength: data.length
 	}
 }
-const sampleMap = (chain: string, channel: number, patch: number, sample: TrackerSample) =>
-	new Map([[trackerInstrumentKey({ chainId: chain, channel, patch }), sample]])
+const sampleMap = (
+	chain: string,
+	channel: number,
+	patch: number,
+	sample: TrackerSample | TrackerSampleSet
+) => new Map([[trackerInstrumentKey({ chainId: chain, channel, patch }), sample]])
+/** A looped sine whose phase, and so whose data, differs for every index */
+const variedSine = (index: number): TrackerSample => {
+	const period = 84
+	return {
+		...sine(60, `Sine ${index}`),
+		data: Float32Array.from({ length: period * 10 }, (_, i) =>
+			Math.sin((2 * Math.PI * i) / period + index * 0.07)
+		)
+	}
+}
+/** A different timbre for each of `count` chains playing the same patch */
+const distinctChains = (count: number) =>
+	new Map(
+		Array.from(
+			{ length: count },
+			(_, i) =>
+				[
+					trackerInstrumentKey({ chainId: `chain-${i}`, channel: 1, patch: 0 }),
+					variedSine(i)
+				] as const
+		)
+	)
 const single = (note: number) => ({
 	name: "Single",
 	duration: 2,
@@ -211,7 +250,7 @@ const importNotes = async (bytes: Uint8Array, name: string) => {
 describe.each(FORMAT_IDS)("%s export", (format) => {
 	const bytes = () => createTrackerModule(recording, { BPM: 120 }, format)
 
-	it("re-imports with the recorded pitches, order, timing and separate instruments", async () => {
+	it("re-imports with the recorded pitches, order, timing and the right instruments", async () => {
 		const imported = (await importNotes(bytes(), `fixture.${format}`))
 			.map((command) => ({
 				number: command.number,
@@ -235,33 +274,39 @@ describe.each(FORMAT_IDS)("%s export", (format) => {
 				expect(note.end).toBeCloseTo(expected[index].end, 1)
 			}
 		})
-		// Each chain, and each drum sound, plays through its own instrument
+		// Each chain plays through its own instrument. A drum chain is one kit instrument where the
+		// format has a keymap and one instrument per drum voice where it does not.
 		const patches = new Map<string, Set<number>>()
 		imported.forEach((note, index) => {
 			const owner = expected[index].owner
-			const key = owner === DRUMS ? `drum ${expected[index].number}` : owner.chain
+			const key =
+				owner !== DRUMS
+					? owner.chain
+					: KEYMAP_FORMATS.includes(format)
+						? "drums"
+						: `drum ${expected[index].number}`
 			patches.set(key, (patches.get(key) ?? new Set()).add(note.patch))
 		})
 		for (const used of patches.values()) {
 			expect(used.size).toBe(1)
 		}
-		expect(patches.size).toBe(DISTINCT_INSTRUMENTS)
+		expect(patches.size).toBe(instrumentsFor(format))
 		expect(new Set([...patches.values()].map((used) => [...used][0])).size).toBe(
-			DISTINCT_INSTRUMENTS
+			instrumentsFor(format)
 		)
 	})
 
-	it("carries one embedded sample per instrument and renders audible audio", async () => {
+	it("carries one sample per distinct timbre and renders audible audio", async () => {
 		const module = await load(bytes())
 		try {
 			if (format === "mod") {
 				// A MOD always has 31 sample slots; the unused ones have no name
-				expect(module.sampleNames().filter(Boolean)).toHaveLength(DISTINCT_INSTRUMENTS)
+				expect(module.sampleNames().filter(Boolean)).toHaveLength(DISTINCT_SAMPLES)
 			} else {
-				expect(module.samples).toBe(DISTINCT_INSTRUMENTS)
+				expect(module.samples).toBe(DISTINCT_SAMPLES)
 			}
 			if (format === "xm" || format === "it") {
-				expect(module.instruments).toBe(DISTINCT_INSTRUMENTS)
+				expect(module.instruments).toBe(instrumentsFor(format))
 			}
 			expect(module.channels).toBeGreaterThanOrEqual(5)
 			const audio = module.render(4.8)
@@ -395,7 +440,12 @@ describe("format limits", () => {
 				event(60, 1, 0, `chain-${i}`, i * 0.25, i * 0.25 + 0.2)
 			)
 		}
-		expect(() => createTrackerModule(song, { BPM: 120 }, format)).toThrow(/instruments/)
+		// Chains that sound different are different instruments; ones that sound alike are not
+		const samples = distinctChains(limit + 1)
+		expect(() => createTrackerModule(song, { BPM: 120 }, format, { samples })).toThrow(
+			/instruments/
+		)
+		expect(() => createTrackerModule(song, { BPM: 120 }, format)).not.toThrow()
 	})
 
 	it("uses four ProTracker channels when they are enough and an even count otherwise", async () => {
@@ -452,7 +502,7 @@ describe("MED adapter", () => {
 		expect(new TextDecoder().decode(new Uint8Array(buffer, 0, 4))).toBe("MMD1")
 		expect(new DataView(buffer).getUint32(4, false)).toBe(buffer.byteLength)
 		const module = await load(new Uint8Array(buffer))
-		expect(module.samples).toBe(DISTINCT_INSTRUMENTS)
+		expect(module.samples).toBe(DISTINCT_SAMPLES)
 		module.destroy()
 	})
 
@@ -615,5 +665,323 @@ describe("synthesised timbres", () => {
 			expect(rms(drum(number).data), `drum ${number}`).toBeGreaterThan(0.01)
 			expect(drum(number).baseNote).toBe(number)
 		}
+	})
+})
+describe("timbre reuse", () => {
+	const range = (from: number, to: number) =>
+		Array.from({ length: to - from + 1 }, (_, i) => from + i)
+	const drumSong = (numbers: readonly number[]) => ({
+		name: "Drums",
+		duration: numbers.length * 0.25 + 1,
+		events: numbers.map((number, i) => event(number, 10, 0, "drums", i * 0.25, i * 0.25 + 0.2))
+	})
+	const countSamples = (module: Awaited<ReturnType<typeof load>>, format: TrackerExportId) =>
+		format === "mod" ? module.sampleNames().filter(Boolean).length : module.samples
+	const note = (chainId: string, number: number, velocity: number, start: number) => ({
+		chainId,
+		number,
+		channel: 1,
+		patch: 0,
+		velocity,
+		start,
+		duration: 0.4
+	})
+
+	describe.each(FORMAT_IDS)("%s", (format) => {
+		it("fits a 47-key drum part into a few drum voice samples", async () => {
+			const module = await load(
+				createTrackerModule(drumSong(range(35, 81)), { BPM: 120 }, format)
+			)
+			try {
+				const samples = countSamples(module, format)
+				expect(samples).toBeGreaterThan(8)
+				expect(samples).toBeLessThanOrEqual(DRUM_VOICES.length)
+				expect(samples).toBeLessThan(47)
+				if (KEYMAP_FORMATS.includes(format)) {
+					expect(module.instruments).toBe(1)
+				}
+				expect(peak(module.render(12))).toBeGreaterThan(0.03)
+			} finally {
+				module.destroy()
+			}
+		})
+
+		it("plays a kick key and a hat key as different sounds", async () => {
+			const song = {
+				name: "Kit",
+				duration: 3,
+				events: [event(36, 10, 0, "drums", 0, 0.2), event(42, 10, 0, "drums", 1, 1.1)]
+			}
+			const module = await load(createTrackerModule(song, { BPM: 120 }, format))
+			try {
+				const audio = module.render(2)
+				const window = (from: number, to: number) =>
+					audio.slice(Math.floor(from * RATE), Math.floor(to * RATE))
+				const kick = window(0, 0.2)
+				const hat = window(1, 1.1)
+				expect(rms(kick)).toBeGreaterThan(0.01)
+				expect(rms(hat)).toBeGreaterThan(0.002)
+				// A kick is low and smooth; a hat is mostly high-frequency noise
+				const brightness = (data: Float32Array) =>
+					rms(data.slice(1).map((value, i) => value - data[i])) / rms(data)
+				expect(brightness(hat)).toBeGreaterThan(brightness(kick) * 3)
+			} finally {
+				module.destroy()
+			}
+		})
+
+		it("stores chains that play the same patch once", async () => {
+			const chains = (count: number) => ({
+				name: "Chains",
+				duration: 4,
+				events: Array.from({ length: count }, (_, i) =>
+					event(60 + i, i % 2 ? 3 : 1, 0, `chain-${i}`, i * 0.5, i * 0.5 + 0.4)
+				)
+			})
+			const module = await load(createTrackerModule(chains(4), { BPM: 120 }, format))
+			try {
+				expect(countSamples(module, format)).toBe(1)
+				if (KEYMAP_FORMATS.includes(format)) {
+					expect(module.instruments).toBe(1)
+				}
+			} finally {
+				module.destroy()
+			}
+			// Four chains cost little more than one
+			const one = createTrackerModule(chains(1), { BPM: 120 }, format).length
+			expect(createTrackerModule(chains(4), { BPM: 120 }, format).length).toBeLessThan(
+				one * 1.5
+			)
+		})
+
+		it("uses captured drum voices for their keys and synthesises the rest", async () => {
+			const set: TrackerSampleSet = {
+				samples: [sine(36, "Cap kick"), sine(42, "Cap hat")],
+				keymap: new Map([
+					[35, 0],
+					[36, 0],
+					[42, 1]
+				])
+			}
+			const song = drumSong([35, 36, 42, 38])
+			const module = await load(
+				createTrackerModule(song, { BPM: 120 }, format, {
+					samples: sampleMap("drums", 10, 0, set)
+				})
+			)
+			try {
+				const names = module.sampleNames().filter(Boolean)
+				expect(names).toContain("Cap kick")
+				expect(names).toContain("Cap hat")
+				expect(names).toContain("Snare 38")
+				expect(names).not.toContain("Kick 36")
+				// Both kick keys share the captured kick
+				expect(countSamples(module, format)).toBe(3)
+			} finally {
+				module.destroy()
+			}
+		})
+
+		it("lets a single captured sample voice only the drum it was played at", async () => {
+			const module = await load(
+				createTrackerModule(drumSong([36, 42]), { BPM: 120 }, format, {
+					samples: sampleMap("drums", 10, 0, sine(36, "Only kick"))
+				})
+			)
+			try {
+				const names = module.sampleNames().filter(Boolean)
+				expect(names).toContain("Only kick")
+				expect(names).toContain("Closed hat 42")
+			} finally {
+				module.destroy()
+			}
+		})
+
+		it("plays captured zones as one keymapped instrument or one instrument per zone", async () => {
+			const zones: TrackerSampleSet = {
+				samples: [sine(48, "Low zone"), sine(72, "High zone")]
+			}
+			const song = {
+				name: "Zones",
+				duration: 3,
+				events: [event(50, 1, 0, "solo", 0, 0.4), event(70, 1, 0, "solo", 0.5, 0.9)]
+			}
+			const module = await load(
+				createTrackerModule(song, { BPM: 120 }, format, {
+					samples: sampleMap("solo", 1, 0, zones)
+				})
+			)
+			try {
+				expect(module.sampleNames().filter(Boolean)).toEqual(
+					expect.arrayContaining(["Low zone", "High zone"])
+				)
+				expect(countSamples(module, format)).toBe(2)
+				if (KEYMAP_FORMATS.includes(format)) {
+					expect(module.instruments).toBe(1)
+				}
+			} finally {
+				module.destroy()
+			}
+		})
+
+		it.each([50, 70])("plays each zone in tune at MIDI %i", async (number) => {
+			const zones: TrackerSampleSet = {
+				samples: [sine(48, "Low zone"), sine(72, "High zone")]
+			}
+			const module = await load(
+				createTrackerModule(single(number), { BPM: 120 }, format, {
+					samples: sampleMap("solo", 1, 0, zones)
+				})
+			)
+			try {
+				expect(Math.abs(cents(frequency(module.render(1)), midiHz(number)))).toBeLessThan(
+					25
+				)
+			} finally {
+				module.destroy()
+			}
+		})
+	})
+
+	it("shares one stored sample between instruments in an IT module", async () => {
+		const samples = new Map([
+			[trackerInstrumentKey({ chainId: "a", channel: 1, patch: 0 }), sine(60, "Loud")],
+			[
+				trackerInstrumentKey({ chainId: "b", channel: 1, patch: 0 }),
+				{ ...sine(60, "Quiet"), volume: 0.5 }
+			]
+		])
+		const song = {
+			name: "Shared",
+			duration: 3,
+			events: [event(60, 1, 0, "a", 0, 0.4), event(60, 1, 0, "b", 0.5, 0.9)]
+		}
+		const shared = await load(createTrackerModule(song, { BPM: 120 }, "it", { samples }))
+		expect([shared.instruments, shared.samples]).toEqual([2, 1])
+		shared.destroy()
+		const own = await load(createTrackerModule(song, { BPM: 120 }, "xm", { samples }))
+		expect([own.instruments, own.samples]).toEqual([2, 2])
+		own.destroy()
+	})
+
+	it("keeps cell volumes right when instruments merge", () => {
+		const song = buildTrackerSong(
+			[note("a", 60, 127, 0), note("b", 62, 64, 0.5)],
+			120,
+			XM_SPEC,
+			"Merge"
+		)
+		expect(song.instruments).toHaveLength(1)
+		const cells = song.cells.flat().filter((cell) => cell && !cell.off)
+		const { gain } = song.instruments[0]
+		expect(cells).toEqual([
+			{ off: false, note: 60, instrument: 1, volume: Math.round(64 * gain) },
+			{ off: false, note: 62, instrument: 1, volume: Math.round((64 / 127) * 64 * gain) }
+		])
+	})
+
+	it("uses zones only while the instrument limit allows", () => {
+		const chains = (count: number) =>
+			Array.from({ length: count }, (_, i) => [
+				{ ...note(`c${i}`, 50, 100, i), duration: 0.2 },
+				{ ...note(`c${i}`, 70, 100, i + 0.5), duration: 0.2 }
+			]).flat()
+		const samples = (count: number) =>
+			new Map(
+				Array.from({ length: count }, (_, i) => [
+					trackerInstrumentKey({ chainId: `c${i}`, channel: 1, patch: 0 }),
+					{
+						samples: [
+							{ ...variedSine(i), baseNote: 48 },
+							{ ...variedSine(i + 100), baseNote: 72 }
+						]
+					} satisfies TrackerSampleSet
+				])
+			)
+		// Fifteen chains with two zones each are thirty instruments in a MOD; twenty would be forty
+		expect(
+			buildTrackerSong(chains(15), 120, MOD_SPEC, "t", samples(15)).instruments
+		).toHaveLength(30)
+		expect(
+			buildTrackerSong(chains(20), 120, MOD_SPEC, "t", samples(20)).instruments
+		).toHaveLength(20)
+		// A format with a keymap keeps the zones in one instrument either way
+		const song = buildTrackerSong(chains(20), 120, XM_SPEC, "t", samples(20))
+		expect(song.instruments).toHaveLength(20)
+		expect(song.instruments.every((instrument) => instrument.samples.length === 2)).toBe(true)
+	})
+
+	it("groups every General MIDI percussion key into a voice of the kit", () => {
+		expect(DRUM_VOICES.length).toBeLessThanOrEqual(16)
+		for (let key = 35; key <= 87; key++) {
+			expect(drumVoiceOf(key).keys, `key ${key}`).toContain(key)
+			expect(DRUM_VOICES, `key ${key}`).toContain(drumVoiceOf(key))
+		}
+		expect(drumVoiceOf(36)).toBe(drumVoiceOf(35))
+		// Closed and pedal hats are one voice; the open hat is its own
+		expect(drumVoiceOf(44)).toBe(drumVoiceOf(42))
+		expect(drumVoiceOf(46)).not.toBe(drumVoiceOf(42))
+	})
+})
+
+describe("sample preparation", () => {
+	const decaying = Float32Array.from(
+		{ length: RATE * 2 },
+		(_, i) => Math.sin(i * 0.05) * Math.exp((-i / RATE) * 9)
+	)
+	// The wave falls below -54 dB (0.002) after ln(500) / 9, about 0.69 s
+
+	it("trims a decayed one-shot tail and fades the cut instead of clicking", () => {
+		const { sample } = prepareSample({
+			name: "Decay",
+			data: decaying,
+			sampleRate: RATE,
+			baseNote: 60
+		})
+		expect(sample.data.length).toBeGreaterThan(RATE * 0.6)
+		expect(sample.data.length).toBeLessThan(RATE * 0.8)
+		expect(sample.data[sample.data.length - 1]).toBe(0)
+		// Everything cut off was quieter than -54 dB
+		expect(
+			decaying
+				.slice(sample.data.length)
+				.reduce((most, value) => Math.max(most, Math.abs(value)), 0)
+		).toBeLessThan(0.0021)
+	})
+
+	it("leaves a one-shot that is still sounding, and a loop, at full length", () => {
+		const held = Float32Array.from({ length: RATE }, (_, i) => Math.sin(i * 0.05))
+		const oneShot = prepareSample({ name: "Held", data: held, sampleRate: RATE, baseNote: 60 })
+		expect(oneShot.sample.data.length).toBe(RATE)
+		const looped = prepareSample(sine(60))
+		expect(looped.sample.data.length).toBe(840)
+		expect(looped.sample.loopLength).toBe(840)
+	})
+
+	it("stores a low sound at a low rate and a bright one at the rate it needs", () => {
+		const limits = { minRate: 4000, maxRate: 22050 }
+		const hum = sine(60)
+		expect(chooseStorageRate(hum, 60, limits)).toBe(4000)
+		let seed = 1
+		const noise = Float32Array.from({ length: 22050 }, () => {
+			seed = (seed * 1664525 + 1013904223) >>> 0
+			return seed / 2 ** 31 - 1
+		})
+		const hiss: TrackerSample = { name: "Hiss", data: noise, sampleRate: 22050, baseNote: 60 }
+		expect(chooseStorageRate(hiss, 60, limits)).toBe(22050)
+		// Played an octave above its base note, half the audible band is out of reach
+		const raised = chooseStorageRate(hiss, 72, limits)
+		expect(raised).toBeLessThan(22050)
+		expect(raised).toBeGreaterThan(16000)
+	})
+
+	it("fingerprints samples by their data, rate, loop and pitch", () => {
+		const base = sine(60)
+		expect(sampleSignature({ ...base, name: "Renamed" })).toBe(sampleSignature(base))
+		expect(sampleSignature({ ...base, baseNote: 61 })).not.toBe(sampleSignature(base))
+		expect(sampleSignature(variedSine(1))).not.toBe(sampleSignature(variedSine(2)))
+		expect(sampleSignature({ ...base, loopStart: undefined, loopLength: undefined })).not.toBe(
+			sampleSignature(base)
+		)
 	})
 })

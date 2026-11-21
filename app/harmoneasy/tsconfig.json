@@ -34,6 +34,8 @@
 			],
 			"audiobus-output-pink-trombone": ["../../packages/audiobus-output-pink-trombone"],
 			"audiobus-output-pink-trombone/*": ["../../packages/audiobus-output-pink-trombone/*"],
+			"audiobus-output-voice-workshop": ["../../packages/audiobus-output-voice-workshop"],
+			"audiobus-output-voice-workshop/*": ["../../packages/audiobus-output-voice-workshop/*"],
 			"audiotool": ["../../packages/audiotool"],
 			"audiotool/*": ["../../packages/audiotool/*"],
 			"netronome": ["../../packages/netronome"],

@@ -25,6 +25,7 @@ const PACKAGES = [
 	{ name: "opendaw", dir: "openDAW" },
 	{ name: "audiobus-output-opendaw-vaporisateur", dir: "audiobus-output-opendaw-vaporisateur" },
 	{ name: "audiobus-output-pink-trombone", dir: "audiobus-output-pink-trombone" },
+	{ name: "audiobus-output-voice-workshop", dir: "audiobus-output-voice-workshop" },
 	{ name: "pitfalls", dir: "pitfalls" }
 ]
 

@@ -136,6 +136,7 @@ All built-in output types are listed here. Plugin-specific outputs follow in the
 | TB-303 | `tb303` | Monophonic acid bass with nonlinear diode ladder, pitch slide and accents. |
 | Drum Accompaniment | `drum-accompaniment` | Clocked drum grooves with note-activity variations, tuning and compression. |
 | Pink Trombone | `pink-trombone` | Vocal-tract synthesis with speech-like sounds. |
+| Voice Workshop | `voice-workshop` | Physically modelled singing voice with a vowel pad and live vocal-tract view. |
 | Yoshimi | `yoshimi` | Software synthesizer with instrument presets. |
 | Supersonic | `supersonic` | SuperCollider-based synthesis engine; requires its runtime assets. |
 | WAM2 | `wam2` | Host a Web Audio Modules 2 instrument by plugin URL. |
@@ -213,6 +214,7 @@ Use **Import File** or drag files onto the app. The importer checks file content
 | DAWproject (`.dawproject`) | Import musical project data as commands for the chain. |
 | Tracker modules and packed modules | Import the 70 extensions listed below through the bundled libopenmpt decoder. |
 | Audio (`.wav`, `.mp3`, `.ogg`, `.oga`, `.opus`, `.flac`, `.m4a`, `.aac`, `.aif`, `.aiff`, `.webm`) | Load into a Loop Player; decoding depends on browser codec support. |
+| SoundFont (`.sf2`, `.sf3`) and MIDI.js soundfonts | Choose which Romplers play the soundfont, or add a new Rompler to the chain in focus; soundfonts may be up to 1 GB. |
 | Instrument/MIDI bundles (`.zip`, `.wam`, `.wam2`) | Inspect for MIDI files or a built WAM2 instrument; when several instruments exist, choose one to load. |
 | Hosted WAM/WAM2 URLs | Load a plugin as an output; legacy module URLs are also recognised. |
 | Preset/setup JSON | Import through the preset library to reuse chain presets and complete setups. |
@@ -235,7 +237,7 @@ Tracker import extracts row notes, instruments and explicit volumes while follow
 
 ### Exports and integrations
 
-The Export menu operates on captured musical events. Play imported material through a chain to capture the part you want to export.
+Choose **Recording** or a **Loaded song** in the Export menu. A loaded song exports directly, without playing it into the recorder; VexFlow, openDAW and AudioTool always use the recording. MIDI, RIFF MIDI, Tone.js JSON, MusicXML/MXL, MuseScore and MIDI CSV keep tempo changes, time signatures, the key signature and track names; DAWproject and REAPER keep all but the key, and Synthesizer V, OpenUtau and UtaFormatix keep tempo changes and time signatures. Notation bar lines follow the time signatures. Formats with a single tempo, such as LMMS and tracker modules, use the first tempo and keep note timing.
 
 | Output format/integration | Result |
 | --- | --- |

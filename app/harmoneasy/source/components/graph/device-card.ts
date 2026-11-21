@@ -2,6 +2,7 @@ import type { InputId } from "audiobus/io/inputs/input-types"
 import { effectOutputId, type OutputId } from "audiobus/io/outputs/output-types"
 import { EFFECT_REGISTRY } from "audiobus/effects/effect-registry"
 import type { PINK_TROMBONE_OUTPUT_ID } from "audiobus-output-pink-trombone"
+import type { VOICE_WORKSHOP_OUTPUT_ID } from "audiobus-output-voice-workshop"
 import { elementDescription, elementIcon } from "./element-icons"
 import type { ClassifiedChoice } from "./device-filters"
 import { OUTPUT_DEFINITIONS } from "audiobus/io/output-definitions"
@@ -232,7 +233,10 @@ onMidiDeviceProfilesChanged(() => {
 	}
 })
 
-export const OUTPUT_GUIDANCE: Record<OutputId | typeof PINK_TROMBONE_OUTPUT_ID, Guidance> = {
+export const OUTPUT_GUIDANCE: Record<
+	OutputId | typeof PINK_TROMBONE_OUTPUT_ID | typeof VOICE_WORKSHOP_OUTPUT_ID,
+	Guidance
+> = {
 	protocol: guide(
 		"Link",
 		"Send notes and application commands to another music application.",
@@ -419,6 +423,12 @@ export const OUTPUT_GUIDANCE: Record<OutputId | typeof PINK_TROMBONE_OUTPUT_ID, 
 		"Create vocal-like synthesized sound.",
 		"Exploring speech-like tones and unusual instruments.",
 		audio
+	),
+	"voice-workshop": guide(
+		"🗣",
+		"Sing notes with a physically modelled human voice.",
+		"Expressive vocal lines, choir pads and vowel sweeps; drag the vowel pad while playing.",
+		audio + " One note at a time."
 	),
 	notation: guide(
 		"♫",

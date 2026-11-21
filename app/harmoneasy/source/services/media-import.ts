@@ -1,4 +1,11 @@
-import { configurationData } from "audiobus/io/device-definition"
+import AudioCommand from "audiobus/commands/audio-command"
+import {
+	normalizeSong,
+	songFromCommands,
+	type SongSource,
+	type SongTrack
+} from "audiobus/formats/song-source"
+import { configurationData, deviceDefinition, deviceId } from "audiobus/io/device-definition"
 import { createInputById } from "audiobus/io/input-factory"
 import { createOutputById } from "audiobus/io/output-factory"
 import { inspectMediaFiles } from "audiobus/importers/dropped-media"
@@ -59,14 +66,15 @@ export function createMediaImporter(
 ) {
 	const target = () => manager.activeChain ?? manager.getChain(manager.createEmptyChain())!
 	const loadNotes = async (file: File, chain: IOChain, format: ImportFormatId = "midi") => {
-		const { commands, noteCount } = await importMusicalFile(file, format)
+		const { commands, noteCount, song } = await importMusicalFile(file, format)
 		if (!noteCount) {
 			throw new Error("The music file contains no notes")
 		}
 		const input = await createInputById("midi-file", {
 			...manager.deviceOptions,
 			fileName: file.name,
-			commands: configurationData(commands.map((command) => ({ ...command })))
+			commands: configurationData(commands.map((command) => ({ ...command }))),
+			song: configurationData(packSong(song))
 		})
 		manager.addDevice(chain, input, "input")
 	}
@@ -172,4 +180,89 @@ export function createMediaImporter(
 		}
 		throw new Error("Expected a ZIP bundle containing MIDI or a complete WAM2 instrument")
 	}
+}
+/** Saved with the input: tuples keep the song compact, and the track supplies channel and program. */
+interface PackedSong extends Omit<SongSource, "tracks"> {
+	tracks: (Omit<SongTrack, "notes" | "controllers" | "pitchBends"> & {
+		notes: [number: number, start: number, duration: number, velocity: number][]
+		controllers?: [time: number, controller: number, value: number][]
+		pitchBends?: [time: number, value: number][]
+	})[]
+}
+const packSong = (song: SongSource): PackedSong => ({
+	...song,
+	tracks: song.tracks.map(({ notes, controllers, pitchBends, ...track }) => ({
+		...track,
+		notes: notes.map((note) => [note.number, note.start, note.duration, note.velocity]),
+		controllers: controllers?.map((event) => [event.time, event.controller, event.value]),
+		pitchBends: pitchBends?.map((event) => [event.time, event.value])
+	}))
+})
+const unpackSong = (song: PackedSong, chainId: string): SongSource =>
+	normalizeSong({
+		...song,
+		tracks: song.tracks.map(({ notes, controllers, pitchBends, ...track }) => ({
+			...track,
+			chainId,
+			notes: notes.map(([number, start, duration, velocity]) => ({
+				number,
+				start,
+				duration,
+				velocity,
+				channel: track.channel,
+				patch: track.patch
+			})),
+			controllers: controllers?.map(([time, controller, value]) => ({
+				time,
+				controller,
+				value
+			})),
+			pitchBends: pitchBends?.map(([time, value]) => ({ time, value }))
+		}))
+	})
+
+export interface LoadedSong {
+	id: string
+	name: string
+	/** Name of the chain that plays the song */
+	chain: string
+	chainId: string
+	song: SongSource
+}
+/** Songs loaded into MIDI file inputs, including restored ones. A shared input appears on each chain,
+ * and its notes take that chain's timbre.
+ */
+export function loadedSongs(manager: Pick<IOChainManager, "entries">): LoadedSong[] {
+	return manager.entries.flatMap(([chainId, chain]) =>
+		chain.inputs.flatMap((input) => {
+			try {
+				const definition = deviceDefinition(input)
+				if (definition.type !== "midi-file") {
+					return []
+				}
+				const options = definition.options ?? {}
+				const song = options.song
+					? unpackSong(options.song, chainId)
+					: songFromCommands(
+							(options.commands ?? []).map((command: object) =>
+								Object.assign(new AudioCommand(), command, { chainId })
+							),
+							options.fileName ?? input.name
+						)
+				return [
+					{
+						id: `${chainId}:${deviceId(input)}`,
+						name: song.name,
+						chain: chain.options.name ?? chainId,
+						chainId,
+						song
+					}
+				]
+			} catch (error) {
+				// An unreadable saved song must not hide the others from the export menu.
+				console.warn("Loaded song is unavailable for export", error)
+				return []
+			}
+		})
+	)
 }

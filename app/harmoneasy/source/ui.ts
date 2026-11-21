@@ -590,11 +590,40 @@ export default class UI implements IAudioOutput {
 		}
 	}
 
-	whenExportRequestedRun(callback: (id: string) => Promise<void>) {
+	/** Format buttons export the source chosen here: the recording, or a song loaded into a chain */
+	whenExportRequestedRun(
+		callback: (id: string, source: string) => Promise<void>,
+		sources: () => { id: string; name: string; chain: string }[] = () => []
+	) {
 		const menu = document.getElementById("export-options")
 		if (!menu) {
 			return
 		}
+		const label = document.createElement("label")
+		label.textContent = "Export source "
+		const select = document.createElement("select")
+		select.id = "export-source"
+		select.setAttribute("aria-label", "Export source")
+		label.append(select)
+		menu.prepend(label)
+		// Songs load and unload while the app runs, so list them each time the dialog opens.
+		const refresh = () => {
+			const previous = select.value
+			select.replaceChildren(
+				new Option("Recording", "recording"),
+				...sources().map(
+					(source) =>
+						new Option(`Loaded song: ${source.name} (${source.chain})`, source.id)
+				)
+			)
+			select.value = [...select.options].some((option) => option.value === previous)
+				? previous
+				: "recording"
+		}
+		refresh()
+		this.elementButtonExport?.addEventListener(EVENT_CLICK, refresh, {
+			signal: this.abortController.signal
+		})
 		for (const format of EXPORT_FORMATS) {
 			const button = document.createElement("button")
 			button.type = "button"
@@ -602,7 +631,7 @@ export default class UI implements IAudioOutput {
 			button.className = "export-option"
 			button.textContent = `Export as ${format.label} (.${format.extension})`
 			button.autofocus = format.id === "midi"
-			button.addEventListener(EVENT_CLICK, () => callback(format.id), {
+			button.addEventListener(EVENT_CLICK, () => callback(format.id, select.value), {
 				signal: this.abortController.signal
 			})
 			menu.insertBefore(button, this.elementVexFlowExportButton)

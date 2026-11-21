@@ -61,6 +61,12 @@ export const PACKAGES: PackageInfo[] = [
 		repo: "https://github.com/designerzen/audiobus-output-pink-trombone.git"
 	},
 	{
+		name: "audiobus-output-voice-workshop",
+		version: "0.1.0",
+		description: "Voice Workshop's physically based voice as a playable audiobus output",
+		repo: "https://github.com/designerzen/audiobus-output-voice-workshop.git"
+	},
+	{
 		name: "pitfalls",
 		version: "0.1.1",
 		description: "Music theory utilities - scales, intervals, chords, and microtonality (EDO)",

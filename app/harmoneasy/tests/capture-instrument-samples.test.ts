@@ -1,14 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import {
+	CAPTURE_BUDGET_SECONDS,
 	captureTrackerSamples,
 	downmixToMono,
 	findSustainLoop,
 	groupTrackerNotes,
 	normalisePeak,
+	planTrackerCaptures,
 	representativeTrackerNote,
+	scheduleTrackerCaptures,
 	trimSilence
 } from "audiobus/io/recording/capture-instrument-samples"
-import { trackerInstrumentKey } from "audiobus/formats/tracker/tracker-types"
+import { DRUM_VOICES } from "audiobus/formats/tracker/tracker-drums"
+import { trackerInstrumentKey, type TrackerSampleSet } from "audiobus/formats/tracker/tracker-types"
 import type { SequenceNote } from "audiobus/formats/note-sequence"
 import type { IAudioOutput } from "audiobus/io/outputs/output-interface"
 import { NOTE_ON, NOTE_OFF } from "audiobus/commands/commands"
@@ -81,6 +85,9 @@ it("loops a sustained saw at rising zero crossings separated by whole periods", 
 	expect(input[end - 1]).toBeLessThanOrEqual(0)
 	expect(input[end]).toBeGreaterThan(0)
 	expect(Math.abs(input[start] - input[end])).toBeLessThan(0.01)
+	// The loop that ends soonest wins: a short loop that early in the held note
+	expect(loop.loopLength!).toBeLessThan(sampleRate * 0.06)
+	expect(end).toBeLessThan(sampleRate * 0.7)
 })
 
 it("does not loop a decaying sine, silence, or a sound too short to sustain", () => {
@@ -184,6 +191,73 @@ function fixture(buffers: Float32Array[] = [stereo(saw())]) {
 	return { context, source, output, taps, restore, mute, options }
 }
 
+describe("capture planning", () => {
+	const wide = (chainId: string) =>
+		[36, 60, 84].map((number) => note({ chainId, number, channel: 3, patch: 17 }))
+
+	it("samples a narrow instrument once and a wide one in up to three zones", () => {
+		const narrow = planTrackerCaptures([60, 66, 72].map((number) => note({ number })))
+		expect(narrow).toHaveLength(1)
+		expect(narrow[0].map((job) => job.note.number)).toEqual([66])
+		const zones = planTrackerCaptures(wide("synth"))
+		expect(zones[0].map((job) => job.note.number)).toEqual([36, 60, 84])
+		expect(zones[0].map((job) => job.rank)).toEqual([1, 0, 2])
+		// Two octaves and a bit needs two zones, not three
+		const two = planTrackerCaptures([60, 70, 80].map((number) => note({ number })))
+		expect(two[0].length).toBeGreaterThan(1)
+		expect(planTrackerCaptures([60, 74].map((number) => note({ number })))[0]).toHaveLength(1)
+	})
+
+	it("samples each drum voice of a channel 10 instrument, most played first, up to twelve", () => {
+		const drums = [36, 36, 35, 38, 42, 42, 42, 46].map((number) =>
+			note({ number, channel: 10 })
+		)
+		const [jobs] = planTrackerCaptures(drums)
+		expect(jobs.map((job) => job.note.number)).toEqual([36, 42, 38, 46])
+		expect(jobs[0].keys).toEqual([35, 36])
+		expect(jobs.every((job) => job.drums)).toBe(true)
+		const kit = DRUM_VOICES.map((voice) => note({ number: voice.rep, channel: 10 }))
+		expect(planTrackerCaptures(kit)[0]).toHaveLength(12)
+	})
+
+	it("keeps the requested hold and release while the captures fit the budget", () => {
+		const plans = planTrackerCaptures(
+			Array.from({ length: 4 }, (_, i) => note({ chainId: `c${i}` }))
+		)
+		const schedule = scheduleTrackerCaptures(plans, CAPTURE_BUDGET_SECONDS, 0.8, 0.6)
+		expect(schedule.plans.flat()).toHaveLength(4)
+		expect(schedule.timing(plans[0][0])).toEqual({ hold: 0.8, release: 0.6 })
+	})
+
+	it("shrinks the holds and releases of many captures to share the budget", () => {
+		const plans = planTrackerCaptures(
+			Array.from({ length: 24 }, (_, i) => note({ chainId: `c${i}` }))
+		)
+		const schedule = scheduleTrackerCaptures(plans, 12, 0.8, 0.6)
+		const times = schedule.plans.flat().map((job) => schedule.timing(job))
+		expect(times).toHaveLength(24)
+		expect(times[0].hold).toBeLessThan(0.8)
+		expect(times[0].hold).toBeGreaterThan(0.15)
+		expect(times.reduce((sum, time) => sum + time.hold + time.release, 0)).toBeLessThanOrEqual(
+			12.0001
+		)
+	})
+
+	it("drops the extra zones, never an instrument's main capture, when the budget is tight", () => {
+		const plans = planTrackerCaptures([...wide("a"), ...wide("b"), ...wide("c")])
+		expect(plans.flat()).toHaveLength(9)
+		const tight = scheduleTrackerCaptures(plans, 0.9, 0.8, 0.6)
+		expect(tight.plans.map((jobs) => jobs.map((job) => job.note.number))).toEqual([
+			[60],
+			[60],
+			[60]
+		])
+		// Room for two more captures keeps the lower zone of the first two instruments
+		const some = scheduleTrackerCaptures(plans, 1.5, 0.8, 0.6)
+		expect(some.plans.flat()).toHaveLength(5)
+	})
+})
+
 describe("live instrument capture", () => {
 	beforeEach(() => {
 		vi.useFakeTimers()
@@ -196,7 +270,7 @@ describe("live instrument capture", () => {
 		const notes = [
 			note({ number: 60, velocity: 60 }),
 			note(),
-			note({ number: 80, velocity: 120 })
+			note({ number: 72, velocity: 120 })
 		]
 		const result = captureTrackerSamples({ ...options, notes, onProgress: progress })
 		await vi.runAllTimersAsync()
@@ -346,6 +420,87 @@ describe("live instrument capture", () => {
 		expect(output.allNotesOff).toHaveBeenCalledOnce()
 		expect(taps[0].port.close).toHaveBeenCalledOnce()
 		expect(restore).toHaveBeenCalledOnce()
+	})
+
+	it("captures a wide-range instrument in zones whose levels stay relative", async () => {
+		const quiet = Float32Array.from(saw(), (value) => value * 0.25)
+		const { options, output } = fixture([stereo(saw()), stereo(quiet), stereo(saw())])
+		const notes = Array.from({ length: 12 }, (_, i) => note({ number: 36 + i * 4 }))
+		const result = captureTrackerSamples({ ...options, notes })
+		await vi.runAllTimersAsync()
+		const set = (await result).get(trackerInstrumentKey(note())) as TrackerSampleSet
+		expect(set.samples.map((sample) => sample.baseNote)).toEqual([40, 56, 72])
+		expect(set.keymap).toBeUndefined()
+		expect(set.samples.map((sample) => sample.volume!)).toEqual([1, 0.25, 1])
+		expect(
+			output.sendCommand.mock.calls
+				.filter(([command]) => command.type === NOTE_ON)
+				.map(([command]) => command.number)
+		).toEqual([40, 56, 72])
+	})
+
+	it("captures each drum voice of a channel 10 instrument and maps the keys that play it", async () => {
+		const { options, output } = fixture([
+			stereo(saw()),
+			stereo(saw()),
+			stereo(saw()),
+			stereo(saw())
+		])
+		const notes = [36, 36, 35, 38, 42, 42, 42, 46].map((number) =>
+			note({ number, channel: 10, patch: 0 })
+		)
+		const result = captureTrackerSamples({ ...options, notes })
+		await vi.runAllTimersAsync()
+		const set = (await result).get(
+			trackerInstrumentKey(note({ channel: 10, patch: 0 }))
+		) as TrackerSampleSet
+		expect(set.samples.map((sample) => [sample.name, sample.baseNote])).toEqual([
+			["Kick 36", 36],
+			["Closed hat 42", 42],
+			["Snare 38", 38],
+			["Open hat 46", 46]
+		])
+		expect([...set.keymap!]).toEqual([
+			[35, 0],
+			[36, 0],
+			[42, 1],
+			[38, 2],
+			[46, 3]
+		])
+		// A hit rings out once, so it has no loop
+		expect(set.samples.every((sample) => sample.loopLength === undefined)).toBe(true)
+		expect(output.sendCommand).toHaveBeenCalledWith(
+			expect.objectContaining({ type: NOTE_ON, number: 38, channel: 10 })
+		)
+	})
+
+	it("keeps the whole capture within the budget by shortening holds and dropping zones", async () => {
+		const { options } = fixture(Array.from({ length: 24 }, () => stereo(saw())))
+		const progress = vi.fn()
+		const notes = Array.from({ length: 24 }, (_, i) =>
+			note({ chainId: `chain-${i}`, number: 60 })
+		)
+		const started = Date.now()
+		const result = captureTrackerSamples({ ...options, notes, onProgress: progress })
+		await vi.runAllTimersAsync()
+		expect((await result).size).toBe(24)
+		expect(Date.now() - started).toBeLessThanOrEqual(CAPTURE_BUDGET_SECONDS * 1000 + 100)
+		// A wide-range instrument with room for only two captures gets two of its three zones
+		const wide = [36, 60, 84].map((number) => note({ number }))
+		const small = vi.fn()
+		const zoned = captureTrackerSamples({
+			...fixture([stereo(saw()), stereo(saw())]).options,
+			notes: wide,
+			budgetSeconds: 0.6,
+			onProgress: small
+		})
+		await vi.runAllTimersAsync()
+		const set = (await zoned).get(trackerInstrumentKey(note())) as TrackerSampleSet
+		expect(set.samples.map((sample) => sample.baseNote)).toEqual([36, 60])
+		expect(small.mock.calls).toEqual([
+			[1, 2],
+			[2, 2]
+		])
 	})
 
 	it("falls back to noteOn and noteOff when an output has no command API", async () => {

@@ -5,6 +5,7 @@ import { getTransformerDefinition, getTransformerIcon } from "audiobus/io/transf
 import type { InputId } from "audiobus/io/inputs/input-types"
 import type { OutputId } from "audiobus/io/outputs/output-types"
 import type { PINK_TROMBONE_OUTPUT_ID } from "audiobus-output-pink-trombone"
+import type { VOICE_WORKSHOP_OUTPUT_ID } from "audiobus-output-voice-workshop"
 import { MIDI_DEVICE_PROFILES } from "audiobus/hardware/midi-devices/device-profiles"
 import { INSTRUMENTS } from "audiobus/instruments/instrument-types"
 
@@ -71,7 +72,10 @@ const INPUT_ICONS: Partial<Record<InputId, string>> = {
 	"device-motion": "motion"
 }
 
-const OUTPUT_ICONS: Record<OutputId | typeof PINK_TROMBONE_OUTPUT_ID, string> = {
+const OUTPUT_ICONS: Record<
+	OutputId | typeof PINK_TROMBONE_OUTPUT_ID | typeof VOICE_WORKSHOP_OUTPUT_ID,
+	string
+> = {
 	protocol: "midi",
 	"impulse-response": "spectrum",
 	sion: "synth",
@@ -97,6 +101,7 @@ const OUTPUT_ICONS: Record<OutputId | typeof PINK_TROMBONE_OUTPUT_ID, string> = 
 	describe: "describe",
 	console: "console",
 	"pink-trombone": "speech",
+	"voice-workshop": "speech",
 	notation: "notation",
 	"spectrum-analyser": "spectrum",
 	"speech-synthesis": "speech",

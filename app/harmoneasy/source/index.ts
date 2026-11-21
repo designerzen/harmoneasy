@@ -40,7 +40,7 @@ import {
 	EVENT_HARMONY_SETTINGS_CHANGED
 } from "audiobus/events/event-constants"
 import { createClockSourceControls } from "./services/clock-source-controls"
-import { createMediaImporter } from "./services/media-import"
+import { createMediaImporter, loadedSongs } from "./services/media-import"
 import {
 	isClockSource,
 	clockDvsInputs,
@@ -55,7 +55,8 @@ import { createOpenDAWProjectFromAudioEventRecording } from "opendaw"
 // Export recordings through the shared format registry
 import { getExportFormat, type ExportFormat } from "audiobus/exporters/registry"
 import { saveScoreToLocalFileSystem as saveExportToLocalFileSystem } from "audiobus/exporters/download-score"
-import { recordingNotes } from "audiobus/formats/note-sequence"
+import type { SequenceNote } from "audiobus/formats/note-sequence"
+import { songFromRecording, songNotes } from "audiobus/formats/song-source"
 import { captureTrackerSamples } from "audiobus/io/recording/capture-instrument-samples"
 import {
 	renderVexFlowToContainer,
@@ -241,8 +242,9 @@ const initialiseFrontEnd = async (audioBus: AudioBus, initialVolumePercent: numb
 
 	// Tracker modules embed a sample of each instrument as it sounds in HarmonEasy
 	const exportOptionsFor = async (
-		format: ExportFormat
-	): Promise<Parameters<ExportFormat["export"]>[2]> => {
+		format: ExportFormat,
+		notes: SequenceNote[]
+	): Promise<Parameters<ExportFormat["export"]>[1]> => {
 		if (format.kind !== "tracker" || !ioManager) {
 			return undefined
 		}
@@ -250,7 +252,7 @@ const initialiseFrontEnd = async (audioBus: AudioBus, initialVolumePercent: numb
 		const samples = await captureTrackerSamples({
 			audioContext: audioBus.audioContext,
 			getChain: (chainId) => ioManager.getChain(chainId) ?? undefined,
-			notes: recordingNotes(recorder, { chains: true }),
+			notes,
 			mute: () => {
 				const output = audioBus.output.gain,
 					volume = output.value
@@ -267,7 +269,8 @@ const initialiseFrontEnd = async (audioBus: AudioBus, initialVolumePercent: numb
 		frontEnd.setExportOverlayText(`Exporting ${format.label}…`)
 		return { samples }
 	}
-	const exportRecording = async (id: string) => {
+	/** Export the recording, or a loaded song by its id, without playing it into the recorder */
+	const exportRecording = async (id: string, source = "recording") => {
 		try {
 			const format = getExportFormat(id)
 			if (!format) {
@@ -275,9 +278,15 @@ const initialiseFrontEnd = async (audioBus: AudioBus, initialVolumePercent: numb
 			}
 			frontEnd.setExportOverlayText(`Exporting ${format.label}…`)
 			frontEnd.showExportOverlay()
-			const options = await exportOptionsFor(format)
-			const blob = await format.export(recorder, timer, options)
-			saveExportToLocalFileSystem(blob, recorder.name, format.extension)
+			const song =
+				source === "recording"
+					? songFromRecording(recorder, timer)
+					: ioManager && loadedSongs(ioManager).find((entry) => entry.id === source)?.song
+			if (!song) {
+				throw new Error("The selected song is no longer loaded")
+			}
+			const blob = await format.export(song, await exportOptionsFor(format, songNotes(song)))
+			saveExportToLocalFileSystem(blob, song.name, format.extension)
 		} catch (error) {
 			frontEnd.showError(
 				"Export failed",
@@ -287,7 +296,9 @@ const initialiseFrontEnd = async (audioBus: AudioBus, initialVolumePercent: numb
 			frontEnd.hideExportOverlay()
 		}
 	}
-	frontEnd.whenExportRequestedRun(exportRecording)
+	frontEnd.whenExportRequestedRun(exportRecording, () =>
+		ioManager ? loadedSongs(ioManager) : []
+	)
 	frontEnd.whenVexFlowExportRequestedRun(async () => {
 		await frontEnd.renderVexFlowModal(
 			renderVexFlowToContainer,

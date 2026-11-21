@@ -11,6 +11,7 @@ import OutputMetronome from "../../../packages/audiobus/io/outputs/output-metron
 import { PercussionSynth } from "../../../packages/audiobus/instruments/percussion/percussion-synth"
 
 import OutputPinkTrombone from "audiobus-output-pink-trombone/output"
+import OutputVoiceWorkshop from "audiobus-output-voice-workshop/output"
 import OutputSuperSonic from "../../../packages/audiobus/io/outputs/output-supersonic"
 import OutputSiON from "../../../packages/audiobus/io/outputs/output-sion"
 import Output303 from "../../../packages/audiobus/io/outputs/output-303"
@@ -115,6 +116,7 @@ export async function measureOutputs(includeSharedMemory = true, only = "") {
 		new OutputYoshimi(context, undefined, bus.mixer),
 		new OutputSiON({ audioContext: context, mixer: bus.mixer }),
 		pink,
+		new OutputVoiceWorkshop({ audioContext: context, mixer: bus.mixer }),
 		new OutputMetronome(context),
 		kick,
 		snare
@@ -130,7 +132,8 @@ export async function measureOutputs(includeSharedMemory = true, only = "") {
 				output instanceof OutputYoshimi ||
 				output instanceof OpenDAWVaporisateur ||
 				output instanceof OutputSuperSonic ||
-				output instanceof OutputPinkTrombone
+				output instanceof OutputPinkTrombone ||
+				output instanceof OutputVoiceWorkshop
 			) {
 				try {
 					await output.connect()

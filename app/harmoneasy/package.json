@@ -62,6 +62,7 @@
 		"audiobus": "workspace:^",
 		"audiobus-output-opendaw-vaporisateur": "workspace:^",
 		"audiobus-output-pink-trombone": "workspace:^",
+		"audiobus-output-voice-workshop": "workspace:^",
 		"audiotool": "workspace:^",
 		"control-surface": "workspace:^",
 		"entitree-flex": "^0.4.1",

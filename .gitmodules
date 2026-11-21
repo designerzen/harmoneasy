@@ -30,3 +30,7 @@
 	path = packages/midi-devices
 	url = https://github.com/designerzen/midi-devices.git
 	branch = main
+[submodule "packages/audiobus-output-voice-workshop"]
+	path = packages/audiobus-output-voice-workshop
+	url = https://github.com/designerzen/audiobus-output-voice-workshop.git
+	branch = main

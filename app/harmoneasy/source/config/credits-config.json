@@ -8,7 +8,7 @@
 	},
 	{
 		"name": "@babel/runtime",
-		"version": "7.28.6",
+		"version": "7.29.14",
 		"authors": ["The Babel Team (https://babel.dev/team)"],
 		"license": "MIT",
 		"url": "https://babel.dev/docs/en/next/babel-runtime"
@@ -78,7 +78,7 @@
 	},
 	{
 		"name": "@huggingface/jinja",
-		"version": "0.5.10",
+		"version": "0.5.13",
 		"authors": ["Hugging Face"],
 		"license": "MIT",
 		"url": "https://github.com/huggingface/huggingface.js.git"
@@ -197,10 +197,10 @@
 	},
 	{
 		"name": "@opendaw/nam-wasm",
-		"version": "1.0.3",
+		"version": "1.2.0",
 		"authors": ["Andre Michelle"],
 		"license": "MIT",
-		"url": "https://github.com/andremichelle/nam-wasm"
+		"url": "git+https://github.com/andremichelle/nam-wasm.git"
 	},
 	{
 		"name": "@opendaw/studio-adapters",
@@ -407,7 +407,7 @@
 	},
 	{
 		"name": "@thi.ng/api",
-		"version": "8.12.14",
+		"version": "8.12.28",
 		"authors": [
 			"Karsten Schmidt (https://thi.ng)",
 			"Matei Adriel (https://github.com/Mateiadrielrafael)"
@@ -417,14 +417,14 @@
 	},
 	{
 		"name": "@thi.ng/binary",
-		"version": "3.6.3",
+		"version": "3.6.17",
 		"authors": ["Karsten Schmidt (https://thi.ng)"],
 		"license": "Apache-2.0",
 		"url": "https://thi.ng/binary"
 	},
 	{
 		"name": "@thi.ng/checks",
-		"version": "3.8.4",
+		"version": "3.11.1",
 		"authors": [
 			"Karsten Schmidt (https://thi.ng)",
 			"Gavin Cannizzaro (https://github.com/gavinpc-mindgrub)",
@@ -435,14 +435,14 @@
 	},
 	{
 		"name": "@thi.ng/errors",
-		"version": "2.6.3",
+		"version": "2.6.17",
 		"authors": ["Karsten Schmidt (https://thi.ng)"],
 		"license": "Apache-2.0",
 		"url": "https://thi.ng/errors"
 	},
 	{
 		"name": "@thi.ng/malloc",
-		"version": "6.1.136",
+		"version": "6.1.151",
 		"authors": ["Karsten Schmidt (https://thi.ng)", "Bnaya Peretz (https://github.com/Bnaya)"],
 		"license": "Apache-2.0",
 		"url": "https://thi.ng/malloc"
@@ -485,14 +485,15 @@
 	},
 	{
 		"name": "@types/d3-selection",
-		"version": "3.0.11",
+		"version": "3.0.12",
 		"authors": [
 			"Tom Wanzek",
 			"Alex Ford",
 			"Boris Yankov",
 			"denisname",
 			"Nathan Bierema",
-			"Ambar Mutha"
+			"Ambar Mutha",
+			"Kyle Hensel"
 		],
 		"license": "MIT",
 		"url": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/d3-selection"
@@ -506,14 +507,14 @@
 	},
 	{
 		"name": "@types/d3-zoom",
-		"version": "3.0.8",
+		"version": "3.0.9",
 		"authors": ["Tom Wanzek", "Alex Ford", "Boris Yankov", "denisname", "Nathan Bierema"],
 		"license": "MIT",
 		"url": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/d3-zoom"
 	},
 	{
 		"name": "@types/emscripten",
-		"version": "1.41.5",
+		"version": "1.41.6",
 		"authors": [
 			"Kensuke Matsuzaki",
 			"Periklis Tsirakidis",
@@ -547,38 +548,7 @@
 	},
 	{
 		"name": "@types/node",
-		"version": "22.19.11",
-		"authors": [
-			"Microsoft TypeScript",
-			"Alberto Schiabel",
-			"Andrew Makarov",
-			"Benjamin Toueg",
-			"David Junger",
-			"Mohsen Azimi",
-			"Nikita Galkin",
-			"Sebastian Silbermann",
-			"Wilco Bakker",
-			"Marcin Kopacz",
-			"Trivikram Kamat",
-			"Junxiao Shi",
-			"Ilia Baryshnikov",
-			"ExE Boss",
-			"Piotr Błażejewicz",
-			"Anna Henningsen",
-			"Victor Perin",
-			"NodeJS Contributors",
-			"Linus Unnebäck",
-			"wafuwafu13",
-			"Matteo Collina",
-			"Dmitry Semigradsky",
-			"René"
-		],
-		"license": "MIT",
-		"url": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/node"
-	},
-	{
-		"name": "@types/node",
-		"version": "25.9.8",
+		"version": "26.6.6",
 		"authors": [
 			"Microsoft TypeScript",
 			"Alberto Schiabel",
@@ -683,14 +653,14 @@
 	},
 	{
 		"name": "@xyflow/react",
-		"version": "12.10.1",
+		"version": "12.12.1",
 		"authors": [],
 		"license": "MIT",
 		"url": "https://reactflow.dev"
 	},
 	{
 		"name": "@xyflow/system",
-		"version": "0.0.75",
+		"version": "0.0.84",
 		"authors": [],
 		"license": "MIT",
 		"url": "https://github.com/xyflow/xyflow.git"
@@ -823,7 +793,7 @@
 	},
 	{
 		"name": "automation-events",
-		"version": "7.1.15",
+		"version": "7.1.19",
 		"authors": ["Christoph Guttandin"],
 		"license": "MIT",
 		"url": "https://github.com/chrisguttandin/automation-events"
@@ -1018,14 +988,14 @@
 	},
 	{
 		"name": "core-js",
-		"version": "3.49.0",
+		"version": "3.51.0",
 		"authors": ["Denis Pushkarev"],
 		"license": "MIT",
 		"url": "https://core-js.io"
 	},
 	{
 		"name": "core-util-is",
-		"version": "1.0.2",
+		"version": "1.0.3",
 		"authors": ["Isaac Z. Schlueter (http://blog.izs.me/)"],
 		"license": "MIT",
 		"url": "git://github.com/isaacs/core-util-is"
@@ -1053,63 +1023,63 @@
 	},
 	{
 		"name": "d3-color",
-		"version": "3.1.0",
+		"version": "3.1.1",
 		"authors": ["Mike Bostock"],
 		"license": "ISC",
 		"url": "https://d3js.org/d3-color/"
 	},
 	{
 		"name": "d3-dispatch",
-		"version": "3.0.1",
+		"version": "3.0.2",
 		"authors": ["Mike Bostock"],
 		"license": "ISC",
 		"url": "https://d3js.org/d3-dispatch/"
 	},
 	{
 		"name": "d3-drag",
-		"version": "3.0.0",
+		"version": "3.0.1",
 		"authors": ["Mike Bostock"],
 		"license": "ISC",
 		"url": "https://d3js.org/d3-drag/"
 	},
 	{
 		"name": "d3-ease",
-		"version": "3.0.1",
+		"version": "3.0.2",
 		"authors": ["Mike Bostock"],
 		"license": "BSD-3-Clause",
 		"url": "https://d3js.org/d3-ease/"
 	},
 	{
 		"name": "d3-interpolate",
-		"version": "3.0.1",
+		"version": "3.0.2",
 		"authors": ["Mike Bostock"],
 		"license": "ISC",
 		"url": "https://d3js.org/d3-interpolate/"
 	},
 	{
 		"name": "d3-selection",
-		"version": "3.0.0",
+		"version": "3.0.1",
 		"authors": ["Mike Bostock"],
 		"license": "ISC",
 		"url": "https://d3js.org/d3-selection/"
 	},
 	{
 		"name": "d3-timer",
-		"version": "3.0.1",
+		"version": "3.0.2",
 		"authors": ["Mike Bostock"],
 		"license": "ISC",
 		"url": "https://d3js.org/d3-timer/"
 	},
 	{
 		"name": "d3-transition",
-		"version": "3.0.1",
+		"version": "3.0.2",
 		"authors": ["Mike Bostock"],
 		"license": "ISC",
 		"url": "https://d3js.org/d3-transition/"
 	},
 	{
 		"name": "d3-zoom",
-		"version": "3.0.0",
+		"version": "3.0.1",
 		"authors": ["Mike Bostock"],
 		"license": "ISC",
 		"url": "https://d3js.org/d3-zoom/"
@@ -1179,7 +1149,7 @@
 	},
 	{
 		"name": "dropbox",
-		"version": "10.34.0",
+		"version": "10.66.0",
 		"authors": [
 			"Brad Rogers",
 			"Andrew Lawson",
@@ -1263,7 +1233,7 @@
 	},
 	{
 		"name": "es-object-atoms",
-		"version": "1.1.1",
+		"version": "1.1.2",
 		"authors": ["Jordan Harband"],
 		"license": "MIT",
 		"url": "https://github.com/ljharb/es-object-atoms#readme"
@@ -1403,7 +1373,7 @@
 	},
 	{
 		"name": "form-data",
-		"version": "4.0.5",
+		"version": "4.0.6",
 		"authors": ["Felix Geisendörfer (http://debuggable.com/)"],
 		"license": "MIT",
 		"url": "git://github.com/form-data/form-data.git"
@@ -1501,7 +1471,7 @@
 	},
 	{
 		"name": "hasown",
-		"version": "2.0.2",
+		"version": "2.0.4",
 		"authors": ["Jordan Harband"],
 		"license": "MIT",
 		"url": "https://github.com/inspect-js/hasOwn#readme"
@@ -1602,7 +1572,7 @@
 	},
 	{
 		"name": "js-cookie",
-		"version": "3.0.5",
+		"version": "3.0.8",
 		"authors": ["Klaus Hartl"],
 		"license": "MIT",
 		"url": "git://github.com/js-cookie/js-cookie.git"
@@ -1616,7 +1586,7 @@
 	},
 	{
 		"name": "jszip",
-		"version": "3.10.1",
+		"version": "3.10.2",
 		"authors": [
 			"Stuart Knightley",
 			"Franz Buchinger",
@@ -1735,7 +1705,7 @@
 	},
 	{
 		"name": "lib0",
-		"version": "0.2.117",
+		"version": "0.2.120",
 		"authors": ["Kevin Jahns"],
 		"license": "MIT",
 		"url": "https://github.com/dmonad/lib0#readme"
@@ -1756,7 +1726,7 @@
 	},
 	{
 		"name": "lodash",
-		"version": "4.17.23",
+		"version": "4.18.1",
 		"authors": ["John-David Dalton", "Mathias Bynens"],
 		"license": "MIT",
 		"url": "https://lodash.com/"
@@ -1830,7 +1800,7 @@
 	},
 	{
 		"name": "midi-devices",
-		"version": "1.0.0",
+		"version": "1.0.1",
 		"authors": [],
 		"license": "",
 		"url": "https://designerzen.github.io/midi-devices/"
@@ -1873,9 +1843,9 @@
 	},
 	{
 		"name": "minipass",
-		"version": "7.1.2",
+		"version": "7.1.3",
 		"authors": ["Isaac Z. Schlueter (http://blog.izs.me/)"],
-		"license": "ISC",
+		"license": "BlueOak-1.0.0",
 		"url": "https://github.com/isaacs/minipass"
 	},
 	{
@@ -1937,13 +1907,6 @@
 	{
 		"name": "node-fetch",
 		"version": "2.6.13",
-		"authors": ["David Frank"],
-		"license": "MIT",
-		"url": "https://github.com/bitinn/node-fetch"
-	},
-	{
-		"name": "node-fetch",
-		"version": "2.7.0",
 		"authors": ["David Frank"],
 		"license": "MIT",
 		"url": "https://github.com/bitinn/node-fetch"
@@ -2145,14 +2108,14 @@
 	},
 	{
 		"name": "react",
-		"version": "19.2.4",
+		"version": "19.3.1",
 		"authors": [],
 		"license": "MIT",
 		"url": "https://react.dev/"
 	},
 	{
 		"name": "react-dom",
-		"version": "19.2.4",
+		"version": "19.3.1",
 		"authors": [],
 		"license": "MIT",
 		"url": "https://react.dev/"
@@ -2257,14 +2220,14 @@
 	},
 	{
 		"name": "scheduler",
-		"version": "0.27.0",
+		"version": "0.28.0",
 		"authors": [],
 		"license": "MIT",
 		"url": "https://react.dev/"
 	},
 	{
 		"name": "sdp",
-		"version": "3.2.1",
+		"version": "3.2.3",
 		"authors": ["Philipp Hancke"],
 		"license": "MIT",
 		"url": "git+https://github.com/fippo/sdp.git"
@@ -2285,7 +2248,7 @@
 	},
 	{
 		"name": "semver",
-		"version": "7.7.4",
+		"version": "7.8.6",
 		"authors": ["GitHub Inc."],
 		"license": "ISC",
 		"url": "git+https://github.com/npm/node-semver.git"
@@ -2520,7 +2483,7 @@
 	},
 	{
 		"name": "source-map",
-		"version": "0.6.1",
+		"version": "0.8.0",
 		"authors": [
 			"Nick Fitzgerald",
 			"Tobias Koppers",
@@ -2640,6 +2603,13 @@
 		"url": "chalk/strip-ansi"
 	},
 	{
+		"name": "structured-clone-es",
+		"version": "1.0.0",
+		"authors": ["Andrea Giammarchi"],
+		"license": "ISC",
+		"url": "https://github.com/antfu/structured-clone-es#readme"
+	},
+	{
 		"name": "supersonic-scsynth",
 		"version": "0.64.0",
 		"authors": ["Sam Aaron"],
@@ -2690,7 +2660,7 @@
 	},
 	{
 		"name": "tar",
-		"version": "7.5.9",
+		"version": "7.5.23",
 		"authors": ["Isaac Z. Schlueter"],
 		"license": "BlueOak-1.0.0",
 		"url": "https://github.com/isaacs/node-tar.git"
@@ -2816,7 +2786,7 @@
 	},
 	{
 		"name": "tslib",
-		"version": "2.8.1",
+		"version": "2.9.1",
 		"authors": ["Microsoft Corp."],
 		"license": "0BSD",
 		"url": "https://www.typescriptlang.org/"
@@ -2880,22 +2850,7 @@
 	},
 	{
 		"name": "undici-types",
-		"version": "6.21.0",
-		"authors": [
-			"Daniele Belardi",
-			"Ethan Arrowood",
-			"Matteo Collina",
-			"Matthew Aitken",
-			"Robert Nagy",
-			"Szymon Marczak",
-			"Tomas Della Vedova"
-		],
-		"license": "MIT",
-		"url": "https://undici.nodejs.org"
-	},
-	{
-		"name": "undici-types",
-		"version": "7.24.6",
+		"version": "8.9.0",
 		"authors": [
 			"Daniele Belardi",
 			"Ethan Arrowood",
@@ -2917,10 +2872,10 @@
 	},
 	{
 		"name": "use-sync-external-store",
-		"version": "1.6.0",
+		"version": "1.7.0",
 		"authors": [],
 		"license": "MIT",
-		"url": "https://github.com/facebook/react.git"
+		"url": "https://github.com/react/react.git"
 	},
 	{
 		"name": "util-deprecate",
@@ -2938,14 +2893,14 @@
 	},
 	{
 		"name": "uuid",
-		"version": "11.1.0",
+		"version": "11.1.1",
 		"authors": [],
 		"license": "MIT",
 		"url": "https://github.com/uuidjs/uuid.git"
 	},
 	{
 		"name": "vexflow",
-		"version": "5.0.0",
+		"version": "5.6.0",
 		"authors": ["VexFlow Authors"],
 		"license": "MIT",
 		"url": "https://vexflow.com/"
@@ -2966,7 +2921,7 @@
 	},
 	{
 		"name": "webrtc-adapter",
-		"version": "9.0.4",
+		"version": "9.0.6",
 		"authors": [],
 		"license": "BSD-3-Clause",
 		"url": "https://github.com/webrtchacks/adapter.git"
@@ -3015,7 +2970,7 @@
 	},
 	{
 		"name": "ws",
-		"version": "6.2.3",
+		"version": "6.2.7",
 		"authors": ["Einar Otto Stangvik (http://2x.io)"],
 		"license": "MIT",
 		"url": "https://github.com/websockets/ws"
@@ -3092,7 +3047,7 @@
 	},
 	{
 		"name": "yargs",
-		"version": "16.2.0",
+		"version": "16.2.2",
 		"authors": ["Yargs Contributors"],
 		"license": "MIT",
 		"url": "https://yargs.js.org/"
@@ -3127,14 +3082,14 @@
 	},
 	{
 		"name": "yjs",
-		"version": "13.6.29",
+		"version": "13.6.33",
 		"authors": ["Kevin Jahns"],
 		"license": "MIT",
 		"url": "https://docs.yjs.dev"
 	},
 	{
 		"name": "zod",
-		"version": "4.3.6",
+		"version": "4.6.7",
 		"authors": ["Colin McDonnell"],
 		"license": "MIT",
 		"url": "https://zod.dev"
@@ -3152,7 +3107,7 @@
 	},
 	{
 		"name": "zxing-wasm",
-		"version": "3.1.6",
+		"version": "3.1.7",
 		"authors": ["Ze-Zheng Wu"],
 		"license": "MIT",
 		"url": "https://github.com/Sec-ant/zxing-wasm"
