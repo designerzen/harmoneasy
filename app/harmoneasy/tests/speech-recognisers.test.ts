@@ -114,95 +114,108 @@ it("offers on-device options first and the online service last", async () => {
 
 function stubMedia() {
 	const track = { stop: vi.fn() }
-	const recorders: { state: string; start(): void; stop(): void }[] = []
+	const nodes: { port: { onmessage: ((event: { data: Float32Array }) => void) | null } }[] = []
+	const contexts: { close: () => void }[] = []
 	vi.stubGlobal("Worker", class {})
 	vi.stubGlobal(
-		"MediaRecorder",
+		"AudioContext",
 		class {
-			state = "inactive"
-			mimeType = "audio/webm"
-			ondataavailable: ((event: { data: Blob }) => void) | null = null
-			onstop: (() => void) | null = null
+			sampleRate = 16000
+			audioWorklet = { addModule: vi.fn().mockResolvedValue(undefined) }
+			close = vi.fn().mockResolvedValue(undefined)
 			constructor() {
-				recorders.push(this)
+				contexts.push(this)
 			}
-			start() {
-				this.state = "recording"
-			}
-			stop() {
-				this.state = "inactive"
-				this.ondataavailable?.({ data: new Blob(["voice"]) })
-				this.onstop?.()
+			createMediaStreamSource() {
+				return { connect: vi.fn() }
 			}
 		}
 	)
 	vi.stubGlobal(
-		"AudioContext",
+		"AudioWorkletNode",
 		class {
-			decodeAudioData = vi.fn().mockResolvedValue({
-				getChannelData: () => new Float32Array([0.1, 0.2])
-			})
-			close = vi.fn()
+			port = { onmessage: null }
+			constructor() {
+				nodes.push(this)
+			}
 		}
 	)
 	const getUserMedia = vi.fn().mockResolvedValue({ getTracks: () => [track] })
 	vi.stubGlobal("navigator", { language: "en-GB", mediaDevices: { getUserMedia } })
-	return { track, recorders, getUserMedia }
-}
-
-it("records a held phrase and transcribes it with a model in the worker", async () => {
-	const media = stubMedia()
-	const posted: { kind: string; model: string; id?: number }[] = []
-	const worker = {
-		onmessage: null as ((event: { data: object }) => void) | null,
-		postMessage(message: { kind: string; model: string; id?: number }) {
-			posted.push(message)
-			if (message.kind === SPEECH_MODEL_TRANSCRIBE) {
-				queueMicrotask(() => {
-					worker.onmessage!({
-						data: { kind: SPEECH_MODEL_PROGRESS, loaded: 1, total: 4 }
-					})
-					worker.onmessage!({
-						data: {
-							kind: SPEECH_MODEL_TEXT,
-							id: message.id,
-							text: "fast jazz on a gamepad"
-						}
-					})
-				})
-			}
+	/** Sends `seconds` of a loud tone, as the capture worklet would, in 20 ms chunks. */
+	const speak = async (seconds: number, level = 0.3) => {
+		for (let i = 0; i < seconds * 50; i++) {
+			nodes.at(-1)!.port.onmessage!({
+				data: Float32Array.from({ length: 320 }, (_, index) => level * Math.sin(index / 3))
+			})
+			await Promise.resolve()
 		}
 	}
-	const models = createSpeechModelWorker(worker as unknown as Worker)
+	return { track, nodes, contexts, getUserMedia, speak }
+}
+
+function fakeModelWorker(
+	reply: (message: { kind: string; id?: number; audio?: Float32Array }) => object[]
+) {
+	const posted: { kind: string; model: string; id?: number; audio?: Float32Array }[] = []
+	const worker = {
+		onmessage: null as ((event: { data: object }) => void) | null,
+		postMessage(message: { kind: string; model: string; id?: number; audio?: Float32Array }) {
+			posted.push(message)
+			queueMicrotask(() => reply(message).forEach((data) => worker.onmessage!({ data })))
+		}
+	}
+	return { posted, models: createSpeechModelWorker(worker as unknown as Worker) }
+}
+
+it("shows a model's text while the person speaks and finishes quickly on release", async () => {
+	const media = stubMedia()
+	const { posted, models } = fakeModelWorker((message) =>
+		message.kind === SPEECH_MODEL_TRANSCRIBE
+			? [
+					{ kind: SPEECH_MODEL_PROGRESS, loaded: 1, total: 4 },
+					{
+						kind: SPEECH_MODEL_TEXT,
+						id: message.id,
+						text: `heard ${Math.round(message.audio!.length / 16000)} seconds`
+					}
+				]
+			: []
+	)
 	const events = handlers()
 	const session = modelSpeechRecogniser("moonshine", () => models)!.start(events)
 	expect(posted[0]).toEqual({
 		kind: SPEECH_MODEL_LOAD,
 		model: "onnx-community/moonshine-tiny-ONNX"
 	})
-	await vi.waitFor(() => expect(media.recorders[0]?.state).toBe("recording"))
+	await vi.waitFor(() => expect(media.nodes).toHaveLength(1))
 	expect(events.onStatus).toHaveBeenLastCalledWith(SPEECH_LISTENING)
+	await media.speak(2)
+	await vi.waitFor(() => expect(events.onText).toHaveBeenCalledWith("heard 2 seconds", false))
+	expect(events.onEnd).not.toHaveBeenCalled()
+	await media.speak(0.3, 0)
+	const passes = posted.filter((message) => message.kind === SPEECH_MODEL_TRANSCRIBE).length
 	session.stop()
-	await vi.waitFor(() => expect(events.onEnd).toHaveBeenCalledOnce())
-	expect(events.onText).toHaveBeenCalledWith("fast jazz on a gamepad", true)
-	expect(events.onStatus).toHaveBeenCalledWith("Downloading Moonshine Tiny for this device: 25%")
 	expect(media.track.stop).toHaveBeenCalled()
-	expect(posted[1]).toMatchObject({
-		kind: SPEECH_MODEL_TRANSCRIBE,
-		model: "onnx-community/moonshine-tiny-ONNX"
-	})
+	await vi.waitFor(() => expect(events.onEnd).toHaveBeenCalledOnce())
+	expect(events.onText).toHaveBeenLastCalledWith("heard 2 seconds", true)
+	expect(posted.filter((message) => message.kind === SPEECH_MODEL_TRANSCRIBE)).toHaveLength(
+		passes
+	)
+	expect(events.onStatus).toHaveBeenCalledWith("Downloading Moonshine Tiny for this device: 25%")
+	expect(media.contexts[0].close).toHaveBeenCalled()
 })
 
 it("discards an aborted recording and explains blocked microphones", async () => {
 	const media = stubMedia()
-	const worker = { onmessage: null, postMessage: vi.fn() }
-	const models = createSpeechModelWorker(worker as unknown as Worker)
+	const { posted, models } = fakeModelWorker(() => [])
 	const aborted = handlers()
 	const session = modelSpeechRecogniser("whisper", () => models)!.start(aborted)
-	await vi.waitFor(() => expect(media.recorders[0]?.state).toBe("recording"))
+	await vi.waitFor(() => expect(media.nodes).toHaveLength(1))
 	session.abort()
+	await media.speak(1)
 	expect(media.track.stop).toHaveBeenCalled()
-	expect(worker.postMessage).toHaveBeenCalledOnce()
+	expect(posted).toHaveLength(1)
 	expect(aborted.onEnd).not.toHaveBeenCalled()
 
 	media.getUserMedia.mockRejectedValue(new DOMException("blocked", "NotAllowedError"))
@@ -210,4 +223,24 @@ it("discards an aborted recording and explains blocked microphones", async () =>
 	modelSpeechRecogniser("whisper", () => models)!.start(blocked)
 	await vi.waitFor(() => expect(blocked.onEnd).toHaveBeenCalledOnce())
 	expect(blocked.onStatus).toHaveBeenLastCalledWith(expect.stringContaining("Microphone access"))
+})
+
+it("warms up a model only when it is already downloaded", async () => {
+	stubMedia()
+	const { posted, models } = fakeModelWorker(() => [])
+	const match = vi.fn().mockResolvedValue(undefined)
+	vi.stubGlobal("caches", { open: vi.fn().mockResolvedValue({ match }) })
+	modelSpeechRecogniser("moonshine", () => models)!.prepare!()
+	await vi.waitFor(() => expect(match).toHaveBeenCalledOnce())
+	expect(match.mock.calls[0][0]).toContain(
+		"moonshine-tiny-ONNX/resolve/main/onnx/encoder_model_quantized"
+	)
+	expect(posted).toHaveLength(0)
+	match.mockResolvedValue(new Response("cached"))
+	modelSpeechRecogniser("moonshine", () => models)!.prepare!()
+	await vi.waitFor(() =>
+		expect(posted).toEqual([
+			{ kind: SPEECH_MODEL_LOAD, model: "onnx-community/moonshine-tiny-ONNX" }
+		])
+	)
 })

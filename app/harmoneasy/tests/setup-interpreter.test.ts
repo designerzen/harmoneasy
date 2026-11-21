@@ -152,3 +152,9 @@ it("always produces answers the wizard can build", () => {
 		}
 	}
 })
+
+it("reads a common speech-recognition mishearing of note names", () => {
+	expect(read("Funk on my game controller and show the node names").answers.feedback).toBe(
+		"sound-text"
+	)
+})

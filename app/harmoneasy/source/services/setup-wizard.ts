@@ -320,6 +320,7 @@ export function createSetupWizard(
 			const speechSelect = document.createElement("select")
 			speechSelect.addEventListener(EVENT_CHANGE, () => {
 				speechChoice = speechSelect.value as SpeechRecogniserId
+				recognisers.find((item) => item.id === speechChoice)?.prepare?.()
 			})
 			speechLabel.append(speechSelect)
 			let recognisers: SpeechRecogniser[] = []
@@ -359,6 +360,7 @@ export function createSetupWizard(
 						return option
 					})
 				)
+				recognisers.find((item) => item.id === speechChoice)?.prepare?.()
 				speak.hidden = false
 				speechLabel.hidden = false
 				help.append(

@@ -5,6 +5,8 @@ import {
 	SPEECH_MODEL_TEXT,
 	SPEECH_MODEL_TRANSCRIBE
 } from "./speech-model-messages"
+import { createSpeechStream, SPEECH_SAMPLE_RATE } from "./speech-stream"
+import { loadCaptureWorklet } from "audiobus/io/inputs/load-capture-worklet"
 
 /**
  * Ways to turn a held spoken phrase into text, preferring those that keep the voice on this
@@ -33,6 +35,8 @@ export interface SpeechRecogniser {
 	id: SpeechRecogniserId
 	label: string
 	onDevice: boolean
+	/** Gets ready without downloading anything, so the first phrase starts quickly. */
+	prepare?(): void
 	start(handlers: SpeechHandlers): SpeechSession
 }
 
@@ -80,10 +84,9 @@ const SPEECH_MODELS = {
 	whisper: {
 		model: "onnx-community/whisper-tiny.en",
 		name: "Whisper Tiny",
-		label: "Whisper Tiny on this device (about 40 MB download)"
+		label: "Whisper Tiny on this device (about 40 MB download, slower live text)"
 	}
 } as const
-const MODEL_SAMPLE_RATE = 16000
 
 export const speechLanguage = () =>
 	globalThis.navigator?.language?.startsWith("en") ? navigator.language : "en-US"
@@ -268,26 +271,87 @@ const defaultWorker = () =>
 		new Worker(new URL("./speech-model.worker.ts", import.meta.url), { type: "module" })
 	))
 
-/** Recordings are decoded straight to the 16 kHz mono samples the speech models expect. */
-async function decodeRecording(blob: Blob) {
-	const context = new AudioContext({ sampleRate: MODEL_SAMPLE_RATE })
-	try {
-		const buffer = await context.decodeAudioData(await blob.arrayBuffer())
-		return buffer.getChannelData(0).slice()
-	} finally {
-		void context.close()
+const CAPTURE_PROCESSOR = "speech-capture-processor"
+/** Posts about 20 ms of microphone audio at a time, so the page can transcribe as it arrives. */
+const CAPTURE_WORKLET = `
+class SpeechCaptureProcessor extends AudioWorkletProcessor {
+	constructor() {
+		super()
+		this.buffer = new Float32Array(1024)
+		this.index = 0
+	}
+	process(inputs) {
+		const channel = inputs[0] && inputs[0][0]
+		if (!channel) return true
+		for (let i = 0; i < channel.length; i++) {
+			this.buffer[this.index++] = channel[i]
+			if (this.index === this.buffer.length) {
+				this.port.postMessage(this.buffer.slice())
+				this.index = 0
+			}
+		}
+		return true
+	}
+}
+registerProcessor("${CAPTURE_PROCESSOR}", SpeechCaptureProcessor)
+`
+
+/** Converts a live stream to 16 kHz by linear interpolation, carrying position across chunks. */
+export function createResampler(from: number) {
+	const ratio = from / SPEECH_SAMPLE_RATE
+	let position = 0
+	let last = 0
+	return (input: Float32Array) => {
+		if (ratio === 1) {
+			return input
+		}
+		const output: number[] = []
+		while (position < input.length - 1) {
+			const index = Math.floor(position)
+			const before = index < 0 ? last : input[index]
+			output.push(before + (input[index + 1] - before) * (position - index))
+			position += ratio
+		}
+		position -= input.length
+		last = input[input.length - 1]
+		return Float32Array.from(output)
 	}
 }
 
-/** Records the held phrase, then transcribes it with an open model on this device. */
+/** Prefers a 16 kHz context so the browser resamples; some browsers only capture at their own rate. */
+function captureSource(media: MediaStream) {
+	const context = new AudioContext({ sampleRate: SPEECH_SAMPLE_RATE })
+	try {
+		return { context, source: context.createMediaStreamSource(media) }
+	} catch {
+		void context.close()
+		const fallback = new AudioContext()
+		return { context: fallback, source: fallback.createMediaStreamSource(media) }
+	}
+}
+
+async function modelCached(model: string) {
+	try {
+		const cache = await caches.open("transformers-cache")
+		return Boolean(
+			await cache.match(
+				`https://huggingface.co/${model}/resolve/main/onnx/encoder_model_quantized.onnx`
+			)
+		)
+	} catch {
+		return false
+	}
+}
+
+/** Transcribes speech with an open model on this device while the person is still speaking. */
 export function modelSpeechRecogniser(
 	id: keyof typeof SPEECH_MODELS,
 	worker: () => SpeechModelWorker = defaultWorker
 ): SpeechRecogniser | undefined {
 	if (
 		typeof Worker === "undefined" ||
-		typeof MediaRecorder === "undefined" ||
 		typeof AudioContext === "undefined" ||
+		typeof AudioWorkletNode === "undefined" ||
 		!globalThis.navigator?.mediaDevices?.getUserMedia
 	) {
 		return undefined
@@ -297,14 +361,25 @@ export function modelSpeechRecogniser(
 		id,
 		label,
 		onDevice: true,
+		// Loading a model that is already downloaded makes the first phrase as quick as the rest.
+		prepare() {
+			void modelCached(model).then((cached) => {
+				if (cached) {
+					worker().load(model)
+				}
+			})
+		},
 		start(handlers) {
 			let aborted = false
 			let stopped = false
 			let stream: MediaStream | undefined
-			let recorder: MediaRecorder | undefined
-			const chunks: Blob[] = []
+			let context: AudioContext | undefined
 			const models = worker()
-			const release = () => stream?.getTracks().forEach((track) => track.stop())
+			const release = () => {
+				stream?.getTracks().forEach((track) => track.stop())
+				void context?.close()
+				context = undefined
+			}
 			models.progress = (loaded, total) => {
 				if (!aborted) {
 					handlers.onStatus(
@@ -314,82 +389,82 @@ export function modelSpeechRecogniser(
 			}
 			// The model loads while the person speaks, so the first phrase waits less.
 			models.load(model)
+			const speech = createSpeechStream({
+				transcribe: (audio) => models.transcribe(model, audio),
+				onText: (text, final) => {
+					if (!aborted) {
+						handlers.onText(text, final)
+					}
+				},
+				onDone: (text, error) => {
+					release()
+					if (aborted) {
+						return
+					}
+					if (text) {
+						handlers.onText(text, true)
+					}
+					if (error) {
+						handlers.onStatus(
+							`${name} could not turn your speech into text. Check your connection for the first download, or choose another speech option.`
+						)
+					} else if (!text) {
+						handlers.onStatus(SPEECH_ERRORS["no-speech"])
+					}
+					handlers.onEnd()
+				}
+			})
 			navigator.mediaDevices
 				.getUserMedia({
 					audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true }
 				})
-				.then(
-					(media) => {
-						stream = media
-						if (aborted || stopped) {
-							release()
-							if (!aborted) {
-								handlers.onStatus(SPEECH_ERRORS["no-speech"])
-								handlers.onEnd()
-							}
-							return
-						}
-						recorder = new MediaRecorder(media)
-						recorder.ondataavailable = (event) => chunks.push(event.data)
-						recorder.onstop = async () => {
-							release()
-							if (aborted) {
-								return
-							}
-							handlers.onStatus("Turning your speech into text on this device…")
-							try {
-								const audio = await decodeRecording(
-									new Blob(chunks, { type: recorder!.mimeType })
-								)
-								const text = await models.transcribe(model, audio)
-								if (!aborted) {
-									if (text) {
-										handlers.onText(text, true)
-									} else {
-										handlers.onStatus(SPEECH_ERRORS["no-speech"])
-									}
-								}
-							} catch {
-								if (!aborted) {
-									handlers.onStatus(
-										`${name} could not turn your speech into text. Check your connection for the first download, or choose another speech option.`
-									)
-								}
-							} finally {
-								if (!aborted) {
-									handlers.onEnd()
-								}
-							}
-						}
-						recorder.start()
-						handlers.onStatus(SPEECH_LISTENING)
-					},
-					(error: unknown) => {
-						if (!aborted) {
-							handlers.onStatus(
-								SPEECH_ERRORS[
-									error instanceof DOMException &&
-									error.name === "NotAllowedError"
-										? "not-allowed"
-										: "audio-capture"
-								]
-							)
-							handlers.onEnd()
+				.then(async (media) => {
+					stream = media
+					if (aborted || stopped) {
+						speech.stop()
+						return
+					}
+					const capture = captureSource(media)
+					context = capture.context
+					await loadCaptureWorklet(capture.context, CAPTURE_PROCESSOR, CAPTURE_WORKLET)
+					if (aborted || stopped || context !== capture.context) {
+						speech.stop()
+						return
+					}
+					const resample = createResampler(capture.context.sampleRate)
+					const node = new AudioWorkletNode(capture.context, CAPTURE_PROCESSOR)
+					node.port.onmessage = ({ data }: MessageEvent<Float32Array>) => {
+						if (!stopped) {
+							speech.push(resample(data))
 						}
 					}
-				)
+					capture.source.connect(node)
+					handlers.onStatus(SPEECH_LISTENING)
+				})
+				.catch((error: unknown) => {
+					speech.abort()
+					release()
+					if (!aborted) {
+						handlers.onStatus(
+							SPEECH_ERRORS[
+								error instanceof DOMException && error.name === "NotAllowedError"
+									? "not-allowed"
+									: "audio-capture"
+							]
+						)
+						handlers.onEnd()
+					}
+				})
 			return {
 				stop: () => {
 					stopped = true
-					if (recorder?.state === "recording") {
-						recorder.stop()
-					}
+					// The microphone is released at once; the last words finish transcribing after.
+					stream?.getTracks().forEach((track) => track.stop())
+					speech.stop()
 				},
 				abort: () => {
 					aborted = true
-					if (recorder?.state === "recording") {
-						recorder.stop()
-					}
+					speech.abort()
 					release()
 				}
 			}

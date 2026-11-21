@@ -404,7 +404,7 @@ const RULES: Rule[] = [
 	),
 	rule(
 		[
-			"note names?",
+			"no[dt]e names?",
 			"names? of (?:the )?notes?",
 			"(?:show|see|display) (?:the )?notes?",
 			"letters",

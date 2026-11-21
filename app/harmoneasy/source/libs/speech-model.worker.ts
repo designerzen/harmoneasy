@@ -6,6 +6,7 @@ import {
 	SPEECH_MODEL_TEXT,
 	SPEECH_MODEL_TRANSCRIBE
 } from "./speech-model-messages"
+import { cleanTranscript } from "./speech-stream"
 
 type Transcriber = (
 	audio: Float32Array,
@@ -65,15 +66,14 @@ self.onmessage = async ({
 			const output = await transcribe(
 				data.audio!,
 				// Whisper reads 30 second windows, so longer speech is split with some overlap.
-				data.model.includes("whisper") ? { chunk_length_s: 30, stride_length_s: 5 } : {}
+				data.model.includes("whisper")
+					? { chunk_length_s: 30, stride_length_s: 5 }
+					: // Moonshine can repeat itself on short or quiet audio unless its output is bounded.
+						{ max_new_tokens: Math.max(8, Math.ceil((data.audio!.length / 16000) * 6)) }
 			)
-			const text = (
+			const text = cleanTranscript(
 				Array.isArray(output) ? output.map((item) => item.text).join(" ") : output.text
 			)
-				// Whisper marks silence and noise as "[BLANK_AUDIO]" or "(music)".
-				.replace(/\[[^\]]*\]|\([^)]*\)/g, " ")
-				.replace(/\s+/g, " ")
-				.trim()
 			self.postMessage({ kind: SPEECH_MODEL_TEXT, id: data.id, text })
 		} catch (error) {
 			self.postMessage({ kind: SPEECH_MODEL_ERROR, id: data.id, error: String(error) })
