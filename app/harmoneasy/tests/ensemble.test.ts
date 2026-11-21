@@ -11,6 +11,9 @@ import {
 	PITCH_BEND,
 } from "audiobus/commands/commands";
 import { midiSong } from "audiobus/io/midi-song";
+import { setControlRenderer } from "audiobus/io/component-ui";
+import { createDomGui } from "control-surface/dom";
+setControlRenderer(createDomGui);
 import {
 	EnsembleSession,
 	type EnsembleSettings,
@@ -183,40 +186,20 @@ describe("one shared ensemble performance", () => {
 			song.midi.header.ppq * 2,
 		);
 	});
-	it("gates only the assigned current parts and never lets old button releases cut score notes", async () => {
-		const t = await transformer({
-			assist: false,
-			players: [
-				{ source: "a", channels: [1, 3] },
-				{ source: "b", channels: [2] },
-			],
-			activityBeats: 1,
-		});
+	it("plays individual assigned onsets and preserves score releases after key release", async () => {
+		const t = await transformer({ assist: false, players: [
+			{ source: "a", channels: [1, 3] }, { source: "b", channels: [2] }
+		] });
 		const initial = t.transform([press("a")], { now: 0 } as any);
-		expect(
-			initial.filter((c) => c.type === NOTE_ON).map((c) => c.channel),
-		).toEqual([1, 3]);
-		expect(
-			t
-				.transform(
-					[Object.assign(press("a", 0.1), { type: NOTE_OFF })],
-					{ now: 0.1 } as any,
-				)
-				.filter((c) => c.type === NOTE_ON || c.type === NOTE_OFF),
-		).toEqual([]);
-		const releases = t
-			.tick(0.25, {} as any)
+		expect(initial.filter((c) => c.type === NOTE_ON).map((c) => c.channel)).toEqual([1, 3]);
+		const releases = t.transform([Object.assign(press("a", 0.1), { type: NOTE_OFF })], { now: 0.1 } as any)
 			.filter((c) => c.type === NOTE_OFF);
 		expect(releases.map((c) => c.channel)).toEqual([1, 3]);
+		for (const release of releases) expect(release.audioTime).toBeCloseTo(0.25);
 		t.tick(0.5, {} as any);
 		const joined = t.transform([press("b", 0.75)], { now: 0.75 } as any);
-		expect(joined.filter((c) => c.type === NOTE_ON)).toEqual([]);
-		expect(
-			t
-				.tick(1, {} as any)
-				.filter((c) => c.type === NOTE_ON)
-				.map((c) => c.channel),
-		).toEqual([2]);
+		expect(joined.filter((c) => c.type === NOTE_ON).map((c) => c.channel)).toEqual([2]);
+		expect(t.tick(1, {} as any).filter((c) => c.type === NOTE_ON)).toEqual([]);
 	});
 	it("brings active parts forward while assistance keeps inactive parts audible", () => {
 		const output = session()
@@ -470,19 +453,15 @@ describe("ensemble registration and unlimited local membership", () => {
 		expect(t.transform([press("unknown")], { now: 0 } as any)).toEqual([]);
 		expect(t.performanceState.running).toBe(false);
 	});
-	it("keeps the playhead and other players' activity when membership is edited", async () => {
+	it("keeps the playhead and surviving note cursors when membership is edited", async () => {
 		const t = await transformer({ assist: false });
 		t.transform([press("a"), press("b")], { now: 0 } as any);
 		t.tick(0.25, {} as any);
-		t.addPlayer();
-		t.removePlayer(0);
+		t.addPlayer(); t.removePlayer(0);
 		expect(t.performanceState.position).toBe(0.25);
-		expect(
-			t
-				.tick(0.5, {} as any)
-				.filter((c) => c.type === NOTE_ON)
-				.map((c) => c.channel),
-		).toEqual([2]);
+		t.transform([Object.assign(press("b", 0.25), { type: NOTE_OFF })], { now: 0.25 } as any);
+		t.transform([press("b", 0.3)], { now: 0.3 } as any);
+		expect(t.tick(0.5, {} as any).filter((c) => c.type === NOTE_ON).map((c) => c.channel)).toEqual([2]);
 	});
 	it("rejects an invalid replacement and ignores an older load finishing later", async () => {
 		const t = await transformer();
@@ -511,7 +490,7 @@ describe("ensemble registration and unlimited local membership", () => {
 		t.destroy();
 		expect(t.transform([press("a")], {} as any)).toEqual([]);
 	});
-	it("advances through the clock pipeline even without more button presses", async () => {
+	it("advances unassigned backing without autoplaying assigned notes", async () => {
 		const t = await transformer();
 		t.transform([press("a")], { now: 0 } as any);
 		advanceTransformers([t], 0.25, {} as any);
@@ -519,13 +498,13 @@ describe("ensemble registration and unlimited local membership", () => {
 			advanceTransformers([t], 0.5, {} as any).filter(
 				(c) => c.type === NOTE_ON,
 			),
-		).toHaveLength(3);
+		).toHaveLength(2);
 		t.setConfig("enabled", false);
 		expect(
 			advanceTransformers([t], 0.6, {} as any).filter(
 				(c) => c.type === NOTE_OFF,
 			),
-		).toHaveLength(3);
+		).toHaveLength(2);
 		expect(advanceTransformers([t], 0.75, {} as any)).toEqual([]);
 	});
 	it("renders dynamic player controls and learns an input without hand-entered IDs", async () => {
@@ -534,15 +513,15 @@ describe("ensemble registration and unlimited local membership", () => {
 		for (let n = 0; n < 8; n++) {
 			t.addPlayer();
 		}
-		expect(gui.querySelectorAll("fieldset")).toHaveLength(8);
-		(gui.querySelector("fieldset button") as HTMLButtonElement).click();
+		expect(gui.querySelectorAll(".ensemble-player")).toHaveLength(8);
+		(gui.querySelector(".ensemble-player button") as HTMLButtonElement).click();
 		t.transform([press("learned-pad")], { now: 0 } as any);
 		expect(t.options.players[0].source).toBe("learned-pad");
 		expect(
-			(gui.querySelector("fieldset input") as HTMLInputElement).value,
+			gui.querySelector(".ensemble-player-source")!.textContent,
 		).toBe("learned-pad");
 		t.removePlayer(7);
-		expect(gui.querySelectorAll("fieldset")).toHaveLength(7);
+		expect(gui.querySelectorAll(".ensemble-player")).toHaveLength(7);
 	});
 	it("keeps distinct input components separate even when their source labels are identical", () => {
 		class Input extends AbstractInput {
@@ -597,9 +576,9 @@ describe("output channel selection", () => {
 			await chain.triggerAudioCommandsOnDevice(
 				chain.executeQueueAndClearComplete(0),
 			);
-			timer.now = 0.1;
+			timer.now = 0.05;
 			await chain.triggerAudioCommandsOnDevice(
-				chain.updateTimeForCommandQueue(0.1, 1, {}),
+				chain.updateTimeForCommandQueue(0.05, 1, {}),
 			);
 			output.sendCommand.mockClear();
 			if (action === "stop") {

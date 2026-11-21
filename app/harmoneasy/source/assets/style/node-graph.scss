@@ -1,3 +1,90 @@
+.ensemble-controls {
+	.ensemble-players {
+		display: grid;
+		gap: 0.5rem;
+		padding: 0;
+		list-style: none;
+	}
+	.ensemble-part {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 0.375rem;
+
+		kbd {
+			padding: 0.25rem 0.5rem;
+			border: var(--border);
+			border-radius: var(--radius-sm);
+			font: inherit;
+			font-weight: 700;
+		}
+		> .ensemble-part-behaviour {
+			grid-column: 1 / -1;
+		}
+	}
+	.ensemble-player {
+		padding: 0.5rem;
+		border: var(--border);
+		border-radius: var(--radius-sm);
+	}
+	.ensemble-player-head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.375rem;
+	}
+	.ensemble-player-parts {
+		display: grid;
+		gap: 0.375rem;
+	}
+}
+
+.ensemble-part-behaviour:not([hidden]) {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.375rem;
+	min-width: 0;
+	white-space: normal;
+
+	select {
+		min-width: 0;
+		max-width: 100%;
+	}
+	button {
+		width: auto;
+	}
+	.ensemble-part-status {
+		flex-basis: 100%;
+	}
+}
+
+.ensemble-part-behaviour[hidden] {
+	display: none;
+}
+
+.ensemble-part-cue {
+	flex-basis: 100%;
+	padding: 0.375rem 0.5rem;
+	border: var(--border);
+	border-radius: var(--radius-sm);
+	font-weight: 600;
+	box-sizing: border-box;
+	min-height: 2.5rem;
+
+	&[data-phase="queued"],
+	&[data-phase="rest"] {
+		border-style: dashed;
+	}
+	&[data-phase="sounding"],
+	&[data-phase="looping"] {
+		background: var(--col-accent-soft);
+	}
+	&[data-pulse="0"] {
+		box-shadow: inset 0 0 0 1px currentColor;
+	}
+}
+
 #graph {
 	width: 100%;
 	height: 100%;
