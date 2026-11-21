@@ -26,8 +26,8 @@ jobs:
             - name: Check out repository
               uses: actions/checkout@v7.0.1
 
-            - name: Check out committed submodule revisions
-              run: git submodule update --init --recursive
+            - name: Check out latest submodule branches
+              run: git submodule update --init --remote --recursive
 
             - name: Install pnpm
               uses: pnpm/action-setup@v6.1.0
@@ -40,10 +40,11 @@ jobs:
                   node-version: "24"
                   cache: pnpm
 
-            # Submodules are already initialized; skip native Electron install scripts.
+            # Skip native Electron builds and the root postinstall, which updates submodules.
             - name: Install dependencies
               run: |
-                  pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
+                  pnpm install --no-frozen-lockfile --prefer-offline --ignore-scripts
+                  pnpm run upgrade:git-dependencies
               timeout-minutes: 40
 
             - name: Build Netronome library and workers

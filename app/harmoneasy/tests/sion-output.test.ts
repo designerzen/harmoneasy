@@ -150,7 +150,10 @@ describe("SiON Output", () => {
 		volume.value = "0.25"
 		volume.dispatchEvent(new Event(EVENT_CHANGE))
 		expect(output.options).toMatchObject({ preset: "valsound.bass1", volume: 0.25 })
-		expect(output.output.gain.setValueAtTime).toHaveBeenCalledWith(0.25 * engineGain("sion"), 10)
+		expect(output.output.gain.setValueAtTime).toHaveBeenCalledWith(
+			0.25 * engineGain("sion"),
+			10
+		)
 		await output.noteOn(60, 100)
 		const panic = [...gui.querySelectorAll("button")].find(
 			(button) => button.textContent === "All notes off"

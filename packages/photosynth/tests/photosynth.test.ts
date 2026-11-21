@@ -26,7 +26,10 @@ import { PhotosynthElement, definePhotosynthElement } from "../src/element.js"
 vi.mock("../src/emoji-font.js", () => ({
 	EMOJI_FONT_FAMILY: "Photosynth Noto Emoji",
 	EMOJI_FONT_URL: new URL("../src/assets/NotoEmoji-Regular.ttf", import.meta.url),
-	loadEmojiFont: vi.fn().mockResolvedValue({ family: "Photosynth Noto Emoji", dataUrl: "data:font/ttf;base64,AA==" })
+	loadEmojiFont: vi.fn().mockResolvedValue({
+		family: "Photosynth Noto Emoji",
+		dataUrl: "data:font/ttf;base64,AA=="
+	})
 }))
 
 const face = (values: Partial<FacePrediction> = {}): FacePrediction => ({

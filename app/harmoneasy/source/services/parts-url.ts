@@ -1,6 +1,7 @@
 import { INPUT_DEFINITIONS } from "audiobus/io/input-definitions"
 import { OUTPUT_DEFINITIONS } from "audiobus/io/output-definitions"
 import { TRANSFORMERS } from "audiobus/io/transformer-factory"
+import { TRANSFORMER_DEFINITIONS } from "audiobus/io/transformer-definitions"
 import { configurationSteps, stepsConfiguration } from "audiobus/io/preset-library"
 import { parsePresetPage, type PresetPage } from "./preset-page"
 
@@ -272,7 +273,7 @@ function blank(): PresetPage {
 		format: "harmoneasy-preset",
 		version: 1,
 		name: "Custom setup",
-		description: "A setup composed from this URL. Start audio, then play the connected inputs.",
+		description: "",
 		clock: { bpm: 110, swing: 0, divisions: 24, bars: 4 },
 		midiControls: { enabled: true, bindings: [] },
 		workspace: {
@@ -292,6 +293,75 @@ function blank(): PresetPage {
 			]
 		}
 	}
+}
+
+/** "a", "a and b", "a, b and c" */
+function sentenceList(items: string[]): string | undefined {
+	return items.length > 1 ? `${items.slice(0, -1).join(", ")} and ${items.at(-1)}` : items[0]
+}
+
+function deviceNames(page: PresetPage, direction: "input" | "output"): string[] {
+	const definitions = direction === "input" ? INPUT_DEFINITIONS : OUTPUT_DEFINITIONS
+	return page.workspace.chains[0][`${direction}s`].map((id: string) => {
+		const type = page.workspace.devices.find((device: any) => device.id === id)?.definition.type
+		return definitions[type]?.name ?? type
+	})
+}
+
+/** Name a setup built from scratch after what it plays, such as "Moog through Harmoniser". */
+function describeName(page: PresetPage) {
+	const effects = configurationSteps(page.workspace.chains[0].transformers)
+		.filter((step) => !["MIDI-File-Player", "Ensemble", "identity"].includes(step.type))
+		.map((step) => TRANSFORMER_DEFINITIONS[step.type]?.name ?? step.type)
+	const outputs = deviceNames(page, "output")
+	const name =
+		sentenceList(outputs.length ? outputs : deviceNames(page, "input")) ?? "Custom setup"
+	return effects.length ? `${name} through ${sentenceList(effects)}` : name
+}
+
+function fileName(url: string) {
+	const name = url.split(/[?#]/)[0].split("/").pop() || url
+	try {
+		return decodeURIComponent(name)
+	} catch {
+		return name
+	}
+}
+
+/** Say in plain words what a setup built from scratch does, for its landing page. */
+function describeSetup(page: PresetPage) {
+	const chain = page.workspace.chains[0]
+	const sentences: string[] = []
+	const inputs = deviceNames(page, "input")
+	if (inputs.length) {
+		sentences.push(`Play with the ${sentenceList(inputs)}.`)
+	}
+	for (const step of configurationSteps(chain.transformers)) {
+		const file = step.config.midiFileUrl
+			? fileName(String(step.config.midiFileUrl))
+			: "the loaded MIDI file"
+		if (step.type === "MIDI-File-Player" && step.config.playbackMode === "step") {
+			sentences.push(
+				`Every note you play steps ${file} forward by one note, so anyone can perform the song.`
+			)
+		} else if (step.type === "MIDI-File-Player" || step.type === "Ensemble") {
+			sentences.push(`${file} plays along once the transport starts.`)
+		} else if (step.type !== "identity") {
+			const definition = TRANSFORMER_DEFINITIONS[step.type]
+			sentences.push(
+				definition
+					? `${definition.name}: ${definition.description}`
+					: `The ${step.type} step changes your notes.`
+			)
+		}
+	}
+	const outputs = deviceNames(page, "output")
+	sentences.push(
+		outputs.length
+			? `You hear the result on the ${sentenceList(outputs)}.`
+			: "Nothing is connected to hear it yet: add an output."
+	)
+	return sentences.join(" ")
 }
 
 function registry(type: string, direction: "input" | "output") {
@@ -549,9 +619,13 @@ export async function loadPartsPage(
 		page.name = options.get("name")!
 	} else if (fresh && midi) {
 		page.name = `${new URL(midi).pathname.split("/").pop()} — Custom MIDI setup`
+	} else if (fresh) {
+		page.name = describeName(page)
 	}
 	if (options.has("description")) {
 		page.description = options.get("description")!
+	} else if (fresh) {
+		page.description = describeSetup(page)
 	}
 	delete page.catalogue
 	if (midi) {

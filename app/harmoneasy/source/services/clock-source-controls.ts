@@ -1,5 +1,10 @@
 import type IOChainManager from "audiobus/io/IO-chain-manager"
-import { ClockSourceController, clockDvsInputs, clockMidiPorts, type ClockSource } from "./clock-source"
+import {
+	ClockSourceController,
+	clockDvsInputs,
+	clockMidiPorts,
+	type ClockSource
+} from "./clock-source"
 
 export function createClockSourceControls(
 	timer: ConstructorParameters<typeof ClockSourceController>[0],

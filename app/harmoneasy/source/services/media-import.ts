@@ -1,18 +1,18 @@
 import { configurationData } from "audiobus/io/device-definition"
 import { createInputById } from "audiobus/io/input-factory"
 import { createOutputById } from "audiobus/io/output-factory"
-import { importMIDIFile } from "audiobus/importers/import-midi-file"
+import { inspectMediaFiles } from "audiobus/importers/dropped-media"
 import {
-	hasMidiHeader,
-	inspectMediaArchive,
-	isArchiveFile,
-	isMidiFile,
-	MAX_MEDIA_BYTES
-} from "audiobus/importers/dropped-media"
+	detectImportFile,
+	importMusicalFile,
+	type ImportFormatId
+} from "audiobus/importers/file-import"
+import type OutputLoopPlayer from "audiobus/io/outputs/output-loop-player"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
 import type IOChain from "audiobus/io/IO-chain"
 import type { ArchivedPlugin } from "audiobus/importers/dropped-media"
 import { storeWamArchive } from "./wam-archive"
+import { loadSoundFont } from "./soundfont-drop"
 import { EVENT_CLICK, EVENT_CLOSE } from "audiobus/events/event-constants"
 
 async function choosePlugin(plugins: ArchivedPlugin[]): Promise<ArchivedPlugin | undefined> {
@@ -55,13 +55,13 @@ async function choosePlugin(plugins: ArchivedPlugin[]): Promise<ArchivedPlugin |
 
 export function createMediaImporter(
 	manager: IOChainManager,
-	importScore: (file: File) => Promise<void>
+	importScore?: (file: File) => Promise<void>
 ) {
 	const target = () => manager.activeChain ?? manager.getChain(manager.createEmptyChain())!
-	const loadMidi = async (file: File, chain: IOChain) => {
-		const { commands, noteCount } = await importMIDIFile(file)
+	const loadNotes = async (file: File, chain: IOChain, format: ImportFormatId = "midi") => {
+		const { commands, noteCount } = await importMusicalFile(file, format)
 		if (!noteCount) {
-			throw new Error("The MIDI file contains no notes")
+			throw new Error("The music file contains no notes")
 		}
 		const input = await createInputById("midi-file", {
 			...manager.deviceOptions,
@@ -70,6 +70,24 @@ export function createMediaImporter(
 		})
 		manager.addDevice(chain, input, "input")
 	}
+	const loadAudio = async (file: File, chain: IOChain) => {
+		if (file.size > 4 * 1024 * 1024) {
+			throw new Error("Audio loops must be at most 4 MB")
+		}
+		const output = (await createOutputById(
+			"loop-player",
+			manager.deviceOptions
+		)) as OutputLoopPlayer
+		try {
+			await output.loadSample(await file.arrayBuffer(), file.name)
+			await manager.audioContext?.resume()
+			manager.addDevice(chain, output, "output")
+		} catch (error) {
+			await output.destroy?.()
+			throw error
+		}
+	}
+
 	const loadPlugin = async (value: string, chain: IOChain) => {
 		let url = new URL(value)
 		const legacy = ["legacy:yoshimi", "legacy:dx7"].includes(url.href)
@@ -109,22 +127,25 @@ export function createMediaImporter(
 			await loadPlugin(media, chain)
 			return
 		}
-		if (media.size > MAX_MEDIA_BYTES) {
-			throw new Error("Dropped file exceeds the 64 MB limit")
-		}
-		if (await hasMidiHeader(media)) {
-			await loadMidi(media, chain)
+		const detected = await detectImportFile(media)
+		if (detected.format.kind === "notes") {
+			if (importScore && detected.format.id !== "midi") {
+				await importScore(media)
+			} else {
+				await loadNotes(media, chain, detected.format.id)
+			}
 			return
 		}
-		if (isMidiFile(media)) {
-			throw new Error("This file does not contain a Standard MIDI File header")
+		if (detected.format.kind === "audio") {
+			await loadAudio(media, chain)
+			return
 		}
-		const signature = new Uint8Array(await media.slice(0, 2).arrayBuffer())
-		if (
-			isArchiveFile(media) ||
-			(signature[0] === 0x50 && signature[1] === 0x4b && !/\.dawproject$/i.test(media.name))
-		) {
-			const archive = await inspectMediaArchive(new Uint8Array(await media.arrayBuffer()))
+		if (detected.format.kind === "soundfont") {
+			await loadSoundFont(manager, media, chain)
+			return
+		}
+		if (detected.archive) {
+			const archive = inspectMediaFiles(detected.archive)
 			if (archive.plugins.length) {
 				const plugin = await choosePlugin(archive.plugins)
 				if (!plugin) {
@@ -139,7 +160,7 @@ export function createMediaImporter(
 				}
 			} else {
 				for (const path of archive.midi) {
-					await loadMidi(
+					await loadNotes(
 						new File([new Uint8Array(archive.files[path])], path.split("/").pop()!, {
 							type: "audio/midi"
 						}),
@@ -149,11 +170,6 @@ export function createMediaImporter(
 			}
 			return
 		}
-		if (/\.(js|mjs|json)$/i.test(media.name)) {
-			throw new Error(
-				"For WAM plugins, drop a hosted index.js URL or a ZIP containing the complete built plugin and descriptor.json"
-			)
-		}
-		await importScore(media)
+		throw new Error("Expected a ZIP bundle containing MIDI or a complete WAM2 instrument")
 	}
 }

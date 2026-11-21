@@ -395,7 +395,11 @@ export function createPresetArtwork({
 		svg.setAttribute("aria-label", `${preset.name}: ${score.gesture}`)
 	}
 	const gradient = add("linearGradient", { id, x2: 1, y2: 1 }, add("defs", {}))
-	add("stop", { style: "stop-color: oklch(26% var(--neutral-chroma) var(--theme-hue))" }, gradient)
+	add(
+		"stop",
+		{ style: "stop-color: oklch(26% var(--neutral-chroma) var(--theme-hue))" },
+		gradient
+	)
 	add(
 		"stop",
 		{ offset: 1, style: "stop-color: oklch(15% var(--neutral-chroma) var(--theme-hue))" },

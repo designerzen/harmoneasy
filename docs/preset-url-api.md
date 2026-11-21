@@ -21,6 +21,30 @@ Examples below use `https://designerzen.github.io/harmoneasy/` and require a dep
 | [Replace Electro with a live speech setup](https://designerzen.github.io/harmoneasy/presets/genres/electro/parts/v1/?mode=replace&inputs=keyboard&outputs=speech-synthesis) | Ignores the preset and builds a new setup entirely from the query. |
 | [A setup with a room invitation](https://designerzen.github.io/harmoneasy/parts/v1/outputs/moog,notation/?room=classroom) | Supplies a local setup and a room name. Connection/pairing still follows the normal collaboration flow. |
 
+## Cosmo MIDI session links (18 November 2026)
+
+These are the Cosmo setups discussed in the MIDI Output Routing and Filtering session. They use the URL schema on `https://harmoneasy.pages.dev/`, with nine Dots mapped to number keys **1–9**. Click Start, then press a Dot or number key. MIDI output requires selecting your external destination in its panel.
+
+| Previously discussed setup | Pages link |
+| --- | --- |
+| Rickroll — audio only | [Open](https://harmoneasy.pages.dev/parts/v1/inputs/cosmo-dots/outputs/moog/?playback=step&midi=midi%2Fnever-gonna-give-you-up.mid&config=%7B%22devices%22%3A%7B%22url-input-cosmo-dots%22%3A%7B%22dotCount%22%3A9%7D%7D%7D) |
+| Rickroll — MIDI only | [Open](https://harmoneasy.pages.dev/parts/v1/inputs/cosmo-dots/outputs/webmidi/?playback=step&midi=midi%2Fnever-gonna-give-you-up.mid&config=%7B%22devices%22%3A%7B%22url-input-cosmo-dots%22%3A%7B%22dotCount%22%3A9%7D%7D%7D) |
+| Rickroll — audio + MIDI (corrected) | [Open](https://harmoneasy.pages.dev/parts/v1/inputs/cosmo-dots/outputs/moog,webmidi/midi/midi%2Fnever-gonna-give-you-up.mid/playback/step/?config=%7B%22devices%22%3A%7B%22url-input-cosmo-dots%22%3A%7B%22dotCount%22%3A9%7D%7D%7D) |
+
+The corrected audio + MIDI link keeps both outputs and puts the song selection in the path. The earlier audio-only and MIDI-only variants are included for reference. Replace the encoded MIDI path with any app-relative MIDI path or reachable HTTP(S) MIDI-file URL to change the song; each activation advances one melody note.
+
+| New live-note variation | What changes |
+| --- | --- |
+| [Quantiser](https://harmoneasy.pages.dev/parts/v1/inputs/cosmo-dots/outputs/moog,webmidi/transformers/Quantiser/?config=%7B%22devices%22%3A%7B%22url-input-cosmo-dots%22%3A%7B%22dotCount%22%3A9%7D%7D%7D) | Replaces the MIDI File Player with timing quantisation. |
+| [Chords](https://harmoneasy.pages.dev/parts/v1/inputs/cosmo-dots/outputs/moog,webmidi/transformers/Quantiser,Chordifier/?config=%7B%22devices%22%3A%7B%22url-input-cosmo-dots%22%3A%7B%22dotCount%22%3A9%7D%7D%7D) | Adds diatonic chord expansion. |
+| [Bloom](https://harmoneasy.pages.dev/parts/v1/inputs/cosmo-dots/outputs/moog,webmidi/transformers/Quantiser,Chord-Bloom/?config=%7B%22devices%22%3A%7B%22url-input-cosmo-dots%22%3A%7B%22dotCount%22%3A9%7D%7D%2C%22steps%22%3A%7B%22url-chain%22%3A%7B%221%22%3A%7B%22step%22%3A0.25%7D%7D%7D%7D) | Unfolds held notes into harmony. |
+| [Arpeggios](https://harmoneasy.pages.dev/parts/v1/inputs/cosmo-dots/outputs/moog,webmidi/transformers/Quantiser,Chordifier,Arpeggiator/?config=%7B%22devices%22%3A%7B%22url-input-cosmo-dots%22%3A%7B%22dotCount%22%3A9%7D%7D%7D) | Plays each generated chord as an ascending arpeggio. |
+| [Chords + Bloom + Arpeggios](https://harmoneasy.pages.dev/parts/v1/inputs/cosmo-dots/outputs/moog,webmidi/transformers/Quantiser,Chordifier,Chord-Bloom,Arpeggiator/?config=%7B%22devices%22%3A%7B%22url-input-cosmo-dots%22%3A%7B%22dotCount%22%3A9%7D%7D%2C%22steps%22%3A%7B%22url-chain%22%3A%7B%222%22%3A%7B%22step%22%3A0.25%7D%7D%7D%7D) | Combines chords, unfolding voices and arpeggiation. |
+
+The new variations replace the song-playing `MIDI-File-Player`: each Dot plays its own configured note through the listed effects, with both Moog audio and Web MIDI output. They deliberately omit `midi` and `playback` so no song player is inserted. These are dynamic setups created by the existing URL schema, rather than new static preset routes.
+
+`Quantiser` is the registered transformer ID (the picker may label it Quantise). Start the transport for clocked transformations. Bloom adds voices while a note remains held, with a quarter-beat interval here. Arpeggios play once by default; enable Repeat to cycle while held. Physical Dots use keyboard/Switch mode.
+
 ## Routes and encoding
 
 ```text

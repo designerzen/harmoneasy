@@ -3,8 +3,10 @@ import NoteVisualiser from "audiobus/ui/note-visualiser.js"
 import NoteTimelineVisualiser from "audiobus/ui/note-timeline-visualiser"
 import SVGKeyboard from "audiobus/ui/keyboard-svg.ts"
 import { createOpenDAWExportDialog } from "./services/opendaw-export-dialog"
-import { EVENT_CLICK, EVENT_CHANGE, EVENT_ABORT, EVENT_INPUT } from "audiobus/events/event-constants"
+import { EVENT_CLICK, EVENT_INPUT } from "audiobus/events/event-constants"
 import { installMediaDrop } from "./services/media-drop"
+import { installImportMenu } from "./services/import-menu"
+import { EXPORT_FORMATS } from "audiobus/exporters/registry"
 
 import type NoteModel from "audiobus/models/note-model.ts"
 import type { IAudioOutput } from "audiobus/io/outputs/output-interface.ts"
@@ -28,14 +30,9 @@ const DOM_ID_BUTTON_CONNECT_BLUETOOTH = "btn-connect-to-ble"
 const DOM_ID_BUTTON_TOGGLE_WEBMIDI = "btn-toggle-webmidi"
 
 const DOM_ID_BUTTON_IMPORT = "btn-import"
-const DOM_ID_BUTTON_EXPORT_MIDI_FILE = "btn-midi-export"
-const DOM_ID_BUTTON_EXPORT_MED = "btn-med-export"
-const DOM_ID_BUTTON_EXPORT_MIDI_MARKDOWN = "btn-midi-markdown-export"
-const DOM_ID_BUTTON_EXPORT_MUSICXML = "btn-musicxml-export"
 const DOM_ID_BUTTON_EXPORT_VEXFLOW = "btn-vexflow-export"
 const DOM_ID_BUTTON_EXPORT_AUDIOTOOL = "btn-audiotool-export"
 const DOM_ID_BUTTON_EXPORT_OPENDAW = "btn-opendaw-export"
-const DOM_ID_BUTTON_EXPORT_DAWPROJECT = "btn-dawproject-export"
 const DOM_ID_BUTTON_EXPORT = "btn-export"
 const DOM_ID_EXPORT_DIALOG = "export-dialog"
 
@@ -91,14 +88,9 @@ export default class UI implements IAudioOutput {
 	elementButtonExport: HTMLElement | null
 	elementExportDialog: HTMLDialogElement | null
 	elementMidiImportButton: HTMLElement | null
-	elementMidiExportButton: HTMLElement | null
-	elementMEDExportButton: HTMLElement | null
-	elementMidiMarkdownExportButton: HTMLElement | null
-	elementMusicXMLExportButton: HTMLElement | null
 	elementVexFlowExportButton: HTMLElement | null
 	elementAudioToolExportButton: HTMLElement | null
 	elementOpenDAWExportButton: HTMLElement | null
-	elementDawProjectExportButton: HTMLElement | null
 	elementButtonRandomTimbre: HTMLElement | null
 	elementOverlayExport: HTMLDialogElement | null
 	elementInfoDialog: HTMLDialogElement | null
@@ -176,18 +168,9 @@ export default class UI implements IAudioOutput {
 		) as HTMLDialogElement | null
 
 		this.elementMidiImportButton = document.getElementById(DOM_ID_BUTTON_IMPORT)
-		this.elementMidiExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_MIDI_FILE)
-		this.elementMEDExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_MED)
-		this.elementMidiMarkdownExportButton = document.getElementById(
-			DOM_ID_BUTTON_EXPORT_MIDI_MARKDOWN
-		)
-		this.elementMusicXMLExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_MUSICXML)
 		this.elementVexFlowExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_VEXFLOW)
 		this.elementAudioToolExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_AUDIOTOOL)
 		this.elementOpenDAWExportButton = document.getElementById(DOM_ID_BUTTON_EXPORT_OPENDAW)
-		this.elementDawProjectExportButton = document.getElementById(
-			DOM_ID_BUTTON_EXPORT_DAWPROJECT
-		)
 
 		this.elementButtonRandomTimbre = document.getElementById(DOM_ID_BUTTON_RANDOM_TIMBRE)
 
@@ -570,43 +553,14 @@ export default class UI implements IAudioOutput {
 	 * Upload files through the same importer used for dropped media.
 	 */
 	whenFileImportRequestedRun(callback: (file: File) => void): void {
-		if (!this.elementMidiImportButton) {
-			return
+		if (this.elementMidiImportButton) {
+			installImportMenu(
+				document,
+				this.elementMidiImportButton,
+				callback,
+				this.abortController.signal
+			)
 		}
-		const fileInput = document.createElement("input")
-		fileInput.type = "file"
-		fileInput.multiple = true
-		fileInput.setAttribute("aria-label", "Upload music files or WAM2 plugin bundles")
-		fileInput.accept =
-			".mid,.midi,audio/midi,.zip,.wam,.wam2,.musicxml,.xml,.dawproject,.mod,.xm,.it,.s3m,.669,.far,.stm,.ult,.mtm,.dmf,.ptm,.okt,.mptm,.nst"
-		fileInput.style.display = "none"
-		document.body.appendChild(fileInput)
-		this.abortController.signal.addEventListener(EVENT_ABORT, () => fileInput.remove(), {
-			once: true
-		})
-
-		// When button is clicked, trigger the file input
-		this.elementMidiImportButton.addEventListener(
-			EVENT_CLICK,
-			() => {
-				fileInput.click()
-			},
-			{ signal: this.abortController.signal }
-		)
-
-		// When file is selected, call the callback
-		fileInput.addEventListener(
-			EVENT_CHANGE,
-			(e) => {
-				const files = (e.target as HTMLInputElement).files
-				for (const file of Array.from(files ?? [])) {
-					callback(file)
-				}
-				// Reset the input so the same file can be selected again
-				fileInput.value = ""
-			},
-			{ signal: this.abortController.signal }
-		)
 	}
 
 	/**
@@ -636,81 +590,22 @@ export default class UI implements IAudioOutput {
 		}
 	}
 
-	/**
-	 *
-	 * @param callback
-	 */
-	whenMIDIFileExportRequestedRun(callback: Function) {
-		if (this.elementMidiExportButton) {
-			this.elementMidiExportButton.addEventListener(
-				"click",
-				async (e) => {
-					this.showExportOverlay()
-					if (callback) {
-						await callback(e)
-					}
-					this.hideExportOverlay()
-				},
-				{ signal: this.abortController.signal }
-			)
+	whenExportRequestedRun(callback: (id: string) => Promise<void>) {
+		const menu = document.getElementById("export-options")
+		if (!menu) {
+			return
 		}
-	}
-
-	/**
-	 *
-	 * @param callback
-	 */
-	whenMEDExportRequestedRun(callback: Function) {
-		if (this.elementMEDExportButton) {
-			this.elementMEDExportButton.addEventListener(
-				"click",
-				async (e) => {
-					this.showExportOverlay()
-					if (callback) {
-						await callback(e)
-					}
-					this.hideExportOverlay()
-				},
-				{ signal: this.abortController.signal }
-			)
-		}
-	}
-
-	/**
-	 *
-	 * @param callback
-	 */
-	whenMIDIMarkdownExportRequestedRun(callback: Function) {
-		if (this.elementMidiMarkdownExportButton) {
-			this.elementMidiMarkdownExportButton.addEventListener(
-				"click",
-				async (e) => {
-					if (callback) {
-						await callback(e)
-					}
-				},
-				{ signal: this.abortController.signal }
-			)
-		}
-	}
-
-	/**
-	 *
-	 * @param callback
-	 */
-	whenMusicXMLExportRequestedRun(callback: Function) {
-		if (this.elementMusicXMLExportButton) {
-			this.elementMusicXMLExportButton.addEventListener(
-				"click",
-				async (e) => {
-					this.showExportOverlay()
-					if (callback) {
-						await callback(e)
-					}
-					this.hideExportOverlay()
-				},
-				{ signal: this.abortController.signal }
-			)
+		for (const format of EXPORT_FORMATS) {
+			const button = document.createElement("button")
+			button.type = "button"
+			button.id = `btn-${format.id}-export`
+			button.className = "export-option"
+			button.textContent = `Export as ${format.label} (.${format.extension})`
+			button.autofocus = format.id === "midi"
+			button.addEventListener(EVENT_CLICK, () => callback(format.id), {
+				signal: this.abortController.signal
+			})
+			menu.insertBefore(button, this.elementVexFlowExportButton)
 		}
 	}
 
@@ -741,26 +636,6 @@ export default class UI implements IAudioOutput {
 	whenOpenDAWExportRequestedRun(callback: Function) {
 		if (this.elementOpenDAWExportButton) {
 			this.elementOpenDAWExportButton.addEventListener(
-				"click",
-				async (e) => {
-					this.showExportOverlay()
-					if (callback) {
-						await callback(e)
-					}
-					this.hideExportOverlay()
-				},
-				{ signal: this.abortController.signal }
-			)
-		}
-	}
-
-	/**
-	 *
-	 * @param callback
-	 */
-	whenDawProjectExportRequestedRun(callback: Function) {
-		if (this.elementDawProjectExportButton) {
-			this.elementDawProjectExportButton.addEventListener(
 				"click",
 				async (e) => {
 					this.showExportOverlay()

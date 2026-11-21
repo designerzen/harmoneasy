@@ -113,7 +113,9 @@ it.each(CLAP_PATCHES.filter((patch) => patch.features?.includes("instrument")))(
 		expect(output.requiresConnectionControl).toBe(false)
 		expect(gui.querySelector("select")).toBeNull()
 		// The shared output channel filter is prepended to every output GUI.
-		const content = [...gui.children].filter((child) => !child.hasAttribute("data-output-channel-filter"))
+		const content = [...gui.children].filter(
+			(child) => !child.hasAttribute("data-output-channel-filter")
+		)
 		expect(content[0]).toBe(gui.querySelector("iframe.webclap-editor"))
 		expect(content[1]).toBe(gui.querySelector(".webclap-parameters"))
 		expect(gui.querySelector('input[aria-label="Gain"]')).not.toBeNull()

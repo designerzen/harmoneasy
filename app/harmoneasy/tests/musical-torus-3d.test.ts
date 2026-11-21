@@ -149,17 +149,15 @@ it("maps captured face taps to editing and suppresses rotation gestures on faces
 	mode.value = "edit"
 	mode.dispatchEvent(new Event(EVENT_CHANGE))
 	const press = () =>
-		svg
-			.querySelector('g[data-fret="2"][data-string="1"] > polygon')!
-			.dispatchEvent(
-				new PointerEvent(EVENT_POINTER_DOWN, {
-					pointerId: 1,
-					button: 0,
-					clientX: 20,
-					clientY: 20,
-					bubbles: true
-				})
-			)
+		svg.querySelector('g[data-fret="2"][data-string="1"] > polygon')!.dispatchEvent(
+			new PointerEvent(EVENT_POINTER_DOWN, {
+				pointerId: 1,
+				button: 0,
+				clientX: 20,
+				clientY: 20,
+				bubbles: true
+			})
+		)
 	press()
 	pointer(EVENT_POINTER_UP, 20, 20)
 	expect(toggle).toHaveBeenCalledExactlyOnceWith(7)

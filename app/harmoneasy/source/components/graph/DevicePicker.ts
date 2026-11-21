@@ -1,8 +1,10 @@
 import { elementDescription, elementIcon } from "./element-icons"
 import {
 	createInstrumentById,
-	getAvailableInstrumentFactories
+	getInstrumentFactories
 } from "audiobus/instruments/instrument-factory-ui.ts"
+import { deviceAvailability, type RequiresDevices } from "audiobus/io/device-requirements"
+import { createUnavailableSection, markUnavailable } from "./unavailable-choices"
 
 import { createClassificationFilter } from "./ClassificationFilter"
 import { choiceMatches, groupChoices, type ClassifiedChoice } from "./device-filters"
@@ -31,11 +33,22 @@ import { createLoader } from "../../libs/loader"
 import { element, button, icon, searchReset } from "./dom"
 
 type Choice = ClassifiedChoice & {
-	kind: "input" | "output" | "instrument"
+	kind: "input" | "output"
+	instrumentId?: string
 	factoryId?: string
 	midiOptions?: Record<string, any>
 	midiPortId?: string
 	profileId?: string
+	/** What this browser lacks to run it; empty when it can be added */
+	missing: string[]
+}
+
+/** Factories this browser can run, plus the ones it cannot with why, minus hidden ones */
+function withAvailability<T extends RequiresDevices>(factories: T[]) {
+	return factories.flatMap((factory) => {
+		const { hidden, missing } = deviceAvailability(factory)
+		return hidden ? [] : [{ ...factory, missing }]
+	})
 }
 
 export function createDevicePicker(
@@ -79,7 +92,6 @@ export function createDevicePicker(
 	const filter = createClassificationFilter({
 		choices: [],
 		value: "",
-		compact: true,
 		label: `Filter ${direction}s by type`,
 		onChange: (value) => {
 			classification = value
@@ -107,7 +119,7 @@ export function createDevicePicker(
 		onAdded?.()
 	}
 	const add = async (choice: Choice) => {
-		if (adding) {
+		if (adding || choice.missing.length) {
 			return
 		}
 		adding = true
@@ -163,8 +175,8 @@ export function createDevicePicker(
 				const options = manager.outputMixer
 					? { mixer: manager.outputMixer, audioContext }
 					: undefined
-				if (choice.kind === "instrument") {
-					select(await createInstrumentById(audioContext, choice.id, options))
+				if (choice.instrumentId) {
+					select(await createInstrumentById(audioContext, choice.instrumentId, options))
 				} else {
 					const { createOutputById } = await import("audiobus/io/output-factory")
 					select(
@@ -188,13 +200,49 @@ export function createDevicePicker(
 			}
 		}
 	}
+	function choiceItem(choice: Choice) {
+		const item = element("li")
+		const node = button("", () => void add(choice), dialog ? "grid-item" : "element-choice")
+		node.disabled = busy
+		node.title = choice.title
+			? `${choice.title}: ${choice.description}`
+			: elementDescription(choice.kind, choice.id, choice.name, choice.description)
+		if (dialog) {
+			fillDeviceCard(node, { ...choice, id: choice.factoryId ?? choice.id }, choice.kind)
+			const profile = choice.profileId ? MIDI_DEVICE_PROFILES[choice.profileId] : undefined
+			const image = node.querySelector<HTMLElement>(".item-icon")
+			if (profile?.icon && image) {
+				image.style.maskImage = `url("${profile.icon}")`
+			}
+		} else {
+			node.append(
+				icon(
+					(choice.profileId ? MIDI_DEVICE_PROFILES[choice.profileId]?.icon : undefined) ??
+						elementIcon(choice.kind, choice.factoryId ?? choice.id),
+					node.title
+				),
+				element("span", "", choice.name)
+			)
+		}
+		if (choice.missing.length) {
+			markUnavailable(node, choice.missing)
+		}
+		item.append(node)
+		if (dialog) {
+			item.append(
+				createDeviceDetails({ ...choice, id: choice.factoryId ?? choice.id }, choice.kind)
+			)
+		}
+		return item
+	}
 	function render() {
 		updateReset(Boolean(search.value || classification))
 		if (destroyed) {
 			return
 		}
 		const midiFactory = choices.find(
-			(choice) => choice.id === "webmidi" && choice.kind === direction
+			(choice) =>
+				choice.id === "webmidi" && choice.kind === direction && !choice.missing.length
 		)
 		const midiPorts = direction === "input" ? sharedWebMidi.inputs : sharedWebMidi.outputs
 		const connectedChoices: Choice[] = midiFactory
@@ -244,21 +292,34 @@ export function createDevicePicker(
 				}
 			})
 		}
-		const availableChoices = [
+		const listedChoices = [
 			...choices.filter(
 				(choice) =>
-					choice.id !== "webmidi" &&
-					!(midiFactory && direction === "input" && MIDI_DEVICE_PROFILES[choice.id])
+					!(choice.id === "webmidi" && midiFactory) &&
+					// A disabled WebMIDI choice already explains why MIDI devices are missing
+					!(
+						direction === "input" &&
+						MIDI_DEVICE_PROFILES[choice.id] &&
+						(midiFactory || choice.missing.length)
+					)
 			),
 			...connectedChoices
 		]
-		const filtered = availableChoices.filter(
+		const matching = listedChoices.filter(
 			(choice) =>
 				(!audioProcessorsOnly ||
 					(choice.type === "audio" && choice.subtype === "effect")) &&
 				choiceMatches(choice, search.value, classification)
 		)
-		filter.update(availableChoices)
+		const filtered = matching.filter((choice) => !choice.missing.length)
+		const unavailable = matching.filter((choice) => choice.missing.length)
+		filter.update(
+			listedChoices.filter(
+				(choice) =>
+					!audioProcessorsOnly || (choice.type === "audio" && choice.subtype === "effect")
+			),
+			search.value
+		)
 		host.setAttribute("aria-busy", String(loading || busy))
 		results.replaceChildren(
 			createSharedDevices(context, {
@@ -306,57 +367,16 @@ export function createDevicePicker(
 			section.append(element("h6", "section-title", group.label))
 			const list = element("ul", dialog ? "items-grid" : "")
 			list.setAttribute("role", "list")
-			for (const choice of group.items) {
-				const item = element("li")
-				const node = button(
-					"",
-					() => void add(choice),
-					dialog ? "grid-item" : "element-choice"
-				)
-				node.disabled = busy
-				node.title = choice.title
-					? `${choice.title}: ${choice.description}`
-					: elementDescription(choice.kind, choice.id, choice.name, choice.description)
-				if (dialog) {
-					fillDeviceCard(
-						node,
-						{ ...choice, id: choice.factoryId ?? choice.id },
-						choice.kind
-					)
-					const profile = choice.profileId
-						? MIDI_DEVICE_PROFILES[choice.profileId]
-						: undefined
-					const image = node.querySelector<HTMLElement>(".item-icon")
-					if (profile?.icon && image) {
-						image.style.maskImage = `url("${profile.icon}")`
-					}
-				} else {
-					node.append(
-						icon(
-							(choice.profileId
-								? MIDI_DEVICE_PROFILES[choice.profileId]?.icon
-								: undefined) ??
-								elementIcon(choice.kind, choice.factoryId ?? choice.id),
-							node.title
-						),
-						element("span", "", choice.name)
-					)
-				}
-				item.append(node)
-				if (dialog) {
-					item.append(
-						createDeviceDetails(
-							{ ...choice, id: choice.factoryId ?? choice.id },
-							choice.kind
-						)
-					)
-				}
-				list.append(item)
-			}
+			list.append(...group.items.map(choiceItem))
 			section.append(list)
 			results.append(section)
 		}
-		if (!filtered.length && !error) {
+		if (unavailable.length) {
+			results.append(
+				createUnavailableSection(unavailable.map(choiceItem), dialog, `${direction}s`)
+			)
+		}
+		if (!filtered.length && !unavailable.length && !error) {
 			status(
 				search.value || classification
 					? `No ${direction}s match the selected filters`
@@ -372,11 +392,11 @@ export function createDevicePicker(
 		render()
 		try {
 			if (direction === "input") {
-				const inputs = await chain.inputManager.getAvailableFactories()
+				const inputs = await chain.inputManager.getFactories()
 				if (destroyed || current !== revision) {
 					return
 				}
-				choices = inputs.map((factory) => ({
+				choices = withAvailability(inputs).map((factory) => ({
 					...INPUT_DEFINITIONS[factory.id],
 					...factory,
 					keywords: Object.values(
@@ -386,21 +406,24 @@ export function createDevicePicker(
 				}))
 			} else {
 				const [outputs, instruments] = await Promise.allSettled([
-					Promise.resolve().then(() => chain.outputManager.getAvailableFactories()),
-					Promise.resolve().then(() => getAvailableInstrumentFactories())
+					Promise.resolve().then(() => chain.outputManager.getFactories()),
+					Promise.resolve().then(() => getInstrumentFactories())
 				])
 				if (destroyed || current !== revision) {
 					return
 				}
 				error = [
 					outputs.status === "rejected" ? "Outputs could not be loaded." : "",
-					instruments.status === "rejected" ? "Instruments could not be loaded." : ""
+					instruments.status === "rejected" ? "Some outputs could not be loaded." : ""
 				]
 					.filter(Boolean)
 					.join(" ")
+				const outputIds = new Set(
+					outputs.status === "fulfilled" ? outputs.value.map((factory) => factory.id) : []
+				)
 				choices = [
 					...(outputs.status === "fulfilled"
-						? outputs.value.map((factory) => ({
+						? withAvailability(outputs.value).map((factory) => ({
 								...OUTPUT_DEFINITIONS[factory.id],
 								...factory,
 								keywords: Object.values(
@@ -411,10 +434,13 @@ export function createDevicePicker(
 							}))
 						: []),
 					...(instruments.status === "fulfilled"
-						? instruments.value.map((factory) => ({
-								...factory,
-								kind: "instrument" as const
-							}))
+						? withAvailability(instruments.value)
+								.filter((factory) => !outputIds.has(factory.id))
+								.map((factory) => ({
+									...factory,
+									kind: "output" as const,
+									instrumentId: factory.id
+								}))
 						: [])
 				]
 			}

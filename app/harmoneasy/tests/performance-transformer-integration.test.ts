@@ -150,9 +150,14 @@ it("makes every new Transformer discoverable in the picker with a real icon", ()
 	try {
 		for (const id of Object.values(TRANSFORMER_TYPE).slice(0, 12)) {
 			const definition = TRANSFORMER_DEFINITIONS[id]
+			// Choices this browser cannot run stay listed, with a note of what they need.
 			expect(
 				[...picker.element.querySelectorAll("button")].some(
-					(button) => button.textContent === definition.name
+					(button) =>
+						button.textContent?.replace(
+							button.querySelector(".item-requirement")?.textContent ?? "",
+							""
+						) === definition.name
 				)
 			).toBe(true)
 			expect(existsSync(resolve("public", definition.icon.slice(1)))).toBe(true)

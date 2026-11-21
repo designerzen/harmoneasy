@@ -6,6 +6,7 @@ import type { InputId } from "audiobus/io/inputs/input-types"
 import type { OutputId } from "audiobus/io/outputs/output-types"
 import type { PINK_TROMBONE_OUTPUT_ID } from "audiobus-output-pink-trombone"
 import { MIDI_DEVICE_PROFILES } from "audiobus/hardware/midi-devices/device-profiles"
+import { INSTRUMENTS } from "audiobus/instruments/instrument-types"
 
 export type ElementKind = "input" | "output" | "instrument" | "transformer"
 
@@ -32,7 +33,9 @@ export function deviceDescription(
 	let type = ""
 	try {
 		type = deviceDefinition(device).type ?? ""
-	} catch {}
+	} catch {
+		// Devices created outside a factory have no definition, so no type.
+	}
 	const definition = direction === "input" ? getInputDefinition(type) : getOutputDefinition(type)
 	return elementDescription(
 		direction,
@@ -127,7 +130,11 @@ export function elementIcon(kind: ElementKind, id: string): string {
 							? (INPUT_ICONS[id as InputId] ?? "input")
 							: kind === "output"
 								? (OUTPUT_ICONS[id as keyof typeof OUTPUT_ICONS] ??
-									(id.startsWith("effect:") ? "spectrum" : "output"))
+									(INSTRUMENTS.has(id)
+										? "instrument"
+										: id.startsWith("effect:")
+											? "spectrum"
+											: "output"))
 								: "instrument"
 					}.svg`
 	return `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`

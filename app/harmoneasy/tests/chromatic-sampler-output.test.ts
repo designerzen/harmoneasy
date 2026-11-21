@@ -3,7 +3,12 @@ import { afterEach, expect, it, vi } from "vitest"
 import OutputSampler from "../../../packages/audiobus/io/outputs/output-chromatic-sampler"
 import { defineDevice, deviceDefinition } from "../../../packages/audiobus/io/device-definition"
 import { musicalCommand } from "../../../packages/audiobus/io/event-clip"
-import { NOTE_ON, NOTE_OFF, PITCH_BEND, CONTROL_CHANGE } from "../../../packages/audiobus/commands/commands"
+import {
+	NOTE_ON,
+	NOTE_OFF,
+	PITCH_BEND,
+	CONTROL_CHANGE
+} from "../../../packages/audiobus/commands/commands"
 
 const outputs: OutputSampler[] = []
 afterEach(() => {
@@ -113,6 +118,23 @@ it("routes notes and bends independently per MIDI channel", async () => {
 		note: 60,
 		time: 10
 	})
+})
+
+it("schedules notes sent ahead at their audioTime", async () => {
+	const { output, file, nodes } = fixture()
+	await output.loadSample(60, 0, file)
+	await output.sendCommand(Object.assign(cmd(NOTE_ON), { audioTime: 10.12 }))
+	await output.sendCommand(Object.assign(cmd(NOTE_OFF), { audioTime: 10.37 }))
+	await output.sendCommand(Object.assign(cmd(NOTE_ON, 62), { audioTime: 9.9 }))
+	const timed = nodes[0].port.postMessage.mock.calls
+		.map(([message]: any[]) => message)
+		.filter((message: any) => message.type === "on" || message.type === "off")
+		.map((message: any) => [message.type, message.note, message.time])
+	expect(timed).toEqual([
+		["on", 60, 10.12],
+		["off", 60, 10.37],
+		["on", 62, 10]
+	])
 })
 
 it("cancels a released note while worklet initialization is pending", async () => {

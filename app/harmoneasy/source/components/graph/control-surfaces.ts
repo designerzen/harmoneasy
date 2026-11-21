@@ -4,13 +4,15 @@ import { ControlSurface, featuredBindings } from "control-surface"
 import { portableComponents, surfaceShareURL, takeSurfaceNotice } from "./control-surface-share"
 import { learnSurfaceTrigger, registerTriggerView } from "./control-surface-triggers"
 import "control-surface/style.css"
-import { bindingKey } from "control-surface/model"
+import { bindingKey, panelKey } from "control-surface/model"
 import type {
 	ComponentUi,
 	ControlBinding,
 	SurfaceState,
-	SurfaceMenuAction
+	SurfaceMenuAction,
+	SurfacePanel
 } from "control-surface/types"
+import { mountDeviceGui } from "./device-gui-views"
 import { componentBindings, subscribeControlSchema } from "audiobus/io/component-ui"
 import { deviceId } from "audiobus/io/device-definition"
 import {
@@ -295,6 +297,46 @@ export function selectSurfaceControls(
 	return { destroy }
 }
 
+/** Inputs' own GUIs, placeable on a surface; a dedicated surface view wins over createGui. */
+function surfacePanels(chain: IOChain): SurfacePanel[] {
+	return chain.inputs.flatMap((input: ComponentUi & { name: string }) => {
+		if (!input.createSurfaceView && !input.createGui) {
+			return []
+		}
+		const id = controlComponentId(input)
+		return [
+			{
+				key: panelKey(id),
+				sourceId: id,
+				label: input.name,
+				mount(host: HTMLElement) {
+					if (!input.createSurfaceView) {
+						return mountDeviceGui(input, host, true)
+					}
+					const view = input.createSurfaceView()
+					host.append(view.element)
+					return () => view.destroy()
+				}
+			}
+		]
+	})
+}
+
+/** Legacy surfaces listed panels above the gadgets; lay them out as full-width panel gadgets. */
+function withPanelWidgets(state: SurfaceState): SurfaceState {
+	if (!state.panels?.length) {
+		return state
+	}
+	const { panels, ...rest } = state
+	return {
+		...rest,
+		widgets: [
+			...panels.map((id) => ({ key: panelKey(id), widget: "panel" as const, span: 6 })),
+			...state.widgets
+		]
+	}
+}
+
 /** Native surface host; React is only responsible for placing its graph node. */
 export function mountControlSurface(
 	host: HTMLElement,
@@ -312,7 +354,6 @@ export function mountControlSurface(
 		generation = 0,
 		signature = ""
 	let saveTimer: ReturnType<typeof setTimeout> | undefined
-	let panelViews: { element: HTMLElement; destroy(): void }[] = []
 	const controlDialogs: { destroy(): void }[] = []
 	let schemaAbort = new AbortController()
 	const abort = new AbortController()
@@ -375,16 +416,12 @@ export function mountControlSurface(
 		surface?.destroy()
 		audioSources?.destroy()
 		audioSources = surfaceAudioSources(chain.outputs)
-		panelViews.forEach((view) => view.destroy())
-		panelViews = (state.panels ?? []).flatMap((id) => {
-			const view = components.get(id)?.createSurfaceView?.()
-			return view ? [view] : []
-		})
 		surface = new ControlSurface({
 			visualiserSources: [noteSource.source, ...audioSources.sources],
 			beatPosition: () => surfaceBeat(chain.timer),
-			state: structuredClone(state),
+			state: structuredClone(withPanelWidgets(state)),
 			bindings,
+			panels: surfacePanels(chain),
 			toolbarHost,
 			editing,
 			menuActions,
@@ -423,7 +460,7 @@ export function mountControlSurface(
 				)
 			}
 		})
-		host.replaceChildren(...panelViews.map((view) => view.element), surface.element)
+		host.replaceChildren(surface.element)
 	}
 	for (const [target, event] of [
 		[chain, EVENT_CONFIGURATION_CHANGED],
@@ -445,7 +482,6 @@ export function mountControlSurface(
 			surface?.destroy()
 			audioSources?.destroy()
 			noteSource.destroy()
-			panelViews.forEach((view) => view.destroy())
 			controlDialogs.forEach((dialog) => dialog.destroy())
 		}
 	}

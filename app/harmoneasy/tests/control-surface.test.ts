@@ -586,6 +586,34 @@ describe("surface interaction and bindings", () => {
 		;(surface as any).save()
 		expect(saved.connections).toHaveLength(1)
 	})
+	it("hosts component GUI panels as DOM gadgets and releases them on rebuild and destroy", () => {
+		const gui = document.createElement("button"),
+			unmount = vi.fn(),
+			mount = vi.fn((host: HTMLElement) => {
+				host.append(gui)
+				return unmount
+			}),
+			saved = state()
+		saved.widgets = [
+			{ key: "panel:dots", widget: "panel" },
+			{ key: "panel:gone", widget: "panel" }
+		]
+		const surface = new ControlSurface({
+			state: saved,
+			bindings: [],
+			panels: [{ key: "panel:dots", sourceId: "dots", label: "Dots", mount }],
+			change: vi.fn()
+		})
+		const [hosted, missing] = surface.element.querySelectorAll<HTMLElement>(".cs-panel")
+		expect(hosted.contains(gui)).toBe(true)
+		expect(missing.textContent).toBe("This component is not in the chain.")
+		expect((surface as any).visibleVisuals()).toEqual([])
+		;(surface as any).rebuild()
+		expect(unmount).toHaveBeenCalledTimes(1)
+		expect(mount).toHaveBeenCalledTimes(2)
+		surface.destroy()
+		expect(unmount).toHaveBeenCalledTimes(2)
+	})
 	it("keeps musical targets at least 44 pixels with 11 pixel gaps when resized or zoomed", () => {
 		for (const scale of [0.5, 1, 2, 3]) {
 			for (const width of [280, 390, 700]) {

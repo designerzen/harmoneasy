@@ -320,9 +320,9 @@ export const OUTPUT_GUIDANCE: Record<OutputId | typeof PINK_TROMBONE_OUTPUT_ID, 
 	),
 	rompler: guide(
 		"Rom",
-		"Play any of the 128 General MIDI instruments from the OpenGM24 soundfont.",
-		"Samples stream in around the notes you play, so sound starts almost immediately and switching instruments cancels the old download.",
-		audio + " AudioWorklet support and an internet connection to fetch the soundfont."
+		"Play any of the 128 General MIDI instruments from the OpenGM24 soundfont, or open your own .sf2, .sf3 or MIDI.js soundfont.",
+		"Samples stream in around the notes you play, so sound starts almost immediately and switching instruments cancels the old download. Open a soundfont file or drop one on the panel; files from disk are kept in this browser.",
+		audio + " AudioWorklet support and an internet connection to fetch OpenGM24 or soundfonts from a URL."
 	),
 	"drum-accompaniment": guide(
 		"Dr",
@@ -540,7 +540,8 @@ function deviceGuidance(factory: DeviceChoice, direction: "input" | "output" | "
 					audio +
 						" WebAssembly and AudioWorklet support. Native interfaces require HTTPS or localhost."
 				)
-			: direction !== "instrument"
+			: direction !== "instrument" &&
+				  !(factory.type === "engine" && factory.subtype === "instrument")
 				? guide(
 						"",
 						factory.description,

@@ -1,4 +1,8 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
+import { createRequire } from "node:module"
+const { zipSync, strToU8 } = createRequire(
+	new URL("../../../packages/audiobus/package.json", import.meta.url)
+)("fflate")
 import { createMediaImporter } from "../source/services/media-import"
 
 const factories = vi.hoisted(() => ({
@@ -19,7 +23,7 @@ const chain = {}
 let manager: any, score: ReturnType<typeof vi.fn>, output: any
 beforeEach(() => {
 	vi.resetAllMocks()
-	output = { connect: vi.fn(), destroy: vi.fn() }
+	output = { connect: vi.fn(), destroy: vi.fn(), loadSample: vi.fn() }
 	factories.output.mockResolvedValue(output)
 	factories.input.mockResolvedValue({ name: "tune" })
 	factories.midi.mockResolvedValue({
@@ -88,4 +92,48 @@ it("rejects misleading MIDI files and page links with useful errors", async () =
 	await expect(load("https://example.com/community.html")).rejects.toThrow(
 		"documentation or gallery page"
 	)
+})
+it("routes compressed MusicXML and DAWproject archives to score import", async () => {
+	const load = createMediaImporter(manager, score)
+	for (const extension of ["mxl", "dawproject"]) {
+		const contents =
+			extension === "mxl"
+				? {
+						"META-INF/container.xml": strToU8("<container/>"),
+						"score.musicxml": strToU8("<score-partwise/>")
+					}
+				: { "project.xml": strToU8("<Project/>") }
+		const file = new File([zipSync(contents)], `song.${extension}`)
+		await load(file)
+		expect(score).toHaveBeenCalledWith(file)
+	}
+})
+it("loads detected NoteSequence data as a saved playable note input", async () => {
+	const file = new File(
+		[JSON.stringify({ notes: [{ pitch: 60, startTime: 0, endTime: 0.5, velocity: 90 }] })],
+		"unknown.dat"
+	)
+	await createMediaImporter(manager)(file)
+	expect(factories.input).toHaveBeenCalledWith(
+		"midi-file",
+		expect.objectContaining({
+			fileName: "unknown.dat",
+			commands: expect.arrayContaining([
+				expect.objectContaining({ type: "noteOn", number: 60, endAt: 0.5 })
+			])
+		})
+	)
+	expect(manager.addDevice).toHaveBeenCalledWith(chain, expect.anything(), "input")
+})
+it("loads detected audio into a Loop Player and cleans up decoding failures", async () => {
+	const file = new File(["RIFF0000WAVEdata"], "unknown.dat")
+	await createMediaImporter(manager)(file)
+	expect(factories.output).toHaveBeenCalledWith("loop-player", manager.deviceOptions)
+	expect(output.loadSample).toHaveBeenCalledWith(expect.any(ArrayBuffer), "unknown.dat")
+	expect(manager.addDevice).toHaveBeenCalledWith(chain, output, "output")
+	manager.addDevice.mockClear()
+	output.loadSample.mockRejectedValue(new Error("Unsupported codec"))
+	await expect(createMediaImporter(manager)(file)).rejects.toThrow("Unsupported codec")
+	expect(output.destroy).toHaveBeenCalled()
+	expect(manager.addDevice).not.toHaveBeenCalled()
 })

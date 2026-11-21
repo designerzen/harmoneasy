@@ -100,6 +100,7 @@ The selectable transformer factory provides the following processing types. Thes
 | Transformer | Capability |
 | --- | --- |
 | Arpeggiator | Turn held notes/chords into patterns of individual notes. |
+| Bernoulli Gate | Toss a coin per note or chord to route it to channel A or B, or toggle sides; after Mutable Instruments Branches. |
 | Channeler | Route musical events to a chosen MIDI channel. |
 | Chordifier | Expand individual notes into chords. |
 | Constrictor | Limit notes to a configured pitch range. |
@@ -114,8 +115,10 @@ The selectable transformer factory provides the following processing types. Thes
 | Note Reverb | Repeat notes at intervals with progressively lower velocities. |
 | Note Shortener | Shorten notes for staccato articulation. |
 | Quantise | Lock playback to a rhythmic grid. |
+| Random Sampler | Generate random gates and in-scale pitches around held notes with spread, bias, steps and Déjà vu loops; ported from Mutable Instruments Marbles (MIT). |
 | Randomiser | Add controlled variation to note parameters. |
 | Timing Humaniser | Add timing variation. |
+| Topographic Drums | Hold a note to play kick, snare and hi-hat patterns morphed across an X/Y map with per-voice density and chaos; modelled on Mutable Instruments Grids with an original pattern map. |
 | Transposer | Shift pitches by an interval. |
 | Vibrator | Apply pitch vibrato; distinct from the haptic output. |
 
@@ -182,19 +185,53 @@ The WebCLAP catalogue also includes mixer inserts: **[Basics] Analyser**, **[Bas
 
 ### Imports
 
-Use Import or drag files onto the app. Imported musical data goes through the active chain, so the chosen transformations and outputs affect playback and subsequent event capture.
+Use **Import File** or drag files onto the app. The importer checks file contents before falling back to the filename, previews the detected format, and loads musical data as a saved playable input on the active chain. The chosen transformations and outputs affect playback and subsequent event capture.
 
 | Input format | Behaviour |
 | --- | --- |
-| Standard MIDI File (`.mid`, `.midi`) | Load notes into a MIDI File input on the active chain. |
-| MusicXML (`.musicxml`, `.xml`) | Convert score data into scheduled musical commands. |
-| DawProject (`.dawproject`) | Import musical project data as commands for the chain. |
-| Tracker files | The import UI accepts `.mod`, `.xm`, `.it`, `.s3m`, `.669`, `.far`, `.stm`, `.ult`, `.mtm`, `.dmf`, `.ptm`, `.okt`, `.mptm` and `.nst`; the current parser is limited and does not provide complete playback/import fidelity for this list. |
-| ZIP archives | Inspect for MIDI files or a built WAM2 instrument; when several instruments exist, choose one to load. |
+| Standard MIDI File / karaoke (`.mid`, `.midi`, `.kar`) | Import MIDI notes, channels, programs and timing. |
+| RIFF MIDI (`.rmi`, `.rmid`) | Import MIDI from a RIFF container. |
+| MusicXML (`.musicxml`, `.xml`) and compressed MusicXML (`.mxl`) | Convert score notes, voices and timing to musical commands. |
+| MuseScore 3/4 (`.mscx`, `.mscz`) | Load written notes, ties, tuplets and tempo changes; repeats and ornaments are not expanded. |
+| Guitar Pro 3–8 (`.gp3`, `.gp4`, `.gp5`, `.gpx`, `.gp`) | Import tablature/score notes through alphaTab. |
+| Capella (`.capx`) | Import compressed Capella scores. |
+| alphaTex (`.atex`, `.alphatex`) | Import text scores. |
+| ABC notation (`.abc`) | Import notation as playable notes. |
+| Core MML (`.mml`) | Import the supported core Music Macro Language note syntax. |
+| RTTTL (`.rtttl`, `.rtx`) | Import ringtone melodies. |
+| MIDI CSV (`.csv`) | Import MIDI event CSV with tempo and channel data. |
+| Magenta NoteSequence (`.json`, `.noteseq`) | Import seconds-based or quantized NoteSequence JSON. Generic JSON is not accepted as a score. |
+| Tone.js MIDI JSON (`.tone.json`) | Import serialized Tone.js MIDI tracks. |
+| JAMS (`.jams`) | Import note annotations. |
+| Sonic Visualiser (`.svl`) | Import note layers. |
+| UTAU (`.ust`) | Import melody notes and timing. |
+| Synthesizer V (`.svp`) | Import vocal note projects, including tempo changes. |
+| OpenUtau (`.ustx`) | Import vocal note projects. |
+| UtaFormatix (`.ufdata`) | Import vocal note interchange data. |
+| LMMS (`.mmp`, `.mpt`, `.mmpz`) | Import song-level piano-roll patterns at a fixed tempo; compressed projects are supported. |
+| REAPER (`.rpp`) | Import embedded MIDI, tempo maps, loops and integer take transposition. Glue slip-edited clips and crop items to their active take first; external MIDI files are not followed. |
+| DAWproject (`.dawproject`) | Import musical project data as commands for the chain. |
+| Tracker modules and packed modules | Import the 70 extensions listed below through the bundled libopenmpt decoder. |
+| Audio (`.wav`, `.mp3`, `.ogg`, `.oga`, `.opus`, `.flac`, `.m4a`, `.aac`, `.aif`, `.aiff`, `.webm`) | Load into a Loop Player; decoding depends on browser codec support. |
+| Instrument/MIDI bundles (`.zip`, `.wam`, `.wam2`) | Inspect for MIDI files or a built WAM2 instrument; when several instruments exist, choose one to load. |
 | Hosted WAM/WAM2 URLs | Load a plugin as an output; legacy module URLs are also recognised. |
 | Preset/setup JSON | Import through the preset library to reuse chain presets and complete setups. |
 
-The media importer limits individual files to 64 MB. Score/project imports exchange musical events, not a guaranteed reconstruction of every source instrument, sample, effect or automation lane. Tracker support is particularly incomplete: accepted extensions should not be read as a compatibility guarantee.
+The media importer limits individual files to 64 MB; audio loops are limited to 4 MB. Score/project imports exchange musical events, not a reconstruction of every source instrument, sample, effect or automation lane. Vocal imports load notes rather than synthesized singing.
+
+#### Tracker import coverage
+
+The file picker and automatic importer expose every extension reported by the bundled decoder:
+
+| Family | Extensions |
+| --- | --- |
+| Main tracker formats | `.mod`, `.xm`, `.it`, `.s3m`, `.mptm`, `.med` |
+| Other tracker formats and variants | `.667`, `.669`, `.amf`, `.ams`, `.c67`, `.cba`, `.dbm`, `.digi`, `.dmf`, `.dsm`, `.dsym`, `.dtm`, `.etx`, `.far`, `.fc`, `.fc13`, `.fc14`, `.fmt`, `.fst`, `.ftm`, `.gdm`, `.gmc`, `.gt2`, `.gtk`, `.ice`, `.imf`, `.ims`, `.j2b`, `.m15`, `.mdl`, `.mms`, `.mt2`, `.mtm`, `.mus`, `.nst`, `.okt`, `.plm`, `.psm`, `.pt36`, `.ptm`, `.puma`, `.rtm`, `.sfx`, `.sfx2`, `.smod`, `.st26`, `.stk`, `.stm`, `.stp`, `.stx`, `.symmod`, `.tcb`, `.ult`, `.unic`, `.wow`, `.xmf` |
+| Compressed modules / containers | `.mo3`, `.oxm`, `.umx`, `.xpk`, `.ppm`, `.mmcmp` |
+
+Traditional Amiga names such as `mod.song` are also recognised. Decoder coverage is checked against the bundled WASM build, rather than assuming all formats in a newer library release are available; see the [libopenmpt format documentation](https://lib.openmpt.org/libopenmpt/faq/).
+
+Tracker import extracts row notes, instruments and explicit volumes while following the decoder's order jumps, repeats and tempo/speed changes. It supports up to 192 tracks, 100,000 notes and 30 minutes per file. Tracks beyond 16 share MIDI channels cyclically but retain distinct source names. Instrument/sample indices become MIDI programs (clamped to 0–127); original samples, envelopes, pitch slides and other tracker effects are not reproduced. Packed files must be decodable by the bundled build; arbitrary archives and external sample dependencies are not resolved.
 
 ### Exports and integrations
 
@@ -202,10 +239,25 @@ The Export menu operates on captured musical events. Play imported material thro
 
 | Output format/integration | Result |
 | --- | --- |
-| MIDI | Standard MIDI File for hardware sequencers and DAWs. |
-| MED | Tracker-oriented MED file export. |
+| MIDI (`.mid`) | Standard MIDI File with one track per channel and program, keeping velocities, programs and tempo. |
+| RIFF MIDI (`.rmi`) | MIDI wrapped in a RIFF container. |
+| Tracker modules (`.med`, `.mod`, `.xm`, `.s3m`, `.it`) | OctaMED, ProTracker, FastTracker 2, Scream Tracker 3 and Impulse Tracker modules. Each instrument is sampled from its chain's audio output during export (the mix is muted briefly) and embedded, so the module sounds close to HarmonEasy; instruments that cannot be sampled use a synthesised General MIDI approximation, with separate drum sounds for channel 10. Polyphony is limited to the format's channels (MOD 32, XM/S3M 32, IT/MED 64) and notes outside a format's range are octave-folded. |
+| MuseScore 4 (`.mscx`, `.mscz`) | Measured score with rests and ties in 4/4. |
 | MIDI Markdown | Text representation of the recorded musical events. |
 | MusicXML | Score interchange for notation applications. |
+| Compressed MusicXML (`.mxl`) | ZIP-packaged MusicXML score. |
+| Guitar Pro 7 (`.gp`) / alphaTex (`.atex`) | Export captured notes as a score or text score. |
+| ABC (`.abc`) | Text notation export. |
+| MIDI CSV (`.csv`) | MIDI event table export. |
+| Core MML (`.mml`) / RTTTL (`.rtttl`) | Text melody export; RTTTL requires a single melody. |
+| LilyPond (`.ly`) | Notation source export. |
+| Magenta NoteSequence (`.json`) | Note sequence JSON export. |
+| Tone.js MIDI JSON (`.tone.json`) | Serialized MIDI tracks. |
+| JAMS (`.jams`) / Sonic Visualiser (`.svl`) | Note annotation/layer export. |
+| UTAU (`.ust`) | Single-voice melody project. |
+| Synthesizer V (`.svp`) / OpenUtau (`.ustx`) / UtaFormatix (`.ufdata`) | Vocal note projects with placeholder “a” lyrics and no assigned singer. |
+| LMMS (`.mmp`, `.mmpz`) | Song note projects using a basic oscillator, optionally compressed. |
+| REAPER (`.rpp`) | Self-contained project with editable embedded MIDI and named tracks; instruments and effects are not included. |
 | VexFlow | Rendered notation preview with downloadable HTML. |
 | DawProject | `.dawproject` project interchange export. |
 | OpenDAW | Generated project-creation script shown in a copyable dialog; paste and run it in OpenDAW. |
@@ -244,6 +296,8 @@ Press **Remote** in the toolbar to open the remote control demo in a window conn
 | Jam with everything | [`/presets/songs/never-gonna-jam-everything/`](http://localhost:1999/presets/songs/never-gonna-jam-everything/) | A song with every input, including audioBus Protocol, playing along in A♭ major. |
 
 To test: run `pnpm --dir app/harmoneasy run dev`, open the remote control demo, press **Start** inside the embedded app, and wait for the status to turn green. Press **Next note** and you will hear the song step and see the note arrive back. The demo reconnects by itself after preset changes and reloads. The live demo uses `https://designerzen.github.io/harmoneasy/` in place of `http://localhost:1999/`.
+
+The [Cosmo MIDI session links](docs/preset-url-api.md#cosmo-midi-session-links-18-november-2026) collect the Pages URLs for song stepping with audio/MIDI output, quantised notes, chords, bloom and arpeggios.
 
 ## Browser and desktop requirements
 

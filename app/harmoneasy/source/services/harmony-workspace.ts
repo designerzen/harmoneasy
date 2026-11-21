@@ -59,17 +59,16 @@ export function mountHarmonyWorkspace(
 	)
 	open.classList.add("btn-harmony")
 	const settings = document.getElementById("btn-settings")
-	if (settings) settings.before(open)
-	else document.body.append(open)
+	if (settings) {
+		settings.before(open)
+	} else {
+		document.body.append(open)
+	}
 	document.body.append(dialog)
 	const close = action("", () => dialog.close(), status)
 	close.className = "close-icon tertiary"
 	close.setAttribute("aria-label", "Close harmony workspace")
-	dialog.append(
-		element("h2", "Harmony workspace"),
-		close,
-		status
-	)
+	dialog.append(element("h2", "Harmony workspace"), close, status)
 	const live = section(dialog, "Current scale and chord")
 	;(live.parentElement as HTMLDetailsElement).open = true
 	live.append(

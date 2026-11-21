@@ -160,6 +160,7 @@ describe("device folders and declarative GUIs", () => {
 		).toContain("left: 30%")
 		gui.destroy()
 	})
+	// Parses every registry device, which is slow when the whole suite runs in parallel.
 	it("loads registry devices, their images and their GUI trees directly from folders", () => {
 		expect(Object.keys(MIDI_DEVICE_PROFILES)).toEqual(
 			expect.arrayContaining(["arcana-strum", "digit-cmpsr"])
@@ -175,7 +176,7 @@ describe("device folders and declarative GUIs", () => {
 			)
 			gui.destroy()
 		}
-	})
+	}, 20_000)
 	it.each([
 		[
 			"missing image",

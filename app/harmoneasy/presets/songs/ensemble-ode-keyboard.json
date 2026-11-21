@@ -2,7 +2,7 @@
 	"format": "harmoneasy-preset",
 	"version": 1,
 	"name": "Ode to Joy — Everyone plays a channel",
-	"description": "The song is ready to play. A labelled Input and surface pad are created for every playable MIDI channel. Each channel has its own QWERTY key (A, S, D, F, …). The first press starts the song; hold your key, or tap it every couple of bars, to keep your part playing in time with everyone else. The song pauses when everybody stops. Turn on assistance for quieter automatic backing parts. Changing the song rebuilds the controls automatically.",
+	"description": "The song is ready to play. A labelled Input and surface pad are created for every playable MIDI channel. Each channel has its own QWERTY key (A, S, D, F, …). The first press starts the song. Tap your key once per note or chord; drums loop on the shared beat until stopped. Missed notes stay in order, with recovery to the current bar after two bars behind. Choose Notes or Groove for any part in the Ensemble controls. Assistance only fills unassigned parts. Changing the song rebuilds the controls automatically.",
 	"clock": {
 		"bpm": 160,
 		"swing": 0,
@@ -112,7 +112,7 @@
 				"direction": "output",
 				"definition": {
 					"factory": "output",
-					"type": "sion",
+					"type": "fm",
 					"options": {
 						"volume": 0.65,
 						"receiveChannels": [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16]
@@ -253,7 +253,7 @@
 					"ensemble-ode-keyboard-channel-6"
 				],
 				"outputs": ["ensemble-voices", "ensemble-drums"],
-				"transformers": "[\"{\\\"type\\\":\\\"Ensemble\\\",\\\"midiControlId\\\":\\\"ensemble-ode-keyboard\\\",\\\"enabled\\\":true,\\\"midiFileUrl\\\":\\\"midi/ode-to-joy.mid\\\",\\\"midiFileName\\\":\\\"Ode to Joy\\\",\\\"autoInputs\\\":\\\"keyboard\\\",\\\"autoJoin\\\":false,\\\"assist\\\":false,\\\"activityBeats\\\":8,\\\"loop\\\":true,\\\"mode\\\":\\\"assisted\\\",\\\"players\\\":[{\\\"source\\\":\\\"input:ensemble-ode-keyboard-channel-1\\\",\\\"channels\\\":[1]},{\\\"source\\\":\\\"input:ensemble-ode-keyboard-channel-2\\\",\\\"channels\\\":[2]},{\\\"source\\\":\\\"input:ensemble-ode-keyboard-channel-3\\\",\\\"channels\\\":[3]},{\\\"source\\\":\\\"input:ensemble-ode-keyboard-channel-4\\\",\\\"channels\\\":[4]},{\\\"source\\\":\\\"input:ensemble-ode-keyboard-channel-5\\\",\\\"channels\\\":[5]},{\\\"source\\\":\\\"input:ensemble-ode-keyboard-channel-6\\\",\\\"channels\\\":[6]}]}\"]",
+				"transformers": "[\"{\\\"type\\\":\\\"Ensemble\\\",\\\"midiControlId\\\":\\\"ensemble-ode-keyboard\\\",\\\"enabled\\\":true,\\\"midiFileUrl\\\":\\\"midi/ode-to-joy.mid\\\",\\\"midiFileName\\\":\\\"Ode to Joy\\\",\\\"autoInputs\\\":\\\"keyboard\\\",\\\"autoJoin\\\":false,\\\"assist\\\":false,\\\"activityBeats\\\":8,\\\"loop\\\":true,\\\"mode\\\":\\\"perform\\\",\\\"players\\\":[{\\\"source\\\":\\\"input:ensemble-ode-keyboard-channel-1\\\",\\\"channels\\\":[1]},{\\\"source\\\":\\\"input:ensemble-ode-keyboard-channel-2\\\",\\\"channels\\\":[2]},{\\\"source\\\":\\\"input:ensemble-ode-keyboard-channel-3\\\",\\\"channels\\\":[3]},{\\\"source\\\":\\\"input:ensemble-ode-keyboard-channel-4\\\",\\\"channels\\\":[4]},{\\\"source\\\":\\\"input:ensemble-ode-keyboard-channel-5\\\",\\\"channels\\\":[5]},{\\\"source\\\":\\\"input:ensemble-ode-keyboard-channel-6\\\",\\\"channels\\\":[6]}]}\"]",
 				"disabledInputs": [],
 				"disabledOutputs": []
 			}
@@ -265,6 +265,6 @@
 		"kind": "workspace",
 		"order": 195,
 		"tags": ["ensemble", "multiplayer", "midi", "keyboard"],
-		"useCase": "The song is ready to play. A labelled Input and surface pad are created for every playable MIDI channel. Each channel has its own QWERTY key (A, S, D, F, …). The first press starts the song; hold your key, or tap it every couple of bars, to keep your part playing in time with everyone else. The song pauses when everybody stops. Turn on assistance for quieter automatic backing parts. Changing the song rebuilds the controls automatically."
+		"useCase": "The song is ready to play. A labelled Input and surface pad are created for every playable MIDI channel. Each channel has its own QWERTY key (A, S, D, F, …). The first press starts the song. Tap your key once per note or chord; drums loop on the shared beat until stopped. Missed notes stay in order, with recovery to the current bar after two bars behind. Choose Notes or Groove for any part in the Ensemble controls. Assistance only fills unassigned parts. Changing the song rebuilds the controls automatically."
 	}
 }

@@ -21,6 +21,35 @@ const steps = (page: any, index = 0) =>
 	configurationSteps(page.workspace.chains[index].transformers)
 
 describe("versioned parts URLs", () => {
+	it("composes Cosmo number keys and any MIDI file through the existing schema", async () => {
+		for (const midi of [
+			"midi/never-gonna-give-you-up.mid",
+			"https://files.example/another.mid"
+		]) {
+			const page = await load(
+				`parts/v1/inputs/cosmo-dots/outputs/moog,webmidi/midi/${encodeURIComponent(midi)}/playback/step/?config=${encodeURIComponent(JSON.stringify({ devices: { "url-input-cosmo-dots": { dotCount: 9 } } }))}`
+			)
+			expect(page!.workspace.chains[0].inputs).toEqual(["url-input-cosmo-dots"])
+			expect(page!.workspace.chains[0].outputs).toEqual([
+				"url-output-moog",
+				"url-output-webmidi"
+			])
+			expect(
+				page!.workspace.devices.find((device: any) => device.id === "url-input-cosmo-dots")
+					.definition.options
+			).toEqual({ dotCount: 9 })
+			expect(steps(page)).toEqual([
+				expect.objectContaining({
+					type: "MIDI-File-Player",
+					config: expect.objectContaining({
+						playbackMode: "step",
+						loop: true,
+						midiFileUrl: new URL(midi, origin + base).href
+					})
+				})
+			])
+		}
+	})
 	it.each(["/", "/harmoneasy/", "/nested/app/"])(
 		"supports deployment base %s, trailing slashes and index.html",
 		async (deployment) => {
@@ -49,6 +78,22 @@ describe("versioned parts URLs", () => {
 			"speech-synthesis"
 		])
 		expect(steps(page)[0].type).toBe("Transposer")
+	})
+
+	it("names and describes a setup built from scratch by what it plays", async () => {
+		const page = await load(
+			"parts/v1/inputs/keyboard,onscreen-keyboard/outputs/moog,speech-synthesis/transformers/Harmoniser/"
+		)
+		expect(page!.name).toBe("Moog and Speech Synthesis through Harmoniser")
+		expect(page!.description).toBe(
+			"Play with the Keyboard and Onscreen Keyboard. Harmoniser: Snap incoming notes into a chosen key and scale, or filter out-of-scale notes. You hear the result on the Moog and Speech Synthesis."
+		)
+		const song = await load("parts/v1/?midi=midi/my%20song.mid&playback=step")
+		expect(song!.description).toContain(
+			"Every note you play steps my song.mid forward by one note"
+		)
+		const custom = await load("parts/v1/inputs/keyboard/?description=Just+play")
+		expect(custom!.description).toBe("Just play")
 	})
 
 	it("extends every published preset through the same path grammar", async () => {

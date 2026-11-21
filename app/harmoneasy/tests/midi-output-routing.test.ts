@@ -21,6 +21,7 @@ vi.mock("../../../packages/audiobus/node_modules/webmidi/dist/esm/webmidi.esm.js
 	WebMidi: midi
 }))
 class Element {
+	setAttribute() {}
 	style = {}
 	children: Element[] = []
 	value = ""

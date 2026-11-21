@@ -1,5 +1,10 @@
 import { ControlSurface, GpuSurfaceRenderer } from "control-surface"
-import type { ControlBinding, ControlDescriptor, ControlValue, WidgetType } from "control-surface/types"
+import type {
+	ControlBinding,
+	ControlDescriptor,
+	ControlValue,
+	WidgetType
+} from "control-surface/types"
 import "control-surface/style.css"
 import { componentBindings } from "audiobus/io/component-ui"
 import { EVENT_CONFIGURATION_CHANGED } from "audiobus/events/event-constants"

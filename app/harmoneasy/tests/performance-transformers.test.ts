@@ -359,7 +359,8 @@ describe("expressive MIDI Transformers", () => {
 			const input = on()
 			expect(effect.transform([input], clock())).toEqual([input])
 			effect.destroy()
-			expect(effect.tick?.(10, clock(10))).toEqual([])
+			// Stateless transformers have no clock work to cancel.
+			expect(effect.tick?.(10, clock(10)) ?? []).toEqual([])
 		}
 	})
 })

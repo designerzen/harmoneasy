@@ -204,7 +204,10 @@ function open(address: string) {
 		// Opened from Harmoneasy: change the window that opened this page instead of embedding one.
 		opener.location.href = url.href
 		target = opener
-		status("Harmoneasy is reloading. Press Start in it; this page reconnects automatically.", "waiting")
+		status(
+			"Harmoneasy is reloading. Press Start in it; this page reconnects automatically.",
+			"waiting"
+		)
 		void connect()
 		return
 	}
@@ -279,7 +282,7 @@ async function connect() {
 			log("•", "Connected")
 			await connected(attempt)
 			return
-		} catch (error) {
+		} catch {
 			attempt.close()
 			if (current !== generation) {
 				return
@@ -794,7 +797,8 @@ async function refreshInterface() {
 	const query = $<HTMLInputElement>("#control-search").value.trim()
 	const controls =
 		((await call("ui.list", query ? { query } : {}, true)) as unknown as
-			UiControl[] | undefined) ?? []
+			| UiControl[]
+			| undefined) ?? []
 	if (revision !== interfaceRevision) {
 		return
 	}
@@ -998,7 +1002,8 @@ async function refreshCommands() {
 				const args: Params = {}
 				for (const [name, parameter] of Object.entries(schema.properties)) {
 					const editor = form.elements.namedItem(name) as
-						HTMLInputElement | HTMLSelectElement
+						| HTMLInputElement
+						| HTMLSelectElement
 					if (editor.value !== "") {
 						args[name] = parameterValue(parameter, editor.value)
 					}
