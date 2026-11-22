@@ -197,8 +197,9 @@ describe("research-guided ensemble performance", () => {
 				[0, 36],
 				[2, 36],
 				[4, 46]
-			])
+			]) {
 				midi.tracks[2].addNote({ midi: pitch, time, duration: 0.1, velocity: 0.8 })
+			}
 		})
 		tap(performance, 2, 0)
 		const notes = attacks(tick(performance, 0, 6.2), 10)
@@ -212,8 +213,9 @@ describe("research-guided ensemble performance", () => {
 				[2, 38],
 				[4, 36],
 				[6, 38]
-			])
+			]) {
 				midi.tracks[2].addNote({ midi: pitch, time, duration: 0.1, velocity: 0.8 })
+			}
 		})
 		tap(performance, 2, 0)
 		const notes = attacks(tick(performance, 0, 10.2), 10).filter((c) => c.audioTime! >= 8)
@@ -277,10 +279,12 @@ describe("research-guided ensemble performance", () => {
 		for (let step = 1; step <= finish * 20; step++) {
 			const now = step / 20
 			output.push(...performance.advance(now))
-			if (step % 10 === 0 && performance.state.running)
+			if (step % 10 === 0 && performance.state.running) {
 				output.push(...tap(performance, 0, now))
-			if (step % 15 === 0 && performance.state.running)
+			}
+			if (step % 15 === 0 && performance.state.running) {
 				output.push(...tap(performance, 1, now))
+			}
 		}
 		expect(performance.state.ended).toBe(true)
 		expect(attacks(output).length).toBeGreaterThan(100)
@@ -326,5 +330,102 @@ describe("research-guided ensemble performance", () => {
 		expect(
 			gui.querySelector('[aria-label="Rejoin channel 1 at the current section"]')
 		).not.toBeNull()
+	})
+	it("supports full 0-50ms chord windows and rejects legato melodic steps that do not co-sustain", () => {
+		const { performance } = fixture({ chordWindowMs: 35 }, (midi) => {
+			midi.tracks[0].notes = []
+			// First group: 32ms rolled chord where both tones co-sustain for 0.5s.
+			midi.tracks[0].addNote({ midi: 60, time: 0, duration: 0.5, velocity: 0.8 })
+			midi.tracks[0].addNote({ midi: 64, time: 0.032, duration: 0.5, velocity: 0.8 })
+			// Second group: fast legato step where first note ends right as second starts.
+			midi.tracks[0].addNote({ midi: 67, time: 0.5, duration: 0.025, velocity: 0.8 })
+			midi.tracks[0].addNote({ midi: 69, time: 0.52, duration: 0.5, velocity: 0.8 })
+		})
+		expect(attacks(tap(performance, 0, 0)).map((c) => c.number)).toEqual([60, 64])
+		expect(attacks(tap(performance, 0, 0.6)).map((c) => c.number)).toEqual([67])
+		expect(attacks(tap(performance, 0, 0.7)).map((c) => c.number)).toEqual([69])
+	})
+	it("recovers at a phrase entry after a multi-beat rest when no MIDI marker is present", () => {
+		const { performance } = fixture({}, (midi) => {
+			// Create a 1-bar rest on channel 1 from 2.5s to 5.5s, with a phrase pickup at 5.5s (beat 11).
+			midi.tracks[0].notes = midi.tracks[0].notes.filter(
+				(n: any) => n.time <= 2 || n.time >= 5.5
+			)
+		})
+		tap(performance, 0, 0)
+		tick(performance, 0, 6.2)
+		// At 6.2s (bar 4), the pickup at 5.5s (bar 3, after >4 beats rest) is within recoveryBars (2).
+		expect(attacks(tap(performance, 0, 6.2)).map((c) => c.number)).toEqual([71])
+	})
+	it("respects authored groove loop, fill, and break regions and never captures empty bars in cycles", () => {
+		const { performance } = fixture(
+			{
+				grooveRegions: [
+					{ fromBar: 1, toBar: 1, kind: "loop" },
+					{ fromBar: 2, toBar: 2, kind: "fill" },
+					{ fromBar: 4, toBar: 4, kind: "break" }
+				]
+			},
+			(midi) => {
+				midi.tracks[2].notes = []
+				midi.tracks[2].addNote({ midi: 36, time: 0, duration: 0.1, velocity: 0.8 })
+				midi.tracks[2].addNote({ midi: 49, time: 2, duration: 0.1, velocity: 0.8 })
+			}
+		)
+		const notes = attacks([...tap(performance, 2, 0), ...tick(performance, 0, 8)], 10)
+		// Bar 1 plays 36, Bar 2 plays fill 49, Bar 3 repeats loop 36 (not fill 49), Bar 4 is silent break.
+		expect(notes.map((c) => [Math.round(c.audioTime!), c.number])).toEqual([
+			[0, 36],
+			[2, 49],
+			[4, 36]
+		])
+	})
+	it("adapts group tempo gently from score-relative intervals across different note densities", () => {
+		const { performance } = fixture({ tempoAdaptation: 0.4 }, (midi) => {
+			midi.tracks[1].notes = []
+			for (let time = 0; time < 16; time += 1) {
+				midi.tracks[1].addNote({ midi: 48, time, duration: 0.5, velocity: 0.8 })
+			}
+		})
+		tap(performance, 0, 0)
+		tap(performance, 1, 0)
+		// Player 0 has 0.5s score intervals; Player 1 has 1.0s score intervals.
+		// Both perform 20% slower than score tempo (0.6s and 1.2s wall intervals).
+		for (let step = 1; step <= 6; step++) {
+			const wall = step * 0.6
+			tick(performance, (step - 1) * 0.6, wall)
+			tap(performance, 0, wall)
+			if (step % 2 === 0) tap(performance, 1, wall)
+		}
+		expect(performance.state.speed).toBeLessThan(0.97)
+		expect(performance.state.speed).toBeGreaterThan(0.85)
+	})
+	it("supports expressive velocity, optional hold articulation, and assistance disclosure with idle pause", async () => {
+		const { performance } = fixture({
+			assist: true,
+			pauseBeats: 2,
+			holdArticulation: true,
+			velocityInfluence: 1,
+			players: [{ source: "a", channels: [1] }]
+		})
+		const loud = attacks(performance.press(0, 0, 120))[0].velocity
+		// Channel 2 is unassigned and assisted; it is disclosed in parts().assisted and does not block pauseBeats.
+		expect(performance.parts().assisted).toContain(2)
+		const releaseOut = [
+			...performance.releasePress(0, 0.05),
+			...tick(performance, 0.05, 0.3)
+		].filter((c) => c.type === NOTE_OFF && c.channel === 1)
+		expect(loud).toBe(120)
+		expect(releaseOut[0].audioTime).toBeLessThanOrEqual(0.25)
+		const soft = attacks(performance.press(0, 0.5, 40))[0].velocity
+		performance.releasePress(0, 0.55)
+		expect(soft).toBe(40)
+		tick(performance, 0.55, 2)
+		expect(performance.state.paused).toBe(true)
+		expect(performance.telemetry()).toMatchObject({
+			acceptedPresses: 2,
+			playedOnsets: 2,
+			immediateLate: 2
+		})
 	})
 })

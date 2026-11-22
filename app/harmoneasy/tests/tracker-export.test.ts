@@ -985,3 +985,158 @@ describe("sample preparation", () => {
 		)
 	})
 })
+
+describe("trimming to the time played", () => {
+	/** A one-shot that never decays, so only the notes played can shorten it */
+	const held = (): TrackerSample => ({
+		name: "Held",
+		data: Float32Array.from({ length: RATE * 2 }, (_, i) => Math.sin(i * 0.05)),
+		sampleRate: RATE,
+		baseNote: 60
+	})
+	const played = (number: number, duration: number, chainId = "solo", start = 0) => ({
+		chainId,
+		number,
+		channel: 1,
+		patch: 0,
+		velocity: 100,
+		start,
+		duration
+	})
+	const lengths = (
+		notes: ReturnType<typeof played>[],
+		spec: typeof MOD_SPEC,
+		samples?: ReadonlyMap<string, TrackerSample>
+	) =>
+		buildTrackerSong(notes, 120, spec, "t", samples).instruments.map(
+			(instrument) => instrument.samples[0].sample.data.length
+		)
+	const heldFor = (chainId: string) =>
+		new Map([[trackerInstrumentKey({ chainId, channel: 1, patch: 0 }), held()]])
+
+	it("trims a synthesised piano after short notes and keeps it for long ones", () => {
+		const full = prepareSample(synthesiseTrackerSample({ channel: 1, patch: 0 })).sample.data
+			.length
+		for (const spec of [XM_SPEC, IT_SPEC, MOD_SPEC, S3M_SPEC, MED_SPEC]) {
+			const [short] = lengths([played(60, 0.2)], spec)
+			expect(short, spec.id).toBeLessThan(full * 0.4)
+			// A held note outlasts the sample, so all of it is kept
+			expect(lengths([played(60, 3)], spec), spec.id).toEqual([full])
+		}
+	})
+
+	it("lets envelope formats ring through the release but cuts the others at the note end", () => {
+		const [cut] = lengths([played(60, 0.5)], MOD_SPEC, heldFor("solo"))
+		const [released] = lengths([played(60, 0.5)], XM_SPEC, heldFor("solo"))
+		// Four rows of 0.125 s, then the release of a one-shot instrument (about 0.35 s)
+		expect(cut).toBeGreaterThan(RATE * 0.5)
+		expect(cut).toBeLessThan(RATE * 0.55)
+		expect(released).toBeGreaterThan(RATE * 0.85)
+		expect(released).toBeLessThan(RATE * 0.9)
+	})
+
+	it("fades the cut instead of ending on a click", () => {
+		const [sample] = buildTrackerSong(
+			[played(60, 0.5)],
+			120,
+			MOD_SPEC,
+			"t",
+			heldFor("solo")
+		).instruments
+		const { data } = sample.samples[0].sample
+		expect(data[data.length - 1]).toBe(0)
+		// The fade is a few milliseconds long and the sound before it is untouched
+		expect(Math.abs(data[Math.round(RATE * 0.5)])).toBeCloseTo(
+			Math.abs(Math.sin(Math.round(RATE * 0.5) * 0.05)),
+			5
+		)
+		expect(data.length - RATE * 0.5 * 1.02).toBeLessThan(RATE * 0.011)
+	})
+
+	it("reads a sample faster for notes above its base note", () => {
+		const at = (number: number) => lengths([played(number, 0.5)], MOD_SPEC, heldFor("solo"))[0]
+		const base = at(60)
+		expect(base).toBeGreaterThan(RATE * 0.5)
+		// An octave up consumes twice the frames in the same time; an octave down, half
+		expect(at(72) / base).toBeGreaterThan(1.9)
+		expect(at(72) / base).toBeLessThan(2.05)
+		expect(at(48) / base).toBeGreaterThan(0.45)
+		expect(at(48) / base).toBeLessThan(0.55)
+		// A sample is never cut below its highest note, whichever plays first
+		const mixed = lengths(
+			[played(72, 0.5, "solo", 0), played(48, 0.5, "solo", 1), played(60, 0.5, "solo", 2)],
+			MOD_SPEC,
+			heldFor("solo")
+		)
+		expect(mixed).toEqual([at(72)])
+	})
+
+	it("keeps the longest read of every instrument that shares a sample", () => {
+		const samples = new Map([
+			[trackerInstrumentKey({ chainId: "short", channel: 1, patch: 0 }), held()],
+			[
+				trackerInstrumentKey({ chainId: "long", channel: 1, patch: 0 }),
+				{ ...held(), volume: 0.5 }
+			]
+		])
+		const notes = [played(60, 0.25, "short", 0), played(60, 1, "long", 1)]
+		const song = buildTrackerSong(notes, 120, XM_SPEC, "t", samples)
+		// The two chains differ in level, so they are two instruments over one sample
+		expect(song.instruments).toHaveLength(2)
+		const [first, second] = song.instruments.map((instrument) => instrument.samples[0].sample)
+		expect(sampleSignature(first)).toBe(sampleSignature(second))
+		const [aloneShort] = lengths([notes[0]], XM_SPEC, samples)
+		const [aloneLong] = lengths([notes[1]], XM_SPEC, samples)
+		expect(aloneLong).toBeGreaterThan(aloneShort)
+		expect(first.data.length).toBe(aloneLong)
+		expect(second.data.length).toBe(aloneLong)
+	})
+
+	it("leaves a looped sample alone", () => {
+		const samples = sampleMap("solo", 1, 0, sine(60))
+		expect(lengths([played(60, 0.25)], XM_SPEC, samples)).toEqual([840])
+	})
+})
+
+describe("MOD finetune", () => {
+	it.each([48, 60, 83])(
+		"tunes samples a semitone down and still plays MIDI %i in tune",
+		async (number) => {
+			const bytes = createTrackerModule(single(number), { BPM: 120 }, "mod", {
+				samples: sampleMap("solo", 1, 0, sine(60))
+			})
+			// The first sample header starts at byte 20; its finetune byte follows the name and length
+			expect(bytes[20 + 24]).toBe(0x08)
+			const module = await load(bytes)
+			try {
+				expect(Math.abs(cents(frequency(module.render(1)), midiHz(number)))).toBeLessThan(
+					10
+				)
+			} finally {
+				module.destroy()
+			}
+			expect(
+				(await importNotes(bytes, "finetune.mod")).map((command) => command.number)
+			).toEqual([number])
+		}
+	)
+
+	it("stores a pitched sample about 5.6% shorter than finetune 0 would", () => {
+		const long: TrackerSample = {
+			name: "Long",
+			data: Float32Array.from({ length: RATE }, (_, i) => Math.sin(i * 0.05)),
+			sampleRate: RATE,
+			baseNote: 60
+		}
+		const bytes = createTrackerModule(
+			{ name: "Long", duration: 3, events: [event(60, 1, 0, "solo", 0, 3)] },
+			{ BPM: 120 },
+			"mod",
+			{ samples: sampleMap("solo", 1, 0, long) }
+		)
+		const words = new DataView(bytes.buffer, bytes.byteOffset).getUint16(20 + 22, false)
+		// One second at the finetuned rate of MIDI 60: 3546894.6 / 428 * 2^(-1/12) frames
+		expect(words * 2).toBeGreaterThan(7800)
+		expect(words * 2).toBeLessThan(7900)
+	})
+})

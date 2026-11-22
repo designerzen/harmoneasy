@@ -26,8 +26,8 @@ jobs:
             - name: Check out repository
               uses: actions/checkout@v7.0.1
 
-            - name: Check out latest submodule branches
-              run: git submodule update --init --remote --recursive
+            - name: Check out committed submodule revisions
+              run: git submodule update --init --recursive
 
             - name: Install pnpm
               uses: pnpm/action-setup@v6.1.0
@@ -40,19 +40,26 @@ jobs:
                   node-version: "24"
                   cache: pnpm
 
-            # Skip native Electron builds and the root postinstall, which updates submodules.
+            # Submodules are already initialized; skip native Electron install scripts.
             - name: Install dependencies
-              run: |
-                  pnpm install --no-frozen-lockfile --prefer-offline --ignore-scripts
-                  pnpm run upgrade:git-dependencies
+              run: pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
               timeout-minutes: 40
 
             - name: Build Netronome library and workers
               run: pnpm --filter netronome run build:lib
 
+            - name: Lint and type-check web application
+              run: |
+                  pnpm exec oxlint app/harmoneasy/
+                  pnpm --dir app/harmoneasy run type-check
+
             - name: Validate contributed presets
               working-directory: app/harmoneasy
               run: pnpm run presets:validate --maxWorkers 2
+
+            - name: Run core app tests
+              working-directory: app/harmoneasy
+              run: pnpm exec vitest run --maxWorkers 2 tests/about-dialog.test.ts tests/start-contexts.test.ts tests/state-location.test.ts tests/clock-source.test.ts tests/preset-browser.test.ts tests/engineering-fixes.test.ts tests/classroom-session.test.ts tests/theme.test.ts tests/accessibility-focus-stage.test.ts tests/adaptive-input-timing.test.ts
 
             - name: Build web application
               working-directory: app/harmoneasy

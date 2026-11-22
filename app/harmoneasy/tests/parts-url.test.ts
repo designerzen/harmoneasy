@@ -339,7 +339,7 @@ describe("versioned parts URLs", () => {
 			.map((match) => match[1])
 			.filter((url) => url.includes("/parts/") || url.includes("?v="))
 		const generated: string[] = []
-		for (const block of guide.matchAll(/```js\n([\s\S]*?)\n```/g)) {
+		for (const block of guide.matchAll(/```js\r?\n([\s\S]*?)\r?\n```/g)) {
 			runInNewContext(block[1], {
 				URL,
 				URLSearchParams,

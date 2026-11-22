@@ -54,8 +54,10 @@ export const createMenuTemplate = (app) => [
 		submenu: [
 			{
 				label: "About",
-				click: () => {
-					// TODO: Show about dialog
+				click: (_item, window) => {
+					window?.webContents
+						.executeJavaScript('document.querySelector("[data-about]")?.click()')
+						.catch((error) => console.error("Could not open about dialog:", error))
 				}
 			}
 		]

@@ -1,5 +1,11 @@
 import * as Commands from "audiobus/commands/commands"
 import type { IAudioCommand } from "audiobus/commands/audio-command-interface"
+import {
+	EVENT_CHAINS_UPDATED,
+	EVENT_CONFIGURATION_CHANGED,
+	EVENT_CONNECTION_CHANGED,
+	EVENT_DEVICE_LIST_CHANGED
+} from "audiobus/events/event-constants"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
 import { acceptsMidiInput } from "audiobus/io/inputs/midi-input-controls"
 import { DVS_CONTROL_VINYL_INPUT_ID } from "audiobus/io/inputs/input-dvs-control-vinyl"
@@ -81,7 +87,7 @@ export class ClockSourceController {
 		private error: (error: unknown) => void
 	) {
 		manager.clockCommandHandler = this.handle
-		manager.addEventListener("chainsUpdated", this.refresh, { signal: this.abort.signal })
+		manager.addEventListener(EVENT_CHAINS_UPDATED, this.refresh, { signal: this.abort.signal })
 		this.refresh()
 	}
 	private enqueue(operation: () => Promise<void> | void): Promise<void> {
@@ -189,9 +195,9 @@ export class ClockSourceController {
 			const subscription = new AbortController()
 			this.subscriptions.set(input, subscription)
 			for (const event of [
-				"deviceListChanged",
-				"configurationChanged",
-				"connectionChanged"
+				EVENT_DEVICE_LIST_CHANGED,
+				EVENT_CONFIGURATION_CHANGED,
+				EVENT_CONNECTION_CHANGED
 			]) {
 				input.addEventListener(event, this.refresh, { signal: subscription.signal })
 			}

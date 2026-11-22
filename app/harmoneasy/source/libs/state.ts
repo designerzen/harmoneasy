@@ -101,6 +101,7 @@ export const setStates = (
 // TODO: Make a wrapper createStateStack
 // stack.setState( "advancedMode", advancedMode )
 export const EVENT_STATE_CHANGE = "global-state-change"
+export const EVENT_POPSTATE = "popstate"
 
 const hasNavigationOccurred = "state" in window.history && window.history.state !== null
 
@@ -222,7 +223,7 @@ export default class State {
 		// so rather than go "back" we instead relaod the application to restart
 		// with the same state as before
 
-		window.addEventListener("popstate", (event) => {
+		window.addEventListener(EVENT_POPSTATE, (event) => {
 			if (event.state) {
 				this.stateChangeCount++
 				// console.info(this.stateChangeCount, "Previous State received: ", event, event.state)
@@ -309,8 +310,7 @@ export default class State {
 		if (this.saveHistory) {
 			const title = ""
 			this.url = createStateURL(this.asObject)
-			// window.history.replaceState( this.asObject, title, this.url )
-			window.history.pushState(this.asObject, title, this.url)
+			window.history.replaceState(this.asObject, title, this.url)
 		}
 
 		if (dispatchEvent) {

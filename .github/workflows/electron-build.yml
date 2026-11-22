@@ -32,8 +32,8 @@ jobs:
         steps:
             - uses: actions/checkout@v7.0.1
 
-            - name: Check out latest submodule branches
-              run: git submodule update --init --remote --recursive
+            - name: Check out committed submodule revisions
+              run: git submodule update --init --recursive
 
             - uses: pnpm/action-setup@v6.1.0
               name: Install pnpm
@@ -62,8 +62,7 @@ jobs:
             - name: Install dependencies (no build)
               run: |
                   pnpm config set fetch-timeout 60000
-                  pnpm install --no-frozen-lockfile --prefer-offline --ignore-scripts
-                  pnpm run upgrade:git-dependencies
+                  pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
               timeout-minutes: 40
               env:
                   npm_config_build_from_source: "false"
@@ -147,8 +146,11 @@ jobs:
                   fi
                   echo "Release files:"
                   ls -lah releases/
+                  if [ -z "$(ls -A releases)" ]; then
+                    echo "No release artifacts found; aborting release." >&2
+                    exit 1
+                  fi
               shell: bash
-              continue-on-error: true
 
             - name: Create Release
               uses: softprops/action-gh-release@v3.0.3

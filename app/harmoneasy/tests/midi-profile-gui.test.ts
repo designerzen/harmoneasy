@@ -1,13 +1,20 @@
 // @vitest-environment happy-dom
-import { midiDeviceFolders } from "audiobus/hardware/midi-devices/device-files.js"
+import { readFileSync } from "node:fs"
+import path from "node:path"
+import {
+	MIDI_DEVICE_DIRECTORY,
+	midiDeviceFolders
+} from "audiobus/hardware/midi-devices/device-files.js"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import {
 	loadMidiDeviceProfiles,
 	MIDI_DEVICE_PROFILES
 } from "../../../packages/audiobus/hardware/midi-devices/device-profiles"
 import {
+	MIDI_SURFACE_KINDS,
 	parseMidiDeviceProfile,
-	profileMessageBytes
+	profileMessageBytes,
+	type MidiGuiNode
 } from "../../../packages/audiobus/hardware/midi-devices/device-profile-schema"
 import { createProfiledMidiGui } from "../../../packages/audiobus/hardware/midi-devices/profiled-midi-gui"
 import { midiToCommand } from "../../../packages/audiobus/midi/midi-command-conversion"
@@ -126,7 +133,8 @@ const fixture = () => ({
 })
 const assets = {
 	"./example/folder-instrument/images/icon.svg": "/emitted/icon.svg",
-	"./example/folder-instrument/images/panel.svg": "/emitted/panel.svg"
+	"./example/folder-instrument/images/panel.svg": "/emitted/panel.svg",
+	"./example/folder-instrument/images/interface.svg": "/emitted/interface.svg"
 }
 function profile(raw: unknown = fixture()) {
 	return parseMidiDeviceProfile(
@@ -135,6 +143,9 @@ function profile(raw: unknown = fixture()) {
 		(path) => assets[`./example/folder-instrument/${path}` as keyof typeof assets]
 	)
 }
+const folders = new Map(midiDeviceFolders().map((entry) => [entry.id, entry.path]))
+const guiImages = (node: MidiGuiNode): MidiGuiNode[] =>
+	node.type === "image" ? [node] : (node.children ?? []).flatMap(guiImages)
 afterEach(() => document.body.replaceChildren())
 
 describe("device folders and declarative GUIs", () => {
@@ -168,15 +179,121 @@ describe("device folders and declarative GUIs", () => {
 		for (const device of Object.values(MIDI_DEVICE_PROFILES)) {
 			const gui = createProfiledMidiGui(device, {}, vi.fn(), vi.fn())
 			expect(gui.element.dataset.deviceProfile).toBe(device.id)
-			expect(gui.element.querySelector("img")?.getAttribute("src")).toContain(
-				`/midi-devices/${midiDeviceFolders().find((entry) => entry.id === device.id)!.path}/panel.svg`
-			)
-			expect(device.icon).toContain(
-				`/midi-devices/${midiDeviceFolders().find((entry) => entry.id === device.id)!.path}/icon.svg`
-			)
+			// The shown image is whatever the profile declares: its surface, else its first GUI image.
+			const declared = device.surface?.src ?? guiImages(device.gui)[0]?.src
+			expect(gui.element.querySelector("img")?.getAttribute("src") ?? declared).toBe(declared)
+			if (declared) {
+				expect(declared).toContain(`/midi-devices/${folders.get(device.id)}/`)
+			}
+			expect(device.icon).toContain(`/midi-devices/${folders.get(device.id)}/icon.svg`)
 			gui.destroy()
 		}
 	}, 20_000)
+	it("accepts every bundled device profile, whatever surface kinds it uses", () => {
+		const files: Record<string, unknown> = {}
+		for (const [id, folder] of folders) {
+			files[`./${folder}/${id}.json`] = JSON.parse(
+				readFileSync(path.join(MIDI_DEVICE_DIRECTORY, folder, `${id}.json`), "utf8")
+			)
+		}
+		const report = vi.fn()
+		const loaded = loadMidiDeviceProfiles(
+			files,
+			new Proxy({}, { get: (_target, key) => String(key) }) as Record<string, string>,
+			report
+		)
+		expect(report.mock.calls.map(([file, error]) => `${file}: ${error}`)).toEqual([])
+		expect(Object.keys(loaded)).toHaveLength(folders.size)
+		expect(Object.keys(MIDI_DEVICE_PROFILES)).toHaveLength(folders.size)
+	}, 20_000)
+	describe("hardware surface kinds", () => {
+		const bindings: Record<string, object> = {
+			wheel: { type: "cc", number: 1 },
+			"horizontal-strip": { type: "cc", number: 2 },
+			switch: { type: "cc", number: 80 },
+			screen: { type: "note", number: 61 }
+		}
+		const surfaceFixture = (extra: object[] = []) => {
+			const raw: any = fixture()
+			raw.surface = {
+				src: "images/interface.svg",
+				width: 1000,
+				height: 1000,
+				elements: [
+					...MIDI_SURFACE_KINDS.map((kind, index) => ({
+						id: `${kind}-element`,
+						label: `Element ${kind}`,
+						kind,
+						position: {
+							x: (index % 8) * 12,
+							y: Math.floor(index / 8) * 12,
+							width: 10,
+							height: 10
+						},
+						...(bindings[kind] ? { message: bindings[kind] } : {})
+					})),
+					...extra
+				]
+			}
+			return raw
+		}
+		const unknown = {
+			id: "hologram-element",
+			label: "Hologram",
+			kind: "hologram",
+			position: { x: 0, y: 0, width: 5, height: 5 }
+		}
+		it("loads every documented kind", () => {
+			expect(profile(surfaceFixture()).surface!.elements.map((item) => item.kind)).toEqual(
+				MIDI_SURFACE_KINDS
+			)
+		})
+		it("skips an unknown kind with a warning but still rejects broken documented kinds", () => {
+			const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
+			try {
+				const loaded = profile(surfaceFixture([unknown]))
+				expect(loaded.surface!.elements).toHaveLength(MIDI_SURFACE_KINDS.length)
+				expect(warn).toHaveBeenCalledOnce()
+			} finally {
+				warn.mockRestore()
+			}
+			const broken = surfaceFixture()
+			broken.surface.elements[MIDI_SURFACE_KINDS.indexOf("wheel")].position.width = 0
+			expect(() => profile(broken)).toThrow("Invalid surface position")
+		})
+		it("renders unbound hardware as labelled regions and binds the rest like their nearest kind", () => {
+			const perform = vi.fn()
+			const gui = createProfiledMidiGui(profile(surfaceFixture()), {}, perform, vi.fn())
+			gui.setConnected(true, "controller")
+			document.body.append(gui.element)
+			const item = (kind: string) =>
+				gui.element.querySelector<SVGGElement>(`[data-surface-kind="${kind}"]`)!
+			expect(gui.element.querySelectorAll("[data-surface-control]")).toHaveLength(
+				MIDI_SURFACE_KINDS.length
+			)
+			for (const kind of ["input", "output", "bidirectional", "jack", "slot", "speaker"]) {
+				expect(item(kind).getAttribute("role")).toBe("img")
+				expect(item(kind).hasAttribute("tabindex")).toBe(false)
+				expect(item(kind).getAttribute("aria-label")).toBe(`Element ${kind}`)
+				item(kind).dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: "Enter" }))
+			}
+			expect(perform).not.toHaveBeenCalled()
+			expect(
+				gui.element.querySelectorAll('[aria-label="Hardware control to map"] option')
+			).toHaveLength(MIDI_SURFACE_KINDS.length - 6)
+			expect(item("wheel").getAttribute("role")).toBe("slider")
+			item("wheel").dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: "ArrowUp" }))
+			expect(perform).toHaveBeenLastCalledWith({ type: "cc", number: 1, channel: 1 }, 1)
+			expect(item("switch").getAttribute("role")).toBe("button")
+			item("switch").dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: "Enter" }))
+			expect(perform).toHaveBeenLastCalledWith({ type: "cc", number: 80, channel: 1 }, 127)
+			// A display kind that carries a message is still playable.
+			expect(item("screen").getAttribute("role")).toBe("button")
+			item("screen").dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: "Enter" }))
+			expect(perform).toHaveBeenLastCalledWith({ type: "note", number: 61, channel: 1 }, 127)
+			gui.destroy()
+		})
+	})
 	it.each([
 		[
 			"missing image",

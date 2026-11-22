@@ -12,9 +12,13 @@ import {
 	umpToCommand,
 	commandToUmp
 } from "../../../packages/audiobus/midi/ump-codec"
+import { midiEchoGuard } from "audiobus/midi/midi-echo-guard"
 import { NOTE_OFF, NOTE_ON } from "../../../packages/audiobus/commands/commands"
 
-afterEach(() => vi.unstubAllGlobals())
+afterEach(() => {
+	vi.unstubAllGlobals()
+	midiEchoGuard.clear()
+})
 
 function setup() {
 	const listeners = new Set<(index: number, words: number[]) => void>()

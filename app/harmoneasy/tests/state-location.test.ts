@@ -59,9 +59,11 @@ describe("bookmark state persistence", () => {
 		state.set("tempo", 110)
 		const previous = window.history.state
 		const previousUrl = window.location.href
+		const historyLengthBefore = window.history.length
 		for (let tempo = 111; tempo <= 150; tempo++) {
 			state.set("tempo", tempo)
 		}
+		expect(window.history.length).toBe(historyLengthBefore)
 		expect(window.location.search).toBe("")
 		expect(getLocationSettings({})).toEqual({ tempo: 150, io: "workspace:initial" })
 		window.history.replaceState(previous, "", previousUrl)

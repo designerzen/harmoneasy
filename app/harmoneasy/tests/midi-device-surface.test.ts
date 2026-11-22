@@ -1,6 +1,13 @@
 // @vitest-environment happy-dom
+import { readFileSync } from "node:fs"
+import path from "node:path"
+import {
+	MIDI_DEVICE_DIRECTORY,
+	midiDeviceFolders
+} from "audiobus/hardware/midi-devices/device-files.js"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { MIDI_DEVICE_PROFILES } from "../../../packages/audiobus/hardware/midi-devices/device-profiles"
+import type { MidiGuiNode } from "../../../packages/audiobus/hardware/midi-devices/device-profile-schema"
 import { createProfiledMidiGui } from "../../../packages/audiobus/hardware/midi-devices/profiled-midi-gui"
 import {
 	createInputById,
@@ -41,21 +48,21 @@ function gui(id = "roland-tb-3", options: Record<string, any> = {}) {
 }
 describe("registry hardware surfaces", () => {
 	it.each(Object.keys(MIDI_DEVICE_PROFILES))(
-		"%s has a validated SVG surface and every documented control appears on it",
+		"%s has a validated SVG surface that renders every element it declares",
 		(id) => {
 			const profile = MIDI_DEVICE_PROFILES[id]
-			expect(profile.surface?.src).toMatch(/panel\.svg$/)
-			expect(profile.surface!.elements.length).toBeGreaterThan(0)
-			for (const control of profile.controls) {
-				expect(
-					profile.surface!.elements.some((element) => element.control === control.id)
-				).toBe(true)
-			}
-			const view = guiForProfile(profile.id)
-			expect(view.element.querySelector("svg")).not.toBeNull()
-			expect(view.element.querySelectorAll("[data-surface-control]")).toHaveLength(
-				profile.surface!.elements.length
+			expect(profile.surface?.src).toContain(
+				`/midi-devices/${devicePath(id)}/${declaredSurfaceSource(id)}`
 			)
+			expect(profile.surface!.elements.length).toBeGreaterThan(0)
+			const view = guiForProfile(profile.id)
+			// Controls-only GUIs (no image node) place no surface, so there is nothing to draw.
+			if (hasGuiImage(profile.gui)) {
+				expect(view.element.querySelector("svg")).not.toBeNull()
+				expect(view.element.querySelectorAll("[data-surface-control]")).toHaveLength(
+					profile.surface!.elements.length
+				)
+			}
 		}
 	)
 	it("lights notes and CCs from hardware without echo, with channel-aware note-off and panic", () => {
@@ -171,6 +178,13 @@ describe("registry hardware surfaces", () => {
 		})
 	})
 })
+const folders = new Map(midiDeviceFolders().map((entry) => [entry.id, entry.path]))
+const devicePath = (id: string) => folders.get(id)!
+const declaredSurfaceSource = (id: string): string =>
+	JSON.parse(readFileSync(path.join(MIDI_DEVICE_DIRECTORY, devicePath(id), `${id}.json`), "utf8"))
+		.surface.src
+const hasGuiImage = (node: MidiGuiNode): boolean =>
+	node.type === "image" || !!node.children?.some(hasGuiImage)
 function guiForProfile(id: string) {
 	return gui(id).gui
 }

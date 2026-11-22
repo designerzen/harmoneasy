@@ -86,7 +86,7 @@ export default defineConfig({
 	},
 	build: {
 		outDir: "dist",
-		emptyOutDir: false,
+		emptyOutDir: true,
 		rollupOptions: {
 			external: ["url", "path"],
 			input: {

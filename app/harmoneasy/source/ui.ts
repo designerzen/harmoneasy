@@ -3,10 +3,19 @@ import NoteVisualiser from "audiobus/ui/note-visualiser.js"
 import NoteTimelineVisualiser from "audiobus/ui/note-timeline-visualiser"
 import SVGKeyboard from "audiobus/ui/keyboard-svg.ts"
 import { createOpenDAWExportDialog } from "./services/opendaw-export-dialog"
-import { EVENT_CLICK, EVENT_INPUT } from "audiobus/events/event-constants"
+import {
+	EVENT_CHANGE,
+	EVENT_CLICK,
+	EVENT_INPUT,
+	EVENT_KEY_DOWN,
+	EVENT_POINTER_DOWN
+} from "audiobus/events/event-constants"
+
+export const EVENT_DBLCLICK = "dblclick"
 import { installMediaDrop } from "./services/media-drop"
 import { installImportMenu } from "./services/import-menu"
-import { EXPORT_FORMATS } from "audiobus/exporters/registry"
+import { installExportMenu, type ExportSongSource } from "./services/export-menu"
+import { renderVexFlowModal as renderVexFlowScoreModal } from "./services/vexflow-modal"
 
 import type NoteModel from "audiobus/models/note-model.ts"
 import type { IAudioOutput } from "audiobus/io/outputs/output-interface.ts"
@@ -233,7 +242,7 @@ export default class UI implements IAudioOutput {
 
 		if (this.elementButtonExport && this.elementExportDialog!) {
 			this.elementButtonExport.addEventListener(
-				"click",
+				EVENT_CLICK,
 				() => {
 					this.elementExportDialog!.hidden = false
 					this.elementExportDialog!.showModal()
@@ -331,7 +340,7 @@ export default class UI implements IAudioOutput {
 		for (const action of ["start", "stop", "reset"] as const) {
 			document
 				.getElementById(`btn-transport-${action}`)
-				?.addEventListener("click", () => callback(action), {
+				?.addEventListener(EVENT_CLICK, () => callback(action), {
 					signal: this.abortController.signal
 				})
 		}
@@ -419,7 +428,7 @@ export default class UI implements IAudioOutput {
 	whenBluetoothDeviceRequestedRun(callback: Function) {
 		if (this.elementButtonBluetoothConnect) {
 			this.elementButtonBluetoothConnect.addEventListener(
-				"click",
+				EVENT_CLICK,
 				() => {
 					if (callback) {
 						callback()
@@ -470,12 +479,12 @@ export default class UI implements IAudioOutput {
 				callback(raw)
 			}
 		}
-		this.elementBLEManualSendButton.addEventListener("click", () => doSend(), {
+		this.elementBLEManualSendButton.addEventListener(EVENT_CLICK, () => doSend(), {
 			signal: this.abortController.signal
 		})
 		// allow Enter key in the input to trigger send
 		this.elementBLEManualInput!.addEventListener(
-			"keydown",
+			EVENT_KEY_DOWN,
 			(e) => {
 				if (e.key === "Enter") {
 					e.preventDefault()
@@ -512,7 +521,7 @@ export default class UI implements IAudioOutput {
 	whenWebMIDIToggledRun(callback: Function) {
 		if (this.elementButtonWebMIDI) {
 			this.elementButtonWebMIDI.addEventListener(
-				"click",
+				EVENT_CLICK,
 				(e) => {
 					if (callback) {
 						callback(e)
@@ -578,7 +587,7 @@ export default class UI implements IAudioOutput {
 	whenAudioToolExportRequestedRun(callback: Function) {
 		if (this.elementAudioToolExportButton) {
 			this.elementAudioToolExportButton.addEventListener(
-				"click",
+				EVENT_CLICK,
 				async (e) => {
 					;(this.elementExportDialog as HTMLDialogElement | null)?.close()
 					if (callback) {
@@ -593,49 +602,16 @@ export default class UI implements IAudioOutput {
 	/** Format buttons export the source chosen here: the recording, or a song loaded into a chain */
 	whenExportRequestedRun(
 		callback: (id: string, source: string) => Promise<void>,
-		sources: () => { id: string; name: string; chain: string }[] = () => []
+		sources: () => ExportSongSource[] = () => []
 	) {
-		const menu = document.getElementById("export-options")
-		if (!menu) {
-			return
-		}
-		const label = document.createElement("label")
-		label.textContent = "Export source "
-		const select = document.createElement("select")
-		select.id = "export-source"
-		select.setAttribute("aria-label", "Export source")
-		label.append(select)
-		menu.prepend(label)
-		// Songs load and unload while the app runs, so list them each time the dialog opens.
-		const refresh = () => {
-			const previous = select.value
-			select.replaceChildren(
-				new Option("Recording", "recording"),
-				...sources().map(
-					(source) =>
-						new Option(`Loaded song: ${source.name} (${source.chain})`, source.id)
-				)
-			)
-			select.value = [...select.options].some((option) => option.value === previous)
-				? previous
-				: "recording"
-		}
-		refresh()
-		this.elementButtonExport?.addEventListener(EVENT_CLICK, refresh, {
-			signal: this.abortController.signal
-		})
-		for (const format of EXPORT_FORMATS) {
-			const button = document.createElement("button")
-			button.type = "button"
-			button.id = `btn-${format.id}-export`
-			button.className = "export-option"
-			button.textContent = `Export as ${format.label} (.${format.extension})`
-			button.autofocus = format.id === "midi"
-			button.addEventListener(EVENT_CLICK, () => callback(format.id, select.value), {
-				signal: this.abortController.signal
-			})
-			menu.insertBefore(button, this.elementVexFlowExportButton)
-		}
+		installExportMenu(
+			document,
+			this.elementButtonExport,
+			this.elementVexFlowExportButton,
+			callback,
+			sources,
+			this.abortController.signal
+		)
 	}
 
 	/**
@@ -645,7 +621,7 @@ export default class UI implements IAudioOutput {
 	whenVexFlowExportRequestedRun(callback: Function) {
 		if (this.elementVexFlowExportButton) {
 			this.elementVexFlowExportButton.addEventListener(
-				"click",
+				EVENT_CLICK,
 				async (e) => {
 					this.showExportOverlay()
 					if (callback) {
@@ -665,7 +641,7 @@ export default class UI implements IAudioOutput {
 	whenOpenDAWExportRequestedRun(callback: Function) {
 		if (this.elementOpenDAWExportButton) {
 			this.elementOpenDAWExportButton.addEventListener(
-				"click",
+				EVENT_CLICK,
 				async (e) => {
 					this.showExportOverlay()
 					if (callback) {
@@ -685,7 +661,7 @@ export default class UI implements IAudioOutput {
 	whenRandomTimbreRequestedRun(callback: Function) {
 		if (this.elementButtonRandomTimbre) {
 			this.elementButtonRandomTimbre.addEventListener(
-				"click",
+				EVENT_CLICK,
 				(e) => {
 					if (callback) {
 						callback(e)
@@ -703,7 +679,7 @@ export default class UI implements IAudioOutput {
 	whenKillSwitchRequestedRun(callback: Function) {
 		if (this.elementButtonKillSwitch) {
 			this.elementButtonKillSwitch.addEventListener(
-				"pointerdown",
+				EVENT_POINTER_DOWN,
 				(e) => {
 					if (callback) {
 						callback(e)
@@ -727,7 +703,7 @@ export default class UI implements IAudioOutput {
 		const question =
 			"Are you sure? This will delete all recorded AudioCommands from memory and saved in storage. It will also reset the clock."
 		this.elementButtonReset.addEventListener(
-			"click",
+			EVENT_CLICK,
 			(e) => {
 				const confirmed = confirm(question)
 				if (confirmed) {
@@ -786,7 +762,7 @@ export default class UI implements IAudioOutput {
 
 		if (this.elementTempo!) {
 			this.elementTempo!.addEventListener(
-				"input",
+				EVENT_INPUT,
 				() => {
 					const tempo = this.elementTempo!.value
 					if (callback) {
@@ -806,7 +782,7 @@ export default class UI implements IAudioOutput {
 	whenTempoUpRequestedRun(callback: Function) {
 		if (this.elementButtonTempoUp) {
 			this.elementButtonTempoUp.addEventListener(
-				"click",
+				EVENT_CLICK,
 				(e) => {
 					if (callback) {
 						callback(e)
@@ -824,7 +800,7 @@ export default class UI implements IAudioOutput {
 	whenTempoDownRequestedRun(callback: Function) {
 		if (this.elementButtonTempoDown) {
 			this.elementButtonTempoDown.addEventListener(
-				"click",
+				EVENT_CLICK,
 				(e) => {
 					if (callback) {
 						callback(e)
@@ -846,7 +822,7 @@ export default class UI implements IAudioOutput {
 
 		if (this.elementVolume!) {
 			this.elementVolume!.addEventListener(
-				"input",
+				EVENT_INPUT,
 				() => {
 					const volume = this.elementVolume!.value
 					if (callback) {
@@ -868,7 +844,7 @@ export default class UI implements IAudioOutput {
 	whenVolumeUpRequestedRun(callback: Function) {
 		if (this.elementButtonVolumeUp) {
 			this.elementButtonVolumeUp.addEventListener(
-				"click",
+				EVENT_CLICK,
 				(e) => {
 					if (callback) {
 						callback(e)
@@ -886,7 +862,7 @@ export default class UI implements IAudioOutput {
 	whenVolumeDownRequestedRun(callback: Function) {
 		if (this.elementButtonVolumeDown) {
 			this.elementButtonVolumeDown.addEventListener(
-				"click",
+				EVENT_CLICK,
 				(e) => {
 					if (callback) {
 						callback(e)
@@ -908,7 +884,7 @@ export default class UI implements IAudioOutput {
 
 		if (this.elementMIDIChannelSelector!) {
 			this.elementMIDIChannelSelector!.addEventListener(
-				"change",
+				EVENT_CHANGE,
 				() => {
 					const channel = Number(this.elementMIDIChannelSelector!.value)
 					if (callback) {
@@ -926,9 +902,13 @@ export default class UI implements IAudioOutput {
 	 */
 	whenNoteVisualiserDoubleClickedRun(callback: Function) {
 		if (this.noteVisualiserCanvas) {
-			this.noteVisualiserCanvas.addEventListener("dblclick", (e) => callback && callback(e), {
-				signal: this.abortController.signal
-			})
+			this.noteVisualiserCanvas.addEventListener(
+				EVENT_DBLCLICK,
+				(e) => callback && callback(e),
+				{
+					signal: this.abortController.signal
+				}
+			)
 		}
 	}
 
@@ -992,7 +972,7 @@ export default class UI implements IAudioOutput {
 	}
 
 	whenMetronomeRequestedRun(callback: () => void) {
-		document.getElementById("btn-metronome")?.addEventListener("click", callback, {
+		document.getElementById("btn-metronome")?.addEventListener(EVENT_CLICK, callback, {
 			signal: this.abortController.signal
 		})
 	}
@@ -1003,7 +983,7 @@ export default class UI implements IAudioOutput {
 	whenSettingsRequestedRun(callback: Function) {
 		if (this.elementButtonSettings) {
 			this.elementButtonSettings.addEventListener(
-				"click",
+				EVENT_CLICK,
 				() => {
 					this.elementSettingsDialog?.showModal()
 					if (callback) {
@@ -1021,7 +1001,7 @@ export default class UI implements IAudioOutput {
 	whenTimerTypeChangesRun(callback: Function) {
 		if (this.elementTimerTypeSelect) {
 			this.elementTimerTypeSelect.addEventListener(
-				"change",
+				EVENT_CHANGE,
 				(e) => {
 					const timerType = (e.target as HTMLSelectElement).value
 					if (callback) {
@@ -1060,49 +1040,15 @@ export default class UI implements IAudioOutput {
 		htmlCreator: (recorder: any, timer: any) => Promise<Blob>,
 		htmlSaver: (blob: Blob, filename: string) => void
 	) {
-		// Create a modal container for the score
-		const modalContainer = document.createElement("div")
-		modalContainer.style.cssText = "width: 100%; height: 100%; overflow-y: auto; padding: 20px;"
-
-		try {
-			renderer(modalContainer, recorder, timer)
-
-			// Create download button
-			const downloadBtn = document.createElement("button")
-			downloadBtn.textContent = "Download as HTML"
-			downloadBtn.className = "primary"
-			downloadBtn.onclick = async () => {
-				const blob = await htmlCreator(recorder, timer)
-				htmlSaver(blob, recorder.name)
-			}
-
-			modalContainer.appendChild(downloadBtn)
-
-			// Show in info dialog - pass the DOM node directly to preserve event listeners
-			const infoMessage = document.querySelector("#info-message")
-			if (infoMessage) {
-				infoMessage.innerHTML = ""
-				infoMessage.appendChild(modalContainer)
-				const title = document.querySelector("#info-dialog h5")
-				if (title) {
-					title.textContent = "Musical Score"
-				}
-				const dialog = document.querySelector<HTMLDialogElement>("#info-dialog")
-				if (dialog) {
-					dialog.hidden = false
-					dialog.showModal()
-				}
-			} else {
-				this.showInfoDialog("Musical Score", modalContainer.innerHTML)
-			}
-			console.info("Exporting Data to VexFlow", { recorder })
-		} catch (error) {
-			console.error("Error rendering VexFlow score", error)
-			this.showInfoDialog(
-				"Error",
-				"Failed to render VexFlow score. Check console for details."
-			)
-		}
+		await renderVexFlowScoreModal(
+			document,
+			(title, message) => this.showInfoDialog(title, message),
+			renderer,
+			recorder,
+			timer,
+			htmlCreator,
+			htmlSaver
+		)
 	}
 
 	/**

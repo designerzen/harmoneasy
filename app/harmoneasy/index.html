@@ -21,6 +21,24 @@
 					document.documentElement.dataset.themeMode = theme.mode
 				}
 			} catch {}
+			try {
+				const a11y = JSON.parse(localStorage.getItem("harmoneasy.accessibility"))
+				if (a11y?.contrast === "high") {
+					document.documentElement.dataset.contrast = "high"
+				}
+				if (a11y?.palette === "colorblind-safe") {
+					document.documentElement.dataset.palette = "colorblind-safe"
+				}
+				if (a11y?.targetSize === "large" || a11y?.targetSize === "xlarge") {
+					document.documentElement.dataset.targetSize = a11y.targetSize
+				}
+				if (a11y?.reducedMotion === "reduce") {
+					document.documentElement.dataset.reducedMotion = "reduce"
+				}
+				if (a11y?.beatFlash === true) {
+					document.documentElement.dataset.beatFlash = "on"
+				}
+			} catch {}
 		</script>
 	</head>
 
@@ -116,6 +134,22 @@
 			<form id="start-form" method="dialog"></form>
 			<div id="start-presets-content" class="start-presets-content" hidden></div>
 			<p id="start-error" role="alert" hidden></p>
+			<footer class="start-brand">
+				<a
+					class="brand-attribution"
+					href="https://awesmth.com"
+					target="_blank"
+					rel="noopener noreferrer"
+				>
+					<img
+						src="/source/assets/logos/awesomething-logo-blue.svg"
+						alt=""
+						width="20"
+						height="20"
+					/>
+					<span>Awesomething</span>
+				</a>
+			</footer>
 		</dialog>
 
 		<dialog id="netronome-dialog" aria-labelledby="netronome-title" data-midi-ignore>
@@ -258,6 +292,16 @@
 				aria-controls="midi-dialog"
 			>
 				MIDI
+			</button>
+			<button
+				id="btn-focus-stage"
+				class="btn-focus-stage"
+				type="button"
+				aria-haspopup="dialog"
+				aria-controls="focus-stage-dialog"
+				title="Open distraction-free Focus Stage with large accessible pads and 1-switch scanning"
+			>
+				Focus Stage
 			</button>
 			<button
 				id="btn-remote-control"
@@ -935,7 +979,23 @@
 					</ul>
 				</details>
 			</div>
-			<footer><p id="about-copyright"></p></footer>
+			<footer>
+				<p id="about-copyright"></p>
+				<a
+					class="brand-attribution"
+					href="https://awesmth.com"
+					target="_blank"
+					rel="noopener noreferrer"
+				>
+					<img
+						src="/source/assets/logos/awesomething-logo-blue.svg"
+						alt=""
+						width="20"
+						height="20"
+					/>
+					<span>Awesomething</span>
+				</a>
+			</footer>
 		</dialog>
 
 		<dialog id="midi-dialog" closedby="any" aria-labelledby="midi-title">
@@ -1033,6 +1093,80 @@
 					</div>
 					<button id="theme-reset" type="button">Reset appearance</button>
 					<p id="theme-status" role="status">Theme saved in this browser only.</p>
+				</fieldset>
+				<fieldset id="accessibility-settings">
+					<legend>Accessibility</legend>
+					<label for="a11y-contrast"
+						>Contrast
+						<select id="a11y-contrast">
+							<option value="standard">Standard</option>
+							<option value="high">High contrast (AAA)</option>
+						</select>
+					</label>
+					<label for="a11y-palette"
+						>Pad colours
+						<select id="a11y-palette">
+							<option value="default">Default palette</option>
+							<option value="colorblind-safe">Colorblind-safe (Okabe-Ito)</option>
+						</select>
+					</label>
+					<label for="a11y-target-size"
+						>Target size
+						<select id="a11y-target-size">
+							<option value="default">Standard</option>
+							<option value="large">Large (48px+)</option>
+							<option value="xlarge">Extra large (56px+)</option>
+						</select>
+					</label>
+					<label for="a11y-reduced-motion"
+						>Motion
+						<select id="a11y-reduced-motion">
+							<option value="system">Follow system</option>
+							<option value="reduce">Reduce all motion</option>
+						</select>
+					</label>
+					<label class="a11y-checkbox" for="a11y-beat-flash">
+						<input id="a11y-beat-flash" type="checkbox" />
+						Visual beat flash (pulse on every beat)
+					</label>
+					<label class="a11y-checkbox" for="a11y-stabilizer">
+						<input id="a11y-stabilizer" type="checkbox" />
+						Motor stabilization (debounce &amp; tremor filter)
+					</label>
+					<label for="a11y-debounce"
+						>Retrigger lockout
+						<select id="a11y-debounce">
+							<option value="0">Off</option>
+							<option value="80">80 ms</option>
+							<option value="120">120 ms</option>
+							<option value="200">200 ms</option>
+							<option value="350">350 ms</option>
+						</select>
+					</label>
+					<label for="a11y-hold-threshold"
+						>Tremor hold filter
+						<select id="a11y-hold-threshold">
+							<option value="0">Off</option>
+							<option value="50">50 ms</option>
+							<option value="100">100 ms</option>
+							<option value="180">180 ms</option>
+							<option value="300">300 ms</option>
+						</select>
+					</label>
+					<label for="a11y-min-duration"
+						>Minimum note sustain
+						<select id="a11y-min-duration">
+							<option value="0">Off</option>
+							<option value="120">120 ms</option>
+							<option value="250">250 ms</option>
+							<option value="400">400 ms</option>
+							<option value="600">600 ms</option>
+						</select>
+					</label>
+					<button id="a11y-reset" type="button">Reset accessibility</button>
+					<p id="a11y-status" role="status">
+						Accessibility preferences saved in this browser only.
+					</p>
 				</fieldset>
 				<fieldset>
 					<legend>Graph layout</legend>

@@ -17,7 +17,8 @@ import {
 	EVENT_TRANSPORT_CHANGED
 } from "audiobus/events/event-constants"
 import type { RoomConnection } from "./room-connection"
-import { parseHarmony } from "audiobus/io/harmony"
+import { DEFAULT_HARMONY, parseHarmony } from "audiobus/io/harmony"
+import { ClassroomSession } from "./classroom-session"
 
 const MUSICAL_COMMANDS = new Set([
 	NOTE_ON,
@@ -107,10 +108,12 @@ export function unpackRoomCommand(value: any, now: number): IAudioCommand | unde
 
 /** The host transforms inputs once; all machines play those exact output commands. */
 export class RoomWorkspace {
+	readonly classroom: ClassroomSession
 	private abort = new AbortController()
 	private revision = 0
 	private encoded = ""
 	private applying = false
+	private injectingClassroom = false
 	private dirty = false
 	private ready = false
 	private loaded = false
@@ -133,6 +136,11 @@ export class RoomWorkspace {
 		private report: (status: string) => void = () => {},
 		private mode: "workspace" | "harmony" = "workspace"
 	) {
+		this.classroom = new ClassroomSession(
+			connection.id,
+			connection.role === "leader",
+			manager.harmony ?? DEFAULT_HARMONY
+		)
 		this.previousHarmonyControl = manager.externallyControlledHarmony
 		if (mode === "harmony") {
 			manager.externallyControlledHarmony = connection.role === "follower"
@@ -145,7 +153,9 @@ export class RoomWorkspace {
 			EVENT_HARMONY_CHANGED,
 			() => {
 				if (!this.applyingHarmony && connection.role === "leader") {
+					this.classroom.setHarmony(manager.harmony)
 					connection.broadcastData({ type: "harmony", state: manager.harmony })
+					this.broadcastClassroom()
 				}
 			},
 			{ signal: this.abort.signal }
@@ -163,9 +173,13 @@ export class RoomWorkspace {
 			{ signal: this.abort.signal }
 		)
 		connection.onPeerOpen = (id) => {
+			if (connection.role === "leader") {
+				this.classroom.ensurePeer(id, false)
+			}
 			if (this.mode === "harmony") {
 				if (connection.role === "leader") {
 					this.send(id, { type: "harmony", state: manager.harmony })
+					this.broadcastClassroom()
 				} else {
 					this.leader = id
 					this.send(id, { type: "request-harmony" })
@@ -181,6 +195,7 @@ export class RoomWorkspace {
 						encoded: this.encoded
 					})
 				}
+				this.broadcastClassroom()
 			} else if (!connection.conductorId || id === connection.conductorId) {
 				this.leader = id
 				this.report("Connected — loading the room setup…")
@@ -188,11 +203,13 @@ export class RoomWorkspace {
 		}
 		connection.onClockChange = () => this.finishJoining()
 		connection.onConductorChange = (id, conductor) => {
+			this.classroom.setConductor(id)
 			if (this.mode === "harmony") {
 				manager.externallyControlledHarmony = !conductor
 				this.leader = id
 				if (conductor) {
 					connection.broadcastData({ type: "harmony", state: manager.harmony })
+					this.broadcastClassroom()
 				} else {
 					this.send(id, { type: "request-harmony" })
 				}
@@ -209,8 +226,10 @@ export class RoomWorkspace {
 						return
 					}
 					if (conductor) {
+						manager.externallyControlledHarmony = false
 						this.encoded = ""
 						this.publish()
+						this.broadcastClassroom()
 						this.report(
 							"You are the conductor. The room continues with its current setup."
 						)
@@ -235,6 +254,10 @@ export class RoomWorkspace {
 		connection.onPeerClose = (id) => {
 			this.harmonyPeers.delete(id)
 			this.readyPeers.delete(id)
+			const releases = this.classroom.removePeer(id, this.now())
+			if (releases.length) {
+				this.flushClassroomReleases(releases)
+			}
 			if (connection.role === "follower" && id === this.leader) {
 				this.ready = false
 				this.clearNotes()
@@ -243,7 +266,35 @@ export class RoomWorkspace {
 				)
 			} else if (connection.role === "leader") {
 				this.silence()
+				this.broadcastClassroom()
 			}
+		}
+	}
+
+	broadcastClassroom(): void {
+		if (!this.closed && this.connection.role === "leader") {
+			this.connection.broadcastData({
+				type: "classroom",
+				state: this.classroom.getState()
+			})
+		}
+	}
+
+	flushClassroomReleases(commands: IAudioCommand[]): void {
+		if (!commands.length || this.closed) {
+			return
+		}
+		const target = this.manager.activeChain ?? this.manager.chains[0]
+		if (!target?.isActive) {
+			return
+		}
+		this.injectingClassroom = true
+		try {
+			for (const command of commands) {
+				target.onInputEvent(new InputAudioEvent(command))
+			}
+		} finally {
+			this.injectingClassroom = false
 		}
 	}
 
@@ -312,16 +363,77 @@ export class RoomWorkspace {
 	}
 
 	private input = (chainId: string, command: IAudioCommand): boolean => {
+		if (this.injectingClassroom) {
+			return false
+		}
 		if (this.previousInput?.(chainId, command)) {
 			return true
 		}
 		if (this.mode === "harmony") {
+			if (!MUSICAL_COMMANDS.has(command.type)) {
+				return false
+			}
+			const processed = this.classroom.processPeerCommand(
+				this.connection.id,
+				command,
+				this.now()
+			)
+			if (!processed.length) {
+				return true
+			}
+			const needsRewrite =
+				processed.length !== 1 ||
+				processed[0].number !== command.number ||
+				processed[0].channel !== command.channel
+			if (needsRewrite) {
+				const chain = this.manager.getChain(chainId)
+				if (chain?.isActive) {
+					this.injectingClassroom = true
+					try {
+						for (const next of processed) {
+							chain.onInputEvent(new InputAudioEvent(next))
+						}
+					} finally {
+						this.injectingClassroom = false
+					}
+				}
+				return true
+			}
 			return false
 		}
 		if (this.applying || this.dirty) {
 			return true
 		}
 		if (this.connection.role === "leader") {
+			if (!MUSICAL_COMMANDS.has(command.type)) {
+				return false
+			}
+			const processed = this.classroom.processPeerCommand(
+				this.connection.id,
+				command,
+				this.now()
+			)
+			if (!processed.length) {
+				return true
+			}
+			const needsRewrite =
+				processed.length !== 1 ||
+				processed[0].number !== command.number ||
+				processed[0].channel !== command.channel
+			if (needsRewrite) {
+				const chain = this.manager.getChain(chainId)
+				if (chain?.isActive) {
+					this.injectingClassroom = true
+					try {
+						for (const next of processed) {
+							chain.onInputEvent(new InputAudioEvent(next))
+						}
+					} finally {
+						this.injectingClassroom = false
+					}
+				}
+				return true
+			}
 			return false
 		}
 		if (this.ready && !this.applying && MUSICAL_COMMANDS.has(command.type)) {
@@ -460,10 +572,26 @@ export class RoomWorkspace {
 		if (!host && this.leader && id !== this.leader) {
 			return
 		}
+		if (message.type === "classroom" && !host) {
+			this.leader = id
+			const next = this.classroom.applyRemoteState(message.state)
+			this.manager.externallyControlledHarmony = next.lockHarmony || this.mode === "harmony"
+			if (next.lockHarmony) {
+				this.applyingHarmony = true
+				try {
+					this.manager.setHarmony(next.harmony)
+				} finally {
+					this.applyingHarmony = false
+				}
+			}
+			return
+		}
 		if (message.type === "request-harmony" && host) {
 			this.readyPeers.delete(id)
 			this.harmonyPeers.add(id)
+			this.classroom.ensurePeer(id, false)
 			this.send(id, { type: "harmony", state: this.manager.harmony })
+			this.broadcastClassroom()
 			return
 		}
 		if (message.type === "harmony" && !host) {
@@ -571,7 +699,17 @@ export class RoomWorkspace {
 			const chain = this.manager.getChain(message.chainId)
 			const command = unpackRoomCommand(message.command, this.now())
 			if (chain?.isActive && command) {
-				chain.onInputEvent(new InputAudioEvent(command))
+				const routed = this.classroom.processPeerCommand(id, command, this.now())
+				if (routed.length) {
+					this.injectingClassroom = true
+					try {
+						for (const next of routed) {
+							chain.onInputEvent(new InputAudioEvent(next))
+						}
+					} finally {
+						this.injectingClassroom = false
+					}
+				}
 			}
 		} else if (
 			message.type === "output" &&
@@ -605,9 +743,7 @@ export class RoomWorkspace {
 	}
 
 	async destroy() {
-		if (this.mode === "harmony") {
-			this.manager.externallyControlledHarmony = this.previousHarmonyControl
-		}
+		this.manager.externallyControlledHarmony = this.previousHarmonyControl
 		this.closed = true
 		clearTimeout(this.edits)
 		this.abort.abort()

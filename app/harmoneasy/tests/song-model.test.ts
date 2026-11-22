@@ -338,8 +338,8 @@ describe("recording songs", () => {
 		const previous = describeMIDI(new Midi(previousMIDI(timer).toArray()))
 		expect(current.name).toBe(previous.name)
 		expect(current.tempos).toEqual(previous.tempos)
-		expect(current.tracks.map(({ notes, ...track }) => track)).toEqual(
-			previous.tracks.map(({ notes, ...track }) => track)
+		expect(current.tracks.map(({ notes: _notes, ...track }) => track)).toEqual(
+			previous.tracks.map(({ notes: _notes, ...track }) => track)
 		)
 		for (const [index, track] of current.tracks.entries()) {
 			expect(track.notes).toHaveLength(previous.tracks[index].notes.length)

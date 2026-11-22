@@ -132,9 +132,22 @@
 	--pad: 1rem;
 	--border: 1px solid var(--col-line);
 	--control-height: 36px;
+	--focus-ring-width: 2px;
+	--stage-pad-min-size: 64px;
 	--shadow-sm: 0 1px 3px oklch(0% 0 0 / 0.16);
 	--shadow-md: 0 6px 20px oklch(0% 0 0 / 0.2);
 	--shadow-lg: 0 24px 80px oklch(0% 0 0 / 0.32);
+
+	/* Focus Stage pads (perceptually distinct OKLCH tones; overridden in colorblind-safe mode). */
+	--stage-pad-fg: oklch(99% 0 0);
+	--stage-pad-1: light-dark(oklch(44% 0.15 260), oklch(66% 0.14 260));
+	--stage-pad-2: light-dark(oklch(45% 0.15 200), oklch(68% 0.14 200));
+	--stage-pad-3: light-dark(oklch(45% 0.15 150), oklch(68% 0.14 150));
+	--stage-pad-4: light-dark(oklch(46% 0.15 95), oklch(72% 0.14 95));
+	--stage-pad-5: light-dark(oklch(46% 0.16 55), oklch(70% 0.15 55));
+	--stage-pad-6: light-dark(oklch(45% 0.17 20), oklch(66% 0.16 20));
+	--stage-pad-7: light-dark(oklch(44% 0.16 335), oklch(66% 0.15 335));
+	--stage-pad-8: light-dark(oklch(44% 0.16 295), oklch(66% 0.15 295));
 
 	/* Motion */
 	--time-short: 90ms;
@@ -159,6 +172,61 @@
 :root[data-theme-mode="dark"] {
 	color-scheme: dark;
 	--dark: 1;
+}
+
+/* Okabe-Ito inspired colorblind-safe 8-pad palette (distinguishable under protanopia, deuteranopia, tritanopia). */
+:root[data-palette="colorblind-safe"] {
+	--stage-pad-1: light-dark(oklch(38% 0.12 250), oklch(68% 0.13 250));
+	--stage-pad-2: light-dark(oklch(48% 0.14 68), oklch(75% 0.15 68));
+	--stage-pad-3: light-dark(oklch(48% 0.11 225), oklch(76% 0.11 225));
+	--stage-pad-4: light-dark(oklch(44% 0.12 165), oklch(70% 0.13 165));
+	--stage-pad-5: light-dark(oklch(48% 0.12 96), oklch(84% 0.14 96));
+	--stage-pad-6: light-dark(oklch(44% 0.16 38), oklch(68% 0.17 38));
+	--stage-pad-7: light-dark(oklch(46% 0.13 340), oklch(73% 0.13 340));
+	--stage-pad-8: light-dark(oklch(30% 0 0), oklch(82% 0 0));
+}
+
+/* WCAG AAA High-Contrast mode: pure black/white grounds, bold borders and maximum legibility. */
+:root[data-contrast="high"] {
+	--col-bg: light-dark(oklch(100% 0 0), oklch(0% 0 0));
+	--col-surface-sunken: light-dark(oklch(96% 0 0), oklch(6% 0 0));
+	--col-surface: light-dark(oklch(100% 0 0), oklch(8% 0 0));
+	--col-surface-raised: light-dark(oklch(95% 0 0), oklch(14% 0 0));
+	--col-fg: light-dark(oklch(0% 0 0), oklch(100% 0 0));
+	--col-muted: light-dark(oklch(14% 0 0), oklch(92% 0 0));
+	--col-line: light-dark(oklch(0% 0 0), oklch(100% 0 0));
+	--col-line-strong: light-dark(oklch(0% 0 0), oklch(100% 0 0));
+	--col-accent: light-dark(oklch(28% 0.18 260), oklch(88% 0.16 95));
+	--col-accent-hover: light-dark(oklch(20% 0.18 260), oklch(94% 0.16 95));
+	--col-on-accent: light-dark(oklch(100% 0 0), oklch(0% 0 0));
+	--border: 2px solid var(--col-line-strong);
+	--focus-ring: light-dark(oklch(28% 0.18 260), oklch(92% 0.18 95));
+	--focus-ring-width: 3px;
+}
+
+:root[data-target-size="large"] {
+	--control-height: 48px;
+	--stage-pad-min-size: 108px;
+}
+
+:root[data-target-size="xlarge"] {
+	--control-height: 56px;
+	--stage-pad-min-size: 148px;
+}
+
+:root[data-reduced-motion="reduce"] {
+	--time-short: 0ms;
+	--time-medium: 0ms;
+	--time-long: 0ms;
+}
+
+:root[data-reduced-motion="reduce"] *,
+:root[data-reduced-motion="reduce"] *::before,
+:root[data-reduced-motion="reduce"] *::after {
+	animation-duration: 0.01ms !important;
+	animation-iteration-count: 1 !important;
+	transition-duration: 0.01ms !important;
+	scroll-behavior: auto !important;
 }
 
 @media (prefers-contrast: more) {

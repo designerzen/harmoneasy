@@ -113,7 +113,7 @@ export const INPUT_GUIDANCE: Record<InputId, Guidance> = {
 			guide(
 				"MIDI",
 				profile.description,
-				profile.abilities.join(", "),
+				profile.abilities.join(", ") || `Playing ${profile.name}.`,
 				`Enable virtual input to play on screen, or connect ${profile.name} with Web MIDI or native desktop MIDI permission.`
 			)
 		])

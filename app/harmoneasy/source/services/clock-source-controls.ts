@@ -1,3 +1,9 @@
+import {
+	EVENT_CHANGE,
+	EVENT_CLICK,
+	EVENT_KEY_DOWN,
+	EVENT_PAGE_HIDE
+} from "audiobus/events/event-constants"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
 import {
 	ClockSourceController,
@@ -152,7 +158,7 @@ export function createClockSourceControls(
 	const controller = new ClockSourceController(timer, manager, link, render, error)
 	ready = true
 	select.disabled = false
-	select.addEventListener("change", async () => {
+	select.addEventListener(EVENT_CHANGE, async () => {
 		const requestedMicrophone = select.value === "microphone"
 		const source = requestedMicrophone ? "internal" : (select.value as ClockSource)
 		select.disabled = true
@@ -173,10 +179,10 @@ export function createClockSourceControls(
 			select.disabled = false
 		}
 	})
-	device.addEventListener("change", () => {
+	device.addEventListener(EVENT_CHANGE, () => {
 		void controller.setMidiDevice(device.value).catch(error)
 	})
-	dvsBpm.addEventListener("change", () => {
+	dvsBpm.addEventListener(EVENT_CHANGE, () => {
 		try {
 			controller.setDvsReferenceBPM(Number(dvsBpm.value))
 			persistReferenceBPM(controller.dvsReferenceBPM)
@@ -185,11 +191,11 @@ export function createClockSourceControls(
 		}
 		dvsBpm.value = String(controller.dvsReferenceBPM)
 	})
-	dvsRestart.addEventListener("change", () => {
+	dvsRestart.addEventListener(EVENT_CHANGE, () => {
 		controller.dvsRestartOnStart = dvsRestart.checked
 		persistRestartOnStart(dvsRestart.checked)
 	})
-	tick.addEventListener("click", () => {
+	tick.addEventListener(EVENT_CLICK, () => {
 		void controller.manualTick().catch(error)
 	})
 	const keydown = (event: KeyboardEvent) => {
@@ -217,11 +223,11 @@ export function createClockSourceControls(
 		event.stopImmediatePropagation()
 		void controller.manualTick().catch(error)
 	}
-	window.addEventListener("keydown", keydown, { capture: true })
+	window.addEventListener(EVENT_KEY_DOWN, keydown, { capture: true })
 	window.addEventListener(
-		"pagehide",
+		EVENT_PAGE_HIDE,
 		() => {
-			window.removeEventListener("keydown", keydown, { capture: true })
+			window.removeEventListener(EVENT_KEY_DOWN, keydown, { capture: true })
 			controller.destroy()
 		},
 		{ once: true }

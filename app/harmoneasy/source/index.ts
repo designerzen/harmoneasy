@@ -15,6 +15,9 @@ import { registerInterfaceCommands } from "./services/interface-commands"
 import { registerApplicationCommands } from "./services/application-commands"
 import { createRemoteControlButton } from "./services/remote-control-window"
 import { createThemeControls } from "./services/theme"
+import { createAccessibilityControls } from "./services/accessibility"
+import { createFocusStage } from "./services/focus-stage"
+import { installMotorStabilizer } from "./services/motor-stabilizer"
 import { createEmptySetup, createStartContexts } from "./services/start-contexts"
 import { nextPaint, setButtonBusy, showLoadingVeil } from "./libs/loader"
 import { createSetupWizard } from "./services/setup-wizard"
@@ -35,12 +38,23 @@ import { configureAudiobus } from "./audiobus-host"
 import { createRecordingControls } from "./services/recording-dialog"
 import { createMusicalFeatureControls } from "./services/musical-feature-controls"
 import {
+	EVENT_CANCEL,
+	EVENT_CHAIN_ACTIVE_CHANGED,
+	EVENT_CHAINS_UPDATED,
 	EVENT_HARMONY_CHANGED,
+	EVENT_HARMONY_SETTINGS_CHANGED,
 	EVENT_PAGE_HIDE,
-	EVENT_HARMONY_SETTINGS_CHANGED
+	EVENT_SUBMIT,
+	EVENT_TRANSPORT_CHANGED
 } from "audiobus/events/event-constants"
 import { createClockSourceControls } from "./services/clock-source-controls"
-import { createMediaImporter, loadedSongs } from "./services/media-import"
+import { createMediaImporter } from "./services/media-import"
+import { wireExportControls } from "./services/export-wiring"
+import {
+	parseInitialTempo,
+	parseInitialVolumePercent,
+	wireFrontEndControls
+} from "./services/transport-wiring"
 import {
 	isClockSource,
 	clockDvsInputs,
@@ -48,23 +62,8 @@ import {
 	type ClockSourceController
 } from "./services/clock-source"
 
-// Integration
-import { captureAudioToolTake, createAudioToolPanel } from "audiotool"
-import { createOpenDAWProjectFromAudioEventRecording } from "opendaw"
-
-// Export recordings through the shared format registry
-import { getExportFormat, type ExportFormat } from "audiobus/exporters/registry"
-import { saveScoreToLocalFileSystem as saveExportToLocalFileSystem } from "audiobus/exporters/download-score"
-import type { SequenceNote } from "audiobus/formats/note-sequence"
-import { songFromRecording, songNotes } from "audiobus/formats/song-source"
-import { captureTrackerSamples } from "audiobus/io/recording/capture-instrument-samples"
-import {
-	renderVexFlowToContainer,
-	createVexFlowHTMLFromAudioEventRecording
-} from "audiobus/exporters/adapter-vexflow.ts"
-
 // Timing
-import { AudioTimer, TIMER_TYPES } from "netronome"
+import { AudioTimer } from "netronome"
 
 // Audio
 import AudioBus from "./audio.ts"
@@ -80,12 +79,10 @@ import { ALL_KEYBOARD_NOTES } from "audiobus/io/inputs/input-onscreen-keyboard.t
 // Back End
 import OPFSStorage, { hasOPFS } from "audiobus/storage/opfs-storage.ts"
 
-// Types
-import type { IAudioCommand } from "audiobus/commands/audio-command-interface.ts"
-
 configureAudiobus()
 
 createThemeControls(document)
+const accessibilityControls = createAccessibilityControls(document)
 createAboutDialog(document)
 createCommandPalette(document)
 registerInterfaceCommands(document)
@@ -103,210 +100,55 @@ let metronomeEnabled = false
 let netronomeLink: ReturnType<typeof createNetronomeLink> | undefined
 let clockSource: ClockSourceController | undefined
 let musicalFeatureControls: ReturnType<typeof createMusicalFeatureControls> | undefined
+let focusStage: ReturnType<typeof createFocusStage> | undefined
 
 /**
- * Create the UI and front end
- * TODO: Condense and optimise
+ * Create the UI and front end.
  */
 const initialiseFrontEnd = async (audioBus: AudioBus, initialVolumePercent: number = 100) => {
-	// const keyboard:SVGKeyboard = new SVGKeyboard(ALL_KEYBOARD_NOTES, onNoteOn, onNoteOff)
 	const frontEnd = new UI(ALL_KEYBOARD_NOTES)
 	frontEnd.setTempo(timer.BPM)
 	frontEnd.setSwing(timer.swing)
 	frontEnd.setVolume(initialVolumePercent)
 	frontEnd.setMetronomeEnabled(metronomeEnabled)
-	frontEnd.whenMetronomeRequestedRun(async () => {
-		metronomeEnabled = !metronomeEnabled
-		frontEnd.setMetronomeEnabled(metronomeEnabled)
-		if (!metronomeEnabled) {
-			return
-		}
-		try {
-			await bus.audioContext.resume()
-			metronome ??= new OutputMetronome(bus.audioContext)
-			if (metronomeEnabled && clockSource?.source === "internal") {
-				await ioManager.transport("start")
+
+	wireFrontEndControls({
+		frontEnd,
+		audioBus,
+		timer,
+		state,
+		recorder,
+		getIOManager: () => ioManager,
+		getNetronomeLink: () => netronomeLink,
+		onMetronomeToggle: async () => {
+			metronomeEnabled = !metronomeEnabled
+			frontEnd.setMetronomeEnabled(metronomeEnabled)
+			if (!metronomeEnabled) {
+				return
 			}
-		} catch (error) {
-			metronomeEnabled = false
-			frontEnd.setMetronomeEnabled(false)
-			frontEnd.showError(
-				"Metronome unavailable",
-				error instanceof Error ? error.message : String(error)
-			)
-		}
-	})
-	// frontEnd.setUIKeyboard( keyboard )
-
-	// Panic button  - kill all playing notes
-	frontEnd.whenKillSwitchRequestedRun(async () => {
-		netronomeLink?.silence()
-		console.info("[Kill Switch] All notes off requested")
-		ioManager.chains.forEach((chain) => {
-			chain.allNotesOff()
-		})
-	})
-
-	// Reset Recorder - kill all played notes
-	frontEnd.whenResetRequestedRun(async () => {
-		recorder.clear()
-		frontEnd.noteTimeline.clear()
-		timer.resetTimer()
-	})
-
-	// FIXME: Random timbre button
-	// ui.whenRandomTimbreRequestedRun(e => synthesizer.setRandomTimbre())
-
-	frontEnd.whenTempoChangesRun((tempo: number) => {
-		timer.BPM = tempo
-		netronomeLink?.tempoChanged()
-		state.set("tempo", tempo)
-	})
-
-	frontEnd.whenSwingChangesRun((swing: number) => {
-		timer.swing = swing
-		netronomeLink?.tempoChanged()
-		state.set("swing", swing)
-	})
-
-	frontEnd.whenTempoUpRequestedRun(() => {
-		const newTempo = Math.min(303, timer.BPM + 1)
-		timer.BPM = newTempo
-		netronomeLink?.tempoChanged()
-		frontEnd.setTempo(newTempo)
-		state.set("tempo", newTempo)
-	})
-
-	frontEnd.whenTempoDownRequestedRun(() => {
-		const newTempo = Math.max(10, timer.BPM - 1)
-		timer.BPM = newTempo
-		netronomeLink?.tempoChanged()
-		frontEnd.setTempo(newTempo)
-		state.set("tempo", newTempo)
-	})
-
-	// Settings - Timer Type Selection
-	frontEnd.whenSettingsRequestedRun(() => {
-		const currentTimerType = state.get("timerType") || TIMER_TYPES.AUDIO_CONTEXT
-		frontEnd.setTimerType(currentTimerType as string)
-	})
-
-	frontEnd.whenTimerTypeChangesRun(async (timerType: string) => {
-		console.info("Timer type change requested:", timerType)
-		try {
-			const success = await timer.switchTimerType(timerType, bus.audioContext)
-			if (success) {
-				state.set("timerType", timerType)
-				console.info("Timer type switched successfully to:", timerType)
-			} else {
-				console.warn("Failed to switch timer type to:", timerType)
-				frontEnd.showError("Timer Switch Failed", `Could not switch to ${timerType}`)
-			}
-		} catch (error) {
-			console.error("Error switching timer type:", error)
-			frontEnd.showError(
-				"Timer Switch Error",
-				error instanceof Error ? error.message : "Unknown error"
-			)
-		}
-	})
-
-	frontEnd.whenVolumeChangesRun((volume: number) => {
-		audioBus.volume = volume / 100
-		state.set("volume", volume)
-	})
-
-	frontEnd.whenVolumeUpRequestedRun(() => {
-		const volumeElement = frontEnd.elementVolume as HTMLInputElement
-		const currentVolume = parseInt(volumeElement.value, 10)
-		const newVolume = Math.min(100, currentVolume + 5)
-		volumeElement.value = String(newVolume)
-		audioBus.volume = newVolume / 100
-		if (frontEnd.elementVolumeOutput) {
-			frontEnd.elementVolumeOutput.textContent = String(newVolume)
-		}
-		state.set("volume", newVolume)
-	})
-
-	frontEnd.whenVolumeDownRequestedRun(() => {
-		const volumeElement = frontEnd.elementVolume as HTMLInputElement
-		const currentVolume = parseInt(volumeElement.value, 10)
-		const newVolume = Math.max(0, currentVolume - 5)
-		volumeElement.value = String(newVolume)
-		audioBus.volume = newVolume / 100
-		if (frontEnd.elementVolumeOutput) {
-			frontEnd.elementVolumeOutput.textContent = String(newVolume)
-		}
-		state.set("volume", newVolume)
-	})
-
-	// Tracker modules embed a sample of each instrument as it sounds in HarmonEasy
-	const exportOptionsFor = async (
-		format: ExportFormat,
-		notes: SequenceNote[]
-	): Promise<Parameters<ExportFormat["export"]>[1]> => {
-		if (format.kind !== "tracker" || !ioManager) {
-			return undefined
-		}
-		frontEnd.setExportOverlayText(`Sampling instruments for ${format.label}…`)
-		const samples = await captureTrackerSamples({
-			audioContext: audioBus.audioContext,
-			getChain: (chainId) => ioManager.getChain(chainId) ?? undefined,
-			notes,
-			mute: () => {
-				const output = audioBus.output.gain,
-					volume = output.value
-				output.value = 0
-				return () => {
-					output.value = volume
+			try {
+				await bus.audioContext.resume()
+				metronome ??= new OutputMetronome(bus.audioContext)
+				if (metronomeEnabled && clockSource?.source === "internal") {
+					await ioManager.transport("start")
 				}
-			},
-			onProgress: (done, total) =>
-				frontEnd.setExportOverlayText(
-					`Sampling instruments for ${format.label} (${done}/${total})…`
+			} catch (error) {
+				metronomeEnabled = false
+				frontEnd.setMetronomeEnabled(false)
+				frontEnd.showError(
+					"Metronome unavailable",
+					error instanceof Error ? error.message : String(error)
 				)
-		})
-		frontEnd.setExportOverlayText(`Exporting ${format.label}…`)
-		return { samples }
-	}
-	/** Export the recording, or a loaded song by its id, without playing it into the recorder */
-	const exportRecording = async (id: string, source = "recording") => {
-		try {
-			const format = getExportFormat(id)
-			if (!format) {
-				throw new Error(`Unknown export format: ${id}`)
 			}
-			frontEnd.setExportOverlayText(`Exporting ${format.label}…`)
-			frontEnd.showExportOverlay()
-			const song =
-				source === "recording"
-					? songFromRecording(recorder, timer)
-					: ioManager && loadedSongs(ioManager).find((entry) => entry.id === source)?.song
-			if (!song) {
-				throw new Error("The selected song is no longer loaded")
-			}
-			const blob = await format.export(song, await exportOptionsFor(format, songNotes(song)))
-			saveExportToLocalFileSystem(blob, song.name, format.extension)
-		} catch (error) {
-			frontEnd.showError(
-				"Export failed",
-				error instanceof Error ? error.message : String(error)
-			)
-		} finally {
-			frontEnd.hideExportOverlay()
 		}
-	}
-	frontEnd.whenExportRequestedRun(exportRecording, () =>
-		ioManager ? loadedSongs(ioManager) : []
-	)
-	frontEnd.whenVexFlowExportRequestedRun(async () => {
-		await frontEnd.renderVexFlowModal(
-			renderVexFlowToContainer,
-			recorder,
-			timer,
-			createVexFlowHTMLFromAudioEventRecording,
-			(blob: Blob, name: string) => saveExportToLocalFileSystem(blob, name, "html")
-		)
+	})
+
+	wireExportControls({
+		frontEnd,
+		audioBus,
+		recorder,
+		getTimer: () => timer,
+		getIOManager: () => ioManager
 	})
 
 	let importMedia: ReturnType<typeof createMediaImporter> | undefined
@@ -336,55 +178,6 @@ const initialiseFrontEnd = async (audioBus: AudioBus, initialVolumePercent: numb
 	}
 	frontEnd.whenFileImportRequestedRun(loadMedia)
 	frontEnd.whenMediaDroppedRun(loadMedia)
-
-	// Exports --------------------------------------------------
-	frontEnd.whenExportMenuRequestedRun(() => {
-		console.info("Export menu opened")
-	})
-	let sentThrough = 0
-	let lastSentEvent: IAudioCommand | undefined
-	const audioTool = createAudioToolPanel(() => {
-		// Reset the cursor when the recorder is cleared or replaced.
-		if (sentThrough && recorder.events[sentThrough - 1] !== lastSentEvent) {
-			sentThrough = 0
-		}
-		const end = recorder.events.length
-		const lastEvent = recorder.events[end - 1]
-		const take = captureAudioToolTake(
-			recorder.events.slice(sentThrough, end),
-			timer.BPM,
-			timer.now,
-			recorder.name
-		)
-		return {
-			take,
-			markSent: () => {
-				sentThrough = end
-				lastSentEvent = lastEvent
-			}
-		}
-	})
-	frontEnd.whenAudioToolExportRequestedRun(() => audioTool.open())
-	frontEnd.whenOpenDAWExportRequestedRun(async () => {
-		const script = await createOpenDAWProjectFromAudioEventRecording(recorder, timer)
-		console.info("Exporting Data to OpenDAW", { recorder, script })
-		frontEnd.showOpenDAWExportDialog(script)
-	})
-
-	// TODO: Global scale?
-	// frontEnd.whenNewScaleIsSelected( (scaleNName:string, select:HTMLElement ) => {
-	//     console.log("New scale selected:", scaleNName)
-	//     // state.set( scaleNName, true )
-
-	//     // ensure we turn all notes off before we change
-	//     // otherwise any currently active notes may stick fprever
-
-	//     intervalFormula = INTERVALS.MODAL_SCALES[TUNING_MODE_NAMES.indexOf(scaleNName) ]
-	// })
-
-	// frontEnd.whenNoteVisualiserDoubleClickedRun(() => {
-	//     synthesizer.setRandomTimbre()
-	// })
 
 	return frontEnd
 }
@@ -440,8 +233,7 @@ const initialiseApplication = async (
 	state.updateLocation()
 
 	// Volume initialization (needed before UI setup)
-	const volumeState = state.get("volume")
-	const initialVolumePercent: number = volumeState ? parseFloat(volumeState as string) : 50
+	const initialVolumePercent: number = parseInitialVolumePercent(state.get("volume"), 50)
 	const initialVolume: number = Math.max(0, Math.min(1, initialVolumePercent / 100))
 
 	bus = new AudioBus(initialVolume)
@@ -468,6 +260,22 @@ const initialiseApplication = async (
 		externalDevices: { ui }
 	})
 	createMixer(ioManager, bus.output)
+	installMotorStabilizer(ioManager, () => {
+		const prefs = accessibilityControls.getPreferences()
+		return {
+			enabled: prefs.stabilizerEnabled,
+			debounceMs: prefs.debounceMs,
+			holdThresholdMs: prefs.holdThresholdMs,
+			minDurationMs: prefs.minDurationMs
+		}
+	})
+	focusStage = createFocusStage({
+		manager: ioManager,
+		doc: document,
+		accessibility: accessibilityControls,
+		audioContext: bus.audioContext,
+		getNow: () => timer.now
+	})
 	const audioRecording = createRecordingControls(
 		bus.audioContext,
 		bus.output,
@@ -480,7 +288,7 @@ const initialiseApplication = async (
 		ui.setPlaying(ioManager.transportRunning)
 		ui.showError("Transport failed", error instanceof Error ? error.message : String(error))
 	}
-	ioManager.addEventListener("transportChanged", () => {
+	ioManager.addEventListener(EVENT_TRANSPORT_CHANGED, () => {
 		ui.setPlaying(ioManager.transportRunning)
 		netronomeLink?.transportChanged()
 	})
@@ -568,10 +376,10 @@ const initialiseApplication = async (
 		}
 	}
 
-	ioManager.addEventListener("chainsUpdated", persistIOState)
+	ioManager.addEventListener(EVENT_CHAINS_UPDATED, persistIOState)
 	ioManager.addEventListener(EVENT_HARMONY_CHANGED, persistIOState)
 	ioManager.addEventListener(EVENT_HARMONY_SETTINGS_CHANGED, persistIOState)
-	ioManager.addEventListener("chainActiveChanged", persistIOState)
+	ioManager.addEventListener(EVENT_CHAIN_ACTIVE_CHANGED, persistIOState)
 
 	const { createGraph } = await import("./components/transformers-graph")
 	createMidiDevicesDialog()
@@ -586,7 +394,7 @@ const initialiseApplication = async (
 	}).catch((error) => console.warn("MIDI instrument discovery unavailable", error))
 
 	// start the clock going
-	timer.bpm = parseFloat(state.get("tempo") ?? 99)
+	timer.BPM = parseInitialTempo(state.get("tempo"), 99)
 	const savedSwing = Number(state.get("swing") ?? 0)
 	timer.swing = Number.isFinite(savedSwing) ? savedSwing : 0
 	ui.setSwing(timer.swing)
@@ -605,10 +413,10 @@ const initialiseApplication = async (
 		manager: ioManager,
 		roomId: roomInvitation.roomId,
 		onConductorChanged: (conductor) => clockSource?.adoptRoomRole(conductor),
-		onLeaveRequested: () => clockSource!.setSource("internal"),
+		onLeaveRequested: () => clockSource?.setSource("internal") ?? Promise.resolve(),
 		source: initialClockSource,
 		autoStart: false,
-		onSharedRequested: () => clockSource!.setSource("shared", false)
+		onSharedRequested: () => clockSource?.setSource("shared", false) ?? Promise.resolve()
 	})
 	clockSource = createClockSourceControls(
 		timer,
@@ -768,12 +576,13 @@ const onTick = (values: Record<string, any>) => {
 		ui.setPlaying(ioManager.transportRunning)
 	}
 	// The timer wraps divisions once per quarter note; its bar counter counts beats.
-	if (metronomeEnabled && divisionsElapsed === 0) {
-		metronome?.playBeat(
-			barsElapsed * bars + bar,
-			timer.syncOptions.beatsPerBar ?? 4,
-			values.scheduledContextTimeSeconds
-		)
+	if (divisionsElapsed === 0) {
+		const beatIndex = barsElapsed * bars + bar
+		const beatsPerBar = timer.syncOptions.beatsPerBar ?? 4
+		focusStage?.pulseBeat(beatIndex, beatsPerBar)
+		if (metronomeEnabled) {
+			metronome?.playBeat(beatIndex, beatsPerBar, values.scheduledContextTimeSeconds)
+		}
 	}
 	musicalFeatureControls?.tick(barsElapsed * bars + bar + divisionsElapsed / timer.divisions)
 	const capturedEvents = ioManager.updateTime(now, divisionsElapsed, options)
@@ -890,7 +699,7 @@ createSetupWizard(wizardButton, (setup) => {
 	void startApplication(wizardButton, setup)
 })
 startDialog.showModal()
-startDialog.addEventListener("cancel", (event) => event.preventDefault())
+startDialog.addEventListener(EVENT_CANCEL, (event) => event.preventDefault())
 async function startApplication(button: HTMLButtonElement, setup?: PresetSetup) {
 	if (startDialog.inert) {
 		return
@@ -936,7 +745,7 @@ async function startApplication(button: HTMLButtonElement, setup?: PresetSetup) 
 	}
 }
 
-document.querySelector<HTMLFormElement>("#start-form")!.addEventListener("submit", (event) => {
+document.querySelector<HTMLFormElement>("#start-form")!.addEventListener(EVENT_SUBMIT, (event) => {
 	event.preventDefault()
 	const button = event.submitter as HTMLButtonElement | null
 	if (!button || button.disabled) {

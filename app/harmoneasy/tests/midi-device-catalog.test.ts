@@ -11,6 +11,10 @@ const html = readFileSync("public/midi-devices.html", "utf8")
 const script = /<script type="module">([\s\S]*?)<\/script>/.exec(html)![1]
 const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor
 const store = createMidiDeviceStore(() => [MIDI_DEVICE_DIRECTORY])
+// The catalog shows the surface image a profile declares, falling back to panel.svg.
+const diagramName = (devicePath: string, id: string): string =>
+	JSON.parse(readFileSync(`${MIDI_DEVICE_DIRECTORY}/${devicePath}/${id}.json`, "utf8")).surface
+		?.src ?? "panel.svg"
 
 async function catalog(
 	overrides: Record<string, unknown> = {},
@@ -62,7 +66,7 @@ describe("standalone MIDI device catalog", () => {
 				`https://example.test/harmoneasy/midi-devices/${devicePath}/icon.svg`
 			)
 			expect(card.querySelector(".diagram")?.getAttribute("src")).toBe(
-				`https://example.test/harmoneasy/midi-devices/${devicePath}/panel.svg`
+				`https://example.test/harmoneasy/midi-devices/${devicePath}/${diagramName(devicePath, id)}`
 			)
 			expect(card.querySelector("details")?.textContent).toContain(id)
 			expect(card.querySelector(".asset-links a:last-child")?.getAttribute("href")).toBe(

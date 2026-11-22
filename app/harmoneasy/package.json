@@ -1,7 +1,7 @@
 {
 	"name": "harmoneasy",
 	"private": true,
-	"version": "0.15.1",
+	"version": "0.19.1",
 	"description": "MIDI/audio application with Electron desktop support",
 	"author": "designerzen <radio@awesomething.co.uk>",
 	"homepage": "https://github.com/designerzen/harmoneasy",

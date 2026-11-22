@@ -1,6 +1,10 @@
 import type IOChainManager from "audiobus/io/IO-chain-manager"
 import type { TransformerPreset, PresetSetup, PresetLibrary } from "audiobus/io/preset-library"
-import { EVENT_PRESET_LIBRARY_UPDATED, EVENT_STORAGE } from "audiobus/events/event-constants"
+import {
+	EVENT_CLOSE,
+	EVENT_PRESET_LIBRARY_UPDATED,
+	EVENT_STORAGE
+} from "audiobus/events/event-constants"
 import { createPresetDetails } from "./PresetDetails"
 import { createPresetArtwork } from "./PresetArtwork"
 import { completePresets, presetSetup } from "./preset-catalogue"
@@ -175,12 +179,12 @@ export function createPresetBrowser({
 	toolsHeader.append(toolsTitle, dismissTools)
 	const openTools = button("Library options", () => tools.showModal(), "preset-library-trigger")
 	openTools.setAttribute("aria-haspopup", "dialog")
-	tools.addEventListener("close", () => {
+	tools.addEventListener(EVENT_CLOSE, () => {
 		if (!destroyed && openTools.isConnected) {
 			openTools.focus()
 		}
 	})
-	dialog?.addEventListener("close", () => {
+	dialog?.addEventListener(EVENT_CLOSE, () => {
 		if (tools.open) {
 			tools.close()
 		}

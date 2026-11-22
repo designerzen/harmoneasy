@@ -1,6 +1,15 @@
 import path from "path"
 import { registerMidi2IPC } from "./midi2-ipc.js"
-import { app, BrowserWindow, Menu, ipcMain, session, systemPreferences, protocol } from "electron"
+import {
+	app,
+	BrowserWindow,
+	dialog,
+	Menu,
+	ipcMain,
+	session,
+	systemPreferences,
+	protocol
+} from "electron"
 import {
 	createMidiDeviceStore,
 	MIDI_DEVICE_DIRECTORY
@@ -48,12 +57,19 @@ function setupAutoUpdater() {
 }
 
 async function initializeSocketServer() {
-	try {
-		const module = await import("./source/server/socket-server.js")
-		SocketServer = module.default
-	} catch (e) {
-		console.warn("Socket server module not available:", e.message)
+	for (const modulePath of [
+		"../source/server/socket-server.js",
+		"./source/server/socket-server.js"
+	]) {
+		try {
+			const module = await import(modulePath)
+			SocketServer = module.default
+			return
+		} catch {
+			continue
+		}
 	}
+	console.warn("Socket server module not available")
 }
 
 // Create a new window to use
@@ -71,7 +87,7 @@ function createWindow() {
 			webSecurity: true,
 			enableRemoteModule: false
 		},
-		icon: path.join(__dirname, "public/favicon.ico")
+		icon: path.join(__dirname, "..", "public", "favicon.ico")
 	})
 
 	// Load URL based on whether app is packaged
@@ -87,11 +103,23 @@ function createWindow() {
 		mainWindow.loadURL(devServerUrl)
 		mainWindow.webContents.openDevTools()
 
-		// Retry loading if connection fails (server not ready yet)
+		// Retry loading if connection fails (server not ready yet), bounded to avoid infinite loops
+		let devLoadRetries = 0
+		const maxDevLoadRetries = 30
+		mainWindow.webContents.on("did-finish-load", () => {
+			devLoadRetries = 0
+		})
 		mainWindow.webContents.on("did-fail-load", () => {
-			console.log("Dev server not ready, retrying in 1s...")
+			if (devLoadRetries >= maxDevLoadRetries) {
+				console.error("Dev server did not become ready after retries.")
+				return
+			}
+			devLoadRetries++
+			console.log(`Dev server not ready, retrying in 1s (${devLoadRetries}/${maxDevLoadRetries})...`)
 			setTimeout(() => {
-				mainWindow?.loadURL(devServerUrl)
+				if (mainWindow && !mainWindow.isDestroyed()) {
+					mainWindow.loadURL(devServerUrl)
+				}
 			}, 1000)
 		})
 	} else {
@@ -102,16 +130,37 @@ function createWindow() {
 	// Handle Bluetooth device selection
 	mainWindow.webContents.on("select-bluetooth-device", (event, deviceList, callback) => {
 		event.preventDefault()
-		// Auto-select the first available Bluetooth device
 		if (deviceList && deviceList.length > 0) {
 			callback(deviceList[0].deviceId)
+		} else {
+			callback("")
 		}
 	})
 
-	// Handle Bluetooth pairing (for devices that require PIN/confirmation)
-	mainWindow.webContents.session.setBluetoothPairingHandler((details, callback) => {
-		// Auto-accept pairing for now (in production, you'd want user confirmation)
-		callback({ confirmed: true })
+	// Handle Bluetooth pairing with explicit user confirmation
+	mainWindow.webContents.session.setBluetoothPairingHandler(async (details, callback) => {
+		try {
+			if (details.pairingKind === "providePin") {
+				callback({ confirmed: false })
+				return
+			}
+			const detail =
+				details.pairingKind === "confirmPin" && details.pin
+					? `Confirm that the PIN ${details.pin} matches the device.`
+					: `Allow Bluetooth pairing with device ${details.deviceId}?`
+			const { response } = await dialog.showMessageBox(mainWindow, {
+				type: "question",
+				buttons: ["Pair", "Cancel"],
+				defaultId: 0,
+				cancelId: 1,
+				title: "Bluetooth Pairing Request",
+				message: "Pair Bluetooth MIDI device?",
+				detail
+			})
+			callback({ confirmed: response === 0 })
+		} catch {
+			callback({ confirmed: false })
+		}
 	})
 
 	mainWindow.on("closed", () => {
@@ -183,14 +232,19 @@ app.on("ready", async () => {
 	setupAutoUpdater()
 
 	// Add user permissions
+	const allowedPermissions = new Set([
+		"media",
+		"audioCapture",
+		"microphone",
+		"midi",
+		"midiSysex"
+	])
 	session.defaultSession.setPermissionCheckHandler((_webContents, permission) => {
-		const allowed = ["media", "audioCapture", "microphone"]
-		return allowed.includes(permission)
+		return allowedPermissions.has(permission)
 	})
 
 	session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
-		const allowed = ["media", "audioCapture", "microphone"]
-		callback(allowed.includes(permission))
+		callback(allowedPermissions.has(permission))
 	})
 
 	// extra neccessary
@@ -247,8 +301,32 @@ ipcMain.handle("app:get-version", () => {
 	return app.getVersion()
 })
 
-ipcMain.handle("app:get-path", (event, name) => {
+const ALLOWED_APP_PATHS = new Set([
+	"home",
+	"appData",
+	"userData",
+	"temp",
+	"desktop",
+	"documents",
+	"downloads",
+	"music"
+])
+
+ipcMain.handle("app:get-path", (_event, name) => {
+	if (typeof name !== "string" || !ALLOWED_APP_PATHS.has(name)) {
+		throw new Error(`Disallowed app path requested: ${String(name)}`)
+	}
 	return app.getPath(name)
+})
+
+ipcMain.handle("dialog:openFile", (_event, options = {}) => {
+	const safeOptions = options && typeof options === "object" ? options : {}
+	return dialog.showOpenDialog(mainWindow, safeOptions)
+})
+
+ipcMain.handle("dialog:saveFile", (_event, options = {}) => {
+	const safeOptions = options && typeof options === "object" ? options : {}
+	return dialog.showSaveDialog(mainWindow, safeOptions)
 })
 
 ipcMain.on("app:minimize", () => {

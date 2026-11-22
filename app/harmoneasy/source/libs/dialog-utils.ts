@@ -2,6 +2,8 @@
  * Utilities for creating and managing dialogs from HTML templates
  */
 
+import { EVENT_CLICK, EVENT_CLOSE } from "audiobus/events/event-constants"
+
 export interface DialogOption {
 	id: string
 	label: string
@@ -57,7 +59,7 @@ export function createDialogFromTemplate(
 			button.title = option.description
 		}
 
-		button.addEventListener("click", async () => {
+		button.addEventListener(EVENT_CLICK, async () => {
 			try {
 				await option.onClick()
 				dialog!.close()
@@ -85,12 +87,12 @@ export function showDialog(dialog: HTMLDialogElement): Promise<void> {
 
 	return new Promise((resolve) => {
 		const handleClose = () => {
-			dialog.removeEventListener("close", handleClose)
+			dialog.removeEventListener(EVENT_CLOSE, handleClose)
 			dialog.remove()
 			resolve()
 		}
 
-		dialog.addEventListener("close", handleClose)
+		dialog.addEventListener(EVENT_CLOSE, handleClose)
 	})
 }
 

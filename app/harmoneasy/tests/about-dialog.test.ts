@@ -21,6 +21,19 @@ it("opens About from either logo without starting a session and keeps credits in
 	expect(dialog.open).toBe(false)
 	expect(document.querySelector("body > footer")).toBeNull()
 	expect(document.querySelector("#about-version")!.textContent).toContain(version)
+	const brandLinks = [
+		document.querySelector<HTMLAnchorElement>("#start-dialog a.brand-attribution"),
+		document.querySelector<HTMLAnchorElement>("#about-dialog > footer a.brand-attribution")
+	]
+	for (const link of brandLinks) {
+		expect(link).not.toBeNull()
+		expect(link!.href).toBe("https://awesmth.com/")
+		expect(link!.target).toBe("_blank")
+		expect(link!.rel).toBe("noopener noreferrer")
+		expect(link!.querySelector("img")?.getAttribute("src")).toContain(
+			"awesomething-logo-blue.svg"
+		)
+	}
 	const logos = document.querySelectorAll<HTMLButtonElement>("[data-about]")
 	expect(logos).toHaveLength(2)
 	logos[0].click()

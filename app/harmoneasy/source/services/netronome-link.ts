@@ -1,5 +1,6 @@
 import { createRoomConnection, ROOM_PROTOCOL } from "./room-connection"
 import { RoomWorkspace } from "./room-workspace"
+import { createClassroomPanel } from "./classroom-panel"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
 import {
 	EVENT_CLICK,
@@ -79,6 +80,29 @@ export function createNetronomeLink(
 		{ name: "Whole workspace and notes", value: "workspace" },
 		{ name: "Harmony only — keep my instruments", value: "harmony" }
 	])
+	const classroomHost = dialog.querySelector<HTMLElement>(".netronome-dialog-content") ?? dialog
+	const classroomPanel = createClassroomPanel({
+		host: classroomHost,
+		getRoomId: () => controller?.roomId ?? (room.value.trim() || undefined),
+		getBpm: () => Number(timer?.BPM) || 120,
+		getSwing: () => Number(timer?.swing) || 0,
+		getNow: () => Number(timer?.now) || 0,
+		isConductor: () => !follower,
+		onHarmonyChange: (harmony) => {
+			options.manager?.setHarmony?.(harmony)
+		},
+		onStateUpdated: () => {
+			workspace?.broadcastClassroom()
+		},
+		onReleaseNotes: (_peerId, commands) => {
+			workspace?.flushClassroomReleases(commands)
+		},
+		reportStatus: (message) => {
+			roomStatus = message
+			status.hidden = false
+			status.textContent = message
+		}
+	})
 	const initialInvitation = readRoomUrl(window.location.href)
 	const initialBundle = new URLSearchParams(window.location.hash.slice(1)).get("sync-bundle")
 	if (initialBundle) {
@@ -305,6 +329,7 @@ export function createNetronomeLink(
 			hideQR()
 			local.value = ""
 			updateSourceUI()
+			classroomPanel.refresh()
 			showStep(linked ? "connected" : step)
 		}
 		if (options.manager) {
@@ -319,6 +344,7 @@ export function createNetronomeLink(
 				sharing.value === "harmony" ? "harmony" : "workspace"
 			)
 		}
+		classroomPanel.attach(workspace?.classroom)
 		current.onStateChange = (state: { connected: boolean; locked: boolean }) => {
 			if (controller !== current) {
 				return
@@ -393,7 +419,10 @@ export function createNetronomeLink(
 		}
 	}
 	updateSourceUI()
-	button.addEventListener(EVENT_CLICK, () => dialog.showModal())
+	button.addEventListener(EVENT_CLICK, () => {
+		classroomPanel.refresh()
+		dialog.showModal()
+	})
 	document.getElementById("netronome-close")!.addEventListener(EVENT_CLICK, () => dialog.close())
 	document.getElementById("netronome-start")!.addEventListener(EVENT_CLICK, () => {
 		showStep("invite")
@@ -499,6 +528,7 @@ export function createNetronomeLink(
 				controller = undefined
 				await workspace?.destroy()
 				workspace = undefined
+				classroomPanel.attach(undefined)
 				sharing.disabled = false
 				roomStatus = ""
 				linked = follower = false
@@ -534,6 +564,9 @@ export function createNetronomeLink(
 		},
 		get isFollower() {
 			return follower
+		},
+		get classroom() {
+			return workspace?.classroom
 		}
 	}
 	document.getElementById("netronome-leave")!.addEventListener(EVENT_CLICK, () => {
