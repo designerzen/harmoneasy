@@ -332,9 +332,9 @@ describe("Switch-Access Scanner, Dwell, and Camera Gestures", () => {
 		releaseSelect.value = "latch"
 		releaseSelect.dispatchEvent(new Event(EVENT_CHANGE))
 
-		// Tab advances from pad 0 -> pad 1 (D4 = 62), Space latches it on, second Space releases it
+		// Right Arrow advances from pad 0 -> pad 1 (D4 = 62), Space latches it on, second Space releases it
 		stage.dialog.dispatchEvent(
-			new KeyboardEvent(EVENT_KEY_DOWN, { key: "Tab", bubbles: true })
+			new KeyboardEvent(EVENT_KEY_DOWN, { key: "ArrowRight", code: "ArrowRight", bubbles: true })
 		)
 		stage.dialog.dispatchEvent(
 			new KeyboardEvent(EVENT_KEY_DOWN, { code: "Space", key: " ", bubbles: true })

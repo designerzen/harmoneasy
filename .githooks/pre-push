@@ -1,3 +1,6 @@
 #!/bin/sh
-# Blocks pushes that would fail CI's frozen-lockfile install.
-exec node "$(git rev-parse --show-toplevel)/scripts/check-lockfile.mjs"
+# Blocks pushes that would fail CI: frozen-lockfile install, then the web app checks.
+set -e
+root="$(git rev-parse --show-toplevel)"
+node "$root/scripts/check-lockfile.mjs"
+pnpm --dir "$root/app/harmoneasy" run ci:check

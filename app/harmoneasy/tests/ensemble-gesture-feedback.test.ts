@@ -395,7 +395,9 @@ describe("research-guided ensemble performance", () => {
 			const wall = step * 0.6
 			tick(performance, (step - 1) * 0.6, wall)
 			tap(performance, 0, wall)
-			if (step % 2 === 0) tap(performance, 1, wall)
+			if (step % 2 === 0) {
+				tap(performance, 1, wall)
+			}
 		}
 		expect(performance.state.speed).toBeLessThan(0.97)
 		expect(performance.state.speed).toBeGreaterThan(0.85)
