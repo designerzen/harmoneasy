@@ -1,3 +1,9 @@
+.app-version {
+	font-size: var(--text-sm);
+	color: var(--col-muted);
+	white-space: nowrap;
+}
+
 #netronome-dialog {
 	width: min(36rem, calc(100vw - 2rem));
 	padding: 0;

@@ -15,3 +15,4 @@ node "$root/scripts/check-lockfile.mjs"
 pnpm --dir "$root/app/harmoneasy" run ci:check
 pnpm --dir "$root/app/harmoneasy" run build
 test -s "$root/app/harmoneasy/dist/index.html"
+test -s "$root/app/harmoneasy/dist/version.json"

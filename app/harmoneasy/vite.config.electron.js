@@ -5,6 +5,7 @@ import _path from "path"
 import { midiDeviceFilesPlugin } from "audiobus/hardware/midi-devices/device-files.js"
 import { supersonicFilesPlugin } from "audiobus/io/outputs/supersonic-files.js"
 import { agentDocsPlugin } from "./scripts/agent-docs.js"
+import { buildVersionPlugin } from "./scripts/build-version.js"
 
 /**
  * Vite config for Electron builds
@@ -72,6 +73,7 @@ export default defineConfig({
 		conditions: ["import"]
 	},
 	plugins: [
+		buildVersionPlugin(),
 		agentDocsPlugin(),
 		nodeAddonPlugin,
 		midiDeviceFilesPlugin(),

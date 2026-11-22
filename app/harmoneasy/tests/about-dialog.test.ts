@@ -21,6 +21,14 @@ it("opens About from either logo without starting a session and keeps credits in
 	expect(dialog.open).toBe(false)
 	expect(document.querySelector("body > footer")).toBeNull()
 	expect(document.querySelector("#about-version")!.textContent).toContain(version)
+	const buildVersion = __APP_VERSION__
+	expect(buildVersion).toMatch(/^\d+\.\d+\.\d+\+\d+$/)
+	expect(document.querySelector("#about-version")!.textContent).toBe(`Version ${buildVersion}`)
+	const versionLabels = document.querySelectorAll("[data-app-version]")
+	expect(versionLabels).toHaveLength(2)
+	for (const label of versionLabels) {
+		expect(label.textContent).toBe(`v${buildVersion}`)
+	}
 	const brandLinks = [
 		document.querySelector<HTMLAnchorElement>("#start-dialog a.brand-attribution"),
 		document.querySelector<HTMLAnchorElement>("#about-dialog > footer a.brand-attribution")

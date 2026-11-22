@@ -9,6 +9,7 @@ import { roomPagesPlugin } from "./scripts/room-pages.js"
 import { presetPagesPlugin } from "./scripts/preset-pages.js"
 import { cloudflareAssetsPlugin } from "./scripts/cloudflare-assets.js"
 import { agentDocsPlugin } from "./scripts/agent-docs.js"
+import { buildVersionPlugin } from "./scripts/build-version.js"
 
 // Vite's static middleware emits an empty MIME type for .tar.gz bundles.
 // Serve WCLAP archives explicitly so browser fetch does not treat them as downloads.
@@ -62,6 +63,7 @@ const webNativeAddonPlugin = {
 
 export default defineConfig({
 	plugins: [
+		buildVersionPlugin(),
 		webNativeAddonPlugin,
 		webclapBundlesPlugin,
 		midiDeviceFilesPlugin(),

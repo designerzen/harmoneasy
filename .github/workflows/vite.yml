@@ -60,7 +60,10 @@ jobs:
                   NODE_ENV: production
 
             - name: Verify Pages entry point
-              run: test -s app/harmoneasy/dist/index.html
+              run: |
+                  test -s app/harmoneasy/dist/index.html
+                  test -s app/harmoneasy/dist/version.json
+                  cat app/harmoneasy/dist/version.json
 
             - name: Upload Pages artifact
               if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
