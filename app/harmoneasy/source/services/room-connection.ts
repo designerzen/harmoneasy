@@ -395,28 +395,22 @@ export class RoomConnection {
 		if (id === this.conductorId || this.destroyed) {
 			return this.transition
 		}
-		const previous = this.session?.getState()
-		const playing = previous?.playing ?? this.timer.isRunning
-		const position = previous?.position ?? 0
+		const resuming = Boolean(this.session)
 		this.conductorId = id
 		this.transitioning = true
 		this.transition = this.transition
 			.then(async () => {
-				await this.session?.destroy()
-				this.session = undefined
-				this.starting = undefined
-				if (this.destroyed) {
-					return
-				}
 				await this.ensureSession()
 				if (this.destroyed) {
 					return
 				}
+				// Hand over in place: playback, tempo and clock estimates carry on.
+				this.session!.setLeader(id)
 				for (const peerId of this.connectedPeerIds) {
 					this.session!.addPeer(peerId)
 				}
-				if (this.role === "leader") {
-					this.session!.setTransport({ playing, position })
+				if (!resuming && this.role === "leader") {
+					this.session!.setTransport({ playing: this.timer.isRunning, position: 0 })
 				}
 				this.transitioning = false
 				this.onConductorChange?.(this.conductorId, this.role === "leader")
