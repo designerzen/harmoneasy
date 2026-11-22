@@ -34,7 +34,7 @@
 		"lint:fix": "oxlint --fix .",
 		"fmt": "oxfmt",
 		"fmt:check": "oxfmt --check",
-		"test:core": "vitest run --maxWorkers 2 --testTimeout 20000 tests/about-dialog.test.ts tests/start-contexts.test.ts tests/state-location.test.ts tests/clock-source.test.ts tests/preset-browser.test.ts tests/engineering-fixes.test.ts tests/classroom-session.test.ts tests/theme.test.ts tests/accessibility-focus-stage.test.ts tests/adaptive-input-timing.test.ts tests/access-profile-calibration.test.ts tests/setup-wizard.test.ts",
+		"test:core": "vitest run --config vite.config.web.js --maxWorkers 2 --testTimeout 20000 tests/about-dialog.test.ts tests/start-contexts.test.ts tests/state-location.test.ts tests/clock-source.test.ts tests/preset-browser.test.ts tests/engineering-fixes.test.ts tests/classroom-session.test.ts tests/theme.test.ts tests/accessibility-focus-stage.test.ts tests/adaptive-input-timing.test.ts tests/access-profile-calibration.test.ts tests/setup-wizard.test.ts",
 		"lint:ci": "pnpm -w exec oxlint app/harmoneasy/",
 		"ci:check": "pnpm run lint:ci && pnpm run type-check && pnpm run presets:validate --maxWorkers 2 && pnpm run test:core"
 	},
