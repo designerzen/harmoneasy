@@ -695,6 +695,33 @@
 	}
 }
 
+// Keep the complete key palette visible, with related settings below it.
+.node-transformer .transformer-controls.harmoniser-controls {
+	gap: 0.75rem 1rem;
+
+	> .harmoniser-summary,
+	> [data-control-id="root"] {
+		grid-column: 1 / -1;
+	}
+
+	.harmoniser-summary {
+		min-width: 0;
+		max-width: none;
+		margin: 0;
+		padding: 0.5rem 0.75rem;
+		border: 1px solid var(--col-line-strong);
+		border-radius: var(--radius-sm);
+		font-size: var(--text-sm);
+		line-height: 1.4;
+		overflow-wrap: anywhere;
+	}
+
+	.harmoniser-summary > div {
+		margin-top: 0.25rem;
+		color: var(--col-muted);
+	}
+}
+
 // MIDI File Player: one source mode at a time, then the loaded song and settings.
 .node-transformer .transformer-controls.midi-file-player {
 	display: grid;

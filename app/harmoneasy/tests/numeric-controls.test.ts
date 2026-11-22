@@ -119,6 +119,49 @@ it("leaves disabled and readonly choices inert", () => {
 	}
 })
 
+it("wraps ordinary forms to show every option and uses additional width without adding a pager", () => {
+	const apply = vi.fn(),
+		control = createDomControl(binding(descriptor), apply)
+	try {
+		const pages = control.choices!
+		control.update(16)
+		pages.resize(300)
+		const narrow = pages.layout
+		pages.resize(600)
+		expect(pages.layout.columns).toBeGreaterThan(narrow.columns)
+		expect(pages.layout.height).toBeLessThan(narrow.height)
+		expect(pages.layout.choices).toHaveLength(16)
+		expect(control.element.querySelector<HTMLElement>(".cs-choice-navigation")!.hidden).toBe(
+			true
+		)
+		pages.resize(120)
+		expect(pages.layout.choices).toHaveLength(16)
+		expect(control.element.querySelector("input:checked")!.closest("[hidden]")).toBeNull()
+		expect(apply).not.toHaveBeenCalled()
+	} finally {
+		control.destroy?.()
+	}
+})
+
+it("fills wide bounded gadgets before paging and retains selection as their bounds change", () => {
+	const control = createDomControl(binding(descriptor), vi.fn())
+	try {
+		control.update(16)
+		control.choices!.resize(500, 100, 1)
+		expect(control.choices!.layout.choices).toHaveLength(16)
+		expect(control.element.querySelector<HTMLElement>(".cs-choice-navigation")!.hidden).toBe(
+			true
+		)
+		control.choices!.resize(153, 145, 1)
+		expect(control.element.querySelector<HTMLElement>(".cs-choice-navigation")!.hidden).toBe(
+			false
+		)
+		expect(control.element.querySelector("input:checked")!.closest("[hidden]")).toBeNull()
+	} finally {
+		control.destroy?.()
+	}
+})
+
 it("publishes Auto and actual playable MIDI tracks when a file loads", async () => {
 	const { Midi } = createRequire(resolve("../../packages/audiobus/package.json"))("@tonejs/midi")
 	const midi = new Midi()

@@ -7,6 +7,11 @@ it("shows the chosen key and notes, updates from controls, and recreates cleanly
 	const effect = new TransformerHarmoniser()
 	try {
 		const gui = await effect.createGui()
+		expect(gui.classList.contains("harmoniser-controls")).toBe(true)
+		expect(gui.querySelectorAll(":scope > [data-control-id]")).toHaveLength(3)
+		expect(gui.querySelector("fieldset")).toBeNull()
+		expect(gui.querySelector<HTMLElement>(".cs-choice-navigation")!.hidden).toBe(true)
+		expect(gui.querySelectorAll(".cs-choice-grid > label:not([hidden])")).toHaveLength(12)
 		const summary = gui.querySelector('[aria-label="Selected scale"]')!
 		expect(summary.textContent).toContain("C · Major (Ionian)")
 		expect(summary.textContent).toContain("C · D · E · F · G · A · B")
