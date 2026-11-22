@@ -15,7 +15,15 @@ vi.mock("netronome", () => ({
 		start = vi.fn(async () => {})
 		destroy = vi.fn(async () => {})
 		setTransport = vi.fn()
-		setLeader = vi.fn()
+		setLeader = vi.fn((id: string) => {
+			this.options.leaderId = id
+		})
+		get isLeader() {
+			return this.options.peerId === this.options.leaderId
+		}
+		toLeaderTime(time: number) {
+			return time
+		}
 		receive = vi.fn()
 		addPeer(id: string) {
 			this.peers.add(id)

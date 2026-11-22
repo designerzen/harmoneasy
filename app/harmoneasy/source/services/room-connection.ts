@@ -82,9 +82,10 @@ export class RoomConnection {
 		)
 	}
 	get leaderTimeMs() {
-		return (
-			performance.now() + (this.role === "leader" ? 0 : (this.conductorClock?.offsetMs ?? 0))
-		)
+		// The session's conversion includes drift and free-running across a handover.
+		return this.session
+			? this.session.toLeaderTime(performance.now())
+			: performance.now()
 	}
 	get playbackDelayMs() {
 		const times =
@@ -130,7 +131,9 @@ export class RoomConnection {
 			if (this.destroyed) {
 				return
 			}
-			if (this.role === "leader") {
+			// The conductor may have changed while the session was starting.
+			this.session.setLeader(this.conductorId)
+			if (this.session.isLeader && !this.session.getState().playing) {
 				this.session.setTransport({
 					playing: false,
 					bpm: this.timer.BPM,
@@ -405,11 +408,12 @@ export class RoomConnection {
 					return
 				}
 				// Hand over in place: playback, tempo and clock estimates carry on.
-				this.session!.setLeader(id)
+				// A later change may already be queued, so follow the latest conductor.
+				this.session!.setLeader(this.conductorId)
 				for (const peerId of this.connectedPeerIds) {
 					this.session!.addPeer(peerId)
 				}
-				if (!resuming && this.role === "leader") {
+				if (!resuming && this.session!.isLeader) {
 					this.session!.setTransport({ playing: this.timer.isRunning, position: 0 })
 				}
 				this.transitioning = false
