@@ -1,0 +1,3 @@
+#!/bin/sh
+# Blocks pushes that would fail CI's frozen-lockfile install.
+exec node "$(git rev-parse --show-toplevel)/scripts/check-lockfile.mjs"
