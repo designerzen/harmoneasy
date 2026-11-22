@@ -185,6 +185,22 @@ it("preserves MIDI channels, CC and pitch bend and releases held notes before di
 	expect(nodes[0].sendMidi).toHaveBeenCalledWith([0xb3, 64, 0])
 })
 
+it("keeps note routing stable on parameter changes and sends full note-offs on panic", async () => {
+	const output = (await createOutputById(webclapOutputId("com.plinken.organ"), {
+		audioContext: context,
+		mixer
+	})) as CLAPInstrument
+	expect(output.configurationAffectsNoteRouting).toBe(false)
+	await output.sendCommand({ type: NOTE_ON, number: 60, velocity: 100, channel: 3 } as any)
+	await output.sendCommand({ type: NOTE_ON, number: 60, velocity: 0, channel: 3 } as any)
+	nodes[0].sendMidi.mockClear()
+	output.allNotesOff()
+	await vi.waitFor(() => expect(nodes[0].sendMidi).toHaveBeenCalledWith([0x82, 127, 0]))
+	expect(nodes[0].sendMidi).toHaveBeenCalledWith([0x82, 60, 0])
+	expect(nodes[0].sendMidi).toHaveBeenCalledWith([0xb2, 123, 0])
+	await output.disconnect()
+})
+
 it("keeps analyser taps and other effects when removing an insert", () => {
 	const a = audioNode(),
 		b = audioNode(),

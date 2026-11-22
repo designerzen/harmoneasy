@@ -1,13 +1,14 @@
 import React from "react"
 import { createRoot } from "react-dom/client"
 import Graph from "./graph/Graph"
-import { createChainWorkspace } from "./graph/chain-workspace"
+import { createChainWorkspace, type WorkspaceLayoutStore } from "./graph/chain-workspace"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
 
 export const createGraph = (
 	elementID = "graph",
 	ioManager: IOChainManager | null = null,
-	startWithSurfaces = false
+	startWithSurfaces = false,
+	layoutStore: WorkspaceLayoutStore = {}
 ) => {
 	const container = document.getElementById(elementID)
 	if (!container) {
@@ -32,6 +33,7 @@ export const createGraph = (
 				}
 			}
 		},
-		startWithSurfaces
+		startWithSurfaces,
+		layoutStore
 	)
 }

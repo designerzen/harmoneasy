@@ -205,13 +205,13 @@ export default class UI implements IAudioOutput {
 		document.getElementById("btn-transport-details")?.addEventListener(
 			EVENT_CLICK,
 			() => {
-				const panel = document.getElementById(
-					"recordings-panel"
-				) as HTMLDetailsElement | null
-				if (panel) {
-					panel.open = true
+				// The workspace shows the timeline as a tab; without one it stays in the page.
+				const tab = document.getElementById("chain-tab-timeline")
+				if (tab) {
+					tab.click()
+				} else {
+					document.getElementById("recordings")?.scrollIntoView({ behavior: "smooth" })
 				}
-				document.getElementById("recordings")?.scrollIntoView({ behavior: "smooth" })
 			},
 			{ signal: this.abortController.signal }
 		)

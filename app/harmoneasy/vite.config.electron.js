@@ -72,6 +72,7 @@ export default defineConfig({
 		conditions: ["import"]
 	},
 	plugins: [
+		agentDocsPlugin(),
 		nodeAddonPlugin,
 		midiDeviceFilesPlugin(),
 		supersonicFilesPlugin(),

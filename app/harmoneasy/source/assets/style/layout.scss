@@ -449,7 +449,6 @@ song-explorer-ui {
 }
 
 #recordings {
-	grid-area: explorer;
 	min-width: 0;
 	position: relative;
 	z-index: 202;
@@ -527,6 +526,35 @@ song-explorer-ui {
 		pointer-events: none;
 	}
 }
+main > #recordings {
+	grid-area: explorer;
+}
+
+/* The workspace shows the timeline as a pane beside or instead of the chains. */
+/* Low specificity so the split rules can move the timeline into the second pane. */
+.chains-stacked > :where(#recordings) {
+	grid-area: 1 / 1;
+}
+.chains-stacked > #recordings {
+	z-index: auto;
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	height: var(--chain-pane-height);
+	min-height: 0;
+
+	&[hidden] {
+		display: none;
+	}
+	.note-timeline-panel {
+		flex: 1;
+		min-height: 0;
+		border-top: 0;
+	}
+	#note-timeline {
+		height: 100%;
+	}
+}
 
 #graph > .chains-stacked {
 	padding: 0;
@@ -544,6 +572,90 @@ body:has(.chains-workspace) {
 	--chain-viewport-gap: 0px;
 	scroll-snap-type: none;
 }
+.chains-stacked {
+	--chain-pane-height: max(
+		12rem,
+		calc(
+			100dvh - var(--action-bar-height, 0px) - var(--transport-height, 52px) - var(
+					--onscreen-keyboard-height,
+					0px
+				) -
+				2 * var(--chain-viewport-gap)
+		)
+	);
+	position: relative;
+
+	/* Two panes split like windows snapped to the sides or the top and bottom of a screen. */
+	&[data-split="row"] {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		> [data-pane="1"] {
+			grid-area: 1 / 2;
+		}
+	}
+	&[data-split="column"] {
+		--chain-pane-height: max(
+			8rem,
+			calc(
+				(
+						100dvh - var(--action-bar-height, 0px) - var(--transport-height, 52px) -
+							var(--onscreen-keyboard-height, 0px) - 2 * var(--chain-viewport-gap)
+					) /
+					2
+			)
+		);
+		> [data-pane="1"] {
+			grid-area: 2 / 1;
+		}
+	}
+	&[data-split] > [data-pane="1"] {
+		border-left: var(--border);
+	}
+	&[data-split="column"] > [data-pane="1"] {
+		border-left: 0;
+		border-top: var(--border);
+	}
+}
+.pane-drop-zone {
+	position: absolute;
+	inset: 0;
+	z-index: 1001;
+
+	&[hidden] {
+		display: none;
+	}
+	.pane-drop-preview {
+		position: absolute;
+		inset: 0.5rem;
+		border: 2px solid var(--col-accent);
+		border-radius: var(--radius-sm);
+		background: var(--col-accent-soft);
+		opacity: 0;
+		pointer-events: none;
+		transition:
+			inset var(--time-short) ease,
+			opacity var(--time-short) ease;
+	}
+	&[data-side] .pane-drop-preview {
+		opacity: 1;
+	}
+	&[data-side="left"] .pane-drop-preview {
+		right: 50%;
+	}
+	&[data-side="right"] .pane-drop-preview {
+		left: 50%;
+	}
+	&[data-side="top"] .pane-drop-preview {
+		bottom: 50%;
+	}
+	&[data-side="bottom"] .pane-drop-preview {
+		top: 50%;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.pane-drop-zone .pane-drop-preview {
+		transition: none;
+	}
+}
 .chains-stacked > .chain-panel {
 	grid-area: 1 / 1;
 	visibility: hidden;
@@ -553,16 +665,7 @@ body:has(.chains-workspace) {
 		box-sizing: border-box;
 		display: grid;
 		grid-template-rows: auto minmax(0, 1fr);
-		height: max(
-			12rem,
-			calc(
-				100dvh - var(--action-bar-height, 0px) - var(--transport-height, 52px) - var(
-						--onscreen-keyboard-height,
-						0px
-					) -
-					2 * var(--chain-viewport-gap)
-			)
-		);
+		height: var(--chain-pane-height);
 
 		> .chain-graph {
 			min-height: 0;
@@ -571,6 +674,8 @@ body:has(.chains-workspace) {
 	}
 }
 .chains-stacked > .chain-panel.chain-front,
+.chains-stacked > .chain-panel[data-pane="0"],
+.chains-stacked > .chain-panel[data-pane="1"],
 .chains-stacked > .chain-panel.chain-solo {
 	visibility: visible;
 	pointer-events: auto;

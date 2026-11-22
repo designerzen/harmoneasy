@@ -367,6 +367,10 @@
 			border-color: transparent;
 			color: var(--col-fg);
 		}
+		&[data-shown] {
+			border-bottom-color: var(--col-muted);
+			color: var(--col-fg);
+		}
 		&[aria-selected="true"] {
 			border-bottom-color: var(--col-accent);
 			color: var(--col-fg);
@@ -375,6 +379,9 @@
 		&:focus-visible {
 			outline-offset: -2px;
 		}
+	}
+	.chain-tab-timeline [role="tab"] {
+		padding-right: 0.75rem;
 	}
 	.chain-tab-remove {
 		position: absolute;

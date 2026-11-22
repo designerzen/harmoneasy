@@ -31,16 +31,23 @@
     <a href="#ensemble">Shared-room MIDI ensemble</a>
     <a href="#reference">Every component</a>
     <a href="{{BASE}}docs/ai/catalog.json">Machine-readable catalog</a>
+    <a href="{{BASE}}docs/ai/index.json">Compact component lookup</a>
+    <a href="{{BASE}}docs/ai/packages/">All packages and submodule docs</a>
     <a href="{{BASE}}docs/ai/preset-url-api.txt">Complete preset URL API</a>
     <a href="{{BASE}}llms-full.txt">Full plain-text documentation</a>
   </nav>
 </header>
 <main>
+<section id="packages">
+  <h2>Packages, submodules and source documentation</h2>
+  <p>The <a href="{{BASE}}docs/ai/packages/">package directory</a> links every workspace library and every packaged Git submodule, including its README and additional guides. Its <a href="{{BASE}}docs/ai/packages/index.json">JSON catalog</a> reads package names, versions, exports, scripts and dependencies directly from the installed manifests. Repository links and commit IDs identify the checkout used for this build; local modifications are explicitly marked. The served documentation includes those modifications, which may not yet exist upstream.</p>
+  <p>Each component reference links to its owning package documentation. Read package limitations before choosing an API: the separate <code>midi-ble</code> barrel is incomplete, <code>flodjs</code> is a partial tracker port, and <code>opendaw</code> exports a scripting adapter rather than a DAWproject loader/saver. Working BLE adapters and DAWproject interchange live in audiobus. A listed prototype or package does not imply that all its intended features are implemented.</p>
+</section>
 <section id="workflow">
   <h2>Build a preset from an intention</h2>
   <ol>
     <li>Identify the players, their controllers, the musical source (live notes, a MIDI song, sequencer or generator), the intended transformations, and the sounds or external destinations. Determine whether players share one computer or connect separate computers through a room.</li>
-    <li>Fetch <a href="{{BASE}}docs/ai/catalog.json">catalog.json</a>. Filter by <code>kind</code>, description and guidance; copy exact, case-sensitive IDs. Inputs produce musical commands, transformers process them in order, outputs consume them, and audio effects process audio between output nodes. Instruments are another output factory.</li>
+    <li>Fetch <a href="{{BASE}}docs/ai/index.json">index.json</a>, find components by name or intention, and follow each entry's <code>reference</code> URL for its individual JSON documentation. For the complete reference in one request, fetch <a href="{{BASE}}docs/ai/catalog.json">catalog.json</a>. Filter by <code>kind</code>, description and guidance; copy exact, case-sensitive IDs. Inputs produce musical commands, transformers process them in order, outputs consume them, and audio effects process audio between output nodes. Instruments are another output factory.</li>
     <li>Prefer an existing <a href="{{BASE}}presets/index.json">published preset</a>. Each directory entry's route has a <code>preset.json</code> containing its full page and workspace, including device IDs, options, routing and ordered steps. Inspect that JSON before overriding it.</li>
     <li>For a simple chain, use the versioned URL API below. For multiple parts, repeated device instances, instruments or audio effects, use the full <code>setup</code> format. Read the complete <a href="{{BASE}}docs/ai/preset-url-api.txt">API reference</a> for every parameter, replacement rule, encoding rule and limit.</li>
     <li>Look up each component's controls, defaults, requirements and <code>configurationSource</code> in the catalog. The source is served locally as plain text so an agent can inspect constructors, option interfaces, value conversions, GUI controls and special behavior. <code>optionKeys</code> is a source-derived discovery list, not a complete validated schema; inherited options and dynamically generated controls can add keys. Do not invent option names from display labels.</li>

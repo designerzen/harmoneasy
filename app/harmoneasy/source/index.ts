@@ -571,7 +571,10 @@ const initialiseApplication = async (
 		persistMidi: (value) => state.set("midiControls", value)
 	})
 
-	createGraph("graph", ioManager, Boolean(pageSetup || startupSetup))
+	createGraph("graph", ioManager, Boolean(pageSetup || startupSetup), {
+		saved: state.get("workspaceLayout"),
+		save: (layout) => state.set("workspaceLayout", layout)
+	})
 
 	// Update UI - this will check all the inputs according to our state
 	state.updateFrontEnd()

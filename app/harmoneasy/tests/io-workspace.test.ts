@@ -335,6 +335,9 @@ describe("IO workspace", () => {
 		clone.outputManager.noteOff(60)
 		await OutputManager.settled(sink)
 		expect(sink.noteOff).toHaveBeenCalledExactlyOnceWith(60)
+		clone.outputManager.allNotesOff()
+		await OutputManager.settled(sink)
+		expect(sink.allNotesOff).toHaveBeenCalledOnce()
 		manager.destroy()
 	})
 

@@ -28,6 +28,49 @@ export interface GraphView {
 	update(isFront: boolean, focusRequest: number): void
 	destroy(): void
 }
+/** The note timeline shares the chain tabs and panes under this id. */
+const TIMELINE = "timeline"
+type DropSide = "left" | "right" | "top" | "bottom" | "center"
+/** Which side of the workspace a drag is over: edges split it, the middle replaces it. */
+function dropSideAt(event: DragEvent, rect: DOMRect): DropSide {
+	const x = (event.clientX - rect.left) / (rect.width || 1),
+		y = (event.clientY - rect.top) / (rect.height || 1)
+	const edge = Math.min(x, 1 - x, y, 1 - y)
+	if (edge > 0.25) {
+		return "center"
+	}
+	return edge === x ? "left" : edge === 1 - x ? "right" : edge === y ? "top" : "bottom"
+}
+/** Which tabs fill the panes, so a reload puts every window back where it was. */
+export interface WorkspaceLayout {
+	panes: string[]
+	focused: number
+	split: "row" | "column"
+	solo: string | null
+}
+export interface WorkspaceLayoutStore {
+	saved?: unknown
+	save?: (layout: WorkspaceLayout) => void
+}
+/** Saved layouts come from the URL, so anything malformed is ignored. */
+function readLayout(value: unknown): WorkspaceLayout | null {
+	const layout = value as Partial<WorkspaceLayout> | null
+	if (
+		!layout ||
+		!Array.isArray(layout.panes) ||
+		!layout.panes.length ||
+		layout.panes.length > 2 ||
+		!layout.panes.every((id) => typeof id === "string")
+	) {
+		return null
+	}
+	return {
+		panes: [...layout.panes],
+		focused: layout.focused === 1 ? 1 : 0,
+		split: layout.split === "column" ? "column" : "row",
+		solo: typeof layout.solo === "string" ? layout.solo : null
+	}
+}
 /** A surface link adds that surface to the active chain once, then leaves the URL clean. */
 function openSharedSurface(manager: IOChainManager): boolean {
 	const shared = readSharedSurface()
@@ -46,7 +89,8 @@ export function createChainWorkspace(
 	container: HTMLElement,
 	manager: IOChainManager,
 	mountGraph: (host: HTMLElement, context: ChainUIContext) => GraphView,
-	startWithSurfaces = false
+	startWithSurfaces = false,
+	layoutStore: WorkspaceLayoutStore = {}
 ) {
 	const host = element("div", "chains-workspace chains-stacked")
 	container.append(host)
@@ -65,14 +109,52 @@ export function createChainWorkspace(
 		empty = element("p", "", "No IOChains. Add a chain to start routing inputs to outputs.")
 	warnings.style.display = "contents"
 	host.append(warnings, empty)
-	let front: string | null = manager.activeChainId,
-		solo: string | null = null,
+	const timeline = document.getElementById("recordings")
+	const timelineHome = timeline && {
+		parent: timeline.parentElement,
+		next: timeline.nextSibling,
+		label: timeline.getAttribute("aria-label")
+	}
+	if (timeline) {
+		timeline.classList.add("timeline-pane")
+		timeline.tabIndex = -1
+		timeline.setAttribute("role", "tabpanel")
+		timeline.setAttribute("aria-labelledby", `chain-tab-${TIMELINE}`)
+		timeline.removeAttribute("aria-label")
+		host.append(timeline)
+	}
+	const dropZone = element("div", "pane-drop-zone")
+	dropZone.hidden = true
+	dropZone.append(element("div", "pane-drop-preview"))
+	host.append(dropZone)
+	const restored = readLayout(layoutStore.saved)
+	// One pane, or two split side by side ("row") or stacked ("column").
+	let panes: string[] =
+			restored?.panes ?? (manager.activeChainId ? [manager.activeChainId] : []),
+		focused = restored?.focused ?? 0,
+		split = restored?.split ?? "row",
+		dragging: string | null = null,
+		solo = restored?.solo ?? null,
+		savedLayout = JSON.stringify(restored),
 		focusRequest = 0,
 		scrollFrame: number | null = null,
 		overflow: string | null = null
 	const views = new Map<string, ReturnType<typeof createPanel>>()
+	const paneIds = () => [
+		...manager.entries.map(([id]) => id),
+		...(timeline ? [TIMELINE] : [])
+	]
+	/** Focuses the pane already showing `id`, or shows it in the focused pane. */
+	const show = (id: string) => {
+		const index = panes.indexOf(id)
+		if (index >= 0) {
+			focused = index
+		} else {
+			panes[focused] = id
+		}
+	}
 	const focus = (id: string) => {
-		front = id
+		show(id)
 		focusRequest++
 		render()
 		if (scrollFrame !== null) {
@@ -80,13 +162,61 @@ export function createChainWorkspace(
 		}
 		scrollFrame = requestAnimationFrame(() => {
 			scrollFrame = null
-			views.get(id)?.element.scrollIntoView?.({ block: "start", inline: "nearest" })
+			const panel = id === TIMELINE ? timeline : views.get(id)?.element
+			panel?.scrollIntoView?.({ block: "start", inline: "nearest" })
 		})
 	}
 	const toggleSolo = (id: string) => {
-		front = id
+		show(id)
 		solo = solo === id ? null : id
 		render()
+	}
+	/** Docks a dragged tab like a window snapped to a screen edge, splitting the workspace in two. */
+	const dock = (id: string, side: DropSide) => {
+		solo = null
+		const current = panes[focused]
+		const other =
+			current !== id
+				? current
+				: (panes.find((pane) => pane !== id) ?? paneIds().find((pane) => pane !== id))
+		if (side === "center" || !other) {
+			panes = [id]
+			focused = 0
+		} else {
+			const first = side === "left" || side === "top"
+			split = side === "left" || side === "right" ? "row" : "column"
+			panes = first ? [id, other] : [other, id]
+			focused = first ? 0 : 1
+		}
+		focusRequest++
+		render()
+	}
+	const endDrag = () => {
+		dragging = null
+		dropZone.hidden = true
+		delete dropZone.dataset.side
+	}
+	dropZone.ondragover = (event) => {
+		if (!dragging) {
+			return
+		}
+		event.preventDefault()
+		if (event.dataTransfer) {
+			event.dataTransfer.dropEffect = "move"
+		}
+		dropZone.dataset.side = dropSideAt(event, dropZone.getBoundingClientRect())
+	}
+	dropZone.ondragleave = (event) => {
+		if (!dropZone.contains(event.relatedTarget as Node | null)) {
+			delete dropZone.dataset.side
+		}
+	}
+	dropZone.ondrop = (event) => {
+		event.preventDefault()
+		if (dragging) {
+			dock(dragging, dropSideAt(event, dropZone.getBoundingClientRect()))
+		}
+		endDrag()
 	}
 	const removeChain = (id: string) => {
 		const entries = manager.entries
@@ -99,10 +229,11 @@ export function createChainWorkspace(
 			return
 		}
 		const nextId = entries[index + 1]?.[0] ?? entries[index - 1]?.[0] ?? null
-		if (front === id) {
-			front = nextId
+		if (panes[focused] === id && nextId && !panes.includes(nextId)) {
+			panes[focused] = nextId
 		}
 		manager.removeChain(id)
+		const front = panes[focused]
 		if (front) {
 			document.getElementById(`chain-tab-${front}`)?.focus()
 		} else {
@@ -216,11 +347,12 @@ export function createChainWorkspace(
 			chain,
 			layoutLabel,
 			update(index: number) {
-				const isFront = front === chainId,
+				const isFront = (solo ?? panes[focused]) === chainId,
 					isSolo = solo === chainId
 				panel.className = `chain-panel ${chain.isActive ? "active" : "inactive"} ${isFront ? "chain-front" : ""} ${isSolo ? "chain-solo" : ""}`
-				panel.hidden = (solo ?? front) !== chainId
+				panel.hidden = solo ? !isSolo : !panes.includes(chainId)
 				panel.inert = panel.hidden
+				placePane(panel, chainId)
 				const chainLabel = chain.options.name ?? `Chain ${index + 1}`
 				power.title = chain.isActive
 					? "Turn chain off"
@@ -249,7 +381,7 @@ export function createChainWorkspace(
 					)
 				layoutName.textContent = `${chainLabel} layout`
 				layoutSelect.value = mode
-				graphView.update(isFront && !graph.hidden, isFront ? focusRequest : 0)
+				graphView.update(!panel.hidden && !graph.hidden, isFront ? focusRequest : 0)
 			},
 			destroy() {
 				graphView.destroy()
@@ -261,11 +393,61 @@ export function createChainWorkspace(
 			}
 		}
 	}
+	function placePane(panel: HTMLElement, id: string) {
+		const index = panes.indexOf(id)
+		panel.dataset.pane = !solo && panes.length > 1 && index >= 0 ? String(index) : ""
+	}
+	function createTab(id: string, label: string, controls: string, ids: string[]) {
+		const tab = element("span", "chain-tab")
+		tab.setAttribute("role", "presentation")
+		const select = button(label, () => focus(id))
+		select.id = `chain-tab-${id}`
+		select.setAttribute("role", "tab")
+		select.setAttribute("aria-controls", controls)
+		select.setAttribute("aria-selected", String(panes[focused] === id))
+		select.toggleAttribute("data-shown", panes.includes(id))
+		select.tabIndex = panes[focused] === id ? 0 : -1
+		select.title = "Drag to a side of the workspace to split it"
+		select.draggable = true
+		select.ondragstart = (event) => {
+			dragging = id
+			event.dataTransfer?.setData("text/plain", label)
+			if (event.dataTransfer) {
+				event.dataTransfer.effectAllowed = "move"
+			}
+			dropZone.hidden = false
+		}
+		select.ondragend = endDrag
+		select.onkeydown = (event) => {
+			const index = ids.indexOf(id)
+			const next =
+				event.key === "ArrowRight"
+					? (index + 1) % ids.length
+					: event.key === "ArrowLeft"
+						? (index + ids.length - 1) % ids.length
+						: event.key === "Home"
+							? 0
+							: event.key === "End"
+								? ids.length - 1
+								: null
+			if (next === null) {
+				return
+			}
+			event.preventDefault()
+			focus(ids[next])
+			document.getElementById(`chain-tab-${ids[next]}`)?.focus({ preventScroll: true })
+		}
+		tab.append(select)
+		return tab
+	}
 	function render() {
 		const entries = manager.entries
-		if (!entries.some(([id]) => id === front)) {
-			front = entries[0]?.[0] ?? null
+		const ids = paneIds()
+		panes = panes.filter((id, index) => ids.includes(id) && panes.indexOf(id) === index)
+		if (!panes.length && ids.length) {
+			panes = [ids[0]]
 		}
+		focused = Math.max(0, Math.min(focused, panes.length - 1))
 		if (!entries.some(([id]) => id === solo)) {
 			solo = null
 		}
@@ -291,41 +473,29 @@ export function createChainWorkspace(
 				views.set(id, view)
 			}
 			view.update(index)
-			const tab = element("span", "chain-tab")
-			tab.setAttribute("role", "presentation")
-			const select = button(chain.options.name ?? `Chain ${index + 1}`, () => focus(id))
-			select.id = `chain-tab-${id}`
-			select.setAttribute("role", "tab")
-			select.setAttribute("aria-controls", view.element.id)
-			select.setAttribute("aria-selected", String(front === id))
-			select.tabIndex = front === id ? 0 : -1
-			select.onkeydown = (event) => {
-				const next =
-					event.key === "ArrowRight"
-						? (index + 1) % entries.length
-						: event.key === "ArrowLeft"
-							? (index + entries.length - 1) % entries.length
-							: event.key === "Home"
-								? 0
-								: event.key === "End"
-									? entries.length - 1
-									: null
-				if (next === null) {
-					return
-				}
-				event.preventDefault()
-				focus(entries[next][0])
-				document
-					.getElementById(`chain-tab-${entries[next][0]}`)
-					?.focus({ preventScroll: true })
-			}
+			const tab = createTab(
+				id,
+				chain.options.name ?? `Chain ${index + 1}`,
+				view.element.id,
+				ids
+			)
 			const remove = button("×", () => removeChain(id), "chain-tab-remove")
 			remove.title = "Remove chain"
 			remove.setAttribute(
 				"aria-label",
 				`Remove ${chain.options.name ?? `Chain ${index + 1}`}`
 			)
-			tab.append(select, remove)
+			tab.append(remove)
+			tabs.append(tab)
+		}
+		host.dataset.split = !solo && panes.length > 1 ? split : ""
+		if (timeline) {
+			timeline.hidden = solo !== null || !panes.includes(TIMELINE)
+			timeline.inert = timeline.hidden
+			timeline.classList.toggle("chain-front", !solo && panes[focused] === TIMELINE)
+			placePane(timeline, TIMELINE)
+			const tab = createTab(TIMELINE, "Note timeline", timeline.id, ids)
+			tab.classList.add("chain-tab-timeline")
 			tabs.append(tab)
 		}
 		if (settings) {
@@ -340,10 +510,15 @@ export function createChainWorkspace(
 			...manager.restoreWarnings.map((warning) => element("p", "", warning))
 		)
 		empty.hidden = !!entries.length
+		const layout: WorkspaceLayout = { panes: [...panes], focused, split, solo }
+		if (JSON.stringify(layout) !== savedLayout) {
+			savedLayout = JSON.stringify(layout)
+			layoutStore.save?.(layout)
+		}
 	}
 	const activeChanged = () => {
 		if (manager.activeChainId) {
-			front = manager.activeChainId
+			show(manager.activeChainId)
 		}
 		focusRequest++
 		render()
@@ -410,6 +585,19 @@ export function createChainWorkspace(
 			}
 			for (const view of views.values()) {
 				view.destroy()
+			}
+			if (timeline && timelineHome) {
+				timeline.classList.remove("timeline-pane", "chain-front")
+				timeline.removeAttribute("role")
+				timeline.removeAttribute("aria-labelledby")
+				timeline.removeAttribute("tabindex")
+				timeline.removeAttribute("data-pane")
+				if (timelineHome.label !== null) {
+					timeline.setAttribute("aria-label", timelineHome.label)
+				}
+				timeline.hidden = false
+				timeline.inert = false
+				timelineHome.parent?.insertBefore(timeline, timelineHome.next)
 			}
 			newChain.destroy()
 			tabs.remove()

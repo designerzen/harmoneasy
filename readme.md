@@ -8,6 +8,8 @@
 
 [Preset URL API guide](docs/preset-url-api.md): build and share custom setups with `/parts/v1/`, extend any preset, or supply a complete workspace through query parameters. Includes clickable examples for MIDI, speech, ensembles and multi-chain setups.
 
+[AI agent documentation](https://designerzen.github.io/harmoneasy/docs/ai/) provides the generated component reference, preset recipes and [every package's documentation](https://designerzen.github.io/harmoneasy/docs/ai/packages/). The site also publishes `llms.txt`, individual component references and a package JSON catalog with manifest versions, exports and checkout provenance.
+
 [audioBus Protocol guide](docs/audiobus-protocol.md): play and control HarmonEasy from another web page or application: notes, transport, presets and every on-screen control. Try it in the [remote control demo](https://designerzen.github.io/harmoneasy/protocol-remote.html).
 
 ### Test remote control
@@ -53,7 +55,7 @@ Connect a MIDI input to a chain before using MIDI control. Default bindings use 
 
 ## Inputs
 
-These are the built-in input factory IDs, plus the hardware profiles registered dynamically. File imports and plugin bundles are covered separately below.
+These are common input factory IDs; the deployed [AI component reference](https://designerzen.github.io/harmoneasy/docs/ai/) is generated from the full current registries, including hardware profiles. File imports and plugin bundles are covered separately below.
 
 | Input | ID | Capability and requirements |
 | --- | --- | --- |
@@ -70,7 +72,7 @@ These are the built-in input factory IDs, plus the hardware profiles registered 
 | Microphone Pitch (ML) | `microphone-pitch` | Detect polyphonic pitches with Spotify Basic Pitch; requires microphone access and model loading. |
 | Leap Motion | `leap-motion` | Hand-gesture input; requires Leap hardware and the Leap runtime exposed to the app. |
 | Music Mouse | `music-mouse` | Cursor-controlled musical instrument inspired by Laurie Spiegel's Music Mouse. |
-| PromptAI Generator | `prompt-ai` | Generate note sequences from text via an external AI API; requires an API key configured in input options, network access and a supported model. |
+| PromptAI Generator | `prompt-ai` | Generate loops from text using supported built-in browser AI; no API key. First use can require a model download. |
 | PromptAI Speech | `prompt-ai-speech` | Speech-recognised prompts for AI note generation; additionally requires browser speech recognition. |
 | MIDI Transport Clock | `midi-transport-clock` | MIDI clock/transport input, using 24 clock pulses per quarter note. |
 | audioBus Protocol | `protocol` | Receive notes and commands from other web pages and applications; see [Remote control](#remote-control-audiobus-protocol). |
@@ -78,7 +80,7 @@ These are the built-in input factory IDs, plus the hardware profiles registered 
 
 ### Hardware-specific MIDI inputs
 
-The profile registry adds named inputs with device metadata and controls, matched to connected ports. The repository currently includes:
+The profile registry adds named inputs with device metadata and controls, matched to connected ports. Examples include:
 
 | Device | Profile ID |
 | --- | --- |
@@ -95,7 +97,7 @@ Profiles are loaded from the device registry at runtime; additional profiles can
 
 ## Transformers
 
-The selectable transformer factory provides the following processing types. These operate on musical commands; Note Delay and Note Reverb, for example, generate or schedule note events rather than processing recorded audio.
+The selectable transformer factory includes the following common processing types; consult the generated [complete reference](https://designerzen.github.io/harmoneasy/docs/ai/) for the current inventory and exact IDs. These operate on musical commands; Note Delay and Note Reverb, for example, generate or schedule note events rather than processing recorded audio.
 
 | Transformer | Capability |
 | --- | --- |
@@ -117,7 +119,7 @@ The selectable transformer factory provides the following processing types. Thes
 | Quantise | Lock playback to a rhythmic grid. |
 | Random Sampler | Generate random gates and in-scale pitches around held notes with spread, bias, steps and Déjà vu loops; ported from Mutable Instruments Marbles (MIT). |
 | Randomiser | Add controlled variation to note parameters. |
-| Timing Humaniser | Add timing variation. |
+| Timing Humaniser | Current source applies a pitch offset and exposes no timing-jitter controls; use Timing Humaniser's source/reference before relying on its name. |
 | Topographic Drums | Hold a note to play kick, snare and hi-hat patterns morphed across an X/Y map with per-voice density and chaos; modelled on Mutable Instruments Grids with an original pattern map. |
 | Transposer | Shift pitches by an interval. |
 | Vibrator | Apply pitch vibrato; distinct from the haptic output. |
@@ -126,7 +128,7 @@ The engine also includes Identity (pass-through), Swinger and Kill Old note-clea
 
 ## Outputs
 
-All built-in output types are listed here. Plugin-specific outputs follow in the next section; an output can produce audio, MIDI, visual information, haptics or a recording control surface.
+Common output types are listed here. The generated component reference includes the full output, instrument and effect inventories. Plugin-specific outputs follow below; an output can produce audio, MIDI, visual information, haptics or a recording control surface.
 
 | Output | ID | Capability and requirements |
 | --- | --- | --- |
@@ -355,14 +357,21 @@ Inputs emit unified `AudioCommand` events. `IOChainManager` owns multiple chains
 | `app/harmoneasy/source/components/graph/` | React graph, device routing UI, preset browser and workspace controls. |
 | `app/harmoneasy/source/services/` | Rooms, clock sources, audio recording, MIDI controls, media import, themes and command palette. |
 | `app/harmoneasy/electron/` | Desktop main/preload integration. |
-| `packages/audiobus/` | Musical commands, chains, factories, transformers, instruments, MIDI, import/export, visualisation and storage. |
-| `packages/audiobus/midi/hardware/devices/` | Hardware profile JSON, metadata and assets. |
-| `packages/netronome/` | Timing/session synchronization and audio worklet support. |
-| `packages/midi-ble/` | Bluetooth MIDI support. |
-| `packages/pitfalls/` | Music theory and tuning utilities. |
-| `packages/audiotool/` | Audiotool integration. |
-| `packages/openDAW/` | OpenDAW export integration. |
-| `packages/pink-trombone/`, `packages/flodjs/` | Vocal synthesis and tracker-related libraries. |
+| [audiobus](packages/audiobus/README.md) | Musical commands, chains, factories, transformers, instruments, MIDI, effects, formats and storage. |
+| [midi-devices](packages/midi-devices/README.md) | Hardware profile JSON, manufacturer metadata, diagrams and registry/API assets. |
+| [netronome](packages/netronome/readme.md) | Timing, shared-clock synchronization and worklet support. |
+| [control-surface](packages/control-surface/README.md) | Control descriptors, DOM controls and GPU performance surfaces. |
+| [Pink Trombone](packages/audiobus-output-pink-trombone/README.md) | Standalone vocal-tract synthesis output. |
+| [Voice Workshop](packages/audiobus-output-voice-workshop/README.md) | Physically modelled singing-voice output and worklet. |
+| [Vaporisateur](packages/audiobus-output-opendaw-vaporisateur/README.md) | Live openDAW synth instrument and processor asset hosting. |
+| [sion](packages/sion/README.md) | SiON engine and Web Audio sessions. |
+| [pitfalls](packages/pitfalls/README.md) | Equal-division microtonal scale and pitch mapping. |
+| [audiotool](packages/audiotool/README.md) | Nexus connection and recorded-note take export. |
+| [opendaw](packages/openDAW/README.md) | Recorded-note export as an openDAW script. |
+| [photosynth](packages/photosynth/README.md) | Camera/expression controller and musical-message web component. |
+| [flodjs](packages/flodjs/README.md) | Partial tracker playback port; see documented limitations. |
+| [midi-ble](packages/midi-ble/README.md) | Incomplete legacy barrel; active BLE adapters are in audiobus. |
+| [shared-config](packages/shared-config/README.md) | Shared lint/tooling configuration. |
 | `app/harmoneasy/tests/` | App tests; packages also contain their own tests. |
 
 The stack uses TypeScript, Vite, pnpm workspaces, Turbo, Web Audio, SCSS, Vitest and Electron. React is reserved for the graph; surrounding application UI follows the established non-React patterns.

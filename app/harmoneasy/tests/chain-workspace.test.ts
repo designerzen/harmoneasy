@@ -4,9 +4,15 @@ import {
 	EVENT_CHAINS_UPDATED,
 	EVENT_CHAIN_ACTIVE_CHANGED,
 	EVENT_KEY_DOWN,
-	EVENT_CHANGE
+	EVENT_CHANGE,
+	EVENT_DRAG_OVER,
+	EVENT_DROP
 } from "audiobus/events/event-constants"
-import { createChainWorkspace, type GraphView } from "../source/components/graph/chain-workspace"
+import {
+	createChainWorkspace,
+	type GraphView,
+	type WorkspaceLayoutStore
+} from "../source/components/graph/chain-workspace"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
 import { readPresets } from "../source/components/graph/saved-presets"
 
@@ -19,7 +25,7 @@ afterEach(() => {
 	vi.unstubAllGlobals()
 	vi.restoreAllMocks()
 })
-function mount() {
+function mount(layoutStore: WorkspaceLayoutStore = {}) {
 	vi.stubGlobal("localStorage", { getItem: () => null })
 	frames = []
 	vi.stubGlobal("requestAnimationFrame", (callback: () => void) => {
@@ -28,7 +34,8 @@ function mount() {
 	})
 	vi.stubGlobal("cancelAnimationFrame", vi.fn())
 	document.body.innerHTML =
-		'<nav id="chain-navigation"></nav><div id="graph-layout-settings"></div><div id="graph"></div>'
+		'<nav id="chain-navigation"></nav><div id="graph-layout-settings"></div><div id="graph"></div>' +
+		'<main><section id="recordings" aria-label="Note timeline"></section></main>'
 	const manager = Object.assign(new EventTarget(), {
 		entries: [] as [string, any][],
 		activeChainId: "one",
@@ -74,7 +81,9 @@ function mount() {
 	workspace = createChainWorkspace(
 		document.getElementById("graph")!,
 		manager as unknown as IOChainManager,
-		mountGraph
+		mountGraph,
+		false,
+		layoutStore
 	)
 	return { manager, graphs, mountGraph, changed }
 }
@@ -241,4 +250,112 @@ it("saves from the chain menu and offers overwrite or rename for duplicate names
 	expect(
 		readPresets().filter((item) => ["one", "Another preset"].includes(item.name))
 	).toHaveLength(2)
+})
+it("offers the note timeline as a tab that replaces the chain pane", () => {
+	const { graphs } = mount()
+	const timeline = document.getElementById("recordings")!,
+		first = document.getElementById("iochain-one")!
+	expect(timeline.parentElement?.classList.contains("chains-workspace")).toBe(true)
+	expect(timeline.hidden).toBe(true)
+	const tab = document.getElementById("chain-tab-timeline")!
+	expect(tab.getAttribute("aria-controls")).toBe("recordings")
+	tab.click()
+	expect(timeline.hidden).toBe(false)
+	expect(first.hidden).toBe(true)
+	expect(graphs.get("one")!.update).toHaveBeenLastCalledWith(false, 0)
+	tab.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: "ArrowRight", bubbles: true }))
+	expect(document.activeElement?.id).toBe("chain-tab-one")
+	expect(timeline.hidden).toBe(true)
+	workspace!.destroy()
+	workspace = undefined
+	expect(timeline.parentElement?.tagName).toBe("MAIN")
+	expect(timeline.hidden).toBe(false)
+	expect(timeline.getAttribute("aria-label")).toBe("Note timeline")
+})
+
+it("splits the workspace when a tab is dropped on a side and merges it in the middle", () => {
+	const { graphs } = mount()
+	const host = document.querySelector<HTMLElement>(".chains-workspace")!,
+		zone = host.querySelector<HTMLElement>(".pane-drop-zone")!,
+		timeline = document.getElementById("recordings")!,
+		first = document.getElementById("iochain-one")!,
+		second = document.getElementById("iochain-two")!
+	// happy-dom's DragEvent drops pointer coordinates, so the drop zone gets mouse events.
+	const drag = (id: string, clientX: number, clientY: number) => {
+		document
+			.getElementById(`chain-tab-${id}`)!
+			.dispatchEvent(new DragEvent("dragstart", { bubbles: true }))
+		expect(zone.hidden).toBe(false)
+		zone.dispatchEvent(new MouseEvent(EVENT_DRAG_OVER, { clientX, clientY, bubbles: true }))
+		zone.dispatchEvent(new MouseEvent(EVENT_DROP, { clientX, clientY, bubbles: true }))
+		expect(zone.hidden).toBe(true)
+	}
+	vi.spyOn(zone, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 100, 100))
+	drag("timeline", 95, 50)
+	expect(host.dataset.split).toBe("row")
+	expect(first.hidden).toBe(false)
+	expect(first.dataset.pane).toBe("0")
+	expect(timeline.hidden).toBe(false)
+	expect(timeline.dataset.pane).toBe("1")
+	expect(document.getElementById("chain-tab-timeline")!.getAttribute("aria-selected")).toBe(
+		"true"
+	)
+	expect(document.getElementById("chain-tab-one")!.hasAttribute("data-shown")).toBe(true)
+	// Choosing a tab replaces the focused pane and leaves the other one alone.
+	document.getElementById("chain-tab-two")!.click()
+	expect(timeline.hidden).toBe(true)
+	expect(first.hidden).toBe(false)
+	expect(second.dataset.pane).toBe("1")
+	expect(graphs.get("two")!.update).toHaveBeenLastCalledWith(true, expect.any(Number))
+	drag("timeline", 50, 5)
+	expect(host.dataset.split).toBe("column")
+	expect(timeline.dataset.pane).toBe("0")
+	expect(second.dataset.pane).toBe("1")
+	drag("two", 50, 50)
+	expect(host.dataset.split).toBe("")
+	expect(timeline.hidden).toBe(true)
+	expect(second.hidden).toBe(false)
+})
+
+it("saves the pane layout and restores it on the next load", () => {
+	const save = vi.fn()
+	mount({ save })
+	expect(save).toHaveBeenLastCalledWith({
+		panes: ["one"],
+		focused: 0,
+		split: "row",
+		solo: null
+	})
+	const zone = document.querySelector<HTMLElement>(".pane-drop-zone")!
+	vi.spyOn(zone, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 100, 100))
+	document
+		.getElementById("chain-tab-timeline")!
+		.dispatchEvent(new DragEvent("dragstart", { bubbles: true }))
+	zone.dispatchEvent(new MouseEvent(EVENT_DROP, { clientX: 50, clientY: 95, bubbles: true }))
+	const layout = save.mock.lastCall![0]
+	expect(layout).toEqual({ panes: ["one", "timeline"], focused: 1, split: "column", solo: null })
+	workspace!.destroy()
+
+	const restored = vi.fn()
+	mount({ saved: JSON.parse(JSON.stringify(layout)), save: restored })
+	expect(restored).not.toHaveBeenCalled()
+	expect(document.querySelector<HTMLElement>(".chains-workspace")!.dataset.split).toBe(
+		"column"
+	)
+	expect(document.getElementById("iochain-one")!.dataset.pane).toBe("0")
+	expect(document.getElementById("recordings")!.dataset.pane).toBe("1")
+	expect(document.getElementById("chain-tab-timeline")!.getAttribute("aria-selected")).toBe(
+		"true"
+	)
+})
+
+it("ignores saved layouts that are malformed or name missing chains", () => {
+	mount({ saved: { panes: ["gone", 4] } })
+	expect(document.getElementById("iochain-one")!.hidden).toBe(false)
+	workspace!.destroy()
+	const save = vi.fn()
+	mount({ saved: { panes: ["gone", "two"], focused: 0, split: "row", solo: null }, save })
+	expect(document.getElementById("iochain-two")!.hidden).toBe(false)
+	expect(document.querySelector<HTMLElement>(".chains-workspace")!.dataset.split).toBe("")
+	expect(save).toHaveBeenLastCalledWith({ panes: ["two"], focused: 0, split: "row", solo: null })
 })

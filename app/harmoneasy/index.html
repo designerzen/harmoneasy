@@ -5,6 +5,8 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta name="color-scheme" content="light dark" />
 		<title>Harmoneasy</title>
+		<link rel="help" href="%BASE_URL%docs/ai/" title="Documentation for AI agents" />
+		<link rel="alternate" type="text/plain" href="%BASE_URL%llms.txt" title="AI agent documentation index" />
 		<link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="shortcut icon" href="/favicon.ico" />
@@ -153,6 +155,7 @@
 						Start empty
 					</button>
 					<a href="%BASE_URL%presets/">Browse preset pages</a>
+					<a href="%BASE_URL%docs/ai/">Documentation for AI agents</a>
 					<a href="%BASE_URL%play/">Play songs</a>
 					<a data-start-song-back href="%BASE_URL%play/" hidden>Choose another song</a>
 				</div>
@@ -698,60 +701,55 @@
 			</div>
 			<div id="onscreen-keyboard"></div>
 
-			<section id="recordings" aria-label="Recordings">
-				<details id="recordings-panel">
-					<summary>Note timeline</summary>
-					<div class="recordings-content">
-						<div class="note-timeline-panel">
-							<canvas
-								id="note-timeline"
-								width="1080"
-								height="320"
-								tabindex="0"
-								aria-label="Note timeline. Arrow keys scroll, plus and minus zoom, Home follows live notes."
-							></canvas>
-							<div
-								class="note-timeline-controls"
-								role="group"
-								aria-label="Timeline controls"
-							>
-								<button
-									type="button"
-									data-timeline-action="zoom-in"
-									class="icon btn-zoom-in"
-									title="Zoom in"
-									aria-label="Zoom in"
-								></button>
-								<button
-									type="button"
-									data-timeline-action="zoom-out"
-									class="icon btn-zoom-out"
-									title="Zoom out"
-									aria-label="Zoom out"
-								></button>
-								<button
-									type="button"
-									data-timeline-action="follow"
-									title="Follow live notes"
-								>
-									Follow live
-								</button>
-								<button
-									type="button"
-									id="btn-reset"
-									class="icon btn-reset"
-									title="Clear recordings and timeline"
-								>
-									Clear recordings
-								</button>
-							</div>
-							<p class="note-timeline-hint" id="note-timeline-hint">
-								Drag to pan · Scroll for pitches · Shift+scroll for time ·
-								Ctrl+scroll to zoom
-							</p>
-						</div>
+			<section id="recordings" aria-label="Note timeline">
+				<div class="note-timeline-panel">
+					<canvas
+						id="note-timeline"
+						width="1080"
+						height="320"
+						tabindex="0"
+						aria-label="Note timeline. Arrow keys scroll, plus and minus zoom, Home follows live notes."
+					></canvas>
+					<div
+						class="note-timeline-controls"
+						role="group"
+						aria-label="Timeline controls"
+					>
+						<button
+							type="button"
+							data-timeline-action="zoom-in"
+							class="icon btn-zoom-in"
+							title="Zoom in"
+							aria-label="Zoom in"
+						></button>
+						<button
+							type="button"
+							data-timeline-action="zoom-out"
+							class="icon btn-zoom-out"
+							title="Zoom out"
+							aria-label="Zoom out"
+						></button>
+						<button
+							type="button"
+							data-timeline-action="follow"
+							title="Follow live notes"
+						>
+							Follow live
+						</button>
+						<button
+							type="button"
+							id="btn-reset"
+							class="icon btn-reset"
+							title="Clear recordings and timeline"
+						>
+							Clear recordings
+						</button>
 					</div>
-				</details>
+					<p class="note-timeline-hint" id="note-timeline-hint">
+						Drag to pan · Scroll for pitches · Shift+scroll for time ·
+						Ctrl+scroll to zoom
+					</p>
+				</div>
 			</section>
 		</main>
 
@@ -932,6 +930,9 @@
 						instruments and explore what your notes can become.
 					</p>
 					<nav class="about-links" aria-label="Harmoneasy project">
+						<a href="%BASE_URL%docs/ai/" target="_blank" rel="noopener noreferrer">
+							Documentation for AI agents<span class="sr-only"> (opens in a new tab)</span>
+						</a>
 						<a
 							class="btn-play-songs"
 							href="%BASE_URL%play/"

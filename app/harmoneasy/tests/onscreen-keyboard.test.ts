@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import SVGKeyboard from "../../../packages/audiobus/ui/keyboard-svg"
 import InputOnScreenKeyboard from "../../../packages/audiobus/io/inputs/input-onscreen-keyboard"
 import NoteModel from "../../../packages/audiobus/models/note-model"
+import { INPUT_EVENT } from "../../../packages/audiobus/commands/commands"
 
 const keyboards: SVGKeyboard[] = []
 function setup(numbers = [60, 61, 62]) {
@@ -115,6 +116,29 @@ describe("onscreen keyboard interaction", () => {
 		pointer(keys[0], "pointerdown", 9)
 		keyboard.allNotesOff()
 		expect(svg.releasePointerCapture).toHaveBeenCalledWith(9)
+	})
+
+	it("still triggers and releases notes when setPointerCapture throws", () => {
+		const { keyboard, on, off, keys } = setup()
+		const svg = keyboard.asElement.querySelector("svg")!
+		svg.setPointerCapture = vi.fn(() => {
+			throw new DOMException("No active pointer", "NotFoundError")
+		})
+		pointer(keys[0], "pointerdown", 12)
+		expect(on).toHaveBeenCalledWith(60, 0.5, 12)
+		pointer(document, "pointerup", 12)
+		expect(off).toHaveBeenCalledExactlyOnceWith(60, 1, 12)
+		expect(keyboard.isTouching).toBe(false)
+	})
+
+	it("clamps very light touch pressure to an audible MIDI velocity", () => {
+		const input = new InputOnScreenKeyboard()
+		const dispatched: any[] = []
+		input.addEventListener(INPUT_EVENT, (event: any) => dispatched.push(event.command))
+		input.onKeyDown(60, 0.001)
+		expect(dispatched).toHaveLength(1)
+		expect(dispatched[0].velocity).toBe(1)
+		input.destroy()
 	})
 
 	it.each(["blur", "visibilitychange", "lostpointercapture"])("releases notes on %s", (type) => {

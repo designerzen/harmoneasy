@@ -21,7 +21,9 @@ export default {
   ...sharedConfig,
   rules: {
     ...sharedConfig.rules,
-    'some-rule': 'off',
+    'no-debugger': 'error',
   },
 };
 ```
+
+[package.json](package.json) defines the current version and the root/`./oxlint` exports; [oxlint.config.ts](oxlint.config.ts) is the authoritative ruleset. This is a workspace configuration package, not a runtime music component, and has no build or test script.

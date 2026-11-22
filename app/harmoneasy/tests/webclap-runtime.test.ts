@@ -180,3 +180,48 @@ it.each(CLAP_PATCHES)(
 	},
 	20000
 )
+
+it("preserves FIFO order for same-block note-on/note-off bursts without sticking notes", async () => {
+	const patch = CLAP_PATCHES.find((entry) => entry.id === "com.plinken.organ")!
+	const config = await getWclap("http://webclap.local" + patch.url)
+	const processor = new Processor({
+		processorOptions: {
+			host: hostConfig,
+			wclap: config,
+			pluginId: patch.factory
+		}
+	})
+	await vi.waitFor(() => expect(processor.port.postMessage).toHaveBeenCalled(), { timeout: 10000 })
+	const methods = processor.remoteMethods
+	const output = [[new Float32Array(128), new Float32Array(128)]]
+	const step = (blocks: number) => {
+		let energy = 0
+		for (let i = 0; i < blocks; i++) {
+			expect(processor.process([[]], output, {})).toBe(true)
+			for (const channel of output[0]) {
+				for (const value of channel) {
+					energy += value * value
+				}
+			}
+		}
+		return Math.sqrt(energy / (blocks * 256))
+	}
+	try {
+		// Same-block note-on followed immediately by note-off.
+		methods.sendMidi.call(processor, [0x90, 60, 100])
+		methods.sendMidi.call(processor, [0x80, 60, 0])
+		step(200)
+		expect(step(30)).toBe(0)
+
+		// Rapid burst exceeding a single 128-sample block must drain cleanly without dropping note-offs.
+		for (let i = 0; i < 80; i++) {
+			const note = 36 + (i % 48)
+			methods.sendMidi.call(processor, [0x90, note, 100])
+			methods.sendMidi.call(processor, [0x80, note, 0])
+		}
+		step(200)
+		expect(step(30)).toBe(0)
+	} finally {
+		methods.destroy.call(processor)
+	}
+}, 20000)

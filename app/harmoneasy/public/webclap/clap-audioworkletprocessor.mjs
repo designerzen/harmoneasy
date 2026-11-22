@@ -216,13 +216,25 @@ class ClapAudioWorkletProcessor extends AudioWorkletProcessor {
 		this.hostApi.pluginMainThread(this.pluginPtr);
 	}
 	
-	// Hands input events to the plugin, and clears the list
-	writePendingEvents() {
-		let plugin = this.clapPlugin;
-		globalThis.clapRouting[this.routingId].events.forEach(bytes => {
+	// Hands input events to the plugin in FIFO order with strictly increasing
+	// sample offsets so same-block note-on/note-off pairs are never reordered.
+	pendingEvents = [];
+	writePendingEvents(blockLength = this.maxFramesCount) {
+		let routed = globalThis.clapRouting[this.routingId]?.events;
+		if (routed && routed.length) {
+			this.pendingEvents.push(...routed);
+			globalThis.clapRouting[this.routingId].events = [];
+		}
+		let count = Math.min(this.pendingEvents.length, Math.max(1, blockLength));
+		if (!count) return;
+		let batch = this.pendingEvents.splice(0, count);
+		for (let i = 0; i < batch.length; ++i) {
+			let bytes = batch[i];
+			if (bytes.byteLength >= 8) {
+				new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).setUint32(4, i, true);
+			}
 			this.hostApi.pluginAcceptEvent(this.pluginPtr, this.sendBytes(bytes));
-		});
-		globalThis.clapRouting[this.routingId].events = [];
+		}
 	}
 	
 	eventTargets = {};
@@ -257,12 +269,13 @@ class ClapAudioWorkletProcessor extends AudioWorkletProcessor {
 				view.setUint16(16, 0, true);
 				bytes.set(data.slice(0, 3), 18);
 			}
-			this.hostApi.pluginAcceptEvent(this.pluginPtr, this.sendBytes(bytes));
+			this.pendingEvents.push(bytes);
 		},
 		destroy() {
 			this.destroyed = true;
 			this.running = false;
 			this.ready = false;
+			this.pendingEvents = [];
 			delete globalThis.clapRouting[this.routingId];
 			this.hostApi.pluginStop(this.pluginPtr);
 			delete this.instancePluginMap[this.pluginPtr];
@@ -343,7 +356,7 @@ class ClapAudioWorkletProcessor extends AudioWorkletProcessor {
 
 		let blockLength = (outputs[0] || inputs[0])[0].length;
 		
-		this.writePendingEvents();
+		this.writePendingEvents(blockLength);
 		
 		// Copy audio input
 		this.instanceAudioPointers.inputs.forEach((ptrs, inputPort) => {

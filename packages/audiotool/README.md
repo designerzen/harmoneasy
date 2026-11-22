@@ -1,206 +1,29 @@
-# @harmoneasy/audiotool
+# audiotool
 
-AudioTool SDK integration for HarmonEasy.
+Harmoneasy's browser connection to Audiotool through `@audiotool/nexus`. This workspace package sends recorded note takes into Audiotool projects. Its package name is `audiotool`; see [the manifest](package.json) and [public exports](index.ts).
 
-## Overview
+## Connection and export
 
-This package provides integration with the AudioTool web platform, allowing HarmonEasy to:
-- Export compositions to AudioTool projects
-- Leverage AudioTool's synthesis and effects
-- Share projects between applications
-- Access AudioTool's plugin ecosystem
+```ts
+import { AudioToolConnection, captureAudioToolTake } from "audiotool"
 
-## Installation
-
-```bash
-pnpm install @harmoneasy/audiotool
+const connection = new AudioToolConnection(localStorage)
+await connection.prepare() // Load the SDK before showing a Connect button.
+// In a user's click handler, call connection.connect() for popup sign-in.
+// After authentication and project selection:
+const projects = await connection.listProjects()
+const take = captureAudioToolTake(recordedCommands, 120, endedAtSeconds, "My take")
+await connection.sendTake(projects[0].name, take, { placement: "end", setTempo: false })
 ```
 
-## Usage
+The host supplies `recordedCommands` and `endedAtSeconds`, in seconds. `placement` is `"start"` or `"end"`; `trackId` selects an existing track. Note pairing separates chain, source, channel and pitch. The adapter converts seconds to Audiotool ticks and MIDI velocity to 0–1, and accepts tempos from 30 to 1000 BPM.
 
-### Initialization
+[AudioToolConnection](audio-tool-connect.ts) also exposes `createProject`, `inspectProject`, `rememberProject`, `connectWithToken`, `disconnect`, and the `isConnected` and `selectedProject` getters. `isConnected` is a property. Personal-token connection is an alternative to popup sign-in; the token stays in memory. Popup sign-in requires an HTTP(S) origin and user activation.
 
-```typescript
-import { AudioToolIntegration } from '@harmoneasy/audiotool'
+[createAudioToolPanel](audio-tool-io.ts) provides the host UI; its source defines the callbacks and options. [The recording adapter](adapter-audiotool-audio-events-recording.ts) defines `RecordedCommand`, `AudioToolTake` and `TakeDestination`, and exports `appendAudioToolTake` for an existing Nexus transaction.
 
-const integration = new AudioToolIntegration()
-await integration.initialize()
-```
+This package exports recorded notes; it does not provide a generic audio-effect host, live MIDI router or the former `AudioToolIntegration` class. The old `@harmoneasy/audiotool` imports and API-key environment examples do not match this implementation.
 
-### Project Export
+## Development and related packages
 
-```typescript
-// Export HarmonEasy project to AudioTool
-const project = await integration.exportProject({
-  name: 'My Song',
-  bpm: 120,
-  timeSignature: '4/4',
-  tracks: audioTracks
-})
-
-// Open in AudioTool
-window.open(project.url)
-```
-
-### MIDI Mapping
-
-```typescript
-// Route MIDI to AudioTool instruments
-const mapping = integration.createMIDIMapping({
-  channel: 1,
-  instrument: 'Synth-A',
-  effects: ['Reverb', 'Delay']
-})
-
-midiInput.routeTo(mapping)
-```
-
-### Audio Processing
-
-```typescript
-// Use AudioTool effects and instruments
-const processor = await integration.createProcessor('Reverb', {
-  decay: 2.0,
-  wet: 0.5
-})
-
-audioOutput.addEffect(processor)
-```
-
-### Project Management
-
-```typescript
-// List available AudioTool projects
-const projects = await integration.listProjects()
-
-// Load project
-const loaded = await integration.loadProject(projectId)
-
-// Save project
-await integration.saveProject(projectId, data)
-
-// Share project
-const shareUrl = await integration.shareProject(projectId)
-```
-
-## API Reference
-
-### Classes
-
-- **AudioToolIntegration** - Main integration class
-
-### Methods
-
-- `initialize()` - Initialize AudioTool connection
-- `exportProject(data)` - Export to AudioTool project
-- `importProject(url)` - Import AudioTool project
-- `createMIDIMapping(config)` - Create MIDI routing
-- `createProcessor(name, params)` - Create audio processor
-- `listProjects()` - Get available projects
-- `loadProject(id)` - Load specific project
-- `saveProject(id, data)` - Save project data
-- `shareProject(id)` - Generate share URL
-- `isConnected()` - Check connection status
-
-### Types
-
-```typescript
-interface AudioToolProject {
-  id: string
-  name: string
-  bpm: number
-  timeSignature: string
-  url: string
-  created: Date
-  modified: Date
-}
-
-interface MIDIMapping {
-  channel: number
-  instrument: string
-  effects: string[]
-}
-
-interface ProcessorConfig {
-  name: string
-  params: Record<string, number>
-}
-```
-
-## Configuration
-
-### Environment Variables
-
-```bash
-AUDIOTOOL_API_KEY=your_api_key
-AUDIOTOOL_BASE_URL=https://www.audiotool.com
-```
-
-## Examples
-
-### Export Composition
-
-```typescript
-import { AudioToolIntegration } from '@harmoneasy/audiotool'
-
-const integration = new AudioToolIntegration()
-await integration.initialize()
-
-// Prepare project data
-const projectData = {
-  name: 'My Composition',
-  bpm: 120,
-  tracks: [
-    {
-      name: 'Piano',
-      events: midiEvents,
-      volume: 1.0
-    }
-  ]
-}
-
-// Export to AudioTool
-const project = await integration.exportProject(projectData)
-console.log(`Project URL: ${project.url}`)
-```
-
-### Real-time Routing
-
-```typescript
-// Route live MIDI to AudioTool
-const midiInput = await createMIDIInput()
-const mapping = integration.createMIDIMapping({
-  channel: 1,
-  instrument: 'Synth-A'
-})
-
-midiInput.onMessage((event) => {
-  mapping.send(event.data)
-})
-```
-
-## Browser Support
-
-- Chrome 90+
-- Firefox 88+
-- Safari 14.1+
-- Edge 90+
-
-Requires HTTPS for production use.
-
-## Limitations
-
-- Requires AudioTool account
-- API key needed for advanced features
-- Rate limiting applies to bulk operations
-- Some features may require AudioTool Pro subscription
-
-## License
-
-MIT
-
-## See Also
-
-- [@harmoneasy/audiobus](../audiobus) - Audio engine
-- [AudioTool](https://www.audiotool.com)
-- [AudioTool API Docs](https://docs.audiotool.com)
+Use the root pnpm workspace installation. The manifest has `lint` and `lint:fix`; there is no package build or standalone server. See [audiobus](../audiobus/README.md) for recording and [openDAW](../openDAW/README.md) for the separate script exporter.
