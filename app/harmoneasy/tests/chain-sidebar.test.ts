@@ -193,7 +193,7 @@ it("groups output engines with instruments and combines type, subtype, category 
 	await choose("Outputs")
 	const host = panel()
 	expect(
-		[...host.querySelectorAll(".choice-group h6")].map((heading) => heading.textContent)
+		[...host.querySelectorAll(".choice-group h3")].map((heading) => heading.textContent)
 	).toEqual(["Sound engines / Instruments", "Visual / Visualisers"])
 	expect(
 		host.querySelector('[aria-label="Sound engines / Instruments"]')!.querySelectorAll("li")

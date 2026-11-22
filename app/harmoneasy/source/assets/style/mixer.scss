@@ -27,10 +27,10 @@
 	border: var(--border);
 	border-radius: var(--radius-sm);
 	h3 {
-		height: 2.5em;
-		overflow: hidden;
+		min-height: 2.5em;
 		margin: 0 0 0.5rem;
 		font-size: var(--text-xs);
+		line-height: 1.3;
 		overflow-wrap: anywhere;
 	}
 	.mixer-gain-value {
@@ -64,8 +64,8 @@
 }
 .mixer-scale {
 	position: relative;
-	width: 22px;
-	font: 9px var(--font-mono);
+	width: 24px;
+	font: var(--text-xs) / 1 var(--font-mono);
 	color: var(--col-muted);
 	span {
 		position: absolute;
@@ -126,6 +126,23 @@
 	background: var(--col-fg);
 	z-index: 1;
 }
+.mixer-clip-badge {
+	display: none;
+	position: absolute;
+	left: 50%;
+	top: -1.15rem;
+	transform: translateX(-50%);
+	padding: 0 0.25rem;
+	border-radius: 2px;
+	background: var(--col-danger-solid);
+	color: var(--col-on-danger);
+	font: 700 0.625rem / 1.3 var(--font-mono);
+	letter-spacing: 0.03em;
+	white-space: nowrap;
+}
+.mixer-meter.is-clipping .mixer-clip-badge {
+	display: block;
+}
 .mixer-meter.is-clipping::before {
 	content: "";
 	position: absolute;
@@ -136,6 +153,19 @@
 	border-radius: 1px;
 	background: var(--col-danger-solid);
 	box-shadow: 0 0 6px var(--col-danger-solid);
+}
+@media (forced-colors: active) {
+	.mixer-meter-fill {
+		forced-color-adjust: none;
+		background: Highlight;
+	}
+	.mixer-meter-peak {
+		forced-color-adjust: none;
+		background: CanvasText;
+	}
+	.mixer-clip-badge {
+		border: 1px solid Highlight;
+	}
 }
 .mixer-hint {
 	margin: 0;

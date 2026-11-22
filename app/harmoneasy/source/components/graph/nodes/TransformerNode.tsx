@@ -145,7 +145,7 @@ export function TransformerNode(props: any) {
 					aria-pressed={enabled}
 					onClick={toggle}
 					title={`${enabled ? "Disable" : "Enable"} transformer in this chain`}
-					aria-label={`${enabled ? "Disable" : "Enable"} transformer`}
+					aria-label={`${enabled ? "On" : "Off"}: ${props.data.label || "transformer"}`}
 				>
 					<svg viewBox="0 0 24 24" aria-hidden="true">
 						<path d="M12 3v9m-5-7a8 8 0 1 0 10 0" />

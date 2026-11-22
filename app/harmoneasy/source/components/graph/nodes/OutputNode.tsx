@@ -9,6 +9,7 @@ import React, { useCallback } from "react"
 import { CONTROL_HANDLE } from "../control-surfaces"
 import { hasAudibleOutput } from "../audio-levels"
 import { AUDIO_HANDLE } from "../layout"
+import { announceLive } from "../../../libs/dialog-utils"
 
 import type { IAudioOutput } from "audiobus/io/outputs/output-interface"
 
@@ -30,8 +31,13 @@ export function OutputNode(props: any) {
 		try {
 			await output.connect?.()
 			chain.dispatchEvent(new Event(EVENT_CONFIGURATION_CHANGED))
+			announceLive(`${output.name} connected.`)
 		} catch (error) {
 			console.error(error)
+			announceLive(
+				`Could not connect ${output.name}: ${error instanceof Error ? error.message : String(error)}`,
+				"assertive"
+			)
 		}
 	}, [output, chain])
 
@@ -39,8 +45,13 @@ export function OutputNode(props: any) {
 		try {
 			await output.disconnect?.()
 			chain.dispatchEvent(new Event(EVENT_CONFIGURATION_CHANGED))
+			announceLive(`${output.name} disconnected.`)
 		} catch (error) {
 			console.error(error)
+			announceLive(
+				`Could not disconnect ${output.name}: ${error instanceof Error ? error.message : String(error)}`,
+				"assertive"
+			)
 		}
 	}, [output, chain])
 
@@ -75,24 +86,28 @@ export function OutputNode(props: any) {
 			)}
 			<p className="sr-only">{props.data.label}</p>
 			{hasConnectMethod && !output.isConnected && (
-				<label className="connect-output">
-					<span className="sr-only">Connect to Device</span>
-					<button className="cta btn-connect" type="button" onClick={connectToOutput}>
+				<div className="connect-output">
+					<button
+						className="cta btn-connect"
+						type="button"
+						onClick={connectToOutput}
+						aria-label={`Connect ${output.name}`}
+					>
 						Connect
 					</button>
-				</label>
+				</div>
 			)}
 			{hasDisconnectMethod && output.isConnected && (
-				<label className="disconnect-output">
-					<span className="sr-only">Disconnect from Device</span>
+				<div className="disconnect-output">
 					<button
 						className="cta btn-disconnect"
 						type="button"
 						onClick={disconnectFromOutput}
+						aria-label={`Disconnect ${output.name}`}
 					>
 						Disconnect
 					</button>
-				</label>
+				</div>
 			)}
 
 			{/* Injected content from the nodes */}

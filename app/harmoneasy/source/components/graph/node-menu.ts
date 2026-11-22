@@ -1,6 +1,7 @@
 import { createDropdown, menuIcon } from "control-surface/dropdown"
 import "control-surface/dropdown.css"
 import { EVENT_CLICK, EVENT_CLOSE, EVENT_SUBMIT } from "audiobus/events/event-constants"
+import { captureFocusReturn } from "../../libs/dialog-utils"
 import { button, element } from "./dom"
 
 export interface NodeMenuAction {
@@ -63,6 +64,7 @@ export function editNodeValue(
 	type: "text" | "color",
 	save: (value: string) => void
 ) {
+	const restoreFocus = captureFocusReturn()
 	const dialog = element("dialog", "node-value-dialog"),
 		form = element("form"),
 		label = element("label", "", title),
@@ -87,7 +89,14 @@ export function editNodeValue(
 		save(input.value.trim())
 		dialog.close()
 	})
-	dialog.addEventListener(EVENT_CLOSE, () => dialog.remove(), { once: true })
+	dialog.addEventListener(
+		EVENT_CLOSE,
+		() => {
+			dialog.remove()
+			restoreFocus()
+		},
+		{ once: true }
+	)
 	dialog.addEventListener(EVENT_CLICK, (event) => event.stopPropagation())
 	dialog.append(form)
 	document.body.append(dialog)

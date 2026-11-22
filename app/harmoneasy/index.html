@@ -32,17 +32,43 @@
 				if (a11y?.targetSize === "large" || a11y?.targetSize === "xlarge") {
 					document.documentElement.dataset.targetSize = a11y.targetSize
 				}
-				if (a11y?.reducedMotion === "reduce") {
-					document.documentElement.dataset.reducedMotion = "reduce"
+				if (
+					a11y?.fontScale === "large" ||
+					a11y?.fontScale === "xlarge" ||
+					a11y?.fontScale === "xxlarge"
+				) {
+					document.documentElement.dataset.fontScale = a11y.fontScale
+				}
+				if (a11y?.textSpacing === "comfortable" || a11y?.textSpacing === "wide") {
+					document.documentElement.dataset.textSpacing = a11y.textSpacing
+				}
+				if (a11y?.readableFont === "sans" || a11y?.readableFont === "mono") {
+					document.documentElement.dataset.readableFont = a11y.readableFont
+				}
+				if (a11y?.focusIndicator === "enhanced" || a11y?.focusIndicator === "maximum") {
+					document.documentElement.dataset.focusIndicator = a11y.focusIndicator
+				}
+				if (a11y?.underlineLinks === true) {
+					document.documentElement.dataset.underlineLinks = "on"
+				}
+				if (a11y?.reducedMotion === "reduce" || a11y?.reducedMotion === "allow") {
+					document.documentElement.dataset.reducedMotion = a11y.reducedMotion
+				}
+				if (a11y?.announcements === "minimal") {
+					document.documentElement.dataset.announcements = "minimal"
 				}
 				if (a11y?.beatFlash === true) {
 					document.documentElement.dataset.beatFlash = "on"
+				}
+				if (a11y?.characterShortcuts === false) {
+					document.documentElement.dataset.shortcuts = "off"
 				}
 			} catch {}
 		</script>
 	</head>
 
 	<body>
+		<a class="skip-link" href="#main-content">Skip to main content</a>
 		<dialog id="start-dialog" open aria-labelledby="start-title" data-midi-ignore>
 			<div id="start-room-context" hidden>
 				<p id="start-room-description"></p>
@@ -147,7 +173,7 @@
 						width="20"
 						height="20"
 					/>
-					<span>Awesomething</span>
+					<span>Awesomething<span class="sr-only"> (opens in a new tab)</span></span>
 				</a>
 			</footer>
 		</dialog>
@@ -249,7 +275,7 @@
 			</div>
 		</dialog>
 
-		<menu id="action-bar" class="file-menu" aria-label="Application actions">
+		<header id="action-bar" class="file-menu" aria-label="Application actions">
 			<button
 				class="backlink"
 				type="button"
@@ -259,7 +285,7 @@
 				aria-controls="about-dialog"
 			>
 				<img class="logo" src="/source/assets/logos/harmoneasy.svg" alt="" />
-				<p class="h2">Harmoneasy</p>
+				<span class="h2">Harmoneasy</span>
 			</button>
 
 			<button
@@ -315,7 +341,7 @@
 			<button id="btn-kill-switch" class="btn-kill-switch btn-panic" type="button">
 				Panic
 			</button>
-		</menu>
+		</header>
 
 		<dialog
 			id="command-palette"
@@ -359,10 +385,9 @@
 			</footer>
 		</dialog>
 
-		<div
+		<section
 			id="midi-transport-control"
 			class="controls"
-			role="group"
 			aria-labelledby="transport-label"
 		>
 			<label class="sr-only" id="transport-label" for="transport-status"
@@ -616,7 +641,7 @@
 				</div>
 			</div>
 			<nav id="chain-navigation" aria-label="IOChains"></nav>
-		</div>
+		</section>
 
 		<dialog id="recording-dialog" aria-labelledby="recording-title" hidden>
 			<div
@@ -664,7 +689,8 @@
 				></button>
 			</div>
 		</dialog>
-		<main>
+		<main id="main-content" tabindex="-1">
+			<h1 class="sr-only">Harmoneasy Workspace</h1>
 			<div id="chain">
 				<canvas id="note-visualiser" width="1080" height="512" aria-hidden="true"></canvas>
 				<div id="graph"></div>
@@ -737,7 +763,7 @@
 			aria-describedby="info-message"
 		>
 			<header>
-				<h5 id="info-dialog-title">Information</h5>
+				<h2 id="info-dialog-title">Information</h2>
 			</header>
 			<pre id="info-message" class="selectable" role="status" aria-live="polite"></pre>
 			<form method="dialog">
@@ -789,7 +815,8 @@
 			<footer class="opendaw-export-actions">
 				<p id="opendaw-export-status" role="status" aria-live="polite"></p>
 				<a href="https://opendaw.studio/scripting" target="_blank" rel="noopener noreferrer"
-					>Open script editor <span aria-hidden="true">↗</span></a
+					>Open script editor <span aria-hidden="true">↗</span
+					><span class="sr-only"> (opens in a new tab)</span></a
 				>
 				<button type="button" id="opendaw-copy-code" class="primary" autofocus>
 					Copy code
@@ -805,7 +832,7 @@
 			aria-describedby="error-message"
 		>
 			<header>
-				<h5 id="error-dialog-title">Error</h5>
+				<h2 id="error-dialog-title">Error</h2>
 			</header>
 			<div role="alert">
 				<p id="error-message"></p>
@@ -824,19 +851,19 @@
 
 		<dialog id="export-dialog" hidden closedby="any" aria-labelledby="export-dialog-title">
 			<header>
-				<h5 id="export-dialog-title">Export</h5>
+				<h2 id="export-dialog-title">Export</h2>
 			</header>
-			<menu id="export-options" class="export-menu">
+			<div id="export-options" class="export-menu">
 				<button type="button" id="btn-audiotool-export" class="export-option">
 					<img
 						src="source/assets/logos/audiotool.svg"
-						alt="AudioTool"
+						alt=""
 						class="logo-inline"
 					/>
 					Send a take to AudioTool
 				</button>
 				<button type="button" id="btn-opendaw-export" class="export-option">
-					<img src="source/assets/logos/opendaw.svg" alt="OpenDAW" class="logo-inline" />
+					<img src="source/assets/logos/opendaw.svg" alt="" class="logo-inline" />
 					Export to OpenDAW
 				</button>
 
@@ -848,7 +875,7 @@
 					Vocal project exports contain notes with “a” lyrics and no assigned singer. LMMS
 					exports use a basic oscillator.
 				</p>
-			</menu>
+			</div>
 			<form method="dialog">
 				<button
 					class="btn-close close-icon"
@@ -859,11 +886,17 @@
 			</form>
 		</dialog>
 
-		<dialog id="export-overlay" class="export-overlay" hidden>
+		<dialog
+			id="export-overlay"
+			class="export-overlay"
+			hidden
+			aria-labelledby="export-overlay-title"
+			aria-busy="true"
+		>
 			<header>
-				<h5>Exporting...</h5>
+				<h2 id="export-overlay-title">Exporting...</h2>
 			</header>
-			<p>Please wait while we create your project</p>
+			<p role="status" aria-live="polite">Please wait while we create your project</p>
 		</dialog>
 
 		<dialog id="about-dialog" closedby="any" aria-labelledby="about-title">
@@ -903,25 +936,29 @@
 							href="%BASE_URL%play/"
 							target="_blank"
 							rel="noopener noreferrer"
-							>Play songs <span aria-hidden="true">↗</span></a
+							>Play songs <span aria-hidden="true">↗</span
+							><span class="sr-only"> (opens in a new tab)</span></a
 						>
 						<a
 							href="https://github.com/designerzen/harmoneasy#readme"
 							target="_blank"
 							rel="noopener noreferrer"
-							>Read the guide <span aria-hidden="true">↗</span></a
+							>Read the guide <span aria-hidden="true">↗</span
+							><span class="sr-only"> (opens in a new tab)</span></a
 						>
 						<a
 							href="https://github.com/designerzen/harmoneasy/issues"
 							target="_blank"
 							rel="noopener noreferrer"
-							>Report an issue <span aria-hidden="true">↗</span></a
+							>Report an issue <span aria-hidden="true">↗</span
+							><span class="sr-only"> (opens in a new tab)</span></a
 						>
 						<a
 							href="https://github.com/designerzen/harmoneasy"
 							target="_blank"
 							rel="noopener noreferrer"
-							>Source code <span aria-hidden="true">↗</span></a
+							>Source code <span aria-hidden="true">↗</span
+							><span class="sr-only"> (opens in a new tab)</span></a
 						>
 					</nav>
 				</section>
@@ -993,13 +1030,13 @@
 						width="20"
 						height="20"
 					/>
-					<span>Awesomething</span>
+					<span>Awesomething<span class="sr-only"> (opens in a new tab)</span></span>
 				</a>
 			</footer>
 		</dialog>
 
 		<dialog id="midi-dialog" closedby="any" aria-labelledby="midi-title">
-			<header><h5 id="midi-title">MIDI</h5></header>
+			<header><h2 id="midi-title">MIDI</h2></header>
 			<button
 				id="btn-midi-devices"
 				type="button"
@@ -1023,7 +1060,7 @@
 		</dialog>
 
 		<dialog id="midi-devices-dialog" closedby="any" aria-labelledby="midi-devices-title">
-			<header><h5 id="midi-devices-title">MIDI devices</h5></header>
+			<header><h2 id="midi-devices-title">MIDI devices</h2></header>
 			<p id="midi-devices-status" role="status"></p>
 			<div
 				class="midi-devices-table"
@@ -1060,7 +1097,7 @@
 
 		<dialog id="settings-dialog" closedby="any" aria-labelledby="settings-dialog-title">
 			<header>
-				<h5 id="settings-dialog-title">Settings</h5>
+				<h2 id="settings-dialog-title">Settings</h2>
 			</header>
 			<form id="settings-form">
 				<fieldset id="theme-settings">
@@ -1087,7 +1124,7 @@
 						value="290"
 						aria-describedby="theme-status"
 					/>
-					<div class="theme-preview" aria-label="Theme preview">
+					<div class="theme-preview" role="group" aria-label="Theme preview">
 						<span class="theme-preview-accent">Accent</span><span>Surface</span
 						><span class="theme-preview-muted">Secondary text</span>
 					</div>
@@ -1096,77 +1133,179 @@
 				</fieldset>
 				<fieldset id="accessibility-settings">
 					<legend>Accessibility</legend>
-					<label for="a11y-contrast"
-						>Contrast
-						<select id="a11y-contrast">
-							<option value="standard">Standard</option>
-							<option value="high">High contrast (AAA)</option>
-						</select>
-					</label>
-					<label for="a11y-palette"
-						>Pad colours
-						<select id="a11y-palette">
-							<option value="default">Default palette</option>
-							<option value="colorblind-safe">Colorblind-safe (Okabe-Ito)</option>
-						</select>
-					</label>
-					<label for="a11y-target-size"
-						>Target size
-						<select id="a11y-target-size">
-							<option value="default">Standard</option>
-							<option value="large">Large (48px+)</option>
-							<option value="xlarge">Extra large (56px+)</option>
-						</select>
-					</label>
-					<label for="a11y-reduced-motion"
-						>Motion
-						<select id="a11y-reduced-motion">
-							<option value="system">Follow system</option>
-							<option value="reduce">Reduce all motion</option>
-						</select>
-					</label>
-					<label class="a11y-checkbox" for="a11y-beat-flash">
-						<input id="a11y-beat-flash" type="checkbox" />
-						Visual beat flash (pulse on every beat)
-					</label>
-					<label class="a11y-checkbox" for="a11y-stabilizer">
-						<input id="a11y-stabilizer" type="checkbox" />
-						Motor stabilization (debounce &amp; tremor filter)
-					</label>
-					<label for="a11y-debounce"
-						>Retrigger lockout
-						<select id="a11y-debounce">
-							<option value="0">Off</option>
-							<option value="80">80 ms</option>
-							<option value="120">120 ms</option>
-							<option value="200">200 ms</option>
-							<option value="350">350 ms</option>
-						</select>
-					</label>
-					<label for="a11y-hold-threshold"
-						>Tremor hold filter
-						<select id="a11y-hold-threshold">
-							<option value="0">Off</option>
-							<option value="50">50 ms</option>
-							<option value="100">100 ms</option>
-							<option value="180">180 ms</option>
-							<option value="300">300 ms</option>
-						</select>
-					</label>
-					<label for="a11y-min-duration"
-						>Minimum note sustain
-						<select id="a11y-min-duration">
-							<option value="0">Off</option>
-							<option value="120">120 ms</option>
-							<option value="250">250 ms</option>
-							<option value="400">400 ms</option>
-							<option value="600">600 ms</option>
-						</select>
-					</label>
-					<button id="a11y-calibrate" type="button">
-						Guided calibration &amp; learner link…
-					</button>
-					<button id="a11y-reset" type="button">Reset accessibility</button>
+					<div
+						class="a11y-group"
+						role="group"
+						aria-labelledby="a11y-group-presets"
+					>
+						<h3 id="a11y-group-presets">Quick presets</h3>
+						<div class="a11y-preset-row">
+							<button
+								id="a11y-preset-low-vision"
+								class="secondary"
+								type="button"
+							>
+								Low-vision + Speech
+							</button>
+							<button
+								id="a11y-preset-deaf-tactile"
+								class="secondary"
+								type="button"
+							>
+								Deaf + Haptics
+							</button>
+						</div>
+					</div>
+					<div
+						class="a11y-group"
+						role="group"
+						aria-labelledby="a11y-group-visual"
+					>
+						<h3 id="a11y-group-visual">Visual &amp; contrast</h3>
+						<label for="a11y-contrast"
+							>Contrast
+							<select id="a11y-contrast">
+								<option value="standard">Standard</option>
+								<option value="high">High contrast (AAA)</option>
+							</select>
+						</label>
+						<label for="a11y-palette"
+							>Pad colours
+							<select id="a11y-palette">
+								<option value="default">Default palette</option>
+								<option value="colorblind-safe">Colorblind-safe (Okabe-Ito)</option>
+							</select>
+						</label>
+						<label for="a11y-focus-indicator"
+							>Focus ring
+							<select id="a11y-focus-indicator">
+								<option value="default">Standard (2px)</option>
+								<option value="enhanced">Enhanced (3px high-visibility)</option>
+								<option value="maximum">Maximum (4px double ring)</option>
+							</select>
+						</label>
+						<label class="a11y-checkbox" for="a11y-underline-links">
+							<input id="a11y-underline-links" type="checkbox" />
+							Always underline links
+						</label>
+					</div>
+					<div
+						class="a11y-group"
+						role="group"
+						aria-labelledby="a11y-group-reading"
+					>
+						<h3 id="a11y-group-reading">Text &amp; reading</h3>
+						<label for="a11y-font-scale"
+							>Text size
+							<select id="a11y-font-scale">
+								<option value="default">Standard (100%)</option>
+								<option value="large">Large (115%)</option>
+								<option value="xlarge">Extra large (130%)</option>
+								<option value="xxlarge">Maximum (150%)</option>
+							</select>
+						</label>
+						<label for="a11y-text-spacing"
+							>Text &amp; line spacing
+							<select id="a11y-text-spacing">
+								<option value="default">Standard</option>
+								<option value="comfortable">Comfortable</option>
+								<option value="wide">Wide (WCAG 1.4.12)</option>
+							</select>
+						</label>
+						<label for="a11y-readable-font"
+							>Font style
+							<select id="a11y-readable-font">
+								<option value="default">Default (Condensed)</option>
+								<option value="sans">Standard sans-serif</option>
+								<option value="mono">Monospace</option>
+							</select>
+						</label>
+					</div>
+					<div
+						class="a11y-group"
+						role="group"
+						aria-labelledby="a11y-group-motion"
+					>
+						<h3 id="a11y-group-motion">Motion, rhythm &amp; announcements</h3>
+						<label for="a11y-reduced-motion"
+							>Motion
+							<select id="a11y-reduced-motion">
+								<option value="system">Follow system</option>
+								<option value="reduce">Reduce all motion</option>
+								<option value="allow">Allow motion (override system)</option>
+							</select>
+						</label>
+						<label for="a11y-announcements"
+							>Screen reader announcements
+							<select id="a11y-announcements">
+								<option value="normal">Standard</option>
+								<option value="minimal">Minimal (alerts only)</option>
+							</select>
+						</label>
+						<label class="a11y-checkbox" for="a11y-beat-flash">
+							<input id="a11y-beat-flash" type="checkbox" />
+							Visual beat flash (pulse on every beat, capped at 3 Hz)
+						</label>
+					</div>
+					<div
+						class="a11y-group"
+						role="group"
+						aria-labelledby="a11y-group-motor"
+					>
+						<h3 id="a11y-group-motor">Keyboard &amp; motor</h3>
+						<label for="a11y-target-size"
+							>Target size
+							<select id="a11y-target-size">
+								<option value="default">Standard</option>
+								<option value="large">Large (48px+)</option>
+								<option value="xlarge">Extra large (56px+)</option>
+							</select>
+						</label>
+						<label class="a11y-checkbox" for="a11y-shortcuts">
+							<input id="a11y-shortcuts" type="checkbox" checked />
+							Single-key musical shortcuts
+						</label>
+						<label class="a11y-checkbox" for="a11y-stabilizer">
+							<input id="a11y-stabilizer" type="checkbox" />
+							Motor stabilization (debounce &amp; tremor filter)
+						</label>
+						<label for="a11y-debounce"
+							>Retrigger lockout
+							<select id="a11y-debounce">
+								<option value="0">Off</option>
+								<option value="80">80 ms</option>
+								<option value="120">120 ms</option>
+								<option value="200">200 ms</option>
+								<option value="350">350 ms</option>
+							</select>
+						</label>
+						<label for="a11y-hold-threshold"
+							>Tremor hold filter
+							<select id="a11y-hold-threshold">
+								<option value="0">Off</option>
+								<option value="50">50 ms</option>
+								<option value="100">100 ms</option>
+								<option value="180">180 ms</option>
+								<option value="300">300 ms</option>
+							</select>
+						</label>
+						<label for="a11y-min-duration"
+							>Minimum note sustain
+							<select id="a11y-min-duration">
+								<option value="0">Off</option>
+								<option value="120">120 ms</option>
+								<option value="250">250 ms</option>
+								<option value="400">400 ms</option>
+								<option value="600">600 ms</option>
+							</select>
+						</label>
+					</div>
+					<div class="a11y-actions">
+						<button id="a11y-calibrate" class="secondary" type="button">
+							Guided calibration &amp; learner link…
+						</button>
+						<button id="a11y-reset" type="button">Reset accessibility</button>
+					</div>
 					<p id="a11y-status" role="status">
 						Accessibility preferences saved in this browser only.
 					</p>
@@ -1238,9 +1377,9 @@
 
 		<!-- Input Manager -->
 		<template id="add-input-overlay-template">
-			<dialog closedby="any">
+			<dialog closedby="any" aria-labelledby="add-input-dialog-title">
 				<header>
-					<h5>Add input</h5>
+					<h2 id="add-input-dialog-title">Add input</h2>
 				</header>
 				<!-- Shows a collection of buttons to allow selection -->
 				<menu></menu>
@@ -1257,9 +1396,9 @@
 
 		<!-- Output Manager -->
 		<template id="add-output-overlay-template">
-			<dialog closedby="any">
+			<dialog closedby="any" aria-labelledby="add-output-dialog-title">
 				<header>
-					<h5>Add output</h5>
+					<h2 id="add-output-dialog-title">Add output</h2>
 				</header>
 				<!-- Shows a collection of buttons to allow selection -->
 				<menu></menu>
@@ -1276,9 +1415,9 @@
 
 		<!-- Instrument Manager -->
 		<template id="add-instrument-overlay-template">
-			<dialog closedby="any">
+			<dialog closedby="any" aria-labelledby="add-instrument-dialog-title">
 				<header>
-					<h5>Add instrument</h5>
+					<h2 id="add-instrument-dialog-title">Add instrument</h2>
 				</header>
 				<!-- Shows a collection of buttons to allow selection -->
 				<menu></menu>
@@ -1295,12 +1434,12 @@
 
 		<!-- Importer -->
 		<template id="import-overlay-template">
-			<div class="import-overlay" hidden>
+			<div class="import-overlay" role="status" aria-live="polite" hidden>
 				<div class="import-overlay-content">
 					<span class="loader loader-large" aria-hidden="true"
 						><i></i><i></i><i></i><i></i
 					></span>
-					<h5>Importing...</h5>
+					<h2>Importing...</h2>
 					<p>Please wait while we load your data.</p>
 				</div>
 			</div>
@@ -1308,12 +1447,12 @@
 
 		<!-- Exporter -->
 		<template id="export-overlay-template">
-			<div class="export-overlay" hidden>
+			<div class="export-overlay" role="status" aria-live="polite" hidden>
 				<div class="export-overlay-content">
 					<span class="loader loader-large" aria-hidden="true"
 						><i></i><i></i><i></i><i></i
 					></span>
-					<h5>Exporting...</h5>
+					<h2>Exporting...</h2>
 					<p>Please wait while we create your project.</p>
 				</div>
 			</div>
@@ -1329,7 +1468,7 @@
 				data-midi-ignore
 			>
 				<header>
-					<h5 id="midi-device-connected-title">MIDI device connected</h5>
+					<h2 id="midi-device-connected-title">MIDI device connected</h2>
 				</header>
 				<div class="midi-connected-device">
 					<span class="midi-connected-icon" aria-hidden="true"></span>
@@ -1370,14 +1509,14 @@
 			<dialog
 				hidden
 				closedby="any"
-				aria-labelledby="error-dialog-title"
-				aria-describedby="error-message"
+				aria-labelledby="error-template-title"
+				aria-describedby="error-template-message"
 			>
 				<header>
-					<h5 class="error-title">Error</h5>
+					<h2 id="error-template-title" class="error-title">Error</h2>
 				</header>
 				<div role="alert">
-					<p class="error-message"></p>
+					<p id="error-template-message" class="error-message"></p>
 					<p class="error-solution"></p>
 				</div>
 				<form method="dialog">

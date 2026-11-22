@@ -57,7 +57,7 @@ export function createSharedDevices(
 	const section = element("section", "shared-device-selector nodrag nopan nowheel")
 	section.hidden = !available.length
 	section.setAttribute("aria-label", `Use existing ${direction}`)
-	section.append(element("h6", "", `Use existing ${direction}`))
+	section.append(element("h3", "", `Use existing ${direction}`))
 	const list = element("ul")
 	for (const entry of available) {
 		const item = element("li")

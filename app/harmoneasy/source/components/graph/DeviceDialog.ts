@@ -1,4 +1,5 @@
 import { EVENT_CLOSE, EVENT_KEY_DOWN } from "audiobus/events/event-constants"
+import { captureFocusReturn } from "../../libs/dialog-utils"
 import { createDevicePicker } from "./DevicePicker"
 import { createTransformerPicker } from "./Transformers"
 import type AbstractInput from "audiobus/io/inputs/abstract-input"
@@ -15,12 +16,13 @@ function createPickerDialog(
 	createPicker: (header: HTMLElement, close: () => void) => NativeView,
 	titleInHeader = false
 ) {
+	const restoreFocus = captureFocusReturn()
 	const dialog = element("dialog", `${className} nodrag nopan nowheel`)
 	dialog.setAttribute("aria-label", title)
 	dialog.setAttribute("closedby", "any")
 	const header = element("header", titleInHeader ? "" : "device-picker-header")
 	const content = element("div", "dialog-content")
-	header.append(element("h5", titleInHeader ? "" : "device-picker-title", title))
+	header.append(element("h2", titleInHeader ? "" : "device-picker-title", title))
 	const picker = createPicker(header, () => dialog.close())
 	content.append(picker.element)
 	const form = element("form")
@@ -46,6 +48,7 @@ function createPickerDialog(
 	}
 	const closed = () => {
 		destroy()
+		restoreFocus()
 		onClose()
 	}
 	dialog.addEventListener(EVENT_CLOSE, closed)

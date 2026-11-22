@@ -175,6 +175,7 @@ export function mountHarmonyWorkspace(
 	const zoom = numberField(networkHost, "Zoom", 1, 0.5, 1.8, 0.1)
 	const network = element("div")
 	network.className = "harmony-network"
+	network.setAttribute("role", "group")
 	network.setAttribute("aria-label", "Related scales; choose a node to change scale")
 	networkHost.append(
 		element(
@@ -455,31 +456,52 @@ export function mountHarmonyWorkspace(
 		const tuning = STRING_TUNINGS[instrument.value as keyof typeof STRING_TUNINGS]
 		const mask = manager.harmony[tabFollow.value as "scale" | "chord"]
 		const grid = element("table")
+		const caption = element(
+			"caption",
+			`${instrument.selectedOptions[0]?.textContent ?? instrument.value} fretboard (${tabFollow.value}, starting at fret ${position.value})`
+		)
+		grid.append(caption)
+		const thead = element("thead")
 		const header = element("tr")
-		header.append(element("th", "String"))
+		const stringHeader = element("th", "String")
+		stringHeader.scope = "col"
+		header.append(stringHeader)
 		for (let f = Number(position.value); f <= Number(position.value) + 4; f++) {
-			header.append(element("th", String(f)))
+			const fretHeader = element("th", `Fret ${f}`)
+			fretHeader.scope = "col"
+			header.append(fretHeader)
 		}
-		grid.append(header)
+		thead.append(header)
+		grid.append(thead)
+		const tbody = element("tbody")
 		fretboard(tuning, mask, Number(position.value) + 4)
 			.slice()
 			.reverse()
 			.forEach((string, i) => {
+				const openName = NOTE_NAMES[tuning[tuning.length - 1 - i] % 12]
 				const row = element("tr")
-				row.append(element("th", NOTE_NAMES[tuning[tuning.length - 1 - i] % 12]))
-				string.slice(Number(position.value)).forEach((fret) => {
+				const rowHead = element("th", openName)
+				rowHead.scope = "row"
+				row.append(rowHead)
+				const startFret = Number(position.value)
+				string.slice(startFret).forEach((fret, offset) => {
 					const cell = element("td")
 					if (fret.active) {
-						cell.append(
-							action(NOTE_NAMES[fret.note % 12], () => audition([fret.note]), status)
+						const noteName = NOTE_NAMES[fret.note % 12]
+						const btn = action(noteName, () => audition([fret.note]), status)
+						btn.setAttribute(
+							"aria-label",
+							`Play ${noteName} on ${openName} string, fret ${startFret + offset}`
 						)
+						cell.append(btn)
 					} else {
 						cell.textContent = "·"
 					}
 					row.append(cell)
 				})
-				grid.append(row)
+				tbody.append(row)
 			})
+		grid.append(tbody)
 		const shape = chordTab(tuning, manager.harmony.chord, Number(position.value))
 		const text = element(
 			"pre",
@@ -564,6 +586,11 @@ export function mountHarmonyWorkspace(
 		if (family.selectedIndex < 0) {
 			family.value = "custom"
 		}
+		const focusedPitchKey =
+			document.activeElement instanceof HTMLElement &&
+			pitchControls.contains(document.activeElement)
+				? document.activeElement.dataset.pitchToggle
+				: undefined
 		pitchControls.replaceChildren()
 		for (const kind of ["scale", "chord"] as const) {
 			const group = element("fieldset")
@@ -578,10 +605,16 @@ export function mountHarmonyWorkspace(
 						}),
 					status
 				)
+				button.dataset.pitchToggle = `${kind}:${pitch}`
 				button.setAttribute("aria-pressed", String(Boolean(state[kind] & (1 << pitch))))
 				group.append(button)
 			})
 			pitchControls.append(group)
+		}
+		if (focusedPitchKey) {
+			pitchControls
+				.querySelector<HTMLElement>(`[data-pitch-toggle="${focusedPitchKey}"]`)
+				?.focus()
 		}
 		renderNetwork()
 		renderTab()
@@ -602,6 +635,9 @@ export function mountHarmonyWorkspace(
 		() => {
 			listen.checked = false
 			drag = undefined
+			if (open.isConnected) {
+				open.focus()
+			}
 		},
 		{ signal: abort.signal }
 	)

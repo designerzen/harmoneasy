@@ -62,6 +62,7 @@ export class PhotosynthElement extends HTMLElement {
 	private face: FacePrediction | null = null
 	private overlay?: WebGPUFaceOverlay
 	private overlayGeneration = 0
+	private lastStatusUpdateMs = 0
 	private resizeObserver?: ResizeObserver
 
 	constructor() {
@@ -77,13 +78,13 @@ export class PhotosynthElement extends HTMLElement {
 <div class="controls"><label>Scale<select id="scale"><option value="pentatonic">Pentatonic</option><option value="major">Major</option><option value="minor">Minor</option></select></label>
 <label>Root<select id="root">${["C", "C♯", "D", "E♭", "E", "F", "F♯", "G", "A♭", "A", "B♭", "B"].map((note, i) => `<option value="${i}">${note}</option>`).join("")}</select></label>
 ${(["octaveLow", "octaveHigh"] as const).map((id) => `<label>${id === "octaveLow" ? "Lower" : "Upper"} octave<select id="${id}">${Array.from({ length: 9 }, (_, value) => `<option>${value}</option>`).join("")}</select></label>`).join("")}
-<label>Gate threshold <output id="threshold-value">18%</output><input id="threshold" type="range" min="1" max="100" value="18"></label>
-<label>Smoothing <output id="smoothing-value">35%</output><input id="smoothing" type="range" min="0" max="95" value="35"></label>
+<label for="threshold">Gate threshold <output id="threshold-value" for="threshold">18%</output><input id="threshold" type="range" min="1" max="100" value="18"></label>
+<label for="smoothing">Smoothing <output id="smoothing-value" for="smoothing">35%</output><input id="smoothing" type="range" min="0" max="95" value="35"></label>
 <label>Expression precision<select id="precision">${Array.from({ length: 7 }, (_, value) => `<option value="${value}">${value} decimal places</option>`).join("")}</select></label>
-${(["headNoteRangeDegrees", "headVerticalRangeDegrees"] as const).map((id) => `<label>${id === "headNoteRangeDegrees" ? "Head tilt range" : "Head vertical range"} <output id="${id}-value">90°</output><input id="${id}" type="range" min="20" max="120" step="1" value="90"></label>`).join("")}
+${(["headNoteRangeDegrees", "headVerticalRangeDegrees"] as const).map((id) => `<label for="${id}">${id === "headNoteRangeDegrees" ? "Head tilt range" : "Head vertical range"} <output id="${id}-value" for="${id}">90°</output><input id="${id}" type="range" min="20" max="120" step="1" value="90"></label>`).join("")}
 ${(["noteController", "octaveController"] as const).map((id) => `<label>${id === "noteController" ? "Note" : "Octave"} axis<select id="${id}"><option value="roll">Head tilt (roll)</option><option value="pitch">Head nod (pitch)</option><option value="yaw">Head turn (yaw)</option></select></label>`).join("")}
 </div><small>Angle ranges are the total sweep, split equally around centre. Precision rounds the mouth/smile signal before smoothing and MIDI conversion.</small>
-<div class="meters">${METERS.map((key) => `<label><span class="meter-label">${key === "mouthRatio" ? "Mouth opening" : key[0]!.toUpperCase() + key.slice(1)}<output data-value="${key}">0%</output></span><meter data-meter="${key}" min="0" max="1" value="0"></meter></label>`).join("")}</div>
+<div class="meters">${METERS.map((key) => `<label for="meter-${key}"><span class="meter-label">${key === "mouthRatio" ? "Mouth opening" : key[0]!.toUpperCase() + key.slice(1)}<output data-value="${key}">0%</output></span><meter id="meter-${key}" data-meter="${key}" min="0" max="1" value="0"></meter></label>`).join("")}</div>
 <p class="status" role="status" aria-live="polite">Ready. Choose a camera, then press Start.</p>
 <small>Video is processed on your device. The MediaPipe model and runtime are downloaded on first use. Expression meters describe visible facial actions.</small></article>`
 		this.root
@@ -272,7 +273,10 @@ ${(["noteController", "octaveController"] as const).map((id) => `<label>${id ===
 					: "Camera stopped. Press Start to play."
 	}
 	private reportError(error: Error) {
-		this.query(".status").textContent =
+		const statusEl = this.query(".status")
+		statusEl.setAttribute("role", "alert")
+		statusEl.setAttribute("aria-live", "assertive")
+		statusEl.textContent =
 			error.name === "NotAllowedError"
 				? "Camera permission was denied. Allow camera access in your browser, then try again."
 				: error.message
@@ -312,11 +316,16 @@ ${(["noteController", "octaveController"] as const).map((id) => `<label>${id ===
 		}
 		this.renderOverlay()
 		if (this.controller.state === "running") {
+			const now = Date.now()
 			const status = face
 				? "Tracking. Open your mouth or smile to play."
 				: "No face in view. Face the camera in good light."
-			if (this.query(".status").textContent !== status) {
-				this.query(".status").textContent = status
+			const statusEl = this.query(".status")
+			if (statusEl.textContent !== status && now - this.lastStatusUpdateMs >= 1500) {
+				this.lastStatusUpdateMs = now
+				statusEl.setAttribute("role", "status")
+				statusEl.setAttribute("aria-live", "polite")
+				statusEl.textContent = status
 			}
 		}
 		this.send(this.music.update(face))

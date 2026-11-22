@@ -80,8 +80,12 @@ button[aria-busy="true"] {
 
 	p {
 		margin: 0;
+		padding: 0.5rem 1rem;
+		border: var(--border);
+		border-radius: var(--radius-md);
+		background: var(--col-surface);
 		font-size: var(--text-sm);
-		color: var(--col-muted);
+		color: var(--col-fg);
 	}
 }
 
@@ -93,7 +97,7 @@ button[aria-busy="true"] {
 
 @media (prefers-reduced-motion: reduce) {
 	.loader i {
-		animation: loader-pulse 1.6s ease-in-out infinite;
+		animation: none;
 		transform: none;
 
 		&:nth-child(odd) {
@@ -106,8 +110,9 @@ button[aria-busy="true"] {
 	}
 }
 
-@keyframes loader-pulse {
-	50% {
-		opacity: 0.4;
+@media (forced-colors: active) {
+	.loader i {
+		forced-color-adjust: none;
+		background: CanvasText;
 	}
 }

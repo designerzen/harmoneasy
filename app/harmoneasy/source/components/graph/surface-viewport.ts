@@ -183,17 +183,32 @@ export function createSurfaceViewport(manager: IOChainManager, startExpanded = f
 			close()
 		}
 		if (event.key === "Tab") {
-			const controls = [
-				...viewport.querySelectorAll<HTMLElement>(
-					"button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex='0']"
-				)
-			].filter((control) => !control.closest("[hidden]") && control.tabIndex >= 0)
+			const selector =
+				'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])'
+			const collectFocusables = (root: ParentNode): HTMLElement[] => {
+				const found: HTMLElement[] = []
+				for (const node of root.querySelectorAll<HTMLElement>("*")) {
+					if (node.matches(selector) && !node.closest("[hidden]") && node.tabIndex >= 0) {
+						found.push(node)
+					}
+					if (node.shadowRoot) {
+						found.push(...collectFocusables(node.shadowRoot))
+					}
+				}
+				return found
+			}
+			const controls = collectFocusables(viewport)
 			const first = controls[0],
 				last = controls.at(-1)
-			if (event.shiftKey && document.activeElement === first) {
+			const active = document.activeElement
+			const inside = active instanceof Node && viewport.contains(active)
+			if (!inside && first) {
+				event.preventDefault()
+				;(event.shiftKey ? last : first)?.focus()
+			} else if (event.shiftKey && active === first) {
 				event.preventDefault()
 				last?.focus()
-			} else if (!event.shiftKey && document.activeElement === last) {
+			} else if (!event.shiftKey && active === last) {
 				event.preventDefault()
 				first?.focus()
 			}

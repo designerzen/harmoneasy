@@ -1,4 +1,4 @@
-import { EVENT_CLICK } from "audiobus/events/event-constants"
+import { EVENT_CLICK, EVENT_CLOSE } from "audiobus/events/event-constants"
 
 /** Render a VexFlow score into the shared info dialog with an HTML download action. */
 export async function renderVexFlowModal(
@@ -27,19 +27,38 @@ export async function renderVexFlowModal(
 
 		modalContainer.appendChild(downloadBtn)
 
-		// Show in info dialog — pass the DOM node directly to preserve event listeners.
+		// Show in info dialog — pass the DOM node directly to preserve event listeners,
+		// and disable status live-region / select-all semantics while hosting interactive notation.
 		const infoMessage = root.querySelector("#info-message")
 		if (infoMessage) {
+			infoMessage.removeAttribute("role")
+			infoMessage.removeAttribute("aria-live")
+			infoMessage.classList.remove("selectable")
 			infoMessage.innerHTML = ""
 			infoMessage.appendChild(modalContainer)
-			const title = root.querySelector("#info-dialog h5")
+			const title = root.querySelector("#info-dialog-title, #info-dialog h2, #info-dialog h5")
 			if (title) {
 				title.textContent = "Musical Score"
 			}
 			const dialog = root.querySelector<HTMLDialogElement>("#info-dialog")
 			if (dialog) {
+				const previousFocus =
+					root.activeElement instanceof HTMLElement && root.activeElement !== root.body
+						? root.activeElement
+						: null
 				dialog.hidden = false
-				dialog.showModal()
+				if (!dialog.open) {
+					dialog.showModal()
+				}
+				dialog.addEventListener(
+					EVENT_CLOSE,
+					() => {
+						if (previousFocus?.isConnected) {
+							previousFocus.focus()
+						}
+					},
+					{ once: true }
+				)
 			}
 		} else {
 			showInfoDialog("Musical Score", modalContainer.innerHTML)

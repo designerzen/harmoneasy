@@ -221,13 +221,13 @@ export function createChainWorkspace(
 				panel.className = `chain-panel ${chain.isActive ? "active" : "inactive"} ${isFront ? "chain-front" : ""} ${isSolo ? "chain-solo" : ""}`
 				panel.hidden = (solo ?? front) !== chainId
 				panel.inert = panel.hidden
-				panel.setAttribute("aria-label", chain.options.name ?? `Chain ${index + 1}`)
+				const chainLabel = chain.options.name ?? `Chain ${index + 1}`
 				power.title = chain.isActive
 					? "Turn chain off"
 					: "Turn chain on — settings are still editable while off"
 				power.setAttribute(
 					"aria-label",
-					chain.isActive ? "Turn chain off" : "Turn chain on"
+					`${chain.isActive ? "On" : "Off"}: ${chainLabel}`
 				)
 				power.setAttribute("aria-pressed", String(chain.isActive))
 				powerText.textContent = chain.isActive ? "On" : "Off"
@@ -247,7 +247,7 @@ export function createChainWorkspace(
 							? "M3 9h6V3m6 0v6h6M3 15h6v6m6 0v-6h6"
 							: "M9 3H3v6m12-6h6v6M3 15v6h6m6 0h6v-6"
 					)
-				layoutName.textContent = chain.options.name ?? `Chain ${index + 1}`
+				layoutName.textContent = `${chainLabel} layout`
 				layoutSelect.value = mode
 				graphView.update(isFront && !graph.hidden, isFront ? focusRequest : 0)
 			},
@@ -334,12 +334,10 @@ export function createChainWorkspace(
 		if (settings && !entries.length) {
 			settings.append(element("p", "", "Add a chain to choose its layout."))
 		}
+		warnings.setAttribute("role", "status")
+		warnings.setAttribute("aria-live", "polite")
 		warnings.replaceChildren(
-			...manager.restoreWarnings.map((warning) => {
-				const node = element("p", "", warning)
-				node.setAttribute("role", "status")
-				return node
-			})
+			...manager.restoreWarnings.map((warning) => element("p", "", warning))
 		)
 		empty.hidden = !!entries.length
 	}

@@ -341,8 +341,10 @@ export function createCommandPalette(
 		editor = undefined
 		argumentEditors.clear()
 		editorPanel.hidden = true
+		editorLabel.removeAttribute("role")
+		editorLabel.removeAttribute("aria-level")
 		results.hidden = false
-		search.setAttribute("aria-expanded", "true")
+		search.setAttribute("aria-expanded", String(matches.length > 0))
 	}
 
 	const highlight = () => {
@@ -389,6 +391,7 @@ export function createCommandPalette(
 		status.textContent = matches.length
 			? `${matches.length} command${matches.length === 1 ? "" : "s"} available`
 			: "No matching commands. Try another name or open a device’s controls."
+		search.setAttribute("aria-expanded", String(matches.length > 0 && !results.hidden))
 		highlight()
 	}
 
@@ -444,6 +447,8 @@ export function createCommandPalette(
 			}
 			editorLabel.textContent = descriptor.title
 			editorLabel.removeAttribute("for")
+			editorLabel.setAttribute("role", "heading")
+			editorLabel.setAttribute("aria-level", "3")
 			results.hidden = true
 			editorPanel.hidden = false
 			search.setAttribute("aria-expanded", "false")
@@ -622,6 +627,10 @@ export function createCommandPalette(
 						(active + (event.key === "ArrowDown" ? 1 : -1) + matches.length) %
 						matches.length
 				}
+				highlight()
+			} else if ((event.key === "Home" || event.key === "End") && matches.length) {
+				event.preventDefault()
+				active = event.key === "Home" ? 0 : matches.length - 1
 				highlight()
 			} else if (event.key === "Enter") {
 				event.preventDefault()

@@ -332,9 +332,17 @@ function FlowComponent({ isFront, focusRequest }: { isFront: boolean; focusReque
 		}
 	}
 
+	const fullscreenTriggerRef = React.useRef<HTMLElement | null>(null)
+	const fullscreenDialogRef = React.useRef<HTMLDivElement | null>(null)
+
 	const handleFullscreenMode = (nodeId: string) => {
 		if (!fullscreenNodeId) {
 			savedViewport.current = getViewport()
+			fullscreenTriggerRef.current =
+				document.activeElement instanceof HTMLElement &&
+				document.activeElement !== document.body
+					? document.activeElement
+					: null
 		}
 		setFullscreenNodeId((current) => (current === nodeId ? null : nodeId))
 	}
@@ -347,6 +355,13 @@ function FlowComponent({ isFront, focusRequest }: { isFront: boolean; focusReque
 
 	const exitFullscreenMode = () => {
 		setFullscreenNodeId(null)
+		const trigger = fullscreenTriggerRef.current
+		fullscreenTriggerRef.current = null
+		requestAnimationFrame(() => {
+			if (trigger?.isConnected) {
+				trigger.focus()
+			}
+		})
 	}
 
 	const handleMinimise = (nodeId: string) => {
@@ -440,13 +455,34 @@ function FlowComponent({ isFront, focusRequest }: { isFront: boolean; focusReque
 					ExpandedNode &&
 					createPortal(
 						<div
+							ref={fullscreenDialogRef}
 							className="node-viewport-editor nodrag nopan nowheel"
 							role="dialog"
+							aria-modal="true"
 							aria-label={`${selectedNode.data.label || selectedNode.data.input?.name || selectedNode.data.output?.name} settings`}
 							onKeyDown={(event) => {
 								if (event.key === "Escape") {
 									event.stopPropagation()
 									exitFullscreenMode()
+									return
+								}
+								if (event.key === "Tab" && fullscreenDialogRef.current) {
+									const focusables = [
+										...fullscreenDialogRef.current.querySelectorAll<HTMLElement>(
+											'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])'
+										)
+									].filter((el) => !el.closest("[hidden]") && el.tabIndex >= 0)
+									const first = focusables[0]
+									const last = focusables.at(-1)
+									if (focusables.length) {
+										if (event.shiftKey && document.activeElement === first) {
+											event.preventDefault()
+											last?.focus()
+										} else if (!event.shiftKey && document.activeElement === last) {
+											event.preventDefault()
+											first?.focus()
+										}
+									}
 								}
 							}}
 						>

@@ -115,6 +115,10 @@
 	--font-ui:
 		"IBM Plex Sans Condensed", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 	--font-mono: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace;
+	--line-height: 1.4;
+	--letter-spacing: normal;
+	--word-spacing: normal;
+	--paragraph-gap: 0.75em;
 	--text-xs: 0.75rem;
 	--text-sm: 0.8125rem;
 	--text-md: 0.9375rem;
@@ -133,21 +137,26 @@
 	--border: 1px solid var(--col-line);
 	--control-height: 36px;
 	--focus-ring-width: 2px;
+	--focus-ring-offset: 2px;
 	--stage-pad-min-size: 64px;
 	--shadow-sm: 0 1px 3px oklch(0% 0 0 / 0.16);
 	--shadow-md: 0 6px 20px oklch(0% 0 0 / 0.2);
 	--shadow-lg: 0 24px 80px oklch(0% 0 0 / 0.32);
 
-	/* Focus Stage pads (perceptually distinct OKLCH tones; overridden in colorblind-safe mode). */
-	--stage-pad-fg: oklch(99% 0 0);
-	--stage-pad-1: light-dark(oklch(44% 0.15 260), oklch(66% 0.14 260));
-	--stage-pad-2: light-dark(oklch(45% 0.15 200), oklch(68% 0.14 200));
-	--stage-pad-3: light-dark(oklch(45% 0.15 150), oklch(68% 0.14 150));
-	--stage-pad-4: light-dark(oklch(46% 0.15 95), oklch(72% 0.14 95));
-	--stage-pad-5: light-dark(oklch(46% 0.16 55), oklch(70% 0.15 55));
-	--stage-pad-6: light-dark(oklch(45% 0.17 20), oklch(66% 0.16 20));
-	--stage-pad-7: light-dark(oklch(44% 0.16 335), oklch(66% 0.15 335));
-	--stage-pad-8: light-dark(oklch(44% 0.16 295), oklch(66% 0.15 295));
+	/* Focus Stage pads (perceptually distinct OKLCH tones; dark text on bright dark-mode pads for >= 7:1 contrast). */
+	--stage-pad-fg: light-dark(oklch(99% 0 0), oklch(12% 0 0));
+	--stage-pad-1: light-dark(oklch(42% 0.15 260), oklch(74% 0.13 260));
+	--stage-pad-2: light-dark(oklch(42% 0.14 200), oklch(76% 0.13 200));
+	--stage-pad-3: light-dark(oklch(42% 0.14 150), oklch(76% 0.13 150));
+	--stage-pad-4: light-dark(oklch(42% 0.14 95), oklch(78% 0.13 95));
+	--stage-pad-5: light-dark(oklch(42% 0.15 55), oklch(76% 0.14 55));
+	--stage-pad-6: light-dark(oklch(42% 0.16 20), oklch(74% 0.15 20));
+	--stage-pad-7: light-dark(oklch(42% 0.15 335), oklch(74% 0.14 335));
+	--stage-pad-8: light-dark(oklch(42% 0.15 295), oklch(74% 0.14 295));
+
+	/* Ensemble overlay cue tokens */
+	--col-cue-bg: oklch(12% var(--neutral-chroma) var(--theme-hue) / 0.88);
+	--col-cue-fg: oklch(95% 0.05 165);
 
 	/* Motion */
 	--time-short: 90ms;
@@ -176,13 +185,13 @@
 
 /* Okabe-Ito inspired colorblind-safe 8-pad palette (distinguishable under protanopia, deuteranopia, tritanopia). */
 :root[data-palette="colorblind-safe"] {
-	--stage-pad-1: light-dark(oklch(38% 0.12 250), oklch(68% 0.13 250));
-	--stage-pad-2: light-dark(oklch(48% 0.14 68), oklch(75% 0.15 68));
-	--stage-pad-3: light-dark(oklch(48% 0.11 225), oklch(76% 0.11 225));
-	--stage-pad-4: light-dark(oklch(44% 0.12 165), oklch(70% 0.13 165));
-	--stage-pad-5: light-dark(oklch(48% 0.12 96), oklch(84% 0.14 96));
-	--stage-pad-6: light-dark(oklch(44% 0.16 38), oklch(68% 0.17 38));
-	--stage-pad-7: light-dark(oklch(46% 0.13 340), oklch(73% 0.13 340));
+	--stage-pad-1: light-dark(oklch(38% 0.12 250), oklch(74% 0.12 250));
+	--stage-pad-2: light-dark(oklch(44% 0.13 68), oklch(78% 0.14 68));
+	--stage-pad-3: light-dark(oklch(44% 0.11 225), oklch(78% 0.11 225));
+	--stage-pad-4: light-dark(oklch(42% 0.12 165), oklch(75% 0.13 165));
+	--stage-pad-5: light-dark(oklch(44% 0.12 96), oklch(84% 0.14 96));
+	--stage-pad-6: light-dark(oklch(42% 0.16 38), oklch(74% 0.15 38));
+	--stage-pad-7: light-dark(oklch(44% 0.13 340), oklch(76% 0.13 340));
 	--stage-pad-8: light-dark(oklch(30% 0 0), oklch(82% 0 0));
 }
 
@@ -199,6 +208,20 @@
 	--col-accent: light-dark(oklch(28% 0.18 260), oklch(88% 0.16 95));
 	--col-accent-hover: light-dark(oklch(20% 0.18 260), oklch(94% 0.16 95));
 	--col-on-accent: light-dark(oklch(100% 0 0), oklch(0% 0 0));
+	--col-danger: light-dark(oklch(34% 0.19 25), oklch(84% 0.13 25));
+	--col-danger-solid: oklch(38% 0.19 25);
+	--col-on-danger: oklch(100% 0 0);
+	--col-success: light-dark(oklch(34% 0.13 150), oklch(86% 0.13 150));
+	--col-warning: light-dark(oklch(34% 0.11 75), oklch(88% 0.13 75));
+	--stage-pad-fg: light-dark(oklch(100% 0 0), oklch(0% 0 0));
+	--stage-pad-1: light-dark(oklch(30% 0.15 260), oklch(80% 0.13 260));
+	--stage-pad-2: light-dark(oklch(30% 0.14 200), oklch(82% 0.12 200));
+	--stage-pad-3: light-dark(oklch(30% 0.14 150), oklch(82% 0.13 150));
+	--stage-pad-4: light-dark(oklch(30% 0.13 95), oklch(85% 0.13 95));
+	--stage-pad-5: light-dark(oklch(30% 0.15 55), oklch(82% 0.14 55));
+	--stage-pad-6: light-dark(oklch(30% 0.17 20), oklch(80% 0.14 20));
+	--stage-pad-7: light-dark(oklch(30% 0.15 335), oklch(80% 0.13 335));
+	--stage-pad-8: light-dark(oklch(22% 0 0), oklch(86% 0 0));
 	--border: 2px solid var(--col-line-strong);
 	--focus-ring: light-dark(oklch(28% 0.18 260), oklch(92% 0.18 95));
 	--focus-ring-width: 3px;
@@ -212,6 +235,52 @@
 :root[data-target-size="xlarge"] {
 	--control-height: 56px;
 	--stage-pad-min-size: 148px;
+}
+
+:root[data-font-scale="large"] {
+	font-size: 115%;
+}
+
+:root[data-font-scale="xlarge"] {
+	font-size: 130%;
+}
+
+:root[data-font-scale="xxlarge"] {
+	font-size: 150%;
+}
+
+:root[data-text-spacing="comfortable"] {
+	--line-height: 1.5;
+	--letter-spacing: 0.04em;
+	--word-spacing: 0.08em;
+	--paragraph-gap: 1.25em;
+}
+
+:root[data-text-spacing="wide"] {
+	--line-height: 1.65;
+	--letter-spacing: 0.12em;
+	--word-spacing: 0.16em;
+	--paragraph-gap: 2em;
+}
+
+:root[data-readable-font="sans"] {
+	--font-ui:
+		system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+		sans-serif;
+}
+
+:root[data-readable-font="mono"] {
+	--font-ui: var(--font-mono);
+}
+
+:root[data-focus-indicator="enhanced"] {
+	--focus-ring-width: 3px;
+	--focus-ring-offset: 3px;
+}
+
+:root[data-focus-indicator="maximum"] {
+	--focus-ring-width: 4px;
+	--focus-ring-offset: 3px;
 }
 
 :root[data-reduced-motion="reduce"] {
@@ -229,10 +298,34 @@
 	scroll-behavior: auto !important;
 }
 
+@media (prefers-reduced-motion: reduce) {
+	:root:not([data-reduced-motion="allow"]) {
+		--time-short: 0ms;
+		--time-medium: 0ms;
+		--time-long: 0ms;
+	}
+	:root:not([data-reduced-motion="allow"]) *,
+	:root:not([data-reduced-motion="allow"]) *::before,
+	:root:not([data-reduced-motion="allow"]) *::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}
+
 @media (prefers-contrast: more) {
 	:root {
 		--col-line: var(--col-line-strong);
 		--col-muted: var(--col-fg);
 		--col-hover: color-mix(in oklch, var(--col-fg) 18%, transparent);
+	}
+}
+
+@media (forced-colors: active) {
+	:root {
+		--border: 1px solid ButtonBorder;
+		--focus-ring: Highlight;
+		--focus-ring-width: 3px;
 	}
 }

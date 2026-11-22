@@ -45,7 +45,7 @@ export function createMixer(manager: IOChainManager, master: GainNode, root: Doc
 	channels.className = "mixer-channels"
 	const hint = element(
 		"p",
-		"Post-fader RMS levels · peak hold · red indicates clipping · meters run only while visible"
+		"Post-fader RMS levels · peak hold · CLIP badge indicates clipping · meters run only while visible"
 	)
 	hint.className = "mixer-hint"
 	dialog.append(header, channels, hint)
@@ -71,6 +71,8 @@ export function createMixer(manager: IOChainManager, master: GainNode, root: Doc
 		control?: LevelControl,
 		isMaster = false
 	) => {
+		const channelIndex = strips.length
+		const faderId = `mixer-fader-${isMaster ? "master" : channelIndex}`
 		const channel = element("section")
 		channel.className = `mixer-channel${isMaster ? " mixer-master" : ""}`
 		channel.setAttribute("aria-label", `${name} channel`)
@@ -78,16 +80,19 @@ export function createMixer(manager: IOChainManager, master: GainNode, root: Doc
 		label.title = name
 		const value = element("output")
 		value.className = "mixer-gain-value"
+		value.htmlFor = faderId
 		const body = element("div")
 		body.className = "mixer-fader-body"
 		const scale = element("div")
 		scale.className = "mixer-scale"
+		scale.setAttribute("aria-hidden", "true")
 		for (const db of [0, -6, -12, -24, -36, -48, -60]) {
 			const tick = element("span", String(db))
 			tick.style.top = `${-db / 0.6}%`
 			scale.append(tick)
 		}
 		const fader = element("input")
+		fader.id = faderId
 		fader.type = "range"
 		fader.min = "-60"
 		fader.max = "0"
@@ -260,11 +265,24 @@ export function createMixer(manager: IOChainManager, master: GainNode, root: Doc
 		render()
 		frame = requestAnimationFrame(animate)
 	}
+	let previousFocus: HTMLElement | null = null
+	const restoreFocus = () => {
+		const target = previousFocus?.isConnected ? previousFocus : button.isConnected ? button : null
+		previousFocus = null
+		target?.focus()
+	}
 	button.addEventListener(
 		EVENT_CLICK,
 		() => {
-			dialog.show()
+			previousFocus =
+				root.activeElement instanceof HTMLElement && root.activeElement !== root.body
+					? root.activeElement
+					: button
+			if (!dialog.open) {
+				dialog.showModal()
+			}
 			sync()
+			;(dialog.querySelector<HTMLElement>(".mixer-fader:not(:disabled)") ?? close).focus()
 		},
 		{ signal: lifetime.signal }
 	)
@@ -276,7 +294,14 @@ export function createMixer(manager: IOChainManager, master: GainNode, root: Doc
 		},
 		{ signal: lifetime.signal }
 	)
-	dialog.addEventListener(EVENT_CLOSE, stop, { signal: lifetime.signal })
+	dialog.addEventListener(
+		EVENT_CLOSE,
+		() => {
+			stop()
+			restoreFocus()
+		},
+		{ signal: lifetime.signal }
+	)
 	dialog.addEventListener(EVENT_CANCEL, stop, { signal: lifetime.signal })
 	root.addEventListener(EVENT_VISIBILITY_CHANGE, sync, { signal: lifetime.signal })
 	root.defaultView?.addEventListener(EVENT_PAGE_HIDE, stop, { signal: lifetime.signal })

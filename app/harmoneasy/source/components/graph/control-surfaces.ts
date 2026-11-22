@@ -13,6 +13,7 @@ import type {
 	SurfacePanel
 } from "control-surface/types"
 import { mountDeviceGui } from "./device-gui-views"
+import { captureFocusReturn } from "../../libs/dialog-utils"
 import { componentBindings, subscribeControlSchema } from "audiobus/io/component-ui"
 import { deviceId } from "audiobus/io/device-definition"
 import {
@@ -177,6 +178,7 @@ export function selectSurfaceControls(
 	if (!component) {
 		return { destroy() {} }
 	}
+	const restoreFocus = captureFocusReturn()
 	const dialog = document.createElement("dialog"),
 		form = document.createElement("form"),
 		heading = document.createElement("h2"),
@@ -234,6 +236,7 @@ export function selectSurfaceControls(
 	const destroy = () => {
 		disposed = true
 		dialog.remove()
+		restoreFocus()
 	}
 	dialog.addEventListener(EVENT_CLOSE, destroy, { once: true })
 	document.body.append(dialog)

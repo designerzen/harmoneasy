@@ -346,6 +346,7 @@ export function createClassroomPanel(options: ClassroomPanelOptions) {
 			const muteBtn = element("button", "Mute")
 			muteBtn.type = "button"
 			muteBtn.className = "classroom-seat-mute"
+			muteBtn.setAttribute("aria-label", `Mute ${seat.name}`)
 			muteBtn.setAttribute("aria-pressed", String(seat.muted))
 			muteBtn.addEventListener(EVENT_CLICK, () => {
 				if (!session) {
@@ -361,6 +362,7 @@ export function createClassroomPanel(options: ClassroomPanelOptions) {
 			const soloBtn = element("button", "Solo")
 			soloBtn.type = "button"
 			soloBtn.className = "classroom-seat-solo"
+			soloBtn.setAttribute("aria-label", `Solo ${seat.name}`)
 			soloBtn.setAttribute("aria-pressed", String(seat.solo))
 			soloBtn.addEventListener(EVENT_CLICK, () => {
 				if (!session) {
@@ -376,6 +378,7 @@ export function createClassroomPanel(options: ClassroomPanelOptions) {
 			const linkBtn = element("button", "Copy link")
 			linkBtn.type = "button"
 			linkBtn.className = "classroom-seat-link"
+			linkBtn.setAttribute("aria-label", `Copy setup link for ${seat.name}`)
 			linkBtn.title = `Copy /parts/v1/ setup link for ${seat.name}`
 			linkBtn.addEventListener(EVENT_CLICK, () => void copySeatLink(seat.role, seat.name))
 

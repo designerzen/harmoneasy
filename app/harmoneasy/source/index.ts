@@ -15,7 +15,12 @@ import { registerInterfaceCommands } from "./services/interface-commands"
 import { registerApplicationCommands } from "./services/application-commands"
 import { createRemoteControlButton } from "./services/remote-control-window"
 import { createThemeControls } from "./services/theme"
-import { applySensoryPreset, createAccessibilityControls } from "./services/accessibility"
+import {
+	applySensoryPreset,
+	createAccessibilityControls,
+	extractAccessibilityPreferences,
+	type SensoryPresetId
+} from "./services/accessibility"
 import { createCalibrationDialog } from "./services/access-calibration-dialog"
 import { readAccessProfileFromUrl, type AccessProfile } from "./services/access-profile"
 import { createFocusStage } from "./services/focus-stage"
@@ -85,20 +90,22 @@ import OPFSStorage, { hasOPFS } from "audiobus/storage/opfs-storage.ts"
 configureAudiobus()
 
 createThemeControls(document)
-const accessibilityControls = createAccessibilityControls(document)
+let pendingSensoryPreset: SensoryPresetId | undefined
+const accessibilityControls = createAccessibilityControls(document, {
+	onSensoryPreset: async (preset) => {
+		if (ioManager) {
+			const result = await applySensoryPreset(ioManager, preset, accessibilityControls)
+			return result.summary
+		}
+		pendingSensoryPreset = preset
+		return preset === "low-vision"
+			? "Low-vision preset applied. Speech & description outputs will attach when you start."
+			: "Deaf & tactile preset applied. Notation & haptic outputs will attach when you start."
+	}
+})
 let pendingAccessProfile: AccessProfile | undefined = readAccessProfileFromUrl(window.location.href)
 if (pendingAccessProfile) {
-	accessibilityControls.update({
-		contrast: pendingAccessProfile.contrast,
-		palette: pendingAccessProfile.palette,
-		targetSize: pendingAccessProfile.targetSize,
-		reducedMotion: pendingAccessProfile.reducedMotion,
-		beatFlash: pendingAccessProfile.beatFlash,
-		stabilizerEnabled: pendingAccessProfile.stabilizerEnabled,
-		debounceMs: pendingAccessProfile.debounceMs,
-		holdThresholdMs: pendingAccessProfile.holdThresholdMs,
-		minDurationMs: pendingAccessProfile.minDurationMs
-	})
+	accessibilityControls.update(extractAccessibilityPreferences(pendingAccessProfile))
 }
 createAboutDialog(document)
 createCommandPalette(document)
@@ -291,6 +298,7 @@ const initialiseApplication = async (
 		doc: document,
 		accessibility: accessibilityControls,
 		audioContext: bus.audioContext,
+		outputNode: bus.output,
 		getNow: () => timer.now,
 		onCalibrate: () => calibrationDialog.open()
 	})
@@ -725,19 +733,11 @@ const calibrationDialog = createCalibrationDialog({
 	baseUrl: import.meta.env.BASE_URL,
 	onApply: (profile, sensoryPreset) => {
 		pendingAccessProfile = profile
-		accessibilityControls.update({
-			contrast: profile.contrast,
-			palette: profile.palette,
-			targetSize: profile.targetSize,
-			reducedMotion: profile.reducedMotion,
-			beatFlash: profile.beatFlash,
-			stabilizerEnabled: profile.stabilizerEnabled,
-			debounceMs: profile.debounceMs,
-			holdThresholdMs: profile.holdThresholdMs,
-			minDurationMs: profile.minDurationMs
-		})
+		accessibilityControls.update(extractAccessibilityPreferences(profile))
 		if (ioManager && sensoryPreset !== "none") {
 			void applySensoryPreset(ioManager, sensoryPreset, accessibilityControls)
+		} else if (sensoryPreset !== "none") {
+			pendingSensoryPreset = sensoryPreset
 		}
 		if (focusStage) {
 			focusStage.applyProfile(profile)
@@ -786,6 +786,11 @@ async function startApplication(button: HTMLButtonElement, setup?: PresetSetup) 
 		startDialog.close()
 		await nextPaint()
 		veil.hide()
+		if (pendingSensoryPreset && ioManager) {
+			const presetToApply = pendingSensoryPreset
+			pendingSensoryPreset = undefined
+			void applySensoryPreset(ioManager, presetToApply, accessibilityControls)
+		}
 		if (pendingAccessProfile?.openFocusStage && focusStage) {
 			focusStage.applyProfile(pendingAccessProfile)
 			focusStage.open()

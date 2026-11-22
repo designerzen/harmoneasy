@@ -7,6 +7,7 @@ import { useChain } from "../ChainContext"
 import { Handle, Position } from "@xyflow/react"
 import React, { useCallback } from "react"
 import { CONTROL_HANDLE } from "../control-surfaces"
+import { announceLive } from "../../../libs/dialog-utils"
 
 import type AbstractInput from "audiobus/io/inputs/abstract-input"
 import type { IAudioInput } from "audiobus/io/inputs/input-interface"
@@ -28,8 +29,13 @@ export function InputNode(props: any) {
 		try {
 			await input.connect?.()
 			chain.dispatchEvent(new Event(EVENT_CONFIGURATION_CHANGED))
+			announceLive(`${input.name} connected.`)
 		} catch (error) {
 			console.error(error)
+			announceLive(
+				`Could not connect ${input.name}: ${error instanceof Error ? error.message : String(error)}`,
+				"assertive"
+			)
 		}
 	}, [input, chain])
 
@@ -37,8 +43,13 @@ export function InputNode(props: any) {
 		try {
 			await input.disconnect?.()
 			chain.dispatchEvent(new Event(EVENT_CONFIGURATION_CHANGED))
+			announceLive(`${input.name} disconnected.`)
 		} catch (error) {
 			console.error(error)
+			announceLive(
+				`Could not disconnect ${input.name}: ${error instanceof Error ? error.message : String(error)}`,
+				"assertive"
+			)
 		}
 	}, [input, chain])
 
@@ -73,24 +84,28 @@ export function InputNode(props: any) {
 			)}
 			<p className="sr-only">{props.data.label}</p>
 			{hasConnectMethod && !input.isConnected && (
-				<label className="connect-input">
-					<span className="sr-only">Connect to Device</span>
-					<button className="cta btn-connect" type="button" onClick={connectToInput}>
+				<div className="connect-input">
+					<button
+						className="cta btn-connect"
+						type="button"
+						onClick={connectToInput}
+						aria-label={`Connect ${input.name}`}
+					>
 						Connect
 					</button>
-				</label>
+				</div>
 			)}
 			{hasDisconnectMethod && input.isConnected && (
-				<label className="disconnect-input">
-					<span className="sr-only">Disconnect from Device</span>
+				<div className="disconnect-input">
 					<button
 						className="cta btn-disconnect"
 						type="button"
 						onClick={disconnectFromInput}
+						aria-label={`Disconnect ${input.name}`}
 					>
 						Disconnect
 					</button>
-				</label>
+				</div>
 			)}
 
 			{/* Injected content from the nodes */}

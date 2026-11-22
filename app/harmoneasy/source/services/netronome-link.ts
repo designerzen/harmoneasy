@@ -5,6 +5,7 @@ import { createClassroomPanel } from "./classroom-panel"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
 import {
 	EVENT_CLICK,
+	EVENT_CLOSE,
 	EVENT_PAGE_HIDE,
 	EVENT_TRANSPORT_CHANGED
 } from "audiobus/events/event-constants"
@@ -166,6 +167,21 @@ export function createNetronomeLink(
 			: "Invitation link"
 		remote.placeholder = inviting ? "Paste reply link" : "Paste invitation link"
 		apply.textContent = inviting ? "Connect player" : "Join room"
+		if (dialog.open) {
+			const target =
+				next === "choose"
+					? document.getElementById("netronome-start")
+					: next === "join"
+						? remote
+						: next === "invite" || next === "reply"
+							? document.getElementById("netronome-copy")
+							: document.getElementById("netronome-regenerate") ??
+								document.getElementById("netronome-leave") ??
+								document.getElementById("netronome-close")
+			if (target && !target.hidden) {
+				target.focus()
+			}
+		}
 	}
 
 	const hideQR = () => {
@@ -425,6 +441,11 @@ export function createNetronomeLink(
 	button.addEventListener(EVENT_CLICK, () => {
 		classroomPanel.refresh()
 		dialog.showModal()
+	})
+	dialog.addEventListener(EVENT_CLOSE, () => {
+		if (button.isConnected) {
+			button.focus()
+		}
 	})
 	document.getElementById("netronome-close")!.addEventListener(EVENT_CLICK, () => dialog.close())
 	document.getElementById("netronome-start")!.addEventListener(EVENT_CLICK, () => {

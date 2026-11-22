@@ -293,9 +293,12 @@ export function createMidiControlPanel(
 					source.append(option)
 				}
 				source.value = binding.source
+				const bindingName =
+					target.selectedOptions[0]?.textContent || binding.target || `CC ${binding.cc}`
 				const save = element("button", "Save assignment")
 				save.type = "button"
 				save.dataset.role = "binding-save"
+				save.setAttribute("aria-label", `Save assignment for ${bindingName}`)
 				save.onclick = () => {
 					if (!cc.reportValidity()) {
 						return
@@ -314,9 +317,11 @@ export function createMidiControlPanel(
 				}
 				const relearn = element("button", "Learn new MIDI CC")
 				relearn.type = "button"
+				relearn.setAttribute("aria-label", `Learn new MIDI CC for ${bindingName}`)
 				relearn.onclick = () => learn(binding.target)
 				const remove = element("button", "Remove")
 				remove.type = "button"
+				remove.setAttribute("aria-label", `Remove assignment for ${bindingName}`)
 				remove.onclick = () => {
 					controls.learning = null
 					controls.remove(binding.target)

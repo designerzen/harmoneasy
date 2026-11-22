@@ -15,13 +15,17 @@ export function action(
 	const button = element("button", label)
 	button.type = "button"
 	button.addEventListener(EVENT_CLICK, async () => {
-		button.disabled = true
+		const hadFocus = document.activeElement === button
+		button.setAttribute("aria-busy", "true")
 		try {
 			await run()
 		} catch (error) {
 			status.textContent = error instanceof Error ? error.message : String(error)
 		} finally {
-			button.disabled = false
+			button.removeAttribute("aria-busy")
+			if (hadFocus && button.isConnected && document.activeElement !== button) {
+				button.focus()
+			}
 		}
 	})
 	return button

@@ -67,10 +67,15 @@ export function createRecordingControls(
 			: "Start all Recorder outputs; replaces the previous take"
 		review.disabled = busy || recording.state !== "idle" || !recording.hasTake
 		clock.classList.toggle("is-recording", active)
-		clock.setAttribute(
-			"aria-label",
-			active ? "Transport time; recording audio" : "Transport time"
-		)
+		const clockButton = clock.closest("button")
+		if (clockButton) {
+			clockButton.setAttribute(
+				"aria-label",
+				active
+					? "Transport time; recording audio; view note timeline"
+					: "Transport time; view note timeline"
+			)
+		}
 		root.body.classList.toggle("is-recording", active)
 		for (const recorder of recorders) {
 			recorder.setRecordingState(active, button.disabled, recording.hasTake)

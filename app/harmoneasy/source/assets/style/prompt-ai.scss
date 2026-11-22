@@ -19,7 +19,7 @@
 
 		textarea {
 			padding: 0.5rem;
-			border: 1px solid var(--col-line);
+			border: 1px solid var(--col-line-strong);
 			border-radius: var(--radius-sm);
 			background: var(--col-bg);
 			color: inherit;
@@ -192,6 +192,10 @@
 					border-radius: 50%;
 					background: var(--col-success);
 					animation: pulse 1s infinite;
+
+					@media (prefers-reduced-motion: reduce) {
+						animation: none;
+					}
 				}
 
 				@keyframes pulse {

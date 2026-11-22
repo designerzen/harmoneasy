@@ -187,9 +187,10 @@ function fire(matches: Match[], pressed: boolean): void {
 function typing(): boolean {
 	const target = document.activeElement
 	return (
+		document.documentElement.dataset.shortcuts === "off" ||
 		!!document.querySelector("dialog[open]") ||
 		!!target?.closest(
-			"textarea, select, [contenteditable]:not([contenteditable='false']), input:not([type='range'], [type='checkbox'], [type='radio'], [type='button'], [type='color'])"
+			"textarea, select, button, a, summary, [role='tab'], [role='menuitem'], [contenteditable]:not([contenteditable='false']), input"
 		)
 	)
 }

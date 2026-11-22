@@ -3,6 +3,7 @@ import type IOChain from "audiobus/io/IO-chain"
 import type { Transformer } from "audiobus/io/transformers/abstract-transformer"
 import {
 	EVENT_CHANGE,
+	EVENT_CLICK,
 	EVENT_INPUT,
 	EVENT_CONFIGURATION_CHANGED,
 	EVENT_SIGNAL_ACTIVITY,
@@ -340,6 +341,18 @@ export function mountDiagnostics(
 	status: HTMLElement
 ) {
 	const readings = element("div")
+	let paused = false
+	const pauseButton = element("button", "Pause live updates")
+	pauseButton.type = "button"
+	pauseButton.setAttribute("aria-pressed", "false")
+	pauseButton.addEventListener(EVENT_CLICK, () => {
+		paused = !paused
+		pauseButton.setAttribute("aria-pressed", String(paused))
+		pauseButton.textContent = paused ? "Resume live updates" : "Pause live updates"
+		if (!paused) {
+			render()
+		}
+	})
 	host.append(
 		action(
 			"Enable audio",
@@ -362,6 +375,7 @@ export function mountDiagnostics(
 			},
 			status
 		),
+		pauseButton,
 		readings
 	)
 	const samples = new Map<IOChain, SignalSample>()
@@ -529,7 +543,11 @@ export function mountDiagnostics(
 			analyser.fftSize = 256
 			master.connect(analyser)
 			render()
-			interval = setInterval(render, 500)
+			interval = setInterval(() => {
+				if (!paused) {
+					render()
+				}
+			}, 500)
 		},
 		stop() {
 			if (interval) {

@@ -48,7 +48,8 @@ export function DeviceTitleBar({
 			chain.outputManager.setEnabled(device as IAudioOutput, !enabled)
 		}
 	}
-	const toggleLabel = `${enabled ? "Disable" : "Enable"} ${direction}`
+	const toggleText = enabled ? "On" : "Off"
+	const toggleLabel = `${toggleText}: ${device.name} ${direction}`
 	const expandLabel = expanded ? `Exit fullscreen ${direction}` : `Expand ${direction}`
 	const description = deviceDescription(device, direction)
 	return (
@@ -91,13 +92,13 @@ export function DeviceTitleBar({
 					className="device-toggle"
 					aria-pressed={enabled}
 					onClick={toggle}
-					title={`${toggleLabel} in this chain`}
+					title={`${enabled ? "Disable" : "Enable"} ${direction} in this chain`}
 					aria-label={toggleLabel}
 				>
 					<svg viewBox="0 0 24 24" aria-hidden="true">
 						<path d="M12 3v9m-5-7a8 8 0 1 0 10 0" />
 					</svg>
-					<span>{enabled ? "On" : "Off"}</span>
+					<span>{toggleText}</span>
 				</button>
 			</NodeHeader>
 			{swapping && (

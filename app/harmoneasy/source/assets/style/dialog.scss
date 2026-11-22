@@ -283,7 +283,7 @@ dialog {
 		:is(h2, h5) {
 			font-size: var(--text-xl);
 			font-weight: 600;
-			line-height: var(--control-height);
+			line-height: 1.3;
 		}
 	}
 	> footer {

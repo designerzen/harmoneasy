@@ -79,9 +79,12 @@ const PAGE_STYLE = `
 body{margin:0;background:var(--col-bg);color:var(--col-fg);font:400 var(--text-md)/1.5 var(--font-ui)}
 a{color:var(--col-accent);text-underline-offset:.2em}a:hover{color:var(--col-accent-hover)}
 button,input,select{font:inherit}
-:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+:focus-visible{outline:var(--focus-ring-width) solid var(--focus-ring);outline-offset:2px}
+.skip-link{position:fixed;top:-4rem;left:1rem;z-index:10;padding:.5rem 1rem;background:var(--col-surface);color:var(--col-fg);border:2px solid var(--focus-ring);border-radius:var(--radius-sm);text-decoration:none;font-weight:600}
+.skip-link:focus-visible{top:.75rem}
 .shell{max-width:1200px;margin:auto;padding:0 1.5rem}
 .top{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding-block:.75rem;border-bottom:var(--border)}
+.top nav{display:flex;align-items:center;gap:1rem}
 .brand{display:inline-flex;align-items:center;gap:.5rem;color:var(--col-fg);font-size:var(--text-lg);font-weight:600;text-decoration:none}
 .app-link{font-size:var(--text-sm)}
 .intro{max-width:44rem;padding:2.5rem 0 1.5rem}
@@ -139,7 +142,7 @@ export function presetDirectoryHtml(entries, base, client) {
 			<p class="description">${escapeHtml(entry.description)}</p>
 			<dl><div><dt>Input</dt><dd>${escapeHtml(entry.inputs.join(", ") || "None")}</dd></div><div><dt>Output</dt><dd>${escapeHtml(entry.outputs.join(", ") || "None")}</dd></div></dl>
 			${entry.transformers.length ? `<p class="transformers">${escapeHtml(entry.transformers.join(" · "))}</p>` : ""}
-			<footer><a class="open" href="${href(`${entry.route}/`)}">Open preset <span aria-hidden="true">↗</span></a><a class="json" href="${href(`${entry.route}/preset.json`)}">Preset JSON</a></footer>
+			<footer><a class="open" href="${href(`${entry.route}/`)}" aria-label="Open ${escapeHtml(entry.name)} preset">Open preset <span aria-hidden="true">↗</span></a><a class="json" href="${href(`${entry.route}/preset.json`)}" aria-label="${escapeHtml(entry.name)} preset JSON">Preset JSON</a></footer>
 		</article>`
 		})
 		.join("\n")
@@ -150,14 +153,14 @@ export function presetDirectoryHtml(entries, base, client) {
 <meta name="color-scheme" content="dark light"><title>Preset directory · Harmoneasy</title>
 <meta name="description" content="Find Harmoneasy instruments, hardware setups and performance presets. Filter by input, output or category, then open a complete setup.">
 <link rel="icon" type="image/svg+xml" href="${href("favicon.svg")}">
-<script>try{const t=JSON.parse(localStorage.getItem("harmoneasy.theme"));if(typeof t?.hue==="number")document.documentElement.style.setProperty("--theme-hue",t.hue);if(t?.mode)document.documentElement.dataset.themeMode=t.mode}catch{}</script>
+<script>try{const t=JSON.parse(localStorage.getItem("harmoneasy.theme"));if(typeof t?.hue==="number")document.documentElement.style.setProperty("--theme-hue",t.hue);if(t?.mode)document.documentElement.dataset.themeMode=t.mode}catch{}try{const a=JSON.parse(localStorage.getItem("harmoneasy.accessibility"));if(a?.contrast==="high")document.documentElement.dataset.contrast="high";if(a?.palette==="colorblind-safe")document.documentElement.dataset.palette="colorblind-safe";if(a?.targetSize==="large"||a?.targetSize==="xlarge")document.documentElement.dataset.targetSize=a.targetSize;if(a?.fontScale==="large"||a?.fontScale==="xlarge"||a?.fontScale==="xxlarge")document.documentElement.dataset.fontScale=a.fontScale;if(a?.textSpacing==="comfortable"||a?.textSpacing==="wide")document.documentElement.dataset.textSpacing=a.textSpacing;if(a?.readableFont==="sans"||a?.readableFont==="mono")document.documentElement.dataset.readableFont=a.readableFont;if(a?.focusIndicator==="enhanced"||a?.focusIndicator==="maximum")document.documentElement.dataset.focusIndicator=a.focusIndicator;if(a?.underlineLinks===true)document.documentElement.dataset.underlineLinks="on";if(a?.reducedMotion==="reduce"||a?.reducedMotion==="allow")document.documentElement.dataset.reducedMotion=a.reducedMotion;if(a?.announcements==="minimal")document.documentElement.dataset.announcements="minimal"}catch{}</script>
 <style>
 ${TOKENS}
 ${PAGE_STYLE.replaceAll("FONT_BASE", href("fonts/"))}
 </style>
 </head>
-<body><div class="shell"><header class="top"><a class="brand" href="${href("")}"><img src="${href("favicon.svg")}" alt="" width="24" height="24">Harmoneasy</a><a class="app-link" href="${href("play/")}">Play songs</a><a class="app-link" href="${href("")}">Open the app ↗</a></header>
-<main id="preset-directory"><section class="intro"><p class="eyebrow">Preset directory</p><h1>Find a setup.<br>Make it your own.</h1><p>Explore instruments, hardware setups and complete performance rooms. Pick a preset to open its chains, sounds and controls in Harmoneasy.</p></section>
+<body><a class="skip-link" href="#preset-directory">Skip to presets</a><div class="shell"><header class="top"><a class="brand" href="${href("")}"><img src="${href("favicon.svg")}" alt="" width="24" height="24">Harmoneasy</a><nav aria-label="Site navigation"><a class="app-link" href="${href("play/")}">Play songs</a><a class="app-link" href="${href("")}">Open the app <span aria-hidden="true">↗</span></a></nav></header>
+<main id="preset-directory" tabindex="-1"><section class="intro"><p class="eyebrow">Preset directory</p><h1>Find a setup.<br>Make it your own.</h1><p>Explore instruments, hardware setups and complete performance rooms. Pick a preset to open its chains, sounds and controls in Harmoneasy.</p></section>
 <form class="filters" role="search" onsubmit="return false">
 <label class="search">Search presets<input type="search" name="q" placeholder="Name, controller, sound or transformer…" autocomplete="off"></label>
 <label>Category<select name="category"><option value="">All categories</option>${options(entries.map((entry) => entry.category))}</select></label>
@@ -167,7 +170,7 @@ ${PAGE_STYLE.replaceAll("FONT_BASE", href("fonts/"))}
 <div class="results-bar"><span id="result-count" role="status" aria-live="polite">${entries.length} presets</span><button class="clear" type="button" id="clear-filters">Clear filters</button></div>
 <div class="cards">${cards}</div><p class="empty" id="no-results" hidden>No presets match these filters. Try another search or clear your filters.</p>
 <noscript><p>All preset links are available above. Enable JavaScript to filter them.</p></noscript></main>
-<div class="site-footer">Built from the same presets as the app.<a href="${href("presets/index.json")}">Browse catalogue JSON</a></div></div>
+<footer class="site-footer">Built from the same presets as the app.<a href="${href("presets/index.json")}">Browse catalogue JSON</a></footer></div>
 <script type="module">${client}
 mountPresetDirectory(document.getElementById("preset-directory"));</script>
 </body></html>`

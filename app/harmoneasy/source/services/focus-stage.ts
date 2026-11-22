@@ -153,6 +153,7 @@ export interface FocusStageOptions {
 	doc: Document
 	accessibility: AccessibilityController
 	audioContext?: AudioContext
+	outputNode?: AudioNode
 	getNow?: () => number
 	onCalibrate?: () => void
 }
@@ -163,6 +164,7 @@ export function createFocusStage({
 	doc,
 	accessibility,
 	audioContext,
+	outputNode,
 	getNow = () => 0,
 	onCalibrate
 }: FocusStageOptions) {
@@ -173,6 +175,8 @@ export function createFocusStage({
 	let dwellMs = 0
 	let stepCursor = 0
 	let beatTimeout: ReturnType<typeof setTimeout> | undefined
+	let beatPulseTimestamps: number[] = []
+	let previousFocus: HTMLElement | null = null
 	let pads: StagePad[] = []
 	const activePadNotes = new Map<number, number[]>()
 	const latchedPads = new Set<number>()
@@ -488,6 +492,7 @@ export function createFocusStage({
 			activateWithReleaseMode(idx, activeReleaseMode, timedMs ?? 450)
 		},
 		audioContext,
+		outputNode,
 		win: doc.defaultView
 	})
 
@@ -578,6 +583,14 @@ export function createFocusStage({
 		if (target && ["SELECT", "INPUT", "TEXTAREA"].includes(target.tagName)) {
 			return
 		}
+		// Never hijack activation keys when focus is on a non-pad interactive control (e.g. toolbar / Exit button)
+		const onNonPadControl =
+			!!target &&
+			!target.classList.contains("focus-stage-pad") &&
+			Boolean(target.closest("button, a, summary, [role='tab'], [role='menuitem']"))
+		if (onNonPadControl && (event.code === "Space" || event.key === "Enter")) {
+			return
+		}
 
 		// 1-switch auto-scan or 2-switch step/select
 		if (scanner.handleKeyDown(event)) {
@@ -591,8 +604,14 @@ export function createFocusStage({
 			return
 		}
 
-		// Direct number shortcuts 1..8
-		if (/^[1-8]$/.test(event.key)) {
+		// Direct number shortcuts 1..8 (respect modifier keys and character-shortcut opt-out)
+		if (
+			/^[1-8]$/.test(event.key) &&
+			!event.ctrlKey &&
+			!event.metaKey &&
+			!event.altKey &&
+			doc.documentElement.dataset.shortcuts !== "off"
+		) {
 			const idx = Number(event.key) - 1
 			if (idx < pads.length) {
 				event.preventDefault()
@@ -657,6 +676,10 @@ export function createFocusStage({
 	}
 
 	const open = () => {
+		previousFocus =
+			doc.activeElement instanceof HTMLElement && doc.activeElement !== doc.body
+				? doc.activeElement
+				: openButton
 		renderPads()
 		if (!dialog.open) {
 			dialog.showModal()
@@ -668,14 +691,25 @@ export function createFocusStage({
 		)
 	}
 
+	const restoreFocus = () => {
+		const target = previousFocus?.isConnected
+			? previousFocus
+			: openButton?.isConnected
+				? openButton
+				: null
+		previousFocus = null
+		target?.focus()
+	}
+
 	const close = () => {
 		scanner.stop()
 		dwell.cancel()
 		releaseAllPads()
 		if (dialog.open) {
 			dialog.close()
+		} else {
+			restoreFocus()
 		}
-		openButton?.focus()
 	}
 
 	openButton?.addEventListener(EVENT_CLICK, open, { signal: abort.signal })
@@ -686,6 +720,7 @@ export function createFocusStage({
 			scanner.stop()
 			dwell.cancel()
 			releaseAllPads()
+			restoreFocus()
 		},
 		{ signal: abort.signal }
 	)
@@ -723,7 +758,7 @@ export function createFocusStage({
 					scanner.start()
 				}
 				announce(
-					"2-switch step/select enabled. Press Tab or Right Arrow to move, Space or Enter to play."
+					"2-switch step/select enabled. Press Right Arrow, Down Arrow, or Right Shift to move, Space or Enter to play."
 				)
 				return
 			}
@@ -841,9 +876,21 @@ export function createFocusStage({
 	const pulseBeat = (beatIndex: number, beatsPerBar = 4) => {
 		const beatInBar = (beatIndex % Math.max(1, beatsPerBar)) + 1
 		beatPill.textContent = `Beat ${beatInBar}`
-		if (!accessibility.getPreferences().beatFlash) {
+		const prefs = accessibility.getPreferences()
+		const prefersReduced =
+			prefs.reducedMotion === "reduce" ||
+			(prefs.reducedMotion === "system" &&
+				Boolean(doc.defaultView?.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches))
+		if (!prefs.beatFlash || prefersReduced) {
 			return
 		}
+		// Enforce WCAG 2.3.1: never exceed 3 visual flashes in any 1-second window.
+		const now = Date.now()
+		beatPulseTimestamps = beatPulseTimestamps.filter((t) => now - t < 1000)
+		if (beatPulseTimestamps.length >= 3) {
+			return
+		}
+		beatPulseTimestamps.push(now)
 		const downbeat = beatInBar === 1
 		beatPill.classList.toggle("is-downbeat", downbeat)
 		beatPill.classList.add("is-pulsing")

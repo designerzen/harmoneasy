@@ -20,6 +20,7 @@ export interface SwitchScannerOptions {
 	onHighlight: (index: number | null) => void
 	onActivate: (index: number, releaseMode: SwitchReleaseMode, timedReleaseMs?: number) => void
 	audioContext?: AudioContext
+	outputNode?: AudioNode
 	win?: Window | null
 }
 
@@ -36,6 +37,7 @@ export function createSwitchScanner({
 	onHighlight,
 	onActivate,
 	audioContext,
+	outputNode,
 	win = typeof window !== "undefined" ? window : null
 }: SwitchScannerOptions) {
 	let config: SwitchScannerConfig = {
@@ -87,7 +89,7 @@ export function createSwitchScanner({
 				gain.gain.exponentialRampToValueAtTime(0.06, now + 0.01)
 				gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.075)
 				osc.connect(gain)
-				gain.connect(audioContext.destination)
+				gain.connect(outputNode ?? audioContext.destination)
 				osc.start(now)
 				osc.stop(now + 0.08)
 			} catch {
@@ -226,9 +228,8 @@ export function createSwitchScanner({
 			}
 			return false
 		}
-		// 2-switch step / select mode
+		// 2-switch step / select mode (never hijack Tab so keyboard navigation can reach toolbar/exit controls)
 		if (
-			event.key === "Tab" ||
 			event.key === "ArrowRight" ||
 			event.key === "ArrowDown" ||
 			event.code === "ShiftRight"

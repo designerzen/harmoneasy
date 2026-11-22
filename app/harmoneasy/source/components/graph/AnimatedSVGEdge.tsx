@@ -30,6 +30,12 @@ export function AnimatedSVGEdge({
 		let frame: number | null = null
 		let latest: IAudioCommand
 		const onAudioEvent = (event: Event) => {
+			if (
+				document.documentElement.dataset.reducedMotion === "reduce" ||
+				window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches
+			) {
+				return
+			}
 			const command = (event as Event & { command: IAudioCommand }).command
 			if (command.from !== data?.name || command.type !== NOTE_ON || command.velocity === 0) {
 				return
@@ -78,6 +84,7 @@ export function AnimatedSVGEdge({
 			<circle
 				ref={circleRef}
 				className="beat"
+				aria-hidden="true"
 				r={(data?.radius as number) ?? 8}
 				fill={(data?.colour as string) || "#fff"}
 			>

@@ -105,35 +105,42 @@ export function createTransformerPicker(
 		return item
 	}
 
+	const statusCount = element("p", "")
+	statusCount.setAttribute("role", "status")
+	statusCount.setAttribute("aria-live", "polite")
+	const resultsHost = element("div")
+	results.append(statusCount, resultsHost)
+
 	function render() {
 		updateReset(Boolean(search.value || classification))
 		filter.update(choices, search.value)
-		results.replaceChildren()
+		resultsHost.replaceChildren()
 		const matching = choices.filter((choice) =>
 			choiceMatches(choice, search.value, classification)
 		)
 		const filtered = matching.filter((choice) => !choice.missing.length)
 		const unavailable = matching.filter((choice) => choice.missing.length)
-		const count = element("p", "", `${filtered.length} matching transformers`)
-		count.setAttribute("role", "status")
-		results.append(count)
+		statusCount.textContent =
+			!filtered.length && !unavailable.length
+				? "No transformers match the selected filters"
+				: `${filtered.length} matching transformers`
 		for (const group of groupChoices(filtered)) {
 			const section = element("section", "choice-group")
 			section.setAttribute("aria-label", group.label)
-			section.append(element("h6", "section-title", group.label))
+			section.append(element("h3", "section-title", group.label))
 			const list = element("ul", dialog ? "items-grid" : "")
 			list.setAttribute("role", "list")
 			list.append(...group.items.map(choiceItem))
 			section.append(list)
-			results.append(section)
+			resultsHost.append(section)
 		}
 		if (unavailable.length) {
-			results.append(
+			resultsHost.append(
 				createUnavailableSection(unavailable.map(choiceItem), dialog, "transformers")
 			)
 		}
 		if (!filtered.length && !unavailable.length) {
-			results.append(element("p", "", "No transformers match the selected filters"))
+			resultsHost.append(element("p", "", "No transformers match the selected filters"))
 		}
 	}
 	search.oninput = render

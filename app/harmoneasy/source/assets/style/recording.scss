@@ -36,7 +36,15 @@
 @media (prefers-reduced-motion: reduce) {
 	#btn-record.is-recording {
 		animation: none;
-		outline: 2px solid var(--col-danger);
+		box-shadow: 0 0 0 2px var(--col-danger);
+	}
+}
+
+@media (forced-colors: active) {
+	#btn-record::before {
+		forced-color-adjust: none;
+		background: ButtonText;
+		border: 1px solid ButtonBorder;
 	}
 }
 #clock {

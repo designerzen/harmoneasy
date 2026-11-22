@@ -495,14 +495,16 @@ function keyboard(host: HTMLElement, lowest: number, keys: number, playable: boo
 			textContent: black ? "" : noteName(note)
 		})
 		key.dataset.note = String(note)
-		key.setAttribute("aria-label", noteName(note))
 		if (playable) {
+			key.setAttribute("aria-label", noteName(note))
 			;(key as HTMLButtonElement).type = "button"
 			holdable(
 				key,
 				() => noteOn(note, true),
 				() => noteOn(note, false)
 			)
+		} else {
+			key.setAttribute("aria-hidden", "true")
 		}
 		host.append(key)
 	}
@@ -533,11 +535,19 @@ function buildPlaying() {
 			await delay(60)
 		}
 	})
-	// Space or Enter anywhere on this page (outside fields) also steps.
+	// Space or Enter anywhere on this page (outside interactive controls) also steps.
 	window.addEventListener(EVENT_KEY_DOWN, (event) => {
-		const field = (event.target as HTMLElement).closest("input,select,textarea,button,summary")
+		if (event.ctrlKey || event.metaKey || event.altKey || event.isComposing) {
+			return
+		}
+		const field = (event.target as HTMLElement).closest(
+			"input,select,textarea,button,a,summary,[role='tab'],[role='menuitem']"
+		)
 		if (!field && !event.repeat && [" ", "Enter"].includes(event.key)) {
 			step.press(event)
+		}
+		if (document.documentElement.dataset.shortcuts === "off") {
+			return
 		}
 		const drum = DRUMS.find(([, , key]) => key === event.key.toLowerCase())
 		if (drum && !field && !event.repeat) {

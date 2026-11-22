@@ -203,7 +203,7 @@
 		gap: 0.8rem;
 		align-items: flex-start;
 		padding: 0.8rem;
-		border: 1px solid var(--col-line);
+		border: 1px solid var(--col-line-strong);
 		border-radius: var(--radius-md);
 		cursor: pointer;
 	}
@@ -252,8 +252,8 @@
 			grid-template-columns: 1fr;
 		}
 		.wizard-stepper li {
-			font-size: 0;
-			padding-block: 0.2rem;
+			font-size: var(--text-xs);
+			padding-block: 0.25rem;
 		}
 		.wizard-stepper li::before {
 			font-size: var(--text-xs);

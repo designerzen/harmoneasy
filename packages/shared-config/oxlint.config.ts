@@ -1,12 +1,22 @@
 import { defineConfig } from "oxlint"
 
 export default defineConfig({
+	plugins: ["jsx-a11y"],
 	env: {
 		browser: true,
 		es2024: true,
 		node: true
 	},
 	rules: {
+		"jsx-a11y/alt-text": "error",
+		"jsx-a11y/aria-props": "error",
+		"jsx-a11y/aria-role": "error",
+		"jsx-a11y/aria-unsupported-elements": "error",
+		"jsx-a11y/heading-has-content": "error",
+		"jsx-a11y/label-has-associated-control": "warn",
+		"jsx-a11y/no-redundant-roles": "warn",
+		"jsx-a11y/role-has-required-aria-props": "error",
+		"jsx-a11y/role-supports-aria-props": "error",
 		"no-debugger": "warn",
 		"no-constant-condition": "warn",
 		"no-empty": "warn",

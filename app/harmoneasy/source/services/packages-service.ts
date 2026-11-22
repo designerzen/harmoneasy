@@ -9,9 +9,9 @@ export async function getPackagesListHTML(): Promise<string> {
 	return PACKAGES.map(
 		(pkg) => `
 <div class="package-item">
-	<h6>${pkg.name} <span class="version">v${pkg.version}</span></h6>
+	<h4>${pkg.name} <span class="version">v${pkg.version}</span></h4>
 	<p>${pkg.description}</p>
-	<a href="${pkg.repo}" target="_blank" rel="noopener noreferrer">View on GitHub →</a>
+	<a href="${pkg.repo}" target="_blank" rel="noopener noreferrer">View ${pkg.name} on GitHub <span aria-hidden="true">→</span><span class="sr-only"> (opens in a new tab)</span></a>
 </div>
 	`
 	).join("")

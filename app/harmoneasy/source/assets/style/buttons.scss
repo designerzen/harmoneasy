@@ -8,7 +8,7 @@ button {
 	min-width: var(--control-height);
 	min-height: var(--control-height);
 	padding: 0.25rem 0.75rem;
-	border: var(--border);
+	border: 1px solid var(--col-line-strong);
 	border-radius: var(--radius-sm);
 	background: var(--col-surface);
 	color: var(--col-fg);
@@ -47,7 +47,7 @@ button {
 
 	&.secondary {
 		background: var(--col-surface);
-		border-color: var(--col-line);
+		border-color: var(--col-line-strong);
 		color: var(--col-fg);
 	}
 
@@ -253,4 +253,29 @@ dialog .btn-close {
 	height: 1em;
 	flex: none;
 	fill: currentColor;
+}
+
+@media (forced-colors: active) {
+	.btn-remove::before,
+	.btn-remove-chain::before,
+	.btn-reset::before,
+	.btn-import::before,
+	.btn-export::before,
+	.btn-settings::before,
+	.btn-command-palette::before,
+	.btn-midi::before,
+	.btn-remote-control::before,
+	.btn-harmony::before,
+	.btn-play-songs::before,
+	.btn-zoom-in::before,
+	.btn-zoom-out::before {
+		forced-color-adjust: none;
+		background-color: ButtonText;
+	}
+	button.primary,
+	button.danger,
+	.btn-kill-switch,
+	button[aria-pressed="true"] {
+		border: 2px solid Highlight;
+	}
 }

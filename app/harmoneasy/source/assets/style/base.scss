@@ -1,6 +1,27 @@
 html {
 	scroll-behavior: smooth;
+	scroll-padding-top: 8rem;
+	scroll-padding-bottom: 8rem;
 	accent-color: var(--accent-color);
+}
+
+.skip-link {
+	position: fixed;
+	top: -4rem;
+	left: 0.75rem;
+	z-index: 10000;
+	padding: 0.5rem 1rem;
+	border: 2px solid var(--focus-ring);
+	border-radius: var(--radius-sm);
+	background: var(--col-surface);
+	color: var(--col-fg);
+	font-weight: 600;
+	text-decoration: none;
+
+	&:focus,
+	&:focus-visible {
+		top: 0.75rem;
+	}
 }
 
 body {
@@ -36,8 +57,29 @@ a:hover {
 	outline: none;
 }
 :focus-visible {
-	outline: 2px solid var(--focus-ring);
-	outline-offset: 2px;
+	outline: var(--focus-ring-width) solid var(--focus-ring);
+	outline-offset: var(--focus-ring-offset);
+}
+
+:root[data-focus-indicator="maximum"] :focus-visible {
+	outline: var(--focus-ring-width) solid var(--focus-ring);
+	outline-offset: var(--focus-ring-offset);
+	box-shadow: 0 0 0 2px var(--col-bg);
+}
+
+:root[data-underline-links="on"] a {
+	text-decoration: underline !important;
+	text-decoration-color: currentColor !important;
+	text-decoration-thickness: max(0.09em, 1.5px);
+	text-underline-offset: 0.2em;
+}
+
+@media (forced-colors: active) {
+	summary::before,
+	summary::after {
+		forced-color-adjust: none;
+		background-color: ButtonText;
+	}
 }
 
 ::selection {

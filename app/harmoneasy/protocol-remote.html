@@ -116,9 +116,24 @@
 				backdrop-filter: blur(6px);
 			}
 			#status::before {
-				content: "●";
+				content: "●" / "";
 				margin-right: 0.4rem;
 				color: var(--muted);
+			}
+			.skip-link {
+				position: fixed;
+				top: -4rem;
+				left: 1rem;
+				z-index: 10;
+				padding: 0.5rem 1rem;
+				background: var(--surface);
+				color: var(--text);
+				border: 2px solid var(--accent-strong);
+				border-radius: 6px;
+				text-decoration: none;
+			}
+			.skip-link:focus-visible {
+				top: 0.75rem;
 			}
 			body[data-connection="waiting"] #status::before {
 				color: var(--warn);
@@ -437,8 +452,9 @@
 		</style>
 	</head>
 	<body data-connection="idle">
+		<a class="skip-link" href="#controls-column">Skip to controls</a>
 		<header>
-			<p><a href="./">← Harmoneasy</a> · <a href="./presets/">Presets</a></p>
+			<nav aria-label="Site navigation"><a href="./">← Harmoneasy</a> · <a href="./presets/">Presets</a></nav>
 			<h1>Remote control Harmoneasy</h1>
 			<p>
 				This page talks to Harmoneasy over <strong>audioBus Protocol</strong> without
@@ -523,7 +539,7 @@
 							><input id="raw-midi" type="checkbox" /> Raw MIDI</label
 						>
 					</div>
-					<div class="keys" id="keys" aria-label="Keyboard"></div>
+					<div class="keys" id="keys" role="group" aria-label="Keyboard"></div>
 				</fieldset>
 
 				<fieldset data-remote>
@@ -606,22 +622,22 @@
 					<legend>Transport</legend>
 					<div class="row">
 						<button data-command="transport.start" type="button" class="primary">
-							▶ Play
+							<span aria-hidden="true">▶</span> Play
 						</button>
-						<button data-command="transport.stop" type="button">■ Stop</button>
+						<button data-command="transport.stop" type="button"><span aria-hidden="true">■</span> Stop</button>
 						<button data-command="app.panic" type="button">Panic</button>
 						<button id="transport-get" type="button">Read</button>
-						<strong id="transport-state">—</strong>
+						<strong id="transport-state" role="status" aria-live="polite">—</strong>
 					</div>
 					<div class="row">
-						<button data-tempo="-10" type="button">−10</button>
-						<button data-tempo="-1" type="button">−1</button>
+						<button data-tempo="-10" type="button" aria-label="Decrease tempo by 10 BPM">−10</button>
+						<button data-tempo="-1" type="button" aria-label="Decrease tempo by 1 BPM">−1</button>
 						<label style="flex: 1 1 12rem"
 							>Tempo <input id="tempo" type="range" min="10" max="303" value="120"
 						/></label>
-						<output id="tempo-value">120</output>
-						<button data-tempo="1" type="button">+1</button>
-						<button data-tempo="10" type="button">+10</button>
+						<output id="tempo-value" for="tempo">120</output>
+						<button data-tempo="1" type="button" aria-label="Increase tempo by 1 BPM">+1</button>
+						<button data-tempo="10" type="button" aria-label="Increase tempo by 10 BPM">+10</button>
 					</div>
 				</fieldset>
 
@@ -630,9 +646,9 @@
 					<p class="hint">
 						Notes from Harmoneasy's audioBus Protocol output (with
 						<em>Also send to applications connected to this window</em> on). Received:
-						<strong id="received-count">0</strong> · last <span id="last-note">—</span>
+						<strong id="received-count">0</strong> · last <span id="last-note" role="status" aria-live="polite">—</span>
 					</p>
-					<div class="keys" id="heard" aria-label="Notes sent by Harmoneasy"></div>
+					<div class="keys" id="heard" role="img" aria-label="Notes sent by Harmoneasy"></div>
 					<label class="row"
 						><input id="hear" type="checkbox" /> Play received notes on this page
 						too</label

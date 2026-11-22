@@ -15,7 +15,7 @@ export function createUnavailableSection(items: HTMLElement[], dialog: boolean, 
 	const section = element("section", "choice-group unavailable-choices")
 	section.setAttribute("aria-label", `Unavailable ${noun}`)
 	section.append(
-		element("h6", "section-title", "Not available in this browser"),
+		element("h3", "section-title", "Not available in this browser"),
 		element(
 			"p",
 			"unavailable-note",

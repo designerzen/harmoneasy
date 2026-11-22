@@ -27,6 +27,7 @@ import {
 	createAccessibilityControls,
 	DEFAULT_ACCESSIBILITY
 } from "../source/services/accessibility"
+import { announceLive } from "../source/libs/dialog-utils"
 import { buildStagePads, createFocusStage } from "../source/services/focus-stage"
 import { THEME_STORAGE_KEY } from "../source/services/theme"
 
@@ -82,6 +83,22 @@ function createFakeManager(harmony: HarmonicState = DEFAULT_HARMONY) {
 	return { manager, chain, received }
 }
 
+function clearAccessibilityDataset() {
+	delete document.documentElement.dataset.contrast
+	delete document.documentElement.dataset.palette
+	delete document.documentElement.dataset.targetSize
+	delete document.documentElement.dataset.fontScale
+	delete document.documentElement.dataset.textSpacing
+	delete document.documentElement.dataset.readableFont
+	delete document.documentElement.dataset.focusIndicator
+	delete document.documentElement.dataset.underlineLinks
+	delete document.documentElement.dataset.reducedMotion
+	delete document.documentElement.dataset.announcements
+	delete document.documentElement.dataset.beatFlash
+	delete document.documentElement.dataset.beatPulse
+	delete document.documentElement.dataset.shortcuts
+}
+
 describe("Accessibility preferences and sensory presets", () => {
 	beforeEach(() => {
 		vi.stubGlobal("localStorage", new Storage())
@@ -93,12 +110,7 @@ describe("Accessibility preferences and sensory presets", () => {
 		localStorage.clear()
 		vi.unstubAllGlobals()
 		document.body.replaceChildren()
-		delete document.documentElement.dataset.contrast
-		delete document.documentElement.dataset.palette
-		delete document.documentElement.dataset.targetSize
-		delete document.documentElement.dataset.reducedMotion
-		delete document.documentElement.dataset.beatFlash
-		delete document.documentElement.dataset.beatPulse
+		clearAccessibilityDataset()
 	})
 
 	it("persists accessibility attributes independently of theme storage and resets cleanly", () => {
@@ -192,6 +204,90 @@ describe("Accessibility preferences and sensory presets", () => {
 
 		controls.destroy()
 	})
+
+	it("applies, persists, and resets Settings refinements & overrides including typography, focus ring, link underlines, motion override, announcements, and quick presets", async () => {
+		const onSensoryPreset = vi.fn(async (preset: string) => `Applied ${preset} outputs.`)
+		const controls = createAccessibilityControls(document, { onSensoryPreset })
+
+		const fontScale = document.getElementById("a11y-font-scale") as HTMLSelectElement
+		const textSpacing = document.getElementById("a11y-text-spacing") as HTMLSelectElement
+		const readableFont = document.getElementById("a11y-readable-font") as HTMLSelectElement
+		const focusIndicator = document.getElementById("a11y-focus-indicator") as HTMLSelectElement
+		const underlineLinks = document.getElementById("a11y-underline-links") as HTMLInputElement
+		const motion = document.getElementById("a11y-reduced-motion") as HTMLSelectElement
+		const announcements = document.getElementById("a11y-announcements") as HTMLSelectElement
+
+		fontScale.value = "xlarge"
+		fontScale.dispatchEvent(new Event(EVENT_CHANGE))
+		textSpacing.value = "wide"
+		textSpacing.dispatchEvent(new Event(EVENT_CHANGE))
+		readableFont.value = "sans"
+		readableFont.dispatchEvent(new Event(EVENT_CHANGE))
+		focusIndicator.value = "maximum"
+		focusIndicator.dispatchEvent(new Event(EVENT_CHANGE))
+		underlineLinks.checked = true
+		underlineLinks.dispatchEvent(new Event(EVENT_CHANGE))
+		motion.value = "allow"
+		motion.dispatchEvent(new Event(EVENT_CHANGE))
+		announcements.value = "minimal"
+		announcements.dispatchEvent(new Event(EVENT_CHANGE))
+
+		expect(document.documentElement.dataset.fontScale).toBe("xlarge")
+		expect(document.documentElement.dataset.textSpacing).toBe("wide")
+		expect(document.documentElement.dataset.readableFont).toBe("sans")
+		expect(document.documentElement.dataset.focusIndicator).toBe("maximum")
+		expect(document.documentElement.dataset.underlineLinks).toBe("on")
+		expect(document.documentElement.dataset.reducedMotion).toBe("allow")
+		expect(document.documentElement.dataset.announcements).toBe("minimal")
+
+		// Minimal announcements suppresses polite live updates while still allowing assertive alerts
+		announceLive("Polite update", "polite", document)
+		announceLive("Urgent alert", "assertive", document)
+		await Promise.resolve()
+		expect(document.getElementById("app-live-status")).toBeNull()
+		expect(document.getElementById("app-live-alert")?.textContent).toBe("Urgent alert")
+
+		// Settings quick preset button updates visual prefs and invokes sensory callback
+		document.getElementById("a11y-preset-low-vision")!.dispatchEvent(new Event(EVENT_CLICK))
+		await Promise.resolve()
+		expect(onSensoryPreset).toHaveBeenCalledWith("low-vision")
+		expect(controls.getPreferences()).toMatchObject({
+			contrast: "high",
+			targetSize: "xlarge",
+			palette: "colorblind-safe",
+			fontScale: "large",
+			focusIndicator: "enhanced"
+		})
+		expect(document.getElementById("a11y-status")!.textContent).toBe("Applied low-vision outputs.")
+
+		// Reloading restores every refinement & override
+		controls.destroy()
+		const restored = createAccessibilityControls(document)
+		expect(restored.getPreferences()).toMatchObject({
+			contrast: "high",
+			targetSize: "xlarge",
+			palette: "colorblind-safe",
+			fontScale: "large",
+			textSpacing: "wide",
+			readableFont: "sans",
+			focusIndicator: "enhanced",
+			underlineLinks: true,
+			reducedMotion: "allow",
+			announcements: "minimal"
+		})
+
+		// Reset clears all new data attributes back to defaults
+		document.getElementById("a11y-reset")!.dispatchEvent(new Event(EVENT_CLICK))
+		expect(restored.getPreferences()).toEqual(DEFAULT_ACCESSIBILITY)
+		expect(document.documentElement.dataset.fontScale).toBeUndefined()
+		expect(document.documentElement.dataset.textSpacing).toBeUndefined()
+		expect(document.documentElement.dataset.readableFont).toBeUndefined()
+		expect(document.documentElement.dataset.focusIndicator).toBeUndefined()
+		expect(document.documentElement.dataset.underlineLinks).toBeUndefined()
+		expect(document.documentElement.dataset.reducedMotion).toBeUndefined()
+		expect(document.documentElement.dataset.announcements).toBeUndefined()
+		restored.destroy()
+	})
 })
 
 describe("Focus Stage instrument view", () => {
@@ -206,12 +302,7 @@ describe("Focus Stage instrument view", () => {
 		localStorage.clear()
 		vi.unstubAllGlobals()
 		document.body.replaceChildren()
-		delete document.documentElement.dataset.contrast
-		delete document.documentElement.dataset.palette
-		delete document.documentElement.dataset.targetSize
-		delete document.documentElement.dataset.reducedMotion
-		delete document.documentElement.dataset.beatFlash
-		delete document.documentElement.dataset.beatPulse
+		clearAccessibilityDataset()
 	})
 
 	it("builds distinct symbol-badged scale, chord, and 1-button step pads from harmony", () => {
@@ -334,5 +425,98 @@ describe("Focus Stage instrument view", () => {
 
 		stage.destroy()
 		controls.destroy()
+	})
+
+	it("avoids keyboard traps in 2-switch mode, preserves toolbar button activation, and caps beat flashes at 3 Hz", () => {
+		vi.useFakeTimers()
+		const controls = createAccessibilityControls(document)
+		const { manager, received } = createFakeManager()
+		const stage = createFocusStage({ manager, doc: document, accessibility: controls })
+
+		stage.open()
+
+		// Enable 2-switch mode: Tab must NOT be prevented so keyboard users can reach Exit/toolbar
+		const scanSelect = stage.dialog.querySelector<HTMLSelectElement>("#focus-stage-scan")!
+		scanSelect.value = "2-switch"
+		scanSelect.dispatchEvent(new Event(EVENT_CHANGE))
+
+		const tabEvent = new KeyboardEvent(EVENT_KEY_DOWN, {
+			key: "Tab",
+			bubbles: true,
+			cancelable: true
+		})
+		stage.dialog.dispatchEvent(tabEvent)
+		expect(tabEvent.defaultPrevented).toBe(false)
+
+		// Space/Enter on Exit Focus Stage button must NOT be hijacked to play a pad
+		const exitBtn = stage.dialog.querySelector<HTMLButtonElement>("#focus-stage-close")!
+		exitBtn.focus()
+		const enterOnExit = new KeyboardEvent(EVENT_KEY_DOWN, {
+			key: "Enter",
+			bubbles: true,
+			cancelable: true
+		})
+		exitBtn.dispatchEvent(enterOnExit)
+		expect(enterOnExit.defaultPrevented).toBe(false)
+		expect(received).toHaveLength(0)
+
+		// Character shortcuts respect global opt-out (#a11y-shortcuts)
+		controls.update({ characterShortcuts: false })
+		expect(document.documentElement.dataset.shortcuts).toBe("off")
+		stage.dialog.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: "1", bubbles: true }))
+		expect(received).toHaveLength(0)
+
+		// Beat flash never exceeds 3 flashes per second (WCAG 2.3.1) and stops under reduced motion
+		controls.update({ beatFlash: true, reducedMotion: "system" })
+		let flashes = 0
+		for (let i = 0; i < 6; i++) {
+			stage.pulseBeat(i, 4)
+			if (document.documentElement.dataset.beatPulse) {
+				flashes++
+			}
+			vi.advanceTimersByTime(150)
+		}
+		expect(flashes).toBeLessThanOrEqual(3)
+
+		vi.advanceTimersByTime(1100)
+		controls.update({ reducedMotion: "reduce" })
+		stage.pulseBeat(0, 4)
+		expect(document.documentElement.dataset.beatPulse).toBeUndefined()
+
+		stage.destroy()
+		controls.destroy()
+	})
+})
+
+describe("WCAG 2.2 document landmarks, skip links, headings, and modal helpers", () => {
+	it("provides skip link, banner/main landmarks, h1, normalized dialog headings, and template dialog labels", () => {
+		const html = readFileSync("index.html", "utf8")
+		const doc = new DOMParser().parseFromString(html, "text/html")
+
+		const skipLink = doc.querySelector<HTMLAnchorElement>("a.skip-link")
+		expect(skipLink?.getAttribute("href")).toBe("#main-content")
+		expect(doc.querySelector("header#action-bar")).not.toBeNull()
+		expect(doc.querySelector("main#main-content h1")).not.toBeNull()
+		expect(doc.querySelectorAll("dialog header h5")).toHaveLength(0)
+		expect(doc.querySelector("#a11y-shortcuts")).not.toBeNull()
+		expect(doc.querySelector("#export-overlay")?.getAttribute("aria-labelledby")).toBe(
+			"export-overlay-title"
+		)
+
+		for (const id of [
+			"add-input-overlay-template",
+			"add-output-overlay-template",
+			"add-instrument-overlay-template",
+			"error-overlay-template"
+		]) {
+			const template = doc.getElementById(id) as HTMLTemplateElement
+			const dialog = template.content.querySelector("dialog")!
+			const labelledBy = dialog.getAttribute("aria-labelledby")
+			expect(labelledBy, `${id} dialog aria-labelledby`).toBeTruthy()
+			expect(
+				template.content.getElementById(labelledBy!),
+				`${id} referenced heading exists inside template`
+			).not.toBeNull()
+		}
 	})
 })

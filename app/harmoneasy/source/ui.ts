@@ -6,15 +6,16 @@ import { createOpenDAWExportDialog } from "./services/opendaw-export-dialog"
 import {
 	EVENT_CHANGE,
 	EVENT_CLICK,
+	EVENT_CLOSE,
 	EVENT_INPUT,
-	EVENT_KEY_DOWN,
-	EVENT_POINTER_DOWN
+	EVENT_KEY_DOWN
 } from "audiobus/events/event-constants"
 
 export const EVENT_DBLCLICK = "dblclick"
 import { installMediaDrop } from "./services/media-drop"
 import { installImportMenu } from "./services/import-menu"
 import { installExportMenu, type ExportSongSource } from "./services/export-menu"
+import { openModalDialog } from "./libs/dialog-utils"
 import { renderVexFlowModal as renderVexFlowScoreModal } from "./services/vexflow-modal"
 
 import type NoteModel from "audiobus/models/note-model.ts"
@@ -290,15 +291,18 @@ export default class UI implements IAudioOutput {
 		}
 
 		this.elementTempo!.value = String(tempo)
+		this.elementTempo!.setAttribute("aria-valuetext", `${tempo} BPM`)
 		this.elementBPM!.textContent = String(tempo)
 	}
 
 	setSwing(swing: number) {
+		const percent = `${Math.round(swing * 100)}%`
 		if (this.elementSwing) {
 			this.elementSwing.value = String(swing)
+			this.elementSwing.setAttribute("aria-valuetext", percent)
 		}
 		if (this.elementSwingOutput) {
-			this.elementSwingOutput.value = `${Math.round(swing * 100)}%`
+			this.elementSwingOutput.value = percent
 		}
 	}
 
@@ -356,11 +360,13 @@ export default class UI implements IAudioOutput {
 	setVolume(value: number): void {
 		const volumeInput = document.querySelector<HTMLInputElement>("#volume")
 		const volumeOutput = document.querySelector<HTMLOutputElement>("#volume-output")
+		const rounded = Math.round(value)
 		if (volumeInput) {
 			volumeInput.value = String(value)
+			volumeInput.setAttribute("aria-valuetext", `${rounded}%`)
 		}
 		if (volumeOutput) {
-			volumeOutput.textContent = String(Math.round(value))
+			volumeOutput.textContent = String(rounded)
 		}
 	}
 
@@ -380,17 +386,34 @@ export default class UI implements IAudioOutput {
 			return
 		}
 
-		const heading = this.elementInfoDialog?.querySelector("h5")
+		const heading = this.elementInfoDialog?.querySelector("#info-dialog-title, h2, h5")
 		if (heading) {
 			heading.textContent = title
 		}
 		const messageElement = this.elementInfoDialog?.querySelector("#info-message")
 		if (messageElement) {
+			messageElement.setAttribute("role", "status")
+			messageElement.setAttribute("aria-live", "polite")
+			messageElement.classList.add("selectable")
 			messageElement.innerHTML = message
 		}
+		const previousFocus =
+			document.activeElement instanceof HTMLElement && document.activeElement !== document.body
+				? document.activeElement
+				: null
 		this.elementInfoDialog!.hidden = false
-		this.elementInfoDialog!.showModal()
-		// this.elementInfoDialog.showModal()
+		if (!this.elementInfoDialog!.open) {
+			this.elementInfoDialog!.showModal()
+		}
+		this.elementInfoDialog!.addEventListener(
+			EVENT_CLOSE,
+			() => {
+				if (previousFocus?.isConnected) {
+					previousFocus.focus()
+				}
+			},
+			{ once: true }
+		)
 	}
 
 	/**
@@ -418,8 +441,23 @@ export default class UI implements IAudioOutput {
 			elementSolution.hidden = true
 		}
 
+		const previousFocus =
+			document.activeElement instanceof HTMLElement && document.activeElement !== document.body
+				? document.activeElement
+				: null
 		this.elementErrorDialog!.hidden = false
-		this.elementErrorDialog!.showModal()
+		if (!this.elementErrorDialog!.open) {
+			this.elementErrorDialog!.showModal()
+		}
+		this.elementErrorDialog!.addEventListener(
+			EVENT_CLOSE,
+			() => {
+				if (previousFocus?.isConnected) {
+					previousFocus.focus()
+				}
+			},
+			{ once: true }
+		)
 		console.error(errorMessage)
 	}
 
@@ -533,20 +571,38 @@ export default class UI implements IAudioOutput {
 	}
 
 	// Exporting --------------------------------------------------------------------
-	showExportOverlay(_text: string = "") {
+	showExportOverlay(text: string = "") {
 		if (!this.elementOverlayExport) {
 			return
 		}
-
-		this.elementOverlayExport!.hidden = false
+		if (text) {
+			this.setExportOverlayText(text)
+		}
+		this.elementOverlayExport.hidden = false
+		if (
+			this.elementOverlayExport instanceof HTMLDialogElement &&
+			!this.elementOverlayExport.open &&
+			typeof this.elementOverlayExport.showModal === "function"
+		) {
+			try {
+				this.elementOverlayExport.showModal()
+			} catch {
+				// Fallback if dialog cannot become modal in current environment
+			}
+		}
 	}
 
 	hideExportOverlay() {
 		if (!this.elementOverlayExport) {
 			return
 		}
-
-		this.elementOverlayExport!.hidden = true
+		if (
+			this.elementOverlayExport instanceof HTMLDialogElement &&
+			this.elementOverlayExport.open
+		) {
+			this.elementOverlayExport.close()
+		}
+		this.elementOverlayExport.hidden = true
 	}
 
 	setExportOverlayText(text: string) {
@@ -679,7 +735,7 @@ export default class UI implements IAudioOutput {
 	whenKillSwitchRequestedRun(callback: Function) {
 		if (this.elementButtonKillSwitch) {
 			this.elementButtonKillSwitch.addEventListener(
-				EVENT_POINTER_DOWN,
+				EVENT_CLICK,
 				(e) => {
 					if (callback) {
 						callback(e)
@@ -985,7 +1041,11 @@ export default class UI implements IAudioOutput {
 			this.elementButtonSettings.addEventListener(
 				EVENT_CLICK,
 				() => {
-					this.elementSettingsDialog?.showModal()
+					if (this.elementSettingsDialog) {
+						void openModalDialog(this.elementSettingsDialog, {
+							returnFocusTo: this.elementButtonSettings
+						})
+					}
 					if (callback) {
 						callback()
 					}

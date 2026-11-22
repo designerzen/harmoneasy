@@ -74,7 +74,7 @@ it("flashes only while recording and opens a playable take on stop", async () =>
 	const clock = document.querySelector("#clock")!
 	expect(document.querySelector("#recording-clock")).toBeNull()
 	expect(clock.classList.contains("is-recording")).toBe(true)
-	expect(clock.getAttribute("aria-label")).toContain("recording audio")
+	expect(clock.closest("button")!.getAttribute("aria-label")).toContain("recording audio")
 	expect(clock.textContent).toBe("00:00:00:00")
 	button("btn-record").click()
 	await vi.waitFor(() => expect(button("recording-save").disabled).toBe(false))

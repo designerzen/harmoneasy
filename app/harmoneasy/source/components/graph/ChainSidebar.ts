@@ -1,3 +1,4 @@
+import { EVENT_KEY_DOWN } from "audiobus/events/event-constants"
 import { createTransformerPicker } from "./Transformers"
 import { createDevicePicker } from "./DevicePicker"
 import type { ChainUIContext } from "./chain-ui-context"
@@ -24,8 +25,19 @@ export function createChainSidebar(context: ChainUIContext) {
 		panel.setAttribute("aria-labelledby", `${id}-tab-${index}`)
 		return panel
 	})
+	function closeSidebar(focusIndex?: number) {
+		const targetIndex = focusIndex ?? active
+		picker?.destroy()
+		picker = null
+		panels.forEach((panel) => panel.replaceChildren())
+		active = null
+		update()
+		if (targetIndex !== null) {
+			buttons[targetIndex]?.focus()
+		}
+	}
 	const buttons = tabs.map((label, index) => {
-		const node = button("", () => open(index))
+		const node = button("", () => (active === index ? closeSidebar(index) : open(index)))
 		node.id = `${id}-tab-${index}`
 		node.title = `Add ${label.toLowerCase()} to chain`
 		node.setAttribute("role", "tab")
@@ -35,6 +47,11 @@ export function createChainSidebar(context: ChainUIContext) {
 			element("span", "chain-sidebar-tab-label", label)
 		)
 		node.onkeydown = (event) => {
+			if (event.key === "Escape" && active !== null) {
+				event.preventDefault()
+				closeSidebar(index)
+				return
+			}
 			const next =
 				event.key === "ArrowDown"
 					? (index + 1) % tabs.length
@@ -66,17 +83,7 @@ export function createChainSidebar(context: ChainUIContext) {
 		picker?.destroy()
 		panels.forEach((panel) => panel.replaceChildren())
 		active = index
-		const close = button(
-			"",
-			() => {
-				picker?.destroy()
-				picker = null
-				active = null
-				update()
-				buttons[index].focus()
-			},
-			"chain-sidebar-close close-icon"
-		)
+		const close = button("", () => closeSidebar(index), "chain-sidebar-close close-icon")
 		close.setAttribute("aria-label", "Close sidebar")
 		close.title = `Close ${tabs[index]}`
 		const content = element("div", "chain-sidebar-content")
@@ -88,12 +95,21 @@ export function createChainSidebar(context: ChainUIContext) {
 		panels[index].append(close, content)
 		update()
 	}
+	const onHostKeyDown = (event: KeyboardEvent) => {
+		if (event.key === "Escape" && active !== null) {
+			event.preventDefault()
+			event.stopPropagation()
+			closeSidebar()
+		}
+	}
+	host.addEventListener(EVENT_KEY_DOWN, onHostKeyDown)
 	tablist.append(...buttons)
 	host.append(tablist, ...panels)
 	update()
 	return {
 		element: host,
 		destroy() {
+			host.removeEventListener(EVENT_KEY_DOWN, onHostKeyDown)
 			picker?.destroy()
 			host.remove()
 		}

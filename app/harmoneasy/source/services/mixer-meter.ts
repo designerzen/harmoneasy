@@ -11,6 +11,11 @@ export function createMixerMeter(host: HTMLElement, source: () => AudioNode | un
 		host.append(lane)
 		return { fill, peak, level: -60, held: -60, holdUntil: 0 }
 	})
+	const clipBadge = document.createElement("span")
+	clipBadge.className = "mixer-clip-badge"
+	clipBadge.textContent = "CLIP"
+	clipBadge.setAttribute("aria-hidden", "true")
+	host.append(clipBadge)
 	host.classList.add("mixer-meter")
 	host.setAttribute("role", "meter")
 	host.setAttribute("aria-label", "Output level in dBFS")

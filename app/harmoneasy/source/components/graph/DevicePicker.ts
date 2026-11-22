@@ -321,7 +321,23 @@ export function createDevicePicker(
 			search.value
 		)
 		host.setAttribute("aria-busy", String(loading || busy))
-		results.replaceChildren(
+		const focusedEl = document.activeElement
+		const focusedChoice =
+			focusedEl instanceof HTMLElement && results.contains(focusedEl)
+				? focusedEl.querySelector("span")?.textContent ?? focusedEl.textContent
+				: undefined
+		results.replaceChildren()
+		const errorBanner = element("p", "")
+		errorBanner.setAttribute("role", "alert")
+		errorBanner.setAttribute("aria-live", "assertive")
+		errorBanner.textContent = error
+		if (error) {
+			results.append(errorBanner)
+		}
+		const statusBanner = element("p", "")
+		statusBanner.setAttribute("role", "status")
+		statusBanner.setAttribute("aria-live", "polite")
+		results.append(
 			createSharedDevices(context, {
 				direction,
 				filterDevice: audioProcessorsOnly
@@ -340,31 +356,33 @@ export function createDevicePicker(
 				}
 			})
 		)
-		if (error) {
-			const alert = element("p", "", error)
-			alert.setAttribute("role", "alert")
-			results.append(alert)
-		}
-		const status = (text: string) => {
-			const node = element("p", "", text)
-			node.setAttribute("role", "status")
-			results.append(node)
-		}
+		const statusParts: string[] = []
 		if (!loading && midiFactory && !midiPorts.length) {
-			status(`No MIDI ${direction} devices connected.`)
+			statusParts.push(`No MIDI ${direction} devices connected.`)
 		}
 		if (loading) {
-			status(`Loading ${direction}s…`)
-			results.lastElementChild!.prepend(createLoader(), " ")
+			statusBanner.textContent = `Loading ${direction}s…`
+			statusBanner.prepend(createLoader(), " ")
+			results.append(statusBanner)
 			return
 		}
 		if (filtered.length) {
-			status(`${filtered.length} matching ${direction}s`)
+			statusParts.push(`${filtered.length} matching ${direction}s`)
+		} else if (!unavailable.length && !error) {
+			statusParts.push(
+				search.value || classification
+					? `No ${direction}s match the selected filters`
+					: `No ${direction}s available`
+			)
+		}
+		statusBanner.textContent = statusParts.join(" · ")
+		if (statusParts.length) {
+			results.append(statusBanner)
 		}
 		for (const group of groupChoices(filtered)) {
 			const section = element("section", "choice-group")
 			section.setAttribute("aria-label", group.label)
-			section.append(element("h6", "section-title", group.label))
+			section.append(element("h3", "section-title", group.label))
 			const list = element("ul", dialog ? "items-grid" : "")
 			list.setAttribute("role", "list")
 			list.append(...group.items.map(choiceItem))
@@ -376,12 +394,11 @@ export function createDevicePicker(
 				createUnavailableSection(unavailable.map(choiceItem), dialog, `${direction}s`)
 			)
 		}
-		if (!filtered.length && !unavailable.length && !error) {
-			status(
-				search.value || classification
-					? `No ${direction}s match the selected filters`
-					: `No ${direction}s available`
+		if (focusedChoice) {
+			const match = [...results.querySelectorAll<HTMLButtonElement>("button:not([disabled])")].find(
+				(btn) => (btn.querySelector("span")?.textContent ?? btn.textContent) === focusedChoice
 			)
+			match?.focus()
 		}
 	}
 	async function load() {

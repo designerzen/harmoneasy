@@ -2,10 +2,15 @@ import type { ClassroomRole } from "./classroom-session"
 import {
 	DEFAULT_ACCESSIBILITY,
 	type AccessibilityPreferences,
+	type AnnouncementMode,
 	type ContrastMode,
+	type FocusIndicatorMode,
+	type FontScale,
 	type MotionPreference,
 	type PaletteMode,
-	type TargetSize
+	type ReadableFont,
+	type TargetSize,
+	type TextSpacing
 } from "./accessibility"
 import type { FocusStageMode, FocusStagePadCount } from "./focus-stage"
 import { createPartsUrl } from "./parts-url"
@@ -200,8 +205,25 @@ export function parseAccessProfile(value: unknown): AccessProfile {
 		targetSize: (["default", "large", "xlarge"].includes(String(raw.targetSize))
 			? raw.targetSize
 			: "default") as TargetSize,
-		reducedMotion: (raw.reducedMotion === "reduce" ? "reduce" : "system") as MotionPreference,
+		fontScale: (["default", "large", "xlarge", "xxlarge"].includes(String(raw.fontScale))
+			? raw.fontScale
+			: "default") as FontScale,
+		textSpacing: (["default", "comfortable", "wide"].includes(String(raw.textSpacing))
+			? raw.textSpacing
+			: "default") as TextSpacing,
+		readableFont: (["default", "sans", "mono"].includes(String(raw.readableFont))
+			? raw.readableFont
+			: "default") as ReadableFont,
+		focusIndicator: (["default", "enhanced", "maximum"].includes(String(raw.focusIndicator))
+			? raw.focusIndicator
+			: "default") as FocusIndicatorMode,
+		underlineLinks: raw.underlineLinks === true,
+		reducedMotion: (["system", "reduce", "allow"].includes(String(raw.reducedMotion))
+			? raw.reducedMotion
+			: "system") as MotionPreference,
+		announcements: (raw.announcements === "minimal" ? "minimal" : "normal") as AnnouncementMode,
 		beatFlash: raw.beatFlash === true,
+		characterShortcuts: raw.characterShortcuts !== false,
 		stabilizerEnabled: raw.stabilizerEnabled === true,
 		debounceMs: Math.round(clamp(raw.debounceMs, DEFAULT_ACCESS_PROFILE.debounceMs, 0, 500)),
 		holdThresholdMs: Math.round(

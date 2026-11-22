@@ -1,5 +1,7 @@
+import { EVENT_CLOSE } from "audiobus/events/event-constants"
 import type IOChain from "audiobus/io/IO-chain"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
+import { captureFocusReturn } from "../../libs/dialog-utils"
 import { applyPreset, readPresets, savePreset } from "./saved-presets"
 import { createPresetBrowser } from "./PresetBrowser"
 import { element, button } from "./dom"
@@ -8,10 +10,9 @@ export function createPresets(chain: IOChain, manager: IOChainManager) {
 	const host = element("div", "presets")
 	const status = element("span")
 	status.setAttribute("role", "status")
-	status.hidden = true
+	status.setAttribute("aria-live", "polite")
 	const showStatus = (text: string) => {
 		status.textContent = text
-		status.hidden = !text
 	}
 	const browser = createPresetBrowser({
 		hideTrigger: true,
@@ -33,15 +34,20 @@ export function createPresets(chain: IOChain, manager: IOChainManager) {
 	const label = element("label", "", "Preset name")
 	label.append(name)
 	const message = element("p")
-	message.setAttribute("role", "status")
-	message.hidden = true
+	message.setAttribute("role", "alert")
+	message.setAttribute("aria-live", "assertive")
 	const save = element("button", "primary", "Save")
 	save.type = "submit"
 	let overwriteId: string | undefined
+	let restoreFocus: (() => void) | undefined
 	const close = () => dialog.close()
+	dialog.addEventListener(EVENT_CLOSE, () => {
+		restoreFocus?.()
+		restoreFocus = undefined
+	})
 	const rename = button("Rename", () => {
 		overwriteId = undefined
-		message.hidden = true
+		message.textContent = ""
 		save.textContent = "Save"
 		rename.hidden = true
 		name.readOnly = false
@@ -62,7 +68,6 @@ export function createPresets(chain: IOChain, manager: IOChainManager) {
 				if (duplicate) {
 					overwriteId = duplicate.id
 					message.textContent = `A preset named “${duplicate.name}” already exists. Overwrite it with this chain, or rename your new preset.`
-					message.hidden = false
 					save.textContent = "Overwrite"
 					rename.hidden = false
 					name.readOnly = true
@@ -75,7 +80,6 @@ export function createPresets(chain: IOChain, manager: IOChainManager) {
 			showStatus("Preset saved")
 		} catch (error) {
 			message.textContent = error instanceof Error ? error.message : String(error)
-			message.hidden = false
 		}
 	}
 	dialog.append(title, form)
@@ -84,10 +88,11 @@ export function createPresets(chain: IOChain, manager: IOChainManager) {
 	return {
 		element: host,
 		openSave() {
+			restoreFocus = captureFocusReturn()
 			name.value = chain.options.name ?? ""
 			name.readOnly = false
 			overwriteId = undefined
-			message.hidden = true
+			message.textContent = ""
 			rename.hidden = true
 			save.textContent = "Save"
 			showStatus("")

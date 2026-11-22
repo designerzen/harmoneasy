@@ -59,7 +59,7 @@ export function NodeHeader({
 			{description ? (
 				<details className="node-title-details nodrag nopan">
 					<summary title="Show device information">
-						<h6>{title}</h6>
+						<span className="node-title-heading">{title}</span>
 						<svg className="node-info-icon" viewBox="0 0 24 24" aria-hidden="true">
 							<circle cx="12" cy="12" r="9" />
 							<path d="M12 11v6" />
@@ -69,7 +69,7 @@ export function NodeHeader({
 					<p>{description}</p>
 				</details>
 			) : (
-				<h6>{title}</h6>
+				<h3 className="node-title-heading">{title}</h3>
 			)}
 		</header>
 	)

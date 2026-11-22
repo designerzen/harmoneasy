@@ -55,6 +55,7 @@ export function createCalibrationDialog({
 	let activeTapDownMs: number | null = null
 	let dwellSamples: number[] = []
 	let dwellEnterMs: number | null = null
+	let previousFocus: HTMLElement | null = null
 
 	const dialog = doc.createElement("dialog")
 	dialog.id = "access-calibration-dialog"
@@ -83,14 +84,15 @@ export function createCalibrationDialog({
 			<section class="cal-card" aria-labelledby="cal-step-dwell">
 				<h3 id="cal-step-dwell">2. Dwell Hover &amp; Microphone Clap (Optional)</h3>
 				<div class="cal-pad-row">
-					<button type="button" id="cal-dwell-pad" class="cal-dwell-pad">Hover here as long as feels natural, then move away</button>
-					<label for="cal-mic-threshold">Mic clap threshold
-						<input id="cal-mic-threshold" type="range" min="0.04" max="0.75" step="0.01" value="0.15" />
+					<button type="button" id="cal-dwell-pad" class="cal-dwell-pad">Hover here (or hold Space/Enter) as long as feels natural, then release</button>
+					<div class="cal-mic-group">
+						<label for="cal-mic-threshold">Mic clap threshold</label>
+						<input id="cal-mic-threshold" type="range" min="0.04" max="0.75" step="0.01" value="0.15" aria-describedby="cal-mic-value" />
 						<output id="cal-mic-value" for="cal-mic-threshold">Off</output>
-					</label>
+					</div>
 					<button type="button" id="cal-mic-enable" class="secondary">Include Mic Clap</button>
 				</div>
-				<p id="cal-dwell-result" class="cal-result" role="status"></p>
+				<p id="cal-dwell-result" class="cal-result" role="status" aria-live="polite"></p>
 			</section>
 
 			<section class="cal-card" aria-labelledby="cal-step-profile">
@@ -290,8 +292,8 @@ export function createCalibrationDialog({
 
 	tapPad.addEventListener(
 		EVENT_POINTER_DOWN,
-		(event) => {
-			event.preventDefault()
+		() => {
+			tapPad.focus()
 			activeTapDownMs = Date.now()
 		},
 		{ signal: abort.signal }
@@ -330,6 +332,21 @@ export function createCalibrationDialog({
 		{ signal: abort.signal }
 	)
 
+	const finishDwellSample = () => {
+		if (dwellEnterMs === null) {
+			return
+		}
+		const held = Date.now() - dwellEnterMs
+		dwellEnterMs = null
+		if (held > 120) {
+			dwellSamples.push(held)
+			const result = calibrateDwellTiming(dwellSamples)
+			profile = { ...profile, dwellMs: result.dwellMs }
+			dwellResult.textContent = result.summary
+			syncFields()
+		}
+	}
+
 	dwellPad.addEventListener(
 		EVENT_POINTER_OVER,
 		() => {
@@ -337,20 +354,23 @@ export function createCalibrationDialog({
 		},
 		{ signal: abort.signal }
 	)
+	dwellPad.addEventListener(EVENT_POINTER_OUT, finishDwellSample, { signal: abort.signal })
 	dwellPad.addEventListener(
-		EVENT_POINTER_OUT,
-		() => {
-			if (dwellEnterMs === null) {
-				return
+		EVENT_KEY_DOWN,
+		(event) => {
+			if (!event.repeat && (event.code === "Space" || event.key === "Enter")) {
+				event.preventDefault()
+				dwellEnterMs = Date.now()
 			}
-			const held = Date.now() - dwellEnterMs
-			dwellEnterMs = null
-			if (held > 120) {
-				dwellSamples.push(held)
-				const result = calibrateDwellTiming(dwellSamples)
-				profile = { ...profile, dwellMs: result.dwellMs }
-				dwellResult.textContent = result.summary
-				syncFields()
+		},
+		{ signal: abort.signal }
+	)
+	dwellPad.addEventListener(
+		EVENT_KEY_UP,
+		(event) => {
+			if (event.code === "Space" || event.key === "Enter") {
+				event.preventDefault()
+				finishDwellSample()
 			}
 		},
 		{ signal: abort.signal }
@@ -544,11 +564,18 @@ export function createCalibrationDialog({
 		() => {
 			activeTapDownMs = null
 			dwellEnterMs = null
+			const target = previousFocus?.isConnected ? previousFocus : null
+			previousFocus = null
+			target?.focus()
 		},
 		{ signal: abort.signal }
 	)
 
 	const open = () => {
+		previousFocus =
+			doc.activeElement instanceof HTMLElement && doc.activeElement !== doc.body
+				? doc.activeElement
+				: null
 		tapSamples = []
 		dwellSamples = []
 		activeTapDownMs = null

@@ -7,8 +7,14 @@ html {
 body {
 	font-family: var(--font-ui);
 	font-size: var(--text-md);
-	line-height: 1.4;
+	line-height: var(--line-height);
+	letter-spacing: var(--letter-spacing);
+	word-spacing: var(--word-spacing);
 	font-weight: 400;
+}
+
+:root[data-text-spacing] p + p {
+	margin-top: var(--paragraph-gap);
 }
 
 time,
@@ -31,7 +37,7 @@ label {
 	font-family: inherit;
 	font-size: inherit;
 	font-weight: 400;
-	line-height: 1.4;
+	line-height: var(--line-height);
 }
 
 h1,

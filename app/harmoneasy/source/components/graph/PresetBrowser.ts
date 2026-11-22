@@ -193,6 +193,8 @@ export function createPresetBrowser({
 	const fileInput = element("input", "sr-only")
 	fileInput.type = "file"
 	fileInput.accept = ".json,application/json"
+	fileInput.tabIndex = -1
+	fileInput.setAttribute("aria-hidden", "true")
 	fileInput.setAttribute("aria-label", "Import preset library")
 	fileInput.onchange = async () => {
 		const file = fileInput.files?.[0]
@@ -232,6 +234,7 @@ export function createPresetBrowser({
 		saveSetupButton,
 		button("Cancel", () => {
 			saveForm.hidden = true
+			saveCurrentBtn?.focus()
 		})
 	)
 	saveForm.onsubmit = (event) => {
@@ -265,14 +268,14 @@ export function createPresetBrowser({
 			render()
 		})
 	)
+	let saveCurrentBtn: HTMLButtonElement | undefined
 	if (manager) {
-		toolActions.append(
-			button("Save current setup", () => {
-				setupName.value = "My setup"
-				saveForm.hidden = false
-				setupName.focus()
-			})
-		)
+		saveCurrentBtn = button("Save current setup", () => {
+			setupName.value = "My setup"
+			saveForm.hidden = false
+			setupName.focus()
+		})
+		toolActions.append(saveCurrentBtn)
 	}
 	const publishForm = element("form", "preset-setup-save")
 	publishForm.hidden = true
@@ -301,6 +304,7 @@ export function createPresetBrowser({
 		publishSubmit,
 		button("Cancel", () => {
 			publishForm.hidden = true
+			exportPublishBtn?.focus()
 		})
 	)
 	publishForm.onsubmit = (event) => {
@@ -328,13 +332,13 @@ export function createPresetBrowser({
 			message = `Downloaded. Add the file at ${exported.repositoryPath} in your pull request.`
 		})
 	}
+	let exportPublishBtn: HTMLButtonElement | undefined
 	if (manager) {
-		toolActions.append(
-			button("Export preset for publishing", () => {
-				publishForm.hidden = false
-				publishName.focus()
-			})
-		)
+		exportPublishBtn = button("Export preset for publishing", () => {
+			publishForm.hidden = false
+			publishName.focus()
+		})
+		toolActions.append(exportPublishBtn)
 	}
 	const undoButton = button("Undo delete", () =>
 		run(() => {
@@ -400,7 +404,8 @@ export function createPresetBrowser({
 		trigger.textContent = createChain ? "New" : "Apply a preset…"
 		trigger.onclick = () => {
 			dialog.showModal()
-			apply.focus({ preventScroll: true })
+			const searchInput = surface.querySelector<HTMLElement>('input[type="search"]')
+			;(searchInput ?? apply).focus({ preventScroll: true })
 		}
 		trigger.hidden = hideTrigger
 		if (createChain) {
@@ -583,14 +588,19 @@ export function createPresetBrowser({
 			editor = null
 			message = ""
 			render()
+			nav.querySelector<HTMLButtonElement>(`[data-preset-id="${CSS.escape(id)}"]`)?.focus({
+				preventScroll: true
+			})
 			if (window.matchMedia("(max-width: 640px)").matches) {
 				preview.scrollIntoView?.({ block: "start", behavior: "smooth" })
 			}
 		}
 		const card = (item: TransformerPreset, id: string, active: boolean) => {
 			const node = button("", () => choose(id))
+			node.dataset.presetId = id
 			node.disabled = busy
 			node.setAttribute("aria-pressed", String(active))
+			node.setAttribute("aria-current", active ? "true" : "false")
 			const label = element("span", "", item.name)
 			if (id.startsWith("preset:")) {
 				label.append(element("small", "preset-list-description", item.description))
@@ -669,6 +679,7 @@ export function createPresetBrowser({
 				button("Cancel edit", () => {
 					editor = null
 					render()
+					preview.querySelector<HTMLElement>("summary, button, a")?.focus()
 				})
 			)
 			form.onsubmit = (event) => {
@@ -691,6 +702,7 @@ export function createPresetBrowser({
 				})
 			}
 			preview.append(form)
+			text.focus()
 		} else {
 			if (preset) {
 				preview.append(createPresetDetails(preset))
@@ -802,10 +814,13 @@ export function createPresetBrowser({
 				preview.append(details)
 			}
 		}
-		status.textContent = storageError || message
-		status.hidden = !status.textContent
-		libraryStatus.textContent = status.textContent
-		libraryStatus.hidden = status.hidden
+		const nextStatus = storageError || message
+		status.setAttribute("role", storageError ? "alert" : "status")
+		status.setAttribute("aria-live", storageError ? "assertive" : "polite")
+		status.textContent = nextStatus
+		libraryStatus.setAttribute("role", storageError ? "alert" : "status")
+		libraryStatus.setAttribute("aria-live", storageError ? "assertive" : "polite")
+		libraryStatus.textContent = nextStatus
 		undoButton.hidden = !undo
 		for (const node of toolActions.querySelectorAll("button")) {
 			node.disabled = busy || !!storageError

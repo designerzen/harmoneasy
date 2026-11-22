@@ -23,10 +23,10 @@ export function roomFallbackHtml(roomPath, playPath) {
       place-items: center;
       background: var(--col-bg);
       color: var(--col-fg);
-      font: 16px/1.5 system-ui, sans-serif;
+      font: 1rem/1.5 system-ui, sans-serif;
       text-align: center;
     }
-    main { padding: 32px 24px; }
+    main { padding: 2rem 1.5rem; }
     .equalizer {
       display: flex;
       align-items: center;
@@ -47,9 +47,9 @@ export function roomFallbackHtml(roomPath, playPath) {
     .equalizer span:nth-child(3) { animation-delay: -0.6s; }
     .equalizer span:nth-child(4) { animation-delay: -0.4s; }
     .equalizer span:nth-child(5) { animation-delay: -0.2s; }
-    h1 { margin: 0; font-size: 24px; font-weight: 600; }
-    p { margin: 12px 0 0; color: var(--col-muted); }
-    a { color: var(--col-muted); text-underline-offset: 4px; font-size: 14px; }
+    h1 { margin: 0; font-size: 1.5rem; font-weight: 600; }
+    p { margin: 0.75rem 0 0; color: var(--col-muted); }
+    a { color: var(--col-muted); text-underline-offset: 4px; font-size: 0.875rem; }
     a:hover { color: var(--col-accent); }
     a:focus-visible { outline: 2px solid var(--col-accent); outline-offset: 6px; }
     noscript { display: block; margin-top: 16px; }
