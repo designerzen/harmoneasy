@@ -1,6 +1,7 @@
 import { EVENT_CHANGE, EVENT_CLICK } from "audiobus/events/event-constants"
 import { NOTE_NAMES, SCALE_FAMILIES } from "audiobus/io/harmony"
 import { mapPitchSet } from "audiobus/tuning/pitch-class-set"
+import type { AccessProfile } from "./access-profile"
 import {
 	CLASSROOM_ROLES,
 	EVENT_CLASSROOM_CHANGED,
@@ -17,6 +18,7 @@ export interface ClassroomPanelOptions {
 	getBpm: () => number
 	getSwing: () => number
 	getNow: () => number
+	getAccessProfile?: () => Partial<AccessProfile> | undefined
 	isConductor: () => boolean
 	onHarmonyChange: (harmony: { root: number; scale: number; chord: number }) => void
 	onStateUpdated: () => void
@@ -114,7 +116,18 @@ export function createClassroomPanel(options: ClassroomPanelOptions) {
 	const copyRoleLink = element("button", "Copy role preset link")
 	copyRoleLink.type = "button"
 	copyRoleLink.id = "classroom-copy-role-link"
-	inviteBar.append(quickRoleLabel, copyRoleLink)
+
+	const includeAccessLabel = element("label")
+	includeAccessLabel.className = "classroom-toggle"
+	const includeAccessCheckbox = element("input")
+	includeAccessCheckbox.type = "checkbox"
+	includeAccessCheckbox.id = "classroom-include-access"
+	includeAccessLabel.append(
+		includeAccessCheckbox,
+		"Include calibrated accessibility profile in seat links"
+	)
+
+	inviteBar.append(quickRoleLabel, copyRoleLink, includeAccessLabel)
 	rosterSection.append(inviteBar)
 
 	// Multi-track jam export section
@@ -144,6 +157,9 @@ export function createClassroomPanel(options: ClassroomPanelOptions) {
 
 	const copySeatLink = async (role: ClassroomRole, seatName?: string) => {
 		try {
+			const accessProfile = includeAccessCheckbox.checked
+				? options.getAccessProfile?.()
+				: undefined
 			const url = buildSeatPresetUrl({
 				location: window.location.href,
 				base: import.meta.env.BASE_URL ?? "/",
@@ -151,11 +167,14 @@ export function createClassroomPanel(options: ClassroomPanelOptions) {
 				role,
 				seatName,
 				bpm: options.getBpm(),
-				swing: options.getSwing()
+				swing: options.getSwing(),
+				accessProfile
 			})
 			await navigator.clipboard.writeText(url)
 			const roleLabel = CLASSROOM_ROLES.find((r) => r.id === role)?.label ?? role
-			status.textContent = `Copied ${roleLabel} seat preset link.`
+			status.textContent = accessProfile
+				? `Copied ${roleLabel} seat link with calibrated accessibility profile.`
+				: `Copied ${roleLabel} seat preset link.`
 		} catch (error) {
 			status.textContent =
 				error instanceof Error ? error.message : "Could not copy seat link."

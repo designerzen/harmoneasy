@@ -16,6 +16,11 @@ import { DRUM_ACCOMPANIMENT, MOOG, TB303 } from "audiobus/io/outputs/output-type
 import { ID_CHORD_TRACK } from "audiobus/io/transformers/transformer-chord-track"
 import { ID_QUANTISE } from "audiobus/io/transformers/transformer-quantise"
 import { mapPitchSet, mod12, pitchClasses, quantisePitchSet } from "audiobus/tuning/pitch-class-set"
+import {
+	ACCESS_PROFILE_PARAM,
+	encodeAccessProfile,
+	type AccessProfile
+} from "./access-profile"
 import { createPartsUrl } from "./parts-url"
 import { roomName } from "./room-url"
 
@@ -271,6 +276,7 @@ export interface SeatPresetUrlOptions {
 	seatName?: string
 	bpm?: number
 	swing?: number
+	accessProfile?: Partial<AccessProfile>
 }
 
 /** Build a validated `/parts/v1/` Harmoneasy link configured for a classroom seat role. */
@@ -318,13 +324,18 @@ export function buildSeatPresetUrl(options: SeatPresetUrlOptions): string {
 		params.swing = String(options.swing)
 	}
 	const href = createPartsUrl(options.location, base, params)
-	if (!options.roomId) {
+	if (!options.roomId && !options.accessProfile) {
 		return href
 	}
 	const url = new URL(href)
-	const fragment = new URLSearchParams(url.hash.slice(1))
-	fragment.set("room", roomName(options.roomId))
-	url.hash = fragment.toString()
+	if (options.accessProfile) {
+		url.searchParams.set(ACCESS_PROFILE_PARAM, encodeAccessProfile(options.accessProfile))
+	}
+	if (options.roomId) {
+		const fragment = new URLSearchParams(url.hash.slice(1))
+		fragment.set("room", roomName(options.roomId))
+		url.hash = fragment.toString()
+	}
 	return url.href
 }
 

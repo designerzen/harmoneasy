@@ -31,7 +31,14 @@ const KEYS = new Set([
 	"config"
 ])
 const LISTS = new Set(["inputs", "outputs", "transformers"])
-const PASSTHROUGH = new Set(["play", "room", "room-setup", "sync-bundle", PARTS_REDIRECT_KEY])
+const PASSTHROUGH = new Set([
+	"play",
+	"room",
+	"room-setup",
+	"sync-bundle",
+	"access",
+	PARTS_REDIRECT_KEY
+])
 const MAX_DATA = 65536
 
 function fail(message: string): never {

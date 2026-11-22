@@ -111,7 +111,8 @@ function wizardIcon(name: string) {
 
 export function createSetupWizard(
 	trigger: HTMLButtonElement,
-	onStart: (setup: PresetSetup) => void
+	onStart: (setup: PresetSetup) => void,
+	options?: { onCalibrate?: () => void }
 ) {
 	const dialog = document.createElement("dialog")
 	dialog.id = "setup-wizard"
@@ -480,6 +481,21 @@ export function createSetupWizard(
 			actions.append(speak, build, stop, aiToggle)
 			details.append(summary, help, label, speechLabel, actions)
 			question.append(details)
+			if (options?.onCalibrate) {
+				const calBar = document.createElement("div")
+				calBar.className = "wizard-calibrate-bar"
+				const calBtn = document.createElement("button")
+				calBtn.type = "button"
+				calBtn.className = "secondary"
+				calBtn.dataset.wizardCalibrate = ""
+				calBtn.textContent = "Calibrate access profile & learner link…"
+				calBtn.addEventListener(EVENT_CLICK, () => {
+					close()
+					options.onCalibrate?.()
+				})
+				calBar.append(calBtn)
+				question.append(calBar)
+			}
 		} else if (step === "recipe") {
 			choices(
 				"wizard-recipe",
@@ -587,6 +603,18 @@ export function createSetupWizard(
 				list.append(li)
 			}
 			question.append(list)
+			if (answers.goal === "access" && options?.onCalibrate) {
+				const calBtn = document.createElement("button")
+				calBtn.type = "button"
+				calBtn.className = "secondary"
+				calBtn.dataset.wizardCalibrate = ""
+				calBtn.textContent = "Calibrate timing & copy learner link…"
+				calBtn.addEventListener(EVENT_CLICK, () => {
+					close()
+					options.onCalibrate?.()
+				})
+				question.append(calBtn)
+			}
 			paragraph(
 				"Creating this setup starts a fresh workspace and replaces the workspace from your previous session. You can change the sounds and patterns afterwards."
 			)

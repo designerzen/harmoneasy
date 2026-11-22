@@ -15,7 +15,9 @@ import { registerInterfaceCommands } from "./services/interface-commands"
 import { registerApplicationCommands } from "./services/application-commands"
 import { createRemoteControlButton } from "./services/remote-control-window"
 import { createThemeControls } from "./services/theme"
-import { createAccessibilityControls } from "./services/accessibility"
+import { applySensoryPreset, createAccessibilityControls } from "./services/accessibility"
+import { createCalibrationDialog } from "./services/access-calibration-dialog"
+import { readAccessProfileFromUrl, type AccessProfile } from "./services/access-profile"
 import { createFocusStage } from "./services/focus-stage"
 import { installMotorStabilizer } from "./services/motor-stabilizer"
 import { createEmptySetup, createStartContexts } from "./services/start-contexts"
@@ -41,6 +43,7 @@ import {
 	EVENT_CANCEL,
 	EVENT_CHAIN_ACTIVE_CHANGED,
 	EVENT_CHAINS_UPDATED,
+	EVENT_CLICK,
 	EVENT_HARMONY_CHANGED,
 	EVENT_HARMONY_SETTINGS_CHANGED,
 	EVENT_PAGE_HIDE,
@@ -83,6 +86,20 @@ configureAudiobus()
 
 createThemeControls(document)
 const accessibilityControls = createAccessibilityControls(document)
+let pendingAccessProfile: AccessProfile | undefined = readAccessProfileFromUrl(window.location.href)
+if (pendingAccessProfile) {
+	accessibilityControls.update({
+		contrast: pendingAccessProfile.contrast,
+		palette: pendingAccessProfile.palette,
+		targetSize: pendingAccessProfile.targetSize,
+		reducedMotion: pendingAccessProfile.reducedMotion,
+		beatFlash: pendingAccessProfile.beatFlash,
+		stabilizerEnabled: pendingAccessProfile.stabilizerEnabled,
+		debounceMs: pendingAccessProfile.debounceMs,
+		holdThresholdMs: pendingAccessProfile.holdThresholdMs,
+		minDurationMs: pendingAccessProfile.minDurationMs
+	})
+}
 createAboutDialog(document)
 createCommandPalette(document)
 registerInterfaceCommands(document)
@@ -274,8 +291,12 @@ const initialiseApplication = async (
 		doc: document,
 		accessibility: accessibilityControls,
 		audioContext: bus.audioContext,
-		getNow: () => timer.now
+		getNow: () => timer.now,
+		onCalibrate: () => calibrationDialog.open()
 	})
+	if (pendingAccessProfile) {
+		focusStage.applyProfile(pendingAccessProfile)
+	}
 	const audioRecording = createRecordingControls(
 		bus.audioContext,
 		bus.output,
@@ -412,6 +433,10 @@ const initialiseApplication = async (
 	netronomeLink = createNetronomeLink(timer, () => ioManager.transportRunning, {
 		manager: ioManager,
 		roomId: roomInvitation.roomId,
+		getAccessProfile: () => ({
+			...accessibilityControls.getPreferences(),
+			...focusStage?.getStageConfig()
+		}),
 		onConductorChanged: (conductor) => clockSource?.adoptRoomRole(conductor),
 		onLeaveRequested: () => clockSource?.setSource("internal") ?? Promise.resolve(),
 		source: initialClockSource,
@@ -693,11 +718,49 @@ try {
 	message.hidden = false
 	message.textContent = error instanceof Error ? error.message : "Invalid room setup link."
 }
+const calibrationDialog = createCalibrationDialog({
+	doc: document,
+	accessibility: accessibilityControls,
+	getStageConfig: () => focusStage?.getStageConfig() ?? {},
+	baseUrl: import.meta.env.BASE_URL,
+	onApply: (profile, sensoryPreset) => {
+		pendingAccessProfile = profile
+		accessibilityControls.update({
+			contrast: profile.contrast,
+			palette: profile.palette,
+			targetSize: profile.targetSize,
+			reducedMotion: profile.reducedMotion,
+			beatFlash: profile.beatFlash,
+			stabilizerEnabled: profile.stabilizerEnabled,
+			debounceMs: profile.debounceMs,
+			holdThresholdMs: profile.holdThresholdMs,
+			minDurationMs: profile.minDurationMs
+		})
+		if (ioManager && sensoryPreset !== "none") {
+			void applySensoryPreset(ioManager, sensoryPreset, accessibilityControls)
+		}
+		if (focusStage) {
+			focusStage.applyProfile(profile)
+			if (profile.openFocusStage) {
+				focusStage.open()
+			}
+		}
+	}
+})
+document.getElementById("a11y-calibrate")?.addEventListener(EVENT_CLICK, () => {
+	calibrationDialog.open()
+})
 startDialog.removeAttribute("open")
 const wizardButton = startDialog.querySelector<HTMLButtonElement>("#start-wizard")!
-createSetupWizard(wizardButton, (setup) => {
-	void startApplication(wizardButton, setup)
-})
+createSetupWizard(
+	wizardButton,
+	(setup) => {
+		void startApplication(wizardButton, setup)
+	},
+	{
+		onCalibrate: () => calibrationDialog.open()
+	}
+)
 startDialog.showModal()
 startDialog.addEventListener(EVENT_CANCEL, (event) => event.preventDefault())
 async function startApplication(button: HTMLButtonElement, setup?: PresetSetup) {
@@ -723,6 +786,10 @@ async function startApplication(button: HTMLButtonElement, setup?: PresetSetup) 
 		startDialog.close()
 		await nextPaint()
 		veil.hide()
+		if (pendingAccessProfile?.openFocusStage && focusStage) {
+			focusStage.applyProfile(pendingAccessProfile)
+			focusStage.open()
+		}
 	} catch (error) {
 		veil.hide()
 		setButtonBusy(button, false)

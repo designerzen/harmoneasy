@@ -1,5 +1,6 @@
 import { createRoomConnection, ROOM_PROTOCOL } from "./room-connection"
 import { RoomWorkspace } from "./room-workspace"
+import type { AccessProfile } from "./access-profile"
 import { createClassroomPanel } from "./classroom-panel"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
 import {
@@ -60,6 +61,7 @@ export function createNetronomeLink(
 		onLeaveRequested?: () => Promise<void>
 		onConductorChanged?: (conductor: boolean) => void
 		roomId?: string
+		getAccessProfile?: () => Partial<AccessProfile> | undefined
 	} = {}
 ) {
 	const button = document.getElementById("netronome-link") as HTMLButtonElement
@@ -87,6 +89,7 @@ export function createNetronomeLink(
 		getBpm: () => Number(timer?.BPM) || 120,
 		getSwing: () => Number(timer?.swing) || 0,
 		getNow: () => Number(timer?.now) || 0,
+		getAccessProfile: options.getAccessProfile,
 		isConductor: () => !follower,
 		onHarmonyChange: (harmony) => {
 			options.manager?.setHarmony?.(harmony)

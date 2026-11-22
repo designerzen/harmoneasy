@@ -22,6 +22,7 @@ import {
 	applySensoryPreset,
 	type AccessibilityController
 } from "./accessibility"
+import type { AccessProfile } from "./access-profile"
 import { describeHarmony } from "./classroom-session"
 import { attachCameraGestures, createDwellController } from "./dwell-controller"
 import {
@@ -153,6 +154,7 @@ export interface FocusStageOptions {
 	accessibility: AccessibilityController
 	audioContext?: AudioContext
 	getNow?: () => number
+	onCalibrate?: () => void
 }
 
 /** Full-viewport, distraction-free non-React performance surface with switch scanning, dwell, and beat pulse. */
@@ -161,7 +163,8 @@ export function createFocusStage({
 	doc,
 	accessibility,
 	audioContext,
-	getNow = () => 0
+	getNow = () => 0,
+	onCalibrate
 }: FocusStageOptions) {
 	const abort = new AbortController()
 	let mode: FocusStageMode = "scale"
@@ -307,6 +310,12 @@ export function createFocusStage({
 	cameraBtn.id = "focus-stage-camera"
 	cameraBtn.textContent = "Camera / Head"
 
+	const calibrateBtn = doc.createElement("button")
+	calibrateBtn.type = "button"
+	calibrateBtn.id = "focus-stage-calibrate"
+	calibrateBtn.textContent = "Calibrate / Link"
+	calibrateBtn.hidden = !onCalibrate
+
 	const lowVisionBtn = doc.createElement("button")
 	lowVisionBtn.type = "button"
 	lowVisionBtn.id = "focus-stage-preset-low-vision"
@@ -331,6 +340,7 @@ export function createFocusStage({
 		cueLabel,
 		dwellLabel,
 		cameraBtn,
+		calibrateBtn,
 		lowVisionBtn,
 		deafTactileBtn,
 		closeBtn
@@ -785,6 +795,14 @@ export function createFocusStage({
 		{ signal: abort.signal }
 	)
 
+	calibrateBtn.addEventListener(
+		EVENT_CLICK,
+		() => {
+			onCalibrate?.()
+		},
+		{ signal: abort.signal }
+	)
+
 	const runSensoryPreset = async (presetId: "low-vision" | "deaf-tactile") => {
 		try {
 			const result = await applySensoryPreset(manager, presetId, accessibility)
@@ -837,11 +855,67 @@ export function createFocusStage({
 		}, 140)
 	}
 
+	const applyProfile = (profile: Partial<AccessProfile>) => {
+		if (profile.stageMode) {
+			mode = profile.stageMode
+			modeSelect.value = mode
+		}
+		if (profile.padCount === 1 || profile.padCount === 4 || profile.padCount === 8) {
+			padCount = profile.padCount
+			countSelect.value = String(padCount)
+		}
+		if (profile.releaseMode) {
+			releaseMode = profile.releaseMode
+			releaseSelect.value = releaseMode
+		}
+		if (profile.auditoryCue) {
+			cueSelect.value = profile.auditoryCue
+		}
+		if (typeof profile.dwellMs === "number") {
+			dwellMs = profile.dwellMs
+			dwellSelect.value = String(dwellMs)
+		}
+		if (profile.scanMode || typeof profile.scanMs === "number") {
+			const nextScanMode = profile.scanMode ?? scanner.getConfig().mode
+			const nextScanMs = profile.scanMs ?? scanner.getConfig().scanMs
+			scanner.configure({
+				mode: nextScanMode,
+				scanMs: nextScanMs,
+				releaseMode,
+				auditoryCue: (profile.auditoryCue ?? scanner.getConfig().auditoryCue) as AuditoryCueMode
+			})
+			scanSelect.value =
+				nextScanMode === "step-2-switch"
+					? "2-switch"
+					: nextScanMode === "auto-1-switch"
+						? String(nextScanMs)
+						: "0"
+		}
+		if (dialog.open) {
+			renderPads()
+		}
+	}
+
+	const getStageConfig = (): Partial<AccessProfile> => {
+		const scan = scanner.getConfig()
+		return {
+			stageMode: mode,
+			padCount,
+			scanMode: scan.mode,
+			scanMs: scan.scanMs,
+			releaseMode,
+			auditoryCue: scan.auditoryCue,
+			dwellMs
+		}
+	}
+
 	return {
 		dialog,
 		open,
 		close,
 		pulseBeat,
+		applyProfile,
+		getStageConfig,
 		getPads: () => pads,
 		destroy() {
 			scanner.stop()
