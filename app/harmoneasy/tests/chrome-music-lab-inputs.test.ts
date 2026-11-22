@@ -83,13 +83,13 @@ describe("shared modal string physics", () => {
 
 describe("Chrome Music Lab input registrations", () => {
 	const ids = [
-		"arpeggios",
-		"chords",
-		"harmonics",
-		"harmonic-strings",
-		"melody-maker",
-		"scrolling-piano-roll",
-		"sound-waves"
+		"chrome-music-lab-arpeggios",
+		"chrome-music-lab-chords",
+		"chrome-music-lab-harmonics",
+		"chrome-music-lab-strings",
+		"chrome-music-lab-melody-maker",
+		"chrome-music-lab-piano-roll",
+		"chrome-music-lab-sound-waves"
 	] as const
 
 	it.each(ids)(
@@ -98,6 +98,7 @@ describe("Chrome Music Lab input registrations", () => {
 			const def = getInputDefinition(id)
 			expect(def).toBeDefined()
 			expect(def?.category).toBe("UI")
+			expect(def?.name.startsWith("Chrome Music Lab ")).toBe(true)
 			expect(def?.attribution?.sourceUrl).toBe(
 				"https://github.com/googlecreativelab/chrome-music-lab"
 			)
@@ -106,6 +107,7 @@ describe("Chrome Music Lab input registrations", () => {
 			mountedInputs.push(input)
 			const element = await input.createGui()
 			document.body.append(element)
+			expect(element.localName).toBe(id)
 			expect(element.shadowRoot?.childElementCount).toBeGreaterThan(0)
 		}
 	)
@@ -113,7 +115,7 @@ describe("Chrome Music Lab input registrations", () => {
 
 describe("HarmonicsWaves", () => {
 	it("computes the harmonic series from F3 and emits noteOn/noteOff across dragged columns", () => {
-		const element = document.createElement("harmonics-waves") as HarmonicsWaves
+		const element = document.createElement("chrome-music-lab-harmonics") as HarmonicsWaves
 		const canvas = element.shadowRoot!.querySelector("canvas")!
 		mockCanvasRect(canvas, 300, 180)
 		document.body.append(element)
@@ -160,7 +162,7 @@ describe("HarmonicsWaves", () => {
 
 describe("HarmonicStrings", () => {
 	it("creates divided harmonic segments and plucks crossed segments in order", () => {
-		const element = document.createElement("harmonic-strings") as HarmonicStrings
+		const element = document.createElement("chrome-music-lab-strings") as HarmonicStrings
 		const canvas = element.shadowRoot!.querySelector("canvas")!
 		mockCanvasRect(canvas, 300, 200)
 		document.body.append(element)
@@ -202,7 +204,7 @@ describe("HarmonicStrings", () => {
 
 describe("ChordKeyboard", () => {
 	it("plays major and minor triads and releases cleanly on stop", () => {
-		const element = document.createElement("chord-keyboard") as ChordKeyboard
+		const element = document.createElement("chrome-music-lab-chords") as ChordKeyboard
 		element.setAttribute("roll", "false")
 		document.body.append(element)
 		const events = collectNoteEvents(element)
@@ -236,7 +238,7 @@ describe("ArpeggiosWheel", () => {
 		expect(arpeggioChordNotes("A", "minor", 3).slice(0, 3)).toEqual([57, 60, 64])
 		expect(ARPEGGIO_PATTERNS).toHaveLength(5)
 
-		const element = document.createElement("arpeggios-wheel") as ArpeggiosWheel
+		const element = document.createElement("chrome-music-lab-arpeggios") as ArpeggiosWheel
 		element.setAttribute("bpm", "120")
 		document.body.append(element)
 		const events = collectNoteEvents(element)
@@ -257,7 +259,7 @@ describe("MelodyMaker", () => {
 		const serialized = serializeMelodyPattern([0, null, 2, 4, null, null, null, null])
 		expect(parseMelodyPattern(serialized)).toEqual([0, null, 2, 4, null, null, null, null])
 
-		const input = (await createInputById("melody-maker", {
+		const input = (await createInputById("chrome-music-lab-melody-maker", {
 			now: () => 0,
 			attributes: { pattern: serialized, harmony: "right", bpm: "120" }
 		})) as InputWebComponent
@@ -289,7 +291,7 @@ describe("ScrollingPianoRoll", () => {
 			"satie"
 		])
 
-		const element = document.createElement("scrolling-piano-roll") as ScrollingPianoRoll
+		const element = document.createElement("chrome-music-lab-piano-roll") as ScrollingPianoRoll
 		document.body.append(element)
 		const events = collectNoteEvents(element)
 
@@ -305,7 +307,9 @@ describe("ScrollingPianoRoll", () => {
 
 describe("SoundWaves", () => {
 	it("emits noteOn/noteOff from keyboard presses and toggles particle zoom", async () => {
-		const input = (await createInputById("sound-waves", { now: () => 0 })) as InputWebComponent
+		const input = (await createInputById("chrome-music-lab-sound-waves", {
+			now: () => 0
+		})) as InputWebComponent
 		mountedInputs.push(input)
 		const commands: any[] = []
 		input.addEventListener(INPUT_EVENT, (event: any) => commands.push(event.command))

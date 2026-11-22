@@ -70,11 +70,11 @@ const INPUT_ICONS: Partial<Record<InputId, string>> = {
 	"microphone-pitch": "microphone",
 	"dvs-control-vinyl": "vinyl",
 	"device-motion": "motion",
-	arpeggios: "clock",
-	chords: "piano",
-	"melody-maker": "clock",
-	"scrolling-piano-roll": "clock",
-	"sound-waves": "piano"
+	"chrome-music-lab-arpeggios": "clock",
+	"chrome-music-lab-chords": "piano",
+	"chrome-music-lab-melody-maker": "clock",
+	"chrome-music-lab-piano-roll": "clock",
+	"chrome-music-lab-sound-waves": "piano"
 }
 
 const OUTPUT_ICONS: Record<
