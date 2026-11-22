@@ -30,8 +30,7 @@ function loaderSource(loader, directory) {
 	if (!module.startsWith("/@fs/")) {
 		return resolve(directory, module)
 	}
-	// "/@fs/" keeps the absolute path's own leading slash on POSIX ("/@fs//home/...") is not used,
-	// so strip only "/@fs" and then drop the slash before a Windows drive letter.
+	// Vite writes "/@fs" + absolute path: "/@fs/home/..." on POSIX, "/@fs/C:/..." on Windows.
 	const path = module.slice(4)
 	return /^\/[A-Za-z]:/.test(path) ? path.slice(1) : path
 }

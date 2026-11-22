@@ -1,5 +1,5 @@
 #!/bin/sh
-# Blocks pushes that would fail CI: frozen-lockfile install, then the web app checks.
+# Blocks pushes that would fail CI: frozen-lockfile install, the web app checks, then the web build.
 # The checks run on the working tree, so it must match what is committed (submodules
 # included), otherwise local edits can make code pass here that CI never sees.
 set -e
@@ -13,3 +13,5 @@ if [ -n "$dirty" ]; then
 fi
 node "$root/scripts/check-lockfile.mjs"
 pnpm --dir "$root/app/harmoneasy" run ci:check
+pnpm --dir "$root/app/harmoneasy" run build
+test -s "$root/app/harmoneasy/dist/index.html"
