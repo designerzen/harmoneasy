@@ -1038,15 +1038,15 @@
 
 		<dialog id="midi-dialog" closedby="any" aria-labelledby="midi-title">
 			<header><h2 id="midi-title">MIDI</h2></header>
-			<button
-				id="btn-midi-devices"
-				type="button"
-				aria-haspopup="dialog"
-				aria-controls="midi-devices-dialog"
-				disabled
-			>
-				MIDI devices
-			</button>
+			<section class="midi-devices" aria-labelledby="midi-devices-title">
+				<h3 id="midi-devices-title">Devices</h3>
+				<p id="midi-devices-status" role="status"></p>
+				<ul
+					id="midi-devices-list"
+					class="midi-device-list"
+					aria-labelledby="midi-devices-title"
+				></ul>
+			</section>
 			<h3>Control via MIDI</h3>
 			<p>
 				These assignments belong to the whole workspace. Global controls affect the app;
@@ -1057,42 +1057,6 @@
 			<div id="midi-macro-controls"></div>
 			<form method="dialog">
 				<button class="btn-close close-icon" type="submit" aria-label="Close"></button>
-			</form>
-		</dialog>
-
-		<dialog id="midi-devices-dialog" closedby="any" aria-labelledby="midi-devices-title">
-			<header><h2 id="midi-devices-title">MIDI devices</h2></header>
-			<p id="midi-devices-status" role="status"></p>
-			<div
-				class="midi-devices-table"
-				tabindex="0"
-				role="region"
-				aria-label="Connected MIDI devices"
-			>
-				<table>
-					<caption>
-						Connected MIDI input and output ports
-					</caption>
-					<thead>
-						<tr>
-							<th scope="col">Device</th>
-							<th scope="col">Manufacturer</th>
-							<th scope="col">Direction</th>
-							<th scope="col">Status</th>
-							<th scope="col">Activity</th>
-							<th scope="col">ID</th>
-						</tr>
-					</thead>
-					<tbody id="midi-devices-list"></tbody>
-				</table>
-			</div>
-			<form method="dialog">
-				<button
-					class="btn-close close-icon"
-					type="submit"
-					autofocus
-					aria-label="Close"
-				></button>
 			</form>
 		</dialog>
 
