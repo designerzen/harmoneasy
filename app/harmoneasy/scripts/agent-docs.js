@@ -27,7 +27,13 @@ function loaderSource(loader, directory) {
 	if (!module) {
 		return undefined
 	}
-	return module.startsWith("/@fs/") ? module.slice(5) : resolve(directory, module)
+	if (!module.startsWith("/@fs/")) {
+		return resolve(directory, module)
+	}
+	// "/@fs/" keeps the absolute path's own leading slash on POSIX ("/@fs//home/...") is not used,
+	// so strip only "/@fs" and then drop the slash before a Windows drive letter.
+	const path = module.slice(4)
+	return /^\/[A-Za-z]:/.test(path) ? path.slice(1) : path
 }
 
 function configurationContract(text, path) {

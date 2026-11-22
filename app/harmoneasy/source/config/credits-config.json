@@ -778,6 +778,13 @@
 		"url": "https://github.com/designerzen/audiobus-output-pink-trombone.git"
 	},
 	{
+		"name": "audiobus-output-voice-workshop",
+		"version": "0.1.0",
+		"authors": [],
+		"license": "",
+		"url": "https://github.com/designerzen/audiobus-output-voice-workshop.git"
+	},
+	{
 		"name": "audiobus-protocol",
 		"version": "0.3.0",
 		"authors": [],
