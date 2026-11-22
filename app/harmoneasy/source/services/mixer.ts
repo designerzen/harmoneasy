@@ -9,7 +9,11 @@ import {
 	EVENT_CHAINS_UPDATED,
 	EVENT_DESTROYED,
 	EVENT_PAGE_HIDE,
-	EVENT_KEY_DOWN
+	EVENT_KEY_DOWN,
+	EVENT_POINTER_DOWN,
+	EVENT_POINTER_MOVE,
+	EVENT_POINTER_UP,
+	EVENT_POINTER_CANCEL
 } from "audiobus/events/event-constants"
 import { createMixerChannels } from "./mixer-channel"
 import { createMixerMeter } from "./mixer-meter"
@@ -283,6 +287,39 @@ export function createMixer(manager: IOChainManager, master: GainNode, root: Doc
 			}
 			sync()
 			;(dialog.querySelector<HTMLElement>(".mixer-fader:not(:disabled)") ?? close).focus()
+		},
+		{ signal: lifetime.signal }
+	)
+	// Drag the panel by its header; the close button keeps its own click.
+	header.addEventListener(
+		EVENT_POINTER_DOWN,
+		(event) => {
+			if (event.button !== 0 || (event.target as Element).closest("button")) {
+				return
+			}
+			const rect = dialog.getBoundingClientRect()
+			const offsetX = event.clientX - rect.left
+			const offsetY = event.clientY - rect.top
+			const drag = new AbortController()
+			header.setPointerCapture(event.pointerId)
+			dialog.classList.add("mixer-dragging")
+			header.addEventListener(
+				EVENT_POINTER_MOVE,
+				(move) => {
+					const view = root.documentElement
+					const left = Math.min(Math.max(0, move.clientX - offsetX), view.clientWidth - rect.width)
+					const top = Math.min(Math.max(0, move.clientY - offsetY), view.clientHeight - rect.height)
+					dialog.style.inset = `${Math.max(0, top)}px auto auto ${Math.max(0, left)}px`
+				},
+				{ signal: drag.signal }
+			)
+			const end = () => {
+				drag.abort()
+				dialog.classList.remove("mixer-dragging")
+			}
+			header.addEventListener(EVENT_POINTER_UP, end, { signal: drag.signal })
+			header.addEventListener(EVENT_POINTER_CANCEL, end, { signal: drag.signal })
+			event.preventDefault()
 		},
 		{ signal: lifetime.signal }
 	)

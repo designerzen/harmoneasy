@@ -4,13 +4,20 @@
 	margin: 0;
 	width: min(960px, calc(100vw - 2rem));
 	padding: 0;
+	user-select: none;
+	-webkit-user-select: none;
 	> header {
+		cursor: grab;
+		touch-action: none;
 		margin: 0;
 		padding: 0.5rem 3rem 0.5rem 1.25rem;
 		border-bottom: var(--border);
 	}
 	h2 {
 		margin: 0;
+	}
+	&.mixer-dragging > header {
+		cursor: grabbing;
 	}
 }
 .mixer-channels {

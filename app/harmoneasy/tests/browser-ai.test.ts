@@ -6,6 +6,12 @@ import {
 	validateMidiNotes
 } from "../../../packages/audiobus/io/browser-ai"
 import InputPromptAI from "../../../packages/audiobus/io/inputs/input-prompt-ai"
+import {
+	describeMusicalContext,
+	noteName,
+	noteNumber,
+	parseFugue
+} from "../../../packages/audiobus/io/ai-fugue"
 import InputPromptAISpeech from "../../../packages/audiobus/io/inputs/input-prompt-ai-speech"
 import {
 	harmonyMapping,
@@ -20,6 +26,8 @@ import { createAudioCommand } from "../../../packages/audiobus/commands/audio-co
 const session = { prompt: vi.fn(), destroy: vi.fn() }
 const api = { availability: vi.fn(), create: vi.fn() }
 const devices: Array<{ destroy(): void }> = []
+const PATTERN =
+	'{"beats": 4, "notes": [{"beat": 0, "note": "C4", "duration": 1, "velocity": 110}, {"beat": 1, "note": "E4", "duration": 1}, {"beat": 2, "note": 67, "duration": 2}]}'
 const voicings = Array.from({ length: 12 }, () => [0, 4, 7])
 beforeEach(() => {
 	vi.useFakeTimers()
@@ -116,20 +124,21 @@ describe("native prompt input", () => {
 		expect(recognition.abort).toHaveBeenCalled()
 		expect(await input.createGui()).not.toBe(panel)
 	})
-	it("plays in audio seconds and cancels future notes while releasing held notes", async () => {
+	it("previews a generated pattern with rhythm and releases held notes on stop", async () => {
 		const input = new InputPromptAI({ now: () => 10, bpm: 120 })
 		devices.push(input)
 		const receive = vi.fn()
 		input.addEventListener(INPUT_EVENT, (event) => receive((event as any).command))
+		session.prompt.mockResolvedValue(PATTERN)
 		await input.generateSequenceFromPrompt("C major")
 		expect(receive).toHaveBeenLastCalledWith(
-			expect.objectContaining({ type: NOTE_ON, number: 60, startAt: 10 })
+			expect.objectContaining({ type: NOTE_ON, number: 60, velocity: 110, startAt: 10 })
 		)
 		input.stopGeneration()
 		expect(receive).toHaveBeenLastCalledWith(
 			expect.objectContaining({ type: NOTE_OFF, number: 60 })
 		)
-		await vi.runAllTimersAsync()
+		await vi.advanceTimersByTimeAsync(2000)
 		expect(receive).toHaveBeenCalledTimes(2)
 	})
 	it("ignores generation completed after removal and surfaces invalid model output", async () => {
@@ -138,9 +147,11 @@ describe("native prompt input", () => {
 		const panel = await input.createGui(),
 			receive = vi.fn()
 		input.addEventListener(INPUT_EVENT, receive)
-		session.prompt.mockResolvedValue("[60.5]")
+		session.prompt.mockResolvedValue(
+			'{"beats": 4, "notes": [{"beat": 0, "note": "H9", "duration": 1}]}'
+		)
 		await input.generateSequenceFromPrompt("C major")
-		expect(panel.querySelector("[role=status]")!.textContent).toContain("MIDI notes")
+		expect(panel.querySelector("[role=status]")!.textContent).toContain("invalid note")
 		expect(receive).not.toHaveBeenCalled()
 		let resolve!: (value: string) => void
 		session.prompt.mockReturnValue(
@@ -151,20 +162,115 @@ describe("native prompt input", () => {
 		const pending = input.generateSequenceFromPrompt("C minor")
 		await vi.waitFor(() => expect(session.prompt).toHaveBeenCalledTimes(2))
 		input.destroy()
-		resolve("[60, 63, 67]")
+		resolve(PATTERN)
 		await pending
 		expect(receive).not.toHaveBeenCalled()
 	})
-	it("routes drum patterns to channel ten", async () => {
+	it("routes drum patterns to channel ten and sends the kit's pads as context", async () => {
 		const input = new InputPromptAI({ mode: "drums" })
 		devices.push(input)
+		input.setMusicalContext({ drumPads: [{ name: "Kick", note: 35 }] })
 		const receive = vi.fn()
 		input.addEventListener(INPUT_EVENT, (event) => receive((event as any).command))
-		session.prompt.mockResolvedValue("[36, 38]")
-		await input.generateSequenceFromPrompt("rock beat")
-		expect(receive).toHaveBeenLastCalledWith(
-			expect.objectContaining({ number: 36, channel: 10 })
+		session.prompt.mockResolvedValue(
+			'{"beats": 1, "notes": [{"beat": 0, "note": 35, "duration": 0.25}]}'
 		)
+		await input.generateSequenceFromPrompt("rock beat")
+		expect(session.prompt.mock.lastCall![0]).toContain("Kick 35")
+		expect(receive).toHaveBeenLastCalledWith(
+			expect.objectContaining({ number: 35, channel: 10 })
+		)
+	})
+	it("starts on the next transport bar, loops, and swaps a new pattern on a boundary", async () => {
+		const input = new InputPromptAI({ pattern: JSON.parse(PATTERN) })
+		devices.push(input)
+		const played: Array<[string, number]> = []
+		input.addEventListener(INPUT_EVENT, (event) => {
+			const { type, number } = (event as any).command
+			played.push([type, number])
+		})
+		input.startClock()
+		input.setMusicalBeat(1.5)
+		input.setMusicalBeat(3.9)
+		expect(played).toEqual([])
+		input.setMusicalBeat(4)
+		input.setMusicalBeat(5)
+		input.setMusicalBeat(6.5)
+		expect(played).toEqual([
+			[NOTE_ON, 60],
+			[NOTE_OFF, 60],
+			[NOTE_ON, 64],
+			[NOTE_OFF, 64],
+			[NOTE_ON, 67]
+		])
+		input.setMusicalBeat(8)
+		expect(played.slice(-2)).toEqual([
+			[NOTE_OFF, 67],
+			[NOTE_ON, 60]
+		])
+		session.prompt.mockResolvedValue(
+			'{"beats": 2, "notes": [{"beat": 0, "note": "D4", "duration": 1}]}'
+		)
+		await input.generateSequenceFromPrompt("next")
+		input.setMusicalBeat(9)
+		expect(played.at(-1)).toEqual([NOTE_ON, 64])
+		input.setMusicalBeat(12)
+		expect(played.slice(-2)).toEqual([
+			[NOTE_OFF, 64],
+			[NOTE_ON, 62]
+		])
+		input.stopClock()
+		expect(played.at(-1)).toEqual([NOTE_OFF, 62])
+	})
+})
+
+describe("AI fugue patterns", () => {
+	it("parses note names and numbers, trims to the loop and sorts by beat", () => {
+		expect(noteNumber("C4")).toBe(60)
+		expect(noteNumber("Bb3")).toBe(58)
+		expect(noteNumber("C#-1")).toBe(1)
+		expect(noteName(61)).toBe("C#4")
+		expect(
+			parseFugue({
+				beats: 2,
+				notes: [
+					{ beat: 1.5, note: "E4", duration: 2 },
+					{ beat: 0, note: 48, duration: 0.5, velocity: 90 },
+					{ beat: 3, note: "G4", duration: 1 }
+				]
+			})
+		).toEqual({
+			beats: 2,
+			notes: [
+				{ beat: 0, number: 48, duration: 0.5, velocity: 90 },
+				{ beat: 1.5, number: 64, duration: 0.5, velocity: 100 }
+			]
+		})
+		for (const value of [
+			[60],
+			{ beats: 0, notes: [] },
+			{ beats: 4, notes: [{ beat: 0, note: "C4" }] },
+			{ beats: 4, notes: [{ beat: 0, note: 128, duration: 1 }] },
+			{ beats: 2, notes: [{ beat: 3, note: 60, duration: 1 }] }
+		]) {
+			expect(() => parseFugue(value)).toThrow()
+		}
+	})
+	it("describes the key, followed chords and instruments, but no key for drums", () => {
+		const context = {
+			// D natural minor as absolute pitch classes C D E F G A B♭.
+			harmony: { root: 2, scale: 1717, chord: 0 },
+			progression: [{ name: "Dm", root: 2, mask: 0, beats: 4 }],
+			outputs: ["Moog"]
+		}
+		const text = describeMusicalContext(context, "melody", 96)
+		expect(text).toContain("Tempo 96 BPM")
+		expect(text).toContain("Key: D natural minor (C D E F G A Bb)")
+		expect(text).toContain("Dm (4 beats)")
+		expect(text).toContain("Played by: Moog")
+		const drums = describeMusicalContext(context, "drums", 96)
+		expect(drums).not.toContain("Key:")
+		expect(drums).toContain("Kick 36")
 	})
 })
 
