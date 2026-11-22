@@ -6,6 +6,8 @@ import {
 	EVENT_KEY_DOWN,
 	EVENT_CHANGE,
 	EVENT_DRAG_OVER,
+	EVENT_DRAG_END,
+	EVENT_DRAG_LEAVE,
 	EVENT_DROP
 } from "audiobus/events/event-constants"
 import {
@@ -339,9 +341,7 @@ it("saves the pane layout and restores it on the next load", () => {
 	const restored = vi.fn()
 	mount({ saved: JSON.parse(JSON.stringify(layout)), save: restored })
 	expect(restored).not.toHaveBeenCalled()
-	expect(document.querySelector<HTMLElement>(".chains-workspace")!.dataset.split).toBe(
-		"column"
-	)
+	expect(document.querySelector<HTMLElement>(".chains-workspace")!.dataset.split).toBe("column")
 	expect(document.getElementById("iochain-one")!.dataset.pane).toBe("0")
 	expect(document.getElementById("recordings")!.dataset.pane).toBe("1")
 	expect(document.getElementById("chain-tab-timeline")!.getAttribute("aria-selected")).toBe(
@@ -358,4 +358,247 @@ it("ignores saved layouts that are malformed or name missing chains", () => {
 	expect(document.getElementById("iochain-two")!.hidden).toBe(false)
 	expect(document.querySelector<HTMLElement>(".chains-workspace")!.dataset.split).toBe("")
 	expect(save).toHaveBeenLastCalledWith({ panes: ["two"], focused: 0, split: "row", solo: null })
+})
+
+function pin(id: string) {
+	document.getElementById(`chain-pin-${id}`)!.click()
+}
+
+it("keeps pinned panes visible when switching tabs and shares space across three pins", () => {
+	const { mountGraph } = mount()
+	const host = document.querySelector<HTMLElement>(".chains-workspace")!
+	const first = document.getElementById("iochain-one")!,
+		second = document.getElementById("iochain-two")!,
+		timeline = document.getElementById("recordings")!
+	const firstPin = document.getElementById("chain-pin-one")!
+	expect(firstPin.nextElementSibling?.id).toBe("chain-tab-one")
+	expect(firstPin.getAttribute("aria-label")).toBe("Pin one")
+	pin("one")
+	document.getElementById("chain-tab-two")!.click()
+	expect(first.hidden).toBe(false)
+	expect(second.hidden).toBe(false)
+	expect(host.dataset.split).toBe("row")
+	document.getElementById("chain-tab-one")!.click()
+	document.getElementById("chain-tab-timeline")!.click()
+	expect(first.hidden).toBe(false)
+	expect(second.hidden).toBe(true)
+	expect(timeline.hidden).toBe(false)
+	pin("timeline")
+	pin("two")
+	for (const [index, panel] of [first, timeline, second].entries()) {
+		expect(panel.hidden).toBe(false)
+		expect(panel.inert).toBe(false)
+		expect(panel.dataset.pane).toBe(String(index))
+		expect(panel.style.getPropertyValue("--pane-position")).toBe(String(index + 1))
+	}
+	expect(host.style.getPropertyValue("--pane-count")).toBe("3")
+	expect(document.getElementById("chain-pin-two")!.getAttribute("aria-pressed")).toBe("true")
+	expect(document.getElementById("chain-pin-two")!.getAttribute("aria-label")).toBe("Unpin two")
+	expect(document.activeElement?.id).toBe("chain-pin-two")
+	document.getElementById("chain-tab-timeline")!.click()
+	pin("one")
+	expect(document.getElementById("chain-tab-timeline")!.getAttribute("aria-selected")).toBe(
+		"true"
+	)
+	pin("one")
+	document.getElementById("chain-tab-two")!.click()
+	pin("timeline")
+	expect(timeline.hidden).toBe(true)
+	expect(first.hidden).toBe(false)
+	expect(second.hidden).toBe(false)
+	expect(host.style.getPropertyValue("--pane-count")).toBe("2")
+	expect(mountGraph).toHaveBeenCalledTimes(2)
+})
+
+it("preserves pins when docking and restores more than two panes and their focus", () => {
+	const save = vi.fn()
+	mount({ save })
+	pin("one")
+	pin("two")
+	pin("timeline")
+	const zone = document.querySelector<HTMLElement>(".pane-drop-zone")!
+	vi.spyOn(zone, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 100, 100))
+	document
+		.getElementById("chain-tab-two")!
+		.dispatchEvent(new DragEvent("dragstart", { bubbles: true }))
+	zone.dispatchEvent(new MouseEvent(EVENT_DROP, { clientX: 50, clientY: 95, bubbles: true }))
+	const layout = save.mock.lastCall![0]
+	expect(layout.panes).toHaveLength(3)
+	expect(layout.pinned).toEqual(["one", "two", "timeline"])
+	expect(layout.split).toBe("column")
+	document.getElementById("chain-tab-one")!.click()
+	const restoredLayout = save.mock.lastCall![0]
+	expect(restoredLayout.focused).toBe(2)
+	workspace!.destroy()
+	const restored = vi.fn()
+	mount({ saved: JSON.parse(JSON.stringify(restoredLayout)), save: restored })
+	expect(restored).not.toHaveBeenCalled()
+	for (const id of ["one", "two", "timeline"]) {
+		const tab = document.getElementById(`chain-tab-${id}`)!
+		expect(document.getElementById(tab.getAttribute("aria-controls")!)!.hidden).toBe(false)
+		expect(document.getElementById(`chain-pin-${id}`)!.getAttribute("aria-pressed")).toBe(
+			"true"
+		)
+	}
+	expect(document.getElementById("chain-tab-one")!.getAttribute("aria-selected")).toBe("true")
+	expect(document.querySelector<HTMLElement>(".chains-workspace")!.dataset.split).toBe("column")
+	const restoredZone = document.querySelector<HTMLElement>(".pane-drop-zone")!
+	vi.spyOn(restoredZone, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 100, 100))
+	document
+		.getElementById("chain-tab-two")!
+		.dispatchEvent(new DragEvent("dragstart", { bubbles: true }))
+	restoredZone.dispatchEvent(
+		new MouseEvent(EVENT_DROP, { clientX: 50, clientY: 50, bubbles: true })
+	)
+	expect(restored.mock.lastCall![0].panes).toHaveLength(3)
+})
+
+it("removes deleted and missing pins while keeping the remaining pane focused", () => {
+	const save = vi.fn()
+	const { manager } = mount({
+		saved: {
+			panes: ["one", "two", "gone"],
+			pinned: ["one", "two", "gone"],
+			focused: 1,
+			split: "row"
+		},
+		save
+	})
+	manager.removeChain("one")
+	expect(save).toHaveBeenLastCalledWith({
+		panes: ["two"],
+		pinned: ["two"],
+		focused: 0,
+		split: "row",
+		solo: null
+	})
+	expect(document.getElementById("chain-tab-two")!.getAttribute("aria-selected")).toBe("true")
+	pin("two")
+	expect(document.getElementById("iochain-two")!.hidden).toBe(false)
+	expect(document.getElementById("chain-pin-two")!.getAttribute("aria-pressed")).toBe("false")
+})
+
+const tabIds = () =>
+	Array.from(document.querySelectorAll('#chain-navigation [role="tab"]'), (tab) =>
+		tab.id.replace("chain-tab-", "")
+	)
+
+function reorderKey(id: string, key: string) {
+	document
+		.getElementById(`chain-tab-${id}`)!
+		.dispatchEvent(
+			new KeyboardEvent(EVENT_KEY_DOWN, { key, altKey: true, shiftKey: true, bubbles: true })
+		)
+}
+
+it("reorders tabs on either side of a drop target without changing pinned panes or selection", () => {
+	const save = vi.fn()
+	const { mountGraph } = mount({ save })
+	pin("one")
+	pin("two")
+	const panes = save.mock.lastCall![0].panes
+	const drag = (source: string, targetId: string, clientX: number, side: string) => {
+		document
+			.getElementById(`chain-tab-${source}`)!
+			.dispatchEvent(new DragEvent("dragstart", { bubbles: true }))
+		const target = document.getElementById(`chain-tab-${targetId}`)!.parentElement!
+		vi.spyOn(target, "getBoundingClientRect").mockReturnValue(new DOMRect(100, 0, 100, 40))
+		const over = new MouseEvent(EVENT_DRAG_OVER, { clientX, bubbles: true, cancelable: true })
+		target.dispatchEvent(over)
+		expect(over.defaultPrevented).toBe(true)
+		expect(target.dataset.reorder).toBe(side)
+		target.dispatchEvent(
+			new MouseEvent(EVENT_DROP, { clientX, bubbles: true, cancelable: true })
+		)
+		expect(document.querySelector("[data-reorder]")).toBeNull()
+		expect(document.querySelector<HTMLElement>(".pane-drop-zone")!.hidden).toBe(true)
+		expect(document.activeElement?.id).toBe(`chain-tab-${source}`)
+	}
+	drag("timeline", "one", 110, "before")
+	expect(tabIds()).toEqual(["timeline", "one", "two"])
+	expect(save.mock.lastCall![0]).toMatchObject({
+		tabOrder: ["timeline", "one", "two"],
+		panes,
+		pinned: ["one", "two"],
+		focused: 1
+	})
+	expect(document.getElementById("recordings")!.hidden).toBe(true)
+	expect(document.getElementById("chain-tab-two")!.getAttribute("aria-selected")).toBe("true")
+	drag("timeline", "two", 190, "after")
+	expect(tabIds()).toEqual(["one", "two", "timeline"])
+	expect(mountGraph).toHaveBeenCalledTimes(2)
+})
+
+it("saves keyboard tab ordering and uses the restored order for navigation", () => {
+	const save = vi.fn()
+	mount({ save })
+	reorderKey("one", "ArrowRight")
+	expect(tabIds()).toEqual(["two", "one", "timeline"])
+	expect(document.activeElement?.id).toBe("chain-tab-one")
+	expect(document.getElementById("chain-tab-one")!.getAttribute("aria-selected")).toBe("true")
+	reorderKey("one", "ArrowRight")
+	expect(tabIds()).toEqual(["two", "timeline", "one"])
+	const calls = save.mock.calls.length
+	reorderKey("one", "ArrowRight")
+	expect(save).toHaveBeenCalledTimes(calls)
+	reorderKey("one", "ArrowLeft")
+	const layout = save.mock.lastCall![0]
+	workspace!.destroy()
+	const restored = vi.fn()
+	mount({ saved: JSON.parse(JSON.stringify(layout)), save: restored })
+	expect(restored).not.toHaveBeenCalled()
+	expect(tabIds()).toEqual(["two", "one", "timeline"])
+	document
+		.getElementById("chain-tab-one")!
+		.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: "ArrowLeft", bubbles: true }))
+	expect(document.activeElement?.id).toBe("chain-tab-two")
+	expect(document.getElementById("iochain-two")!.hidden).toBe(false)
+})
+
+it("cleans stale and duplicate tab ordering and appends newly added chains", () => {
+	const save = vi.fn()
+	const { manager, changed } = mount({
+		saved: {
+			panes: ["one"],
+			tabOrder: ["timeline", "gone", "two", "two"],
+			focused: 0,
+			split: "row",
+			solo: null
+		},
+		save
+	})
+	expect(tabIds()).toEqual(["timeline", "two", "one"])
+	manager.entries.push(["three", manager.entries[0][1]])
+	changed()
+	expect(tabIds()).toEqual(["timeline", "two", "one", "three"])
+	manager.removeChain("two")
+	expect(tabIds()).toEqual(["timeline", "one", "three"])
+	expect(save.mock.lastCall![0].tabOrder).toEqual(["timeline", "one", "three"])
+})
+
+it("clears insertion markers after leaving or cancelling a drag and ignores external drops", () => {
+	const save = vi.fn()
+	mount({ save })
+	save.mockClear()
+	const source = document.getElementById("chain-tab-one")!,
+		target = document.getElementById("chain-tab-two")!.parentElement!
+	const external = new MouseEvent(EVENT_DRAG_OVER, { bubbles: true, cancelable: true })
+	target.dispatchEvent(external)
+	expect(external.defaultPrevented).toBe(false)
+	source.dispatchEvent(new DragEvent("dragstart", { bubbles: true }))
+	target.dispatchEvent(new MouseEvent(EVENT_DRAG_OVER, { bubbles: true }))
+	expect(target.hasAttribute("data-reorder")).toBe(true)
+	target.dispatchEvent(
+		new MouseEvent(EVENT_DRAG_LEAVE, { relatedTarget: target.firstElementChild })
+	)
+	expect(target.hasAttribute("data-reorder")).toBe(true)
+	target.dispatchEvent(new MouseEvent(EVENT_DRAG_LEAVE))
+	expect(target.hasAttribute("data-reorder")).toBe(false)
+	target.dispatchEvent(new MouseEvent(EVENT_DRAG_OVER, { bubbles: true }))
+	source.dispatchEvent(new DragEvent(EVENT_DRAG_END, { bubbles: true }))
+	expect(target.hasAttribute("data-reorder")).toBe(false)
+	expect(document.querySelector<HTMLElement>(".pane-drop-zone")!.hidden).toBe(true)
+	target.dispatchEvent(new MouseEvent(EVENT_DROP, { bubbles: true }))
+	expect(tabIds()).toEqual(["one", "two", "timeline"])
+	expect(save).not.toHaveBeenCalled()
 })

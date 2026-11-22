@@ -585,11 +585,11 @@ body:has(.chains-workspace) {
 	);
 	position: relative;
 
-	/* Two panes split like windows snapped to the sides or the top and bottom of a screen. */
+	/* Visible panes share the available width or height equally. */
 	&[data-split="row"] {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		> [data-pane="1"] {
-			grid-area: 1 / 2;
+		grid-template-columns: repeat(var(--pane-count, 2), minmax(0, 1fr));
+		> [data-pane]:not([data-pane=""]) {
+			grid-area: 1 / var(--pane-position);
 		}
 	}
 	&[data-split="column"] {
@@ -597,20 +597,23 @@ body:has(.chains-workspace) {
 			8rem,
 			calc(
 				(
-						100dvh - var(--action-bar-height, 0px) - var(--transport-height, 52px) -
-							var(--onscreen-keyboard-height, 0px) - 2 * var(--chain-viewport-gap)
+						100dvh - var(--action-bar-height, 0px) - var(
+								--transport-height,
+								52px
+							) - var(--onscreen-keyboard-height, 0px) -
+							2 * var(--chain-viewport-gap)
 					) /
-					2
+					var(--pane-count, 2)
 			)
 		);
-		> [data-pane="1"] {
-			grid-area: 2 / 1;
+		> [data-pane]:not([data-pane=""]) {
+			grid-area: var(--pane-position) / 1;
 		}
 	}
-	&[data-split] > [data-pane="1"] {
+	&[data-split="row"] > [data-pane]:not([data-pane=""]):not([data-pane="0"]) {
 		border-left: var(--border);
 	}
-	&[data-split="column"] > [data-pane="1"] {
+	&[data-split="column"] > [data-pane]:not([data-pane=""]):not([data-pane="0"]) {
 		border-left: 0;
 		border-top: var(--border);
 	}
@@ -674,8 +677,7 @@ body:has(.chains-workspace) {
 	}
 }
 .chains-stacked > .chain-panel.chain-front,
-.chains-stacked > .chain-panel[data-pane="0"],
-.chains-stacked > .chain-panel[data-pane="1"],
+.chains-stacked > .chain-panel[data-pane]:not([data-pane=""]),
 .chains-stacked > .chain-panel.chain-solo {
 	visibility: visible;
 	pointer-events: auto;
