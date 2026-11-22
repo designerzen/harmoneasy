@@ -1,6 +1,15 @@
 #!/bin/sh
 # Blocks pushes that would fail CI: frozen-lockfile install, then the web app checks.
+# The checks run on the working tree, so it must match what is committed (submodules
+# included), otherwise local edits can make code pass here that CI never sees.
 set -e
 root="$(git rev-parse --show-toplevel)"
+dirty="$(git -C "$root" status --porcelain --ignore-submodules=none)"
+if [ -n "$dirty" ]; then
+	echo "✖ Push blocked: uncommitted changes would make the CI checks below meaningless." >&2
+	echo "$dirty" >&2
+	echo "Commit (and push submodules) or stash them, then push again." >&2
+	exit 1
+fi
 node "$root/scripts/check-lockfile.mjs"
 pnpm --dir "$root/app/harmoneasy" run ci:check
