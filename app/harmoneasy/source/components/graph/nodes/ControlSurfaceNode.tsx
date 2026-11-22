@@ -24,14 +24,17 @@ export function ControlSurfaceNode({ id, data }: any) {
 		)
 		return () => view.destroy()
 	}, [chain, data.surface.id])
+	const isMoving = Boolean(data.isMoving)
 	return (
 		<div
-			className={`node-control-surface graph-node can-remove ${data.isCompact ? "is-compact" : ""}`}
+			className={`node-control-surface graph-node can-remove ${data.isCompact ? "is-compact" : ""} ${isMoving ? "is-moving-node" : ""}`}
 		>
 			<NodeHeader
 				title={data.surface.name}
 				removeLabel="Remove control surface"
 				onRemove={() => removeSurface(chain, data.surface.id)}
+				onMove={data.onMoveNode ? () => data.onMoveNode(id) : undefined}
+				isMoving={isMoving}
 			>
 				<MinimiseButton
 					compact={Boolean(data.isCompact)}
@@ -62,7 +65,9 @@ export function ControlSurfaceNode({ id, data }: any) {
 				id={SURFACE_HANDLE}
 				position={data.layoutMode === "vertical" ? Position.Left : Position.Top}
 				className="control-connector"
-				aria-label="Connect component controls"
+				tabIndex={0}
+				role="button"
+				aria-label={`Connect component controls to ${data.surface.name}`}
 			/>
 			<div ref={host} className="nodrag nopan nowheel" />
 		</div>

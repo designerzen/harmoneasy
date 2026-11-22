@@ -44,6 +44,19 @@ import {
 	removeSurface,
 	selectSurfaceControls
 } from "./control-surfaces"
+import {
+	bezierPreviewPath,
+	buildConnectionCandidate,
+	describeConnectionStory,
+	describeHandleAction,
+	handleKey,
+	inferConnectionIntent,
+	nudgePosition,
+	type HandleDescriptor,
+	type PendingConnection,
+	type PendingNodeMove
+} from "./graph-interactions"
+import { announceLive } from "../../libs/dialog-utils"
 
 import {
 	DEFAULT_GRAPH_OPTIONS,
@@ -87,14 +100,23 @@ function FlowComponent({ isFront, focusRequest }: { isFront: boolean; focusReque
 	const [nodes, setNodes] = useState(initialNodes)
 	const [edges, setEdges] = useState(initialEdges)
 	const [layoutMode, setLayoutMode] = useState(chain.options.graphLayout ?? DEFAULT_LAYOUT_MODE)
-	const { fitView, getNodes, getNodesBounds, getViewport, setViewport } = useReactFlow()
+	const { fitView, getNodes, getNodesBounds, getViewport, setViewport, screenToFlowPosition } =
+		useReactFlow()
 	const store = useStoreApi()
+	const flowWrapperRef = useRef<HTMLDivElement | null>(null)
+	const handlePointerStart = useRef<{ x: number; y: number } | null>(null)
+	const handleDragged = useRef(false)
 	const savedViewport = useRef<ReturnType<typeof getViewport> | null>(null)
 	const fittedLayout = useRef<string | null>(null)
 	const fittedFocusRequest = useRef(-1)
 	const nodesInitialized = useNodesInitialized()
 	const [fullscreenNodeId, setFullscreenNodeId] = useState<string | null>(null)
 	const [compactNodeIds, setCompactNodeIds] = useState<Set<string>>(() => new Set())
+	const [pendingConnection, setPendingConnection] = useState<PendingConnection | null>(null)
+	const [wireOrigin, setWireOrigin] = useState<{ x: number; y: number } | null>(null)
+	const [wireTarget, setWireTarget] = useState<{ x: number; y: number } | null>(null)
+	const [pendingMoveNode, setPendingMoveNode] = useState<PendingNodeMove | null>(null)
+	const [movePointer, setMovePointer] = useState<{ x: number; y: number } | null>(null)
 	const controlDialogs = useRef(new Set<{ destroy(): void }>())
 	useEffect(() => {
 		const minimise = (event: Event) => {
@@ -379,13 +401,302 @@ function FlowComponent({ isFront, focusRequest }: { isFront: boolean; focusReque
 		}
 	}
 
-	// Pass fullscreen handlers to node data
+	const cancelPendingConnection = useCallback((announce = false) => {
+		setPendingConnection(null)
+		setWireOrigin(null)
+		setWireTarget(null)
+		if (announce) {
+			announceLive("Connection cancelled.")
+		}
+	}, [])
+
+	const persistNodePosition = useCallback(
+		(nodeId: string, positionKey: string, position: { x: number; y: number }) => {
+			setNodes((snapshot) =>
+				snapshot.map((item) => (item.id === nodeId ? { ...item, position } : item))
+			)
+			chain.setGraphOptions({
+				positions: {
+					...chain.options.positions,
+					[positionKey]: position
+				}
+			})
+		},
+		[chain]
+	)
+
+	const cancelPendingMove = useCallback(
+		(revert = true, announce = false) => {
+			setPendingMoveNode((current) => {
+				if (current && revert) {
+					setNodes((snapshot) =>
+						snapshot.map((item) =>
+							item.id === current.nodeId ? { ...item, position: current.origin } : item
+						)
+					)
+				}
+				if (current && announce) {
+					announceLive(`Cancelled moving ${current.label}.`)
+				}
+				return null
+			})
+			setMovePointer(null)
+		},
+		[]
+	)
+
+	const handleStartNodeMove = useCallback(
+		(nodeId: string) => {
+			cancelPendingConnection(false)
+			if (pendingMoveNode?.nodeId === nodeId) {
+				cancelPendingMove(true, true)
+				return
+			}
+			const node = nodes.find((item) => item.id === nodeId)
+			if (!node || !node.data.positionKey) {
+				return
+			}
+			const label = String(
+				node.data.label ||
+					node.data.surface?.name ||
+					node.data.input?.name ||
+					node.data.output?.name ||
+					"node"
+			)
+			setPendingMoveNode({
+				nodeId: node.id,
+				positionKey: String(node.data.positionKey),
+				label,
+				origin: { ...node.position },
+				width: node.measured?.width ?? 220,
+				height: node.measured?.height ?? 140
+			})
+			setMovePointer(null)
+			announceLive(
+				`Moving ${label}. Click anywhere on the canvas to place it, use arrow keys to nudge and Enter to confirm, or press Escape to cancel.`
+			)
+		},
+		[nodes, pendingMoveNode, cancelPendingConnection, cancelPendingMove]
+	)
+
+	const commitMoveAtPosition = useCallback(
+		(position: { x: number; y: number }) => {
+			if (!pendingMoveNode) {
+				return
+			}
+			persistNodePosition(pendingMoveNode.nodeId, pendingMoveNode.positionKey, position)
+			announceLive(`Placed ${pendingMoveNode.label}.`)
+			setPendingMoveNode(null)
+			setMovePointer(null)
+		},
+		[pendingMoveNode, persistNodePosition]
+	)
+
+	const centerRelativeToWrapper = useCallback((el: Element | null) => {
+		const wrapper = flowWrapperRef.current
+		if (!wrapper || !el) {
+			return null
+		}
+		const wrapRect = wrapper.getBoundingClientRect()
+		const rect = el.getBoundingClientRect()
+		return {
+			x: rect.left - wrapRect.left + rect.width / 2,
+			y: rect.top - wrapRect.top + rect.height / 2
+		}
+	}, [])
+
+	const readHandleDescriptor = (el: HTMLElement): HandleDescriptor | null => {
+		const nodeId = el.getAttribute("data-nodeid")
+		const handleType = el.getAttribute("data-handletype")
+		if (!nodeId || (handleType !== "source" && handleType !== "target")) {
+			return null
+		}
+		return {
+			nodeId,
+			handleId: el.getAttribute("data-handleid"),
+			handleType
+		}
+	}
+
+	const validPartnerHandleElements = useCallback(
+		(descriptor: HandleDescriptor): HTMLElement[] => {
+			const wrapper = flowWrapperRef.current
+			if (!wrapper) {
+				return []
+			}
+			const matches: HTMLElement[] = []
+			for (const el of wrapper.querySelectorAll<HTMLElement>(".react-flow__handle")) {
+				if (el.style.visibility === "hidden" || el.classList.contains("connectable-false")) {
+					continue
+				}
+				const other = readHandleDescriptor(el)
+				if (!other) {
+					continue
+				}
+				const candidate = buildConnectionCandidate(descriptor, other)
+				if (candidate && validConnection(candidate)) {
+					matches.push(el)
+				}
+			}
+			return matches
+		},
+		[nodes, edges]
+	)
+
+	const activateHandle = useCallback(
+		(handleEl: HTMLElement) => {
+			const descriptor = readHandleDescriptor(handleEl)
+			if (!descriptor) {
+				return
+			}
+			if (pendingMoveNode) {
+				cancelPendingMove(true, false)
+			}
+			const node = nodes.find((item) => item.id === descriptor.nodeId)
+			const nodeLabel = String(
+				node?.data.label ||
+					node?.data.surface?.name ||
+					node?.data.input?.name ||
+					node?.data.output?.name ||
+					"component"
+			)
+
+			// Click 2: try to complete connection or cancel/re-arm.
+			if (pendingConnection) {
+				if (handleKey(pendingConnection) === handleKey(descriptor)) {
+					cancelPendingConnection(true)
+					return
+				}
+				const candidate = buildConnectionCandidate(pendingConnection, descriptor)
+				if (candidate && validConnection(candidate)) {
+					onConnect(candidate)
+					cancelPendingConnection(false)
+					announceLive(`Connected ${pendingConnection.nodeLabel} and ${nodeLabel}.`)
+					return
+				}
+			}
+
+			// Click 1: arm a new 2-click connection if at least one valid partner exists.
+			const partners = validPartnerHandleElements(descriptor)
+			const intent = inferConnectionIntent(descriptor.handleId)
+			if (!partners.length) {
+				if (intent === "controls" && descriptor.handleType === "source") {
+					announceLive(
+						`Add a Control Surface to connect ${nodeLabel} controls.`
+					)
+				} else {
+					announceLive(`No compatible ports available for ${nodeLabel}.`)
+				}
+				return
+			}
+			const nextPending: PendingConnection = {
+				...descriptor,
+				nodeLabel,
+				portLabel: handleEl.getAttribute("aria-label") || `${nodeLabel} port`,
+				intent
+			}
+			setPendingConnection(nextPending)
+			const origin = centerRelativeToWrapper(handleEl)
+			setWireOrigin(origin)
+			setWireTarget(centerRelativeToWrapper(partners[0]) ?? origin)
+			announceLive(describeConnectionStory(nextPending))
+		},
+		[
+			nodes,
+			pendingConnection,
+			pendingMoveNode,
+			validPartnerHandleElements,
+			centerRelativeToWrapper,
+			cancelPendingConnection,
+			cancelPendingMove
+		]
+	)
+
+	// Sync visual storytelling classes/attributes onto React Flow handles and nodes while armed.
+	useEffect(() => {
+		const wrapper = flowWrapperRef.current
+		if (!wrapper) {
+			return
+		}
+		const clear = () => {
+			for (const el of wrapper.querySelectorAll<HTMLElement>("[data-connect-role]")) {
+				delete el.dataset.connectRole
+				delete el.dataset.connectBadge
+			}
+			for (const el of wrapper.querySelectorAll<HTMLElement>("[data-connect-node]")) {
+				delete el.dataset.connectNode
+			}
+		}
+		if (!pendingConnection) {
+			clear()
+			return
+		}
+		const sourceKey = handleKey(pendingConnection)
+		const actionBadge = describeHandleAction(pendingConnection)
+		const validTargets = new Set(
+			validPartnerHandleElements(pendingConnection).map((el) => {
+				const desc = readHandleDescriptor(el)
+				return desc ? handleKey(desc) : ""
+			})
+		)
+		const targetNodes = new Set<string>()
+		let sourceEl: HTMLElement | null = null
+		for (const el of wrapper.querySelectorAll<HTMLElement>(".react-flow__handle")) {
+			const desc = readHandleDescriptor(el)
+			if (!desc) {
+				continue
+			}
+			const key = handleKey(desc)
+			if (key === sourceKey) {
+				el.dataset.connectRole = "source"
+				delete el.dataset.connectBadge
+				sourceEl = el
+			} else if (validTargets.has(key)) {
+				el.dataset.connectRole = "valid-target"
+				el.dataset.connectBadge = actionBadge
+				targetNodes.add(desc.nodeId)
+			} else {
+				el.dataset.connectRole = "dimmed"
+				delete el.dataset.connectBadge
+			}
+		}
+		if (sourceEl) {
+			setWireOrigin(centerRelativeToWrapper(sourceEl))
+		}
+		for (const nodeEl of wrapper.querySelectorAll<HTMLElement>(".react-flow__node")) {
+			const id = nodeEl.getAttribute("data-id")
+			if (!id) {
+				continue
+			}
+			if (id === pendingConnection.nodeId) {
+				nodeEl.dataset.connectNode = "source"
+			} else if (targetNodes.has(id)) {
+				nodeEl.dataset.connectNode = "target"
+			} else {
+				nodeEl.dataset.connectNode = "dimmed"
+			}
+		}
+		return clear
+	}, [pendingConnection, nodes, edges, validPartnerHandleElements, centerRelativeToWrapper])
+
+	useEffect(() => {
+		if (pendingConnection && !nodes.some((n) => n.id === pendingConnection.nodeId)) {
+			cancelPendingConnection(false)
+		}
+		if (pendingMoveNode && !nodes.some((n) => n.id === pendingMoveNode.nodeId)) {
+			cancelPendingMove(false, false)
+		}
+	}, [nodes, pendingConnection, pendingMoveNode, cancelPendingConnection, cancelPendingMove])
+
+	// Pass fullscreen & 2-click move handlers to node data
 	const nodesWithFullscreen: GraphNode[] = nodes.map((node) => ({
 		...node,
 		data: {
 			...node.data,
 			onFullscreen: handleFullscreenMode,
 			onMinimise: handleMinimise,
+			onMoveNode: node.draggable !== false ? handleStartNodeMove : undefined,
+			isMoving: pendingMoveNode?.nodeId === node.id,
 			isCompact: compactNodeIds.has(node.id),
 			isFullscreen: false,
 			layoutMode
@@ -403,8 +714,234 @@ function FlowComponent({ isFront, focusRequest }: { isFront: boolean; focusReque
 					? OutputNode
 					: null
 
+	const movingNodeCenter = pendingMoveNode
+		? centerRelativeToWrapper(
+				flowWrapperRef.current?.querySelector(
+					`.react-flow__node[data-id="${CSS.escape(pendingMoveNode.nodeId)}"]`
+				) ?? null
+			)
+		: null
+	const activeViewportZoom = getViewport().zoom || 1
+
 	return (
-		<>
+		<div
+			ref={flowWrapperRef}
+			className="graph-flow-shell"
+			data-connect-state={pendingConnection ? "armed" : undefined}
+			data-move-state={pendingMoveNode ? "armed" : undefined}
+			onPointerDownCapture={(event) => {
+				const target = event.target as HTMLElement | null
+				if (target?.closest(".react-flow__handle")) {
+					handlePointerStart.current = { x: event.clientX, y: event.clientY }
+					handleDragged.current = false
+				} else {
+					handlePointerStart.current = null
+				}
+			}}
+			onPointerMove={(event) => {
+				if (handlePointerStart.current) {
+					const moved = Math.hypot(
+						event.clientX - handlePointerStart.current.x,
+						event.clientY - handlePointerStart.current.y
+					)
+					if (moved > 5) {
+						handleDragged.current = true
+						if (pendingConnection) {
+							cancelPendingConnection(false)
+						}
+					}
+				}
+				const wrapper = flowWrapperRef.current
+				if (!wrapper) {
+					return
+				}
+				if (pendingConnection) {
+					const rect = wrapper.getBoundingClientRect()
+					setWireTarget({ x: event.clientX - rect.left, y: event.clientY - rect.top })
+				}
+				if (pendingMoveNode) {
+					const rect = wrapper.getBoundingClientRect()
+					setMovePointer({ x: event.clientX - rect.left, y: event.clientY - rect.top })
+				}
+			}}
+			onClickCapture={(event) => {
+				const target = event.target as HTMLElement | null
+				const handleEl = target?.closest<HTMLElement>(".react-flow__handle")
+				if (!handleEl) {
+					return
+				}
+				handlePointerStart.current = null
+				if (handleDragged.current) {
+					handleDragged.current = false
+					return
+				}
+				event.preventDefault()
+				event.stopPropagation()
+				activateHandle(handleEl)
+			}}
+			onFocusCapture={(event) => {
+				if (!pendingConnection) {
+					return
+				}
+				const target = event.target as HTMLElement | null
+				const handleEl = target?.closest<HTMLElement>(
+					'.react-flow__handle[data-connect-role="valid-target"]'
+				)
+				if (handleEl) {
+					setWireTarget(centerRelativeToWrapper(handleEl))
+				}
+			}}
+			onKeyDown={(event) => {
+				const target = event.target as HTMLElement | null
+				if (event.key === "Escape") {
+					if (pendingConnection) {
+						event.preventDefault()
+						event.stopPropagation()
+						cancelPendingConnection(true)
+						return
+					}
+					if (pendingMoveNode) {
+						event.preventDefault()
+						event.stopPropagation()
+						cancelPendingMove(true, true)
+						return
+					}
+				}
+				if (
+					(event.key === "Enter" || event.key === " ") &&
+					target?.classList.contains("react-flow__handle")
+				) {
+					event.preventDefault()
+					event.stopPropagation()
+					activateHandle(target)
+					return
+				}
+				if (pendingMoveNode) {
+					const moving = nodes.find((item) => item.id === pendingMoveNode.nodeId)
+					if (!moving) {
+						return
+					}
+					const nextPos = nudgePosition(moving.position, event.key, event.shiftKey)
+					if (nextPos) {
+						event.preventDefault()
+						event.stopPropagation()
+						setNodes((snapshot) =>
+							snapshot.map((item) =>
+								item.id === pendingMoveNode.nodeId ? { ...item, position: nextPos } : item
+							)
+						)
+						return
+					}
+					if (
+						event.key === "Enter" &&
+						!target?.closest(".graph-story-banner button")
+					) {
+						event.preventDefault()
+						event.stopPropagation()
+						commitMoveAtPosition(moving.position)
+					}
+				}
+			}}
+		>
+			{pendingConnection && (
+				<div className="graph-story-banner nodrag nopan" role="status">
+					<span className="graph-story-step">Step 2 of 2</span>
+					<span>{describeConnectionStory(pendingConnection)}</span>
+					<div className="graph-story-actions">
+						<button
+							type="button"
+							className="secondary"
+							onClick={() => cancelPendingConnection(true)}
+						>
+							Cancel
+						</button>
+					</div>
+				</div>
+			)}
+			{pendingMoveNode && (
+				<>
+					<div className="graph-story-banner nodrag nopan" role="status">
+						<span className="graph-story-step">Step 2 of 2</span>
+						<span>
+							Moving {pendingMoveNode.label} — click anywhere on the canvas to place it,
+							or use Arrow keys then Place here.
+						</span>
+						<div className="graph-story-actions">
+							<button
+								type="button"
+								className="primary"
+								onClick={() => {
+									const current = nodes.find(
+										(item) => item.id === pendingMoveNode.nodeId
+									)
+									if (current) {
+										commitMoveAtPosition(current.position)
+									}
+								}}
+							>
+								Place here
+							</button>
+							<button
+								type="button"
+								className="secondary"
+								onClick={() => cancelPendingMove(true, true)}
+							>
+								Cancel
+							</button>
+						</div>
+					</div>
+					<div
+						className="graph-move-overlay nodrag nopan"
+						role="button"
+						tabIndex={0}
+						aria-label={`Click to place ${pendingMoveNode.label} on canvas`}
+						onClick={(event) => {
+							const flowPoint = screenToFlowPosition({
+								x: event.clientX,
+								y: event.clientY
+							})
+							commitMoveAtPosition({
+								x: Math.round(flowPoint.x - pendingMoveNode.width / 2),
+								y: Math.round(flowPoint.y - pendingMoveNode.height / 2)
+							})
+						}}
+					>
+						{movePointer && (
+							<div
+								className="graph-move-ghost"
+								aria-hidden="true"
+								style={{
+									left: movePointer.x - (pendingMoveNode.width * activeViewportZoom) / 2,
+									top: movePointer.y - (pendingMoveNode.height * activeViewportZoom) / 2,
+									width: pendingMoveNode.width * activeViewportZoom,
+									height: pendingMoveNode.height * activeViewportZoom
+								}}
+							>
+								Place {pendingMoveNode.label} here
+							</div>
+						)}
+					</div>
+				</>
+			)}
+			{((pendingConnection && wireOrigin && wireTarget) ||
+				(pendingMoveNode && movingNodeCenter && movePointer)) && (
+				<svg className="graph-story-wire" aria-hidden="true">
+					{pendingConnection && wireOrigin && wireTarget && (
+						<>
+							<path d={bezierPreviewPath(wireOrigin, wireTarget)} />
+							<circle cx={wireOrigin.x} cy={wireOrigin.y} r={5} />
+							<circle cx={wireTarget.x} cy={wireTarget.y} r={6} />
+						</>
+					)}
+					{pendingMoveNode && movingNodeCenter && movePointer && (
+						<>
+							<path d={bezierPreviewPath(movingNodeCenter, movePointer)} />
+							<circle cx={movingNodeCenter.x} cy={movingNodeCenter.y} r={5} />
+							<circle cx={movePointer.x} cy={movePointer.y} r={5} />
+						</>
+					)}
+				</svg>
+			)}
 			<ReactFlow
 				className={ExpandedNode ? "node-expanded" : undefined}
 				panOnScroll={false}
@@ -429,6 +966,11 @@ function FlowComponent({ isFront, focusRequest }: { isFront: boolean; focusReque
 				isValidConnection={validConnection}
 				onNodesDelete={removeNodes}
 				onEdgesDelete={detachEdges}
+				onPaneClick={() => {
+					if (pendingConnection) {
+						cancelPendingConnection(true)
+					}
+				}}
 				onEdgeClick={(_, edge) => {
 					if (edge.data?.controlSurfaceId) {
 						controlDialogs.current.add(
@@ -440,14 +982,17 @@ function FlowComponent({ isFront, focusRequest }: { isFront: boolean; focusReque
 						)
 					}
 				}}
-				onNodeDragStop={(_, node) =>
+				onNodeDragStop={(_, node) => {
+					if (pendingMoveNode) {
+						cancelPendingMove(false, false)
+					}
 					chain.setGraphOptions({
 						positions: {
 							...chain.options.positions,
 							[node.data.positionKey as string]: node.position
 						}
 					})
-				}
+				}}
 			>
 				<GraphControls layoutMode={layoutMode} />
 				<SectionDividers layoutMode={layoutMode} />
@@ -495,7 +1040,7 @@ function FlowComponent({ isFront, focusRequest }: { isFront: boolean; focusReque
 						document.body
 					)}
 			</ReactFlow>
-		</>
+		</div>
 	)
 }
 

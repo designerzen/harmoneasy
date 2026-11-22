@@ -16,7 +16,9 @@ export function DeviceTitleBar({
 	compact,
 	onMinimise,
 	onExpand,
-	onRemove
+	onRemove,
+	onMove,
+	isMoving = false
 }: {
 	device: AbstractInput | IAudioOutput
 	direction: "input" | "output"
@@ -25,6 +27,8 @@ export function DeviceTitleBar({
 	onMinimise: () => void
 	onExpand: () => void
 	onRemove: () => void
+	onMove?: () => void
+	isMoving?: boolean
 }) {
 	const { chain } = useChain()
 	const [swapping, setSwapping] = useState(false)
@@ -60,6 +64,8 @@ export function DeviceTitleBar({
 				removeLabel={`Remove ${direction}`}
 				onRemove={onRemove}
 				onSwap={() => setSwapping(true)}
+				onMove={expanded ? undefined : onMove}
+				isMoving={isMoving}
 				title={
 					<>
 						<ElementIcon src={deviceIcon(device, direction)} title={description} />

@@ -93,13 +93,16 @@ export function TransformerNode(props: any) {
 		}
 	}, [props.id, onFullscreen])
 
+	const isMoving = Boolean(props.data?.isMoving) && !isFullscreen
+	const onMoveNode = props.data?.onMoveNode
+
 	return (
 		<div
 			title={description}
 			data-layout={isVertical ? "vertical" : "horizontal"}
 			style={customColor ? ({ "--node-accent": color } as React.CSSProperties) : undefined}
 			data-midi-scope={`${chainId}:transformer:${props.data.element.midiControlId}`}
-			className={`node-transformer graph-node can-remove category-${props.data.element.category.toLowerCase()} ${isFullscreen ? "is-fullscreen" : ""} ${isCompact ? "is-compact" : ""}`}
+			className={`node-transformer graph-node can-remove category-${props.data.element.category.toLowerCase()} ${isFullscreen ? "is-fullscreen" : ""} ${isCompact ? "is-compact" : ""} ${isMoving ? "is-moving-node" : ""}`}
 		>
 			<NodeHeader
 				enabled={enabled}
@@ -108,6 +111,8 @@ export function TransformerNode(props: any) {
 				removeLabel="Delete transformer"
 				onRemove={removeNode}
 				onSwap={() => setSwapping(true)}
+				onMove={!isFullscreen && onMoveNode ? () => onMoveNode(props.id) : undefined}
+				isMoving={isMoving}
 				title={
 					<>
 						<ElementIcon src={icon} title={description} />
@@ -215,6 +220,8 @@ export function TransformerNode(props: any) {
 						position={isVertical ? Position.Right : Position.Bottom}
 						style={isVertical ? { top: "80%" } : { left: "80%" }}
 						className="control-connector"
+						tabIndex={0}
+						role="button"
 						aria-label={`${props.data.element.name} controls`}
 					/>
 				</>

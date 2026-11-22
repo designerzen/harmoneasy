@@ -474,4 +474,57 @@ describe("research-guided ensemble performance", () => {
 		expect(postComplete).toHaveLength(1)
 		expect(performance.partFeedback(1).message).toContain("Comping")
 	})
+	it("immediately comps without locking a distant future trigger when tapped outside the anticipation window", () => {
+		const { performance } = fixture({ anticipationBeats: 2 }, (midi) => {
+			// Channel 1 enters at 4.0s (beat 8, 8 beats ahead > anticipationBeats=2).
+			midi.tracks[0].notes = midi.tracks[0].notes.filter((n: any) => n.time === 4)
+		})
+		tap(performance, 1, 0)
+		// First tap at t=0 is 8 beats early (> 2), so it voices an immediate comp note without locking a request for t=4.0s.
+		const immediate = attacks(tap(performance, 0, 0))
+		expect(immediate).toHaveLength(1)
+		expect(performance.partFeedback(1).message).toContain("Comping")
+		// Because no distant trigger was locked, advancing to 4.1s without another tap does not auto-fire the 4.0s note.
+		expect(attacks(tick(performance, 0, 3.2))).toEqual([])
+		// Tapping at 3.3s (beat 6.6, within 1.4 beats <= anticipationBeats=2 of beat 8) queues the real entrance at 4.0s.
+		expect(attacks(tap(performance, 0, 3.3))).toEqual([])
+		expect(performance.partFeedback(1).phase).toBe("queued")
+		expect(performance.partFeedback(1).approach).toBeGreaterThan(0.6)
+		expect(attacks(tick(performance, 3.3, 4.1)).map((c) => c.number)).toEqual([68])
+	})
+	it("pairs unison/octave companion parts and lets a human seamlessly take over an assisted keyboard part", () => {
+		const { performance } = fixture(
+			{
+				assist: true,
+				pairCompanionParts: true,
+				players: [
+					{ source: "a", channels: [1] },
+					{ source: "b", channels: [2] }
+				]
+			},
+			(midi) => {
+				// Add channel 3 as an octave-doubled companion to channel 1.
+				const companion = midi.addTrack()
+				companion.channel = 2
+				for (let time = 0; time < 16; time += 0.5) {
+					companion.addNote({
+						midi: 72 + time * 2,
+						time,
+						duration: 0.25,
+						velocity: 0.7
+					})
+				}
+			}
+		)
+		expect(performance.companionChannels(1)).toContain(3)
+		// Tapping player 0 (channel 1) pairs octave companion channel 3, while unclaimed channel 2 receives quiet assist backing.
+		const firstTap = tap(performance, 0, 0)
+		expect(attacks(firstTap, 1).map((c) => c.number)).toEqual([60])
+		expect(attacks(firstTap, 3).map((c) => c.number)).toEqual([72])
+		expect(performance.parts().assisted).toContain(2)
+		// Advance to 2.0s while channel 2 is assisted, then player 1 takes over channel 2 right at the current beat (2.0s -> pitch 65).
+		tick(performance, 0, 2)
+		const takeover = attacks(tap(performance, 1, 2), 2)
+		expect(takeover.map((c) => c.number)).toEqual([65])
+	})
 })

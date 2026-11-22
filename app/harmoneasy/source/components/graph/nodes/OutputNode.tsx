@@ -58,7 +58,9 @@ export function OutputNode(props: any) {
 	const isVertical = props.data?.layoutMode === "vertical"
 	const isFullscreen = props.data?.isFullscreen || false
 	const isCompact = Boolean(props.data?.isCompact) && !isFullscreen
+	const isMoving = Boolean(props.data?.isMoving) && !isFullscreen
 	const onFullscreen = props.data?.onFullscreen
+	const onMoveNode = props.data?.onMoveNode
 
 	const handleFullscreen = useCallback(() => {
 		if (onFullscreen) {
@@ -69,7 +71,7 @@ export function OutputNode(props: any) {
 	return (
 		<div
 			data-midi-scope={`${chainId}:output:${deviceId(output)}`}
-			className={`node-output graph-node can-remove ${output.audioInput ? "is-effect" : ""} ${hasControls ? "has-controls" : "no-controls"} ${isFullscreen ? "is-fullscreen" : ""} ${isCompact ? "is-compact" : ""}`}
+			className={`node-output graph-node can-remove ${output.audioInput ? "is-effect" : ""} ${hasControls ? "has-controls" : "no-controls"} ${isFullscreen ? "is-fullscreen" : ""} ${isCompact ? "is-compact" : ""} ${isMoving ? "is-moving-node" : ""}`}
 			title={deviceDescription(output, "output")}
 		>
 			<DeviceTitleBar
@@ -77,6 +79,8 @@ export function OutputNode(props: any) {
 				direction="output"
 				expanded={isFullscreen}
 				compact={isCompact}
+				isMoving={isMoving}
+				onMove={onMoveNode ? () => onMoveNode(props.id) : undefined}
 				onMinimise={() => props.data.onMinimise?.(props.id)}
 				onExpand={handleFullscreen}
 				onRemove={removeNode}
@@ -118,6 +122,9 @@ export function OutputNode(props: any) {
 					type="target"
 					id={output.audioInput ? "audio-in" : undefined}
 					position={isVertical ? Position.Top : Position.Left}
+					tabIndex={0}
+					role="button"
+					aria-label={output.audioInput ? `${output.name} audio in` : `${output.name} input`}
 				/>
 			)}
 			{!isFullscreen && (
@@ -128,6 +135,8 @@ export function OutputNode(props: any) {
 					isConnectable={true}
 					// Always mounted so the speaker edge finds it if an engine gains audio later.
 					style={{ visibility: hasAudibleOutput(output) ? undefined : "hidden" }}
+					tabIndex={hasAudibleOutput(output) ? 0 : -1}
+					role="button"
 					aria-label={`${output.name} audio out`}
 				/>
 			)}
@@ -144,6 +153,8 @@ export function OutputNode(props: any) {
 						position={isVertical ? Position.Right : Position.Bottom}
 						style={isVertical ? { top: "80%" } : { left: "80%" }}
 						className="control-connector"
+						tabIndex={0}
+						role="button"
 						aria-label={`${output.name} controls`}
 					/>
 				</>

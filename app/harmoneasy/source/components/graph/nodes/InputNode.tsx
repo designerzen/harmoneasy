@@ -56,7 +56,9 @@ export function InputNode(props: any) {
 	const isVertical = props.data?.layoutMode === "vertical"
 	const isFullscreen = props.data?.isFullscreen || false
 	const isCompact = Boolean(props.data?.isCompact) && !isFullscreen
+	const isMoving = Boolean(props.data?.isMoving) && !isFullscreen
 	const onFullscreen = props.data?.onFullscreen
+	const onMoveNode = props.data?.onMoveNode
 
 	const handleFullscreen = useCallback(() => {
 		if (onFullscreen) {
@@ -67,7 +69,7 @@ export function InputNode(props: any) {
 	return (
 		<div
 			data-midi-scope={`${chainId}:input:${deviceId(input)}`}
-			className={`node-input graph-node can-remove ${hasControls ? "has-controls" : "no-controls"} ${isFullscreen ? "is-fullscreen" : ""} ${isCompact ? "is-compact" : ""}`}
+			className={`node-input graph-node can-remove ${hasControls ? "has-controls" : "no-controls"} ${isFullscreen ? "is-fullscreen" : ""} ${isCompact ? "is-compact" : ""} ${isMoving ? "is-moving-node" : ""}`}
 			title={deviceDescription(input, "input")}
 		>
 			<DeviceTitleBar
@@ -75,6 +77,8 @@ export function InputNode(props: any) {
 				direction="input"
 				expanded={isFullscreen}
 				compact={isCompact}
+				isMoving={isMoving}
+				onMove={onMoveNode ? () => onMoveNode(props.id) : undefined}
 				onMinimise={() => props.data.onMinimise?.(props.id)}
 				onExpand={handleFullscreen}
 				onRemove={removeNode}
@@ -112,7 +116,13 @@ export function InputNode(props: any) {
 			<DeviceGui device={input} expanded={isFullscreen} />
 
 			{!isFullscreen && (
-				<Handle type="source" position={isVertical ? Position.Bottom : Position.Right} />
+				<Handle
+					type="source"
+					position={isVertical ? Position.Bottom : Position.Right}
+					tabIndex={0}
+					role="button"
+					aria-label={`${input.name} output`}
+				/>
 			)}
 			{!isFullscreen && (
 				<>
@@ -127,6 +137,8 @@ export function InputNode(props: any) {
 						position={isVertical ? Position.Right : Position.Bottom}
 						style={isVertical ? { top: "80%" } : { left: "80%" }}
 						className="control-connector"
+						tabIndex={0}
+						role="button"
 						aria-label={`${input.name} controls`}
 					/>
 				</>
