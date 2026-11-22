@@ -5,7 +5,12 @@ import {
 	MIDI_DEVICE_PROFILES,
 	onMidiDeviceProfilesChanged
 } from "audiobus/hardware/midi-devices/device-profiles"
+import type {
+	MidiDeviceProfile,
+	MidiGuiNode
+} from "audiobus/hardware/midi-devices/device-profile-schema"
 import {
+	EVENT_CHANGE,
 	EVENT_CLOSED,
 	EVENT_DEVICE_LIST_CHANGED,
 	EVENT_MIDI_CHANNELS_CHANGED,
@@ -29,8 +34,33 @@ export interface MidiPortSummary {
 	connection: string
 }
 
-// Names of the chains using a port, so the list shows where each device is wired.
-export type MidiPortConnections = (port: MidiPortSummary) => string[]
+// One chain a port can be wired into. "all" marks a chain that already hears
+// every MIDI device, so it cannot be unlinked from a single port.
+export interface MidiChainLink {
+	name: string
+	state: "linked" | "all" | "none"
+	toggle(): Promise<void>
+}
+// The chains a port can join; the profile ID decides which input type is created.
+export type MidiPortLinks = (port: MidiPortSummary, profileId?: string) => MidiChainLink[]
+
+function imageIn(node: MidiGuiNode): MidiGuiNode | undefined {
+	if (node.type === "image") {
+		return node
+	}
+	for (const child of node.children ?? []) {
+		const image = imageIn(child)
+		if (image) {
+			return image
+		}
+	}
+}
+
+// The panel layout drawing a profile ships with, if any
+export const profileArtwork = (profile: MidiDeviceProfile) => {
+	const image = imageIn(profile.gui)
+	return image?.src ? { src: image.src, alt: image.alt || `${profile.name} layout` } : undefined
+}
 
 const CONNECTION_LABELS: Record<string, string> = {
 	open: "open",
@@ -51,7 +81,7 @@ const summarise = (port: any): MidiPortSummary => ({
 // devices first, then disconnected ones, each with its ports, chains and abilities.
 export function createMidiDevicesDialog(
 	root: Document = document,
-	connections: MidiPortConnections = () => []
+	links: MidiPortLinks = () => []
 ): () => void {
 	const dialog = root.querySelector<HTMLDialogElement>("#midi-dialog")!
 	const status = root.querySelector<HTMLElement>("#midi-devices-status")!
@@ -112,6 +142,38 @@ export function createMidiDevicesDialog(
 		facts.append(element("dt", undefined, term), description)
 	}
 
+	const chainToggles = (port: MidiPortSummary, profileId: string | undefined, card: Element) => {
+		const options = links(port, profileId)
+		if (!options.length) {
+			return [element("span", "midi-device-muted", "No chains yet")]
+		}
+		return options.map((link) => {
+			const label = element("label", "midi-chain-toggle")
+			const box = element("input")
+			box.type = "checkbox"
+			box.checked = link.state !== "none"
+			box.disabled = link.state === "all"
+			if (link.state === "all") {
+				label.title = "This chain listens to every MIDI device"
+			}
+			box.addEventListener(EVENT_CHANGE, async () => {
+				for (const control of card.querySelectorAll("input")) {
+					control.disabled = true
+				}
+				try {
+					await link.toggle()
+					render()
+				} catch (error) {
+					render()
+					status.textContent = `Could not change ${link.name}: ${error instanceof Error ? error.message : error}`
+					console.warn("MIDI device link failed", error)
+				}
+			})
+			label.append(box, link.name)
+			return label
+		})
+	}
+
 	const renderDevice = (ports: MidiPortSummary[]) => {
 		const [first] = ports
 		const connected = ports.some((port) => port.state === "connected")
@@ -146,6 +208,15 @@ export function createMidiDevicesDialog(
 			element("span", "midi-device-state", connected ? "Connected" : "Disconnected")
 		)
 		item.append(head)
+		const artwork = profile && profileArtwork(profile)
+		if (artwork) {
+			const image = element("img", "midi-device-panel")
+			image.src = artwork.src
+			image.alt = artwork.alt
+			image.loading = "lazy"
+			image.decoding = "async"
+			item.append(image)
+		}
 
 		const facts = element("dl", "midi-device-facts")
 		fact(
@@ -169,8 +240,17 @@ export function createMidiDevicesDialog(
 			].sort((a, b) => a - b)
 			fact(facts, "Channels heard", channels.join(", ") || "None yet")
 		}
-		const chains = [...new Set(ports.flatMap((port) => connections(port)))]
-		fact(facts, "Chains", chains.join(", ") || "Not used by any chain")
+		for (const [type, term] of [
+			["input", "Plays into"],
+			["output", "Plays from"]
+		] as const) {
+			const port =
+				ports.find((port) => port.type === type && port.state === "connected") ??
+				ports.find((port) => port.type === type)
+			if (port) {
+				fact(facts, term, chainToggles(port, profile?.id, item))
+			}
+		}
 		const abilities = [
 			ports.some((port) => port.type === "input") ? "Sends MIDI" : "",
 			ports.some((port) => port.type === "output") ? "Receives MIDI" : "",

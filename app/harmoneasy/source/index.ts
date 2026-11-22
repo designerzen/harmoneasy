@@ -40,6 +40,7 @@ import { startKnownMidiInputs } from "audiobus/hardware/midi-devices/known-midi-
 import { showMidiDeviceDisconnected } from "./services/midi-device-errors"
 import { chooseChainsForMidiDevice } from "./services/midi-device-connected-dialog"
 import { createMidiDevicesDialog } from "./services/midi-devices-dialog"
+import { createMidiDeviceChains } from "./services/midi-device-chains"
 import { createMixer } from "./services/mixer"
 import { configureAudiobus } from "./audiobus-host"
 import { createRecordingControls } from "./services/recording-dialog"
@@ -411,33 +412,7 @@ const initialiseApplication = async (
 	ioManager.addEventListener(EVENT_CHAIN_ACTIVE_CHANGED, persistIOState)
 
 	const { createGraph } = await import("./components/transformers-graph")
-	createMidiDevicesDialog(document, (port) =>
-		ioManager.chains
-			.map((chain, index) => ({
-				chain,
-				name: chain.options.name ?? `Chain ${index + 1}`
-			}))
-			.filter(({ chain }) =>
-				(port.type === "input" ? chain.inputs : chain.outputs).some((node: any) => {
-					const options = node.options ?? {}
-					const devices = port.type === "input" ? node.inputDevices : node.outputDevices
-					if (!Array.isArray(devices)) {
-						return false
-					}
-					// Outputs list every port, so only an explicit choice or "all" counts
-					const everyPort =
-						port.type === "input" ||
-						options.sendToAllDevices === true ||
-						options.selectedDevice === ""
-					return (
-						String(options.selectedDevice) === port.id ||
-						(everyPort &&
-							devices.some((device: { id: string }) => device.id === port.id))
-					)
-				})
-			)
-			.map(({ name }) => name)
-	)
+	createMidiDevicesDialog(document, createMidiDeviceChains(ioManager))
 	const midiControls = createMidiControlPanel(
 		ioManager,
 		state.get("midiControls") as string | undefined,

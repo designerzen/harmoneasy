@@ -69,7 +69,12 @@ const INPUT_ICONS: Partial<Record<InputId, string>> = {
 	"music-mouse": "mouse",
 	"microphone-pitch": "microphone",
 	"dvs-control-vinyl": "vinyl",
-	"device-motion": "motion"
+	"device-motion": "motion",
+	arpeggios: "clock",
+	chords: "piano",
+	"melody-maker": "clock",
+	"scrolling-piano-roll": "clock",
+	"sound-waves": "piano"
 }
 
 const OUTPUT_ICONS: Record<

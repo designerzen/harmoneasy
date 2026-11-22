@@ -2,9 +2,10 @@
 import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
-import { createMidiDevicesDialog } from "../source/services/midi-devices-dialog"
+import { createMidiDevicesDialog, type MidiChainLink } from "../source/services/midi-devices-dialog"
 import * as registry from "audiobus/hardware/midi-devices/device-profiles"
 import {
+	EVENT_CHANGE,
 	EVENT_CLOSED,
 	EVENT_DEVICE_LIST_CHANGED,
 	EVENT_MIDI_CHANNELS_CHANGED,
@@ -27,7 +28,14 @@ vi.mock("audiobus/midi/shared-webmidi", () => ({
 const markup = readFileSync(resolve("index.html"), "utf8")
 let dispose: () => void
 let hidden = false
-const connections = vi.fn((_port: { id: string }) => [] as string[])
+const connections = vi.fn(
+	(_port: { id: string; type: string }, _profileId?: string) => [] as MidiChainLink[]
+)
+const link = (name: string, state: MidiChainLink["state"] = "none") => ({
+	name,
+	state,
+	toggle: vi.fn(async () => {})
+})
 const dialog = () => document.querySelector<HTMLDialogElement>("#midi-dialog")!
 const rows = () => document.querySelector<HTMLUListElement>("#midi-devices-list")!
 const status = () => document.querySelector<HTMLElement>("#midi-devices-status")!
@@ -90,17 +98,21 @@ afterEach(() => {
 it("lists devices inside the MIDI dialog with ports, channels, chains and capabilities while visible", () => {
 	expect(document.querySelector("#action-bar #btn-midi")).not.toBeNull()
 	expect(document.querySelector("#btn-midi-devices")).toBeNull()
-	connections.mockImplementation((port) => (port.id === "Synth" ? ["Lead"] : []))
+	connections.mockImplementation((port) =>
+		port.id === "Synth" ? [link("Lead", "linked"), link("Bass")] : []
+	)
 	open()
 	expect(rows().children).toHaveLength(2)
 	expect(rows().textContent).toContain("Keys <b>")
 	expect(rows().querySelector("b")).toBeNull()
 	const [keys, synth] = rows().children
 	expect(keys.textContent).toContain("ConnectedPortsIn · openChannels heard3")
-	expect(keys.textContent).toContain("Not used by any chain")
+	expect(keys.textContent).toContain("Plays intoNo chains yet")
 	expect(keys.textContent).toContain("Sends MIDI")
 	expect(synth.textContent).toContain("Out · open")
-	expect(synth.textContent).toContain("ChainsLead")
+	const toggles = [...synth.querySelectorAll<HTMLInputElement>(".midi-chain-toggle input")]
+	expect(synth.textContent).toContain("Plays fromLeadBass")
+	expect(toggles.map((box) => box.checked)).toEqual([true, false])
 	expect(synth.textContent).toContain("Receives MIDI")
 	expect(synth.textContent).not.toContain("Channels heard")
 	expect(status().textContent).toBe("2 connected")
@@ -187,6 +199,10 @@ it("shows profile artwork, abilities and product links for matching IDs and exac
 	profile("test-keys", {
 		name: "Test Keys",
 		icon: "/test-keys.svg",
+		gui: {
+			type: "column",
+			children: [{ type: "image", src: "/test-keys-panel.svg", alt: "Test Keys panel" }]
+		},
 		portNames: ["Keys MKII"],
 		abilities: ["Velocity keys"],
 		productUrl: "https://example.com/keys",
@@ -205,6 +221,13 @@ it("shows profile artwork, abilities and product links for matching IDs and exac
 		])
 		const keys = rows().querySelector<HTMLElement>('[data-midi-profile="test-keys"]')!
 		expect(keys.querySelector("img")!.getAttribute("src")).toBe("/test-keys.svg")
+		const panel = keys.querySelector<HTMLImageElement>(".midi-device-panel")!
+		expect(panel.getAttribute("src")).toBe("/test-keys-panel.svg")
+		expect(panel.alt).toBe("Test Keys panel")
+		expect(connections).toHaveBeenCalledWith(
+			expect.objectContaining({ id: "host-assigned-id" }),
+			"test-keys"
+		)
 		expect(keys.textContent).toContain("Profile maker · Test Keys")
 		expect(keys.textContent).toContain("Sends MIDI · Velocity keys")
 		expect([...keys.querySelectorAll("a")].map((link) => link.textContent)).toEqual([
@@ -285,4 +308,35 @@ it("shows readiness and empty states without requesting access and releases list
 	mock.service.inputs = [port("After cleanup")]
 	mock.service.dispatchEvent(new Event(EVENT_DEVICE_LIST_CHANGED))
 	expect(rows().children).toHaveLength(0)
+})
+
+it("links and unlinks a device from chains with its profile ID and shows chains that hear every device", async () => {
+	const bass = link("Bass")
+	const all = link("Omni", "all")
+	connections.mockImplementation((port) => (port.type === "input" ? [bass, all] : []))
+	mock.service.outputs = []
+	open()
+	const boxes = [...rows().querySelectorAll<HTMLInputElement>(".midi-chain-toggle input")]
+	expect(boxes.map((box) => [box.checked, box.disabled])).toEqual([
+		[false, false],
+		[true, true]
+	])
+	expect(connections).toHaveBeenCalledWith(expect.objectContaining({ id: "Keys <b>" }), undefined)
+	bass.toggle.mockImplementationOnce(async () => {
+		bass.state = "linked"
+	})
+	boxes[0].checked = true
+	boxes[0].dispatchEvent(new Event(EVENT_CHANGE))
+	expect(boxes[1].disabled).toBe(true)
+	await vi.waitFor(() => expect(bass.toggle).toHaveBeenCalledOnce())
+	await vi.waitFor(() =>
+		expect(rows().querySelector<HTMLInputElement>(".midi-chain-toggle input")!.checked).toBe(
+			true
+		)
+	)
+	bass.toggle.mockRejectedValueOnce(new Error("chain was deleted"))
+	const box = rows().querySelector<HTMLInputElement>(".midi-chain-toggle input")!
+	box.checked = false
+	box.dispatchEvent(new Event(EVENT_CHANGE))
+	await vi.waitFor(() => expect(status().textContent).toContain("chain was deleted"))
 })

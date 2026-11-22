@@ -741,6 +741,11 @@ body:has(dialog:modal) {
 		height: 2rem;
 		object-fit: contain;
 	}
+	img.midi-connected-panel {
+		width: 100%;
+		height: auto;
+		max-height: 10rem;
+	}
 	small,
 	.midi-chain-status,
 	.midi-connected-hint {
@@ -972,6 +977,36 @@ body:has(dialog:modal) {
 		border-radius: var(--radius-sm);
 		font-size: var(--text-xs);
 		line-height: 1.6;
+	}
+	.midi-device-panel {
+		display: block;
+		width: 100%;
+		max-height: 8rem;
+		object-fit: contain;
+	}
+	.midi-device-muted {
+		color: var(--col-muted);
+	}
+	.midi-chain-toggle {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.375rem;
+		padding: 0.125rem 0.625rem 0.125rem 0.375rem;
+		border: 1px solid var(--col-line);
+		border-radius: 999px;
+		font-size: var(--text-xs);
+		cursor: pointer;
+		&:has(input:checked) {
+			border-color: var(--col-accent);
+			background: var(--col-accent-soft);
+		}
+		&:has(input:disabled) {
+			cursor: default;
+			opacity: 0.7;
+		}
+		input {
+			margin: 0;
+		}
 	}
 	.midi-device-links {
 		display: flex;

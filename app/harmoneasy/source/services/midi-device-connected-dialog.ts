@@ -5,6 +5,7 @@ import { MIDI_DEVICE_PROFILES } from "audiobus/hardware/midi-devices/device-prof
 import { EVENT_CHANGE } from "audiobus/events/event-constants"
 import { deviceIcon, elementIcon } from "../components/graph/element-icons"
 import { createDialogFromTemplate, showDialog } from "../libs/dialog-utils"
+import { profileArtwork } from "./midi-devices-dialog"
 
 const chainName = (chain: IOChain, index: number) => chain.options.name ?? `Chain ${index + 1}`
 
@@ -43,6 +44,25 @@ export async function chooseChainsForMidiDevice(
 		.querySelector(".midi-connected-icon")!
 		.append(icon(profile?.icon || elementIcon("input", "webmidi")))
 	dialog.querySelector(".midi-connected-name")!.textContent = device.name || "Unnamed MIDI device"
+	if (profile) {
+		dialog.querySelector(".midi-connected-device small")!.textContent =
+			`${[profile.manufacturer, profile.name].filter(Boolean).join(" ")} · MIDI input`
+		const artwork = profileArtwork(profile)
+		const details: HTMLElement[] = []
+		if (artwork) {
+			const panel = icon(artwork.src)
+			panel.alt = artwork.alt
+			panel.className = "midi-connected-panel"
+			details.push(panel)
+		}
+		if (profile.abilities.length) {
+			const abilities = document.createElement("p")
+			abilities.className = "midi-connected-hint"
+			abilities.textContent = profile.abilities.join(" · ")
+			details.push(abilities)
+		}
+		dialog.querySelector(".midi-connected-device")!.after(...details)
+	}
 	const list = dialog.querySelector(".midi-chain-list")!
 	const add = dialog.querySelector<HTMLButtonElement>("#midi-device-add")!
 	add.classList.add("primary")
