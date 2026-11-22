@@ -337,6 +337,22 @@
 			>
 				Remote
 			</button>
+			<button
+				type="button"
+				id="netronome-link"
+				class="btn-shared-room"
+				title="Share tempo, notes and workspace with another device"
+				aria-haspopup="dialog"
+				aria-controls="netronome-dialog"
+				disabled
+			>
+				<img
+					id="netronome-qr-preview"
+					alt="Shared room invitation QR code"
+					hidden
+				/>
+				<span>Shared room</span>
+			</button>
 			<button id="btn-settings" class="btn-settings" type="button">Settings</button>
 			<button id="btn-kill-switch" class="btn-kill-switch btn-panic" type="button">
 				Panic
@@ -461,15 +477,6 @@
 				disabled
 			>
 				Last take
-			</button>
-			<button
-				id="btn-mixer"
-				type="button"
-				aria-haspopup="dialog"
-				aria-controls="mixer-dialog"
-				disabled
-			>
-				Mixer
 			</button>
 			<div class="header-controls" role="group" aria-label="Session controls">
 				<div id="tempo-control" class="controls">
@@ -613,6 +620,15 @@
 						</button>
 					</div>
 				</div>
+				<button
+					id="btn-mixer"
+					type="button"
+					aria-haspopup="dialog"
+					aria-controls="mixer-dialog"
+					disabled
+				>
+					Mixer
+				</button>
 				<div class="header-secondary">
 					<button
 						type="button"
@@ -622,21 +638,6 @@
 						disabled
 					>
 						Metronome
-					</button>
-					<button
-						type="button"
-						id="netronome-link"
-						title="Share tempo, notes and workspace with another device"
-						aria-haspopup="dialog"
-						aria-controls="netronome-dialog"
-						disabled
-					>
-						<img
-							id="netronome-qr-preview"
-							alt="Shared room invitation QR code"
-							hidden
-						/>
-						<span>Shared room</span>
 					</button>
 				</div>
 			</div>

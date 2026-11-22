@@ -183,7 +183,8 @@ dialog .btn-close {
 .btn-midi,
 .btn-remote-control,
 .btn-harmony,
-.btn-play-songs {
+.btn-play-songs,
+.btn-shared-room {
 	&::before {
 		content: "";
 		display: inline-block;
@@ -217,6 +218,13 @@ dialog .btn-close {
 }
 .btn-play-songs {
 	--icon: url("../icons/play.svg");
+}
+.btn-shared-room {
+	--icon: url("../icons/shared-room.svg");
+	// The live invitation QR replaces the icon once a room is open.
+	&:has(img:not([hidden]))::before {
+		display: none;
+	}
 }
 
 .btn-add::before {
@@ -267,6 +275,7 @@ dialog .btn-close {
 	.btn-remote-control::before,
 	.btn-harmony::before,
 	.btn-play-songs::before,
+	.btn-shared-room::before,
 	.btn-zoom-in::before,
 	.btn-zoom-out::before {
 		forced-color-adjust: none;
