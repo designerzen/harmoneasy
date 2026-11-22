@@ -38,7 +38,16 @@ describe.each(devices)("%s overhead diagrams", (id) => {
 			"image/svg+xml"
 		)
 
-	it.each(["panel", "icon"])("%s has addressable, labelled physical controls", (asset) => {
+	// Icons are manufacturer logos copied by the midi-devices generator, not diagrams.
+	it("icon is a titled manufacturer logo", () => {
+		const document = diagram("icon")
+		expect(document.querySelector("parsererror")).toBeNull()
+		expect(document.documentElement.localName).toBe("svg")
+		expect(document.querySelector("title")?.textContent?.trim()).toMatch(/logo$/i)
+	})
+
+	it("panel has addressable, labelled physical controls", () => {
+		const asset = "panel"
 		const document = diagram(asset)
 		expect(document.querySelector("parsererror")).toBeNull()
 		const ids = [...document.querySelectorAll("[id]")].map((node) => node.id)
@@ -91,8 +100,8 @@ describe.each(devices)("%s overhead diagrams", (id) => {
 		}
 	})
 
-	it.each(["panel", "icon"])("%s uses outline wireframes without shaded parts", (asset) => {
-		const document = diagram(asset)
+	it("panel uses outline wireframes without shaded parts", () => {
+		const document = diagram("panel")
 		for (const shape of document.querySelectorAll(
 			"rect, circle, ellipse, path, line, polygon, polyline"
 		)) {

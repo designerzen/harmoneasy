@@ -64,6 +64,7 @@ async function add(folder: string, id: string, filename = `${id}.json`) {
 	}
 }
 describe("runtime device folders", () => {
+	// Copies the whole bundled registry, several hundred device folders.
 	it("serves package hardware assets in development and copies raw device folders for deployed builds", async () => {
 		const folder = await root()
 		const plugin = midiDeviceFilesPlugin()
@@ -104,7 +105,7 @@ describe("runtime device folders", () => {
 			next
 		)
 		expect(JSON.parse(response.end.mock.calls[0][0].toString()).id).toBe("digit-cmpsr")
-	})
+	}, 60_000)
 	it("discovers folders added after startup without importing or rebuilding application code", async () => {
 		const folder = await root()
 		useTestMidiProfileFiles([folder, bundledMidiDevices])

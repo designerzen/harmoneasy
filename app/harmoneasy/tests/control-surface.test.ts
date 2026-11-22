@@ -547,8 +547,8 @@ describe("surface interaction and bindings", () => {
 		expect(surface.pointerDown(900, entry.visual.x + 20, entry.visual.y + 40, false, 0.8)).toBe(
 			true
 		)
-		const cycle = surface.element.querySelector<HTMLButtonElement>(
-			'[aria-label="Switch visualiser"]'
+		const cycle = [...surface.element.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent?.startsWith("Visualiser:")
 		)!
 		cycle.click()
 		expect(saved.background).toMatchObject({ sourceId: "audio", kind: "waveform" })

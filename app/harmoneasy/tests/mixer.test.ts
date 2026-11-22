@@ -117,7 +117,7 @@ it("allocates no meter taps or frames until opened, and places stereo meters to 
 	expect(source.context.gains[0].connect).toHaveBeenCalledWith(splitters[0])
 	for (const fader of document.querySelectorAll(".mixer-fader")) {
 		expect(fader.nextElementSibling?.classList.contains("mixer-meter")).toBe(true)
-		expect(fader.nextElementSibling?.children).toHaveLength(2)
+		expect(fader.nextElementSibling?.querySelectorAll(".mixer-meter-lane")).toHaveLength(2)
 	}
 	// Opposite stereo polarity still registers and clips: the taps never downmix.
 	expect(document.querySelectorAll(".mixer-meter.is-clipping")).toHaveLength(2)

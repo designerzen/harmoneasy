@@ -56,7 +56,7 @@ it("exposes labelled title controls and updates the toggle when the manager chan
 		expect(buttons[buttons.length - 1].className).toBe("device-expand")
 		const details = host.querySelector("header")!.lastElementChild!
 		expect(details.tagName).toBe("DETAILS")
-		expect(details.querySelector("summary h6")).not.toBeNull()
+		expect(details.querySelector("summary .node-title-heading")).not.toBeNull()
 		expect(details.querySelector("summary .node-info-icon")).not.toBeNull()
 		expect(details.querySelector("p")!.textContent).toBe("Plays test notes")
 		expect(host.querySelector(".device-swap")!.textContent).toBe("Swap")
@@ -74,7 +74,7 @@ it("exposes labelled title controls and updates the toggle when the manager chan
 		await act(async () => toggle.click())
 		expect(inputManager.isEnabled(input)).toBe(false)
 		expect(toggle.getAttribute("aria-pressed")).toBe("false")
-		expect(toggle.getAttribute("aria-label")).toBe("Enable input")
+		expect(toggle.getAttribute("aria-label")).toBe(`Off: ${input.name} input`)
 		await act(async () => inputManager.setEnabled(input, true))
 		expect(toggle.getAttribute("aria-pressed")).toBe("true")
 		await act(async () => {

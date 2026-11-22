@@ -58,8 +58,9 @@ describe("standalone MIDI device catalog", () => {
 			`${ids.length} devices available.`
 		)
 		expect(document.getElementById("catalog")?.getAttribute("aria-busy")).toBe("false")
+		const folders = new Map(midiDeviceFolders().map((entry) => [entry.id, entry.path]))
 		for (const id of ids) {
-			const devicePath = midiDeviceFolders().find((entry) => entry.id === id)!.path
+			const devicePath = folders.get(id)!
 			const card = document.getElementById(`device-${id}`)!
 			expect(card.querySelector("h2")?.textContent).toBeTruthy()
 			expect(card.querySelector(".icon")?.getAttribute("src")).toBe(
