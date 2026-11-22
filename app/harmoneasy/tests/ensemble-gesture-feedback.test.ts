@@ -428,4 +428,48 @@ describe("research-guided ensemble performance", () => {
 			immediateLate: 2
 		})
 	})
+	it("enters grooves immediately in phase when legato launch is enabled and converges sustained one-bar lag", () => {
+		const { performance } = fixture({ legatoGroove: true, recoveryBars: 2 })
+		tap(performance, 0, 0)
+		tick(performance, 0, 0.7)
+		// Joining groove at 0.7s (beat 1.4) immediately voices a percussion hit and plays remaining beats of bar 1 (1.0s, 1.5s).
+		const initialGroove = attacks(tap(performance, 2, 0.7), 10)
+		expect(initialGroove.length).toBeGreaterThan(0)
+		expect(performance.partFeedback(10).phase).toBe("looping")
+		const bar1Remaining = attacks(tick(performance, 0.7, 2), 10)
+		expect(bar1Remaining.map((c) => c.audioTime)).toEqual([1, 1.5, 2])
+		// Player 0 is now at t=2.0s (beat 4, bar 2), while cursor is at note 1 (0.5s, beat 1).
+		// First tap at 2.5s plays note 1 (61); second tap at 3.0s at song tempo (non-shrinking 1-bar lag) converges to current beat (66 at 3.0s).
+		tick(performance, 2, 2.5)
+		expect(attacks(tap(performance, 0, 2.5)).map((c) => c.number)).toEqual([61])
+		tick(performance, 2.5, 3)
+		expect(attacks(tap(performance, 0, 3)).map((c) => c.number)).toEqual([66])
+	})
+	it("voices in-harmony comping notes during long multi-bar rests and after part completion without losing the real entrance", () => {
+		const { performance } = fixture({}, (midi) => {
+			// Channel 1 rests until 4.0s (beat 8, bar 3) and ends after that single note.
+			midi.tracks[0].notes = midi.tracks[0].notes.filter((n: any) => n.time === 4)
+		})
+		tap(performance, 1, 0)
+		// First tap on channel 1 queues the entrance at 4.0s (8 beats away).
+		expect(attacks(tap(performance, 0, 0))).toEqual([])
+		expect(performance.partFeedback(1).phase).toBe("queued")
+		// Subsequent taps during the long rest voice immediate in-harmony comping notes while keeping the 4.0s entrance queued.
+		tick(performance, 0, 0.5)
+		const comp = attacks(tap(performance, 0, 0.5))
+		expect(comp).toHaveLength(1)
+		expect(performance.partFeedback(1)).toMatchObject({
+			phase: "sounding",
+			message: expect.stringContaining("Comping")
+		})
+		// The real score entrance at 4.0s (pitch 68) still fires on time.
+		const realEntrance = attacks(tick(performance, 0.5, 4.1))
+		expect(realEntrance.map((c) => c.number)).toEqual([68])
+		// After the part completes, further taps continue to voice comping notes instead of going dead.
+		tick(performance, 4.1, 5)
+		expect(performance.partFeedback(1).phase).toBe("complete")
+		const postComplete = attacks(tap(performance, 0, 5))
+		expect(postComplete).toHaveLength(1)
+		expect(performance.partFeedback(1).message).toContain("Comping")
+	})
 })

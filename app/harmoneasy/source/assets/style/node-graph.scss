@@ -1080,6 +1080,37 @@
 	}
 }
 
+.control-surface .cs-widget[data-ensemble-cue]::before {
+	content: attr(data-ensemble-cue);
+	position: absolute;
+	left: 6px;
+	right: 6px;
+	bottom: 6px;
+	padding: 2px 8px;
+	border-radius: 6px;
+	border: 1px solid color-mix(in oklab, var(--cs-source, #d6fff2) 35%, transparent);
+	background: color-mix(in oklab, var(--cs-source, #d6fff2) 16%, #050a14d9);
+	color: var(--cs-source, #d6fff2);
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.35;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	pointer-events: none;
+}
+
+.control-surface .cs-widget[data-ensemble-phase="queued"]::before {
+	border-color: var(--col-accent, #2effb3);
+	background: color-mix(in oklab, var(--col-accent, #2effb3) 26%, #050a14e6);
+}
+
+.control-surface
+	.cs-widget:is([data-ensemble-phase="sounding"], [data-ensemble-phase="looping"])::before {
+	border-color: var(--col-success, #2effb3);
+	background: color-mix(in oklab, var(--col-success, #2effb3) 32%, #050a14e6);
+}
+
 .node-start,
 .node-add-transformer,
 .node-add-control-surface,

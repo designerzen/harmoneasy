@@ -231,6 +231,22 @@ describe("automatic song setup", () => {
 				.filter((c) => c.type === NOTE_ON)
 				.map((c) => c.channel)
 		).toEqual([3])
+		const drumInput = chain.inputs[2] as InputChannelTrigger
+		const widget = document.createElement("div")
+		widget.className = "cs-widget"
+		widget.dataset.sourceId = drumInput.uuid
+		document.body.append(widget)
+		const gui = await drumInput.createGui()
+		expect(drumInput.feedback?.message).toContain("groove")
+		expect(gui.querySelector(".ensemble-part-cue")?.textContent).toContain("groove")
+		const drumDelivered = new Promise<void>((resolve) =>
+			chain.addEventListener(INPUT_EVENT, () => resolve(), { once: true })
+		)
+		drumInput.setControlValue("trigger", 1)
+		await drumDelivered
+		expect(drumInput.feedback?.phase).toBe("looping")
+		expect(widget.dataset.ensemblePhase).toBe("looping")
+		expect(widget.dataset.ensembleCue).toContain("Looping")
 	})
 	it("uses surface keyboard triggers without also firing the input keyboard listener", async () => {
 		const { m, chain } = await ensemble()
