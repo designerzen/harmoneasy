@@ -8,6 +8,7 @@ import { supersonicFilesPlugin } from "audiobus/io/outputs/supersonic-files.js"
 import { roomPagesPlugin } from "./scripts/room-pages.js"
 import { presetPagesPlugin } from "./scripts/preset-pages.js"
 import { cloudflareAssetsPlugin } from "./scripts/cloudflare-assets.js"
+import { agentDocsPlugin } from "./scripts/agent-docs.js"
 
 // Vite's static middleware emits an empty MIME type for .tar.gz bundles.
 // Serve WCLAP archives explicitly so browser fetch does not treat them as downloads.
@@ -69,6 +70,7 @@ export default defineConfig({
 		opendawFilesPlugin(),
 		roomPagesPlugin(),
 		presetPagesPlugin(),
+		agentDocsPlugin(),
 		cloudflareAssetsPlugin()
 	],
 	worker: { format: "es" },

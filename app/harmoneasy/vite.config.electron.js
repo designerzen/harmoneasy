@@ -4,6 +4,7 @@ import { opendawFilesPlugin } from "audiobus-output-opendaw-vaporisateur/vite"
 import _path from "path"
 import { midiDeviceFilesPlugin } from "audiobus/hardware/midi-devices/device-files.js"
 import { supersonicFilesPlugin } from "audiobus/io/outputs/supersonic-files.js"
+import { agentDocsPlugin } from "./scripts/agent-docs.js"
 
 /**
  * Vite config for Electron builds

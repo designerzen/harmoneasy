@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Harmoneasy documentation for AI agents</title>
+  <meta name="description" content="Build custom Harmoneasy presets from an intention. Complete input, output, instrument, effect and transformer reference, preset URL API and shared-room ensemble guide.">
+  <link rel="alternate" type="text/plain" href="{{BASE}}llms-full.txt" title="Full AI agent documentation">
+  <style>
+    :root { color-scheme: light dark; font: 17px/1.6 system-ui, sans-serif; }
+    body { max-width: 76rem; margin: auto; padding: 2rem; }
+    h1, h2, h3 { line-height: 1.25; }
+    a { color: light-dark(#1645a0, #9cc5ff); text-underline-offset: .2em; }
+    pre { background: light-dark(#f0f3f7, #202530); padding: 1rem; overflow: auto; }
+    code { font-size: .9em; overflow-wrap: anywhere; }
+    article { border-top: 1px solid #8886; padding-block: 1rem; scroll-margin-top: 1rem; }
+    nav { display: flex; flex-wrap: wrap; gap: 1rem; }
+    table { border-collapse: collapse; width: 100%; }
+    td, th { text-align: left; vertical-align: top; border: 1px solid #8886; padding: .6rem; }
+    :focus-visible { outline: 3px solid currentColor; outline-offset: 4px; }
+  </style>
+</head>
+<body>
+<header>
+  <a href="{{BASE}}">Open Harmoneasy</a>
+  <h1>Documentation for AI agents</h1>
+  <p>Turn a musical intention into a working, shareable Harmoneasy preset. This page and its references are static: no JavaScript, account, audio startup or device permissions are needed to read them.</p>
+  <nav aria-label="Agent documentation">
+    <a href="#workflow">Build a preset</a>
+    <a href="#routing">Routing and configuration</a>
+    <a href="#ensemble">Shared-room MIDI ensemble</a>
+    <a href="#reference">Every component</a>
+    <a href="{{BASE}}docs/ai/catalog.json">Machine-readable catalog</a>
+    <a href="{{BASE}}docs/ai/preset-url-api.txt">Complete preset URL API</a>
+    <a href="{{BASE}}llms-full.txt">Full plain-text documentation</a>
+  </nav>
+</header>
+<main>
+<section id="workflow">
+  <h2>Build a preset from an intention</h2>
+  <ol>
+    <li>Identify the players, their controllers, the musical source (live notes, a MIDI song, sequencer or generator), the intended transformations, and the sounds or external destinations. Determine whether players share one computer or connect separate computers through a room.</li>
+    <li>Fetch <a href="{{BASE}}docs/ai/catalog.json">catalog.json</a>. Filter by <code>kind</code>, description and guidance; copy exact, case-sensitive IDs. Inputs produce musical commands, transformers process them in order, outputs consume them, and audio effects process audio between output nodes. Instruments are another output factory.</li>
+    <li>Prefer an existing <a href="{{BASE}}presets/index.json">published preset</a>. Each directory entry's route has a <code>preset.json</code> containing its full page and workspace, including device IDs, options, routing and ordered steps. Inspect that JSON before overriding it.</li>
+    <li>For a simple chain, use the versioned URL API below. For multiple parts, repeated device instances, instruments or audio effects, use the full <code>setup</code> format. Read the complete <a href="{{BASE}}docs/ai/preset-url-api.txt">API reference</a> for every parameter, replacement rule, encoding rule and limit.</li>
+    <li>Look up each component's controls, defaults, requirements and <code>configurationSource</code> in the catalog. The source is served locally as plain text so an agent can inspect constructors, option interfaces, value conversions, GUI controls and special behavior. <code>optionKeys</code> is a source-derived discovery list, not a complete validated schema; inherited options and dynamically generated controls can add keys. Do not invent option names from display labels.</li>
+    <li>Open the resulting setup, resolve any start-screen errors, start audio and test an actual input. Verify all intended output connections, transformer order, transport and MIDI part selection. For a room, verify connection status and tempo changes on a second participant. Deliver the link plus the remaining user actions.</li>
+  </ol>
+  <p>The catalog is regenerated from this deployment's registries on each build. It includes disabled and registered components, hardware profiles shipped with the deployment, plugin variants and host-provided instruments. <code>registered: false</code> means metadata exists but the component is not in its corresponding factory: select a registered alternative. Runtime-discovered or externally registered components may extend the catalog after deployment; check the live pickers or exported workspace when that happens.</p>
+</section>
+<section id="routing">
+  <h2>Routing and configuration</h2>
+  <table>
+    <thead><tr><th>Component kind</th><th>Use in a preset</th><th>Configuration contract</th></tr></thead>
+    <tbody>
+      <tr><td>input</td><td><code>inputs=&lt;id&gt;</code>, or a workspace device with <code>direction: "input"</code> and <code>definition.factory: "input"</code>.</td><td>Device <code>definition.options</code>; URL overrides use <code>config.devices[deviceId]</code>. Read its guidance for connection and performance steps.</td></tr>
+      <tr><td>output</td><td><code>outputs=&lt;id&gt;</code>, or a device with <code>direction: "output"</code> and <code>definition.factory: "output"</code>.</td><td>Device options, including <code>receiveChannels</code> where applicable (MIDI channels 1–16). Connecting MIDI output still requires choosing an actual destination.</td></tr>
+      <tr><td>instrument</td><td>Full setup device with <code>direction: "output"</code>, <code>definition.factory: "instrument"</code>, and <code>definition.type</code> set to its ID.</td><td>Instrument options and any <code>defaultOptions</code>. The host supplies the audio context. Instruments can require sample data, plugin URLs, models or external engines.</td></tr>
+      <tr><td>transformer</td><td><code>transformers=&lt;id&gt;,&lt;id&gt;</code> in processing order, or serialized steps in a workspace chain.</td><td><code>defaults</code> and <code>controls</code> list option names, types, defaults, numeric bounds and choices. Button controls are actions, not persistent settings. Override through <code>config.steps[chainId][zeroBasedIndex]</code>.</td></tr>
+      <tr><td>effect</td><td>Use its <code>outputId</code> as an output device. Connect the instrument, effect(s), then destination in the ordered output chain.</td><td><code>parameters</code> provide IDs, defaults, bounds, units and choices. Pass parameters directly in device options. If <code>mix</code> is numeric, dry/wet mix is 0–1; <code>mix: false</code> means whole-signal processing.</td></tr>
+    </tbody>
+  </table>
+  <p>A transformer changes note/controller commands; an audio effect changes sound. For example, Note Reverb creates repeated notes while Reverb processes the instrument's audio. Output order matters for audio processing. A visual or text output need not produce audible sound; keep a synthesizer connected when sound is intended.</p>
+  <h3>Simple shareable URL</h3>
+  <p>Resolve the app root from this page's “Open Harmoneasy” link. Use that same deployment, including its base path. This example plays a computer keyboard through an octave transposition into Moog:</p>
+  <pre><code>const appRoot = new URL("../../", documentationPageUrl); // docs/ai/ → app root
+const url = new URL("parts/v1/", appRoot);
+url.search = new URLSearchParams({
+  inputs: "keyboard,onscreen-keyboard",
+  outputs: "moog",
+  transformers: "Transposer",
+  bpm: "110",
+  config: JSON.stringify({ steps: { "url-chain": { "0": { distance: 12 } } } })
+}).toString();
+console.log(url.href);</code></pre>
+  <p>New shorthand devices have IDs <code>url-input-&lt;type&gt;</code> and <code>url-output-&lt;type&gt;</code>; a new chain is <code>url-chain</code>. In inherited presets, inspect actual IDs first. Lists append to existing sections by default; use <code>inputs-mode=replace</code>, <code>outputs-mode=replace</code> or <code>transformers-mode=replace</code> when replacing. Transformer indices refer to the final ordered list. Supplying <code>midi</code> to a new setup inserts a MIDI File Player when there is no MIDI File Player or Ensemble already present.</p>
+  <h3>Full workspace: two independently playable parts</h3>
+  <p>Full setups use page version 1 and workspace version 2. Transformer steps are an outer JSON string containing an array of JSON strings. Here two keyboards feed independent voices, and the upper voice passes through an audio delay. Supply the whole object as the <code>setup</code> query parameter:</p>
+  <pre><code>const steps = (...configs) =&gt; JSON.stringify(configs.map(config =&gt; JSON.stringify(config)));
+const setup = {
+  format: "harmoneasy-preset", version: 1,
+  name: "Two parts", description: "Live bass and delayed upper voice",
+  clock: { bpm: 110, swing: 0, divisions: 24, bars: 4 },
+  midiControls: { enabled: true, bindings: [] },
+  workspace: {
+    version: 2, activeChainId: "bass",
+    devices: [
+      { id: "keys", direction: "input", definition: { factory: "input", type: "keyboard" } },
+      { id: "screen", direction: "input", definition: { factory: "input", type: "onscreen-keyboard" } },
+      { id: "bass-synth", direction: "output", definition: { factory: "output", type: "moog" } },
+      { id: "lead-synth", direction: "output", definition: { factory: "output", type: "moog" } },
+      { id: "echo", direction: "output", definition: { factory: "output", type: "effect:delay", options: { time: 0.25, feedback: 0.3, mix: 0.25 } } }
+    ],
+    chains: [
+      { id: "bass", options: { name: "Bass", active: true }, inputs: ["keys"], outputs: ["bass-synth"], transformers: steps({ type: "Transposer", distance: -12 }) },
+      { id: "lead", options: { name: "Lead", active: true }, inputs: ["screen"], outputs: ["lead-synth", "echo"], transformers: steps({ type: "Transposer", distance: 12 }) }
+    ]
+  }
+};
+const url = new URL("parts/v1/", appRoot);
+url.searchParams.set("setup", JSON.stringify(setup));</code></pre>
+  <p>All IDs must be unique and connection references must resolve. Reuse one device across chains only when sharing that instance is intended. Do not include runtime objects (audio contexts, DOM elements, callbacks), credentials or temporary local file URLs. Each decoded <code>setup</code> and <code>config</code> has a 65,536-character limit; long setups can exceed browser or sharing-service URL limits sooner. Use the app's preset export/import or compressed room-sharing workflow for larger workspaces.</p>
+</section>
+<section id="ensemble">
+  <h2>Worked intention: shared tempo and a group playing MIDI song parts</h2>
+  <p><strong>Intention:</strong> “Go to Harmoneasy, share tempo in a room, and let a whole group play parts from a MIDI file.” Use Ensemble for dividing a song into playable channel parts and Shared room for connecting separate computers. These are separate configuration steps.</p>
+  <ol>
+    <li>Inspect <a href="{{BASE}}presets/activities/ensemble-any-song-gamepads/preset.json">the any-song gamepad ensemble preset</a>, or <a href="{{BASE}}presets/songs/ensemble-ode-keyboard/preset.json">the Ode to Joy keyboard ensemble preset</a>. The gamepad preset has no song selected: provide a reachable MIDI file URL or upload one after starting.</li>
+    <li>Build the link below from that preset. The <code>midi</code> shortcut sets Ensemble's song while preserving its player and channel configuration. Do not combine Ensemble with the MIDI File Player-only <code>track</code> or <code>playback</code> shortcuts.</li>
+    <li>Start the app. Load the song and inspect the resulting MIDI channels. In Ensemble, assign each player/source to one or more song channels, or use its automatic keyboard/gamepad part controls. MIDI channels are 1-based; file track indices are 0-based and are a different concept. Set the mode: Perform for expressive notes/chords with rhythmic companion parts, Assisted for activity-led playback, Together for quorum-based progression, or Conductor for a lead player's activity.</li>
+    <li>For players at one computer, connect their keyboards/controllers/gamepads and test each assignment. For separate computers, open <strong>Shared room</strong>, start or join the named room, and distribute the actual invitation from that dialog. Follow any pairing/connection prompts. The host shares workspace, notes and tempo once connected. A <code>room</code> parameter supplies a room name; it does not itself prove that peers have connected.</li>
+    <li>On each participant, enable audio and required inputs. Check Shared room status, test tempo propagation, and test that each player's events reach the intended Ensemble assignment. Controller/source IDs on different computers are not automatically interchangeable. Use the room's Classroom &amp; jam roles when assigning melody, chords, bass or rhythm roles; these musical roles do not automatically map MIDI file channels.</li>
+    <li>Start transport where needed. Verify each player can advance their assigned part, other parts behave according to the chosen Ensemble mode, and Stop releases all held notes. Share the final room invitation after setup and connection have been checked.</li>
+  </ol>
+  <pre><code>const url = new URL("presets/activities/ensemble-any-song-gamepads/parts/v1/", appRoot);
+url.search = new URLSearchParams({
+  midi: "midi/ode-to-joy.mid", // or an HTTPS URL returning MIDI bytes with CORS access
+  bpm: "110",
+  room: "group-rehearsal",
+  config: JSON.stringify({ steps: {
+    "ensemble-any-song-gamepads": { "0": {
+      mode: "assisted", autoInputs: "gamepads", loop: true
+    } }
+  } })
+}).toString();
+console.log(url.href);</code></pre>
+  <p><a href="{{BASE}}presets/activities/ensemble-any-song-gamepads/parts/v1/?midi=midi%2Fode-to-joy.mid&amp;bpm=110&amp;room=group-rehearsal">Open the shared-room ensemble starting point</a>. This creates a starting configuration; player assignments and actual room connection must still be verified. See <a href="#transformer-Ensemble">Ensemble's complete controls, defaults and source</a> for <code>players: [{ source, channels }]</code>, automatic inputs, assistance and timing options. Remote MIDI URLs must return actual MIDI bytes and permit cross-origin browser access. A file upload is local until distributed through a supported sharing flow or hosted at a stable URL.</p>
+</section>
+<section id="reference">
+  <h2>Complete component reference</h2>
+  <p>Search this page for a component name or exact ID, or filter the <a href="{{BASE}}docs/ai/catalog.json">JSON catalog</a>. Each entry has a stable anchor, its factory and registration status, available setup guidance and a fetchable configuration implementation. Transformer control choices and defaults are obtained from the actual implementation; audio effect parameters come from the effect registry. Runtime-dependent controls can vary after a song, plugin or device is loaded.</p>
+  {{CATALOG}}
+</section>
+</main>
+</body>
+</html>

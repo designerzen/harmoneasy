@@ -330,6 +330,15 @@ describe("research-guided ensemble performance", () => {
 		expect(
 			gui.querySelector('[aria-label="Rejoin channel 1 at the current section"]')
 		).not.toBeNull()
+		// Key badge in the GUI is directly playable via pointer/keyboard and updates the header beat meter.
+		const keyTile = gui.querySelector<HTMLElement>(".ensemble-part kbd")!
+		expect(keyTile.getAttribute("role")).toBe("button")
+		keyTile.dispatchEvent(new Event("pointerup"))
+		keyTile.dispatchEvent(new Event("pointerdown"))
+		const fromTile = attacks(t.tick(0.6, {} as any))
+		expect(fromTile.length).toBeGreaterThan(0)
+		const meter = gui.querySelector<HTMLElement>(".ensemble-meter")!
+		expect(meter.dataset.running).toBe("true")
 	})
 	it("supports full 0-50ms chord windows and rejects legato melodic steps that do not co-sustain", () => {
 		const { performance } = fixture({ chordWindowMs: 35 }, (midi) => {
