@@ -28,7 +28,11 @@ afterEach(() => {
 	document.body.replaceChildren()
 	vi.clearAllMocks()
 })
-function setup(startExpanded: boolean, withSurfaces = true) {
+function setup(
+	startExpanded: boolean,
+	withSurfaces = true,
+	includesChain?: (id: string) => boolean
+) {
 	const entries = ["Lead", "Drums"].map(
 		(name) =>
 			[
@@ -44,7 +48,11 @@ function setup(startExpanded: boolean, withSurfaces = true) {
 			] as const
 	)
 	const manager = Object.assign(new EventTarget(), { entries })
-	viewport = createSurfaceViewport(manager as unknown as IOChainManager, startExpanded)
+	viewport = createSurfaceViewport(
+		manager as unknown as IOChainManager,
+		startExpanded,
+		includesChain
+	)
 	return {
 		manager,
 		entries,
@@ -111,6 +119,26 @@ it("keeps the graph visible when a preset has no surfaces", () => {
 	const { dialog } = setup(true, false)
 	expect(dialog()).toBeNull()
 	expect(document.body.style.overflow).toBe("")
+})
+
+it("keeps expanded controls in the window that owns the chain", () => {
+	let local = false
+	const { entries, dialog } = setup(false, true, (id) => local && id === "Lead")
+	const expand = () =>
+		entries[0][1].dispatchEvent(
+			new CustomEvent(EVENT_CONTROL_SURFACE_EXPAND, { detail: "Lead" })
+		)
+	expand()
+	expect(dialog()).toBeNull()
+	local = true
+	viewport!.refresh()
+	expand()
+	expect(dialog()).not.toBeNull()
+	local = false
+	viewport!.refresh()
+	expect(dialog()).toBeNull()
+	expand()
+	expect(dialog()).toBeNull()
 })
 
 it("lets gadgets handle Escape before closing the expanded surface from the playing region", () => {

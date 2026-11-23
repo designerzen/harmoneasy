@@ -45,5 +45,43 @@ int main() {
     plugin->getStateInformation(recalled);
     const auto bytes = juce::String::fromUTF8(static_cast<const char*>(recalled.getData()) + 8, static_cast<int>(recalled.getSize()) - 8);
     check(bytes.contains("sections"));
+    // Link mode: DAW notes leave through the bridge and HarmonEasy's notes come back as output.
+    struct Capture final : juce::OSCReceiver::Listener<juce::OSCReceiver::MessageLoopCallback> {
+        juce::StringArray addresses;
+        void oscMessageReceived(const juce::OSCMessage& message) override { addresses.add(message.getAddressPattern().toString()); }
+    } capture;
+    juce::OSCReceiver app;
+    check(app.connect(9124));
+    app.addListener(&capture);
+    events.clear();
+    plugin->processBlock(audio, events); // Flush the panic queued by the state recall.
+    set("link", 1);
+    events.clear(); events.addEvent(juce::MidiMessage::noteOn(2, 64, static_cast<juce::uint8>(90)), 3);
+    events.addEvent(juce::MidiMessage::programChange(2, 5), 4);
+    plugin->processBlock(audio, events);
+    check(events.getNumEvents() == 1 && (*events.begin()).getMessage().isProgramChange());
+    for (int i = 0; i < 20 && !capture.addresses.contains("/harmoneasy/note/on"); ++i) juce::MessageManager::getInstance()->runDispatchLoopUntil(20);
+    check(capture.addresses.contains("/harmoneasy/note/on"));
+    browser.send("/harmoneasy/note/on", 67, 80, 3);
+    browser.send("/harmoneasy/note/on", 200, 80, 3); // Out of range: ignored.
+    bool returned = false;
+    for (int i = 0; i < 20 && !returned; ++i) {
+        juce::MessageManager::getInstance()->runDispatchLoopUntil(20);
+        events.clear();
+        plugin->processBlock(audio, events);
+        for (const auto metadata : events) {
+            const auto message = metadata.getMessage();
+            check(message.isNoteOn() && message.getNoteNumber() == 67 && message.getChannel() == 3);
+            returned = true;
+        }
+    }
+    check(returned);
+    // Closing the link releases the notes HarmonEasy left sounding.
+    set("link", 0);
+    events.clear();
+    plugin->processBlock(audio, events);
+    check(events.getNumEvents() == 1 && (*events.begin()).getMessage().isNoteOff() && (*events.begin()).getMessage().getNoteNumber() == 67);
+    app.removeListener(&capture);
+    app.disconnect();
     plugin->releaseResources();
 }

@@ -12,7 +12,11 @@ import { button, element } from "./dom"
 import { mountControlSurface, removeSurface } from "./control-surfaces"
 
 /** One native viewport for every surface, including surfaces in other preset chains. */
-export function createSurfaceViewport(manager: IOChainManager, startExpanded = false) {
+export function createSurfaceViewport(
+	manager: IOChainManager,
+	startExpanded = false,
+	includesChain: (id: string) => boolean = () => true
+) {
 	type Entry = { chainId: string; chain: IOChain; surface: SurfaceState }
 	let entries: Entry[] = []
 	let selected: Entry | undefined
@@ -116,16 +120,17 @@ export function createSurfaceViewport(manager: IOChainManager, startExpanded = f
 		}
 	}
 	function refresh() {
-		entries = manager.entries.flatMap(([chainId, chain]) =>
+		const chains = manager.entries.filter(([id]) => includesChain(id))
+		entries = chains.flatMap(([chainId, chain]) =>
 			(chain.options.controlSurfaces ?? []).map((surface) => ({ chainId, chain, surface }))
 		)
 		for (const [chain, abort] of subscriptions) {
-			if (!manager.entries.some(([, current]) => current === chain)) {
+			if (!chains.some(([, current]) => current === chain)) {
 				abort.abort()
 				subscriptions.delete(chain)
 			}
 		}
-		for (const [, chain] of manager.entries) {
+		for (const [, chain] of chains) {
 			if (subscriptions.has(chain)) {
 				continue
 			}
@@ -224,6 +229,7 @@ export function createSurfaceViewport(manager: IOChainManager, startExpanded = f
 		)
 	}
 	return {
+		refresh,
 		destroy() {
 			close()
 			manager.removeEventListener(EVENT_CHAINS_UPDATED, refresh)

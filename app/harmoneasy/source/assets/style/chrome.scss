@@ -372,7 +372,7 @@
 		margin: 0;
 		padding: 0.25rem 0.75rem;
 		padding-left: 2.25rem;
-		padding-right: 2.25rem;
+		padding-right: 4rem;
 		border: 0;
 		border-bottom: 2px solid transparent;
 		border-radius: var(--radius-sm) var(--radius-sm) 0 0;
@@ -397,9 +397,10 @@
 		}
 	}
 	.chain-tab-timeline [role="tab"] {
-		padding-right: 0.75rem;
+		padding-right: 2.25rem;
 	}
 	.chain-tab-pin,
+	.chain-tab-window,
 	.chain-tab-remove {
 		position: absolute;
 		right: 0.25rem;
@@ -411,6 +412,27 @@
 		border: 0;
 		background: transparent;
 		color: var(--col-muted);
+	}
+	.chain-tab-window {
+		right: 2rem;
+		svg {
+			width: 15px;
+			height: 15px;
+			fill: none;
+			stroke: currentColor;
+			stroke-width: 1.75;
+			vertical-align: middle;
+		}
+		&:hover:not(:disabled) {
+			background: var(--col-hover);
+			color: var(--col-fg);
+		}
+	}
+	.chain-tab-timeline .chain-tab-window {
+		right: 0.25rem;
+	}
+	.chain-tab[data-window] .chain-tab-window {
+		color: var(--col-accent);
 	}
 	.chain-tab-pin {
 		left: 0.25rem;

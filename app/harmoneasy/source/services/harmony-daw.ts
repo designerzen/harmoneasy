@@ -25,6 +25,10 @@ export function mountDawBridge(
 		element(
 			"p",
 			"Run pnpm --dir app/harmoneasy harmony:bridge, then enable the bridge in the Harmoneasy Harmony DAW plugin. For Ableton, load the supplied Max MIDI Effect patch. Connect, then choose whether to send this session or recall the DAW’s saved harmony."
+		),
+		element(
+			"p",
+			"To play DAW tracks through HarmonEasy, turn on “Process notes in HarmonEasy” in the plugin and add an OSC Bridge input and output on ws://127.0.0.1:9122. To follow the DAW’s tempo and transport, turn on “Send DAW transport as clock” and choose MIDI clock from OSC Bridge."
 		)
 	)
 	const url = field(host, "Local bridge", element("input"))

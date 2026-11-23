@@ -40,7 +40,8 @@ export function clockMidiPorts(manager: IOChainManager): MidiPort[] {
 		if (direction !== "input" || !device.isConnected || !device.hasMidiInput?.()) {
 			continue
 		}
-		const devices = device.inputDevices ?? (device.device ? [device.device] : [])
+		const devices =
+			device.inputDevices ?? device.clockPorts ?? (device.device ? [device.device] : [])
 		for (const port of devices) {
 			const id = String(port.id ?? port.index)
 			if (acceptsMidiInput({ ...device.options, selectedChannel: 0 }, id, 0)) {

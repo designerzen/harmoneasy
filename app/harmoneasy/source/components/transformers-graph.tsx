@@ -8,7 +8,8 @@ export const createGraph = (
 	elementID = "graph",
 	ioManager: IOChainManager | null = null,
 	startWithSurfaces = false,
-	layoutStore: WorkspaceLayoutStore = {}
+	layoutStore: WorkspaceLayoutStore = {},
+	windowTab?: string
 ) => {
 	const container = document.getElementById(elementID)
 	if (!container) {
@@ -34,6 +35,7 @@ export const createGraph = (
 			}
 		},
 		startWithSurfaces,
-		layoutStore
+		layoutStore,
+		windowTab
 	)
 }

@@ -23,6 +23,7 @@ import {
 	readSharedSurface
 } from "./control-surface-share"
 import { controlComponents } from "./control-surfaces"
+import { createWorkspaceWindows } from "./workspace-windows"
 
 export interface GraphView {
 	update(isFront: boolean, focusRequest: number): void
@@ -102,7 +103,8 @@ export function createChainWorkspace(
 	manager: IOChainManager,
 	mountGraph: (host: HTMLElement, context: ChainUIContext) => GraphView,
 	startWithSurfaces = false,
-	layoutStore: WorkspaceLayoutStore = {}
+	layoutStore: WorkspaceLayoutStore = {},
+	windowTab?: string
 ) {
 	const host = element("div", "chains-workspace chains-stacked")
 	container.append(host)
@@ -112,15 +114,21 @@ export function createChainWorkspace(
 	tabs.setAttribute("role", "tablist")
 	tabs.setAttribute("aria-label", "Chains")
 	const newChain = createIOChainManagerUI(manager)
-	if (navigation) {
-		navigation.append(tabs, newChain.element)
-	} else {
-		host.append(newChain.element)
+	if (!windowTab) {
+		if (navigation) {
+			navigation.append(tabs, newChain.element)
+		} else {
+			host.append(newChain.element)
+		}
 	}
 	const warnings = element("div"),
 		empty = element("p", "", "No IOChains. Add a chain to start routing inputs to outputs.")
 	warnings.style.display = "contents"
 	host.append(warnings, empty)
+	const windowStatus = element("p", "workspace-window-status")
+	windowStatus.setAttribute("role", "status")
+	windowStatus.hidden = true
+	host.append(windowStatus)
 	const timeline = document.getElementById("recordings")
 	const timelineHome = timeline && {
 		parent: timeline.parentElement,
@@ -131,7 +139,10 @@ export function createChainWorkspace(
 		timeline.classList.add("timeline-pane")
 		timeline.tabIndex = -1
 		timeline.setAttribute("role", "tabpanel")
-		timeline.setAttribute("aria-labelledby", `chain-tab-${TIMELINE}`)
+		timeline.setAttribute(
+			"aria-labelledby",
+			windowTab ? "window-title" : `chain-tab-${TIMELINE}`
+		)
 		timeline.removeAttribute("aria-label")
 		host.append(timeline)
 	}
@@ -141,7 +152,9 @@ export function createChainWorkspace(
 	host.append(dropZone)
 	const restored = readLayout(layoutStore.saved)
 	// Panes split side by side ("row") or stacked ("column").
-	let panes: string[] = restored?.panes ?? (manager.activeChainId ? [manager.activeChainId] : []),
+	let panes: string[] = windowTab
+			? [windowTab]
+			: (restored?.panes ?? (manager.activeChainId ? [manager.activeChainId] : [])),
 		pinned = new Set(restored?.pinned ?? []),
 		tabOrder = restored?.tabOrder ?? null,
 		focused = restored?.focused ?? 0,
@@ -154,8 +167,39 @@ export function createChainWorkspace(
 		scrollFrame: number | null = null,
 		overflow: string | null = null
 	const views = new Map<string, ReturnType<typeof createPanel>>()
+	const chainEntries = () => manager.entries.filter(([id]) => !windowTab || windowTab === id)
+	const windows = windowTab
+		? null
+		: createWorkspaceWindows(manager, {
+				timeline,
+				changed() {
+					solo = null
+					windowStatus.hidden = true
+					surfaceViewport.refresh()
+					render()
+				},
+				returned(id) {
+					if (id === TIMELINE && timeline) {
+						timeline.classList.add("timeline-pane")
+						timeline.setAttribute("role", "tabpanel")
+						timeline.setAttribute("aria-labelledby", `chain-tab-${TIMELINE}`)
+						timeline.tabIndex = -1
+						host.append(timeline)
+					}
+					if (paneIds().includes(id)) {
+						show(id)
+					}
+					focusRequest++
+					surfaceViewport.refresh()
+					render()
+				},
+				error(message) {
+					windowStatus.textContent = message
+					windowStatus.hidden = false
+				}
+			})
 	const paneIds = () => {
-		const ids = [...manager.entries.map(([id]) => id), ...(timeline ? [TIMELINE] : [])]
+		const ids = [...chainEntries().map(([id]) => id), ...(timeline ? [TIMELINE] : [])]
 		return tabOrder
 			? [
 					...tabOrder.filter((id) => ids.includes(id)),
@@ -165,6 +209,10 @@ export function createChainWorkspace(
 	}
 	/** Focuses an existing pane or replaces an unpinned pane, keeping every pin visible. */
 	const show = (id: string) => {
+		if (windows?.has(id)) {
+			windows.focus(id)
+			return
+		}
 		const index = panes.indexOf(id)
 		if (index >= 0) {
 			focused = index
@@ -217,6 +265,9 @@ export function createChainWorkspace(
 	}
 	/** Docks a dragged tab at a screen edge while retaining pinned panes. */
 	const dock = (id: string, side: DropSide) => {
+		if (windows?.has(id)) {
+			windows.return(id)
+		}
 		solo = null
 		const current = panes[focused]
 		const other =
@@ -296,7 +347,8 @@ export function createChainWorkspace(
 			return
 		}
 		const chain = entries[index][1]
-		if (!window.confirm(`Remove “${chain.options.name ?? `Chain ${index + 1}`}”?`)) {
+		const ownerWindow = views.get(id)?.element.ownerDocument.defaultView ?? window
+		if (!ownerWindow.confirm(`Remove “${chain.options.name ?? `Chain ${index + 1}`}”?`)) {
 			return
 		}
 		const nextId = entries[index + 1]?.[0] ?? entries[index - 1]?.[0] ?? null
@@ -318,7 +370,7 @@ export function createChainWorkspace(
 		panel.dataset.midiScope = chainId
 		panel.tabIndex = -1
 		panel.setAttribute("role", "tabpanel")
-		panel.setAttribute("aria-labelledby", `chain-tab-${chainId}`)
+		panel.setAttribute("aria-labelledby", windowTab ? "window-title" : `chain-tab-${chainId}`)
 		const toolbar = element("header", "chain-toolbar")
 		const identity = element("div", "chain-identity")
 		const power = button(
@@ -418,10 +470,10 @@ export function createChainWorkspace(
 			chain,
 			layoutLabel,
 			update(index: number) {
-				const isFront = (solo ?? panes[focused]) === chainId,
+				const isFront = !windows?.has(chainId) && (solo ?? panes[focused]) === chainId,
 					isSolo = solo === chainId
 				panel.className = `chain-panel ${chain.isActive ? "active" : "inactive"} ${isFront ? "chain-front" : ""} ${isSolo ? "chain-solo" : ""}`
-				panel.hidden = solo ? !isSolo : !panes.includes(chainId)
+				panel.hidden = windows?.has(chainId) || (solo ? !isSolo : !panes.includes(chainId))
 				panel.inert = panel.hidden
 				placePane(panel, chainId)
 				const chainLabel = chain.options.name ?? `Chain ${index + 1}`
@@ -501,6 +553,7 @@ export function createChainWorkspace(
 			reorderTab(source, id, dropAfter(event))
 		}
 		const pin = button("", () => togglePin(id), "chain-tab-pin")
+		pin.disabled = Boolean(windows?.has(id))
 		pin.id = `chain-pin-${id}`
 		pin.title = `${pinned.has(id) ? "Unpin" : "Pin"} ${label}`
 		pin.setAttribute("aria-label", pin.title)
@@ -561,24 +614,44 @@ export function createChainWorkspace(
 			document.getElementById(`chain-tab-${ids[next]}`)?.focus({ preventScroll: true })
 		}
 		tab.append(pin, select)
+		if (windows) {
+			const floating = windows.has(id)
+			tab.toggleAttribute("data-window", floating)
+			const open = button(
+				"",
+				() => (floating ? windows.return(id) : windows.open(id)),
+				"chain-tab-window"
+			)
+			open.title = floating ? `Return ${label} to workspace` : `Open ${label} in window`
+			open.setAttribute("aria-label", open.title)
+			open.innerHTML =
+				'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3h7v7M21 3l-9 9M10 3H3v18h18v-7" /></svg>'
+			tab.append(open)
+		}
 		return tab
 	}
 	function render() {
-		const entries = manager.entries
+		const entries = chainEntries()
 		const ids = paneIds()
+		for (const [id] of views) {
+			if (!ids.includes(id)) {
+				windows?.return(id)
+			}
+		}
+		const dockedIds = ids.filter((id) => !windows?.has(id))
 		if (tabOrder) {
 			tabOrder = ids
 		}
 		const front = panes[focused]
 		pinned = new Set([...pinned].filter((id) => ids.includes(id)))
-		panes = panes.filter((id, index) => ids.includes(id) && panes.indexOf(id) === index)
+		panes = panes.filter((id, index) => dockedIds.includes(id) && panes.indexOf(id) === index)
 		for (const pin of pinned) {
-			if (!panes.includes(pin)) {
+			if (dockedIds.includes(pin) && !panes.includes(pin)) {
 				panes.push(pin)
 			}
 		}
-		if (!panes.length && ids.length) {
-			panes = [ids[0]]
+		if (!panes.length && dockedIds.length) {
+			panes = [dockedIds[0]]
 		}
 		focused = panes.includes(front)
 			? panes.indexOf(front)
@@ -626,10 +699,13 @@ export function createChainWorkspace(
 		host.dataset.split = !solo && panes.length > 1 ? split : ""
 		host.style.setProperty("--pane-count", String(panes.length || 1))
 		if (timeline) {
-			timeline.hidden = solo !== null || !panes.includes(TIMELINE)
-			timeline.inert = timeline.hidden
-			timeline.classList.toggle("chain-front", !solo && panes[focused] === TIMELINE)
-			placePane(timeline, TIMELINE)
+			if (!windows?.has(TIMELINE) || timeline.ownerDocument === document) {
+				timeline.hidden =
+					Boolean(windows?.has(TIMELINE)) || solo !== null || !panes.includes(TIMELINE)
+				timeline.inert = timeline.hidden
+				timeline.classList.toggle("chain-front", !solo && panes[focused] === TIMELINE)
+				placePane(timeline, TIMELINE)
+			}
 			const tab = createTab(TIMELINE, "Note timeline", timeline.id, ids)
 			tab.classList.add("chain-tab-timeline")
 			tabElements.set(TIMELINE, tab)
@@ -646,7 +722,10 @@ export function createChainWorkspace(
 		warnings.replaceChildren(
 			...manager.restoreWarnings.map((warning) => element("p", "", warning))
 		)
-		empty.hidden = !!entries.length
+		empty.hidden = !!panes.length || !windows
+		empty.textContent = ids.length
+			? "Tabs are open in separate windows. Select a tab to focus its window, or return it to this workspace."
+			: "No IOChains. Add a chain to start routing inputs to outputs."
 		const layout: WorkspaceLayout = {
 			panes: [...panes],
 			...(pinned.size ? { pinned: [...pinned] } : {}),
@@ -661,7 +740,7 @@ export function createChainWorkspace(
 		}
 	}
 	const activeChanged = () => {
-		if (manager.activeChainId) {
+		if (manager.activeChainId && (!windowTab || windowTab === manager.activeChainId)) {
 			show(manager.activeChainId)
 		}
 		focusRequest++
@@ -703,9 +782,10 @@ export function createChainWorkspace(
 	render()
 	const surfaceViewport = createSurfaceViewport(
 		manager,
-		openSharedSurface(manager) || startWithSurfaces
+		(!windowTab && openSharedSurface(manager)) || startWithSurfaces,
+		(id) => (windowTab ? id === windowTab : !windows?.has(id))
 	)
-	const removeSurfaceTriggers = installSurfaceTriggers(manager)
+	const removeSurfaceTriggers = installSurfaceTriggers(manager, !windowTab)
 	let destroyed = false
 	return {
 		destroy() {
@@ -713,6 +793,7 @@ export function createChainWorkspace(
 				return
 			}
 			destroyed = true
+			windows?.destroy()
 			surfaceViewport.destroy()
 			removeSurfaceTriggers()
 			if (scrollFrame !== null) {

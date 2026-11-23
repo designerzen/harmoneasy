@@ -49,6 +49,10 @@ export default defineConfig({
 		outDir: "dist-electron",
 		emptyOutDir: true,
 		rollupOptions: {
+			input: {
+				main: _path.resolve(import.meta.dirname, "index.html"),
+				"chain-window": _path.resolve(import.meta.dirname, "chain-window.html")
+			},
 			external: [
 				"url",
 				"path",

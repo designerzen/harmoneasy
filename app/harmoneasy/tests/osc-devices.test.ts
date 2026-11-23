@@ -9,6 +9,10 @@ import {
 	NOTE_OFF,
 	NOTE_ON,
 	CONTROL_CHANGE,
+	MIDI_CLOCK,
+	MIDI_CONTINUE,
+	MIDI_START,
+	MIDI_STOP,
 	PITCH_BEND
 } from "../../../packages/audiobus/commands/commands"
 import { musicalCommand } from "../../../packages/audiobus/io/event-clip"
@@ -86,6 +90,16 @@ describe("OSC encoding and musical mappings", () => {
 		})
 		expect(oscToCommand(message, "/other", 0, "test")).toBeUndefined()
 	})
+	it("maps argument-free transport messages to MIDI clock commands", () => {
+		const transport = (address: string, args: number[] = []) =>
+			oscToCommand({ address, args }, "/m", 3, "daw")?.type
+		expect(transport("/m/clock")).toBe(MIDI_CLOCK)
+		expect(transport("/m/start")).toBe(MIDI_START)
+		expect(transport("/m/stop")).toBe(MIDI_STOP)
+		expect(transport("/m/continue")).toBe(MIDI_CONTINUE)
+		expect(transport("/m/clock", [1])).toBeUndefined()
+		expect(transport("/other/start")).toBeUndefined()
+	})
 	it("rejects out-of-range values before they can become musical commands", () => {
 		expect(() =>
 			oscToCommand({ address: "/m/note/on", args: [128, 100, 1] }, "/m", 0, "")
@@ -108,7 +122,9 @@ describe("OSC device lifecycle", () => {
 		await pending
 		socket.receive(encodeOSC({ address: "/harmoneasy/note/on", args: [60, 100, 2] }))
 		socket.receive(encodeOSC({ address: "/harmoneasy/cc", args: [64, 127, 2] }))
-		expect(receive).toHaveBeenCalledTimes(2)
+		socket.receive(encodeOSC({ address: "/harmoneasy/clock", args: [] }))
+		expect(receive).toHaveBeenCalledTimes(3)
+		expect(receive.mock.lastCall![0]).toMatchObject({ type: MIDI_CLOCK, from: input.uuid })
 		socket.close()
 		expect(input.isConnected).toBe(false)
 		expect(

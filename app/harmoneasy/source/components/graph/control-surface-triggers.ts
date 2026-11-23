@@ -16,6 +16,7 @@ import { controlComponents } from "./control-surfaces"
 interface TriggerView {
 	trigger(key: string, pressed: boolean): boolean
 	follow?(key: string, axis: "x" | "y", position: number): boolean
+	active?(): boolean
 }
 interface Match {
 	chain: IOChain
@@ -26,11 +27,20 @@ interface Match {
 }
 type Input = Required<Pick<SurfaceTrigger, "key">> | Required<Pick<SurfaceTrigger, "midi">>
 
-const views = new Map<string, Set<TriggerView>>()
-let learner: { kind: "press" | "cc"; done(trigger: SurfaceTrigger): void } | undefined
+export interface SurfaceTriggerState {
+	views: Map<string, Set<TriggerView>>
+	learner?: { kind: "press" | "cc"; done(trigger: SurfaceTrigger): void }
+}
+export let surfaceTriggerState: SurfaceTriggerState = { views: new Map() }
+
+/** Separate editors share gadget feedback and MIDI learning with the audio-owning window. */
+export function shareSurfaceTriggers(state: SurfaceTriggerState) {
+	surfaceTriggerState = state
+}
 
 /** Mounted surfaces play their own gadgets, so hardware gets the same flash and pressed states. */
 export function registerTriggerView(surfaceId: string, view: TriggerView): () => void {
+	const { views } = surfaceTriggerState
 	const set = views.get(surfaceId) ?? new Set()
 	views.set(surfaceId, set.add(view))
 	return () => {
@@ -53,16 +63,16 @@ export function learnSurfaceTrigger(
 		const current = {
 			kind,
 			done(trigger: SurfaceTrigger) {
-				learner = undefined
+				surfaceTriggerState.learner = undefined
 				resolve(trigger)
 			}
 		}
-		learner = current
+		surfaceTriggerState.learner = current
 		signal.addEventListener(
 			EVENT_ABORT,
 			() => {
-				if (learner === current) {
-					learner = undefined
+				if (surfaceTriggerState.learner === current) {
+					surfaceTriggerState.learner = undefined
 				}
 				reject(signal.reason)
 			},
@@ -160,8 +170,9 @@ async function followDirect(
 
 function follow(matches: Match[], position: number): void {
 	for (const match of matches) {
-		const played = [...(views.get(match.surfaceId) ?? [])].some((view) =>
-			view.follow?.(match.key, match.axis ?? "x", position)
+		const played = [...(surfaceTriggerState.views.get(match.surfaceId) ?? [])].some(
+			(view) =>
+				view.active?.() !== false && view.follow?.(match.key, match.axis ?? "x", position)
 		)
 		if (!played) {
 			void followDirect(match, position).catch((error) =>
@@ -173,8 +184,8 @@ function follow(matches: Match[], position: number): void {
 
 function fire(matches: Match[], pressed: boolean): void {
 	for (const match of matches) {
-		const played = [...(views.get(match.surfaceId) ?? [])].some((view) =>
-			view.trigger(match.key, pressed)
+		const played = [...(surfaceTriggerState.views.get(match.surfaceId) ?? [])].some(
+			(view) => view.active?.() !== false && view.trigger(match.key, pressed)
 		)
 		if (!played) {
 			void writeDirect(match, pressed).catch((error) =>
@@ -199,7 +210,7 @@ function typing(): boolean {
  * Keys and MIDI messages assigned to surface gadgets are consumed before the musical
  * keyboard, Cosmo Dots or instruments see them.
  */
-export function installSurfaceTriggers(manager: IOChainManager): () => void {
+export function installSurfaceTriggers(manager: IOChainManager, installMidi = true): () => void {
 	const abort = new AbortController()
 	const heldKeys = new Map<string, Match[]>()
 	const heldControls = new Map<string, Match[]>()
@@ -210,6 +221,7 @@ export function installSurfaceTriggers(manager: IOChainManager): () => void {
 				return
 			}
 			const key = triggerKey(event.key)
+			const { learner } = surfaceTriggerState
 			if (learner) {
 				if (learner.kind === "press" && key !== "Escape" && key !== "Tab") {
 					event.preventDefault()
@@ -259,7 +271,7 @@ export function installSurfaceTriggers(manager: IOChainManager): () => void {
 		{ signal: abort.signal }
 	)
 	const previousCC = new Map<string, number>()
-	manager.triggerHandler = (command: IAudioCommand) => {
+	const triggerHandler = (command: IAudioCommand) => {
 		const type =
 			command.type === CONTROL_CHANGE
 				? "cc"
@@ -284,6 +296,7 @@ export function installSurfaceTriggers(manager: IOChainManager): () => void {
 						? false
 						: undefined
 		}
+		const { learner } = surfaceTriggerState
 		if (learner) {
 			if (learner.kind === "cc" ? type === "cc" : pressed) {
 				learner.done({
@@ -311,11 +324,14 @@ export function installSurfaceTriggers(manager: IOChainManager): () => void {
 		}
 		return true
 	}
+	if (installMidi) {
+		manager.triggerHandler = triggerHandler
+	}
 	return () => {
 		abort.abort()
-		if (manager.triggerHandler) {
+		if (installMidi && manager.triggerHandler === triggerHandler) {
 			manager.triggerHandler = undefined
+			surfaceTriggerState.learner = undefined
 		}
-		learner = undefined
 	}
 }

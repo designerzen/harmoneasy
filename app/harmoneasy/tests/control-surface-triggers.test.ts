@@ -56,6 +56,25 @@ it("plays a gadget from its key and keeps that key away from notes and Cosmo Dot
 	expect(view.trigger).toHaveBeenCalledTimes(2)
 })
 
+it("leaves the audio owner's MIDI handler installed when another editor opens and closes", () => {
+	const { manager } = setup({ midi: { type: "note", number: 60, channel: 0 } })
+	const handler = manager.triggerHandler
+	const closeEditor = installSurfaceTriggers(manager as never, false)
+	expect(manager.triggerHandler).toBe(handler)
+	closeEditor()
+	expect(manager.triggerHandler).toBe(handler)
+})
+
+it("sends hardware feedback to the visible editor instead of its hidden workspace view", () => {
+	const { manager, view } = setup({ midi: { type: "note", number: 60, channel: 0 } })
+	Object.assign(view, { active: () => false })
+	const floating = { trigger: vi.fn(() => true), active: () => true }
+	cleanup.push(registerTriggerView("surface", floating))
+	manager.triggerHandler!({ type: NOTE_ON, number: 60, channel: 0, velocity: 90 })
+	expect(view.trigger).not.toHaveBeenCalled()
+	expect(floating.trigger).toHaveBeenCalledWith(KEY, true)
+})
+
 it("consumes assigned MIDI notes and CC presses and lets everything else through", () => {
 	const { manager, view } = setup({ midi: { type: "note", number: 60, channel: 0 } })
 	const handle = manager.triggerHandler!

@@ -95,6 +95,7 @@ export default defineConfig({
 			external: ["url", "path"],
 			input: {
 				main: resolve(import.meta.dirname, "index.html"),
+				"chain-window": resolve(import.meta.dirname, "chain-window.html"),
 				"protocol-remote": resolve(import.meta.dirname, "protocol-remote.html")
 			}
 		}

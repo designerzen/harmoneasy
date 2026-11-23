@@ -4,6 +4,8 @@ import { readFileSync } from "node:fs"
 import IOChain from "../../../packages/audiobus/io/IO-chain"
 import IOChainManager from "../../../packages/audiobus/io/IO-chain-manager"
 import AbstractInput from "../../../packages/audiobus/io/inputs/abstract-input"
+import InputOSC from "../../../packages/audiobus/io/inputs/input-osc"
+import { oscToCommand } from "../../../packages/audiobus/io/osc"
 import { DVS_CONTROL_VINYL_INPUT_ID } from "../../../packages/audiobus/io/inputs/input-dvs-control-vinyl"
 import { createAudioCommand } from "../../../packages/audiobus/commands/audio-command-factory"
 import * as Commands from "../../../packages/audiobus/commands/commands"
@@ -272,6 +274,28 @@ describe("Main clock source", () => {
 		await clock.settled()
 		expect(timer.isRunning).toBe(false)
 		expect(timer.ticks).toBe(0)
+	})
+	it("follows a DAW transport sent over the OSC bridge as a MIDI clock port", async () => {
+		const input = new InputOSC()
+		const { clock, timer, manager } = setup(true, input)
+		expect(clockMidiPorts(manager)).toEqual([{ id: input.uuid, name: "OSC Bridge" }])
+		await clock.setSource("midi")
+		expect(clock.midiDevice).toBe(input.uuid)
+		const send = (message: string, time: number) => {
+			timer.now = time
+			const address = `/harmoneasy/${message}`
+			clock.handle(oscToCommand({ address, args: [] }, "/harmoneasy", time, input.uuid)!)
+		}
+		send("start", 0)
+		send("clock", 0)
+		send("clock", 0.02)
+		await clock.settled()
+		expect(timer.isRunning).toBe(true)
+		// The first pulse after start marks the downbeat without advancing.
+		expect(timer.externalTrigger.mock.calls.map(([advance]) => advance)).toEqual([false, true])
+		send("stop", 0.04)
+		await clock.settled()
+		expect(timer.isRunning).toBe(false)
 	})
 	it("keeps shared clock authority with the room and restores the internal worker when switching back", async () => {
 		const { clock, timer, manager, send, link } = setup()
