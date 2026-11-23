@@ -1,0 +1,93 @@
+{
+	"format": "harmoneasy-preset",
+	"version": 1,
+	"name": "Strum Harp",
+	"description": "Fifteen diatonic harp strings in C major. Drag across the strings in either direction, tap to pluck, or rest a finger to mute. Resize the string panel to suit your surface. Instrument samples stream on first use.",
+	"clock": {
+		"bpm": 100,
+		"swing": 0,
+		"divisions": 24,
+		"bars": 4
+	},
+	"midiControls": {
+		"enabled": true,
+		"bindings": []
+	},
+	"workspace": {
+		"version": 2,
+		"activeChainId": "strum-chain",
+		"devices": [
+			{
+				"id": "strings",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "strum-strings",
+					"options": {
+						"attributes": {
+							"tuning": "harp",
+							"sustain": 4,
+							"capo": 0
+						}
+					}
+				}
+			},
+			{
+				"id": "voice",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "rompler",
+					"options": {
+						"preset": 46,
+						"volume": 0.55,
+						"release": 0.6
+					}
+				}
+			}
+		],
+		"chains": [
+			{
+				"id": "strum-chain",
+				"options": {
+					"name": "Strum Harp",
+					"active": true,
+					"mainSurfaceId": "strum-performance",
+					"controlSurfaces": [
+						{
+							"id": "strum-performance",
+							"name": "Strum Harp controls",
+							"theme": "ice",
+							"panels": ["strings"],
+							"connections": [
+								{
+									"componentId": "voice",
+									"controlIds": ["volume"]
+								}
+							],
+							"widgets": [
+								{
+									"key": "[\"voice\",\"volume\"]",
+									"widget": "slider"
+								}
+							]
+						}
+					]
+				},
+				"inputs": ["strings"],
+				"outputs": ["voice"],
+				"transformers": "[]",
+				"disabledInputs": [],
+				"disabledOutputs": []
+			}
+		]
+	},
+	"catalogue": {
+		"id": "performance:strum-strings/harp",
+		"category": "Performance instruments",
+		"useCase": "Strum in either direction, pluck individual strings and mute with a resting finger.",
+		"order": 191,
+		"kind": "workspace",
+		"stepSummaries": []
+	}
+}

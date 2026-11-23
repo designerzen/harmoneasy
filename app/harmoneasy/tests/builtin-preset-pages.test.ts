@@ -127,10 +127,20 @@ describe("complete public preset catalogue", () => {
 			pages.get("presets/hardware/arcana/strum")
 		)
 	})
-	it("provides independent layered instruments with supported inputs and connected surfaces", () => {
+	it("provides independent performance instruments with supported inputs and connected surfaces", () => {
 		const inputs = new Set<string>()
 		for (const preset of PERFORMANCE_PRESETS.filter((item) => item.category !== "Hardware")) {
 			const setup = presetSetup(preset)
+			if (preset.id.startsWith("performance:strum-strings/")) {
+				expect(setup.chains).toHaveLength(1)
+				expect(setup.chains[0].steps).toEqual([])
+				const strings = setup.devices.find((device) => device.id === "strings")!
+				expect(INPUT_DEFINITIONS[strings.definition.type!]).toBeDefined()
+				expect(setup.chains[0].options.controlSurfaces![0].panels).toContain(strings.id)
+				setup.devices[1].definition.options!.volume = 0
+				expect(presetSetup(preset).devices[1].definition.options!.volume).toBeGreaterThan(0)
+				continue
+			}
 			expect(setup.chains.length).toBeGreaterThanOrEqual(2)
 			const input = setup.devices.find((device) => device.id === "performance-input")!
 			inputs.add(input.definition.type!)

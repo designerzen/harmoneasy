@@ -21,6 +21,45 @@ const steps = (page: any, index = 0) =>
 	configurationSteps(page.workspace.chains[index].transformers)
 
 describe("versioned parts URLs", () => {
+	it("composes strum strings and a physical string instrument with reflected settings", async () => {
+		const config = {
+			devices: {
+				"url-input-strum-strings": { attributes: { tuning: "bass", capo: 2, sustain: 3 } },
+				"url-output-waveguide": { feedback: 0.98, cutoff: 1800 }
+			}
+		}
+		const page = await load(
+			`parts/v1/inputs/strum-strings/outputs/waveguide/?config=${encodeURIComponent(JSON.stringify(config))}`
+		)
+		expect(page!.workspace.chains[0].inputs).toEqual(["url-input-strum-strings"])
+		expect(page!.workspace.chains[0].outputs).toEqual(["url-output-waveguide"])
+		expect(steps(page)).toEqual([])
+		for (const device of page!.workspace.devices) {
+			expect(device.definition.options).toEqual(config.devices[device.id])
+		}
+		expect(() => parsePresetPage(JSON.stringify(page))).not.toThrow()
+	})
+
+	it.each(["guitar", "harp", "bass"])(
+		"publishes the %s strumming preset with its panel and supports API extensions",
+		async (id) => {
+			const route = `presets/inputs/strum-strings/${id}`
+			const source = pages.get(route)!
+			expect(source.workspace.devices[0].definition).toMatchObject({
+				factory: "input",
+				type: "strum-strings",
+				options: { attributes: { tuning: id } }
+			})
+			const chain = source.workspace.chains[0]
+			expect(chain.options.controlSurfaces[0].panels).toContain(chain.inputs[0])
+			expect(chain.options.mainSurfaceId).toBe(chain.options.controlSurfaces[0].id)
+			const page = await load(`${route}/parts/v1/outputs/describe/`)
+			expect(page!.workspace.chains[0].inputs).toEqual(chain.inputs)
+			expect(page!.workspace.chains[0].outputs).toEqual(["voice", "url-output-describe"])
+			expect(() => parsePresetPage(JSON.stringify(page))).not.toThrow()
+		}
+	)
+
 	it("composes Cosmo number keys and any MIDI file through the existing schema", async () => {
 		for (const midi of [
 			"midi/never-gonna-give-you-up.mid",
