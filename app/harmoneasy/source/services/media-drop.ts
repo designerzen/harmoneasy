@@ -7,7 +7,19 @@ import {
 	EVENT_ABORT
 } from "audiobus/events/event-constants"
 
-/** Capture file drops even over graph nodes, while leaving internal drags alone. */
+/** The nearest panel that takes its own drops of the file types it lists */
+const ownDropTarget = (event: DragEvent) =>
+	(event.target as Element)?.closest?.<HTMLElement>("[data-file-drop]") ?? undefined
+
+const accepts = (target: HTMLElement, file: File) =>
+	target.dataset.fileDrop!.split(",").some((extension) =>
+		file.name.toLowerCase().endsWith(extension.trim().toLowerCase())
+	)
+
+/**
+ * Capture file drops even over graph nodes, while leaving internal drags alone
+ * and files dropped on a panel that accepts them, such as a Rompler's soundfonts.
+ */
 export function installMediaDrop(
 	root: Document,
 	receive: (media: File | string) => void,
@@ -35,7 +47,8 @@ export function installMediaDrop(
 			if (event.dataTransfer) {
 				event.dataTransfer.dropEffect = "copy"
 			}
-			root.body.classList.add("drag-over")
+			// The panel highlights itself instead
+			root.body.classList.toggle("drag-over", !ownDropTarget(event))
 		},
 		{ capture: true, signal }
 	)
@@ -61,6 +74,10 @@ export function installMediaDrop(
 				return
 			}
 			const files = Array.from(transfer.files)
+			const own = ownDropTarget(event)
+			if (own && files.length && files.every((file) => accepts(own, file))) {
+				return
+			}
 			const url = files.length
 				? undefined
 				: droppedUrl(transfer.getData("text/uri-list"), transfer.getData("text/plain"))
