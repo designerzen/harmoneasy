@@ -326,7 +326,8 @@ export const OUTPUT_GUIDANCE: Record<
 		"Rom",
 		"Play any of the 128 General MIDI instruments from the OpenGM24 soundfont, or open your own .sf2, .sf3 or MIDI.js soundfont.",
 		"Samples stream in around the notes you play, so sound starts almost immediately and switching instruments cancels the old download. Open a soundfont file or drop one on the panel; files from disk are kept in this browser.",
-		audio + " AudioWorklet support and an internet connection to fetch OpenGM24 or soundfonts from a URL."
+		audio +
+			" AudioWorklet support and an internet connection to fetch OpenGM24 or soundfonts from a URL."
 	),
 	"drum-accompaniment": guide(
 		"Dr",
@@ -345,6 +346,13 @@ export const OUTPUT_GUIDANCE: Record<
 		"Play your own audio sample across MIDI notes.",
 		"Custom instruments, found sounds and pitched samples.",
 		audio + " Load an audio file up to 4 MB; set its original MIDI pitch."
+	),
+	lyria: guide(
+		"Lyria",
+		"Generate a backing track and play along with it.",
+		"Describe music, preview the generated audio, then start the global transport.",
+		audio +
+			" Generation uses your Gemini API key and quota. Audio is stored in this browser; download it before sharing a workspace."
 	),
 	"loop-player": guide(
 		"Loop",

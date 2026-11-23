@@ -89,6 +89,7 @@ const OUTPUT_ICONS: Record<
 	"note-monitor": "piano",
 	"song-tree": "visualizer",
 	"sample-player": "synth",
+	lyria: "synth",
 	"loop-player": "synth",
 	"chromatic-sampler": "synth",
 	rompler: "synth",
