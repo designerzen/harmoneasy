@@ -6,9 +6,8 @@ export function createAboutDialog(root: Document) {
 	const dialog = root.querySelector<HTMLDialogElement>("#about-dialog")!
 	const version = __APP_VERSION__
 	root.querySelector("#about-version")!.textContent = `Version ${version}`
-	root.querySelectorAll<HTMLElement>("[data-app-version]").forEach((label) => {
-		label.textContent = `v${version}`
-		label.title = `Installed Harmoneasy version ${version}`
+	root.querySelectorAll<HTMLElement>("[data-about]").forEach((logo) => {
+		logo.title = `Harmoneasy v${version}`
 	})
 	root.querySelector("#about-copyright")!.textContent =
 		`© ${new Date().getFullYear()} ${author.replace(/\s*<[^>]*>/g, "")}`

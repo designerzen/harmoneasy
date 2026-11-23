@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import OutputMonotron from "../../../packages/audiobus/io/outputs/output-monotron.ts"
 import OutputWaveguide from "../../../packages/audiobus/io/outputs/output-waveguide.ts"
 import OutputMultiOscillator from "../../../packages/audiobus/io/outputs/output-multi-oscillator.ts"
+import OutputZeta from "../../../packages/audiobus/io/outputs/output-zeta.ts"
 import {
 	NOTE_ON,
 	PITCH_BEND,
@@ -122,7 +123,7 @@ afterEach(() => {
 	vi.useRealTimers()
 })
 
-for (const Output of [OutputMonotron, OutputWaveguide, OutputMultiOscillator]) {
+for (const Output of [OutputMonotron, OutputWaveguide, OutputMultiOscillator, OutputZeta]) {
 	describe(Output.name, () => {
 		function create(options = {}) {
 			vi.useFakeTimers()
@@ -198,7 +199,7 @@ for (const Output of [OutputMonotron, OutputWaveguide, OutputMultiOscillator]) {
 			output.sendCommand(
 				musicalCommand({ type: NOTE_ON, channel: 2, number: 81, velocity: 127 })
 			)
-			const next = delays[1]?.delayTime ?? sources[2].frequency
+			const next = delays[1]?.delayTime ?? sources[Output === OutputZeta ? 1 : 2].frequency
 			expect(next.setValueAtTime.mock.lastCall![0]).toBeCloseTo(
 				Output === OutputWaveguide
 					? Math.max(128 / 48000, 1 / (frequency * 2))

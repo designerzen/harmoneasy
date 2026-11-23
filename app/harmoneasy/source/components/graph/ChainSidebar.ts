@@ -5,8 +5,8 @@ import type { ChainUIContext } from "./chain-ui-context"
 import { element, button, icon, type NativeView } from "./dom"
 
 export function createChainSidebar(context: ChainUIContext) {
-	const tabs = ["Inputs", "Transformers", "Outputs"]
-	const icons = ["device-input", "transformer-default", "device-output"]
+	const tabs = ["Inputs", "Transformers", "Outputs", "Effects"]
+	const icons = ["device-input", "transformer-default", "device-output", "device-spectrum"]
 	const id = `chain-sidebar-${crypto.randomUUID()}`
 	const host = element("aside", "chain-sidebar nodrag nopan nowheel")
 	host.setAttribute("aria-label", "Add to chain")
@@ -90,7 +90,10 @@ export function createChainSidebar(context: ChainUIContext) {
 		picker =
 			index === 1
 				? createTransformerPicker(context)
-				: createDevicePicker(context, { direction: index === 0 ? "input" : "output" })
+				: createDevicePicker(context, {
+						direction: index === 0 ? "input" : "output",
+						audioProcessorsOnly: index === 3
+					})
 		content.append(picker.element)
 		panels[index].append(close, content)
 		update()

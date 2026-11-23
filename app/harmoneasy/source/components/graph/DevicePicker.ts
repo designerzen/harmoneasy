@@ -70,6 +70,10 @@ export function createDevicePicker(
 	}
 ) {
 	const { chain, manager } = context
+	const choiceLabel = audioProcessorsOnly ? "effects" : `${direction}s`
+	const matchesMenu = (choice: Choice) =>
+		direction === "input" ||
+		(choice.type === "audio" && choice.subtype === "effect") === audioProcessorsOnly
 	let choices: Choice[] = [],
 		classification = "",
 		loading = true,
@@ -84,15 +88,15 @@ export function createDevicePicker(
 	const search = element("input", dialog ? "filter-input-global" : "")
 	search.type = "search"
 	search.autofocus = dialog
-	search.placeholder = `Search ${direction}s…`
-	search.setAttribute("aria-label", `Search ${direction}s`)
+	search.placeholder = `Search ${choiceLabel}…`
+	search.setAttribute("aria-label", `Search ${choiceLabel}`)
 	label.innerHTML =
 		'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10" cy="10" r="6" /><path d="m15 15 5 5" /></svg>'
 	label.append(search)
 	const filter = createClassificationFilter({
 		choices: [],
 		value: "",
-		label: `Filter ${direction}s by type`,
+		label: `Filter ${choiceLabel} by type`,
 		onChange: (value) => {
 			classification = value
 			render()
@@ -305,26 +309,18 @@ export function createDevicePicker(
 			),
 			...connectedChoices
 		]
-		const matching = listedChoices.filter(
-			(choice) =>
-				(!audioProcessorsOnly ||
-					(choice.type === "audio" && choice.subtype === "effect")) &&
-				choiceMatches(choice, search.value, classification)
+		const menuChoices = listedChoices.filter(matchesMenu)
+		const matching = menuChoices.filter((choice) =>
+			choiceMatches(choice, search.value, classification)
 		)
 		const filtered = matching.filter((choice) => !choice.missing.length)
 		const unavailable = matching.filter((choice) => choice.missing.length)
-		filter.update(
-			listedChoices.filter(
-				(choice) =>
-					!audioProcessorsOnly || (choice.type === "audio" && choice.subtype === "effect")
-			),
-			search.value
-		)
+		filter.update(menuChoices, search.value)
 		host.setAttribute("aria-busy", String(loading || busy))
 		const focusedEl = document.activeElement
 		const focusedChoice =
 			focusedEl instanceof HTMLElement && results.contains(focusedEl)
-				? focusedEl.querySelector("span")?.textContent ?? focusedEl.textContent
+				? (focusedEl.querySelector("span")?.textContent ?? focusedEl.textContent)
 				: undefined
 		results.replaceChildren()
 		const errorBanner = element("p", "")
@@ -340,9 +336,10 @@ export function createDevicePicker(
 		results.append(
 			createSharedDevices(context, {
 				direction,
-				filterDevice: audioProcessorsOnly
-					? (device) => Boolean(device.audioInput)
-					: undefined,
+				filterDevice:
+					direction === "output"
+						? (device) => Boolean(device.audioInput) === audioProcessorsOnly
+						: undefined,
 				search: search.value,
 				selection: classification,
 				disabled: busy,
@@ -361,18 +358,18 @@ export function createDevicePicker(
 			statusParts.push(`No MIDI ${direction} devices connected.`)
 		}
 		if (loading) {
-			statusBanner.textContent = `Loading ${direction}s…`
+			statusBanner.textContent = `Loading ${choiceLabel}…`
 			statusBanner.prepend(createLoader(), " ")
 			results.append(statusBanner)
 			return
 		}
 		if (filtered.length) {
-			statusParts.push(`${filtered.length} matching ${direction}s`)
+			statusParts.push(`${filtered.length} matching ${choiceLabel}`)
 		} else if (!unavailable.length && !error) {
 			statusParts.push(
 				search.value || classification
-					? `No ${direction}s match the selected filters`
-					: `No ${direction}s available`
+					? `No ${choiceLabel} match the selected filters`
+					: `No ${choiceLabel} available`
 			)
 		}
 		statusBanner.textContent = statusParts.join(" · ")
@@ -391,12 +388,15 @@ export function createDevicePicker(
 		}
 		if (unavailable.length) {
 			results.append(
-				createUnavailableSection(unavailable.map(choiceItem), dialog, `${direction}s`)
+				createUnavailableSection(unavailable.map(choiceItem), dialog, choiceLabel)
 			)
 		}
 		if (focusedChoice) {
-			const match = [...results.querySelectorAll<HTMLButtonElement>("button:not([disabled])")].find(
-				(btn) => (btn.querySelector("span")?.textContent ?? btn.textContent) === focusedChoice
+			const match = [
+				...results.querySelectorAll<HTMLButtonElement>("button:not([disabled])")
+			].find(
+				(btn) =>
+					(btn.querySelector("span")?.textContent ?? btn.textContent) === focusedChoice
 			)
 			match?.focus()
 		}

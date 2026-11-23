@@ -24,10 +24,10 @@ it("opens About from either logo without starting a session and keeps credits in
 	const buildVersion = __APP_VERSION__
 	expect(buildVersion).toMatch(/^\d+\.\d+\.\d+\+\d+$/)
 	expect(document.querySelector("#about-version")!.textContent).toBe(`Version ${buildVersion}`)
-	const versionLabels = document.querySelectorAll("[data-app-version]")
-	expect(versionLabels).toHaveLength(2)
-	for (const label of versionLabels) {
-		expect(label.textContent).toBe(`v${buildVersion}`)
+	expect(document.querySelector("[data-app-version]")).toBeNull()
+	for (const logo of document.querySelectorAll<HTMLElement>("[data-about]")) {
+		expect(logo.title).toBe(`Harmoneasy v${buildVersion}`)
+		expect(logo.textContent).not.toContain(buildVersion)
 	}
 	const brandLinks = [
 		document.querySelector<HTMLAnchorElement>("#start-dialog a.brand-attribution"),

@@ -151,6 +151,61 @@ const selectFilter = async (host: ParentNode, value: string) => {
 	})
 }
 
+it("keeps effects in their own menu and adds them to the chain", async () => {
+	mocks.outputs.mockResolvedValue([
+		{
+			id: "effect:delay",
+			name: "Delay",
+			description: "Echo",
+			type: "audio",
+			subtype: "effect"
+		},
+		{
+			id: "webmidi",
+			name: "MIDI output",
+			description: "Device",
+			type: "midi",
+			subtype: "device"
+		}
+	])
+	mocks.devices.push(
+		{
+			id: "shared-delay",
+			direction: "output",
+			chains: new Set(),
+			device: { name: "Shared delay", audioInput: {} }
+		},
+		{
+			id: "shared-piano",
+			direction: "output",
+			chains: new Set(),
+			device: { name: "Shared piano" }
+		}
+	)
+	await choose("Outputs")
+	expect(panel().textContent).toContain("Piano")
+	expect(panel().textContent).toContain("Shared piano")
+	expect(panel().textContent).not.toContain("Delay")
+	expect(panel().textContent).not.toContain("Shared delay")
+	expect(
+		[...panel().querySelectorAll("option")].some((option) => option.value === "subtype:effect")
+	).toBe(false)
+	await choose("Effects")
+	expect(panel().textContent).toContain("Delay")
+	expect(panel().textContent).toContain("Shared delay")
+	expect(panel().textContent).not.toContain("Piano")
+	expect(panel().textContent).not.toContain("Shared piano")
+	expect(panel().textContent).toContain("1 matching effects")
+	expect(panel().querySelector("input")?.placeholder).toBe("Search effects…")
+	await add("Delay")
+	expect(mocks.output).toHaveBeenCalledWith("effect:delay", expect.anything())
+	expect(mocks.addDevice).toHaveBeenCalledWith(
+		context.chain,
+		{ name: "Created output" },
+		"output"
+	)
+})
+
 const outputCatalogue = () => {
 	mocks.outputs.mockResolvedValue([
 		{

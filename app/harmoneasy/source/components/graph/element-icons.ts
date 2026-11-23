@@ -100,6 +100,7 @@ const OUTPUT_ICONS: Record<
 	performance: "spectrum",
 	moog: "synth",
 	fm: "synth",
+	zeta: "synth",
 	monotron: "synth",
 	waveguide: "synth",
 	"multi-oscillator": "synth",

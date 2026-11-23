@@ -1832,6 +1832,8 @@ dialog.add-output-dialog {
 }
 .chain-toolbar input.chain-name {
 	width: 100%;
+	height: var(--control-height);
+	margin: 0;
 	border-color: transparent;
 	background: transparent;
 	cursor: text;
@@ -2511,7 +2513,7 @@ body:has(.preset-browser[open]) {
 /* Compact chain toolbar, independent of the preset drawer styling. */
 .chain-toolbar {
 	display: grid;
-	grid-template-columns: minmax(5rem, 1fr) auto max-content var(--control-height);
+	grid-template-columns: minmax(0, 1fr) auto max-content var(--control-height);
 	grid-template-areas: "name presets actions fullscreen";
 	gap: 0.5rem;
 	padding: 0.25rem 0.5rem;
@@ -2603,14 +2605,6 @@ body:has(.preset-browser[open]) {
 		grid-column: 1 / -1;
 	}
 }
-@container chain-panel (max-width: 40rem) {
-	.chain-toolbar {
-		grid-template-columns: minmax(0, 1fr) max-content;
-		grid-template-areas: "name fullscreen" "presets actions";
-		gap: 0.375rem;
-	}
-}
-
 .chain-graph {
 	grid-template-columns: 44px minmax(0, 1fr);
 

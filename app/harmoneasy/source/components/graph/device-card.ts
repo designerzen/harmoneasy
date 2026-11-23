@@ -390,6 +390,12 @@ export const OUTPUT_GUIDANCE: Record<
 		"General MIDI electric pianos, bells, basses and brass, or voices from a DX7 file.",
 		audio + " AudioWorklet support."
 	),
+	zeta: guide(
+		"Zeta",
+		"Play waveforms derived from the logarithmic integral at Riemann zeta zeros.",
+		"Compare real and imaginary terms, cumulative sums and the paper's cycle approximation.",
+		audio
+	),
 	monotron: guide(
 		"Mono",
 		"Play a resonant low-pass synthesizer with a cutoff LFO.",

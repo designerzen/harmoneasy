@@ -61,7 +61,8 @@ export function createDeviceDialog(
 	{
 		direction,
 		replacing,
-		audioProcessorsOnly = false,
+		audioProcessorsOnly = direction === "output" &&
+			Boolean(replacing && "audioInput" in replacing && replacing.audioInput),
 		onClose
 	}: {
 		direction: "input" | "output"
@@ -70,10 +71,11 @@ export function createDeviceDialog(
 		onClose: () => void
 	}
 ) {
+	const deviceLabel = audioProcessorsOnly ? "effect" : direction
 	return createPickerDialog(
-		`${replacing ? "Swap" : "Add new"} ${direction === "input" ? "input" : "output"}`,
+		`${replacing ? "Swap" : "Add new"} ${deviceLabel}`,
 		`add-${direction}-dialog`,
-		`Cancel ${replacing ? "swapping" : "adding"} ${direction}`,
+		`Cancel ${replacing ? "swapping" : "adding"} ${deviceLabel}`,
 		onClose,
 		(header, close) =>
 			createDevicePicker(context, {
