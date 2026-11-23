@@ -1,0 +1,121 @@
+{
+	"format": "harmoneasy-preset",
+	"version": 1,
+	"name": "Prism Orbit",
+	"description": "FM music-box arpeggios orbit the register through a piano-body convolution.",
+	"clock": {
+		"bpm": 100,
+		"swing": 0,
+		"divisions": 24,
+		"bars": 4
+	},
+	"midiControls": {
+		"enabled": true,
+		"bindings": []
+	},
+	"workspace": {
+		"version": 2,
+		"activeChainId": "context-chain",
+		"devices": [
+			{
+				"id": "computer-keyboard",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "keyboard"
+				}
+			},
+			{
+				"id": "keyboard",
+				"direction": "input",
+				"definition": {
+					"factory": "keyboard-input"
+				}
+			},
+			{
+				"id": "synth",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "fm",
+					"options": {
+						"preset": 10,
+						"volume": 0.45,
+						"polyphony": 24
+					}
+				}
+			},
+			{
+				"id": "ui",
+				"direction": "output",
+				"definition": {
+					"factory": "external",
+					"type": "ui"
+				}
+			},
+			{
+				"id": "effect-auto-pan",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "effect:auto-pan",
+					"options": {
+						"rate": 0.2,
+						"depth": 0.6,
+						"waveform": "sine"
+					}
+				}
+			},
+			{
+				"id": "impulse-response",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "impulse-response",
+					"options": {
+						"preset": "InsidePiano",
+						"mix": 0.16
+					}
+				}
+			}
+		],
+		"chains": [
+			{
+				"id": "context-chain",
+				"options": {
+					"name": "Prism Orbit",
+					"active": true,
+					"controlSurfaces": [
+						{
+							"id": "context-chain-performance",
+							"name": "Prism Orbit controls",
+							"theme": "ice",
+							"connections": [],
+							"widgets": [],
+							"panels": ["synth", "effect-auto-pan", "impulse-response"]
+						}
+					],
+					"mainSurfaceId": "context-chain-performance"
+				},
+				"inputs": ["computer-keyboard", "keyboard"],
+				"outputs": ["synth", "effect-auto-pan", "impulse-response", "ui"],
+				"transformers": "[\"{\\\"root\\\":0,\\\"mode\\\":[0,2,4,5,7,9,11],\\\"type\\\":\\\"Harmoniser\\\"}\",\"{\\\"mode\\\":\\\"ionian\\\",\\\"root\\\":3,\\\"simultaneous\\\":3,\\\"type\\\":\\\"Chordifier\\\"}\",\"{\\\"pattern\\\":\\\"up\\\",\\\"rate\\\":\\\"1/16\\\",\\\"octaves\\\":1,\\\"type\\\":\\\"Arpeggiator\\\"}\",\"{\\\"lower\\\":48,\\\"upper\\\":84,\\\"stride\\\":7,\\\"collect\\\":25,\\\"type\\\":\\\"Register-Orbit\\\"}\"]",
+				"disabledInputs": [],
+				"disabledOutputs": []
+			}
+		]
+	},
+	"catalogue": {
+		"id": "prism-orbit",
+		"category": "Sound explorations",
+		"kind": "workspace",
+		"order": 245,
+		"useCase": "Play one note at a time and listen on stereo speakers. Adjust Auto Pan Depth or the piano-body convolution mix.",
+		"stepSummaries": [
+			"Keep notes in C major.",
+			"Build a chord.",
+			"Spread chord tones into an arpeggio.",
+			"Move pitch classes between registers."
+		]
+	}
+}

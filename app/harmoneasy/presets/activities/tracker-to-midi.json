@@ -55,6 +55,15 @@
 					"factory": "external",
 					"type": "ui"
 				}
+			},
+			{
+				"id": "event-recorder",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "event-recorder",
+					"options": {}
+				}
 			}
 		],
 		"chains": [
@@ -106,13 +115,14 @@
 									"key": "[\"synth\",\"filterResonance\"]",
 									"widget": "dial"
 								}
-							]
+							],
+							"panels": ["event-recorder"]
 						}
 					],
 					"mainSurfaceId": "context-chain-performance"
 				},
 				"inputs": ["computer-keyboard", "keyboard"],
-				"outputs": ["synth", "ui"],
+				"outputs": ["synth", "event-recorder", "ui"],
 				"transformers": "[]",
 				"disabledInputs": [],
 				"disabledOutputs": []
@@ -122,7 +132,7 @@
 	"catalogue": {
 		"id": "activity:tracker-to-midi",
 		"category": "Activities · Files",
-		"useCase": "Import a tracker file and play it through the chain to capture its notes, then export MIDI. Tracker samples and effects are not recreated by this note conversion.",
+		"useCase": "Import a tracker file and play it through the chain to capture its notes, then export MIDI. Tracker samples and effects are not recreated by this note conversion. Use Event Recorder to capture the transformed performance and download an event loop.",
 		"order": 160,
 		"kind": "chain",
 		"stepSummaries": []

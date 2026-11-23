@@ -55,6 +55,15 @@
 					"factory": "external",
 					"type": "ui"
 				}
+			},
+			{
+				"id": "event-recorder",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "event-recorder",
+					"options": {}
+				}
 			}
 		],
 		"chains": [
@@ -106,13 +115,14 @@
 									"key": "[\"synth\",\"filterResonance\"]",
 									"widget": "dial"
 								}
-							]
+							],
+							"panels": ["event-recorder"]
 						}
 					],
 					"mainSurfaceId": "context-chain-performance"
 				},
 				"inputs": ["computer-keyboard", "keyboard"],
-				"outputs": ["synth", "ui"],
+				"outputs": ["synth", "event-recorder", "ui"],
 				"transformers": "[\"{\\\"root\\\":0,\\\"mode\\\":[0,2,4,5,7,9,11],\\\"type\\\":\\\"Harmoniser\\\"}\"]",
 				"disabledInputs": [],
 				"disabledOutputs": []
@@ -122,7 +132,7 @@
 	"catalogue": {
 		"id": "activity:daw-handoff",
 		"category": "Activities · Files",
-		"useCase": "Play a short take, then use Export for MIDI, DawProject, AudioTool or OpenDAW.",
+		"useCase": "Play a short take, then use Export for MIDI, DawProject, AudioTool or OpenDAW. Use Event Recorder to capture the transformed performance and download an event loop.",
 		"order": 161,
 		"kind": "chain",
 		"stepSummaries": ["Harmoniser — moves notes to the nearest pitch in C major."]

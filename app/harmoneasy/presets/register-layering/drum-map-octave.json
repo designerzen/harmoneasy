@@ -36,15 +36,11 @@
 				"id": "synth",
 				"direction": "output",
 				"definition": {
-					"factory": "polyphonic",
+					"factory": "output",
+					"type": "drum-kit",
 					"options": {
-						"shape": "square",
-						"volume": 0.22,
-						"attack": 0.04,
-						"decay": 0.2,
-						"sustain": 0.45,
-						"release": 0.18,
-						"filterCutOff": 1700
+						"volume": 0.5,
+						"channel": 0
 					}
 				}
 			},
@@ -54,6 +50,15 @@
 				"definition": {
 					"factory": "external",
 					"type": "ui"
+				}
+			},
+			{
+				"id": "note-monitor",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "note-monitor",
+					"options": {}
 				}
 			}
 		],
@@ -68,51 +73,15 @@
 							"id": "context-chain-performance",
 							"name": "Drum Map: Octave Layer controls",
 							"theme": "ice",
-							"connections": [
-								{
-									"componentId": "synth",
-									"controlIds": [
-										"volume",
-										"shape",
-										"attack",
-										"release",
-										"filterCutOff",
-										"filterResonance"
-									]
-								}
-							],
-							"widgets": [
-								{
-									"key": "[\"synth\",\"volume\"]",
-									"widget": "slider"
-								},
-								{
-									"key": "[\"synth\",\"shape\"]",
-									"widget": "select"
-								},
-								{
-									"key": "[\"synth\",\"attack\"]",
-									"widget": "dial"
-								},
-								{
-									"key": "[\"synth\",\"release\"]",
-									"widget": "dial"
-								},
-								{
-									"key": "[\"synth\",\"filterCutOff\"]",
-									"widget": "dial"
-								},
-								{
-									"key": "[\"synth\",\"filterResonance\"]",
-									"widget": "dial"
-								}
-							]
+							"connections": [],
+							"widgets": [],
+							"panels": ["synth", "note-monitor"]
 						}
 					],
 					"mainSurfaceId": "context-chain-performance"
 				},
 				"inputs": ["computer-keyboard", "keyboard"],
-				"outputs": ["synth", "ui"],
+				"outputs": ["synth", "note-monitor", "ui"],
 				"transformers": "[\"{\\\"mapping\\\":\\\"36:36; 38:38+50; 42:42\\\",\\\"unmatched\\\":\\\"pass\\\",\\\"type\\\":\\\"Note-Mapper\\\"}\"]",
 				"disabledInputs": [],
 				"disabledOutputs": []
@@ -122,7 +91,7 @@
 	"catalogue": {
 		"id": "drum-map-octave",
 		"category": "Register & layering",
-		"useCase": "Try a drum controller or edit the map for your instrument.",
+		"useCase": "Try a drum controller or edit the map for your instrument. Play MIDI drum notes 36 (kick), 38 (snare) and 42 (hi-hat); the note monitor shows the transformed hits.",
 		"order": 35,
 		"kind": "chain",
 		"stepSummaries": ["Layer snare note 38 with note 50."]

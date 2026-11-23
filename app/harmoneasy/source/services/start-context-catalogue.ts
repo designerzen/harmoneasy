@@ -1,5 +1,6 @@
 import { DEFAULT_PRESET_LIBRARY, GENRE_BPM } from "./factory-preset-data"
 import { presetVoice, setupSurfaces } from "./preset-instruments"
+import { publishedPresetSetup } from "./preset-files"
 import type { PresetSetup } from "audiobus/io/preset-library"
 import type { DeviceDefinition } from "audiobus/io/device-definition"
 import {
@@ -963,7 +964,7 @@ export const START_CONTEXTS: StartContext[] = [
 		category: "Files",
 		description:
 			"Import a MIDI performance and export MusicXML for a notation program, or view its musical score.",
-		next: "Import a MIDI file and play it through the chain to capture its notes, then choose MusicXML or Download Sheet Music in Export.",
+		next: "Import a MIDI file and play it through the chain to capture its notes, then choose MusicXML or Download Sheet Music in Export. Read the notes on the Notation output as you play.",
 		presets: []
 	},
 	{
@@ -971,7 +972,7 @@ export const START_CONTEXTS: StartContext[] = [
 		name: "Bring a written score into a sequencer",
 		category: "Files",
 		description: "Use a MusicXML score as note material that you can export as MIDI.",
-		next: "Import the MusicXML file and play it through the chain to capture its notes, then export MIDI and open it in your sequencer.",
+		next: "Import the MusicXML file and play it through the chain to capture its notes, then export MIDI and open it in your sequencer. Read the notes on the Notation output as you play.",
 		presets: []
 	},
 	{
@@ -979,7 +980,7 @@ export const START_CONTEXTS: StartContext[] = [
 		name: "Reuse notes from a tracker tune",
 		category: "Files",
 		description: "Bring note material from a MOD, XM, IT or S3M file into a MIDI workflow.",
-		next: "Import a tracker file and play it through the chain to capture its notes, then export MIDI. Tracker samples and effects are not recreated by this note conversion.",
+		next: "Import a tracker file and play it through the chain to capture its notes, then export MIDI. Tracker samples and effects are not recreated by this note conversion. Use Event Recorder to capture the transformed performance and download an event loop.",
 		presets: []
 	},
 	{
@@ -988,7 +989,7 @@ export const START_CONTEXTS: StartContext[] = [
 		category: "Files",
 		description:
 			"Play a major-key idea here, then use the export tools to continue arranging elsewhere.",
-		next: "Play a short take, then use Export for MIDI, DawProject, AudioTool or OpenDAW.",
+		next: "Play a short take, then use Export for MIDI, DawProject, AudioTool or OpenDAW. Use Event Recorder to capture the transformed performance and download an event loop.",
 		presets: ["c-major-sketchbook"]
 	},
 	{
@@ -1124,6 +1125,13 @@ export const START_SUGGESTIONS = [
 ]
 
 export function createContextSetup(context: StartContext): PresetSetup {
+	// Published workspaces also supply the starter and wizard sounds and controls.
+	if (START_CONTEXTS.includes(context)) {
+		const published = publishedPresetSetup(`activity:${context.id}`)
+		if (published) {
+			return published
+		}
+	}
 	const steps = context.presets.flatMap((id) => {
 		const preset = DEFAULT_PRESET_LIBRARY.presets.find((preset) => preset.id === id)
 		if (!preset) {

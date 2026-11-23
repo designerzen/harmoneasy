@@ -55,6 +55,15 @@
 					"factory": "external",
 					"type": "ui"
 				}
+			},
+			{
+				"id": "notation",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "notation",
+					"options": {}
+				}
 			}
 		],
 		"chains": [
@@ -106,13 +115,14 @@
 									"key": "[\"synth\",\"filterResonance\"]",
 									"widget": "dial"
 								}
-							]
+							],
+							"panels": ["notation"]
 						}
 					],
 					"mainSurfaceId": "context-chain-performance"
 				},
 				"inputs": ["computer-keyboard", "keyboard"],
-				"outputs": ["synth", "ui"],
+				"outputs": ["synth", "notation", "ui"],
 				"transformers": "[]",
 				"disabledInputs": [],
 				"disabledOutputs": []
@@ -122,7 +132,7 @@
 	"catalogue": {
 		"id": "activity:score-to-midi",
 		"category": "Activities · Files",
-		"useCase": "Import the MusicXML file and play it through the chain to capture its notes, then export MIDI and open it in your sequencer.",
+		"useCase": "Import the MusicXML file and play it through the chain to capture its notes, then export MIDI and open it in your sequencer. Read the notes on the Notation output as you play.",
 		"order": 159,
 		"kind": "chain",
 		"stepSummaries": []

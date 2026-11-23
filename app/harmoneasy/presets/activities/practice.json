@@ -55,6 +55,15 @@
 					"factory": "external",
 					"type": "ui"
 				}
+			},
+			{
+				"id": "note-monitor",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "note-monitor",
+					"options": {}
+				}
 			}
 		],
 		"chains": [
@@ -106,13 +115,14 @@
 									"key": "[\"synth\",\"filterResonance\"]",
 									"widget": "dial"
 								}
-							]
+							],
+							"panels": ["note-monitor"]
 						}
 					],
 					"mainSurfaceId": "context-chain-performance"
 				},
 				"inputs": ["computer-keyboard", "keyboard"],
-				"outputs": ["synth", "ui"],
+				"outputs": ["synth", "note-monitor", "ui"],
 				"transformers": "[\"{\\\"root\\\":9,\\\"mode\\\":[0,2,3,5,7,8,10],\\\"type\\\":\\\"Harmoniser\\\"}\"]",
 				"disabledInputs": [],
 				"disabledOutputs": []

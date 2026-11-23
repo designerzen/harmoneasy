@@ -36,15 +36,12 @@
 				"id": "synth",
 				"direction": "output",
 				"definition": {
-					"factory": "polyphonic",
+					"factory": "output",
+					"type": "fm",
 					"options": {
-						"shape": "square",
-						"volume": 0.22,
-						"attack": 0.04,
-						"decay": 0.2,
-						"sustain": 0.45,
-						"release": 0.18,
-						"filterCutOff": 1700
+						"preset": 4,
+						"volume": 0.45,
+						"polyphony": 24
 					}
 				}
 			},
@@ -54,6 +51,15 @@
 				"definition": {
 					"factory": "external",
 					"type": "ui"
+				}
+			},
+			{
+				"id": "note-monitor",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "note-monitor",
+					"options": {}
 				}
 			}
 		],
@@ -68,51 +74,15 @@
 							"id": "context-chain-performance",
 							"name": "Keyboard Channel Split controls",
 							"theme": "ice",
-							"connections": [
-								{
-									"componentId": "synth",
-									"controlIds": [
-										"volume",
-										"shape",
-										"attack",
-										"release",
-										"filterCutOff",
-										"filterResonance"
-									]
-								}
-							],
-							"widgets": [
-								{
-									"key": "[\"synth\",\"volume\"]",
-									"widget": "slider"
-								},
-								{
-									"key": "[\"synth\",\"shape\"]",
-									"widget": "select"
-								},
-								{
-									"key": "[\"synth\",\"attack\"]",
-									"widget": "dial"
-								},
-								{
-									"key": "[\"synth\",\"release\"]",
-									"widget": "dial"
-								},
-								{
-									"key": "[\"synth\",\"filterCutOff\"]",
-									"widget": "dial"
-								},
-								{
-									"key": "[\"synth\",\"filterResonance\"]",
-									"widget": "dial"
-								}
-							]
+							"connections": [],
+							"widgets": [],
+							"panels": ["synth", "note-monitor"]
 						}
 					],
 					"mainSurfaceId": "context-chain-performance"
 				},
 				"inputs": ["computer-keyboard", "keyboard"],
-				"outputs": ["synth", "ui"],
+				"outputs": ["synth", "note-monitor", "ui"],
 				"transformers": "[\"{\\\"source\\\":\\\"key\\\",\\\"split\\\":60,\\\"lowerChannel\\\":1,\\\"upperChannel\\\":2,\\\"type\\\":\\\"Note-Router\\\"}\"]",
 				"disabledInputs": [],
 				"disabledOutputs": []
@@ -122,7 +92,7 @@
 	"catalogue": {
 		"id": "keyboard-channel-split",
 		"category": "Register & layering",
-		"useCase": "Use a multitimbral instrument listening on channels 1 and 2.",
+		"useCase": "Use a multitimbral instrument listening on channels 1 and 2. The FM output accepts all channels; use the note monitor to see their allocation.",
 		"order": 41,
 		"kind": "chain",
 		"stepSummaries": ["Route notes below middle C to channel 1 and the rest to channel 2."]

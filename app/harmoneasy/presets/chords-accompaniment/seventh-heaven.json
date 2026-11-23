@@ -36,15 +36,12 @@
 				"id": "synth",
 				"direction": "output",
 				"definition": {
-					"factory": "polyphonic",
+					"factory": "output",
+					"type": "fm",
 					"options": {
-						"shape": "triangle",
-						"volume": 0.4,
-						"attack": 0.003,
-						"decay": 0.25,
-						"sustain": 0.12,
-						"release": 0.2,
-						"filterCutOff": 4200
+						"preset": 4,
+						"volume": 0.45,
+						"polyphony": 24
 					}
 				}
 			},
@@ -68,45 +65,9 @@
 							"id": "context-chain-performance",
 							"name": "Seventh Heaven controls",
 							"theme": "ice",
-							"connections": [
-								{
-									"componentId": "synth",
-									"controlIds": [
-										"volume",
-										"shape",
-										"attack",
-										"release",
-										"filterCutOff",
-										"filterResonance"
-									]
-								}
-							],
-							"widgets": [
-								{
-									"key": "[\"synth\",\"volume\"]",
-									"widget": "slider"
-								},
-								{
-									"key": "[\"synth\",\"shape\"]",
-									"widget": "select"
-								},
-								{
-									"key": "[\"synth\",\"attack\"]",
-									"widget": "dial"
-								},
-								{
-									"key": "[\"synth\",\"release\"]",
-									"widget": "dial"
-								},
-								{
-									"key": "[\"synth\",\"filterCutOff\"]",
-									"widget": "dial"
-								},
-								{
-									"key": "[\"synth\",\"filterResonance\"]",
-									"widget": "dial"
-								}
-							]
+							"connections": [],
+							"widgets": [],
+							"panels": ["synth"]
 						}
 					],
 					"mainSurfaceId": "context-chain-performance"

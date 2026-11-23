@@ -38,6 +38,9 @@ export function createIOChainManagerUI(manager: IOChainManager) {
 							setup.chains[0].options.controlSurfaces ?? []
 						)
 						for (const surface of surfaces) {
+							if (surface.panels) {
+								surface.panels = surface.panels.map((id) => ids.get(id) ?? id)
+							}
 							for (const connection of surface.connections) {
 								connection.componentId =
 									ids.get(connection.componentId) ?? connection.componentId

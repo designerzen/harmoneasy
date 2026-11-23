@@ -316,6 +316,40 @@ it.each([
 	expect(manager.setActiveChain).toHaveBeenCalledWith("activity-chain")
 })
 
+it("remaps instrument panels when adding a preset as a new chain", async () => {
+	vi.stubGlobal("localStorage", { getItem: () => null })
+	const chain = {
+		outputs: [defineDevice({}, { factory: "output", type: "rompler" }, "new-guitar")],
+		options: {},
+		isActive: true,
+		clearNoteCommands: vi.fn(),
+		importConfiguration: vi.fn(),
+		setGraphOptions: vi.fn(),
+		setName: vi.fn()
+	}
+	const manager = {
+		createChainWithSounds: vi.fn().mockResolvedValue("new-chain"),
+		getChain: vi.fn(() => chain),
+		setActiveChain: vi.fn()
+	}
+	root = createIOChainManagerUI(manager as unknown as IOChainManager)
+	document.body.append(root.element)
+	runUI(() =>
+		[...document.querySelectorAll<HTMLButtonElement>("nav button")]
+			.find((button) => button.textContent?.includes("Gentle Strummed Chords"))!
+			.click()
+	)
+	await runUI(async () =>
+		document.querySelector<HTMLButtonElement>(".preset-apply-button")!.click()
+	)
+	expect(manager.createChainWithSounds).toHaveBeenCalledWith([
+		expect.objectContaining({ factory: "output", type: "rompler" })
+	])
+	expect(chain.setGraphOptions.mock.calls.at(-1)![0].controlSurfaces[0].panels).toEqual([
+		"new-guitar"
+	])
+})
+
 it("finds presets by misspelled transformer names and combines transformer and category filters", () => {
 	vi.stubGlobal("localStorage", { getItem: () => null })
 	root = createPresetBrowser({ onApply: vi.fn(), startup: true })

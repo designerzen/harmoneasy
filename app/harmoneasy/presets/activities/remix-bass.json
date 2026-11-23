@@ -36,16 +36,17 @@
 				"id": "synth",
 				"direction": "output",
 				"definition": {
-					"factory": "polyphonic",
+					"factory": "output",
+					"type": "monotron",
 					"options": {
 						"shape": "sawtooth",
-						"volume": 0.3,
+						"volume": 0.22,
+						"cutoff": 650,
+						"resonance": 1.2,
+						"lfoDepth": 0,
 						"attack": 0.005,
-						"decay": 0.15,
-						"sustain": 0.35,
-						"release": 0.08,
-						"filterCutOff": 650,
-						"filterResonance": 2
+						"release": 0.12,
+						"maxPolyphony": 8
 					}
 				}
 			},
@@ -69,45 +70,9 @@
 							"id": "context-chain-performance",
 							"name": "Turn an imported melody into bass material controls",
 							"theme": "ice",
-							"connections": [
-								{
-									"componentId": "synth",
-									"controlIds": [
-										"volume",
-										"shape",
-										"attack",
-										"release",
-										"filterCutOff",
-										"filterResonance"
-									]
-								}
-							],
-							"widgets": [
-								{
-									"key": "[\"synth\",\"volume\"]",
-									"widget": "slider"
-								},
-								{
-									"key": "[\"synth\",\"shape\"]",
-									"widget": "select"
-								},
-								{
-									"key": "[\"synth\",\"attack\"]",
-									"widget": "dial"
-								},
-								{
-									"key": "[\"synth\",\"release\"]",
-									"widget": "dial"
-								},
-								{
-									"key": "[\"synth\",\"filterCutOff\"]",
-									"widget": "dial"
-								},
-								{
-									"key": "[\"synth\",\"filterResonance\"]",
-									"widget": "dial"
-								}
-							]
+							"connections": [],
+							"widgets": [],
+							"panels": ["synth"]
 						}
 					],
 					"mainSurfaceId": "context-chain-performance"

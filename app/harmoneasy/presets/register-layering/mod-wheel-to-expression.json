@@ -36,15 +36,12 @@
 				"id": "synth",
 				"direction": "output",
 				"definition": {
-					"factory": "polyphonic",
+					"factory": "output",
+					"type": "fm",
 					"options": {
-						"shape": "square",
-						"volume": 0.22,
-						"attack": 0.04,
-						"decay": 0.2,
-						"sustain": 0.45,
-						"release": 0.18,
-						"filterCutOff": 1700
+						"preset": 48,
+						"volume": 0.45,
+						"polyphony": 24
 					}
 				}
 			},
@@ -68,45 +65,9 @@
 							"id": "context-chain-performance",
 							"name": "Mod Wheel to Expression controls",
 							"theme": "ice",
-							"connections": [
-								{
-									"componentId": "synth",
-									"controlIds": [
-										"volume",
-										"shape",
-										"attack",
-										"release",
-										"filterCutOff",
-										"filterResonance"
-									]
-								}
-							],
-							"widgets": [
-								{
-									"key": "[\"synth\",\"volume\"]",
-									"widget": "slider"
-								},
-								{
-									"key": "[\"synth\",\"shape\"]",
-									"widget": "select"
-								},
-								{
-									"key": "[\"synth\",\"attack\"]",
-									"widget": "dial"
-								},
-								{
-									"key": "[\"synth\",\"release\"]",
-									"widget": "dial"
-								},
-								{
-									"key": "[\"synth\",\"filterCutOff\"]",
-									"widget": "dial"
-								},
-								{
-									"key": "[\"synth\",\"filterResonance\"]",
-									"widget": "dial"
-								}
-							]
+							"connections": [],
+							"widgets": [],
+							"panels": ["synth"]
 						}
 					],
 					"mainSurfaceId": "context-chain-performance"
@@ -122,7 +83,7 @@
 	"catalogue": {
 		"id": "mod-wheel-to-expression",
 		"category": "Register & layering",
-		"useCase": "Control MIDI CC 11 with a hardware modulation wheel.",
+		"useCase": "Hold a note and move a hardware modulation wheel to control the FM strings volume through CC 11.",
 		"order": 32,
 		"kind": "chain",
 		"stepSummaries": ["Map CC 1 to CC 11."]

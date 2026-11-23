@@ -1,0 +1,119 @@
+{
+	"format": "harmoneasy-preset",
+	"version": 1,
+	"name": "Velvet Circuits",
+	"description": "Voice-led FM electric piano with slow phaser and tremolo.",
+	"clock": {
+		"bpm": 90,
+		"swing": 0,
+		"divisions": 24,
+		"bars": 4
+	},
+	"midiControls": {
+		"enabled": true,
+		"bindings": []
+	},
+	"workspace": {
+		"version": 2,
+		"activeChainId": "context-chain",
+		"devices": [
+			{
+				"id": "computer-keyboard",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "keyboard"
+				}
+			},
+			{
+				"id": "keyboard",
+				"direction": "input",
+				"definition": {
+					"factory": "keyboard-input"
+				}
+			},
+			{
+				"id": "synth",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "fm",
+					"options": {
+						"preset": 4,
+						"volume": 0.45,
+						"polyphony": 24
+					}
+				}
+			},
+			{
+				"id": "ui",
+				"direction": "output",
+				"definition": {
+					"factory": "external",
+					"type": "ui"
+				}
+			},
+			{
+				"id": "effect-phaser",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "effect:phaser",
+					"options": {
+						"mix": 0.25,
+						"rate": 0.25,
+						"depth": 1.5,
+						"frequency": 800,
+						"feedback": 0.2
+					}
+				}
+			},
+			{
+				"id": "effect-tremolo",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "effect:tremolo",
+					"options": {
+						"rate": 3,
+						"depth": 0.25,
+						"waveform": "sine"
+					}
+				}
+			}
+		],
+		"chains": [
+			{
+				"id": "context-chain",
+				"options": {
+					"name": "Velvet Circuits",
+					"active": true,
+					"controlSurfaces": [
+						{
+							"id": "context-chain-performance",
+							"name": "Velvet Circuits controls",
+							"theme": "ice",
+							"connections": [],
+							"widgets": [],
+							"panels": ["synth", "effect-phaser", "effect-tremolo"]
+						}
+					],
+					"mainSurfaceId": "context-chain-performance"
+				},
+				"inputs": ["computer-keyboard", "keyboard"],
+				"outputs": ["synth", "effect-phaser", "effect-tremolo", "ui"],
+				"transformers": "[\"{\\\"root\\\":3,\\\"mode\\\":\\\"ionian\\\",\\\"simultaneous\\\":3,\\\"type\\\":\\\"Chordifier\\\"}\",\"{\\\"lower\\\":48,\\\"upper\\\":84,\\\"collect\\\":30,\\\"type\\\":\\\"Voice-Leader\\\"}\"]",
+				"disabledInputs": [],
+				"disabledOutputs": []
+			}
+		]
+	},
+	"catalogue": {
+		"id": "velvet-circuits",
+		"category": "Sound explorations",
+		"kind": "workspace",
+		"order": 243,
+		"useCase": "Play single-note roots and let each chord settle. Adjust Phaser Mix and Tremolo Depth for movement.",
+		"stepSummaries": ["Build diatonic triads.", "Keep successive chord voices close."]
+	}
+}
