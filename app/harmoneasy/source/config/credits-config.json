@@ -1453,6 +1453,13 @@
 		"url": "https://github.com/ljharb/get-proto#readme"
 	},
 	{
+		"name": "github-url-to-object",
+		"version": "4.0.6",
+		"authors": ["zeke"],
+		"license": "MIT",
+		"url": "https://github.com/zeke/github-url-to-object"
+	},
+	{
 		"name": "global-agent",
 		"version": "3.0.0",
 		"authors": ["Gajus Kuizinas"],
@@ -1580,6 +1587,13 @@
 		"authors": ["Sindre Sorhus"],
 		"license": "MIT",
 		"url": "sindresorhus/is-fullwidth-code-point"
+	},
+	{
+		"name": "is-url",
+		"version": "1.2.4",
+		"authors": [],
+		"license": "MIT",
+		"url": "https://github.com/segmentio/is-url"
 	},
 	{
 		"name": "isarray",
@@ -1914,6 +1928,13 @@
 		"authors": ["Isaac Z. Schlueter (http://blog.izs.me/)"],
 		"license": "MIT",
 		"url": "git+https://github.com/isaacs/minizlib.git"
+	},
+	{
+		"name": "ms",
+		"version": "2.1.3",
+		"authors": [],
+		"license": "MIT",
+		"url": "vercel/ms"
 	},
 	{
 		"name": "napi-macros",
@@ -2936,6 +2957,13 @@
 		"authors": ["Mikola Lysenko"],
 		"license": "MIT",
 		"url": "git://github.com/mikolalysenko/uniq.git"
+	},
+	{
+		"name": "update-electron-app",
+		"version": "3.3.0",
+		"authors": [],
+		"license": "MIT",
+		"url": "https://github.com/electron/update-electron-app"
 	},
 	{
 		"name": "use-sync-external-store",
