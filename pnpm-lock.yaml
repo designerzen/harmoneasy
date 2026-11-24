@@ -213,6 +213,9 @@ importers:
       uWebSockets.js:
         specifier: github:uNetworking/uWebSockets.js
         version: https://codeload.github.com/uNetworking/uWebSockets.js/tar.gz/42aee84b3677747ec7417c406c593898e81f2100
+      update-electron-app:
+        specifier: ^3.3.0
+        version: 3.3.0
       webrtc-adapter:
         specifier: ^9.0.6
         version: 9.0.6
@@ -256,9 +259,6 @@ importers:
       typescript:
         specifier: ~5.9.3
         version: 5.9.3
-      update-electron-app:
-        specifier: ^3.3.0
-        version: 3.3.0
       vite:
         specifier: ^8.0.1
         version: 8.0.1(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)(@types/node@22.20.5)(esbuild@0.27.7)(jiti@2.7.0)(sass-embedded@1.108.2)(sass@1.108.2)(terser@5.51.3)(yaml@2.8.2)

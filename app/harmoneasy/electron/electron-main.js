@@ -32,7 +32,6 @@ protocol.registerSchemesAsPrivileged([
 const require = createRequire(import.meta.url)
 registerMidi2IPC(ipcMain, () => require("../build/Release/midi2-native.node"))
 const endpointMidi2 = registerEndpointMidi2IPC(ipcMain, () => BrowserWindow.getAllWindows())
-const updateElectronApp = require("update-electron-app")
 
 let SocketServer = null
 let mainWindow
@@ -47,6 +46,13 @@ function setupAutoUpdater() {
 	}
 
 	try {
+		const updaterModule = require("update-electron-app")
+		const updateElectronApp =
+			updaterModule.updateElectronApp ?? updaterModule.default ?? updaterModule
+		if (typeof updateElectronApp !== "function") {
+			console.warn("Auto-updater module did not export a callable function")
+			return
+		}
 		// Uses official Electron update service or Hazel/custom server
 		// Checks for updates at app startup, then every 10 minutes
 		// Automatically handles dialog and installation
