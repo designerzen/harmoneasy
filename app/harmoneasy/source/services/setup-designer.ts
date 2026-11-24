@@ -50,6 +50,21 @@ export const WIZARD_INPUTS = [
 	{ id: "pads", label: "Onscreen chord or drum pads" },
 	{ id: "music-mouse", label: "My mouse or trackpad" },
 	{
+		id: "microphone-melody",
+		label: "Microphone melody (Essentia)",
+		description: "Hum or play one note with low-latency pitch tracking."
+	},
+	{
+		id: "microphone-chords",
+		label: "Microphone chords (Essentia)",
+		description: "Follow microphone chords and estimate the current key."
+	},
+	{
+		id: "microphone-timbre",
+		label: "Microphone timbre (Essentia)",
+		description: "Map microphone tone and dynamics to MIDI controllers."
+	},
+	{
 		id: "microphone-pitch",
 		label: "My voice or an acoustic instrument",
 		description: "Use a microphone to detect notes."
@@ -73,6 +88,12 @@ export const WIZARD_INPUT_INSTRUCTIONS: Record<WizardInput, string> = {
 	pads: "Open the chord or drum pads input panel, then tap the pads or use their keyboard shortcuts.",
 	"music-mouse":
 		"Open the Music Mouse input panel and move your mouse or trackpad to play notes.",
+	"microphone-melody":
+		"Start listening and allow microphone access. Hum or play one note with low-latency pitch tracking. Headphones help prevent feedback.",
+	"microphone-chords":
+		"Start listening and allow microphone access. Follow microphone chords and estimate the current key. Headphones help prevent feedback.",
+	"microphone-timbre":
+		"Start listening and allow microphone access. Map microphone tone and dynamics to MIDI controllers. Headphones help prevent feedback.",
 	"microphone-pitch":
 		"Open the microphone pitch input panel and start listening. Allow microphone access, then sing or play into it. Pitch detection needs a model download; headphones help prevent feedback.",
 	"microphone-trigger":
@@ -86,6 +107,9 @@ export const WIZARD_INPUT_INSTRUCTIONS: Record<WizardInput, string> = {
 export const WIZARD_CONNECTION_INPUTS: readonly WizardInput[] = [
 	"midi",
 	"gamepad",
+	"microphone-melody",
+	"microphone-chords",
+	"microphone-timbre",
 	"microphone-pitch",
 	"microphone-trigger",
 	"camera-gestures"

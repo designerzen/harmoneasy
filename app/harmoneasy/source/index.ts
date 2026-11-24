@@ -189,7 +189,16 @@ const initialiseFrontEnd = async (audioBus: AudioBus, initialVolumePercent: numb
 						"Audio is still starting. Try dropping the file again in a moment."
 					)
 				}
-				importMedia ??= createMediaImporter(ioManager)
+				importMedia ??= createMediaImporter(ioManager, undefined, {
+					get: () => timer.BPM,
+					canSet: () => clockSource?.source === "internal" && !netronomeLink?.isFollower,
+					set: (bpm) => {
+						timer.BPM = bpm
+						frontEnd.setTempo(bpm)
+						state.set("tempo", bpm)
+						netronomeLink?.tempoChanged()
+					}
+				})
 				await importMedia(media)
 			} catch (error) {
 				frontEnd.showError(

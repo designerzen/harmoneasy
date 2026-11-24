@@ -382,6 +382,10 @@ Read [CODING_STANDARDS.md](CODING_STANDARDS.md) before implementing or reviewing
 
 ## Credits and support
 
-HarmonEasy builds on Web Audio, Web MIDI, Web Bluetooth, Netronome, Web Audio Modules, WebCLAP, VexFlow, Pink Trombone, Spotify Basic Pitch, Magenta, SuperCollider/Supersonic, Audiotool and OpenDAW. The app's About/credits information and plugin catalogue include component attributions; bundled third-party assets retain their own licenses.
+HarmonEasy builds on Web Audio, Web MIDI, Web Bluetooth, Netronome, Web Audio Modules, WebCLAP, VexFlow, Pink Trombone, Spotify Basic Pitch, Essentia, Magenta, SuperCollider/Supersonic, Audiotool and OpenDAW. The app's About/credits information and plugin catalogue include component attributions; bundled third-party assets retain their own licenses.
 
 Report bugs and request features through [GitHub Issues](https://github.com/designerzen/harmoneasy/issues), join [Discussions](https://github.com/designerzen/harmoneasy/discussions), or [contact the maintainer](mailto:radio@awesomething.co.uk).
+
+## License
+
+HarmonEasy is free software licensed under the [GNU Affero General Public License v3.0 or later](LICENSE). If you run a modified version as a network service, you must offer its users the corresponding source code. Audio analysis uses [Essentia](https://essentia.upf.edu), which is also AGPL-3.0.

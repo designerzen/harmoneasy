@@ -4,6 +4,7 @@
 	"type": "module",
 	"version": "0.19.1",
 	"description": "A web-based music collaboration platform that transforms, quantizes, and harmonizes live MIDI input in real-time",
+	"license": "AGPL-3.0-or-later",
 	"author": "designerzen <radio@awesomething.co.uk>",
 	"packageManager": "pnpm@12.0.0",
 	"scripts": {

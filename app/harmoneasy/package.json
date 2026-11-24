@@ -3,6 +3,7 @@
 	"private": true,
 	"version": "0.19.1",
 	"description": "MIDI/audio application with Electron desktop support",
+	"license": "AGPL-3.0-or-later",
 	"author": "designerzen <radio@awesomething.co.uk>",
 	"homepage": "https://github.com/designerzen/harmoneasy",
 	"type": "module",

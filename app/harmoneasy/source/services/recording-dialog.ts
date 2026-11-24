@@ -12,9 +12,17 @@ import { getAudioRecording } from "audiobus/io/recording/audio-recording"
 import { RECORDING_STATE_CHANGED, type RecordingBits } from "audiobus/io/recording/recording-format"
 import {
 	AUDIO_EXPORT_FORMATS,
+	convertAudioMedia,
 	populateAudioExportFormats,
 	type AudioExportFormat
 } from "audiobus/io/media/audio-media"
+import {
+	analyseTake,
+	createAnalysisPanel,
+	describeGain,
+	normalisationGain,
+	normaliseWave
+} from "./recording-analysis"
 
 export function createRecordingControls(
 	context: AudioContext,
@@ -38,6 +46,9 @@ export function createRecordingControls(
 	let url: string | undefined
 	let busy = false
 	let reviewing = false
+	let analysing = false
+	let takeId = 0
+	const analysisPanel = createAnalysisPanel(root, () => void runAnalysis())
 
 	const duration = () => {
 		const seconds = Math.floor(recording.duration)
@@ -89,9 +100,38 @@ export function createRecordingControls(
 		save.disabled = busy || recording.state !== "idle" || !recording.hasTake
 		format.disabled = busy
 		filename.disabled = busy
+		analysisPanel?.update({
+			canAnalyse: !busy && !analysing && recording.state === "idle" && recording.hasTake,
+			busy
+		})
 		details.textContent = `${duration()} · ${recording.sampleRate.toLocaleString()} Hz · Stereo · ${recording.storage === "opfs" ? "Saved in browser storage" : "Memory only (64 MB limit)"}`
 	}
-	const show = async () => {
+	// Analysis runs in a worker and never holds the save controls; any failure stays in its own panel.
+	const runAnalysis = async () => {
+		if (!analysisPanel || analysing || recording.state !== "idle" || !recording.hasTake) {
+			return
+		}
+		const id = takeId
+		analysing = true
+		analysisPanel.showMessage("Analysing take…")
+		render()
+		try {
+			const result = await analyseTake(recording)
+			if (id === takeId) {
+				analysisPanel.showResult(result)
+			}
+		} catch (error) {
+			if (id === takeId) {
+				analysisPanel.showMessage(
+					`Analysis unavailable: ${error instanceof Error ? error.message : error}. Recording and saving are not affected.`
+				)
+			}
+		} finally {
+			analysing = false
+			render()
+		}
+	}
+	const show = async (analyseAfter = false) => {
 		if (busy || reviewing) {
 			return
 		}
@@ -124,6 +164,9 @@ export function createRecordingControls(
 			if (dialog.open && !save.disabled && root.activeElement === initialFocus) {
 				save.focus({ preventScroll: true })
 			}
+			if (analyseAfter) {
+				void runAnalysis()
+			}
 		}
 	}
 
@@ -141,7 +184,7 @@ export function createRecordingControls(
 	recording.addEventListener(RECORDING_STATE_CHANGED, () => {
 		if (wasRecording && recording.state === "idle") {
 			wasRecording = false
-			void show()
+			void show(true)
 		}
 		if (recording.state === "recording") {
 			wasRecording = true
@@ -162,6 +205,8 @@ export function createRecordingControls(
 		}
 		clearPlayback()
 		dialog.close()
+		takeId++
+		analysisPanel?.reset()
 		await recording.start()
 	}
 	// Cancelling the Recorder outputs' events keeps them from driving the take themselves.
@@ -217,22 +262,53 @@ export function createRecordingControls(
 					})) as FileSystemFileHandle)
 				: undefined
 			status.textContent = "Preparing audio for saving…"
+			// Loudness normalisation is best effort: a failed measurement saves the take unchanged.
+			let normalised = ""
+			let gain: number | undefined
+			const target = analysisPanel?.normaliseTarget()
+			if (target !== undefined) {
+				try {
+					const measured = await analyseTake(recording)
+					const result = normalisationGain(measured, target)
+					analysisPanel?.showResult(measured)
+					if (result.gainDb) {
+						gain = result.gain
+					}
+					normalised = ` Normalised: ${describeGain(result, target)}.`
+				} catch (error) {
+					normalised = ` Not normalised: loudness could not be measured (${error instanceof Error ? error.message : error}).`
+				}
+			}
 			const compressed = exportFormat !== "16" && exportFormat !== "32"
+			const progress = (value: number) => {
+				status.textContent = `Encoding audio… ${Math.round(value * 100)}%`
+			}
 			const blob = compressed
-				? await recording.exportAudio(
-						exportFormat,
-						(progress) => {
-							status.textContent = `Encoding audio… ${Math.round(progress * 100)}%`
-						},
-						handle ? await handle.createWritable() : undefined
-					)
-				: await recording.wave(Number(exportFormat) as RecordingBits)
+				? gain
+					? await convertAudioMedia(
+							await normaliseWave(await recording.wave(32), 32, gain),
+							exportFormat,
+							progress,
+							handle ? await handle.createWritable() : undefined
+						)
+					: await recording.exportAudio(
+							exportFormat,
+							progress,
+							handle ? await handle.createWritable() : undefined
+						)
+				: gain
+					? await normaliseWave(
+							await recording.wave(32),
+							Number(exportFormat) as RecordingBits,
+							gain
+						)
+					: await recording.wave(Number(exportFormat) as RecordingBits)
 			if (handle && !compressed) {
 				const output = await handle.createWritable()
 				await blob!.stream().pipeTo(output)
 			}
 			if (handle) {
-				status.textContent = "Recording saved. The take is still available here."
+				status.textContent = `Recording saved. The take is still available here.${normalised}`
 			} else {
 				const download = URL.createObjectURL(blob!)
 				const anchor = root.createElement("a")
@@ -242,7 +318,7 @@ export function createRecordingControls(
 				anchor.click()
 				anchor.remove()
 				setTimeout(() => URL.revokeObjectURL(download), 60_000)
-				status.textContent = "Download started. The take is still available here."
+				status.textContent = `Download started. The take is still available here.${normalised}`
 			}
 		} catch (error) {
 			status.textContent =

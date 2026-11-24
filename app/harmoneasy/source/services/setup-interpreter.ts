@@ -598,6 +598,9 @@ const RULES: Rule[] = [
 		{ inputs: ["pads"] }
 	),
 	rule(["mouse", "trackpad", "touchpad"], { inputs: ["music-mouse"] }),
+	rule(["microphone melody", "hum to play"], { inputs: ["microphone-melody"] }),
+	rule(["microphone chords", "follow (?:the )?chords"], { inputs: ["microphone-chords"] }),
+	rule(["microphone timbre", "voice to cc"], { inputs: ["microphone-timbre"] }),
 	rule(
 		[
 			"sing(?:s|ing|er|ers)?",

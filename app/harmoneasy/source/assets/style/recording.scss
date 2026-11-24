@@ -91,6 +91,42 @@
 		font-size: var(--text-sm);
 		color: var(--col-muted);
 	}
+	.recording-analysis {
+		margin-bottom: 1rem;
+		h3 {
+			margin: 0 0 0.5rem;
+			font-size: var(--text-sm);
+		}
+		dl {
+			display: grid;
+			grid-template-columns: max-content 1fr;
+			gap: 0.25rem 1rem;
+			margin: 0.5rem 0;
+			font-size: var(--text-sm);
+			font-variant-numeric: tabular-nums;
+		}
+		dt {
+			font-weight: 600;
+		}
+		dd {
+			margin: 0;
+		}
+		[role="status"] {
+			margin: 0.25rem 0 0.75rem;
+			font-size: var(--text-sm);
+			color: var(--col-muted);
+		}
+		.recording-normalise {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+		}
+		input[type="checkbox"] {
+			display: inline-block;
+			width: auto;
+			margin: 0;
+		}
+	}
 	.recording-actions {
 		flex: 0 0 auto;
 		display: flex;

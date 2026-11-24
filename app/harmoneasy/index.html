@@ -674,6 +674,25 @@
 					<option value="32">WAV · 32-bit float (original quality)</option>
 				</select>
 				<p id="recording-status" role="status"></p>
+				<section class="recording-analysis" aria-labelledby="recording-analysis-title">
+					<h3 id="recording-analysis-title">Take analysis</h3>
+					<button type="button" id="recording-analyse" disabled>Analyse take</button>
+					<dl id="recording-analysis-summary" hidden></dl>
+					<p id="recording-analysis-status" role="status"></p>
+					<label class="recording-normalise">
+						<input type="checkbox" id="recording-normalise" />
+						Normalise loudness when saving
+					</label>
+					<label for="recording-normalise-target">Target loudness (LUFS)</label>
+					<input
+						id="recording-normalise-target"
+						type="number"
+						value="-14"
+						min="-50"
+						max="-5"
+						step="0.5"
+					/>
+				</section>
 				<p class="recording-hint">
 					One take is kept locally. Starting a new recording replaces it. Clearing site
 					data deletes browser recordings. External MIDI instruments and system speech

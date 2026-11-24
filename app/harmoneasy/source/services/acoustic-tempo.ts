@@ -1,3 +1,5 @@
+import { createAnalysisStream, type AnalysisStream } from "audiobus/analysis/essentia-client"
+import { loadCaptureWorklet } from "audiobus/io/inputs/load-capture-worklet"
 import { EVENT_ENDED } from "audiobus/events/event-constants"
 /** Tap/reference tempo disambiguates offbeats and half/double-time interpretations. */
 export class AcousticTempoTracker {
@@ -69,10 +71,27 @@ export class AcousticTempoTracker {
 	}
 }
 
+const CAPTURE_PROCESSOR = "acoustic-tempo-capture"
+const CAPTURE_CODE = `
+class AcousticTempoCapture extends AudioWorkletProcessor {
+	process(inputs) {
+		const samples = inputs[0]?.[0]
+		if (samples) {
+			this.port.postMessage({ samples: samples.slice(), time: currentTime })
+		}
+		return true
+	}
+}
+registerProcessor("${CAPTURE_PROCESSOR}", AcousticTempoCapture)
+`
+
 export class AcousticTempoFollower {
 	private stream?: MediaStream
 	private source?: MediaStreamAudioSourceNode
 	private analyser?: AnalyserNode
+	private analysis?: AnalysisStream
+	private capture?: AudioWorkletNode
+	private fallback = false
 	private frame = 0
 	private generation = 0
 	private floor = 0.002
@@ -122,44 +141,111 @@ export class AcousticTempoFollower {
 				track.addEventListener(
 					EVENT_ENDED,
 					() => {
-						this.stop()
-						this.status("Microphone disconnected; holding tempo")
+						if (generation === this.generation) {
+							this.stop()
+							this.status("Microphone disconnected; holding tempo")
+						}
 					},
 					{ once: true }
 				)
 			}
-			const data = new Float32Array(this.analyser.fftSize)
-			const sample = () => {
-				if (!this.active) {
+			this.fallback = false
+			const fallback = () => {
+				if (generation !== this.generation || this.fallback) {
 					return
 				}
-				if (!this.allowed() || document.hidden) {
-					this.stop()
-					this.status("Acoustic following stopped")
+				this.fallback = true
+				this.releaseAnalysis()
+				this.tracker.reset(this.getBpm())
+				this.status("Essentia unavailable; using energy-based onset detection")
+			}
+			const data = new Float32Array(this.analyser!.fftSize)
+			const sample = () => {
+				if (generation !== this.generation || !this.active) {
+					return
+				}
+				if (!this.checkAllowed()) {
+					return
+				}
+				if (!this.fallback) {
+					this.status(this.tracker.status(this.context.currentTime))
+					this.frame = requestAnimationFrame(sample)
 					return
 				}
 				this.analyser!.getFloatTimeDomainData(data)
 				const rms = Math.sqrt(data.reduce((sum, n) => sum + n * n, 0) / data.length)
 				const threshold = Math.max(0.008, this.floor * this.threshold)
-				const time = performance.now() / 1000
-				if (Math.abs(this.getBpm() - this.tracker.bpm) > 0.1) {
-					this.tracker.reset(this.getBpm())
-				}
+				const time = this.context.currentTime
 				if (this.armed && rms > threshold) {
-					const bpm = this.tracker.onset(time)
-					if (bpm !== undefined) {
-						this.accept(bpm)
-					}
+					this.onset(time)
 					this.armed = false
 				}
 				if (rms < threshold * 0.7) {
 					this.armed = true
 				}
 				this.floor += (Math.max(0.001, rms) - this.floor) * (rms < this.floor ? 0.15 : 0.01)
-				this.status(this.tracker.status(time))
+				this.status(`Energy-based onset detection · ${this.tracker.status(time)}`)
 				this.frame = requestAnimationFrame(sample)
 			}
 			this.frame = requestAnimationFrame(sample)
+			try {
+				await loadCaptureWorklet(this.context, CAPTURE_PROCESSOR, CAPTURE_CODE)
+				if (generation !== this.generation) {
+					return
+				}
+				if (!this.checkAllowed()) {
+					return
+				}
+				this.capture = new AudioWorkletNode(this.context, CAPTURE_PROCESSOR, {
+					channelCount: 1,
+					channelCountMode: "explicit"
+				})
+				let startedAt = this.context.currentTime
+				let firstChunk = true
+				this.analysis = createAnalysisStream(
+					{
+						sampleRate: this.context.sampleRate,
+						frameSize: 1024,
+						hopSize: 512,
+						features: ["onset"],
+						onsetThreshold: this.threshold
+					},
+					(frames) => {
+						if (generation !== this.generation || this.fallback || !this.checkAllowed()) {
+							return
+						}
+						for (const frame of frames) {
+							if (frame.onset?.detected) {
+								this.onset(startedAt + frame.time)
+							}
+						}
+						this.status(this.tracker.status(this.context.currentTime))
+					},
+					fallback
+				)
+				this.capture.port.onmessage = (
+					event: MessageEvent<{ samples: Float32Array, time: number }>
+				) => {
+					if (generation !== this.generation || this.fallback || !this.checkAllowed()) {
+						return
+					}
+					if (firstChunk) {
+						// Use the first render quantum's clock, excluding port/worker delivery latency.
+						// Device input latency is a constant offset and does not affect tempo intervals.
+						startedAt = event.data.time
+						firstChunk = false
+					}
+					this.analysis?.push(event.data.samples)
+				}
+				this.source.connect(this.capture)
+				// The processor outputs silence; connecting it keeps capture rendering without mic feedback.
+				this.capture.connect(this.context.destination)
+			} catch {
+				fallback()
+			}
+			if (generation !== this.generation) {
+				return
+			}
 		} catch (error) {
 			if (generation === this.generation) {
 				this.stop()
@@ -167,10 +253,42 @@ export class AcousticTempoFollower {
 			}
 		}
 	}
+	private checkAllowed(): boolean {
+		if (!this.active) {
+			return false
+		}
+		if (!this.allowed() || document.hidden) {
+			this.stop()
+			this.status("Acoustic following stopped")
+			return false
+		}
+		return true
+	}
+	private onset(time: number): void {
+		if (Math.abs(this.getBpm() - this.tracker.bpm) > 0.1) {
+			this.tracker.reset(this.getBpm())
+		}
+		const bpm = this.tracker.onset(time)
+		if (bpm !== undefined) {
+			this.accept(bpm)
+		}
+	}
+	private releaseAnalysis(): void {
+		this.analysis?.stop()
+		this.analysis = undefined
+		if (this.capture) {
+			this.source?.disconnect(this.capture)
+			this.capture.port.onmessage = null
+			this.capture.port.close()
+			this.capture.disconnect()
+			this.capture = undefined
+		}
+	}
 	stop(): void {
 		this.generation++
 		this.active = false
 		cancelAnimationFrame(this.frame)
+		this.releaseAnalysis()
 		this.source?.disconnect()
 		this.analyser?.disconnect()
 		this.stream?.getTracks().forEach((track) => track.stop())

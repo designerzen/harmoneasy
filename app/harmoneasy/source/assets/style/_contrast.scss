@@ -1,0 +1,19 @@
+/* Readable text on any background, whatever theme or contrast mode is active. */
+
+/// Picks the first of `$color`, the theme foreground, white or black that
+/// reaches WCAG AA against `$background`, which an ancestor or this rule paints.
+/// Browsers without color-contrast() keep `$color`, so pass the token designed
+/// for that background.
+@mixin readable-text($background, $color: var(--col-fg)) {
+	color: $color;
+
+	@supports (color: color-contrast(white vs black, white)) {
+		color: color-contrast(#{$background} vs #{$color}, var(--col-fg), white, black to AA);
+	}
+}
+
+/// Paints `$background` with readable text on it.
+@mixin readable($background, $color: var(--col-fg)) {
+	background: $background;
+	@include readable-text($background, $color);
+}

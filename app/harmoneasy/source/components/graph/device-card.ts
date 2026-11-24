@@ -202,6 +202,24 @@ export const INPUT_GUIDANCE: Record<InputId, Guidance> = {
 		"Exploring melodies and harmonies by movement.",
 		"A mouse, touchpad, or compatible pointer."
 	),
+	"microphone-melody": guide(
+		"🎤",
+		"Hum or play one note with low-latency pitch tracking.",
+		"Playing with your voice or an acoustic instrument through Essentia.js (AGPL-3.0).",
+		mic + " WebAssembly and audio worklets are required."
+	),
+	"microphone-chords": guide(
+		"🎤",
+		"Follow microphone chords and estimate the current key.",
+		"Playing with your voice or an acoustic instrument through Essentia.js (AGPL-3.0).",
+		mic + " WebAssembly and audio worklets are required."
+	),
+	"microphone-timbre": guide(
+		"🎤",
+		"Map microphone tone and dynamics to MIDI controllers.",
+		"Playing with your voice or an acoustic instrument through Essentia.js (AGPL-3.0).",
+		mic + " WebAssembly and audio worklets are required."
+	),
 	"microphone-pitch": guide(
 		"🎤",
 		"Detect played or sung pitches from microphone audio.",

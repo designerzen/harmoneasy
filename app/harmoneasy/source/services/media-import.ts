@@ -18,8 +18,10 @@ import type OutputLoopPlayer from "audiobus/io/outputs/output-loop-player"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
 import type IOChain from "audiobus/io/IO-chain"
 import type { ArchivedPlugin } from "audiobus/importers/dropped-media"
+import type { HarmonicState } from "audiobus/io/harmony"
 import { storeWamArchive } from "./wam-archive"
 import { loadSoundFont } from "./soundfont-drop"
+import { analyseImportedLoop, type TempoControl } from "./audio-analysis-apply"
 import { EVENT_CLICK, EVENT_CLOSE } from "audiobus/events/event-constants"
 
 async function choosePlugin(plugins: ArchivedPlugin[]): Promise<ArchivedPlugin | undefined> {
@@ -62,7 +64,8 @@ async function choosePlugin(plugins: ArchivedPlugin[]): Promise<ArchivedPlugin |
 
 export function createMediaImporter(
 	manager: IOChainManager,
-	importScore?: (file: File) => Promise<void>
+	importScore?: (file: File) => Promise<void>,
+	tempo?: TempoControl
 ) {
 	const target = () => manager.activeChain ?? manager.getChain(manager.createEmptyChain())!
 	const loadNotes = async (file: File, chain: IOChain, format: ImportFormatId = "midi") => {
@@ -94,6 +97,19 @@ export function createMediaImporter(
 			await output.destroy?.()
 			throw error
 		}
+		// Detect tempo and key beside the import: it is slow and optional, so it never fails the load.
+		const harmony = {
+			get: () => manager.harmony,
+			external: () => manager.externallyControlledHarmony,
+			sections: () => {
+				const { playSections, sections } = manager.musicTools
+				return playSections && sections.length > 0
+			},
+			set: (state: HarmonicState) => manager.setHarmony(state)
+		}
+		void analyseImportedLoop({ output, chain, tempo, harmony }).catch((error) =>
+			console.warn("Audio analysis unavailable", error)
+		)
 	}
 
 	const loadPlugin = async (value: string, chain: IOChain) => {

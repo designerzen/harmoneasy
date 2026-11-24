@@ -1,3 +1,5 @@
+@use "./contrast" as *;
+
 .ensemble-controls {
 	.ensemble-players {
 		display: grid;
@@ -3506,8 +3508,10 @@ dialog.add-output-dialog {
 	border: 0;
 	border-radius: 0;
 	color-scheme: dark;
-	background: oklch(14% var(--neutral-chroma) var(--theme-hue));
-	color: oklch(96% var(--neutral-chroma) var(--theme-hue));
+	@include readable(
+		oklch(14% var(--neutral-chroma) var(--theme-hue)),
+		oklch(96% var(--neutral-chroma) var(--theme-hue))
+	);
 
 	/* View switch, then the surface's own toolbar, then one labelled way out. */
 	> .surface-viewport-header {
@@ -3519,7 +3523,7 @@ dialog.add-output-dialog {
 		padding: 0.5rem 0.75rem;
 		flex: none;
 		border-bottom: var(--border);
-		background: var(--col-surface);
+		@include readable(var(--col-surface));
 
 		.surface-viewport-views {
 			display: inline-flex;
@@ -3542,7 +3546,6 @@ dialog.add-output-dialog {
 			min-height: var(--control-height, 44px);
 			padding: 0 1rem;
 			border-radius: calc(var(--radius-md) - 3px);
-			color: var(--col-fg);
 			font: inherit;
 			font-weight: 600;
 			cursor: pointer;
@@ -3559,17 +3562,17 @@ dialog.add-output-dialog {
 			}
 		}
 
+		// Unpressed views share the track's colour so their contrast is measured against it.
 		.surface-viewport-view {
 			border: 0;
-			background: transparent;
+			@include readable(var(--col-surface-sunken));
 
 			&:hover:not(:disabled, [aria-pressed="true"]) {
-				background: var(--col-hover);
+				@include readable(color-mix(in oklch, var(--col-fg) 9%, var(--col-surface-sunken)));
 			}
 
 			&[aria-pressed="true"] {
-				background: var(--col-accent);
-				color: var(--col-on-accent);
+				@include readable(var(--col-accent), var(--col-on-accent));
 			}
 
 			&:disabled {
@@ -3591,10 +3594,10 @@ dialog.add-output-dialog {
 			margin-left: auto;
 			border: var(--border);
 			border-radius: var(--radius-md);
-			background: var(--col-surface-raised);
+			@include readable(var(--col-surface-raised));
 
 			&:hover {
-				background: var(--col-hover);
+				@include readable(color-mix(in oklch, var(--col-fg) 9%, var(--col-surface-raised)));
 			}
 		}
 
