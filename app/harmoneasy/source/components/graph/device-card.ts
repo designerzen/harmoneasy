@@ -3,6 +3,7 @@ import { effectOutputId, type OutputId } from "audiobus/io/outputs/output-types"
 import { EFFECT_REGISTRY } from "audiobus/effects/effect-registry"
 import type { PINK_TROMBONE_OUTPUT_ID } from "audiobus-output-pink-trombone"
 import type { VOICE_WORKSHOP_OUTPUT_ID } from "audiobus-output-voice-workshop"
+import type { KLATTSCH_OUTPUT_ID } from "../../libs/klattsch-output"
 import { elementDescription, elementIcon } from "./element-icons"
 import type { ClassifiedChoice } from "./device-filters"
 import { OUTPUT_DEFINITIONS } from "audiobus/io/output-definitions"
@@ -252,7 +253,10 @@ onMidiDeviceProfilesChanged(() => {
 })
 
 export const OUTPUT_GUIDANCE: Record<
-	OutputId | typeof PINK_TROMBONE_OUTPUT_ID | typeof VOICE_WORKSHOP_OUTPUT_ID,
+	| OutputId
+	| typeof PINK_TROMBONE_OUTPUT_ID
+	| typeof VOICE_WORKSHOP_OUTPUT_ID
+	| typeof KLATTSCH_OUTPUT_ID,
 	Guidance
 > = {
 	protocol: guide(
@@ -461,6 +465,12 @@ export const OUTPUT_GUIDANCE: Record<
 		"Sing notes with a physically modelled human voice.",
 		"Expressive vocal lines, choir pads and vowel sweeps; drag the vowel pad while playing.",
 		audio + " One note at a time."
+	),
+	klattsch: guide(
+		"Speech",
+		"Speak editable phoneme sequences at the pitch of incoming MIDI notes.",
+		"Retro robot voices, singing chords and phoneme experiments; use Speak to audition.",
+		audio + " A browser with AudioWorklet support."
 	),
 	notation: guide(
 		"♫",

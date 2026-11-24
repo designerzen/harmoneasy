@@ -966,6 +966,17 @@
 		"url": "yargs/cliui"
 	},
 	{
+		"name": "cmu-pronouncing-dictionary",
+		"version": "3.0.0",
+		"authors": [
+			"Zeke Sikelianos (http://zeke.sikelianos.com)",
+			"Titus Wormer (https://wooorm.com)",
+			"Christian Murphy"
+		],
+		"license": "ISC",
+		"url": "words/cmu-pronouncing-dictionary"
+	},
+	{
 		"name": "coi-serviceworker",
 		"version": "0.1.7",
 		"authors": ["Guido Zuidhof"],
@@ -1646,6 +1657,13 @@
 		],
 		"license": "MIT",
 		"url": "https://github.com/jonschlinkert/kind-of"
+	},
+	{
+		"name": "klattsch",
+		"version": "0.8.0",
+		"authors": ["Tony Gies (https://github.com/tgies)"],
+		"license": "MIT",
+		"url": "https://klatts.ch/play/"
 	},
 	{
 		"name": "kokoro-js",

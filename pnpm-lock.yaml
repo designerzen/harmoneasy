@@ -176,6 +176,9 @@ importers:
       jzz:
         specifier: ^1.9.6
         version: 1.9.6
+      klattsch:
+        specifier: ^0.8.0
+        version: 0.8.0
       lz-string:
         specifier: ^1.5.0
         version: 1.5.0
@@ -2679,6 +2682,9 @@ packages:
   clone-response@1.0.3:
     resolution: {integrity: sha512-ROoL94jJH2dUVML2Y/5PEDNaSHgeOdSDicUyS7izcF63G6sTc/FTjLub4b8Il9S8S0beOfYt0TaA5qvFK+w0wA==}
 
+  cmu-pronouncing-dictionary@3.0.0:
+    resolution: {integrity: sha512-6y5X4OxsYFnHERo6WSVPnLrk53G07MOQ8aUb2z555JgwynpbZsHR0a//WdN6DUcmE1j2auTF2TtL4PpoKze8QQ==}
+
   coi-serviceworker@0.1.7:
     resolution: {integrity: sha512-bjSUqEngCPOkErY2vbyWsaIGCNRODYzlNycaREVw5s12/C8SM+RnRUUeX6pZbTtov6C52ZLY/+tvHK+BDxuUuA==}
 
@@ -3425,6 +3431,10 @@ packages:
   kind-of@3.2.2:
     resolution: {integrity: sha512-NOW9QQXMoZGg/oqnVNoNTTIFEIid1627WCffUBJEdMxYApq7mNE7CpzucIPc+ZQg25Phej7IJSmX3hO+oblOtQ==}
     engines: {node: '>=0.10.0'}
+
+  klattsch@0.8.0:
+    resolution: {integrity: sha512-NN73eGiHdaITIfhtBClHE2940+Xa+1K3XewsvJoMwR0JAOd7xoccRmdV5N/lIhGDzlhmwILmtuZGLl5pzHMoGA==}
+    hasBin: true
 
   kokoro-js@1.2.1:
     resolution: {integrity: sha512-oq0HZJWis3t8lERkMJh84WLU86dpYD0EuBPtqYnLlQzyFP1OkyBRDcweAqCfhNOpltyN9j/azp1H6uuC47gShw==}
@@ -6944,6 +6954,9 @@ snapshots:
     dependencies:
       mimic-response: 1.0.1
 
+  cmu-pronouncing-dictionary@3.0.0:
+    optional: true
+
   coi-serviceworker@0.1.7: {}
 
   color-convert@2.0.1:
@@ -7778,6 +7791,10 @@ snapshots:
   kind-of@3.2.2:
     dependencies:
       is-buffer: 1.1.6
+
+  klattsch@0.8.0:
+    optionalDependencies:
+      cmu-pronouncing-dictionary: 3.0.0
 
   kokoro-js@1.2.1:
     dependencies:

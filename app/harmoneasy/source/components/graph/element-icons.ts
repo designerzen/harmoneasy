@@ -6,6 +6,7 @@ import type { InputId } from "audiobus/io/inputs/input-types"
 import type { OutputId } from "audiobus/io/outputs/output-types"
 import type { PINK_TROMBONE_OUTPUT_ID } from "audiobus-output-pink-trombone"
 import type { VOICE_WORKSHOP_OUTPUT_ID } from "audiobus-output-voice-workshop"
+import type { KLATTSCH_OUTPUT_ID } from "../../libs/klattsch-output"
 import { MIDI_DEVICE_PROFILES } from "audiobus/hardware/midi-devices/device-profiles"
 import { INSTRUMENTS } from "audiobus/instruments/instrument-types"
 
@@ -81,7 +82,10 @@ const INPUT_ICONS: Partial<Record<InputId, string>> = {
 }
 
 const OUTPUT_ICONS: Record<
-	OutputId | typeof PINK_TROMBONE_OUTPUT_ID | typeof VOICE_WORKSHOP_OUTPUT_ID,
+	| OutputId
+	| typeof PINK_TROMBONE_OUTPUT_ID
+	| typeof VOICE_WORKSHOP_OUTPUT_ID
+	| typeof KLATTSCH_OUTPUT_ID,
 	string
 > = {
 	protocol: "midi",
@@ -112,6 +116,7 @@ const OUTPUT_ICONS: Record<
 	console: "console",
 	"pink-trombone": "speech",
 	"voice-workshop": "speech",
+	klattsch: "speech",
 	notation: "notation",
 	"spectrum-analyser": "spectrum",
 	"speech-synthesis": "speech",
