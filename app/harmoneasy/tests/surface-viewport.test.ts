@@ -5,10 +5,10 @@ import { mountControlSurface } from "../source/components/graph/control-surfaces
 import {
 	EVENT_CHAINS_UPDATED,
 	EVENT_CONTROL_SURFACE_EXPAND,
-	EVENT_CONTROL_SURFACE_MINIMISE,
 	EVENT_KEY_DOWN
 } from "audiobus/events/event-constants"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
+import type { FocusStage, FocusStageHost } from "../source/services/focus-stage"
 
 vi.mock("../source/components/graph/control-surfaces", () => ({
 	mountControlSurface: vi.fn((host, _chain, id) => {
@@ -31,7 +31,8 @@ afterEach(() => {
 function setup(
 	startExpanded: boolean,
 	withSurfaces = true,
-	includesChain?: (id: string) => boolean
+	includesChain?: (id: string) => boolean,
+	stage?: FocusStage
 ) {
 	const entries = ["Lead", "Drums"].map(
 		(name) =>
@@ -51,7 +52,8 @@ function setup(
 	viewport = createSurfaceViewport(
 		manager as unknown as IOChainManager,
 		startExpanded,
-		includesChain
+		includesChain,
+		stage
 	)
 	return {
 		manager,
@@ -90,19 +92,16 @@ it("starts preset surfaces expanded and switches across chains without closing t
 	expect(dialog()).toBeNull()
 	expect(document.body.style.overflow).toBe("")
 })
-it("opens from the graph gadget, minimises, restores focus, and releases subscriptions", () => {
+it("opens from the graph gadget, exits, restores focus, and releases subscriptions", () => {
 	const { entries, dialog } = setup(false)
 	expect(dialog()).toBeNull()
 	const opener = document.body.appendChild(document.createElement("button"))
 	opener.focus()
 	const chain = entries[0][1]
-	const minimise = vi.fn()
-	chain.addEventListener(EVENT_CONTROL_SURFACE_MINIMISE, minimise)
 	const expand = () =>
 		chain.dispatchEvent(new CustomEvent(EVENT_CONTROL_SURFACE_EXPAND, { detail: "Lead" }))
 	expand()
-	dialog()!.querySelector<HTMLButtonElement>(".device-minimise")!.click()
-	expect(minimise).toHaveBeenCalledOnce()
+	dialog()!.querySelector<HTMLButtonElement>(".surface-viewport-exit")!.click()
 	expect(dialog()).toBeNull()
 	expect(document.activeElement).toBe(opener)
 	expand()
@@ -160,5 +159,67 @@ it("lets gadgets handle Escape before closing the expanded surface from the play
 	expect(dialog()).not.toBeNull()
 	expect(document.activeElement).toBe(playing)
 	playing.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: "Escape", bubbles: true }))
+	expect(dialog()).toBeNull()
+})
+function fakeStage() {
+	let host: FocusStageHost | undefined
+	const element = document.createElement("section")
+	element.className = "focus-stage"
+	const stage = {
+		element,
+		attach: vi.fn((next: FocusStageHost) => {
+			host = next
+			return () => (host = undefined)
+		}),
+		activate: vi.fn(),
+		deactivate: vi.fn(),
+		open: (view?: "controls" | "pads") => host?.show(view),
+		close: () => host?.hide()
+	}
+	return stage
+}
+
+it("hosts the Focus Stage pads beside the controls in the same fullscreen view", () => {
+	const stage = fakeStage()
+	const { dialog } = setup(false, true, undefined, stage as unknown as FocusStage)
+	const views = () =>
+		[...dialog()!.querySelectorAll<HTMLButtonElement>(".surface-viewport-view")].map(
+			(view) => [view.textContent, view.getAttribute("aria-pressed")]
+		)
+	// The menu button opens the chain's controls when it has a surface.
+	stage.open()
+	expect(views()).toEqual([
+		["Controls", "true"],
+		["Pads", "false"]
+	])
+	expect(dialog()!.querySelector<HTMLElement>(".surface-titlebar")!.hidden).toBe(false)
+	dialog()!.querySelectorAll<HTMLButtonElement>(".surface-viewport-view")[1].click()
+	expect(stage.activate).toHaveBeenCalledOnce()
+	expect(stage.element.isConnected).toBe(true)
+	expect(dialog()!.querySelector<HTMLElement>(".surface-titlebar")!.hidden).toBe(true)
+	expect(dialog()!.getAttribute("aria-label")).toBe("Focus Stage pads")
+	dialog()!.querySelectorAll<HTMLButtonElement>(".surface-viewport-view")[0].click()
+	expect(stage.deactivate).toHaveBeenCalledOnce()
+	expect(stage.element.isConnected).toBe(false)
+	expect(dialog()!.getAttribute("aria-label")).toBe("Lead mix controls")
+	stage.open("pads")
+	stage.close()
+	expect(dialog()).toBeNull()
+	expect(stage.deactivate).toHaveBeenCalledTimes(2)
+})
+
+it("opens pads when there are no surfaces and never starts expanded without one", () => {
+	const stage = fakeStage()
+	const { dialog } = setup(true, false, undefined, stage as unknown as FocusStage)
+	expect(dialog()).toBeNull()
+	stage.open()
+	expect(stage.activate).toHaveBeenCalledOnce()
+	expect(dialog()!.querySelector<HTMLButtonElement>(".surface-viewport-view")!.disabled).toBe(true)
+	document.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: "Escape", bubbles: true }))
+	expect(dialog()).toBeNull()
+	expect(stage.deactivate).toHaveBeenCalledOnce()
+	viewport!.destroy()
+	viewport = undefined
+	stage.open()
 	expect(dialog()).toBeNull()
 })

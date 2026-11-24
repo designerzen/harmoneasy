@@ -3509,32 +3509,95 @@ dialog.add-output-dialog {
 	background: oklch(14% var(--neutral-chroma) var(--theme-hue));
 	color: oklch(96% var(--neutral-chroma) var(--theme-hue));
 
-	> .device-node-header {
+	/* View switch, then the surface's own toolbar, then one labelled way out. */
+	> .surface-viewport-header {
 		display: flex;
-		flex-direction: row;
 		align-items: center;
 		flex-wrap: wrap;
-		gap: 8px;
+		gap: 0.75rem;
 		margin: 0;
-		padding: 8px;
+		padding: 0.5rem 0.75rem;
 		flex: none;
-		border-bottom: 1px solid oklch(32% var(--neutral-chroma) var(--theme-hue));
+		border-bottom: var(--border);
+		background: var(--col-surface);
 
-		> .device-title-controls {
-			display: contents;
+		.surface-viewport-views {
+			display: inline-flex;
+			gap: 2px;
+			padding: 3px;
+			border: var(--border);
+			border-radius: var(--radius-md);
+			background: var(--col-surface-sunken);
+
+			&[hidden] {
+				display: none;
+			}
 		}
-		.node-actions-left {
-			order: 0;
+
+		.surface-viewport-view,
+		.surface-viewport-exit {
+			display: inline-flex;
+			align-items: center;
+			gap: 0.5rem;
+			min-height: var(--control-height, 44px);
+			padding: 0 1rem;
+			border-radius: calc(var(--radius-md) - 3px);
+			color: var(--col-fg);
+			font: inherit;
+			font-weight: 600;
+			cursor: pointer;
+
+			svg {
+				width: 18px;
+				height: 18px;
+				flex: none;
+				fill: none;
+				stroke: currentColor;
+				stroke-width: 1.8;
+				stroke-linecap: round;
+				stroke-linejoin: round;
+			}
 		}
+
+		.surface-viewport-view {
+			border: 0;
+			background: transparent;
+
+			&:hover:not(:disabled, [aria-pressed="true"]) {
+				background: var(--col-hover);
+			}
+
+			&[aria-pressed="true"] {
+				background: var(--col-accent);
+				color: var(--col-on-accent);
+			}
+
+			&:disabled {
+				opacity: 0.45;
+				cursor: not-allowed;
+			}
+		}
+
 		.surface-titlebar {
-			order: 1;
 			flex: 1;
 			min-width: min(100%, 260px);
+
+			&[hidden] {
+				display: none;
+			}
 		}
-		.node-actions-right {
-			order: 2;
-			margin-left: 0;
+
+		.surface-viewport-exit {
+			margin-left: auto;
+			border: var(--border);
+			border-radius: var(--radius-md);
+			background: var(--col-surface-raised);
+
+			&:hover {
+				background: var(--col-hover);
+			}
 		}
+
 		.cs-toolbar {
 			margin: 0;
 		}

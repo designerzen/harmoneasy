@@ -150,7 +150,7 @@ describe("Cosmo Dots Strings preset", () => {
 		const input = manager.activeChain!.inputs[0] as InputCosmoDots
 		input.setDotCount(3)
 		expect(surface.querySelectorAll("button[data-cosmo-dot] svg")).toHaveLength(3)
-		surface.querySelector<HTMLButtonElement>(".device-expand")!.click()
+		surface.querySelector<HTMLButtonElement>(".surface-viewport-exit")!.click()
 		expect(graph.hidden).toBe(false)
 		expect(surface.isConnected).toBe(false)
 		manager.activeChain!.dispatchEvent(

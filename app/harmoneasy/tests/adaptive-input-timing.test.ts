@@ -23,6 +23,21 @@ import {
 } from "../source/services/motor-stabilizer"
 import { createSwitchScanner } from "../source/services/switch-scanner"
 
+/** Stands in for the fullscreen performance view that hosts the stage in the app. */
+function hostedStage(stage: ReturnType<typeof createFocusStage>) {
+	stage.attach({
+		show() {
+			document.body.append(stage.element)
+			stage.activate()
+		},
+		hide() {
+			stage.deactivate()
+			stage.element.remove()
+		}
+	})
+	return stage
+}
+
 vi.mock("audiobus/io/input-factory", () => ({
 	createInputById: vi.fn(async (type: string) => {
 		const input = {
@@ -320,30 +335,30 @@ describe("Switch-Access Scanner, Dwell, and Camera Gestures", () => {
 	it("wires 2-switch latch, pointer dwell with cooldown, and Camera Gestures in Focus Stage", async () => {
 		const controls = createAccessibilityControls(document)
 		const { manager, chain, received } = createFakeManager()
-		const stage = createFocusStage({ manager, doc: document, accessibility: controls })
+		const stage = hostedStage(createFocusStage({ manager, doc: document, accessibility: controls }))
 		stage.open()
 
 		// Configure 2-switch step/select + latch toggle
-		const scanSelect = stage.dialog.querySelector<HTMLSelectElement>("#focus-stage-scan")!
+		const scanSelect = stage.element.querySelector<HTMLSelectElement>("#focus-stage-scan")!
 		scanSelect.value = "2-switch"
 		scanSelect.dispatchEvent(new Event(EVENT_CHANGE))
 
-		const releaseSelect = stage.dialog.querySelector<HTMLSelectElement>("#focus-stage-release")!
+		const releaseSelect = stage.element.querySelector<HTMLSelectElement>("#focus-stage-release")!
 		releaseSelect.value = "latch"
 		releaseSelect.dispatchEvent(new Event(EVENT_CHANGE))
 
 		// Right Arrow advances from pad 0 -> pad 1 (D4 = 62), Space latches it on, second Space releases it
-		stage.dialog.dispatchEvent(
+		stage.element.dispatchEvent(
 			new KeyboardEvent(EVENT_KEY_DOWN, { key: "ArrowRight", code: "ArrowRight", bubbles: true })
 		)
-		stage.dialog.dispatchEvent(
+		stage.element.dispatchEvent(
 			new KeyboardEvent(EVENT_KEY_DOWN, { code: "Space", key: " ", bubbles: true })
 		)
 		expect(received.at(-1)).toEqual({ type: NOTE_ON, number: 62 })
-		const secondPad = stage.dialog.querySelector<HTMLButtonElement>('[data-pad-index="1"]')!
+		const secondPad = stage.element.querySelector<HTMLButtonElement>('[data-pad-index="1"]')!
 		expect(secondPad.classList.contains("is-latched")).toBe(true)
 
-		stage.dialog.dispatchEvent(
+		stage.element.dispatchEvent(
 			new KeyboardEvent(EVENT_KEY_DOWN, { code: "Space", key: " ", bubbles: true })
 		)
 		expect(received.at(-1)).toEqual({ type: NOTE_OFF, number: 62 })
@@ -354,11 +369,11 @@ describe("Switch-Access Scanner, Dwell, and Camera Gestures", () => {
 		scanSelect.dispatchEvent(new Event(EVENT_CHANGE))
 		releaseSelect.value = "timed"
 		releaseSelect.dispatchEvent(new Event(EVENT_CHANGE))
-		const dwellSelect = stage.dialog.querySelector<HTMLSelectElement>("#focus-stage-dwell")!
+		const dwellSelect = stage.element.querySelector<HTMLSelectElement>("#focus-stage-dwell")!
 		dwellSelect.value = "400"
 		dwellSelect.dispatchEvent(new Event(EVENT_CHANGE))
 
-		const firstPad = stage.dialog.querySelector<HTMLButtonElement>('[data-pad-index="0"]')!
+		const firstPad = stage.element.querySelector<HTMLButtonElement>('[data-pad-index="0"]')!
 		firstPad.dispatchEvent(new Event(EVENT_POINTER_OVER, { bubbles: true }))
 		expect(firstPad.classList.contains("is-dwelling")).toBe(true)
 

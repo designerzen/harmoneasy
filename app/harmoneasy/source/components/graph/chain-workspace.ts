@@ -15,6 +15,7 @@ import { createChainSidebar } from "./ChainSidebar"
 import { element, button, option } from "./dom"
 import type { ChainUIContext } from "./chain-ui-context"
 import { createSurfaceViewport } from "./surface-viewport"
+import type { FocusStage } from "../../services/focus-stage"
 import { installSurfaceTriggers } from "./control-surface-triggers"
 import {
 	SURFACE_FRAGMENT_KEY,
@@ -104,7 +105,8 @@ export function createChainWorkspace(
 	mountGraph: (host: HTMLElement, context: ChainUIContext) => GraphView,
 	startWithSurfaces = false,
 	layoutStore: WorkspaceLayoutStore = {},
-	windowTab?: string
+	windowTab?: string,
+	stage?: FocusStage
 ) {
 	const host = element("div", "chains-workspace chains-stacked")
 	container.append(host)
@@ -783,7 +785,8 @@ export function createChainWorkspace(
 	const surfaceViewport = createSurfaceViewport(
 		manager,
 		(!windowTab && openSharedSurface(manager)) || startWithSurfaces,
-		(id) => (windowTab ? id === windowTab : !windows?.has(id))
+		(id) => (windowTab ? id === windowTab : !windows?.has(id)),
+		stage
 	)
 	const removeSurfaceTriggers = installSurfaceTriggers(manager, !windowTab)
 	let destroyed = false

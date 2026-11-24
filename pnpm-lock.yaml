@@ -257,7 +257,7 @@ importers:
         version: 8.0.1(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)(@types/node@22.20.5)(esbuild@0.27.7)(jiti@2.7.0)(sass-embedded@1.108.2)(sass@1.108.2)(terser@5.51.3)(yaml@2.8.2)
       vitest:
         specifier: ^4.1.12
-        version: 4.1.12(@types/node@22.20.5)(happy-dom@20.14.5)(vite@8.0.1(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)(@types/node@22.20.5)(jiti@2.7.0)(sass-embedded@1.108.2)(sass@1.108.2)(terser@5.51.3)(yaml@2.8.2))
+        version: 4.1.12(@types/node@22.20.5)(happy-dom@20.14.5)(vite@8.0.1(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)(@types/node@22.20.5)(esbuild@0.27.7)(jiti@2.7.0)(sass-embedded@1.108.2)(sass@1.108.2)(terser@5.51.3)(yaml@2.8.2))
       wait-on:
         specifier: ^9.5.1
         version: 9.5.1(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)
@@ -306,6 +306,9 @@ importers:
       control-surface:
         specifier: workspace:*
         version: link:../control-surface
+      essentia.js:
+        specifier: 0.1.3
+        version: 0.1.3
       fflate:
         specifier: ^0.8.3
         version: 0.8.3
@@ -315,6 +318,9 @@ importers:
       lz-string:
         specifier: ^1.5.0
         version: 1.5.0
+      mediabunny:
+        specifier: ^1.66.2
+        version: 1.66.2
       midi-devices:
         specifier: workspace:*
         version: link:../midi-devices
@@ -2057,6 +2063,12 @@ packages:
   '@types/deep-eql@4.0.2':
     resolution: {integrity: sha512-c9h9dVVMigMPc4bwTvC5dxqtqJZwQPePsWjPlpSOnojbor6pGqdk541lfA7AqFQr5pB1BRdq0juY9db81BwyFw==}
 
+  '@types/dom-mediacapture-transform@0.1.12':
+    resolution: {integrity: sha512-d7/QsLRwF864A5mgIM/YrfiglHoYn7zgCcAoJgW404r+2DwnNr7EBbLnCWpmOMgH8y0te73L1AV6H1bmauaWFw==}
+
+  '@types/dom-webcodecs@0.1.13':
+    resolution: {integrity: sha512-O5hkiFIcjjszPIYyUSyvScyvrBoV3NOEEZx/pMlsu44TKzWNkLVBBxnxJz42in5n3QIolYOcBYFCPZZ0h8SkwQ==}
+
   '@types/emscripten@1.41.6':
     resolution: {integrity: sha512-uN+9i8bFT5CUcZfyIEYDrSueACEyKGbUs5kC/72DGlZZoinh84sJfVV0i8UOJD1asdzkvLPBRrKs41kZ8MdEXg==}
 
@@ -3011,6 +3023,9 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
 
+  essentia.js@0.1.3:
+    resolution: {integrity: sha512-vVEPgeVMEBLRXbM5o5H5Rgu53EPHu25vyFKYg+flWLzI/nEoegJQez9FKRv8GR/KxIBwm+fXDEFL+MkQeoHaLw==}
+
   estraverse@1.3.2:
     resolution: {integrity: sha512-OkbCPVUu8D9tbsLcUR+CKFRBbhZlogmkbWaP3BPERlkqzWL5Q6IdTz6eUk+b5cid2MTaCqJb2nNRGoJ8TpfPrg==}
     engines: {node: '>=0.4.0'}
@@ -3601,6 +3616,9 @@ packages:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
     engines: {node: '>= 0.4'}
 
+  mediabunny@1.66.2:
+    resolution: {integrity: sha512-NTzRrBhAyRVi8qpJ9AH6XPyxiDVkfugxYY+gu3Z5zi+Nw2R/7nTAnXJEt2Ucy8wTIve1/UYGnCFf50x2LpvMDQ==}
+
   merge-stream@2.0.0:
     resolution: {integrity: sha512-abv/qOcuPfk3URPfDzmZU1LKmuw8kT+0nIHvKrKgFrwifol/doWcdA4ZqsWQ8ENrFKkd67Mfpo/LovbIUsbt3w==}
 
@@ -3741,6 +3759,10 @@ packages:
     resolution: {integrity: sha512-OMcPNvqTCFUnNaBlmdgq+lfNqY7gTiSmNRDjY3uAXRyudeKZEZxu3CLtjMQrx4zZxCX2b/mpNqTtwuCJgXhHkw==}
     engines: {node: ^20.17.0 || >=22.9.0}
     hasBin: true
+
+  node-wav@0.0.2:
+    resolution: {integrity: sha512-M6Rm/bbG6De/gKGxOpeOobx/dnGuP0dz40adqx38boqHhlWssBJZgLCPBNtb9NkrmnKYiV04xELq+R6PFOnoLA==}
+    engines: {node: '>=4.4.0'}
 
   nopt@9.0.0:
     resolution: {integrity: sha512-Zhq3a+yFKrYwSBluL4H9XP3m3y5uvQkB/09CwDruCiRmR/UJYnn9W4R48ry0uGC70aeTPKLynBtscP9efFFcPw==}
@@ -6257,6 +6279,12 @@ snapshots:
 
   '@types/deep-eql@4.0.2': {}
 
+  '@types/dom-mediacapture-transform@0.1.12':
+    dependencies:
+      '@types/dom-webcodecs': 0.1.13
+
+  '@types/dom-webcodecs@0.1.13': {}
+
   '@types/emscripten@1.41.6': {}
 
   '@types/estree@1.0.10': {}
@@ -6450,14 +6478,6 @@ snapshots:
       vite: 8.0.1(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)(@types/node@22.20.5)(esbuild@0.27.7)(jiti@2.7.0)(sass-embedded@1.108.2)(sass@1.108.2)(terser@5.51.3)(yaml@2.8.2)
 
   '@vitest/mocker@4.1.12(vite@8.0.1(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)(@types/node@22.20.5)(esbuild@0.27.7)(jiti@2.7.0)(sass-embedded@1.108.2)(sass@1.108.2)(terser@5.51.3)(yaml@2.8.2))':
-    dependencies:
-      '@vitest/spy': 4.1.12
-      estree-walker: 3.0.3
-      magic-string: 0.30.21
-    optionalDependencies:
-      vite: 8.0.1(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)(@types/node@22.20.5)(esbuild@0.27.7)(jiti@2.7.0)(sass-embedded@1.108.2)(sass@1.108.2)(terser@5.51.3)(yaml@2.8.2)
-
-  '@vitest/mocker@4.1.12(vite@8.0.1(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)(@types/node@22.20.5)(jiti@2.7.0)(sass-embedded@1.108.2)(sass@1.108.2)(terser@5.51.3)(yaml@2.8.2))':
     dependencies:
       '@vitest/spy': 4.1.12
       estree-walker: 3.0.3
@@ -7338,6 +7358,10 @@ snapshots:
 
   esprima@1.2.5: {}
 
+  essentia.js@0.1.3:
+    dependencies:
+      node-wav: 0.0.2
+
   estraverse@1.3.2: {}
 
   estraverse@1.5.1: {}
@@ -7928,6 +7952,11 @@ snapshots:
 
   math-intrinsics@1.1.0: {}
 
+  mediabunny@1.66.2:
+    dependencies:
+      '@types/dom-mediacapture-transform': 0.1.12
+      '@types/dom-webcodecs': 0.1.13
+
   merge-stream@2.0.0: {}
 
   midi-file@1.2.4: {}
@@ -8078,6 +8107,8 @@ snapshots:
       tinyglobby: 0.2.17
       undici: 6.29.1
       which: 6.0.1
+
+  node-wav@0.0.2: {}
 
   nopt@9.0.0:
     dependencies:
@@ -9154,34 +9185,6 @@ snapshots:
     dependencies:
       '@vitest/expect': 4.1.12
       '@vitest/mocker': 4.1.12(vite@8.0.1(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)(@types/node@22.20.5)(esbuild@0.27.7)(jiti@2.7.0)(sass-embedded@1.108.2)(sass@1.108.2)(terser@5.51.3)(yaml@2.8.2))
-      '@vitest/pretty-format': 4.1.12
-      '@vitest/runner': 4.1.12
-      '@vitest/snapshot': 4.1.12
-      '@vitest/spy': 4.1.12
-      '@vitest/utils': 4.1.12
-      es-module-lexer: 2.3.2
-      expect-type: 1.4.0
-      magic-string: 0.30.21
-      obug: 2.2.1
-      pathe: 2.0.3
-      picomatch: 4.0.7
-      std-env: 4.3.0
-      tinybench: 2.9.0
-      tinyexec: 1.3.1
-      tinyglobby: 0.2.17
-      tinyrainbow: 3.2.0
-      vite: 8.0.1(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)(@types/node@22.20.5)(esbuild@0.27.7)(jiti@2.7.0)(sass-embedded@1.108.2)(sass@1.108.2)(terser@5.51.3)(yaml@2.8.2)
-      why-is-node-running: 2.3.0
-    optionalDependencies:
-      '@types/node': 22.20.5
-      happy-dom: 20.14.5
-    transitivePeerDependencies:
-      - msw
-
-  vitest@4.1.12(@types/node@22.20.5)(happy-dom@20.14.5)(vite@8.0.1(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)(@types/node@22.20.5)(jiti@2.7.0)(sass-embedded@1.108.2)(sass@1.108.2)(terser@5.51.3)(yaml@2.8.2)):
-    dependencies:
-      '@vitest/expect': 4.1.12
-      '@vitest/mocker': 4.1.12(vite@8.0.1(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)(@types/node@22.20.5)(jiti@2.7.0)(sass-embedded@1.108.2)(sass@1.108.2)(terser@5.51.3)(yaml@2.8.2))
       '@vitest/pretty-format': 4.1.12
       '@vitest/runner': 4.1.12
       '@vitest/snapshot': 4.1.12

@@ -5,56 +5,114 @@ import {
 	EVENT_CHAINS_UPDATED,
 	EVENT_CONFIGURATION_CHANGED,
 	EVENT_CONTROL_SURFACE_EXPAND,
-	EVENT_CONTROL_SURFACE_MINIMISE,
 	EVENT_KEY_DOWN
 } from "audiobus/events/event-constants"
+import type { FocusStage, PerformanceView } from "../../services/focus-stage"
 import { button, element } from "./dom"
 import { mountControlSurface, removeSurface } from "./control-surfaces"
 
-/** One native viewport for every surface, including surfaces in other preset chains. */
+/**
+ * The one fullscreen performance view: every chain's control surfaces, and the
+ * Focus Stage pads when a stage is supplied (only the main window has one).
+ */
 export function createSurfaceViewport(
 	manager: IOChainManager,
 	startExpanded = false,
-	includesChain: (id: string) => boolean = () => true
+	includesChain: (id: string) => boolean = () => true,
+	stage?: FocusStage
 ) {
 	type Entry = { chainId: string; chain: IOChain; surface: SurfaceState }
 	let entries: Entry[] = []
 	let selected: Entry | undefined
-	let view: ReturnType<typeof mountControlSurface> | undefined
+	let surfaceView: ReturnType<typeof mountControlSurface> | undefined
 	let previousFocus: HTMLElement | null = null
 	let overflow = ""
-	let open = false
+	let view: PerformanceView | undefined
 	const subscriptions = new Map<IOChain, AbortController>()
 	const viewport = element("div", "node-viewport-editor surface-viewport nodrag nopan nowheel")
 	viewport.setAttribute("role", "dialog")
 	viewport.setAttribute("aria-modal", "true")
 	const panel = element("section", "node-control-surface graph-node can-remove is-fullscreen")
-	const header = element("header", "device-node-header node-actions")
-	const controls = element("div", "device-title-controls nodrag nopan")
-	const left = element("div", "node-actions-left")
-	const right = element("div", "node-actions-right")
-	const title = element("div", "surface-titlebar")
+	const header = element("header", "surface-viewport-header")
+	const views = element("div", "surface-viewport-views")
+	views.setAttribute("role", "group")
+	views.setAttribute("aria-label", "Performance view")
+	views.hidden = !stage
+	const toolbar = element("div", "surface-titlebar")
 	const content = element("div", "surface-viewport-content nodrag nopan nowheel")
 	content.id = `surface-panel-${crypto.randomUUID()}`
 	content.setAttribute("role", "region")
-	const gadget = (label: string, className: string, path: string, action: () => void) => {
-		const control = button("", action, className)
-		control.title = label
-		control.setAttribute("aria-label", label)
-		control.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${path}" /></svg>`
+	const icon = (path: string) =>
+		`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${path}" /></svg>`
+	const viewButton = (label: string, path: string, action: () => void) => {
+		const control = button("", action, "surface-viewport-view")
+		control.innerHTML = `${icon(path)}<span>${label}</span>`
+		control.setAttribute("aria-controls", content.id)
 		return control
 	}
+	const controlsButton = viewButton(
+		"Controls",
+		"M4 7h10M18 7h2M4 17h2M10 17h10M14 4v6M6 14v6",
+		() => {
+			const entry =
+				entries.find(
+					(item) =>
+						item.chain === selected?.chain && item.surface.id === selected?.surface.id
+				) ?? preferred()
+			if (entry) {
+				select(entry)
+			}
+		}
+	)
+	const padsButton = viewButton("Pads", "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z", () =>
+		showPads()
+	)
+	views.append(controlsButton, padsButton)
+	const exit = button("", () => close(), "surface-viewport-exit")
+	exit.innerHTML = `${icon("M6 6l12 12M18 6 6 18")}<span>Exit</span>`
+	exit.title = "Return to the workspace (Esc)"
+	exit.setAttribute("aria-label", "Exit fullscreen view")
+	header.append(views, toolbar, exit)
+	panel.append(header, content)
+	viewport.append(panel)
+	const syncHeader = () => {
+		controlsButton.disabled = !entries.length
+		controlsButton.title = entries.length ? "" : "This workspace has no control surfaces yet"
+		controlsButton.setAttribute("aria-pressed", String(view === "controls"))
+		padsButton.setAttribute("aria-pressed", String(view === "pads"))
+		toolbar.hidden = view !== "controls"
+		panel.dataset.view = view ?? ""
+	}
+	const leavePads = () => {
+		if (view === "pads") {
+			stage?.deactivate()
+			stage?.element.remove()
+		}
+	}
 	const close = () => {
-		if (!open) {
+		if (!view) {
 			return
 		}
-		open = false
-		view?.destroy()
+		leavePads()
 		view = undefined
+		surfaceView?.destroy()
+		surfaceView = undefined
 		content.replaceChildren()
 		viewport.remove()
 		document.body.style.overflow = overflow
 		previousFocus?.focus({ preventScroll: true })
+	}
+	/** Returns true when this call put the viewport on screen. */
+	const openShell = () => {
+		if (view) {
+			return false
+		}
+		previousFocus =
+			document.activeElement instanceof HTMLElement ? document.activeElement : null
+		overflow = document.body.style.overflow
+		document.body.style.overflow = "hidden"
+		document.body.append(viewport)
+		return true
 	}
 	const removeAction = {
 		label: "Remove control surface",
@@ -66,43 +124,29 @@ export function createSurfaceViewport(
 			refresh()
 		}
 	}
-	const minimise = gadget("Minimise control surface", "device-minimise", "M5 12h14", () => {
-		if (selected) {
-			selected.chain.dispatchEvent(
-				new CustomEvent(EVENT_CONTROL_SURFACE_MINIMISE, { detail: selected.surface.id })
-			)
-		}
-		close()
-	})
-	minimise.setAttribute("aria-expanded", "true")
-	const expand = gadget(
-		"Exit fullscreen control surface",
-		"device-expand",
-		"M3 9h6V3m6 0v6h6M3 15h6v6m6 0v-6h6",
-		close
-	)
-	expand.setAttribute("aria-expanded", "true")
-	right.append(minimise, expand)
-	controls.append(left, right)
-	header.append(controls, title)
-	panel.append(header, content)
-	viewport.append(panel)
+	const preferred = () => {
+		const main = (entry: Entry) => entry.surface.id === entry.chain.options.mainSurfaceId
+		const active = (entry: Entry) => entry.chain === manager.activeChain
+		return (
+			entries.find((entry) => active(entry) && main(entry)) ??
+			entries.find(active) ??
+			entries.find(main) ??
+			entries[0]
+		)
+	}
 	const select = (entry: Entry) => {
-		const opening = !open
-		const changed = selected?.chain !== entry.chain || selected?.surface.id !== entry.surface.id
+		const opening = openShell()
+		const changed =
+			view !== "controls" ||
+			selected?.chain !== entry.chain ||
+			selected?.surface.id !== entry.surface.id
+		leavePads()
+		view = "controls"
 		selected = entry
-		if (!open) {
-			previousFocus =
-				document.activeElement instanceof HTMLElement ? document.activeElement : null
-			overflow = document.body.style.overflow
-			document.body.style.overflow = "hidden"
-			document.body.append(viewport)
-			open = true
-		}
-		if (changed || !view) {
-			view?.destroy()
+		if (changed || !surfaceView) {
+			surfaceView?.destroy()
 			content.replaceChildren()
-			view = mountControlSurface(content, entry.chain, entry.surface.id, title, () => [
+			surfaceView = mountControlSurface(content, entry.chain, entry.surface.id, toolbar, () => [
 				...(entries.length > 1
 					? entries.map((item) => ({
 							label: `Open ${item.surface.name}`,
@@ -115,10 +159,35 @@ export function createSurfaceViewport(
 		}
 		viewport.setAttribute("aria-label", `${entry.surface.name} controls`)
 		content.setAttribute("aria-label", entry.surface.name)
+		syncHeader()
 		if (opening) {
-			expand.focus({ preventScroll: true })
+			exit.focus({ preventScroll: true })
 		}
 	}
+	const showPads = () => {
+		if (!stage || view === "pads") {
+			return
+		}
+		openShell()
+		surfaceView?.destroy()
+		surfaceView = undefined
+		content.replaceChildren(stage.element)
+		view = "pads"
+		viewport.setAttribute("aria-label", "Focus Stage pads")
+		content.setAttribute("aria-label", "Pads")
+		syncHeader()
+		stage.activate()
+	}
+	/** Without a requested view, open the active chain's controls, or pads when it has none. */
+	const show = (requested?: PerformanceView) => {
+		const entry = requested === "pads" ? undefined : preferred()
+		if (entry) {
+			select(entry)
+		} else {
+			showPads()
+		}
+	}
+	const detachStage = stage?.attach({ show, hide: close })
 	function refresh() {
 		const chains = manager.entries.filter(([id]) => includesChain(id))
 		entries = chains.flatMap(([chainId, chain]) =>
@@ -153,7 +222,7 @@ export function createSurfaceViewport(
 				{ signal: abort.signal }
 			)
 		}
-		if (open) {
+		if (view === "controls") {
 			const next =
 				entries.find(
 					(entry) =>
@@ -164,10 +233,12 @@ export function createSurfaceViewport(
 			} else {
 				close()
 			}
+		} else if (view) {
+			syncHeader()
 		}
 	}
 	const keydown = (event: KeyboardEvent) => {
-		if (!open || document.querySelector("dialog[open]")) {
+		if (!view || document.querySelector("dialog[open]")) {
 			return
 		}
 		if (event.key === "Escape") {
@@ -230,8 +301,10 @@ export function createSurfaceViewport(
 	}
 	return {
 		refresh,
+		show,
 		destroy() {
 			close()
+			detachStage?.()
 			manager.removeEventListener(EVENT_CHAINS_UPDATED, refresh)
 			document.removeEventListener(EVENT_KEY_DOWN, keydown, true)
 			for (const abort of subscriptions.values()) {

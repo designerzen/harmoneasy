@@ -513,6 +513,20 @@
 		"url": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/d3-zoom"
 	},
 	{
+		"name": "@types/dom-mediacapture-transform",
+		"version": "0.1.12",
+		"authors": ["Ben Wagner"],
+		"license": "MIT",
+		"url": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/dom-mediacapture-transform"
+	},
+	{
+		"name": "@types/dom-webcodecs",
+		"version": "0.1.13",
+		"authors": ["Ben Wagner"],
+		"license": "MIT",
+		"url": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/dom-webcodecs"
+	},
+	{
 		"name": "@types/emscripten",
 		"version": "1.41.6",
 		"authors": [
@@ -1797,6 +1811,13 @@
 		"authors": ["Jordan Harband"],
 		"license": "MIT",
 		"url": "https://github.com/es-shims/math-intrinsics#readme"
+	},
+	{
+		"name": "mediabunny",
+		"version": "1.66.2",
+		"authors": ["Vanilagy"],
+		"license": "MPL-2.0",
+		"url": "https://mediabunny.dev/"
 	},
 	{
 		"name": "midi-ble",

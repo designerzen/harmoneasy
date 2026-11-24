@@ -3,13 +3,15 @@ import { createRoot } from "react-dom/client"
 import Graph from "./graph/Graph"
 import { createChainWorkspace, type WorkspaceLayoutStore } from "./graph/chain-workspace"
 import type IOChainManager from "audiobus/io/IO-chain-manager"
+import type { FocusStage } from "../services/focus-stage"
 
 export const createGraph = (
 	elementID = "graph",
 	ioManager: IOChainManager | null = null,
 	startWithSurfaces = false,
 	layoutStore: WorkspaceLayoutStore = {},
-	windowTab?: string
+	windowTab?: string,
+	stage?: FocusStage
 ) => {
 	const container = document.getElementById(elementID)
 	if (!container) {
@@ -36,6 +38,7 @@ export const createGraph = (
 		},
 		startWithSurfaces,
 		layoutStore,
-		windowTab
+		windowTab,
+		stage
 	)
 }

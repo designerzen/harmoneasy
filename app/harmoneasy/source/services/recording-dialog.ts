@@ -10,6 +10,11 @@ import type IOChainManager from "audiobus/io/IO-chain-manager"
 import OutputRecorder from "audiobus/io/outputs/output-recorder"
 import { getAudioRecording } from "audiobus/io/recording/audio-recording"
 import { RECORDING_STATE_CHANGED, type RecordingBits } from "audiobus/io/recording/recording-format"
+import {
+	AUDIO_EXPORT_FORMATS,
+	populateAudioExportFormats,
+	type AudioExportFormat
+} from "audiobus/io/media/audio-media"
 
 export function createRecordingControls(
 	context: AudioContext,
@@ -29,6 +34,7 @@ export function createRecordingControls(
 	const save = root.querySelector<HTMLButtonElement>("#recording-save")!
 	const status = root.querySelector<HTMLElement>("#recording-status")!
 	const details = root.querySelector<HTMLElement>("#recording-details")!
+	populateAudioExportFormats(format, recording.sampleRate)
 	let url: string | undefined
 	let busy = false
 	let reviewing = false
@@ -187,31 +193,48 @@ export function createRecordingControls(
 		}
 		busy = true
 		render()
-		const bits = Number(format.value) as RecordingBits
+		const selected = AUDIO_EXPORT_FORMATS.find((entry) => entry.id === format.value)!
+		const exportFormat = selected.id as AudioExportFormat
 		const name =
 			(filename.value
 				.trim()
-				.replace(/\.wav$/i, "")
+				.replace(/\.(wav|webm|ogg|m4a)$/i, "")
 				// oxlint-disable-next-line no-control-regex -- Strip control characters forbidden in filenames.
 				.replace(/[<>:"/\\|?*\u0000-\u001f]/g, "-")
-				.slice(0, 120) || "Harmoneasy recording") + ".wav"
+				.slice(0, 120) || "Harmoneasy recording") + `.${selected.extension}`
 		try {
 			// Acquire the destination during the click gesture, before conversion.
 			const picker = (window as any).showSaveFilePicker
 			const handle = picker
 				? ((await picker.call(window, {
 						suggestedName: name,
-						types: [{ description: "WAV audio", accept: { "audio/wav": [".wav"] } }]
+						types: [
+							{
+								description: selected.label,
+								accept: { [selected.mime]: [`.${selected.extension}`] }
+							}
+						]
 					})) as FileSystemFileHandle)
 				: undefined
 			status.textContent = "Preparing audio for saving…"
-			const blob = await recording.wave(bits)
-			if (handle) {
+			const compressed = exportFormat !== "16" && exportFormat !== "32"
+			const blob = compressed
+				? await recording.exportAudio(
+						exportFormat,
+						(progress) => {
+							status.textContent = `Encoding audio… ${Math.round(progress * 100)}%`
+						},
+						handle ? await handle.createWritable() : undefined
+					)
+				: await recording.wave(Number(exportFormat) as RecordingBits)
+			if (handle && !compressed) {
 				const output = await handle.createWritable()
-				await blob.stream().pipeTo(output)
+				await blob!.stream().pipeTo(output)
+			}
+			if (handle) {
 				status.textContent = "Recording saved. The take is still available here."
 			} else {
-				const download = URL.createObjectURL(blob)
+				const download = URL.createObjectURL(blob!)
 				const anchor = root.createElement("a")
 				anchor.href = download
 				anchor.download = name

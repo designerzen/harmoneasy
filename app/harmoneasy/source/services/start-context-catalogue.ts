@@ -1150,7 +1150,7 @@ export function createContextSetup(context: StartContext): PresetSetup {
 		direction: "output" as const,
 		definition: structuredClone(definition)
 	}))
-	return setupSurfaces({
+	const setup: PresetSetup = {
 		id: context.id,
 		name: context.name,
 		description: context.description,
@@ -1184,7 +1184,9 @@ export function createContextSetup(context: StartContext): PresetSetup {
 				outputs: [...outputs.map((output) => output.id), "ui"]
 			}
 		]
-	})
+	}
+	// A fresh chain has nothing to perform yet, so it starts in the graph without a surface.
+	return context.id === "blank" ? setup : setupSurfaces(setup)
 }
 
 export function createEmptySetup() {

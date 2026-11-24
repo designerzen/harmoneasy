@@ -31,6 +31,21 @@ import { announceLive } from "../source/libs/dialog-utils"
 import { buildStagePads, createFocusStage } from "../source/services/focus-stage"
 import { THEME_STORAGE_KEY } from "../source/services/theme"
 
+/** Stands in for the fullscreen performance view that hosts the stage in the app. */
+function hostedStage(stage: ReturnType<typeof createFocusStage>) {
+	stage.attach({
+		show() {
+			document.body.append(stage.element)
+			stage.activate()
+		},
+		hide() {
+			stage.deactivate()
+			stage.element.remove()
+		}
+	})
+	return stage
+}
+
 vi.mock("audiobus/io/output-factory", () => ({
 	createOutputById: vi.fn(async (type: string) => {
 		const output = {
@@ -327,17 +342,17 @@ describe("Focus Stage instrument view", () => {
 	it("emits NOTE_ON/NOTE_OFF for pointer, keyboard shortcuts, roving arrows, step mode, and closes cleanly", () => {
 		const controls = createAccessibilityControls(document)
 		const { manager, received } = createFakeManager()
-		const stage = createFocusStage({ manager, doc: document, accessibility: controls })
+		const stage = hostedStage(createFocusStage({ manager, doc: document, accessibility: controls }))
 
 		document.getElementById("btn-focus-stage")!.dispatchEvent(new Event(EVENT_CLICK))
-		expect(stage.dialog.open).toBe(true)
+		expect(stage.isActive()).toBe(true)
 
 		// Pointer press & release on pad 1 (C4 = 60)
-		const firstPad = stage.dialog.querySelector<HTMLButtonElement>('[data-pad-index="0"]')!
+		const firstPad = stage.element.querySelector<HTMLButtonElement>('[data-pad-index="0"]')!
 		firstPad.dispatchEvent(new Event(EVENT_POINTER_DOWN, { bubbles: true }))
 		expect(received.at(-1)).toMatchObject({ type: NOTE_ON, number: 60, from: "focus-stage" })
 		expect(firstPad.getAttribute("aria-pressed")).toBe("true")
-		expect(stage.dialog.querySelector("#focus-stage-live")!.textContent).toContain("Playing C")
+		expect(stage.element.querySelector("#focus-stage-live")!.textContent).toContain("Playing C")
 
 		firstPad.dispatchEvent(new Event(EVENT_POINTER_UP, { bubbles: true }))
 		expect(received.at(-1)).toMatchObject({ type: NOTE_OFF, number: 60 })
@@ -345,34 +360,34 @@ describe("Focus Stage instrument view", () => {
 
 		// Roving focus via ArrowRight
 		firstPad.focus()
-		stage.dialog.dispatchEvent(
+		stage.element.dispatchEvent(
 			new KeyboardEvent(EVENT_KEY_DOWN, { key: "ArrowRight", bubbles: true })
 		)
-		const secondPad = stage.dialog.querySelector<HTMLButtonElement>('[data-pad-index="1"]')!
+		const secondPad = stage.element.querySelector<HTMLButtonElement>('[data-pad-index="1"]')!
 		expect(document.activeElement).toBe(secondPad)
 
 		// Keyboard shortcut '2' held open, then closed -> guaranteed NOTE_OFF
-		stage.dialog.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: "2", bubbles: true }))
+		stage.element.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: "2", bubbles: true }))
 		expect(received.at(-1)).toMatchObject({ type: NOTE_ON, number: 62 })
 		stage.close()
 		expect(received.at(-1)).toMatchObject({ type: NOTE_OFF, number: 62 })
-		expect(stage.dialog.open).toBe(false)
+		expect(stage.isActive()).toBe(false)
 
 		// Switch to 1-button step mode and advance through notes
 		stage.open()
-		const modeSelect = stage.dialog.querySelector<HTMLSelectElement>("#focus-stage-mode")!
+		const modeSelect = stage.element.querySelector<HTMLSelectElement>("#focus-stage-mode")!
 		modeSelect.value = "step"
 		modeSelect.dispatchEvent(new Event(EVENT_CHANGE))
-		expect(stage.dialog.querySelectorAll(".focus-stage-pad")).toHaveLength(1)
+		expect(stage.element.querySelectorAll(".focus-stage-pad")).toHaveLength(1)
 
-		stage.dialog.dispatchEvent(
+		stage.element.dispatchEvent(
 			new KeyboardEvent(EVENT_KEY_DOWN, { code: "Space", key: " ", bubbles: true })
 		)
 		expect(received.at(-1)).toMatchObject({ type: NOTE_ON, number: 60 })
-		stage.dialog.dispatchEvent(
+		stage.element.dispatchEvent(
 			new KeyboardEvent(EVENT_KEY_UP, { code: "Space", key: " ", bubbles: true })
 		)
-		stage.dialog.dispatchEvent(
+		stage.element.dispatchEvent(
 			new KeyboardEvent(EVENT_KEY_DOWN, { code: "Space", key: " ", bubbles: true })
 		)
 		expect(received.at(-1)).toMatchObject({ type: NOTE_ON, number: 62 })
@@ -380,7 +395,7 @@ describe("Focus Stage instrument view", () => {
 		// Harmony updates live while open
 		manager.harmony = { ...DEFAULT_HARMONY, root: 2 } // D Major
 		manager.dispatchEvent(new Event(EVENT_HARMONY_CHANGED))
-		expect(stage.dialog.querySelector("#focus-stage-harmony")!.textContent).toContain("D")
+		expect(stage.element.querySelector("#focus-stage-harmony")!.textContent).toContain("D")
 
 		stage.destroy()
 		controls.destroy()
@@ -390,21 +405,21 @@ describe("Focus Stage instrument view", () => {
 		vi.useFakeTimers()
 		const controls = createAccessibilityControls(document)
 		const { manager, received } = createFakeManager()
-		const stage = createFocusStage({ manager, doc: document, accessibility: controls })
+		const stage = hostedStage(createFocusStage({ manager, doc: document, accessibility: controls }))
 
 		stage.open()
-		const scanSelect = stage.dialog.querySelector<HTMLSelectElement>("#focus-stage-scan")!
+		const scanSelect = stage.element.querySelector<HTMLSelectElement>("#focus-stage-scan")!
 		scanSelect.value = "600"
 		scanSelect.dispatchEvent(new Event(EVENT_CHANGE))
 
 		// Advance one scan step from pad 0 -> pad 1 (D4 = 62)
 		vi.advanceTimersByTime(600)
-		const secondPad = stage.dialog.querySelector<HTMLButtonElement>('[data-pad-index="1"]')!
+		const secondPad = stage.element.querySelector<HTMLButtonElement>('[data-pad-index="1"]')!
 		expect(secondPad.classList.contains("is-scanned")).toBe(true)
 		expect(secondPad.getAttribute("aria-current")).toBe("true")
 
 		// Press Space to play the currently scanned pad, then verify timed NOTE_OFF
-		stage.dialog.dispatchEvent(
+		stage.element.dispatchEvent(
 			new KeyboardEvent(EVENT_KEY_DOWN, { code: "Space", key: " ", bubbles: true })
 		)
 		expect(received.at(-1)).toMatchObject({ type: NOTE_ON, number: 62 })
@@ -415,13 +430,13 @@ describe("Focus Stage instrument view", () => {
 		controls.update({ beatFlash: true })
 		stage.pulseBeat(0, 4)
 		expect(document.documentElement.dataset.beatPulse).toBe("downbeat")
-		expect(stage.dialog.querySelector("#focus-stage-beat")!.textContent).toBe("Beat 1")
+		expect(stage.element.querySelector("#focus-stage-beat")!.textContent).toBe("Beat 1")
 		vi.advanceTimersByTime(150)
 		expect(document.documentElement.dataset.beatPulse).toBeUndefined()
 
 		stage.pulseBeat(1, 4)
 		expect(document.documentElement.dataset.beatPulse).toBe("beat")
-		expect(stage.dialog.querySelector("#focus-stage-beat")!.textContent).toBe("Beat 2")
+		expect(stage.element.querySelector("#focus-stage-beat")!.textContent).toBe("Beat 2")
 
 		stage.destroy()
 		controls.destroy()
@@ -431,12 +446,12 @@ describe("Focus Stage instrument view", () => {
 		vi.useFakeTimers()
 		const controls = createAccessibilityControls(document)
 		const { manager, received } = createFakeManager()
-		const stage = createFocusStage({ manager, doc: document, accessibility: controls })
+		const stage = hostedStage(createFocusStage({ manager, doc: document, accessibility: controls }))
 
 		stage.open()
 
 		// Enable 2-switch mode: Tab must NOT be prevented so keyboard users can reach Exit/toolbar
-		const scanSelect = stage.dialog.querySelector<HTMLSelectElement>("#focus-stage-scan")!
+		const scanSelect = stage.element.querySelector<HTMLSelectElement>("#focus-stage-scan")!
 		scanSelect.value = "2-switch"
 		scanSelect.dispatchEvent(new Event(EVENT_CHANGE))
 
@@ -445,11 +460,11 @@ describe("Focus Stage instrument view", () => {
 			bubbles: true,
 			cancelable: true
 		})
-		stage.dialog.dispatchEvent(tabEvent)
+		stage.element.dispatchEvent(tabEvent)
 		expect(tabEvent.defaultPrevented).toBe(false)
 
-		// Space/Enter on Exit Focus Stage button must NOT be hijacked to play a pad
-		const exitBtn = stage.dialog.querySelector<HTMLButtonElement>("#focus-stage-close")!
+		// Space/Enter on a non-pad options button must NOT be hijacked to play a pad
+		const exitBtn = stage.element.querySelector<HTMLButtonElement>("#focus-stage-camera")!
 		exitBtn.focus()
 		const enterOnExit = new KeyboardEvent(EVENT_KEY_DOWN, {
 			key: "Enter",
@@ -463,7 +478,7 @@ describe("Focus Stage instrument view", () => {
 		// Character shortcuts respect global opt-out (#a11y-shortcuts)
 		controls.update({ characterShortcuts: false })
 		expect(document.documentElement.dataset.shortcuts).toBe("off")
-		stage.dialog.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: "1", bubbles: true }))
+		stage.element.dispatchEvent(new KeyboardEvent(EVENT_KEY_DOWN, { key: "1", bubbles: true }))
 		expect(received).toHaveLength(0)
 
 		// Beat flash never exceeds 3 flashes per second (WCAG 2.3.1) and stops under reduced motion

@@ -571,10 +571,17 @@ const initialiseApplication = async (
 		persistMidi: (value) => state.set("midiControls", value)
 	})
 
-	createGraph("graph", ioManager, Boolean(pageSetup || startupSetup), {
-		saved: state.get("workspaceLayout"),
-		save: (layout) => state.set("workspaceLayout", layout)
-	})
+	createGraph(
+		"graph",
+		ioManager,
+		Boolean(pageSetup || (startupSetup && startupSetup.id !== "blank")),
+		{
+			saved: state.get("workspaceLayout"),
+			save: (layout) => state.set("workspaceLayout", layout)
+		},
+		undefined,
+		focusStage
+	)
 
 	// Update UI - this will check all the inputs according to our state
 	state.updateFrontEnd()
@@ -746,7 +753,7 @@ const calibrationDialog = createCalibrationDialog({
 		if (focusStage) {
 			focusStage.applyProfile(profile)
 			if (profile.openFocusStage) {
-				focusStage.open()
+				focusStage.open("pads")
 			}
 		}
 	}
@@ -797,7 +804,7 @@ async function startApplication(button: HTMLButtonElement, setup?: PresetSetup) 
 		}
 		if (pendingAccessProfile?.openFocusStage && focusStage) {
 			focusStage.applyProfile(pendingAccessProfile)
-			focusStage.open()
+			focusStage.open("pads")
 		}
 	} catch (error) {
 		veil.hide()

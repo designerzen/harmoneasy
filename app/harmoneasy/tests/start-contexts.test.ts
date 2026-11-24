@@ -393,6 +393,8 @@ it("hides the browser until Presets is clicked and retains session actions", asy
 	expect((submit.mock.calls[0][0].submitter as HTMLButtonElement).value).toBe("session")
 	expect(dialog.querySelector("form form")).toBeNull()
 	expect(createEmptySetup().chains[0].steps).toEqual([])
+	// Nothing to perform yet, so the empty start must not open a control surface.
+	expect(createEmptySetup().chains[0].options.controlSurfaces).toBeUndefined()
 })
 
 it("provides restorable contexts with valid routing and independent transformer settings", () => {

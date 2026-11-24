@@ -4,7 +4,6 @@ import { NOTE_OFF, NOTE_ON } from "audiobus/commands/commands"
 import {
 	EVENT_CHANGE,
 	EVENT_CLICK,
-	EVENT_CLOSE,
 	EVENT_HARMONY_CHANGED,
 	EVENT_KEY_DOWN,
 	EVENT_KEY_UP,
@@ -148,6 +147,14 @@ export function buildStagePads(
 	return pads
 }
 
+export type PerformanceView = "controls" | "pads"
+
+/** The fullscreen performance view that shows the stage beside the chain's control surfaces. */
+export interface FocusStageHost {
+	show(view?: PerformanceView): void
+	hide(): void
+}
+
 export interface FocusStageOptions {
 	manager: IOChainManager
 	doc: Document
@@ -158,7 +165,7 @@ export interface FocusStageOptions {
 	onCalibrate?: () => void
 }
 
-/** Full-viewport, distraction-free non-React performance surface with switch scanning, dwell, and beat pulse. */
+/** Accessible pads with switch scanning, dwell and beat pulse, shown as the Pads view of the fullscreen performance view. */
 export function createFocusStage({
 	manager,
 	doc,
@@ -176,28 +183,30 @@ export function createFocusStage({
 	let stepCursor = 0
 	let beatTimeout: ReturnType<typeof setTimeout> | undefined
 	let beatPulseTimestamps: number[] = []
-	let previousFocus: HTMLElement | null = null
+	let active = false
+	let host: FocusStageHost | undefined
 	let pads: StagePad[] = []
 	const activePadNotes = new Map<number, number[]>()
 	const latchedPads = new Set<number>()
 	const activeTimedReleases = new Set<ReturnType<typeof setTimeout>>()
 
 	const openButton = doc.getElementById("btn-focus-stage") as HTMLButtonElement | null
-	const dialog = doc.createElement("dialog")
-	dialog.id = "focus-stage-dialog"
-	dialog.className = "focus-stage"
-	dialog.setAttribute("aria-labelledby", "focus-stage-title")
-	dialog.setAttribute("data-midi-ignore", "")
+	const element = doc.createElement("section")
+	element.id = "focus-stage"
+	element.className = "focus-stage"
+	element.setAttribute("aria-labelledby", "focus-stage-title")
+	element.setAttribute("data-midi-ignore", "")
 
-	// Header bar
-	const header = doc.createElement("header")
+	const header = doc.createElement("div")
 	header.className = "focus-stage-header"
 
 	const identity = doc.createElement("div")
 	identity.className = "focus-stage-identity"
 	const title = doc.createElement("h2")
 	title.id = "focus-stage-title"
-	title.textContent = "Focus Stage"
+	// The host's pressed Pads button already names this view on screen.
+	title.className = "sr-only"
+	title.textContent = "Pads"
 	const harmonyBadge = doc.createElement("output")
 	harmonyBadge.id = "focus-stage-harmony"
 	harmonyBadge.className = "focus-stage-harmony"
@@ -208,13 +217,22 @@ export function createFocusStage({
 	beatPill.textContent = "Beat 1"
 	identity.append(title, harmonyBadge, beatPill)
 
+	// Options are tuned once per learner, so they stay folded away while playing.
+	const options = doc.createElement("details")
+	options.className = "focus-stage-options"
+	const optionsSummary = doc.createElement("summary")
+	optionsSummary.textContent = "Access options"
 	const toolbar = doc.createElement("div")
 	toolbar.className = "focus-stage-toolbar"
 	toolbar.setAttribute("role", "group")
 	toolbar.setAttribute("aria-label", "Focus Stage options")
+	const presets = doc.createElement("div")
+	presets.className = "focus-stage-presets"
+	const optionsPanel = doc.createElement("div")
+	optionsPanel.className = "focus-stage-options-panel"
 
 	const modeLabel = doc.createElement("label")
-	modeLabel.append("Play mode ")
+	modeLabel.append("Play mode")
 	const modeSelect = doc.createElement("select")
 	modeSelect.id = "focus-stage-mode"
 	for (const [value, text] of [
@@ -230,7 +248,7 @@ export function createFocusStage({
 	modeLabel.append(modeSelect)
 
 	const countLabel = doc.createElement("label")
-	countLabel.append("Pads ")
+	countLabel.append("Pads")
 	const countSelect = doc.createElement("select")
 	countSelect.id = "focus-stage-count"
 	for (const count of [1, 4, 8] as const) {
@@ -243,7 +261,7 @@ export function createFocusStage({
 	countLabel.append(countSelect)
 
 	const scanLabel = doc.createElement("label")
-	scanLabel.append("Switch scan ")
+	scanLabel.append("Switch scan")
 	const scanSelect = doc.createElement("select")
 	scanSelect.id = "focus-stage-scan"
 	for (const [value, text] of [
@@ -261,7 +279,7 @@ export function createFocusStage({
 	scanLabel.append(scanSelect)
 
 	const releaseLabel = doc.createElement("label")
-	releaseLabel.append("Release ")
+	releaseLabel.append("Release")
 	const releaseSelect = doc.createElement("select")
 	releaseSelect.id = "focus-stage-release"
 	for (const [value, text] of [
@@ -276,7 +294,7 @@ export function createFocusStage({
 	releaseLabel.append(releaseSelect)
 
 	const cueLabel = doc.createElement("label")
-	cueLabel.append("Scan cue ")
+	cueLabel.append("Scan cue")
 	const cueSelect = doc.createElement("select")
 	cueSelect.id = "focus-stage-cue"
 	for (const [value, text] of [
@@ -292,7 +310,7 @@ export function createFocusStage({
 	cueLabel.append(cueSelect)
 
 	const dwellLabel = doc.createElement("label")
-	dwellLabel.append("Dwell ")
+	dwellLabel.append("Dwell")
 	const dwellSelect = doc.createElement("select")
 	dwellSelect.id = "focus-stage-dwell"
 	for (const [value, text] of [
@@ -330,26 +348,11 @@ export function createFocusStage({
 	deafTactileBtn.id = "focus-stage-preset-deaf-tactile"
 	deafTactileBtn.textContent = "Deaf + Haptics"
 
-	const closeBtn = doc.createElement("button")
-	closeBtn.type = "button"
-	closeBtn.id = "focus-stage-close"
-	closeBtn.className = "primary"
-	closeBtn.textContent = "Exit Focus Stage"
-
-	toolbar.append(
-		modeLabel,
-		countLabel,
-		scanLabel,
-		releaseLabel,
-		cueLabel,
-		dwellLabel,
-		cameraBtn,
-		calibrateBtn,
-		lowVisionBtn,
-		deafTactileBtn,
-		closeBtn
-	)
-	header.append(identity, toolbar)
+	toolbar.append(modeLabel, countLabel, scanLabel, releaseLabel, cueLabel, dwellLabel)
+	presets.append(cameraBtn, calibrateBtn, lowVisionBtn, deafTactileBtn)
+	optionsPanel.append(toolbar, presets)
+	options.append(optionsSummary, optionsPanel)
+	header.append(identity, options)
 
 	// Main pad grid
 	const grid = doc.createElement("div")
@@ -365,8 +368,7 @@ export function createFocusStage({
 	liveRegion.setAttribute("role", "status")
 	liveRegion.setAttribute("aria-live", "polite")
 
-	dialog.append(header, grid, liveRegion)
-	doc.body.append(dialog)
+	element.append(header, grid, liveRegion)
 
 	const announce = (text: string) => {
 		liveRegion.textContent = text
@@ -570,20 +572,20 @@ export function createFocusStage({
 			grid.append(btn)
 		})
 
-		if (dialog.open) {
+		if (active) {
 			scanner.start()
 		}
 	}
 
 	const onKeyDown = (event: KeyboardEvent) => {
-		if (!dialog.open || event.repeat) {
+		if (!active || event.repeat) {
 			return
 		}
 		const target = event.target as HTMLElement | null
 		if (target && ["SELECT", "INPUT", "TEXTAREA"].includes(target.tagName)) {
 			return
 		}
-		// Never hijack activation keys when focus is on a non-pad interactive control (e.g. toolbar / Exit button)
+		// Never hijack activation keys when focus is on a non-pad interactive control (e.g. options or Exit)
 		const onNonPadControl =
 			!!target &&
 			!target.classList.contains("focus-stage-pad") &&
@@ -655,7 +657,7 @@ export function createFocusStage({
 	}
 
 	const onKeyUp = (event: KeyboardEvent) => {
-		if (!dialog.open || releaseMode === "latch" || scanner.isActive()) {
+		if (!active || releaseMode === "latch" || scanner.isActive()) {
 			return
 		}
 		if (mode === "step" && (event.code === "Space" || event.key === "Enter")) {
@@ -675,15 +677,10 @@ export function createFocusStage({
 		}
 	}
 
-	const open = () => {
-		previousFocus =
-			doc.activeElement instanceof HTMLElement && doc.activeElement !== doc.body
-				? doc.activeElement
-				: openButton
+	/** Called by the host once the stage is on screen. */
+	const activate = () => {
+		active = true
 		renderPads()
-		if (!dialog.open) {
-			dialog.showModal()
-		}
 		scanner.start()
 		grid.querySelector<HTMLButtonElement>(".focus-stage-pad")?.focus()
 		announce(
@@ -691,41 +688,21 @@ export function createFocusStage({
 		)
 	}
 
-	const restoreFocus = () => {
-		const target = previousFocus?.isConnected
-			? previousFocus
-			: openButton?.isConnected
-				? openButton
-				: null
-		previousFocus = null
-		target?.focus()
-	}
-
-	const close = () => {
+	const deactivate = () => {
+		active = false
 		scanner.stop()
 		dwell.cancel()
 		releaseAllPads()
-		if (dialog.open) {
-			dialog.close()
-		} else {
-			restoreFocus()
-		}
 	}
 
-	openButton?.addEventListener(EVENT_CLICK, open, { signal: abort.signal })
-	closeBtn.addEventListener(EVENT_CLICK, close, { signal: abort.signal })
-	dialog.addEventListener(
-		EVENT_CLOSE,
-		() => {
-			scanner.stop()
-			dwell.cancel()
-			releaseAllPads()
-			restoreFocus()
-		},
-		{ signal: abort.signal }
-	)
-	dialog.addEventListener(EVENT_KEY_DOWN, onKeyDown, { signal: abort.signal })
-	dialog.addEventListener(EVENT_KEY_UP, onKeyUp, { signal: abort.signal })
+	/** Without a view the host opens the chain's controls, falling back to pads. */
+	const open = (view?: PerformanceView) => host?.show(view)
+	const close = () => host?.hide()
+
+	openButton?.addEventListener(EVENT_CLICK, () => open(), { signal: abort.signal })
+	// The host traps focus in the fullscreen view, so shortcuts also work from its header.
+	doc.addEventListener(EVENT_KEY_DOWN, onKeyDown, { signal: abort.signal })
+	doc.addEventListener(EVENT_KEY_UP, onKeyUp, { signal: abort.signal })
 
 	modeSelect.addEventListener(
 		EVENT_CHANGE,
@@ -754,7 +731,7 @@ export function createFocusStage({
 		() => {
 			if (scanSelect.value === "2-switch") {
 				scanner.configure({ mode: "step-2-switch" })
-				if (dialog.open) {
+				if (active) {
 					scanner.start()
 				}
 				announce(
@@ -765,7 +742,7 @@ export function createFocusStage({
 			const interval = Number(scanSelect.value) || 0
 			if (interval > 0) {
 				scanner.configure({ mode: "auto-1-switch", scanMs: interval })
-				if (dialog.open) {
+				if (active) {
 					scanner.start()
 				}
 				announce(
@@ -857,7 +834,7 @@ export function createFocusStage({
 	manager.addEventListener(
 		EVENT_HARMONY_CHANGED,
 		() => {
-			if (dialog.open) {
+			if (active) {
 				renderPads()
 			}
 		},
@@ -938,7 +915,7 @@ export function createFocusStage({
 						? String(nextScanMs)
 						: "0"
 		}
-		if (dialog.open) {
+		if (active) {
 			renderPads()
 		}
 	}
@@ -957,9 +934,21 @@ export function createFocusStage({
 	}
 
 	return {
-		dialog,
+		element,
 		open,
 		close,
+		activate,
+		deactivate,
+		isActive: () => active,
+		/** The latest host wins; the returned function detaches it. */
+		attach(next: FocusStageHost) {
+			host = next
+			return () => {
+				if (host === next) {
+					host = undefined
+				}
+			}
+		},
 		pulseBeat,
 		applyProfile,
 		getStageConfig,
@@ -970,7 +959,10 @@ export function createFocusStage({
 			releaseAllPads()
 			clearTimeout(beatTimeout)
 			abort.abort()
-			dialog.remove()
+			close()
+			element.remove()
 		}
 	}
 }
+
+export type FocusStage = ReturnType<typeof createFocusStage>

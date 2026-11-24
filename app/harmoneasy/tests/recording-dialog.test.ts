@@ -35,6 +35,16 @@ vi.mock("../../../packages/audiobus/io/recording/audio-recording", () => ({
 				this.change()
 			}
 			wave = vi.fn(async () => new Blob(["audio"], { type: "audio/wav" }))
+			exportAudio = vi.fn(async (_format, progress, destination) => {
+				progress?.(0.5)
+				if (destination) {
+					const writer = destination.getWriter()
+					await writer.write(new Uint8Array([1, 2, 3]))
+					await writer.close()
+					return
+				}
+				return new Blob(["encoded"], { type: "audio/webm" })
+			})
 		})()
 }))
 
@@ -127,6 +137,41 @@ it("streams the selected WAV format to the chosen destination", async () => {
 	expect(recording.wave).toHaveBeenLastCalledWith(32)
 	expect(write).toHaveBeenCalled()
 	expect(close).toHaveBeenCalled()
+})
+
+it("streams compressed audio with matching file picker metadata and retains the take on encoding errors", async () => {
+	const recording = createRecordingControls({} as AudioContext, {} as AudioNode)
+	await recording.ready
+	button("btn-record").click()
+	button("btn-record").click()
+	await vi.waitFor(() => expect(button("recording-save").disabled).toBe(false))
+	const write = vi.fn(),
+		close = vi.fn()
+	const output = new WritableStream({ write, close })
+	const picker = vi.fn().mockResolvedValue({ createWritable: async () => output })
+	;(window as any).showSaveFilePicker = picker
+	document.querySelector<HTMLSelectElement>("#recording-format")!.value = "webm"
+	document.querySelector<HTMLInputElement>("#recording-filename")!.value = "My take.wav"
+	button("recording-save").click()
+	await vi.waitFor(() => expect(status()).toContain("Recording saved"))
+	expect(picker).toHaveBeenCalledWith(
+		expect.objectContaining({
+			suggestedName: "My take.webm",
+			types: [
+				{ description: "WebM · Opus (compressed)", accept: { "audio/webm": [".webm"] } }
+			]
+		})
+	)
+	expect(recording.exportAudio).toHaveBeenCalledWith("webm", expect.any(Function), output)
+	expect(write).toHaveBeenCalled()
+	expect(close).toHaveBeenCalled()
+	expect(recording.hasTake).toBe(true)
+	vi.mocked(recording.exportAudio).mockRejectedValueOnce(new Error("Encoder failed"))
+	button("recording-save").click()
+	await vi.waitFor(() => expect(status()).toContain("Encoder failed"))
+	expect(recording.hasTake).toBe(true)
+	expect(button("recording-save").disabled).toBe(false)
+	expect(document.querySelector<HTMLAudioElement>("#recording-playback")!.src).toBe("blob:take")
 })
 
 it("only shows the global recording toggle while Recorder outputs are attached and synchronises their controls", async () => {
