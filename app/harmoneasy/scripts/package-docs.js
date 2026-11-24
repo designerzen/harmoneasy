@@ -132,6 +132,14 @@ export async function packageDocumentationAssets(repository, base) {
 					dirname(path),
 					decodeURIComponent(target.split(/[?#]/)[0])
 				)
+				const owner = packages.find(
+					(pkg) =>
+						pkg.submodule && (local === pkg.folder || local.startsWith(pkg.folder + "/"))
+				)
+				const destLocal = webPath(relative(repository, destination))
+				if (owner && !destLocal.startsWith(owner.folder + "/") && destLocal !== owner.folder) {
+					continue
+				}
 				let url
 				try {
 					url = await publish(destination)
