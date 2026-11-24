@@ -301,13 +301,6 @@
 		"url": "https://github.com/protobufjs/protobuf.js.git"
 	},
 	{
-		"name": "essentia.js",
-		"version": "0.1.3",
-		"authors": ["Music Technology Group, Universitat Pompeu Fabra"],
-		"license": "AGPL-3.0",
-		"url": "https://github.com/MTG/essentia.js"
-	},
-	{
 		"name": "@spotify/basic-pitch",
 		"version": "1.0.1",
 		"authors": [],
@@ -781,7 +774,7 @@
 		"name": "audiobus",
 		"version": "3.2.1",
 		"authors": [],
-		"license": "",
+		"license": "AGPL-3.0-or-later",
 		"url": "https://github.com/designerzen/audiobus.git"
 	},
 	{
@@ -1346,6 +1339,13 @@
 		"authors": ["Ariya Hidayat"],
 		"license": "",
 		"url": "http://esprima.org"
+	},
+	{
+		"name": "essentia.js",
+		"version": "0.1.3",
+		"authors": ["Albin Correya (http://mtg.upf.edu)"],
+		"license": "AGPL-3.0",
+		"url": "https://mtg.github.io/essentia.js/"
 	},
 	{
 		"name": "estraverse",
@@ -1977,6 +1977,13 @@
 		"authors": ["Mathias Buus (@mafintosh)"],
 		"license": "MIT",
 		"url": "https://github.com/prebuild/node-gyp-build"
+	},
+	{
+		"name": "node-wav",
+		"version": "0.0.2",
+		"authors": ["Andreas Gal"],
+		"license": "MIT",
+		"url": "https://github.com/andreasgal/node-wav"
 	},
 	{
 		"name": "object-inspect",
