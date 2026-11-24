@@ -25,6 +25,28 @@ function reference(method, index, opening) {
 	return action
 }
 
+// Expose endpoint-based MIDI 2.0 bridge (shared contract with InterFACE / PhotoSYNTH)
+contextBridge.exposeInMainWorld("electron", {
+	midi: Object.freeze({
+		available:
+			typeof ipcRenderer.sendSync === "function" &&
+			ipcRenderer.sendSync("midi:is-available") === true,
+		getPorts: () => ipcRenderer.invoke("midi:get-ports"),
+		sendUMP: (portId, words, timestamp = 0) =>
+			ipcRenderer.invoke("midi:send", { portId, words, timestamp }),
+		onMessage: (callback) => {
+			const listener = (_event, message) => callback(message)
+			ipcRenderer.on("midi:message", listener)
+			return () => ipcRenderer.removeListener("midi:message", listener)
+		},
+		onPortsChanged: (callback) => {
+			const listener = (_event, ports) => callback(ports)
+			ipcRenderer.on("midi:ports-changed", listener)
+			return () => ipcRenderer.removeListener("midi:ports-changed", listener)
+		}
+	})
+})
+
 // Expose safe IPC methods to the renderer process
 contextBridge.exposeInMainWorld("electronAPI", {
 	midi2: {

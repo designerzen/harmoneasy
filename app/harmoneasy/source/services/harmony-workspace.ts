@@ -36,6 +36,7 @@ import {
 	selectField
 } from "./music-tools-dom"
 import { mountDawBridge } from "./harmony-daw"
+import { mountFlexDataBridge } from "./harmony-flex-data"
 
 export function mountHarmonyWorkspace(
 	manager: IOChainManager,
@@ -579,6 +580,12 @@ export function mountHarmonyWorkspace(
 		{ signal: abort.signal }
 	)
 	const daw = mountDawBridge(section(dialog, "DAW connection"), manager, getBpm, setTempo)
+	const flexData = mountFlexDataBridge(
+		section(dialog, "MIDI 2.0 Flex Data"),
+		manager,
+		getBpm,
+		setTempo
+	)
 	function refresh() {
 		const state = manager.harmony ?? DEFAULT_HARMONY
 		tonic.value = String(state.root)
@@ -652,6 +659,7 @@ export function mountHarmonyWorkspace(
 				release()
 			}
 			daw.destroy()
+			flexData.destroy()
 			open.remove()
 			dialog.remove()
 		}

@@ -1,5 +1,6 @@
 import path from "path"
 import { registerMidi2IPC } from "./midi2-ipc.js"
+import { registerEndpointMidi2IPC } from "./endpoint-midi2-backend.js"
 import {
 	app,
 	BrowserWindow,
@@ -30,6 +31,7 @@ protocol.registerSchemesAsPrivileged([
 
 const require = createRequire(import.meta.url)
 registerMidi2IPC(ipcMain, () => require("../build/Release/midi2-native.node"))
+const endpointMidi2 = registerEndpointMidi2IPC(ipcMain, () => BrowserWindow.getAllWindows())
 const updateElectronApp = require("update-electron-app")
 
 let SocketServer = null
@@ -282,6 +284,7 @@ app.on("ready", async () => {
 })
 
 app.on("window-all-closed", () => {
+	endpointMidi2.destroy()
 	if (socketServer) {
 		socketServer.stop()
 	}
