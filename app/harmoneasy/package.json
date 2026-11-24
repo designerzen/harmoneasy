@@ -64,6 +64,7 @@
 		"@huggingface/transformers": "3.8.1",
 		"@xyflow/react": "^12.12.1",
 		"audiobus": "workspace:^",
+		"audiobus-input-composer": "workspace:^",
 		"audiobus-output-opendaw-vaporisateur": "workspace:^",
 		"audiobus-output-pink-trombone": "workspace:^",
 		"audiobus-output-voice-workshop": "workspace:^",

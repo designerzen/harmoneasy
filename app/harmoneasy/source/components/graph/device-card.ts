@@ -36,6 +36,12 @@ export const INPUT_GUIDANCE: Record<InputId, Guidance> = {
 		"Auditioning unfamiliar scales and discovering chromatic and fourths relationships.",
 		"Connect an output. Use transport Play for a repeating scale, Audition chord, or click torus notes."
 	),
+	composer: guide(
+		"Compose",
+		"Develop themes on its own from an emotion and an energy level, answering and varying them phrase by phrase.",
+		"Hearing music that unfolds without entering every note, and steering its character as it plays.",
+		"Connect an output. Use transport Play, then choose an emotion on the wheel; changes enter at the next phrase."
+	),
 	...Object.fromEntries(
 		Object.values(INPUT_DEFINITIONS).map((definition) => [
 			definition.id,

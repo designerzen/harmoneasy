@@ -106,6 +106,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
+  audiobus-input-composer: workspace:*
   control-surface: workspace:*
   netronome: workspace:*
   pitfalls: workspace:*
@@ -152,6 +153,9 @@ importers:
       audiobus:
         specifier: workspace:^
         version: link:../../packages/audiobus
+      audiobus-input-composer:
+        specifier: workspace:*
+        version: link:../../packages/audiobus-input-composer
       audiobus-output-opendaw-vaporisateur:
         specifier: workspace:^
         version: link:../../packages/audiobus-output-opendaw-vaporisateur
@@ -208,7 +212,7 @@ importers:
         version: 19.3.1(react@19.3.1)
       uWebSockets.js:
         specifier: github:uNetworking/uWebSockets.js
-        version: https://codeload.github.com/uNetworking/uWebSockets.js/tar.gz/139419cece198053af3478e4a367ecac4e006bb9
+        version: https://codeload.github.com/uNetworking/uWebSockets.js/tar.gz/42aee84b3677747ec7417c406c593898e81f2100
       webrtc-adapter:
         specifier: ^9.0.6
         version: 9.0.6
@@ -291,6 +295,9 @@ importers:
       abcjs:
         specifier: 6.7.3
         version: 6.7.3
+      audiobus-input-composer:
+        specifier: workspace:*
+        version: link:../audiobus-input-composer
       audiobus-protocol:
         specifier: git+https://github.com/designerzen/audiobus-protocol.git#main
         version: https://codeload.github.com/designerzen/audiobus-protocol/tar.gz/e3204ab1b7446ab1541249f70c0dc4aa27c164dc
@@ -370,6 +377,18 @@ importers:
       vitest:
         specifier: ^4.1.12
         version: 4.1.12(@types/node@22.20.5)(happy-dom@20.14.5)(vite@8.0.1(@emnapi/core@2.0.0-beta.2)(@emnapi/runtime@2.0.0-beta.2)(@types/node@22.20.5)(esbuild@0.27.7)(jiti@2.7.0)(sass-embedded@1.108.2)(sass@1.108.2)(terser@5.51.3)(yaml@2.8.2))
+
+  packages/audiobus-input-composer:
+    devDependencies:
+      '@playwright/test':
+        specifier: ^1.65.1
+        version: 1.65.1
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+      vite:
+        specifier: ^8.3.8
+        version: 8.3.8(@types/node@22.20.5)(esbuild@0.27.7)(jiti@2.7.0)(sass-embedded@1.108.2)(sass@1.108.2)(terser@5.51.3)(yaml@2.8.2)
 
   packages/audiobus-output-opendaw-vaporisateur:
     dependencies:
@@ -4612,8 +4631,8 @@ packages:
     engines: {node: '>=16.20.0'}
     hasBin: true
 
-  uWebSockets.js@https://codeload.github.com/uNetworking/uWebSockets.js/tar.gz/139419cece198053af3478e4a367ecac4e006bb9:
-    resolution: {gitHosted: true, integrity: sha512-OXm7fKtNI7+040QXdy6w5/o+QTHTwgqSiWP8WMv3PJJS/lj3hk0UaDLpziWUMx8vAmito6XtIfsCyM3siUl2tg==, tarball: https://codeload.github.com/uNetworking/uWebSockets.js/tar.gz/139419cece198053af3478e4a367ecac4e006bb9}
+  uWebSockets.js@https://codeload.github.com/uNetworking/uWebSockets.js/tar.gz/42aee84b3677747ec7417c406c593898e81f2100:
+    resolution: {gitHosted: true, integrity: sha512-6Cdd9huuHL2lfRqo2ubk1PQ2y0rJhbGtuJ5Pn2hFtulONK8QfE1zcbQa02JQ4V0u215Fcntgr1Ol/Wlwk/knKg==, tarball: https://codeload.github.com/uNetworking/uWebSockets.js/tar.gz/42aee84b3677747ec7417c406c593898e81f2100}
     version: 0.0.0
 
   ufo@1.6.4:
@@ -9061,7 +9080,7 @@ snapshots:
       '@typescript/typescript-win32-arm64': 7.0.2
       '@typescript/typescript-win32-x64': 7.0.2
 
-  uWebSockets.js@https://codeload.github.com/uNetworking/uWebSockets.js/tar.gz/139419cece198053af3478e4a367ecac4e006bb9: {}
+  uWebSockets.js@https://codeload.github.com/uNetworking/uWebSockets.js/tar.gz/42aee84b3677747ec7417c406c593898e81f2100: {}
 
   ufo@1.6.4: {}
 
@@ -9157,6 +9176,23 @@ snapshots:
     transitivePeerDependencies:
       - '@emnapi/core'
       - '@emnapi/runtime'
+
+  vite@8.3.8(@types/node@22.20.5)(esbuild@0.27.7)(jiti@2.7.0)(sass-embedded@1.108.2)(sass@1.108.2)(terser@5.51.3)(yaml@2.8.2):
+    dependencies:
+      lightningcss: 1.33.0
+      picomatch: 4.0.7
+      postcss: 8.5.33
+      rolldown: 1.2.19
+      tinyglobby: 0.2.17
+    optionalDependencies:
+      '@types/node': 22.20.5
+      esbuild: 0.27.7
+      fsevents: 2.3.3
+      jiti: 2.7.0
+      sass: 1.108.2
+      sass-embedded: 1.108.2
+      terser: 5.51.3
+      yaml: 2.8.2
 
   vite@8.3.8(@types/node@26.6.6)(terser@5.51.3):
     dependencies:

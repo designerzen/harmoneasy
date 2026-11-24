@@ -34,3 +34,7 @@
 	path = packages/audiobus-output-voice-workshop
 	url = https://github.com/designerzen/audiobus-output-voice-workshop.git
 	branch = main
+[submodule "packages/audiobus-input-composer"]
+	path = packages/audiobus-input-composer
+	url = https://github.com/designerzen/audiobus-input-composer.git
+	branch = main

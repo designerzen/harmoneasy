@@ -26,6 +26,8 @@
 		"paths": {
 			"audiobus": ["../../packages/audiobus"],
 			"audiobus/*": ["../../packages/audiobus/*"],
+			"audiobus-input-composer": ["../../packages/audiobus-input-composer/src/index.ts"],
+			"audiobus-input-composer/component": ["../../packages/audiobus-input-composer/src/component/index.ts"],
 			"audiobus-output-opendaw-vaporisateur": [
 				"../../packages/audiobus-output-opendaw-vaporisateur"
 			],

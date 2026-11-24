@@ -19,6 +19,7 @@ patchedDependencies:
     app-builder-lib@26.8.1: patches/app-builder-lib@26.8.1.patch
 # Packages that audiobus installs from GitHub; use the submodule checkouts here instead.
 overrides:
+    audiobus-input-composer: "workspace:*"
     control-surface: "workspace:*"
     netronome: "workspace:*"
     pitfalls: "workspace:*"

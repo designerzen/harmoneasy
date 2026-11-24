@@ -49,6 +49,12 @@ export const PACKAGES: PackageInfo[] = [
 		repo: "https://github.com/designerzen/harmoneasy"
 	},
 	{
+		name: "audiobus-input-composer",
+		version: "0.1.0",
+		description: "Theory-guided autonomous composer and Plutchik emotion control as an audiobus input",
+		repo: "https://github.com/designerzen/audiobus-input-composer.git"
+	},
+	{
 		name: "audiobus-output-opendaw-vaporisateur",
 		version: "0.1.0",
 		description: "openDAW's Vaporisateur synthesiser as an audiobus instrument and output",
