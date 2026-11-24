@@ -567,7 +567,8 @@ describe("shared harmony from the detected key", () => {
 		tempo: tempoControl(120),
 		harmony,
 		duration: 10,
-		keyTransformers: 1
+		keyTransformers: 1,
+		fileName: "groove.wav"
 	})
 
 	it("rotates the scale and tonic triad to the detected key", () => {
@@ -588,10 +589,27 @@ describe("shared harmony from the detected key", () => {
 	it("is offered but never ticked by default, because it changes every chain", () => {
 		const option = planAnalysis(analysis(), context(harmonyControl())).harmony
 		expect(option).toMatchObject({
-			label: "Set the shared harmony to D minor (affects every chain)",
+			label: "Set the shared harmony to D minor, the key detected in “groove.wav” (affects every chain)",
 			checked: false,
 			reason: undefined
 		})
+	})
+	it("says which file and method the key came from", () => {
+		expect(planAnalysis(analysis(), context(harmonyControl())).source).toBe(
+			"Measured from “groove.wav” by Essentia: the tempo from its beat tracker, the key by matching the audio’s pitch content against major and minor key profiles."
+		)
+		const long = planAnalysis(analysis(), { ...context(), duration: 400, fileName: undefined })
+		expect(long.source).toMatch(/^Measured from the first 3 minutes of the dropped audio/)
+	})
+	it("shows the source in the dialog", async () => {
+		const result = askAnalysisChoices(planAnalysis(analysis(), context(harmonyControl())))
+		expect(document.querySelector("dialog")!.textContent).toContain(
+			"Measured from “groove.wav”"
+		)
+		;[...document.querySelectorAll("button")]
+			.find((item) => item.textContent === "Dismiss")!
+			.click()
+		await result
 	})
 	it("explains why it cannot be chosen", () => {
 		expect(planAnalysis(analysis(), context()).harmony.reason).toMatch(/unavailable/)

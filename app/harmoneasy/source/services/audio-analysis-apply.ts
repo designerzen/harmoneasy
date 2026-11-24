@@ -41,6 +41,8 @@ export interface AnalysisOption {
 
 export interface AnalysisPlan {
 	summary: string
+	/** Where the tempo and key came from, so nobody wonders why the app changed key. */
+	source: string
 	tempo: AnalysisOption
 	align: AnalysisOption
 	key: AnalysisOption
@@ -51,6 +53,7 @@ export interface AnalysisPlan {
 export const MIN_TEMPO_CONFIDENCE = 1
 /** Below this the key estimate is close to a guess, so it does not change transformers unasked. */
 export const MIN_KEY_STRENGTH = 0.5
+const ANALYSED_SECONDS = 180
 const MIN_PROJECT_BPM = 10
 const MAX_PROJECT_BPM = 303
 
@@ -87,6 +90,7 @@ export function planAnalysis(
 		harmony?: HarmonyControl
 		duration: number
 		keyTransformers: number
+		fileName?: string
 	}
 ): AnalysisPlan {
 	const bpm = roundBpm(analysis.bpm)
@@ -106,6 +110,9 @@ export function planAnalysis(
 	const keyReason = context.keyTransformers
 		? undefined
 		: "No transformer in this chain has a key setting."
+	const file = context.fileName ? `“${context.fileName}”` : "the dropped audio"
+	// analyseAudioBuffer measures at most its default 180 seconds
+	const portion = context.duration > ANALYSED_SECONDS ? "the first 3 minutes of " : ""
 	let harmonyReason: string | undefined
 	if (!context.harmony) {
 		harmonyReason = "The shared harmony is unavailable here."
@@ -118,6 +125,9 @@ export function planAnalysis(
 	}
 	return {
 		summary: describeAnalysis(analysis),
+		source:
+			`Measured from ${portion}${file} by Essentia: the tempo from its beat tracker, ` +
+			"the key by matching the audio’s pitch content against major and minor key profiles.",
 		tempo: {
 			label: `Set project tempo to ${bpm} BPM`,
 			checked: !tempoReason && reliable,
@@ -137,7 +147,7 @@ export function planAnalysis(
 		},
 		// App-wide, so it is always an explicit choice rather than a default
 		harmony: {
-			label: `Set the shared harmony to ${keyName} (affects every chain)`,
+			label: `Set the shared harmony to ${keyName}, the key detected in ${file} (affects every chain)`,
 			checked: false,
 			reason: harmonyReason
 		}
@@ -152,12 +162,14 @@ export async function askAnalysisChoices(plan: AnalysisPlan): Promise<AnalysisCh
 	const dialog = document.createElement("dialog")
 	const title = document.createElement("h2")
 	const summary = document.createElement("p")
+	const source = document.createElement("p")
 	title.id = `analysis-title-${id}`
 	title.textContent = "Audio analysed"
 	summary.textContent = plan.summary
+	source.textContent = plan.source
 	dialog.className = "analysis-dialog"
 	dialog.setAttribute("aria-labelledby", title.id)
-	dialog.append(title, summary)
+	dialog.append(title, summary, source)
 
 	const boxes = {} as Record<keyof AnalysisChoices, HTMLInputElement>
 	for (const name of ["tempo", "align", "key", "harmony"] as const) {
@@ -234,10 +246,11 @@ export async function analyseImportedLoop(
 		tempo,
 		harmony,
 		duration: buffer.duration,
-		keyTransformers: countKeyTransformers(chain.transformers)
+		keyTransformers: countKeyTransformers(chain.transformers),
+		fileName: output.options?.fileName
 	})
 	if (![plan.tempo, plan.align, plan.key, plan.harmony].some((option) => !option.reason)) {
-		announceLive(plan.summary)
+		announceLive(`${plan.summary}. ${plan.source}`)
 		return
 	}
 	const choices = await ask(plan)
@@ -265,7 +278,9 @@ export async function analyseImportedLoop(
 	}
 	if (choices.harmony && harmony && !harmony.external() && !harmony.sections()) {
 		harmony.set(harmonyForKey(analysis))
-		applied.push(`shared harmony ${analysis.keyName} ${analysis.scale}`)
+		applied.push(
+			`shared harmony ${analysis.keyName} ${analysis.scale} (detected in ${output.options?.fileName ?? "the dropped audio"})`
+		)
 	}
 	if (applied.length) {
 		announceLive(`Applied ${applied.join(", ")}`)
