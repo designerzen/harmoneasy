@@ -300,7 +300,7 @@ importers:
         version: link:../audiobus-input-composer
       audiobus-protocol:
         specifier: git+https://github.com/designerzen/audiobus-protocol.git#main
-        version: https://codeload.github.com/designerzen/audiobus-protocol/tar.gz/e3204ab1b7446ab1541249f70c0dc4aa27c164dc
+        version: https://codeload.github.com/designerzen/audiobus-protocol/tar.gz/59b008ff5930c257408af4faca15f2e3a4b7d5dc
       butterchurn:
         specifier: ^2.6.7
         version: 2.6.7
@@ -2553,8 +2553,8 @@ packages:
     resolution: {integrity: sha512-+q/t7Ekv1EDY2l6Gda6LLiX14rU9TV20Wa3ofeQmwPFZbOMo9DXrLbOjFaaclkXKWidIaopwAObQDqwWtGUjqg==}
     engines: {node: '>= 4.0.0'}
 
-  audiobus-protocol@https://codeload.github.com/designerzen/audiobus-protocol/tar.gz/e3204ab1b7446ab1541249f70c0dc4aa27c164dc:
-    resolution: {gitHosted: true, integrity: sha512-vTMWyHub2hlHWKr2e7ndsl4PX0jLkFWkUi8BaUTOOhZhrFINUfGQhh24OgL+qWnUa8KWXOXbAXejlecNG5NWhQ==, tarball: https://codeload.github.com/designerzen/audiobus-protocol/tar.gz/e3204ab1b7446ab1541249f70c0dc4aa27c164dc}
+  audiobus-protocol@https://codeload.github.com/designerzen/audiobus-protocol/tar.gz/59b008ff5930c257408af4faca15f2e3a4b7d5dc:
+    resolution: {gitHosted: true, integrity: sha512-0RlXOUiik3sOUgjvSWLTjh0JkLxthRee7xJB1c0rS6WTt6OHBPwKgYMRCJM9QlGb+0wS6cuJMEGdK2Ym23k99w==, tarball: https://codeload.github.com/designerzen/audiobus-protocol/tar.gz/59b008ff5930c257408af4faca15f2e3a4b7d5dc}
     version: 0.3.0
 
   automation-events@7.1.19:
@@ -6788,7 +6788,7 @@ snapshots:
 
   at-least-node@1.0.0: {}
 
-  audiobus-protocol@https://codeload.github.com/designerzen/audiobus-protocol/tar.gz/e3204ab1b7446ab1541249f70c0dc4aa27c164dc: {}
+  audiobus-protocol@https://codeload.github.com/designerzen/audiobus-protocol/tar.gz/59b008ff5930c257408af4faca15f2e3a4b7d5dc: {}
 
   automation-events@7.1.19:
     dependencies:
