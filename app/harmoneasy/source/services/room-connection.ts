@@ -598,10 +598,13 @@ export class RoomConnection {
 		}
 		const bpm = this.timer.BPM,
 			swing = this.timer.swing,
+			divisions = this.timer.divisions,
 			current = this.session.getState()
+		// The change lands on a future bar line; hold the running values until then.
+		this.timer.setPPQ(current.divisions)
 		this.timer.BPM = current.bpm
 		this.timer.swing = current.swing
-		this.session.setTransport({ bpm, swing })
+		this.session.setTransport({ bpm, swing, divisions })
 	}
 
 	private remove(connectionId: string) {

@@ -33,6 +33,7 @@ import type { PresetSetup } from "audiobus/io/preset-library"
 import { createNetronomeLink } from "./services/netronome-link"
 import { readRoomUrl } from "./services/room-url"
 import { loadPresetPage, presetWorkspace } from "./services/preset-page"
+import { mountTimingSettings } from "./services/timing-settings"
 import { PLAY_REDIRECT_KEY, playRoute, playUrl } from "./services/play-page"
 import { restorePartsUrl } from "./services/parts-url"
 import { createMidiControlPanel } from "./services/midi-control-panel"
@@ -82,6 +83,7 @@ import IOChainManager from "audiobus/io/IO-chain-manager.ts"
 import OutputMetronome from "audiobus/io/outputs/output-metronome.ts"
 import * as Commands from "audiobus/commands/commands"
 
+import { harmonyMetronomeClicks } from "audiobus/timing/harmony-metronome"
 // IAudioInputs
 import { ALL_KEYBOARD_NOTES } from "audiobus/io/inputs/input-onscreen-keyboard.ts"
 
@@ -276,10 +278,10 @@ const initialiseApplication = async (
 	timer = new AudioTimer(bus.audioContext, bus.hasAudioWorklets)
 	await timer.loaded
 	if (roomSetup) {
-		timer.divisions = roomSetup.divisions
+		timer.setPPQ(roomSetup.divisions)
 		timer.bars = roomSetup.bars
 	} else {
-		timer.divisions = Number(state.get("divisions") ?? timer.divisions)
+		timer.setPPQ(Number(state.get("divisions") ?? timer.divisions))
 		timer.bars = Number(state.get("bars") ?? timer.bars)
 	}
 
@@ -584,6 +586,17 @@ const initialiseApplication = async (
 		"graph",
 		ioManager,
 		Boolean(pageSetup || (startupSetup && startupSetup.id !== "blank")),
+	mountTimingSettings({
+		manager: ioManager,
+		getPPQ: () => timer.ppq,
+		canSetPPQ: () => clockSource?.source === "internal" && !netronomeLink?.isFollower,
+		setPPQ: (ppq) => {
+			timer.setPPQ(ppq)
+			state.set("divisions", timer.ppq)
+			netronomeLink?.tempoChanged()
+		}
+	})
+
 		{
 			saved: state.get("workspaceLayout"),
 			save: (layout) => state.set("workspaceLayout", layout)
@@ -631,9 +644,10 @@ const onTick = (values: Record<string, any>) => {
 	// The timer wraps divisions once per quarter note; its bar counter counts beats.
 	if (divisionsElapsed === 0) {
 		const beatIndex = barsElapsed * bars + bar
-		const beatsPerBar = timer.syncOptions.beatsPerBar ?? 4
+		const signature = ioManager.musicalTiming.timeSignature
+		const beatsPerBar = signature ? signature.numerator * 32 / signature.denominator / signature.thirtySecondNotes : timer.syncOptions.beatsPerBar ?? 4
 		focusStage?.pulseBeat(beatIndex, beatsPerBar)
-		if (metronomeEnabled) {
+		if (metronomeEnabled && !ioManager.musicalTiming.timeSignature && !ioManager.musicalTiming.metronome) {
 			metronome?.playBeat(beatIndex, beatsPerBar, values.scheduledContextTimeSeconds)
 		}
 	}
@@ -641,6 +655,12 @@ const onTick = (values: Record<string, any>) => {
 	const capturedEvents = ioManager.updateTime(now, divisionsElapsed, options)
 	if (capturedEvents.length) {
 		recorder.addEvents(capturedEvents)
+	if (metronomeEnabled && (ioManager.musicalTiming.timeSignature || ioManager.musicalTiming.metronome)) {
+		const quarter = barsElapsed * bars + bar + divisionsElapsed / timer.divisions
+		for (const click of harmonyMetronomeClicks(quarter, quarter + 1 / timer.divisions, ioManager.musicalTiming, timer.syncOptions.beatsPerBar ?? 4)) {
+			metronome?.playMusicalClick(click.accent, click.secondary, (values.scheduledContextTimeSeconds ?? bus.audioContext.currentTime) + (click.at - quarter) * 60 / timer.BPM)
+		}
+	}
 	}
 	const ticksPerStep = timer.divisions / 4
 	if (divisionsElapsed % ticksPerStep === 0) {
