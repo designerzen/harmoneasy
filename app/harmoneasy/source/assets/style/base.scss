@@ -7,23 +7,31 @@ html {
 
 .skip-link {
 	position: fixed;
-	top: -4rem;
+	top: 0.75rem;
 	left: 0.75rem;
 	z-index: 10000;
 	display: inline-flex;
 	align-items: center;
 	min-height: var(--control-height);
 	padding: 0.5rem 1rem;
-	border: 2px solid var(--focus-ring);
+	border: 0;
 	border-radius: var(--radius-sm);
 	background: var(--col-surface);
 	color: var(--col-fg);
 	font-weight: 600;
 	text-decoration: none;
+	box-shadow: 0 0.25rem 1rem color-mix(in oklch, black 45%, transparent);
+	// Fully off-screen (including the focus ring) until focused.
+	transform: translateY(calc(-100% - 2rem));
+	transition: transform 120ms ease;
 
 	&:focus,
 	&:focus-visible {
-		top: 0.75rem;
+		transform: none;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		transition: none;
 	}
 }
 
