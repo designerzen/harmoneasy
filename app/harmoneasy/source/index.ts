@@ -582,10 +582,6 @@ const initialiseApplication = async (
 		persistMidi: (value) => state.set("midiControls", value)
 	})
 
-	createGraph(
-		"graph",
-		ioManager,
-		Boolean(pageSetup || (startupSetup && startupSetup.id !== "blank")),
 	mountTimingSettings({
 		manager: ioManager,
 		getPPQ: () => timer.ppq,
@@ -597,6 +593,10 @@ const initialiseApplication = async (
 		}
 	})
 
+	createGraph(
+		"graph",
+		ioManager,
+		Boolean(pageSetup || (startupSetup && startupSetup.id !== "blank")),
 		{
 			saved: state.get("workspaceLayout"),
 			save: (layout) => state.set("workspaceLayout", layout)
