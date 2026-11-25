@@ -88,6 +88,7 @@ export function mountHarmonyWorkspace(
 		const root = Number(tonic.value)
 		manager.setHarmony({
 			root,
+			chordRoot: ((previous.chordRoot ?? previous.root) + root - previous.root + 12) % 12,
 			scale: mapPitchSet(previous.scale, 1, root - previous.root),
 			chord: mapPitchSet(previous.chord, 1, root - previous.root)
 		})
@@ -100,10 +101,13 @@ export function mountHarmonyWorkspace(
 		if (family.value !== "custom") {
 			manager.setHarmony({
 				...manager.harmony,
+				keySignature: undefined,
 				scale: mapPitchSet(Number(family.value), 1, manager.harmony.root)
 			})
 		}
 	})
+	const chordRoot = selectField(live, "Chord root", NOTE_NAMES.map((name, root) => ({ name, value: String(root) })))
+	onChange(chordRoot, () => manager.setHarmony({ ...manager.harmony, chordRoot: Number(chordRoot.value), chordSymbol: undefined }))
 	const pitchControls = element("div")
 	live.append(pitchControls)
 	live.append(
@@ -589,6 +593,7 @@ export function mountHarmonyWorkspace(
 	function refresh() {
 		const state = manager.harmony ?? DEFAULT_HARMONY
 		tonic.value = String(state.root)
+		chordRoot.value = String(state.chordRoot ?? state.root)
 		family.value = String(mapPitchSet(state.scale, 1, -state.root))
 		if (family.selectedIndex < 0) {
 			family.value = "custom"
@@ -608,6 +613,7 @@ export function mountHarmonyWorkspace(
 					() =>
 						manager.setHarmony({
 							...manager.harmony,
+							...(kind === "scale" ? { keySignature: undefined } : { chordSymbol: undefined }),
 							[kind]: manager.harmony[kind] ^ (1 << pitch)
 						}),
 					status

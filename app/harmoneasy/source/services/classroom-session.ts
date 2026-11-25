@@ -10,6 +10,7 @@ import {
 	NOTE_NAMES,
 	SCALE_FAMILIES,
 	parseHarmony,
+	sameHarmony,
 	type HarmonicState
 } from "audiobus/io/harmony"
 import { DRUM_ACCOMPANIMENT, MOOG, TB303 } from "audiobus/io/outputs/output-types"
@@ -469,11 +470,7 @@ export class ClassroomSession extends EventTarget {
 
 	setHarmony(harmony: HarmonicState): void {
 		const parsed = parseHarmony(harmony)
-		if (
-			this.harmony.root === parsed.root &&
-			this.harmony.scale === parsed.scale &&
-			this.harmony.chord === parsed.chord
-		) {
+		if (sameHarmony(this.harmony, parsed)) {
 			return
 		}
 		this.harmony = parsed
