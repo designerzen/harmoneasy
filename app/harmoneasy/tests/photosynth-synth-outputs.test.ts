@@ -2,6 +2,9 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import OutputMonotron from "../../../packages/audiobus/io/outputs/output-monotron.ts"
 import OutputWaveguide from "../../../packages/audiobus/io/outputs/output-waveguide.ts"
 import OutputMultiOscillator from "../../../packages/audiobus/io/outputs/output-multi-oscillator.ts"
+import OutputEquations from "../../../packages/audiobus/io/outputs/output-equations.ts"
+import { EQUATION_WAVES } from "../../../packages/audiobus/instruments/equations/equation-waves.ts"
+import OutputPde from "../../../packages/audiobus/io/outputs/output-pde.ts"
 import OutputZeta from "../../../packages/audiobus/io/outputs/output-zeta.ts"
 import {
 	NOTE_ON,
@@ -123,7 +126,7 @@ afterEach(() => {
 	vi.useRealTimers()
 })
 
-for (const Output of [OutputMonotron, OutputWaveguide, OutputMultiOscillator, OutputZeta]) {
+for (const Output of [OutputMonotron, OutputWaveguide, OutputMultiOscillator, OutputZeta, OutputPde, OutputEquations]) {
 	describe(Output.name, () => {
 		function create(options = {}) {
 			vi.useFakeTimers()
@@ -196,10 +199,11 @@ for (const Output of [OutputMonotron, OutputWaveguide, OutputMultiOscillator, Ou
 				Output === OutputWaveguide ? Math.max(128 / 48000, 1 / frequency) : frequency,
 				10
 			)
+			const perVoice = sources.length
 			output.sendCommand(
 				musicalCommand({ type: NOTE_ON, channel: 2, number: 81, velocity: 127 })
 			)
-			const next = delays[1]?.delayTime ?? sources[Output === OutputZeta ? 1 : 2].frequency
+			const next = delays[1]?.delayTime ?? sources[perVoice].frequency
 			expect(next.setValueAtTime.mock.lastCall![0]).toBeCloseTo(
 				Output === OutputWaveguide
 					? Math.max(128 / 48000, 1 / (frequency * 2))
@@ -414,4 +418,36 @@ it("starts optional synth noise, routes delay and cleans feedback nodes after re
 	output.noteOff(60)
 	advance(1)
 	expect(nodes.slice(3).every((node) => node.disconnect.mock.calls.length > 0)).toBe(true)
+})
+it("voices every PDE equation, with cantilever beam modes at the 6.267 ratio", () => {
+	for (let equation = 0; equation < 7; equation++) {
+		const { audioContext, mixer, sources } = setup()
+		const output = new OutputPde({ audioContext, mixer, equation })
+		devices.push(output)
+		output.noteOn(69, 127)
+		expect(sources.length).toBeGreaterThan(0)
+		if (equation === 5) {
+			const ratio =
+				sources[1].frequency.setValueAtTime.mock.calls[0][0] /
+				sources[0].frequency.setValueAtTime.mock.calls[0][0]
+			expect(ratio).toBeCloseTo(6.267, 2)
+		}
+	}
+})
+
+describe("equation waves", () => {
+	for (const { title, render } of EQUATION_WAVES) {
+		it(title + " renders a finite, non-silent cycle across its parameter range", () => {
+			for (const [a, b] of [
+				[0, 0],
+				[0.5, 0.5],
+				[1, 1]
+			]) {
+				const points = render(1024, a, b)
+				expect(points).toHaveLength(1024)
+				expect(points.every(Number.isFinite)).toBe(true)
+				expect(Math.max(...points) - Math.min(...points)).toBeGreaterThan(1e-6)
+			}
+		})
+	}
 })

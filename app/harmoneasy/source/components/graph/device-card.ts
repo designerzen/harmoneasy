@@ -430,6 +430,18 @@ export const OUTPUT_GUIDANCE: Record<
 		"Wobbling basses and squelchy leads.",
 		audio
 	),
+	pde: guide(
+		"PDE",
+		"Play seven partial differential equations as modal synthesis.",
+		"Equation 0–6: heat, wave, Maxwell dipole, Euler airfoil, Schrödinger packet, cantilever beam, reaction-diffusion.",
+		audio
+	),
+	equations: guide(
+		"Maths",
+		"Play single-cycle waveforms drawn from mathematical equations.",
+		"Fourier series, Bessel and Airy functions, spirographs, strange attractors, primes and Thue–Morse.",
+		audio
+	),
 	waveguide: guide(
 		"Pluck",
 		"Play noise-excited plucked strings.",

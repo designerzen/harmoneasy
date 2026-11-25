@@ -109,6 +109,8 @@ const OUTPUT_ICONS: Record<
 	fm: "synth",
 	zeta: "synth",
 	monotron: "synth",
+	pde: "synth",
+	equations: "synth",
 	waveguide: "synth",
 	"multi-oscillator": "synth",
 	tb303: "synth",
