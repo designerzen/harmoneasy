@@ -80,7 +80,16 @@ jobs:
                   LD_LIBRARY_PATH: "/usr/lib"
 
             - name: Build Electron app
-              run: pnpm run build:electron
+              shell: bash
+              run: |
+                  # Missing GitHub secrets become empty strings. electron-builder treats an
+                  # empty certificate link as a local path, resolving it to the app directory.
+                  for certificate_var in CSC_LINK WIN_CSC_LINK; do
+                    if [ -z "${!certificate_var}" ]; then
+                      unset "$certificate_var"
+                    fi
+                  done
+                  pnpm run build:electron
               timeout-minutes: 45
               env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
