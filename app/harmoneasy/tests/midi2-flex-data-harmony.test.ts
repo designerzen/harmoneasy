@@ -284,7 +284,7 @@ describe("independent Flex Data harmony and native expression", () => {
 		expect(adapter.state.chord).toBe(0)
 		expect(adapter.chordName).toBe("N.C.")
 		expect(decodeFlexDataUmp([0xd0100006, 0x03170000, 0, 0x80000000])).toMatchObject({ chord: 1 })
-		for (const packet of [[0xd0100006, 0x031c0000, 0, 0x80000000], [0xd0100006, 0x03010000, 1, 0x80000000], [0xd0300005, 0, 0, 0], [0xd0100005, NaN, 0, 0]]) expect(decodeFlexDataUmp(packet)).toBeUndefined()
+		for (const packet of [[0xd0100006, 0x031c0000, 0, 0x80000000], [0xd0100006, 0x03010000, 1, 0x80000000], [0xd0300005, 0, 0, 0], [0xd0100005, NaN, 0, 0]]) {expect(decodeFlexDataUmp(packet)).toBeUndefined()}
 		adapter.destroy()
 	})
 	it("retains symbols and bass-chord alterations through project persistence and exact re-encoding", () => {

@@ -35,13 +35,13 @@ export function mountFlexDataBridge(host: HTMLElement, manager: IOChainManager, 
 	let queue: Promise<void> = Promise.resolve()
 	const echoes = new Map<string, number>()
 	function run(task: () => Promise<void>) {
-		queue = queue.then(task).catch(error => { if (alive) status.textContent = error instanceof Error ? error.message : String(error) })
+		queue = queue.then(task).catch(error => { if (alive) {status.textContent = error instanceof Error ? error.message : String(error)} })
 		return queue
 	}
 	async function ensureBridge(): Promise<NativeMidiBridge> {
-		if (!hasNativeMidiBridge()) throw new Error("MIDI 2.0 Flex Data requires the Electron desktop app")
+		if (!hasNativeMidiBridge()) {throw new Error("MIDI 2.0 Flex Data requires the Electron desktop app")}
 		const native = bridge ??= getNativeMidiBridge()
-		if (!(await native.getCapabilities()).umpSupport) throw new Error("The selected MIDI backend cannot carry Flex Data UMP packets")
+		if (!(await native.getCapabilities()).umpSupport) {throw new Error("The selected MIDI backend cannot carry Flex Data UMP packets")}
 		return native
 	}
 	function fill(select: HTMLSelectElement, ports: NativeMidiDevice[]) {
@@ -52,13 +52,13 @@ export function mountFlexDataBridge(host: HTMLElement, manager: IOChainManager, 
 			option.value = String(port.index)
 			select.append(option)
 		}
-		if (ports.some(p => String(p.index) === previous)) select.value = previous
-		else if (previous !== "") select.selectedIndex = -1
+		if (ports.some(p => String(p.index) === previous)) {select.value = previous}
+		else if (previous !== "") {select.selectedIndex = -1}
 	}
 	async function refreshPorts() {
 		const native = await ensureBridge()
 		const [inputs, outputs] = await Promise.all([native.getUmpInputs(), native.getUmpOutputs()])
-		if (!alive) return
+		if (!alive) {return}
 		fill(input, inputs)
 		fill(output, outputs)
 	}
@@ -69,18 +69,18 @@ export function mountFlexDataBridge(host: HTMLElement, manager: IOChainManager, 
 		unsubscribe = undefined
 		adapter?.destroy()
 		adapter = undefined
-		if (ownsHarmony) manager.externallyControlledHarmony = false
+		if (ownsHarmony) {manager.externallyControlledHarmony = false}
 		ownsHarmony = false
 	}
 	async function closeInput() {
 		const index = openedInput
 		openedInput = undefined
-		if (index !== undefined) await bridge?.closeUmpInput(index)
+		if (index !== undefined) {await bridge?.closeUmpInput(index)}
 	}
 	async function closeOutput() {
 		const index = openedOutput
 		openedOutput = undefined
-		if (index !== undefined) await bridge?.closeUmpOutput(index)
+		if (index !== undefined) {await bridge?.closeUmpOutput(index)}
 	}
 	function withIncoming(run: () => void) {
 		applying = true
@@ -90,10 +90,10 @@ export function mountFlexDataBridge(host: HTMLElement, manager: IOChainManager, 
 		try {
 			await closeInput()
 			const native = await ensureBridge()
-			if (input.value === "") await refreshPorts()
-			if (!alive || version !== generation || !receive.checked) return
-			if (input.value === "") throw new Error("Choose a connected Flex Data input")
-			if (manager.externallyControlledHarmony && !ownsHarmony) throw new Error("Release the other harmony source before following Flex Data")
+			if (input.value === "") {await refreshPorts()}
+			if (!alive || version !== generation || !receive.checked) {return}
+			if (input.value === "") {throw new Error("Choose a connected Flex Data input")}
+			if (manager.externallyControlledHarmony && !ownsHarmony) {throw new Error("Release the other harmony source before following Flex Data")}
 			const index = Number(input.value)
 			await native.openUmpInput(index)
 			openedInput = index
@@ -106,18 +106,18 @@ export function mountFlexDataBridge(host: HTMLElement, manager: IOChainManager, 
 					manager.setHarmony(state, FLEX_SOURCE)
 					status.textContent = name ? `Flex Data chord: ${name}` : "Updated shared key from Flex Data"
 				}),
-				onTempo: bpm => { if (followTempo.checked && bpm >= 10 && bpm <= 303) withIncoming(() => setTempo(bpm)) },
-				onTimeSignature: timeSignature => { if (followTiming.checked) withIncoming(() => manager.setMusicalTiming({ ...manager.musicalTiming, timeSignature }, FLEX_SOURCE)) },
-				onMetronome: metronome => { if (followTiming.checked) withIncoming(() => manager.setMusicalTiming({ ...manager.musicalTiming, metronome }, FLEX_SOURCE)) }
+				onTempo: bpm => { if (followTempo.checked && bpm >= 10 && bpm <= 303) {withIncoming(() => setTempo(bpm))} },
+				onTimeSignature: timeSignature => { if (followTiming.checked) {withIncoming(() => manager.setMusicalTiming({ ...manager.musicalTiming, timeSignature }, FLEX_SOURCE))} },
+				onMetronome: metronome => { if (followTiming.checked) {withIncoming(() => manager.setMusicalTiming({ ...manager.musicalTiming, metronome }, FLEX_SOURCE))} }
 			})
 			unsubscribe = native.onUmpInput((source, words) => {
-				if (!receive.checked || source !== openedInput) return
-				if ((echoes.get(words.join(",")) ?? 0) > performance.now()) return
+				if (!receive.checked || source !== openedInput) {return}
+				if ((echoes.get(words.join(",")) ?? 0) > performance.now()) {return}
 				adapter?.feed(words)
 			})
 			status.textContent = `Following ${input.selectedOptions[0]?.textContent}, group ${group.value}`
 		} catch (error) {
-			if (version === generation) stopFollowing()
+			if (version === generation) {stopFollowing()}
 			await closeInput()
 			throw error
 		}
@@ -130,11 +130,11 @@ export function mountFlexDataBridge(host: HTMLElement, manager: IOChainManager, 
 		void run(() => enabled ? startReceiving(version) : closeInput())
 	}
 	async function sendHarmonyNow() {
-		if (!alive || applying) return
+		if (!alive || applying) {return}
 		const native = await ensureBridge()
-		if (output.value === "") await refreshPorts()
-		if (!alive) return
-		if (output.value === "") throw new Error("Choose a connected Flex Data output")
+		if (output.value === "") {await refreshPorts()}
+		if (!alive) {return}
+		if (output.value === "") {throw new Error("Choose a connected Flex Data output")}
 		const index = Number(output.value)
 		if (openedOutput !== index) {
 			await closeOutput()
@@ -145,19 +145,19 @@ export function mountFlexDataBridge(host: HTMLElement, manager: IOChainManager, 
 		const address = { group: Number(group.value) - 1, groupScoped: channel.value === "0", channel: Number(channel.value) }
 		const timing = manager.musicalTiming
 		const packets = [encodeFlexTempoUmp(getBpm(), address), encodeFlexKeySignatureUmp(manager.harmony, address)]
-		if (timing.timeSignature) packets.push(encodeFlexTimeSignatureUmp(timing.timeSignature, address))
-		if (timing.metronome) packets.push(encodeFlexMetronomeUmp(timing.metronome, address))
+		if (timing.timeSignature) {packets.push(encodeFlexTimeSignatureUmp(timing.timeSignature, address))}
+		if (timing.metronome) {packets.push(encodeFlexMetronomeUmp(timing.metronome, address))}
 		packets.push(encodeFlexChordNameUmp(manager.harmony, address))
-		for (const [key, expiry] of echoes) if (expiry <= performance.now()) echoes.delete(key)
+		for (const [key, expiry] of echoes) {if (expiry <= performance.now()) {echoes.delete(key)}}
 		for (const packet of packets) {
 			echoes.set(packet.join(","), performance.now() + 1000)
 			await native.sendUmp(index, packet)
 		}
-		if (!broadcast.checked) await closeOutput()
-		if (alive) status.textContent = `Sent Flex Data to ${output.selectedOptions[0]?.textContent}`
+		if (!broadcast.checked) {await closeOutput()}
+		if (alive) {status.textContent = `Sent Flex Data to ${output.selectedOptions[0]?.textContent}`}
 	}
 	onChange(receive, restartReceiving)
-	for (const control of [input, group, channel, coalesce]) onChange(control, () => { if (receive.checked) restartReceiving() })
+	for (const control of [input, group, channel, coalesce]) {onChange(control, () => { if (receive.checked) {restartReceiving()} })}
 	onChange(output, () => { void run(closeOutput) })
 	onChange(broadcast, () => { void run(broadcast.checked ? sendHarmonyNow : closeOutput) })
 	host.append(
@@ -174,11 +174,11 @@ export function mountFlexDataBridge(host: HTMLElement, manager: IOChainManager, 
 		status
 	)
 	const changed = (event: Event) => {
-		if (applying || (event as CustomEvent).detail?.source === FLEX_SOURCE) return
+		if (applying || (event as CustomEvent).detail?.source === FLEX_SOURCE) {return}
 		if (receive.checked) { stopFollowing(); void run(closeInput) }
-		if (broadcast.checked) void run(sendHarmonyNow)
+		if (broadcast.checked) {void run(sendHarmonyNow)}
 	}
-	for (const event of [EVENT_HARMONY_CHANGED, EVENT_HARMONY_SETTINGS_CHANGED, EVENT_WORKSPACE_RESTORED, EVENT_MUSICAL_TIMING_CHANGED]) manager.addEventListener(event, changed, { signal: abort.signal })
+	for (const event of [EVENT_HARMONY_CHANGED, EVENT_HARMONY_SETTINGS_CHANGED, EVENT_WORKSPACE_RESTORED, EVENT_MUSICAL_TIMING_CHANGED]) {manager.addEventListener(event, changed, { signal: abort.signal })}
 	return { destroy() {
 		alive = false
 		abort.abort()
