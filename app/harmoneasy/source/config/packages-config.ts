@@ -26,7 +26,7 @@ export const PACKAGES: PackageInfo[] = [
 	},
 	{
 		name: "audiobus-input-composer",
-		version: "0.2.0",
+		version: "0.3.0",
 		description:
 			"A theory-guided symbolic music composer and Plutchik web component for AudioBus",
 		repo: "https://github.com/designerzen/audiobus-input-composer.git"
