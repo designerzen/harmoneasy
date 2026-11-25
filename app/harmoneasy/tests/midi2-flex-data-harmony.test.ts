@@ -77,7 +77,13 @@ describe("MIDI 2.0 Flex Data codec", () => {
 		vi.advanceTimersByTime(50)
 		expect(onHarmony).toHaveBeenCalledTimes(1)
 		expect(onHarmony).toHaveBeenLastCalledWith(
-			expect.objectContaining({ root: 9, chordRoot: 9, scale: 2741, chord: 0b001000010001, bass: 4 }),
+			expect.objectContaining({
+				root: 9,
+				chordRoot: 9,
+				scale: 2741,
+				chord: 0b001000010001,
+				bass: 4
+			}),
 			"Am/E"
 		)
 		adapter.destroy()
@@ -127,10 +133,11 @@ describe("Booth Bridge accessible remapping and range folding", () => {
 			repitch: 1
 		})
 		// Hold D4 (-> E4=64) and E4 (-> G4=67) on C major
-		expect(track.transform([cmd(62, NOTE_ON, 80, 0), cmd(64, NOTE_ON, 90, 0)], clock(0)).map((c) => c.number)).toEqual([
-			64,
-			67
-		])
+		expect(
+			track
+				.transform([cmd(62, NOTE_ON, 80, 0), cmd(64, NOTE_ON, 90, 0)], clock(0))
+				.map((c) => c.number)
+		).toEqual([64, 67])
 
 		// Change to A minor (C, E, A): E4(64) stays sounding, G4(67) releases and re-strikes A4(69) with velocity 90
 		track.setHarmony({ root: 9, scale: 2741, chord: (1 << 0) | (1 << 4) | (1 << 9) })
@@ -181,7 +188,11 @@ describe("PhotoSYNTH endpoint MIDI 2.0 backend integration", () => {
 			}
 		}
 
-		const controller = registerEndpointMidi2IPC(ipcMain, () => [win], () => binding)
+		const controller = registerEndpointMidi2IPC(
+			ipcMain,
+			() => [win],
+			() => binding
+		)
 		expect(controller.available).toBe(true)
 
 		const flexPacket = encodeFlexChordNameUmp({ root: 0, chord: 145 })
@@ -189,7 +200,12 @@ describe("PhotoSYNTH endpoint MIDI 2.0 backend integration", () => {
 		expect(sendMock).toHaveBeenCalledWith("win-1", flexPacket, 0)
 
 		onMessageCb!({ endpointId: "win-1", timestamp: 123, words: flexPacket })
-		expect(sent).toEqual([{ channel: "midi:message", payload: { endpointId: "win-1", timestamp: 123, words: flexPacket } }])
+		expect(sent).toEqual([
+			{
+				channel: "midi:message",
+				payload: { endpointId: "win-1", timestamp: 123, words: flexPacket }
+			}
+		])
 
 		// Verify native-midi-bridge prefers window.electron.midi and drives mountFlexDataBridge
 		const listeners = new Set<(msg: any) => void>()
@@ -240,7 +256,10 @@ describe("PhotoSYNTH endpoint MIDI 2.0 backend integration", () => {
 })
 
 // Native fixtures below exercise actual UMP fields rather than only codec round trips.
-import { encodeFlexTimeSignatureUmp, encodeFlexMetronomeUmp } from "../../../packages/audiobus/midi/flex-data"
+import {
+	encodeFlexTimeSignatureUmp,
+	encodeFlexMetronomeUmp
+} from "../../../packages/audiobus/midi/flex-data"
 import { commandToUmp, umpToCommand } from "../../../packages/audiobus/midi/ump-codec"
 import { parseHarmony, sameHarmony } from "../../../packages/audiobus/io/harmony"
 import { parseMusicTools, defaultMusicTools } from "../../../packages/audiobus/io/music-tools"
@@ -249,7 +268,12 @@ import { harmonyMetronomeClicks } from "../../../packages/audiobus/timing/harmon
 describe("independent Flex Data harmony and native expression", () => {
 	it("keeps C major through C–Am–F–G7 and handles modulation in either packet order", () => {
 		const adapter = new FlexDataHarmonyAdapter({ coalesceMs: 0 })
-		for (const [root, chord] of [[0, 145], [9, 529], [5, 545], [7, 2212]]) {
+		for (const [root, chord] of [
+			[0, 145],
+			[9, 529],
+			[5, 545],
+			[7, 2212]
+		]) {
 			adapter.feed(encodeFlexChordNameUmp({ root, chord }))
 			expect(adapter.state).toMatchObject({ root: 0, scale: 2741, chordRoot: root, chord })
 		}
@@ -260,7 +284,10 @@ describe("independent Flex Data harmony and native expression", () => {
 		adapter.destroy()
 	})
 	it("decodes accidental spelling from the signature, including B sharp in C sharp major", () => {
-		expect(decodeFlexDataUmp([0xd0100005, 0x72000000, 0, 0])).toMatchObject({ root: 0, sharpsOrFlats: 7 })
+		expect(decodeFlexDataUmp([0xd0100005, 0x72000000, 0, 0])).toMatchObject({
+			root: 0,
+			sharpsOrFlats: 7
+		})
 		const packet = encodeFlexKeySignatureUmp({ root: 1, scale: 1387 }) // Db major
 		expect((packet[1] >>> 24) & 15).toBe(4)
 		expect(decodeFlexDataUmp(packet)).toMatchObject({ root: 1 })
@@ -270,7 +297,11 @@ describe("independent Flex Data harmony and native expression", () => {
 		expect(packet).toEqual([0xd0100005, 0x80000000, 0, 0])
 		const adapter = new FlexDataHarmonyAdapter({ coalesceMs: 0 })
 		adapter.feed(packet)
-		expect(adapter.state).toMatchObject({ root: 0, scale: 2741, keySignature: { sharpsOrFlats: -8, tonic: 0 } })
+		expect(adapter.state).toMatchObject({
+			root: 0,
+			scale: 2741,
+			keySignature: { sharpsOrFlats: -8, tonic: 0 }
+		})
 		expect(encodeFlexKeySignatureUmp(adapter.state)).toEqual(packet)
 		adapter.destroy()
 	})
@@ -283,15 +314,26 @@ describe("independent Flex Data harmony and native expression", () => {
 		adapter.feed([0xd0100006, 0, 0, 0x80000000])
 		expect(adapter.state.chord).toBe(0)
 		expect(adapter.chordName).toBe("N.C.")
-		expect(decodeFlexDataUmp([0xd0100006, 0x03170000, 0, 0x80000000])).toMatchObject({ chord: 1 })
-		for (const packet of [[0xd0100006, 0x031c0000, 0, 0x80000000], [0xd0100006, 0x03010000, 1, 0x80000000], [0xd0300005, 0, 0, 0], [0xd0100005, NaN, 0, 0]]) {expect(decodeFlexDataUmp(packet)).toBeUndefined()}
+		expect(decodeFlexDataUmp([0xd0100006, 0x03170000, 0, 0x80000000])).toMatchObject({
+			chord: 1
+		})
+		for (const packet of [
+			[0xd0100006, 0x031c0000, 0, 0x80000000],
+			[0xd0100006, 0x03010000, 1, 0x80000000],
+			[0xd0300005, 0, 0, 0],
+			[0xd0100005, NaN, 0, 0]
+		]) {
+			expect(decodeFlexDataUmp(packet)).toBeUndefined()
+		}
 		adapter.destroy()
 	})
 	it("retains symbols and bass-chord alterations through project persistence and exact re-encoding", () => {
 		const packet = [0xd0100006, 0xf4033500, 0, 0x05071200] // Dbmaj7#5 / E minor(add2)
 		const adapter = new FlexDataHarmonyAdapter({ coalesceMs: 0 })
 		adapter.feed(packet)
-		const tools = parseMusicTools(JSON.parse(JSON.stringify({ ...defaultMusicTools(), harmony: adapter.state })))
+		const tools = parseMusicTools(
+			JSON.parse(JSON.stringify({ ...defaultMusicTools(), harmony: adapter.state }))
+		)
 		expect(encodeFlexChordNameUmp(tools.harmony)).toEqual(packet)
 		expect(sameHarmony(adapter.state, tools.harmony)).toBe(true)
 		expect(() => parseHarmony({ ...tools.harmony, chordRoot: 12 })).toThrow()
@@ -310,10 +352,26 @@ describe("independent Flex Data harmony and native expression", () => {
 	it("filters groups/channels and cancels scheduled and coalesced updates on reset", () => {
 		vi.useFakeTimers()
 		const changed = vi.fn()
-		const adapter = new FlexDataHarmonyAdapter({ coalesceMs: 50, group: 2, channel: 4, onHarmony: changed, now: () => Date.now() })
-		const packet = encodeFlexChordNameUmp({ root: 5, chord: 545 }, { group: 2, groupScoped: false, channel: 4 })
+		const adapter = new FlexDataHarmonyAdapter({
+			coalesceMs: 50,
+			group: 2,
+			channel: 4,
+			onHarmony: changed,
+			now: () => Date.now()
+		})
+		const packet = encodeFlexChordNameUmp(
+			{ root: 5, chord: 545 },
+			{ group: 2, groupScoped: false, channel: 4 }
+		)
 		expect(adapter.feed(encodeFlexChordNameUmp({ root: 0, chord: 145 }))).toBeUndefined()
-		expect(adapter.feed(encodeFlexChordNameUmp({ root: 0, chord: 145 }, { group: 2, groupScoped: false, channel: 3 }))).toBeUndefined()
+		expect(
+			adapter.feed(
+				encodeFlexChordNameUmp(
+					{ root: 0, chord: 145 },
+					{ group: 2, groupScoped: false, channel: 3 }
+				)
+			)
+		).toBeUndefined()
 		adapter.feed(packet, Date.now() + 100)
 		vi.advanceTimersByTime(99)
 		expect(changed).not.toHaveBeenCalled()
@@ -327,21 +385,37 @@ describe("independent Flex Data harmony and native expression", () => {
 		adapter.destroy()
 	})
 	it("preserves 16-bit attack/release velocity and 32-bit expression while remapping note addresses", () => {
-		const track = new TransformerChordTrack({ source: "live", mapping: "white-keys", follow: "chord" })
+		const track = new TransformerChordTrack({
+			source: "live",
+			mapping: "white-keys",
+			follow: "chord"
+		})
 		const on = umpToCommand([0x42933e00, 0x91230000], 0, "keys")!
 		const attack = track.transform([on], clock())[0]
 		expect(commandToUmp(attack)).toEqual([0x42934000, 0x91230000])
-		for (const words of [[0x42633e00, 0x81234567], [0x42133e4a, 0x12345678], [0x42a33e00, 0x23456789]]) {
+		for (const words of [
+			[0x42633e00, 0x81234567],
+			[0x42133e4a, 0x12345678],
+			[0x42a33e00, 0x23456789]
+		]) {
 			const expression = umpToCommand(words, 0, "keys")!
 			const mapped = track.transform([expression], clock())[0]
-			expect(commandToUmp(mapped)).toEqual([((words[0] & 0xffff00ff) | (64 << 8)) >>> 0, words[1]])
+			expect(commandToUmp(mapped)).toEqual([
+				((words[0] & 0xffff00ff) | (64 << 8)) >>> 0,
+				words[1]
+			])
 		}
 		const off = umpToCommand([0x42833e00, 0x43210000], 1, "keys")!
 		expect(commandToUmp(track.transform([off], clock(1))[0])).toEqual([0x42834000, 0x43210000])
 	})
 	it("keeps MIDI groups independent for held-note releases and leaves free parts untouched", () => {
-		const track = new TransformerChordTrack({ source: "live", mapping: "white-keys", repitch: 1 })
-		const on = (group: number) => umpToCommand([(0x40903e00 | group << 24) >>> 0, 0x91230000], 0, "keys")!
+		const track = new TransformerChordTrack({
+			source: "live",
+			mapping: "white-keys",
+			repitch: 1
+		})
+		const on = (group: number) =>
+			umpToCommand([(0x40903e00 | (group << 24)) >>> 0, 0x91230000], 0, "keys")!
 		track.transform([on(0), on(1)], clock())
 		const off = umpToCommand([0x41803e00, 0], 1, "keys")!
 		expect(track.transform([off], clock(1))[0].midiGroup).toBe(1)
@@ -363,10 +437,15 @@ describe("independent Flex Data harmony and native expression", () => {
 describe("Flex musical timing", () => {
 	it("decodes independent time signature and metronome fixtures and persists the shared timing", () => {
 		const meter = { numerator: 6, denominator: 8, thirtySecondNotes: 8 }
-		const metronome = { clocksPerClick: 36, barAccents: [2, 0, 0] as [number, number, number], subdivisions: [3, 0] as [number, number] }
+		const metronome = {
+			clocksPerClick: 36,
+			barAccents: [2, 0, 0] as [number, number, number],
+			subdivisions: [3, 0] as [number, number]
+		}
 		expect(encodeFlexTimeSignatureUmp(meter)).toEqual([0xd0100001, 0x06030800, 0, 0])
 		expect(encodeFlexMetronomeUmp(metronome)).toEqual([0xd0100002, 0x24020000, 0x03000000, 0])
-		const onTimeSignature = vi.fn(), onMetronome = vi.fn()
+		const onTimeSignature = vi.fn(),
+			onMetronome = vi.fn()
 		const adapter = new FlexDataHarmonyAdapter({ onTimeSignature, onMetronome })
 		adapter.feed([0xd0100001, 0x06030800, 0, 0])
 		adapter.feed([0xd0100002, 0x24020000, 0x03000000, 0])
@@ -374,9 +453,166 @@ describe("Flex musical timing", () => {
 		expect(onMetronome).toHaveBeenCalledWith(expect.objectContaining(metronome))
 		const timing = { timeSignature: meter, metronome }
 		expect(parseMusicTools({ ...defaultMusicTools(), timing }).timing).toEqual(timing)
-		expect(harmonyMetronomeClicks(0, 3, timing).map(c => [c.at, c.accent, c.secondary])).toEqual([
-			[0, true, false], [0.5, false, true], [1, false, true], [1.5, false, false], [2, false, true], [2.5, false, true]
+		expect(
+			harmonyMetronomeClicks(0, 3, timing).map((c) => [c.at, c.accent, c.secondary])
+		).toEqual([
+			[0, true, false],
+			[0.5, false, true],
+			[1, false, true],
+			[1.5, false, false],
+			[2, false, true],
+			[2.5, false, true]
 		])
 		adapter.destroy()
+	})
+})
+
+describe("selected native Flex Data source lifecycle", () => {
+	it("isolates ports and addresses, suppresses loopback, follows timing, and releases control on manual edits", async () => {
+		let deliver: ((index: number, words: number[]) => void) | undefined
+		const sendUmp = vi.fn(async (_index: number, words: number[]) => {
+			deliver?.(0, words)
+		})
+		const native = {
+			getCapabilities: async () => ({
+				umpSupport: true,
+				midi2Support: true,
+				perNoteCC: true
+			}),
+			getUmpInputs: async () => [
+				{ index: 0, name: "Conductor" },
+				{ index: 1, name: "Other" }
+			],
+			getUmpOutputs: async () => [
+				{ index: 2, name: "Selected synth" },
+				{ index: 3, name: "Other synth" }
+			],
+			openUmpInput: vi.fn(async () => {}),
+			closeUmpInput: vi.fn(async () => {}),
+			openUmpOutput: vi.fn(async () => {}),
+			closeUmpOutput: vi.fn(async () => {}),
+			sendUmp,
+			onUmpInput: (listener: typeof deliver) => {
+				deliver = listener
+				return () => {
+					deliver = undefined
+				}
+			}
+		}
+		vi.stubGlobal("window", { electronAPI: { midi2: native } })
+		const manager = new IOChainManager({ timer: clock(), outputMixer: {} as GainNode })
+		const host = document.createElement("div")
+		const setTempo = vi.fn()
+		const bridge = mountFlexDataBridge(host, manager, () => 120, setTempo)
+		const control = (label: string) =>
+			[...host.querySelectorAll("label")]
+				.find((l) => l.textContent?.startsWith(label))!
+				.querySelector("input,select") as HTMLInputElement
+		const toggle = (label: string, checked: boolean) => {
+			const box = control(label)
+			box.checked = checked
+			box.dispatchEvent(new Event("change"))
+		}
+		try {
+			toggle("Receive MIDI 2.0", true)
+			await vi.waitFor(() => expect(deliver).toBeTypeOf("function"))
+			expect(native.openUmpInput).toHaveBeenCalledWith(0)
+			expect(native.openUmpInput).toHaveBeenCalledTimes(1)
+			deliver!(1, encodeFlexChordNameUmp({ root: 5, chord: 545 }))
+			deliver!(0, encodeFlexChordNameUmp({ root: 5, chord: 545 }, { group: 1 }))
+			deliver!(
+				0,
+				encodeFlexChordNameUmp({ root: 5, chord: 545 }, { groupScoped: false, channel: 2 })
+			)
+			expect(manager.harmony.chord).toBe(145)
+			deliver!(0, encodeFlexChordNameUmp({ root: 5, chord: 545 }))
+			expect(manager.harmony).toMatchObject({ root: 0, chordRoot: 5, chord: 545 })
+			toggle("Follow Flex Data tempo", true)
+			toggle("Follow Flex Data time signature", true)
+			deliver!(0, encodeFlexTempoUmp(123.456))
+			expect(setTempo).toHaveBeenLastCalledWith(expect.closeTo(123.456, 4))
+			deliver!(0, [0xd0100001, 0x06030800, 0, 0])
+			expect(manager.musicalTiming.timeSignature).toEqual({
+				numerator: 6,
+				denominator: 8,
+				thirtySecondNotes: 8
+			})
+			toggle("Broadcast harmony", true)
+			await vi.waitFor(() => expect(sendUmp).toHaveBeenCalledTimes(4))
+			expect(sendUmp.mock.calls.every(([index]) => index === 2)).toBe(true)
+			expect(manager.externallyControlledHarmony).toBe(true)
+			deliver!(0, encodeFlexChordNameUmp({ root: 7, chord: 2212 }))
+			await new Promise((resolve) => setTimeout(resolve, 10))
+			expect(sendUmp).toHaveBeenCalledTimes(4)
+			manager.setHarmony({ root: 2, scale: 2774, chord: 580 })
+			expect(manager.externallyControlledHarmony).toBe(false)
+			expect(control("Receive MIDI 2.0").checked).toBe(false)
+			await vi.waitFor(() => expect(native.closeUmpInput).toHaveBeenCalledWith(0))
+			toggle("Receive MIDI 2.0", true)
+			await vi.waitFor(() => expect(deliver).toBeTypeOf("function"))
+			deliver!(0, encodeFlexChordNameUmp({ root: 9, chord: 530 }))
+			expect(manager.harmony).toMatchObject({ root: 2, scale: 2774, chordRoot: 9 })
+		} finally {
+			bridge.destroy()
+			manager.destroy()
+		}
+		await vi.waitFor(() => expect(native.closeUmpOutput).toHaveBeenCalledWith(2))
+	})
+})
+describe("native harmony transition regressions", () => {
+	it("applies timestamped key and chord changes atomically", () => {
+		vi.useFakeTimers()
+		const onHarmony = vi.fn()
+		const adapter = new FlexDataHarmonyAdapter({ onHarmony, now: () => Date.now() })
+		const at = Date.now() + 100
+		adapter.feed(encodeFlexKeySignatureUmp({ root: 2, scale: 2774 }), at)
+		adapter.feed(encodeFlexChordNameUmp({ root: 9, chord: 530 }), at)
+		vi.advanceTimersByTime(100)
+		expect(onHarmony).toHaveBeenCalledTimes(1)
+		expect(adapter.state).toMatchObject({ root: 2, scale: 2774, chordRoot: 9, chord: 530 })
+		adapter.destroy()
+	})
+	it("keeps cached expression before note-on and transfers it to new chord tones", () => {
+		const track = new TransformerChordTrack({
+			source: "live",
+			mapping: "white-keys",
+			repitch: 1
+		})
+		const pressure = umpToCommand([0x40a04000, 0x12345678], 0, "keys")!
+		expect(track.transform([pressure], clock())).toEqual([])
+		const on = umpToCommand([0x40904000, 0x91230000], 0, "keys")!
+		const result = track.transform([on], clock()).map(commandToUmp)
+		expect(result).toEqual([
+			[0x40a04300, 0x12345678],
+			[0x40904300, 0x91230000]
+		])
+		track.setHarmony({ root: 0, scale: 2741, chord: 529, chordRoot: 9 })
+		expect(track.tick(1, clock(1)).map(commandToUmp)).toEqual([
+			[0x40804300, 0],
+			[0x40a04500, 0x12345678],
+			[0x40904500, 0x91230000]
+		])
+		const pedalOn = umpToCommand([0x40b04000, 0xffffffff], 1, "keys")!
+		expect(commandToUmp(track.transform([pedalOn], clock(1))[0])).toEqual([
+			0x40b04000, 0xffffffff
+		])
+		const off = umpToCommand([0x40804000, 0x54320000], 2, "keys")!
+		expect(commandToUmp(track.transform([off], clock(2))[0])).toEqual([0x40804500, 0x54320000])
+		const pedalOff = umpToCommand([0x40b04000, 0], 3, "keys")!
+		expect(commandToUmp(track.transform([pedalOff], clock(3))[0])).toEqual([0x40b04000, 0])
+	})
+	it("releases only its own harmony ownership when another controller takes over", () => {
+		const manager = new IOChainManager({ timer: clock(), outputMixer: {} as GainNode })
+		try {
+			expect(manager.claimHarmonySource("flex")).toBe(true)
+			expect(manager.claimHarmonySource("other")).toBe(false)
+			manager.externallyControlledHarmony = true // Room conductor takes over.
+			manager.releaseHarmonySource("flex")
+			expect(manager.externallyControlledHarmony).toBe(true)
+			manager.externallyControlledHarmony = false
+			expect(manager.externallyControlledHarmony).toBe(false)
+		} finally {
+			manager.destroy()
+		}
 	})
 })

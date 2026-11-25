@@ -106,8 +106,18 @@ export function mountHarmonyWorkspace(
 			})
 		}
 	})
-	const chordRoot = selectField(live, "Chord root", NOTE_NAMES.map((name, root) => ({ name, value: String(root) })))
-	onChange(chordRoot, () => manager.setHarmony({ ...manager.harmony, chordRoot: Number(chordRoot.value), chordSymbol: undefined }))
+	const chordRoot = selectField(
+		live,
+		"Chord root",
+		NOTE_NAMES.map((name, root) => ({ name, value: String(root) }))
+	)
+	onChange(chordRoot, () =>
+		manager.setHarmony({
+			...manager.harmony,
+			chordRoot: Number(chordRoot.value),
+			chordSymbol: undefined
+		})
+	)
 	const pitchControls = element("div")
 	live.append(pitchControls)
 	live.append(
@@ -613,7 +623,9 @@ export function mountHarmonyWorkspace(
 					() =>
 						manager.setHarmony({
 							...manager.harmony,
-							...(kind === "scale" ? { keySignature: undefined } : { chordSymbol: undefined }),
+							...(kind === "scale"
+								? { keySignature: undefined }
+								: { chordSymbol: undefined }),
 							[kind]: manager.harmony[kind] ^ (1 << pitch)
 						}),
 					status

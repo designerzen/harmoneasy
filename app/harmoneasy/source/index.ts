@@ -574,6 +574,7 @@ const initialiseApplication = async (
 		canFollow: () => clockSource?.source === "internal" && !netronomeLink?.isFollower,
 		setTempo: (bpm, swing) => {
 			timer.BPM = bpm
+			ioManager.notifyTempoChanged()
 			ui.setTempo(bpm)
 			state.set("tempo", bpm)
 			if (swing !== undefined) {
@@ -636,6 +637,7 @@ const onTick = (values: Record<string, any>) => {
 		grid: false
 	}
 	const now = timer.now
+	const musicalTiming = ioManager.musicalTiming
 	if (clockSource?.source !== "internal" || netronomeLink?.isFollower) {
 		ui.setTempo(Math.round(timer.BPM * 100) / 100)
 	}
@@ -648,17 +650,29 @@ const onTick = (values: Record<string, any>) => {
 	// The timer wraps divisions once per quarter note; its bar counter counts beats.
 	if (divisionsElapsed === 0) {
 		const beatIndex = barsElapsed * bars + bar
-		const signature = ioManager.musicalTiming.timeSignature
-		const beatsPerBar = signature ? signature.numerator * 32 / signature.denominator / signature.thirtySecondNotes : timer.syncOptions.beatsPerBar ?? 4
+		const signature = musicalTiming.timeSignature
+		const beatsPerBar = signature
+			? (signature.numerator * 32) / signature.denominator / signature.thirtySecondNotes
+			: (timer.syncOptions.beatsPerBar ?? 4)
 		focusStage?.pulseBeat(beatIndex, beatsPerBar)
-		if (metronomeEnabled && !ioManager.musicalTiming.timeSignature && !ioManager.musicalTiming.metronome) {
+		if (metronomeEnabled && !musicalTiming.timeSignature && !musicalTiming.metronome) {
 			metronome?.playBeat(beatIndex, beatsPerBar, values.scheduledContextTimeSeconds)
 		}
 	}
-	if (metronomeEnabled && (ioManager.musicalTiming.timeSignature || ioManager.musicalTiming.metronome)) {
+	if (metronomeEnabled && (musicalTiming.timeSignature || musicalTiming.metronome)) {
 		const quarter = barsElapsed * bars + bar + divisionsElapsed / timer.divisions
-		for (const click of harmonyMetronomeClicks(quarter, quarter + 1 / timer.divisions, ioManager.musicalTiming, timer.syncOptions.beatsPerBar ?? 4)) {
-			metronome?.playMusicalClick(click.accent, click.secondary, (values.scheduledContextTimeSeconds ?? bus.audioContext.currentTime) + (click.at - quarter) * 60 / timer.BPM)
+		for (const click of harmonyMetronomeClicks(
+			quarter,
+			quarter + 1 / timer.divisions,
+			musicalTiming,
+			timer.syncOptions.beatsPerBar ?? 4
+		)) {
+			metronome?.playMusicalClick(
+				click.accent,
+				click.secondary,
+				(values.scheduledContextTimeSeconds ?? bus.audioContext.currentTime) +
+					((click.at - quarter) * 60) / timer.BPM
+			)
 		}
 	}
 	musicalFeatureControls?.tick(barsElapsed * bars + bar + divisionsElapsed / timer.divisions)

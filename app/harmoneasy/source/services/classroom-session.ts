@@ -17,11 +17,7 @@ import { DRUM_ACCOMPANIMENT, MOOG, TB303 } from "audiobus/io/outputs/output-type
 import { ID_CHORD_TRACK } from "audiobus/io/transformers/transformer-chord-track"
 import { ID_QUANTISE } from "audiobus/io/transformers/transformer-quantise"
 import { mapPitchSet, mod12, pitchClasses, quantisePitchSet } from "audiobus/tuning/pitch-class-set"
-import {
-	ACCESS_PROFILE_PARAM,
-	encodeAccessProfile,
-	type AccessProfile
-} from "./access-profile"
+import { ACCESS_PROFILE_PARAM, encodeAccessProfile, type AccessProfile } from "./access-profile"
 import { createPartsUrl } from "./parts-url"
 import { roomName } from "./room-url"
 
@@ -718,13 +714,15 @@ export class ClassroomSession extends EventTarget {
 	}
 
 	/** Build a validated multi-track SongSource with one named track per seat. */
-	buildJamSong(options: {
-		name?: string
-		bpm?: number
-		numerator?: number
-		denominator?: number
-		now?: number
-	} = {}): SongSource {
+	buildJamSong(
+		options: {
+			name?: string
+			bpm?: number
+			numerator?: number
+			denominator?: number
+			now?: number
+		} = {}
+	): SongSource {
 		const bpm =
 			Number.isFinite(options.bpm) && options.bpm! >= 10 && options.bpm! <= 303
 				? options.bpm!
@@ -759,7 +757,12 @@ export class ClassroomSession extends EventTarget {
 			if (isRhythm) {
 				return 10
 			}
-			if (preferred >= 1 && preferred <= 16 && preferred !== 10 && !usedChannels.has(preferred)) {
+			if (
+				preferred >= 1 &&
+				preferred <= 16 &&
+				preferred !== 10 &&
+				!usedChannels.has(preferred)
+			) {
 				usedChannels.add(preferred)
 				return preferred
 			}

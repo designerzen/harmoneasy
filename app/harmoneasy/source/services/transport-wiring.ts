@@ -18,8 +18,7 @@ export interface TransportWiringOptions {
 
 /** Parse persisted volume percent safely, preserving explicit 0%. */
 export function parseInitialVolumePercent(volumeState: unknown, fallback = 50): number {
-	const parsed =
-		volumeState != null && volumeState !== "" ? parseFloat(String(volumeState)) : NaN
+	const parsed = volumeState != null && volumeState !== "" ? parseFloat(String(volumeState)) : NaN
 	return Number.isFinite(parsed) ? parsed : fallback
 }
 
@@ -60,6 +59,7 @@ export function wireFrontEndControls({
 
 	frontEnd.whenTempoChangesRun((tempo: number) => {
 		timer.BPM = tempo
+		getIOManager()?.notifyTempoChanged()
 		getNetronomeLink()?.tempoChanged()
 		state.set("tempo", tempo)
 	})
@@ -73,6 +73,7 @@ export function wireFrontEndControls({
 	frontEnd.whenTempoUpRequestedRun(() => {
 		const newTempo = Math.min(303, timer.BPM + 1)
 		timer.BPM = newTempo
+		getIOManager()?.notifyTempoChanged()
 		getNetronomeLink()?.tempoChanged()
 		frontEnd.setTempo(newTempo)
 		state.set("tempo", newTempo)
@@ -81,6 +82,7 @@ export function wireFrontEndControls({
 	frontEnd.whenTempoDownRequestedRun(() => {
 		const newTempo = Math.max(10, timer.BPM - 1)
 		timer.BPM = newTempo
+		getIOManager()?.notifyTempoChanged()
 		getNetronomeLink()?.tempoChanged()
 		frontEnd.setTempo(newTempo)
 		state.set("tempo", newTempo)
