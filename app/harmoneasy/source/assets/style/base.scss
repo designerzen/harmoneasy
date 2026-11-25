@@ -10,6 +10,9 @@ html {
 	top: -4rem;
 	left: 0.75rem;
 	z-index: 10000;
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--control-height);
 	padding: 0.5rem 1rem;
 	border: 2px solid var(--focus-ring);
 	border-radius: var(--radius-sm);

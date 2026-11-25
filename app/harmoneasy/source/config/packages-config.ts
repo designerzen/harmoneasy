@@ -25,6 +25,13 @@ export const PACKAGES: PackageInfo[] = [
 		repo: "https://github.com/designerzen/audiobus.git"
 	},
 	{
+		name: "audiobus-input-composer",
+		version: "0.1.0",
+		description:
+			"A theory-guided symbolic music composer and Plutchik web component for AudioBus",
+		repo: "https://github.com/designerzen/audiobus-input-composer.git"
+	},
+	{
 		name: "audiotool",
 		version: "0.0.11",
 		description: "AudioTool SDK integration for HarmonEasy",

@@ -68,8 +68,7 @@ export function createSurfaceViewport(
 		showPads()
 	)
 	views.append(controlsButton, padsButton)
-	const exit = button("", () => close(), "surface-viewport-exit")
-	exit.innerHTML = `${icon("M6 6l12 12M18 6 6 18")}<span>Exit</span>`
+	const exit = button("", () => close(), "surface-viewport-exit close-icon")
 	exit.title = "Return to the workspace (Esc)"
 	exit.setAttribute("aria-label", "Exit fullscreen view")
 	header.append(views, toolbar, exit)

@@ -1,13 +1,19 @@
 // @vitest-environment happy-dom
 import { expect, it, vi } from "vitest"
 import { directDescriptor, widgetChoices } from "control-surface/model"
-import { createDomControl } from "control-surface/dom"
+import { createDomControl, createDomGui } from "control-surface/dom"
 import { EVENT_KEY_DOWN } from "../../../packages/control-surface/src/events"
 import type { ControlBinding, ControlDescriptor } from "control-surface/types"
 import { createRequire } from "node:module"
 import { resolve } from "node:path"
 import { TransformerMIDIFilePlayer } from "audiobus/io/transformers/transformer-midi-file-player"
-import { componentBindings, subscribeControlSchema } from "audiobus/io/component-ui"
+import {
+	componentBindings,
+	fieldsDescriptor,
+	subscribeControlSchema
+} from "audiobus/io/component-ui"
+import { TransformerChordifier } from "audiobus/io/transformers/transformer-chordifier"
+import { EVENT_INPUT } from "../../../packages/audiobus/events/event-constants"
 
 const descriptor: ControlDescriptor = {
 	id: "channel",
@@ -23,6 +29,70 @@ const binding = (d: ControlDescriptor): ControlBinding => ({
 	descriptor: d,
 	read: () => 1,
 	write: vi.fn()
+})
+
+it("edits transformer numbers by dragging or tapping within their original bounds", async () => {
+	const transformer = new TransformerChordifier(),
+		bindings = await componentBindings(transformer, "chordifier"),
+		gui = createDomGui(bindings)
+	try {
+		await vi.waitFor(() => {
+			expect(gui.element.querySelector<HTMLInputElement>('input[type="range"]')?.value).toBe(
+				"3"
+			)
+		})
+		const control = gui.element.querySelector<HTMLElement>('[data-control-id="simultaneous"]')!,
+			slider = control.querySelector<HTMLInputElement>('input[type="range"]')!,
+			decrease = control.querySelector<HTMLButtonElement>(
+				'[aria-label="Decrease Notes per chord"]'
+			)!,
+			increase = control.querySelector<HTMLButtonElement>(
+				'[aria-label="Increase Notes per chord"]'
+			)!
+		expect(control.querySelector('input[type="number"], input[type="radio"]')).toBeNull()
+		expect([slider.min, slider.max, slider.step]).toEqual(["1", "8", "1"])
+		increase.click()
+		await vi.waitFor(() => expect(transformer.options.simultaneous).toBe(4))
+		decrease.click()
+		await vi.waitFor(() => expect(transformer.options.simultaneous).toBe(3))
+		slider.value = "8"
+		slider.dispatchEvent(new Event(EVENT_INPUT, { bubbles: true }))
+		await vi.waitFor(() => expect(transformer.options.simultaneous).toBe(8))
+		expect(increase.disabled).toBe(true)
+		transformer.setConfig("simultaneous", 1)
+		await vi.waitFor(() => expect(slider.value).toBe("1"))
+		expect(decrease.disabled).toBe(true)
+		expect(control.querySelector("output")!.value).toBe("1")
+	} finally {
+		gui.destroy()
+		transformer.destroy()
+	}
+})
+
+it("preserves fractional steps and keeps disabled or readonly sliders inert", () => {
+	const descriptor = fieldsDescriptor([
+		{ name: "amount", type: "number", min: 0.1, max: 2, step: 0.1, default: 0.3 }
+	]).controls[0]
+	for (const unavailable of [{}, { disabled: true }, { readOnly: true }]) {
+		const apply = vi.fn(),
+			control = createDomControl(binding({ ...descriptor, ...unavailable }), apply)
+		try {
+			control.update(0.3)
+			const increase = control.element.querySelector<HTMLButtonElement>(
+				'[aria-label="Increase Amount"]'
+			)!
+			increase.click()
+			if ("disabled" in unavailable || "readOnly" in unavailable) {
+				expect(apply).not.toHaveBeenCalled()
+			} else {
+				expect(apply).toHaveBeenLastCalledWith(0.4)
+				increase.click()
+				expect(apply).toHaveBeenLastCalledWith(0.5)
+			}
+		} finally {
+			control.destroy?.()
+		}
+	}
 })
 
 it("replaces numeric editors with direct choices or sliders, preserving explicit values and bounds", () => {

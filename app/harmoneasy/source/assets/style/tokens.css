@@ -135,7 +135,8 @@
 	--gap: 0.75rem;
 	--pad: 1rem;
 	--border: 1px solid var(--col-line);
-	--control-height: 36px;
+	/* WCAG target size: no interactive control is smaller than 44px. */
+	--control-height: 44px;
 	--focus-ring-width: 2px;
 	--focus-ring-offset: 2px;
 	--stage-pad-min-size: 64px;
@@ -167,11 +168,6 @@
 @media (prefers-color-scheme: dark) {
 	:root {
 		--dark: 1;
-	}
-}
-@media (pointer: coarse) {
-	:root {
-		--control-height: 44px;
 	}
 }
 :root[data-theme-mode="light"] {

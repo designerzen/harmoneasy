@@ -524,12 +524,9 @@ body:has(dialog:modal) {
 			color: var(--col-fg);
 		}
 		#dismiss-start-room {
-			color: inherit;
+			--close-bg: var(--col-accent);
+			--close-fg: var(--col-on-accent);
 			align-self: start;
-			width: 42px;
-			padding: 0;
-			font-size: var(--text-2xl);
-			line-height: 1;
 		}
 		@media (max-width: 680px) {
 			grid-template-columns: minmax(0, 1fr) auto;

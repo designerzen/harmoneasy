@@ -19,6 +19,7 @@ import { mkdir } from "node:fs/promises"
 import { fileURLToPath } from "url"
 import { createRequire } from "module"
 import { loadElectronModule } from "./electron-loader.js"
+import { setupAutoUpdater } from "./auto-updater.js"
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -37,32 +38,6 @@ let SocketServer = null
 let mainWindow
 let socketServer
 let createMenuTemplate = null
-
-function setupAutoUpdater() {
-	// Only check for updates in production (packaged app)
-	if (!app.isPackaged) {
-		console.log("Auto-updater disabled in development mode")
-		return
-	}
-
-	try {
-		const updaterModule = require("update-electron-app")
-		const updateElectronApp =
-			updaterModule.updateElectronApp ?? updaterModule.default ?? updaterModule
-		if (typeof updateElectronApp !== "function") {
-			console.warn("Auto-updater module did not export a callable function")
-			return
-		}
-		// Uses official Electron update service or Hazel/custom server
-		// Checks for updates at app startup, then every 10 minutes
-		// Automatically handles dialog and installation
-		updateElectronApp({
-			repo: "designerzen/harmoneasy"
-		})
-	} catch (error) {
-		console.error("Failed to setup auto-updater:", error)
-	}
-}
 
 async function initializeSocketServer() {
 	for (const modulePath of [
@@ -123,7 +98,9 @@ function createWindow() {
 				return
 			}
 			devLoadRetries++
-			console.log(`Dev server not ready, retrying in 1s (${devLoadRetries}/${maxDevLoadRetries})...`)
+			console.log(
+				`Dev server not ready, retrying in 1s (${devLoadRetries}/${maxDevLoadRetries})...`
+			)
 			setTimeout(() => {
 				if (mainWindow && !mainWindow.isDestroyed()) {
 					mainWindow.loadURL(devServerUrl)
@@ -237,16 +214,8 @@ app.on("ready", async () => {
 
 	await initializeSocketServer()
 
-	setupAutoUpdater()
-
 	// Add user permissions
-	const allowedPermissions = new Set([
-		"media",
-		"audioCapture",
-		"microphone",
-		"midi",
-		"midiSysex"
-	])
+	const allowedPermissions = new Set(["media", "audioCapture", "microphone", "midi", "midiSysex"])
 	session.defaultSession.setPermissionCheckHandler((_webContents, permission) => {
 		return allowedPermissions.has(permission)
 	})
@@ -277,6 +246,7 @@ app.on("ready", async () => {
 	}
 
 	focusOrCreateMainWindow()
+	setupAutoUpdater({ app, BrowserWindow, ipcMain, getMainWindow: () => mainWindow })
 
 	// Start socket server if available
 	if (SocketServer) {

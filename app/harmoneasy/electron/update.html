@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta
+			http-equiv="Content-Security-Policy"
+			content="default-src 'none'; script-src 'self'; style-src 'self'; base-uri 'none'; form-action 'none'"
+		/>
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Harmoneasy update</title>
+		<link rel="stylesheet" href="update.css" />
+	</head>
+	<body>
+		<main aria-labelledby="title">
+			<div id="activity" aria-hidden="true"></div>
+			<h1 id="title">Harmoneasy update</h1>
+			<p id="message" role="status" aria-live="polite"></p>
+			<progress id="progress" max="100" aria-label="Update download" hidden></progress>
+			<p id="detail"></p>
+			<footer>
+				<button id="later" type="button">Later</button>
+				<button id="primary" type="button" autofocus>Update now</button>
+			</footer>
+		</main>
+		<script src="update-renderer.js"></script>
+	</body>
+</html>

@@ -750,6 +750,13 @@
 		"url": "nodeca/argparse"
 	},
 	{
+		"name": "argparse",
+		"version": "2.0.1",
+		"authors": [],
+		"license": "Python-2.0",
+		"url": "nodeca/argparse"
+	},
+	{
 		"name": "array-flatten",
 		"version": "3.0.0",
 		"authors": ["Blake Embrey"],
@@ -873,6 +880,13 @@
 		"authors": [],
 		"license": "MIT",
 		"url": "LinusU/buffer-from"
+	},
+	{
+		"name": "builder-util-runtime",
+		"version": "9.7.0",
+		"authors": ["Vladimir Krivosheev"],
+		"license": "MIT",
+		"url": "https://github.com/electron-userland/electron-builder"
 	},
 	{
 		"name": "butterchurn",
@@ -1124,6 +1138,18 @@
 		"url": "https://d3js.org/d3-zoom/"
 	},
 	{
+		"name": "debug",
+		"version": "4.4.3",
+		"authors": [
+			"Josh Junon (https://github.com/qix-)",
+			"TJ Holowaychuk",
+			"Nathan Rajlich (http://n8.io)",
+			"Andrew Rhyne"
+		],
+		"license": "MIT",
+		"url": "git://github.com/debug-js/debug.git"
+	},
+	{
 		"name": "decamelize",
 		"version": "1.2.0",
 		"authors": ["Sindre Sorhus"],
@@ -1227,6 +1253,13 @@
 		"authors": ["Rick Waldron"],
 		"license": "MIT",
 		"url": "git+https://github.com/tc39/proposal-math-extensions.git"
+	},
+	{
+		"name": "electron-updater",
+		"version": "6.8.11",
+		"authors": ["Vladimir Krivosheev"],
+		"license": "MIT",
+		"url": "https://github.com/electron-userland/electron-builder"
 	},
 	{
 		"name": "emoji-regex",
@@ -1425,6 +1458,13 @@
 		"url": "git://github.com/form-data/form-data.git"
 	},
 	{
+		"name": "fs-extra",
+		"version": "10.1.0",
+		"authors": ["JP Richardson"],
+		"license": "MIT",
+		"url": "https://github.com/jprichardson/node-fs-extra"
+	},
+	{
 		"name": "function-bind",
 		"version": "1.1.2",
 		"authors": ["Raynos", "Jordan Harband"],
@@ -1453,13 +1493,6 @@
 		"url": "https://github.com/ljharb/get-proto#readme"
 	},
 	{
-		"name": "github-url-to-object",
-		"version": "4.0.6",
-		"authors": ["zeke"],
-		"license": "MIT",
-		"url": "https://github.com/zeke/github-url-to-object"
-	},
-	{
 		"name": "global-agent",
 		"version": "3.0.0",
 		"authors": ["Gajus Kuizinas"],
@@ -1479,6 +1512,13 @@
 		"authors": ["Jordan Harband"],
 		"license": "MIT",
 		"url": "https://github.com/ljharb/gopd#readme"
+	},
+	{
+		"name": "graceful-fs",
+		"version": "4.2.12",
+		"authors": [],
+		"license": "BlueOak-1.0.0",
+		"url": "https://github.com/isaacs/node-graceful-fs"
 	},
 	{
 		"name": "guid-typescript",
@@ -1589,13 +1629,6 @@
 		"url": "sindresorhus/is-fullwidth-code-point"
 	},
 	{
-		"name": "is-url",
-		"version": "1.2.4",
-		"authors": [],
-		"license": "MIT",
-		"url": "https://github.com/segmentio/is-url"
-	},
-	{
 		"name": "isarray",
 		"version": "0.0.1",
 		"authors": ["Julian Gruber"],
@@ -1638,11 +1671,30 @@
 		"url": "git://github.com/js-cookie/js-cookie.git"
 	},
 	{
+		"name": "js-yaml",
+		"version": "4.3.2",
+		"authors": [
+			"Vladimir Zapparov",
+			"Aleksey V Zapparov (http://www.ixti.net/)",
+			"Vitaly Puzrin (https://github.com/puzrin)",
+			"Martin Grenfell (http://got-ravings.blogspot.com)"
+		],
+		"license": "MIT",
+		"url": "nodeca/js-yaml"
+	},
+	{
 		"name": "json-stringify-safe",
 		"version": "5.0.1",
 		"authors": ["Isaac Z. Schlueter (http://blog.izs.me)", "Andri Möll (http://themoll.com)"],
 		"license": "ISC",
 		"url": "https://github.com/isaacs/json-stringify-safe"
+	},
+	{
+		"name": "jsonfile",
+		"version": "6.2.1",
+		"authors": ["JP Richardson"],
+		"license": "MIT",
+		"url": "git@github.com:jprichardson/node-jsonfile.git"
 	},
 	{
 		"name": "jszip",
@@ -1699,6 +1751,13 @@
 		"authors": ["Jon Schlinkert (https://github.com/jonschlinkert)"],
 		"license": "MIT",
 		"url": "https://github.com/jonschlinkert/lazy-cache"
+	},
+	{
+		"name": "lazy-val",
+		"version": "1.0.5",
+		"authors": ["Vladimir Krivosheev"],
+		"license": "MIT",
+		"url": "https://github.com/develar/lazy-val"
 	},
 	{
 		"name": "level",
@@ -1804,6 +1863,27 @@
 		"authors": [
 			"John-David Dalton (http://allyoucanleet.com/)",
 			"Blaine Bublitz (https://github.com/phated)",
+			"Mathias Bynens (https://mathiasbynens.be/)"
+		],
+		"license": "MIT",
+		"url": "https://lodash.com/"
+	},
+	{
+		"name": "lodash.escaperegexp",
+		"version": "4.1.2",
+		"authors": [
+			"John-David Dalton (http://allyoucanleet.com/)",
+			"Blaine Bublitz (https://github.com/phated)",
+			"Mathias Bynens (https://mathiasbynens.be/)"
+		],
+		"license": "MIT",
+		"url": "https://lodash.com/"
+	},
+	{
+		"name": "lodash.isequal",
+		"version": "4.5.0",
+		"authors": [
+			"John-David Dalton (http://allyoucanleet.com/)",
 			"Mathias Bynens (https://mathiasbynens.be/)"
 		],
 		"license": "MIT",
@@ -2307,6 +2387,13 @@
 		"url": "https://github.com/feross/safe-buffer"
 	},
 	{
+		"name": "sax",
+		"version": "1.6.1",
+		"authors": ["Isaac Z. Schlueter (http://blog.izs.me/)"],
+		"license": "BlueOak-1.0.0",
+		"url": "git+ssh://git@github.com/isaacs/sax-js.git"
+	},
+	{
 		"name": "scheduler",
 		"version": "0.28.0",
 		"authors": [],
@@ -2333,6 +2420,13 @@
 		"authors": ["David Bau"],
 		"license": "MIT",
 		"url": "http://davidbau.com/archives/2010/01/30/random_seeds_coded_hints_and_quintillions.html"
+	},
+	{
+		"name": "semver",
+		"version": "7.7.4",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/node-semver.git"
 	},
 	{
 		"name": "semver",
@@ -2768,6 +2862,13 @@
 		"url": "https://github.com/rvagg/through2.git"
 	},
 	{
+		"name": "tiny-typed-emitter",
+		"version": "2.1.0",
+		"authors": ["Zurab Benashvili"],
+		"license": "MIT",
+		"url": "https://github.com/binier/tiny-typed-emitter.git"
+	},
+	{
 		"name": "tonal",
 		"version": "2.2.2",
 		"authors": ["danigb"],
@@ -2959,11 +3060,11 @@
 		"url": "git://github.com/mikolalysenko/uniq.git"
 	},
 	{
-		"name": "update-electron-app",
-		"version": "3.3.0",
-		"authors": [],
+		"name": "universalify",
+		"version": "2.0.1",
+		"authors": ["Ryan Zimmerman"],
 		"license": "MIT",
-		"url": "https://github.com/electron/update-electron-app"
+		"url": "https://github.com/RyanZim/universalify#readme"
 	},
 	{
 		"name": "use-sync-external-store",

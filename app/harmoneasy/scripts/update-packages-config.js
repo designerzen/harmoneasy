@@ -19,6 +19,7 @@ const rootDir = path.resolve(__dirname, "../../..")
 const PACKAGES = [
 	{ name: "netronome", dir: "netronome" },
 	{ name: "audiobus", dir: "audiobus" },
+	{ name: "audiobus-input-composer", dir: "audiobus-input-composer" },
 	{ name: "audiotool", dir: "audiotool" },
 	{ name: "flodjs", dir: "flodjs" },
 	{ name: "midi-ble", dir: "midi-ble" },

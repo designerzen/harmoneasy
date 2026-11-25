@@ -1,3 +1,5 @@
+@use "./contrast" as *;
+
 // Default button: a quiet, bordered control. Variants change emphasis, never size.
 button {
 	box-sizing: border-box;
@@ -79,13 +81,19 @@ button[aria-pressed="true"] {
 	border-color: var(--col-accent);
 }
 
-// Icon-only close control shared by every dialog, tab and banner.
+// Icon-only close control shared by every dialog, panel, fullscreen view and banner.
+// Hosts on another background set --close-bg (and --close-fg when muted won't read).
 .btn-close,
 .close-icon {
+	--close-bg: var(--col-surface);
+	flex: none;
+	width: var(--control-height);
+	height: var(--control-height);
 	padding: 0;
-	background: transparent;
 	border-color: transparent;
-	color: var(--col-muted);
+	border-radius: var(--radius-sm);
+	background: transparent;
+	@include readable-text(var(--close-bg), var(--close-fg, var(--col-muted)));
 	&::before {
 		content: "\00d7" / "";
 		font-size: var(--text-xl);
@@ -93,9 +101,11 @@ button[aria-pressed="true"] {
 		line-height: 1;
 	}
 	&:hover:not(:disabled) {
-		background: var(--col-hover);
 		border-color: transparent;
-		color: var(--col-fg);
+		@include readable(
+			color-mix(in oklch, var(--col-fg) 12%, var(--close-bg)),
+			var(--close-fg, var(--col-fg))
+		);
 	}
 }
 

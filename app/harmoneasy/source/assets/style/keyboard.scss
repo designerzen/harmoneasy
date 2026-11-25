@@ -119,8 +119,8 @@
 		position: absolute;
 		bottom: 100%;
 		right: 0.5rem;
-		min-width: 44px;
-		min-height: 24px;
+		min-width: var(--control-height);
+		min-height: var(--control-height);
 		padding: 0;
 		border-bottom: 0;
 		border-radius: var(--radius-sm) var(--radius-sm) 0 0;

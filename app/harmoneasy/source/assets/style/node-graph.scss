@@ -2232,7 +2232,7 @@ dialog.add-output-dialog {
 		}
 	}
 	.preset-library-trigger {
-		min-height: 32px;
+		min-height: var(--control-height);
 		padding: 0.25rem 0.5rem;
 		font-size: var(--text-sm);
 		background: transparent;
@@ -2363,7 +2363,7 @@ dialog.add-output-dialog {
 	}
 	.preset-apply-button {
 		flex: 0 1 auto;
-		min-height: 40px;
+		min-height: var(--control-height);
 		padding-inline: 1.25rem;
 		background: var(--preset-accent);
 		color: var(--col-on-accent);
@@ -2691,10 +2691,7 @@ body:has(.preset-browser[open]) {
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			width: 44px;
-			min-height: 44px;
 			margin: 0;
-			padding: 0.5rem;
 			border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 			background: var(--col-surface);
 		}
@@ -2844,7 +2841,7 @@ body:has(.preset-browser[open]) {
 .search-field {
 	position: relative;
 	input[type="search"] {
-		padding-inline-end: 2.75rem;
+		padding-inline-end: calc(var(--control-height) + 0.5rem);
 		&::-webkit-search-cancel-button {
 			appearance: none;
 		}
@@ -2856,9 +2853,9 @@ body:has(.preset-browser[open]) {
 		transform: translateY(-50%);
 		display: grid;
 		place-items: center;
-		width: 36px;
-		height: 36px;
-		min-height: 36px;
+		width: var(--control-height);
+		height: var(--control-height);
+		min-height: var(--control-height);
 		padding: 0;
 		border: 0;
 		border-radius: var(--radius-sm);
@@ -3538,8 +3535,7 @@ dialog.add-output-dialog {
 			}
 		}
 
-		.surface-viewport-view,
-		.surface-viewport-exit {
+		.surface-viewport-view {
 			display: inline-flex;
 			align-items: center;
 			gap: 0.5rem;
@@ -3592,13 +3588,6 @@ dialog.add-output-dialog {
 
 		.surface-viewport-exit {
 			margin-left: auto;
-			border: var(--border);
-			border-radius: var(--radius-md);
-			@include readable(var(--col-surface-raised));
-
-			&:hover {
-				@include readable(color-mix(in oklch, var(--col-fg) 9%, var(--col-surface-raised)));
-			}
 		}
 
 		.cs-toolbar {

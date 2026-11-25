@@ -1,0 +1,79 @@
+{
+	"format": "harmoneasy-preset",
+	"version": 1,
+	"name": "Emotion Composer",
+	"description": "An autonomous piano ensemble steered by the Plutchik emotion star and energy, following the shared transport.",
+	"clock": { "bpm": 104, "swing": 0, "divisions": 24, "bars": 8 },
+	"midiControls": { "enabled": true, "bindings": [] },
+	"workspace": {
+		"version": 2,
+		"activeChainId": "composer-chain",
+		"devices": [
+			{
+				"id": "composer",
+				"direction": "input",
+				"definition": {
+					"factory": "input",
+					"type": "composer",
+					"options": {
+						"composer": {
+							"seed": "first-light",
+							"emotion": "joy",
+							"intensity": 0.6666666666666666,
+							"energy": 0.5,
+							"algorithm": "markov",
+							"parts": ["melody", "bass", "harmony"]
+						}
+					}
+				}
+			},
+			{
+				"id": "synth",
+				"direction": "output",
+				"definition": {
+					"factory": "output",
+					"type": "rompler",
+					"options": { "preset": 0, "volume": 0.4, "release": 0.2 }
+				}
+			},
+			{
+				"id": "ui",
+				"direction": "output",
+				"definition": { "factory": "external", "type": "ui" }
+			}
+		],
+		"chains": [
+			{
+				"id": "composer-chain",
+				"options": {
+					"name": "Emotion Composer",
+					"active": true,
+					"controlSurfaces": [
+						{
+							"id": "composer-performance",
+							"name": "Emotion and energy",
+							"theme": "ice",
+							"connections": [],
+							"widgets": [],
+							"panels": ["composer", "synth"]
+						}
+					],
+					"mainSurfaceId": "composer-performance"
+				},
+				"inputs": ["composer"],
+				"outputs": ["synth", "ui"],
+				"transformers": "[]",
+				"disabledInputs": [],
+				"disabledOutputs": []
+			}
+		]
+	},
+	"catalogue": {
+		"id": "emotion-composer",
+		"category": "Sound explorations",
+		"kind": "workspace",
+		"order": 248,
+		"useCase": "Press the shared Play control, open Composer and select an emotion. Energy and generator changes apply at the next eight-bar phrase. Stop releases the ensemble; Finish phrase ends on a tonic cadence.",
+		"stepSummaries": ["Develop a seeded theme with melody, bass and chord accompaniment."]
+	}
+}
