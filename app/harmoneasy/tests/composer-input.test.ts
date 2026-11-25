@@ -186,9 +186,13 @@ describe("Composer input", () => {
 			now = timer.now = 0.1
 			manager.updateTime(now, 1)
 			await vi.waitFor(() => expect(panel.playing).toBe(true))
-			now = timer.now = 0.2
-			manager.updateTime(now, 2)
+			// Notes carry the genre's timing feel, so some arrive just after the downbeat and are
+			// queued asynchronously: keep the clock moving until every channel has been routed.
+			let step = 1
 			await vi.waitFor(() => {
+				step++
+				now = timer.now = step / 10
+				manager.updateTime(now, step)
 				const commands = output.sendCommand.mock.calls.map(([command]) => command)
 				for (const channel of [1, 2, 3, 10]) {
 					expect(commands.some((c) => c.type === NOTE_ON && c.channel === channel)).toBe(
