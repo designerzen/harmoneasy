@@ -56,16 +56,18 @@ export function createAboutDialog(root: Document) {
 		}
 		list.replaceChildren(fragment)
 	}
-	root.querySelectorAll<HTMLButtonElement>("[data-about]").forEach((logo) => {
-		logo.addEventListener(EVENT_CLICK, () => {
-			if (!dialog.open) {
-				dialog.showModal()
-			}
-			loaded ??= loadCredits().catch(() => {
-				root.querySelector("#about-credits")!.textContent =
-					"Credits could not be loaded. Close and reopen this dialog to retry."
-				loaded = undefined
-			})
+	const open = () => {
+		if (!dialog.open) {
+			dialog.showModal()
+		}
+		loaded ??= loadCredits().catch(() => {
+			root.querySelector("#about-credits")!.textContent =
+				"Credits could not be loaded. Close and reopen this dialog to retry."
+			loaded = undefined
 		})
+	}
+	root.querySelectorAll<HTMLButtonElement>("[data-about]").forEach((logo) => {
+		logo.addEventListener(EVENT_CLICK, open)
 	})
+	return { open }
 }

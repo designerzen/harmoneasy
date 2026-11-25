@@ -43,6 +43,13 @@
 			font-weight: 600;
 		}
 	}
+	> .help-menu > button {
+		padding-inline: 0.625rem;
+		white-space: nowrap;
+		&:hover {
+			background: var(--col-hover);
+		}
+	}
 	kbd {
 		margin-left: 0.25rem;
 		font-size: var(--text-xs);

@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, expect, it, vi } from "vitest"
 import InputProtocol from "audiobus/io/inputs/input-protocol"
-import { Peer, CommandRegistry, EMPTY_SCHEMA } from "audiobus/io/protocol-registry"
+import { Peer, CommandRegistry, EMPTY_SCHEMA, midiTransport } from "audiobus/io/protocol-registry"
 import { INPUT_EVENT, NOTE_ON, NOTE_OFF, CONTROL_CHANGE } from "audiobus/commands/commands"
 import { EVENT_MESSAGE } from "audiobus/events/event-constants"
 
@@ -199,5 +199,139 @@ it("requires the displayed pairing code before accepting MIDI, patches or reques
 		expect(input.pairingCode).toBeUndefined()
 		opener.close()
 		paired?.close()
+	}
+})
+/** A loopback MIDI port with named ports, as requestMIDIAccess would list it. */
+function loopbackAccess(name: string) {
+	const inputs = new Set<Set<(event: { data: Uint8Array }) => void>>()
+	const port = () => {
+		const listeners = new Set<(event: { data: Uint8Array }) => void>()
+		inputs.add(listeners)
+		return {
+			input: {
+				name,
+				addEventListener: (_type: string, fn: (event: { data: Uint8Array }) => void) =>
+					listeners.add(fn),
+				removeEventListener: (_type: string, fn: (event: { data: Uint8Array }) => void) =>
+					listeners.delete(fn)
+			},
+			output: {
+				name,
+				send: (data: ArrayLike<number>) => {
+					const bytes = Uint8Array.from(data)
+					queueMicrotask(() =>
+						inputs.forEach((each) => each.forEach((fn) => fn({ data: bytes })))
+					)
+				}
+			}
+		}
+	}
+	const access = () => {
+		const { input, output } = port()
+		return { inputs: new Map([["in", input]]), outputs: new Map([["out", output]]) }
+	}
+	return { port, access }
+}
+
+it("listens on an encrypted MIDI port for applications that cannot reach this window", async () => {
+	const registry = new CommandRegistry()
+	registry.register({
+		id: "test.name",
+		title: "Name",
+		description: "",
+		inputSchema: EMPTY_SCHEMA,
+		execute: () => "Harmoneasy"
+	})
+	const loopback = loopbackAccess("loopMIDI Port")
+	const requestMIDIAccess = vi.fn(async () => loopback.access())
+	const input = new InputProtocol({
+		registry,
+		acceptUnpaired: false,
+		midiPort: "loopMIDI Port",
+		midiRoom: 2,
+		midiSecret: "abcd-efgh-jklm",
+		requestMIDIAccess
+	})
+	const commands: any[] = []
+	input.addEventListener(INPUT_EVENT, (event) => commands.push((event as CustomEvent).detail))
+	const { input: portIn, output: portOut } = loopback.port()
+	const remoteOn = (secret: string) =>
+		new Peer(midiTransport(portIn, portOut, { room: 2, secret }), {
+			identity: { name: "Isolated application", version: "1" },
+			timeoutMs: 1500
+		})
+	const intruder = remoteOn("WRONG-SECRET")
+	const remote = remoteOn("ABCDEFGHJKLM")
+	try {
+		await vi.waitFor(() => expect(input.midiPortConnection).toBeDefined())
+		expect(requestMIDIAccess).toHaveBeenCalledWith({ sysex: true })
+		expect(await input.midiPortNames()).toEqual(["loopMIDI Port"])
+		await expect(intruder.connect()).rejects.toMatchObject({ code: "timeout" })
+		await remote.connect()
+		expect(await remote.call("test.name")).toBe("Harmoneasy")
+		remote.sendMidi([0x90, 60, 100])
+		await vi.waitFor(() => expect(commands.map((command) => command.type)).toEqual([NOTE_ON]))
+		await input.disconnect()
+		expect(input.midiPortConnection).toBeUndefined()
+		expect(commands.map((command) => command.type)).toEqual([NOTE_ON, NOTE_OFF])
+	} finally {
+		input.destroy()
+		remote.close()
+		intruder.close()
+	}
+})
+
+it("reports a missing MIDI port without stopping other connections", async () => {
+	const input = new InputProtocol({
+		midiPort: "Missing",
+		requestMIDIAccess: async () => loopbackAccess("Other").access(),
+		autoConnect: false
+	})
+	try {
+		await input.connect()
+		expect(input.isConnected).toBe(true)
+		expect(input.midiPortConnection).toBeUndefined()
+		const gui = await input.createGui()
+		expect(gui.textContent).toContain('MIDI port "Missing" was not found')
+	} finally {
+		input.destroy()
+	}
+})
+
+it("releases a MIDI port application's notes when another takes over, and shows passphrases as used", async () => {
+	const loopback = loopbackAccess("loopMIDI Port")
+	const input = new InputProtocol({
+		acceptUnpaired: false,
+		midiPort: "loopMIDI Port",
+		midiSecret: "it's fine, really!",
+		requestMIDIAccess: async () => loopback.access()
+	})
+	const commands: any[] = []
+	input.addEventListener(INPUT_EVENT, (event) => commands.push((event as CustomEvent).detail))
+	const remoteOn = () => {
+		const { input: portIn, output: portOut } = loopback.port()
+		return new Peer(midiTransport(portIn, portOut, { secret: "IT'S FINE, REALLY!" }), {
+			identity: { name: "Isolated application", version: "1" },
+			timeoutMs: 1500
+		})
+	}
+	const first = remoteOn()
+	let second: Peer | undefined
+	try {
+		await vi.waitFor(() => expect(input.midiPortConnection).toBeDefined())
+		const gui = await input.createGui()
+		expect(gui.textContent).toContain("IT'S-FINE-,REA-LLY!")
+		await first.connect()
+		first.sendMidi([0x90, 60, 100])
+		await vi.waitFor(() => expect(commands.map((command) => command.type)).toEqual([NOTE_ON]))
+		// The first application vanishes without a goodbye; its replacement connects.
+		first.close({ notify: false })
+		second = remoteOn()
+		await second.connect()
+		expect(commands.map((command) => command.type)).toEqual([NOTE_ON, NOTE_OFF])
+	} finally {
+		input.destroy()
+		first.close()
+		second?.close()
 	}
 })

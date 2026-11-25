@@ -10,6 +10,8 @@ import State from "./libs/state.ts"
 // Front End
 import UI from "./ui.ts"
 import { createAboutDialog } from "./services/about-dialog"
+import { createHelpMenu } from "./services/help-menu"
+import { createPluginGuide } from "./services/plugin-guide"
 import { createCommandPalette } from "./services/command-palette"
 import { registerInterfaceCommands } from "./services/interface-commands"
 import { registerApplicationCommands } from "./services/application-commands"
@@ -31,9 +33,9 @@ import { createSetupWizard } from "./services/setup-wizard"
 import { applySetup } from "./components/graph/saved-presets"
 import type { PresetSetup } from "audiobus/io/preset-library"
 import { createNetronomeLink } from "./services/netronome-link"
+import { mountTimingSettings } from "./services/timing-settings"
 import { readRoomUrl } from "./services/room-url"
 import { loadPresetPage, presetWorkspace } from "./services/preset-page"
-import { mountTimingSettings } from "./services/timing-settings"
 import { PLAY_REDIRECT_KEY, playRoute, playUrl } from "./services/play-page"
 import { restorePartsUrl } from "./services/parts-url"
 import { createMidiControlPanel } from "./services/midi-control-panel"
@@ -81,9 +83,9 @@ import "audiobus/models/audio-event.ts"
 import AudioEventRecorder from "audiobus/events/audio-event-recorder.ts"
 import IOChainManager from "audiobus/io/IO-chain-manager.ts"
 import OutputMetronome from "audiobus/io/outputs/output-metronome.ts"
+import { harmonyMetronomeClicks } from "audiobus/timing/harmony-metronome"
 import * as Commands from "audiobus/commands/commands"
 
-import { harmonyMetronomeClicks } from "audiobus/timing/harmony-metronome"
 // IAudioInputs
 import { ALL_KEYBOARD_NOTES } from "audiobus/io/inputs/input-onscreen-keyboard.ts"
 
@@ -110,7 +112,9 @@ let pendingAccessProfile: AccessProfile | undefined = readAccessProfileFromUrl(w
 if (pendingAccessProfile) {
 	accessibilityControls.update(extractAccessibilityPreferences(pendingAccessProfile))
 }
-createAboutDialog(document)
+const about = createAboutDialog(document)
+const pluginGuide = createPluginGuide(document)
+createHelpMenu(document, { openAbout: about.open, openPluginGuide: pluginGuide.open })
 createCommandPalette(document)
 registerInterfaceCommands(document)
 createRemoteControlButton(document)
@@ -651,16 +655,16 @@ const onTick = (values: Record<string, any>) => {
 			metronome?.playBeat(beatIndex, beatsPerBar, values.scheduledContextTimeSeconds)
 		}
 	}
-	musicalFeatureControls?.tick(barsElapsed * bars + bar + divisionsElapsed / timer.divisions)
-	const capturedEvents = ioManager.updateTime(now, divisionsElapsed, options)
-	if (capturedEvents.length) {
-		recorder.addEvents(capturedEvents)
 	if (metronomeEnabled && (ioManager.musicalTiming.timeSignature || ioManager.musicalTiming.metronome)) {
 		const quarter = barsElapsed * bars + bar + divisionsElapsed / timer.divisions
 		for (const click of harmonyMetronomeClicks(quarter, quarter + 1 / timer.divisions, ioManager.musicalTiming, timer.syncOptions.beatsPerBar ?? 4)) {
 			metronome?.playMusicalClick(click.accent, click.secondary, (values.scheduledContextTimeSeconds ?? bus.audioContext.currentTime) + (click.at - quarter) * 60 / timer.BPM)
 		}
 	}
+	musicalFeatureControls?.tick(barsElapsed * bars + bar + divisionsElapsed / timer.divisions)
+	const capturedEvents = ioManager.updateTime(now, divisionsElapsed, options)
+	if (capturedEvents.length) {
+		recorder.addEvents(capturedEvents)
 	}
 	const ticksPerStep = timer.divisions / 4
 	if (divisionsElapsed % ticksPerStep === 0) {

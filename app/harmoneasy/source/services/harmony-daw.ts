@@ -24,7 +24,7 @@ export function mountDawBridge(
 	host.append(
 		element(
 			"p",
-			"Run pnpm --dir app/harmoneasy harmony:bridge, then enable the bridge in the Harmoneasy Harmony DAW plugin. For Ableton, load the supplied Max MIDI Effect patch. Connect, then choose whether to send this session or recall the DAW’s saved harmony."
+			"Run pnpm --dir app/harmoneasy harmony:bridge, then enable the bridge in the Harmoneasy Harmony DAW plugin. For Ableton, load the supplied Max MIDI Effect patch. Connect, then choose whether to send this session or recall the DAW’s saved harmony. Help → DAW plugin guide explains how to install and set it up."
 		),
 		element(
 			"p",

@@ -1,0 +1,75 @@
+name: Build Harmony DAW plugin
+
+# Builds and tests the Harmoneasy Harmony VST3. Pushes to main replace the ZIP on the rolling
+# "harmony-plugin" pre-release, which every host (Pages, Cloudflare, Electron) links to.
+on:
+    push:
+        branches: [main]
+        paths:
+            - "native/harmony-plugin/**"
+            - ".github/workflows/harmony-plugin.yml"
+    pull_request:
+        branches: [main]
+        paths:
+            - "native/harmony-plugin/**"
+            - ".github/workflows/harmony-plugin.yml"
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: harmony-plugin-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    windows:
+        runs-on: windows-2022
+        timeout-minutes: 45
+        steps:
+            - uses: actions/checkout@v7.0.1
+
+            - name: Configure
+              run: cmake -S native/harmony-plugin -B native/harmony-plugin/build
+
+            - name: Build
+              run: cmake --build native/harmony-plugin/build --config Release --parallel 4
+
+            - name: Test
+              run: ctest --test-dir native/harmony-plugin/build -C Release --output-on-failure
+
+            - name: Package VST3
+              shell: pwsh
+              run: |
+                  $bundle = "native/harmony-plugin/build/HarmoneasyHarmony_artefacts/Release/VST3/Harmoneasy Harmony.vst3"
+                  if (-not (Test-Path $bundle)) { throw "VST3 bundle not found at $bundle" }
+                  Compress-Archive -Path $bundle -DestinationPath Harmoneasy-Harmony-Windows-VST3.zip
+
+            - uses: actions/upload-artifact@v7.0.1
+              with:
+                  name: harmony-plugin-windows
+                  path: Harmoneasy-Harmony-Windows-VST3.zip
+                  if-no-files-found: error
+
+    publish:
+        needs: windows
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        runs-on: ubuntu-24.04
+        permissions:
+            contents: write
+        steps:
+            - uses: actions/download-artifact@v8.0.1
+              with:
+                  name: harmony-plugin-windows
+
+            # A pre-release, so it never becomes the "latest" release the Electron updater reads.
+            - name: Replace the download on the rolling release
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  GH_REPO: ${{ github.repository }}
+              run: |
+                  gh release view harmony-plugin >/dev/null 2>&1 ||
+                    gh release create harmony-plugin --prerelease --target "$GITHUB_SHA" \
+                      --title "Harmoneasy Harmony DAW plugin" \
+                      --notes "Built automatically from main. Extract the ZIP into your VST3 folder."
+                  gh release upload harmony-plugin Harmoneasy-Harmony-Windows-VST3.zip --clobber

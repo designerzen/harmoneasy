@@ -296,6 +296,20 @@ console.log(await input.connection!.list())
 input.destroy()
 ```
 
+## Connect isolated applications through a MIDI port
+
+Applications that are cross-origin isolated for `SharedArrayBuffer`, such as OpenDAW, cannot reach another site's popup or opener, so window connections fail between them and Harmoneasy. A loopback MIDI port connects them instead: loopMIDI on Windows, the IAC Driver on macOS, or `snd-virmidi` on Linux.
+
+1. In the Protocol Input, expand **Advanced connection settings**, press **Find MIDI ports** and choose the loopback port. Allow MIDI with SysEx when the browser asks.
+2. Keep the generated **Secret**, or press **New secret**, then press **Listen on this port**.
+3. In the other application, open the same port and room with the same secret: `midiTransport(input, output, { room, secret })` from `audiobus-protocol`.
+
+With a secret, everything on the port is encrypted and authenticated, and the Input only hears an application that proves it knows the secret. Without one, any software using the port can read and send, so the status warns about it. Window connections keep working alongside the port. The port, room and secret are saved with the project, so it listens again after a reload; press **New secret** and then **Listen on this port** before sharing a project. Anything that can write to the port can still disrupt the connection, though not read or forge it. See [secure channels](https://github.com/designerzen/audiobus-protocol#secure-channels-for-isolated-apps) for how it works and its limits.
+
+```ts
+const input = new InputProtocol({ midiPort: "loopMIDI Port", midiRoom: 0, midiSecret: "ABCD-EFGH-JKLM" })
+```
+
 ## Send to another application (Protocol Output)
 
 The **audioBus Protocol** output sends a chain's MIDI to another application. You can pair it from its panel (destination URL, **Open and pair destination**, pairing code, **Connect**) or in code:

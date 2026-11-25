@@ -983,20 +983,25 @@
 					</nav>
 				</section>
 				<section class="about-community" aria-labelledby="about-downloads-title">
-					<h3 id="about-downloads-title">Harmoneasy Harmony plugin</h3>
+					<h3 id="about-downloads-title">Harmoneasy Harmony DAW plugin</h3>
 					<p>
-						Follow your session’s scale or chord inside your DAW, with automation and
-						harmony recall.
+						A MIDI effect that keeps a DAW track in your session’s scale or chord. It
+						can also play the track through HarmonEasy and follow the DAW’s tempo.
 					</p>
-					<nav class="about-links" aria-label="Plugin downloads">
-						<a href="%BASE_URL%downloads/Harmoneasy-Harmony-Windows-VST3.zip" download>
-							Download Windows VST3 (64-bit ZIP)
+					<nav class="about-links" aria-label="DAW plugin">
+						<button type="button" class="secondary" data-plugin-guide>
+							How to install and use it
+						</button>
+						<a
+							href="https://github.com/designerzen/harmoneasy/releases/download/harmony-plugin/Harmoneasy-Harmony-Windows-VST3.zip"
+							target="_blank"
+							rel="noopener noreferrer"
+						>
+							Download Windows VST3 (64-bit ZIP)<span class="sr-only">
+								(opens in a new tab)</span
+							>
 						</a>
 					</nav>
-					<p>
-						Extract the ZIP into your VST3 plugin folder, then rescan plugins in your
-						DAW.
-					</p>
 				</section>
 				<section class="about-community" aria-labelledby="about-community-title">
 					<h3 id="about-community-title">Made possible by a community</h3>
@@ -1053,6 +1058,207 @@
 					<span>Awesomething<span class="sr-only"> (opens in a new tab)</span></span>
 				</a>
 			</footer>
+		</dialog>
+
+		<dialog id="plugin-dialog" closedby="any" aria-labelledby="plugin-title">
+			<header>
+				<span class="about-label">DAW plugin</span>
+				<form method="dialog">
+					<button class="close-icon" type="submit" autofocus aria-label="Close"></button>
+				</form>
+			</header>
+			<div
+				class="about-content selectable"
+				tabindex="0"
+				role="region"
+				aria-label="DAW plugin guide"
+			>
+				<section class="about-intro" aria-labelledby="plugin-title">
+					<div class="about-identity">
+						<img
+							src="/source/assets/logos/harmoneasy.svg"
+							alt=""
+							width="56"
+							height="56"
+						/>
+						<div>
+							<h2 id="plugin-title">Harmoneasy Harmony</h2>
+							<p class="plugin-kind">MIDI effect plugin for your DAW</p>
+						</div>
+					</div>
+					<p class="about-description">
+						Put it on a MIDI track, before the instrument. It keeps the track’s notes in
+						your session’s scale or chord and saves that harmony with your DAW project.
+						Connected to HarmonEasy, it can also play the track through a HarmonEasy
+						chain and send the DAW’s tempo and transport to HarmonEasy.
+					</p>
+					<nav class="about-links" aria-label="Plugin actions">
+						<a
+							href="https://github.com/designerzen/harmoneasy/releases/download/harmony-plugin/Harmoneasy-Harmony-Windows-VST3.zip"
+							target="_blank"
+							rel="noopener noreferrer"
+						>
+							Download Windows VST3 (64-bit ZIP)<span class="sr-only">
+								(opens in a new tab)</span
+							>
+						</a>
+						<button type="button" id="plugin-open-daw" class="secondary">
+							Open DAW connection
+						</button>
+					</nav>
+					<p id="plugin-open-daw-hint" class="plugin-hint" hidden>
+						Start a session to open the DAW connection.
+					</p>
+				</section>
+
+				<section class="about-community" aria-labelledby="plugin-works-title">
+					<h3 id="plugin-works-title">What it works on</h3>
+					<ul class="plugin-list">
+						<li><strong>Windows:</strong> VST3, 64-bit. Download the ZIP above.</li>
+						<li>
+							<strong>macOS:</strong> VST3 and Audio Unit MIDI effect, built from the
+							source code with <code>pnpm build:harmony-plugin</code>.
+						</li>
+						<li>
+							<strong>DAWs:</strong> any DAW that can host a VST3 or Audio Unit MIDI
+							effect and pass its MIDI on to an instrument.
+						</li>
+						<li>
+							<strong>Ableton Live:</strong> Live can’t host MIDI effect plugins. Use
+							the Max for Live patch in <code>native/ableton</code> to follow Live’s
+							scale instead.
+						</li>
+					</ul>
+				</section>
+
+				<section class="plugin-step" aria-labelledby="plugin-install-title">
+					<h3 id="plugin-install-title">Install</h3>
+					<ol>
+						<li>Download the ZIP and extract it.</li>
+						<li>
+							Copy <code>Harmoneasy Harmony.vst3</code> to your VST3 folder:
+							<code>C:\Program Files\Common Files\VST3</code> on Windows, or
+							<code>~/Library/Audio/Plug-Ins/VST3</code> on macOS.
+						</li>
+						<li>Rescan plugins in your DAW.</li>
+						<li>
+							Add “Harmoneasy Harmony” to a MIDI or instrument track as a MIDI effect,
+							before the instrument.
+						</li>
+					</ol>
+				</section>
+
+				<section class="plugin-step" aria-labelledby="plugin-alone-title">
+					<h3 id="plugin-alone-title">Use it on its own</h3>
+					<dl>
+						<dt>Follow</dt>
+						<dd>
+							Pass through, Scale (move notes into the scale) or Chord (move notes
+							onto the chord).
+						</dd>
+						<dt>Tonic, Scale mask, Chord mask</dt>
+						<dd>
+							The key and the notes allowed. HarmonEasy sets these for you, and you
+							can automate them in your DAW.
+						</dd>
+					</dl>
+					<p>
+						The harmony and HarmonEasy’s song sections are saved with your DAW project,
+						so reopening the project recalls them.
+					</p>
+				</section>
+
+				<section class="plugin-step" aria-labelledby="plugin-connect-title">
+					<h3 id="plugin-connect-title">Connect it to HarmonEasy</h3>
+					<p>
+						Browsers can’t talk to plugins directly, so a small local bridge passes
+						messages between them on this computer.
+					</p>
+					<ol>
+						<li>
+							Start the bridge from the source code:
+							<code>pnpm --dir app/harmoneasy harmony:bridge</code>
+						</li>
+						<li>
+							In the plugin, turn on “Enable local bridge”. Only one plugin instance
+							can use the bridge at a time.
+						</li>
+						<li>
+							In HarmonEasy, open Harmony, then DAW connection, and choose Connect DAW
+							bridge.
+						</li>
+						<li>
+							Choose “Send this session to DAW”, or “Recall DAW harmony and sections”
+							to load what the DAW project saved. Turn on “Follow DAW tempo” to take
+							the DAW’s tempo too.
+						</li>
+					</ol>
+				</section>
+
+				<section class="plugin-step" aria-labelledby="plugin-link-title">
+					<h3 id="plugin-link-title">Play a DAW track through HarmonEasy</h3>
+					<ol>
+						<li>In the plugin, turn on “Process notes in HarmonEasy”.</li>
+						<li>
+							In HarmonEasy, add an OSC Bridge input and an OSC Bridge output, both on
+							<code>ws://127.0.0.1:9122</code>, with your transformers between them.
+						</li>
+						<li>
+							Play the track. Its notes go through the chain, and what reaches the OSC
+							Bridge output comes back out of the plugin to your instrument.
+						</li>
+					</ol>
+				</section>
+
+				<section class="plugin-step" aria-labelledby="plugin-clock-title">
+					<h3 id="plugin-clock-title">Follow the DAW’s tempo and transport</h3>
+					<ol>
+						<li>In the plugin, turn on “Send DAW transport as clock”.</li>
+						<li>
+							In HarmonEasy, set Tempo to MIDI clock and choose OSC Bridge as the
+							device. Play and stop in your DAW to start and stop HarmonEasy.
+						</li>
+					</ol>
+				</section>
+
+				<details>
+					<summary>Limits</summary>
+					<ul class="plugin-list">
+						<li>
+							Notes from HarmonEasy arrive a few milliseconds late, at the start of
+							the next audio block. Record them to a MIDI track if you need exact
+							timing.
+						</li>
+						<li>
+							Bouncing, freezing or rendering faster than real time won’t include
+							HarmonEasy’s notes. Record them to a MIDI track first.
+						</li>
+						<li>Only one plugin instance can use the bridge at a time.</li>
+						<li>
+							Starting the DAW partway through a song continues HarmonEasy from where
+							it is, so its bar count may not match the DAW’s.
+						</li>
+					</ul>
+				</details>
+				<details>
+					<summary>Troubleshooting</summary>
+					<ul class="plugin-list">
+						<li>
+							<strong>The plugin isn’t listed:</strong> check it’s in the VST3 folder,
+							that your DAW is 64-bit, then rescan plugins.
+						</li>
+						<li>
+							<strong>HarmonEasy can’t connect:</strong> check the bridge is still
+							running and that no other program uses ports 9122, 9123 or 9124.
+						</li>
+						<li>
+							<strong>No notes come back:</strong> check “Enable local bridge” and
+							“Process notes in HarmonEasy” are on, that the chain ends in an OSC
+							Bridge output, and that the plugin’s MIDI goes to an instrument.
+						</li>
+					</ul>
+				</details>
+			</div>
 		</dialog>
 
 		<dialog id="midi-dialog" closedby="any" aria-labelledby="midi-title">
