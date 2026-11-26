@@ -136,7 +136,6 @@ const event = (
 	return Object.assign(new AudioEvent(command, start), { chainId })
 }
 
-const FORMAT_IDS = TRACKER_EXPORT_FORMATS.map((format) => format.id)
 const SPECS = {
 	med: MED_SPEC,
 	mod: MOD_SPEC,
@@ -144,6 +143,10 @@ const SPECS = {
 	s3m: S3M_SPEC,
 	it: IT_SPEC
 } as const
+// This fixture needs at least five voices; legacy formats with fewer voices have their own suite.
+const FORMAT_IDS = TRACKER_EXPORT_FORMATS.map((format) => format.id).filter(
+	(format): format is keyof typeof SPECS => format in SPECS
+)
 const EXPLICIT_NOTE_ENDS: readonly TrackerExportId[] = ["xm", "s3m", "it"]
 
 // 120 BPM: four rows per beat, so a row is 0.125 s

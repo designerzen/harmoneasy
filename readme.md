@@ -245,9 +245,9 @@ Choose **Recording** or a **Loaded song** in the Export menu. A loaded song expo
 | --- | --- |
 | MIDI (`.mid`) | Standard MIDI File with one track per channel and program, keeping velocities, programs and tempo. |
 | RIFF MIDI (`.rmi`) | MIDI wrapped in a RIFF container. |
-| Tracker modules (`.med`, `.mod`, `.xm`, `.s3m`, `.it`) | OctaMED, ProTracker, FastTracker 2, Scream Tracker 3 and Impulse Tracker modules. Each instrument is sampled from its chain's audio output during export (the mix is muted briefly) and embedded, so the module sounds close to HarmonEasy; instruments that cannot be sampled use a synthesised General MIDI approximation, with separate drum sounds for channel 10. Polyphony is limited to the format's channels (MOD 32, XM/S3M 32, IT/MED 64) and notes outside a format's range are octave-folded. |
+| Tracker modules (`.med`, `.mod`, `.xm`, `.s3m`, `.it`, `.mtm`, `.dsm`, `.ult`, `.669`, `.okt`, `.stm`, `.amf`, `.ptm`) | Thirteen native module formats with embedded samples; see the tracker export limits below. Each instrument is sampled from its chain's audio output during export (the mix is muted briefly); instruments that cannot be sampled use a synthesised General MIDI approximation, with separate drum sounds for channel 10. |
 | MuseScore 4 (`.mscx`, `.mscz`) | Measured score with rests and ties in 4/4. |
-| MIDI Markdown | Text representation of the recorded musical events. |
+| MIDI Markdown (`.md`) | Text representation of the recorded musical events. |
 | MusicXML | Score interchange for notation applications. |
 | Compressed MusicXML (`.mxl`) | ZIP-packaged MusicXML score. |
 | Guitar Pro 7 (`.gp`) / alphaTex (`.atex`) | Export captured notes as a score or text score. |
@@ -255,20 +255,41 @@ Choose **Recording** or a **Loaded song** in the Export menu. A loaded song expo
 | MIDI CSV (`.csv`) | MIDI event table export. |
 | Core MML (`.mml`) / RTTTL (`.rtttl`) | Text melody export; RTTTL requires a single melody. |
 | LilyPond (`.ly`) | Notation source export. |
-| Magenta NoteSequence (`.json`) | Note sequence JSON export. |
+| Magenta NoteSequence (`.notes.json`) | Note sequence JSON export. |
 | Tone.js MIDI JSON (`.tone.json`) | Serialized MIDI tracks. |
 | JAMS (`.jams`) / Sonic Visualiser (`.svl`) | Note annotation/layer export. |
 | UTAU (`.ust`) | Single-voice melody project. |
 | Synthesizer V (`.svp`) / OpenUtau (`.ustx`) / UtaFormatix (`.ufdata`) | Vocal note projects with placeholder “a” lyrics and no assigned singer. |
 | LMMS (`.mmp`, `.mmpz`) | Song note projects using a basic oscillator, optionally compressed. |
 | REAPER (`.rpp`) | Self-contained project with editable embedded MIDI and named tracks; instruments and effects are not included. |
-| VexFlow | Rendered notation preview with downloadable HTML. |
+| VexFlow (`.html`) | Rendered notation preview with downloadable HTML. |
 | DawProject | `.dawproject` project interchange export. |
 | OpenDAW | Generated project-creation script shown in a copyable dialog; paste and run it in OpenDAW. |
 | Audiotool | Connect through the Audiotool panel and send captured takes into a project; requires the external service/connection. |
-| WAV | Master audio recording, reviewed and downloaded through Recorder controls. |
+| WAV (`.wav`) | Master audio recording, exported as 16-bit PCM or 32-bit float through Recorder controls. |
+| WebM/Opus (`.webm`), Ogg/Opus (`.ogg`), M4A/AAC (`.m4a`) | Compressed audio exports through Recorder controls, available when the browser supports the encoder. |
 | Preset/setup JSON | Download individual saved presets/setups or a reusable preset library. |
 | Setup/room links and QR codes | Share the current workspace or exchange invitations to connect browsers. |
+
+#### Tracker export limits
+
+| Format | Channels | Instruments | Notes |
+| --- | --- | --- | --- |
+| OctaMED (`.med`) | 64 | 63 | Embedded samples. |
+| ProTracker (`.mod`) | 32 | 31 | Classic period-based pitch range. |
+| FastTracker 2 (`.xm`) | 32 | 128 | Multisample instruments and release envelopes. |
+| Scream Tracker 3 (`.s3m`) | 32 | 99 | Embedded PCM samples. |
+| Impulse Tracker (`.it`) | 64 | 99 | Multisample instruments and release envelopes. |
+| MultiTracker (`.mtm`) | 32 | 63 | Native tracks and pattern maps, 8-bit samples. |
+| DSIK (`.dsm`) | 16 | 64 | RIFF-based DSM v2 with embedded 8-bit samples. |
+| UltraTracker (`.ult`) | 32 | 64 | ULT v4, two effect slots, embedded 8-bit samples. |
+| Composer 669 (`.669`) | 8 | 64 | Fixed tempo 78; speed 1–15 determines row timing. Volume has 16 levels. |
+| Oktalyzer (`.okt`) | 4 | 36 | Four hardware channels with 8-bit samples; fixed tempo 125 with variable speed. Samples are limited to 131,070 bytes each. |
+| Scream Tracker 2 (`.stm`) | 4 | 31 | STM 2.21 with variable speed and the default ST2 tick rate; 64 distinct patterns and 65,535 bytes per sample. |
+| ASYLUM (`.amf`) | 8 | 64 | ASYLUM Music Format v1.0 with 8-bit samples; not the separate DSMI AMF variant. |
+| PolyTracker (`.ptm`) | 32 | 255 | PTM 2.03 with delta-encoded 8-bit samples; 128 pattern slots. |
+
+All thirteen formats export recordings or loaded songs. Notes are snapped to tracker rows, pitches outside the format's range are octave-folded, and excessive polyphony, instrument counts or song length produce an error. Formats with fixed tempo use the nearest supported row duration, so 669, Oktalyzer and STM have coarser timing. MOD, MTM, ULT and PTM may insert a leading row when the first row has no room for the initial timing effects. The legacy formats carry one sample per instrument and cut notes at their ends; they do not carry plugin automation or release envelopes. These exports are native module files verified with libopenmpt; the larger tracker import list also contains formats that cannot be exported.
 
 ### Audio recording and persistence
 

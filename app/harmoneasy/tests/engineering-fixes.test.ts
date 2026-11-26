@@ -93,6 +93,11 @@ describe("extracted UI export helpers", () => {
 		select.value = "song-2"
 		document.getElementById("btn-midi-export")!.click()
 		expect(onExport).toHaveBeenCalledWith("midi", "song-2")
+
+		const scores = document.querySelector('[data-export-kind="score"]')!
+		expect(scores.querySelector("h3")?.textContent).toBe("Sheet music and tablature")
+		expect(scores.querySelector("#btn-vexflow-export")).not.toBeNull()
+		expect(document.getElementById("btn-midi-export")?.textContent).toContain(".mid")
 	})
 
 	it("renders VexFlow modal and triggers HTML download on button click", async () => {

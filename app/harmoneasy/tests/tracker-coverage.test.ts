@@ -11,7 +11,8 @@ import {
 	IMPORT_FILE_ACCEPT,
 	FILE_IMPORT_FORMATS
 } from "audiobus/importers/file-import"
-import { INTERCHANGE_EXPORT_FORMATS } from "audiobus/exporters/adapter-interchange"
+import { EXPORT_FORMATS } from "audiobus/exporters/registry"
+import { AUDIO_EXPORT_FORMATS } from "audiobus/io/media/audio-media"
 import { NOTE_ON, NOTE_OFF } from "audiobus/commands/commands"
 
 it("decodes a native MultiTracker module into timed note pairs", async () => {
@@ -86,12 +87,12 @@ it.each(["mod.song", "MED.My song", "xm.song"])(
 	}
 )
 
-it("documents every registered import and interchange export extension", () => {
-	const readme = readFileSync("../../README.md", "utf8")
-	for (const format of [...FILE_IMPORT_FORMATS, ...INTERCHANGE_EXPORT_FORMATS]) {
+it("documents every registered import, musical export and audio export extension", () => {
+	const readme = readFileSync("../../README.md", "utf8").toLowerCase()
+	for (const format of [...FILE_IMPORT_FORMATS, ...EXPORT_FORMATS, ...AUDIO_EXPORT_FORMATS]) {
 		const extensions = "extensions" in format ? format.extensions : [format.extension]
 		for (const extension of extensions) {
-			expect(readme).toContain(`\`.${extension}\``)
+			expect(readme).toContain(`\`.${extension.toLowerCase()}\``)
 		}
 	}
 })

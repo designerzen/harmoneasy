@@ -120,3 +120,17 @@ it("closing the menu invalidates an in-flight file detection", async () => {
 	expect(dialog.querySelector('[role="status"]')?.textContent).toBe("No files selected.")
 	expect(receive).not.toHaveBeenCalled()
 })
+it("removes a selected file from the import and updates the summary", async () => {
+	const { dialog, choose, load, receive } = setup()
+	const keep = file("MThd0000", "keep.mid"),
+		drop = file("MThd0000", "drop.mid")
+	choose([keep, drop])
+	await vi.waitFor(() => expect(load.disabled).toBe(false))
+	dialog.querySelector<HTMLButtonElement>('[aria-label="Remove drop.mid"]')!.click()
+	expect(dialog.querySelector('[role="status"]')?.textContent).toBe(
+		"1 of 1 file ready to import."
+	)
+	expect(load.textContent).toBe("Import file")
+	load.click()
+	expect(receive).toHaveBeenCalledExactlyOnceWith(keep)
+})

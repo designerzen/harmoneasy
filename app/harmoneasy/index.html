@@ -6,7 +6,12 @@
 		<meta name="color-scheme" content="light dark" />
 		<title>Harmoneasy</title>
 		<link rel="help" href="%BASE_URL%docs/ai/" title="Documentation for AI agents" />
-		<link rel="alternate" type="text/plain" href="%BASE_URL%llms.txt" title="AI agent documentation index" />
+		<link
+			rel="alternate"
+			type="text/plain"
+			href="%BASE_URL%llms.txt"
+			title="AI agent documentation index"
+		/>
 		<link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="shortcut icon" href="/favicon.ico" />
@@ -348,11 +353,7 @@
 				aria-controls="netronome-dialog"
 				disabled
 			>
-				<img
-					id="netronome-qr-preview"
-					alt="Shared room invitation QR code"
-					hidden
-				/>
+				<img id="netronome-qr-preview" alt="Shared room invitation QR code" hidden />
 				<span>Shared room</span>
 			</button>
 			<button id="btn-settings" class="btn-settings" type="button">Settings</button>
@@ -403,11 +404,7 @@
 			</footer>
 		</dialog>
 
-		<section
-			id="midi-transport-control"
-			class="controls"
-			aria-labelledby="transport-label"
-		>
+		<section id="midi-transport-control" class="controls" aria-labelledby="transport-label">
 			<label class="sr-only" id="transport-label" for="transport-status"
 				>MIDI transport</label
 			>
@@ -728,11 +725,7 @@
 						tabindex="0"
 						aria-label="Note timeline. Arrow keys scroll, plus and minus zoom, Home follows live notes."
 					></canvas>
-					<div
-						class="note-timeline-controls"
-						role="group"
-						aria-label="Timeline controls"
-					>
+					<div class="note-timeline-controls" role="group" aria-label="Timeline controls">
 						<button
 							type="button"
 							data-timeline-action="zoom-in"
@@ -788,8 +781,8 @@
 						</button>
 					</div>
 					<p class="note-timeline-hint" id="note-timeline-hint">
-						Drag to pan · Scroll for pitches · Shift+scroll for time ·
-						Ctrl+scroll to zoom · Cut in / End point trim the saved recording
+						Drag to pan · Scroll for pitches · Shift+scroll for time · Ctrl+scroll to
+						zoom · Cut in / End point trim the saved recording
 					</p>
 				</div>
 			</section>
@@ -890,33 +883,21 @@
 			</form>
 		</dialog>
 
-		<dialog id="export-dialog" hidden closedby="any" aria-labelledby="export-dialog-title">
+		<dialog
+			id="export-dialog"
+			class="file-dialog"
+			hidden
+			closedby="any"
+			aria-labelledby="export-dialog-title"
+			aria-describedby="export-dialog-description"
+		>
 			<header>
 				<h2 id="export-dialog-title">Export</h2>
-			</header>
-			<div id="export-options" class="export-menu">
-				<button type="button" id="btn-audiotool-export" class="export-option">
-					<img
-						src="source/assets/logos/audiotool.svg"
-						alt=""
-						class="logo-inline"
-					/>
-					Send a take to AudioTool
-				</button>
-				<button type="button" id="btn-opendaw-export" class="export-option">
-					<img src="source/assets/logos/opendaw.svg" alt="" class="logo-inline" />
-					Export to OpenDAW
-				</button>
-
-				<hr />
-				<button type="button" id="btn-vexflow-export" class="export-option">
-					Download sheet music
-				</button>
-				<p>
-					Vocal project exports contain notes with “a” lyrics and no assigned singer. LMMS
-					exports use a basic oscillator.
+				<p id="export-dialog-description" class="file-dialog-lede">
+					Save your notes in another format, or open them in an online DAW. Exports carry
+					notes, timing and tempo; sounds and effects stay in Harmoneasy.
 				</p>
-			</div>
+			</header>
 			<form method="dialog">
 				<button
 					class="btn-close close-icon"
@@ -925,6 +906,45 @@
 					aria-label="Close"
 				></button>
 			</form>
+			<div id="export-options" class="export-menu">
+				<section class="export-group" aria-labelledby="export-group-apps">
+					<h3 id="export-group-apps">Open in an online DAW</h3>
+					<div class="export-grid">
+						<button type="button" id="btn-audiotool-export" class="export-option">
+							<span class="export-option-label">
+								<img
+									src="source/assets/logos/audiotool.svg"
+									alt=""
+									class="logo-inline"
+								/>
+								AudioTool
+							</span>
+							<span class="export-option-meta"
+								>Send a recorded take to AudioTool</span
+							>
+						</button>
+						<button type="button" id="btn-opendaw-export" class="export-option">
+							<span class="export-option-label">
+								<img
+									src="source/assets/logos/opendaw.svg"
+									alt=""
+									class="logo-inline"
+								/>
+								OpenDAW
+							</span>
+							<span class="export-option-meta">
+								Copy a script that rebuilds the recording in OpenDAW
+							</span>
+						</button>
+					</div>
+				</section>
+				<button type="button" id="btn-vexflow-export" class="export-option">
+					<span class="export-option-label">Sheet music</span>
+					<span class="export-option-meta"
+						>Preview the score and download it as HTML</span
+					>
+				</button>
+			</div>
 		</dialog>
 
 		<dialog
@@ -973,7 +993,9 @@
 					</p>
 					<nav class="about-links" aria-label="Harmoneasy project">
 						<a href="%BASE_URL%docs/ai/" target="_blank" rel="noopener noreferrer">
-							Documentation for AI agents<span class="sr-only"> (opens in a new tab)</span>
+							Documentation for AI agents<span class="sr-only">
+								(opens in a new tab)</span
+							>
 						</a>
 						<a
 							class="btn-play-songs"
@@ -1347,34 +1369,18 @@
 				</fieldset>
 				<fieldset id="accessibility-settings">
 					<legend>Accessibility</legend>
-					<div
-						class="a11y-group"
-						role="group"
-						aria-labelledby="a11y-group-presets"
-					>
+					<div class="a11y-group" role="group" aria-labelledby="a11y-group-presets">
 						<h3 id="a11y-group-presets">Quick presets</h3>
 						<div class="a11y-preset-row">
-							<button
-								id="a11y-preset-low-vision"
-								class="secondary"
-								type="button"
-							>
+							<button id="a11y-preset-low-vision" class="secondary" type="button">
 								Low-vision + Speech
 							</button>
-							<button
-								id="a11y-preset-deaf-tactile"
-								class="secondary"
-								type="button"
-							>
+							<button id="a11y-preset-deaf-tactile" class="secondary" type="button">
 								Deaf + Haptics
 							</button>
 						</div>
 					</div>
-					<div
-						class="a11y-group"
-						role="group"
-						aria-labelledby="a11y-group-visual"
-					>
+					<div class="a11y-group" role="group" aria-labelledby="a11y-group-visual">
 						<h3 id="a11y-group-visual">Visual &amp; contrast</h3>
 						<label for="a11y-contrast"
 							>Contrast
@@ -1403,11 +1409,7 @@
 							Always underline links
 						</label>
 					</div>
-					<div
-						class="a11y-group"
-						role="group"
-						aria-labelledby="a11y-group-reading"
-					>
+					<div class="a11y-group" role="group" aria-labelledby="a11y-group-reading">
 						<h3 id="a11y-group-reading">Text &amp; reading</h3>
 						<label for="a11y-font-scale"
 							>Text size
@@ -1435,11 +1437,7 @@
 							</select>
 						</label>
 					</div>
-					<div
-						class="a11y-group"
-						role="group"
-						aria-labelledby="a11y-group-motion"
-					>
+					<div class="a11y-group" role="group" aria-labelledby="a11y-group-motion">
 						<h3 id="a11y-group-motion">Motion, rhythm &amp; announcements</h3>
 						<label for="a11y-reduced-motion"
 							>Motion
@@ -1461,11 +1459,7 @@
 							Visual beat flash (pulse on every beat, capped at 3 Hz)
 						</label>
 					</div>
-					<div
-						class="a11y-group"
-						role="group"
-						aria-labelledby="a11y-group-motor"
-					>
+					<div class="a11y-group" role="group" aria-labelledby="a11y-group-motor">
 						<h3 id="a11y-group-motor">Keyboard &amp; motor</h3>
 						<label for="a11y-target-size"
 							>Target size
