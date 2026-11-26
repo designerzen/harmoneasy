@@ -719,7 +719,7 @@ export function createChainWorkspace(
 		}
 		tabs.replaceChildren(...ids.map((id) => tabElements.get(id)!))
 		// New adds a chain, so it follows the last chain tab rather than the note timeline.
-		const lastChain = ids.findLast((id) => id !== TIMELINE)
+		const lastChain = ids.filter((id) => id !== TIMELINE).at(-1)
 		if (navigation && !windowTab) {
 			if (lastChain) {
 				tabElements.get(lastChain)!.after(newChain.element)
