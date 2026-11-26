@@ -388,7 +388,8 @@
 		padding-left: calc(var(--control-height) + 0.5rem);
 		padding-right: calc(var(--control-height) * 2 + 0.5rem);
 		border: 0;
-		border-top: 3px solid var(--tab-colour);
+		border: 2px solid color-mix(in oklch, var(--tab-colour) 70%, var(--col-bg));
+		border-top: 4px solid var(--tab-colour);
 		border-bottom: 2px solid transparent;
 		border-radius: var(--radius-sm) var(--radius-sm) 0 0;
 		@include readable(var(--tab-tint));
@@ -480,7 +481,8 @@
 			color: var(--col-on-danger);
 		}
 	}
-	> .secondary-action {
+	.secondary-action {
+		flex: none;
 		align-self: center;
 		margin-bottom: 2px;
 		background: transparent;
