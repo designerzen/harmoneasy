@@ -1,3 +1,5 @@
+@use "./contrast" as *;
+
 /* Application chrome: command bar, transport bar and chain tabs. */
 
 #action-bar {
@@ -355,7 +357,12 @@
 		align-items: flex-end;
 		flex: none;
 	}
+	/* Each tab carries its own hue so chains and the note timeline are told apart at a glance. */
 	.chain-tab {
+		--tab-hue: 210;
+		--tab-colour: oklch(0.68 0.15 var(--tab-hue));
+		--tab-tint: color-mix(in oklch, var(--tab-colour) 16%, var(--col-bg));
+		--tab-tint-strong: color-mix(in oklch, var(--tab-colour) 34%, var(--col-bg));
 		position: relative;
 		display: inline-flex;
 		flex: none;
@@ -381,30 +388,34 @@
 		padding-left: calc(var(--control-height) + 0.5rem);
 		padding-right: calc(var(--control-height) * 2 + 0.5rem);
 		border: 0;
+		border-top: 3px solid var(--tab-colour);
 		border-bottom: 2px solid transparent;
 		border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-		background: transparent;
-		color: var(--col-muted);
+		@include readable(var(--tab-tint));
 		&:hover:not(:disabled) {
-			background: var(--col-hover);
-			border-color: transparent;
-			color: var(--col-fg);
+			@include readable(var(--tab-tint-strong));
+			border-bottom-color: transparent;
 		}
 		&[data-shown] {
-			border-bottom-color: var(--col-muted);
-			color: var(--col-fg);
+			border-bottom-color: var(--tab-colour);
 		}
 		&[aria-selected="true"] {
-			border-bottom-color: var(--col-accent);
-			color: var(--col-fg);
+			@include readable(var(--tab-tint-strong));
+			border-bottom-color: var(--tab-colour);
 			font-weight: 600;
 		}
 		&:focus-visible {
 			outline-offset: -2px;
 		}
 	}
+	.chain-tab-timeline {
+		--tab-hue: 75;
+	}
 	.chain-tab-timeline [role="tab"] {
 		padding-right: calc(var(--control-height) + 0.5rem);
+		&::before {
+			content: "♪ " / "";
+		}
 	}
 	.chain-tab-pin,
 	.chain-tab-window,

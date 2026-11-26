@@ -327,6 +327,8 @@ const initialiseApplication = async (
 		document,
 		ioManager
 	)
+	// The timeline's cut in and end point trim the saved take.
+	ui.noteTimeline.onCuts = (cuts) => audioRecording.setCuts(cuts)
 
 	const transportError = (error: unknown) => {
 		console.error("Shared MIDI transport failed", error)

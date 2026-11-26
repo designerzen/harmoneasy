@@ -756,6 +756,30 @@
 						</button>
 						<button
 							type="button"
+							data-timeline-action="cut-in"
+							aria-pressed="false"
+							title="Choose, then click the timeline where the recording should start (I key: at the view centre)"
+						>
+							Cut in
+						</button>
+						<button
+							type="button"
+							data-timeline-action="cut-out"
+							aria-pressed="false"
+							title="Choose, then click the timeline where the recording should end (O key: at the view centre)"
+						>
+							End point
+						</button>
+						<button
+							type="button"
+							data-timeline-action="clear-cuts"
+							title="Keep the whole recording"
+							hidden
+						>
+							Clear cuts
+						</button>
+						<button
+							type="button"
 							id="btn-reset"
 							class="icon btn-reset"
 							title="Clear recordings and timeline"
@@ -765,7 +789,7 @@
 					</div>
 					<p class="note-timeline-hint" id="note-timeline-hint">
 						Drag to pan · Scroll for pitches · Shift+scroll for time ·
-						Ctrl+scroll to zoom
+						Ctrl+scroll to zoom · Cut in / End point trim the saved recording
 					</p>
 				</div>
 			</section>

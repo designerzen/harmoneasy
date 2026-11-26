@@ -1,11 +1,16 @@
 import { afterEach, expect, it, vi } from "vitest"
 import { readFileSync } from "node:fs"
 
-const worker = vi.hoisted(() => ({ postMessage: vi.fn(), terminate: vi.fn() }))
+const worker = vi.hoisted(() => ({
+	postMessage: vi.fn(),
+	terminate: vi.fn(),
+	addEventListener: vi.fn()
+}))
 vi.mock("../../../packages/audiobus/ui/note-timeline-worker.ts?worker", () => ({
 	default: class {
 		postMessage = worker.postMessage
 		terminate = worker.terminate
+		addEventListener = worker.addEventListener
 	}
 }))
 import NoteTimelineVisualiser from "../../../packages/audiobus/ui/note-timeline-visualiser"

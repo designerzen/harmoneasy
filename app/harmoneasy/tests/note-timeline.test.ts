@@ -71,6 +71,7 @@ describe("note timeline", () => {
 			frame = callback
 		})
 		vi.stubGlobal("onmessage", null)
+		vi.stubGlobal("postMessage", vi.fn())
 		vi.stubGlobal("performance", { timeOrigin: 1000, now: () => 3000 })
 		await import("../../../packages/audiobus/ui/note-timeline-worker")
 		const send = (data: object) => globalThis.onmessage!({ data } as MessageEvent)

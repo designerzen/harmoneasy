@@ -696,6 +696,11 @@ export function createChainWorkspace(
 				`Remove ${chain.options.name ?? `Chain ${index + 1}`}`
 			)
 			tab.append(remove)
+			// A hue from the chain id keeps each chain's colour when tabs are reordered.
+			tab.style.setProperty(
+				"--tab-hue",
+				String([...id].reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) % 360, 7))
+			)
 			tabElements.set(id, tab)
 		}
 		host.dataset.split = !solo && panes.length > 1 ? split : ""
