@@ -80,11 +80,13 @@
 		"opendaw": "workspace:^",
 		"partysocket": "1.1.16",
 		"pitfalls": "workspace:^",
+		"prai": "0.4.16",
 		"qrcode": "^1.5.4",
 		"react": "^19.3.1",
 		"react-dom": "^19.3.1",
 		"uWebSockets.js": "github:uNetworking/uWebSockets.js",
-		"webrtc-adapter": "^9.0.6"
+		"webrtc-adapter": "^9.0.6",
+		"zod": "^3.25.76"
 	},
 	"build": {
 		"appId": "com.harmoneasy.app",

@@ -6,12 +6,11 @@ import {
 	EVENT_CHANGE,
 	EVENT_INPUT
 } from "audiobus/events/event-constants"
-import { browserAI, promptBrowserAI } from "audiobus/io/browser-ai"
+import { browserAI } from "audiobus/io/browser-ai"
+import { interpretSetupWithAI } from "./setup-language"
 import {
 	designSetup,
-	wizardAIPrompt,
 	wizardContexts,
-	WIZARD_AI_SCHEMA,
 	WIZARD_FEEDBACK,
 	WIZARD_GOALS,
 	WIZARD_INPUTS,
@@ -26,12 +25,7 @@ import {
 	type SpeechRecogniser,
 	type SpeechRecogniserId
 } from "../libs/speech-recognisers"
-import {
-	interpretationHints,
-	interpretSetupDescription,
-	withAISuggestion,
-	type SetupInterpretation
-} from "./setup-interpreter"
+import { interpretSetupDescription, type SetupInterpretation } from "./setup-interpreter"
 
 type Step =
 	| "goal"
@@ -433,23 +427,20 @@ export function createSetupWizard(
 				build.disabled = true
 				stop.hidden = false
 				try {
-					const value = await promptBrowserAI(
-						wizardAIPrompt(description, interpretationHints(local)),
-						WIZARD_AI_SCHEMA,
+					const result = await interpretSetupWithAI(
+						description,
+						local,
 						controller.signal,
 						(message) => {
 							if (!controller.signal.aborted) {
-								status.textContent =
-									message === "Generating music…"
-										? "Reading your description…"
-										: message
+								status.textContent = message
 							}
 						}
 					)
 					if (controller.signal.aborted || !dialog.open) {
 						return
 					}
-					showInterpretation(withAISuggestion(local, value))
+					showInterpretation(result)
 				} catch (error) {
 					if (controller.signal.aborted || !dialog.open) {
 						return

@@ -14,6 +14,20 @@
 		"url": "https://babel.dev/docs/en/next/babel-runtime"
 	},
 	{
+		"name": "@biomejs/js-api",
+		"version": "0.7.1",
+		"authors": ["Biome Developers and Contributors"],
+		"license": "MIT OR Apache-2.0",
+		"url": "https://biomejs.dev"
+	},
+	{
+		"name": "@biomejs/wasm-nodejs",
+		"version": "1.9.4",
+		"authors": [],
+		"license": "MIT OR Apache-2.0",
+		"url": "https://biomejs.dev/"
+	},
+	{
 		"name": "@bufbuild/protobuf",
 		"version": "1.10.0",
 		"authors": [],
@@ -77,6 +91,20 @@
 		"url": "https://github.com/ffmpegwasm/ffmpeg.wasm#readme"
 	},
 	{
+		"name": "@gar/promise-retry",
+		"version": "1.0.3",
+		"authors": [],
+		"license": "MIT",
+		"url": "git://github.com/wraithgar/node-promise-retry.git"
+	},
+	{
+		"name": "@google/genai",
+		"version": "1.52.0",
+		"authors": [],
+		"license": "Apache-2.0",
+		"url": "https://github.com/googleapis/js-genai#readme"
+	},
+	{
 		"name": "@huggingface/jinja",
 		"version": "0.5.13",
 		"authors": ["Hugging Face"],
@@ -112,6 +140,20 @@
 		"url": "https://github.com/npm/fs-minipass.git"
 	},
 	{
+		"name": "@isaacs/fs-minipass",
+		"version": "4.0.1",
+		"authors": ["Isaac Z. Schlueter"],
+		"license": "ISC",
+		"url": "https://github.com/npm/fs-minipass.git"
+	},
+	{
+		"name": "@isaacs/string-locale-compare",
+		"version": "1.1.0",
+		"authors": ["Isaac Z. Schlueter (https://izs.me)"],
+		"license": "ISC",
+		"url": "git+https://github.com/isaacs/string-locale-compare"
+	},
+	{
 		"name": "@magenta/music",
 		"version": "1.23.1",
 		"authors": ["Magenta"],
@@ -131,6 +173,111 @@
 		"authors": ["The MessagePack community"],
 		"license": "ISC",
 		"url": "https://msgpack.org/"
+	},
+	{
+		"name": "@npmcli/agent",
+		"version": "4.0.2",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "https://github.com/npm/agent#readme"
+	},
+	{
+		"name": "@npmcli/arborist",
+		"version": "9.9.4",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/cli.git"
+	},
+	{
+		"name": "@npmcli/config",
+		"version": "10.14.1",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/cli.git"
+	},
+	{
+		"name": "@npmcli/fs",
+		"version": "5.0.0",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/fs.git"
+	},
+	{
+		"name": "@npmcli/git",
+		"version": "7.0.2",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/git.git"
+	},
+	{
+		"name": "@npmcli/installed-package-contents",
+		"version": "4.0.0",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/installed-package-contents.git"
+	},
+	{
+		"name": "@npmcli/map-workspaces",
+		"version": "5.0.3",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/map-workspaces.git"
+	},
+	{
+		"name": "@npmcli/metavuln-calculator",
+		"version": "9.0.3",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/metavuln-calculator.git"
+	},
+	{
+		"name": "@npmcli/name-from-folder",
+		"version": "4.0.0",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/name-from-folder.git"
+	},
+	{
+		"name": "@npmcli/node-gyp",
+		"version": "5.0.0",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/node-gyp.git"
+	},
+	{
+		"name": "@npmcli/package-json",
+		"version": "7.0.5",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/package-json.git"
+	},
+	{
+		"name": "@npmcli/promise-spawn",
+		"version": "9.0.2",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/promise-spawn.git"
+	},
+	{
+		"name": "@npmcli/query",
+		"version": "5.0.0",
+		"authors": ["GitHub Inc.", "Ruy Adorno"],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/query.git"
+	},
+	{
+		"name": "@npmcli/redact",
+		"version": "4.0.0",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/redact.git"
+	},
+	{
+		"name": "@npmcli/run-script",
+		"version": "10.0.4",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/run-script.git"
 	},
 	{
 		"name": "@opendaw/lib-box",
@@ -301,6 +448,48 @@
 		"url": "https://github.com/protobufjs/protobuf.js.git"
 	},
 	{
+		"name": "@sigstore/bundle",
+		"version": "4.0.0",
+		"authors": ["bdehamer@github.com"],
+		"license": "Apache-2.0",
+		"url": "https://github.com/sigstore/sigstore-js/tree/main/packages/bundle#readme"
+	},
+	{
+		"name": "@sigstore/core",
+		"version": "3.2.1",
+		"authors": ["bdehamer@github.com"],
+		"license": "Apache-2.0",
+		"url": "https://github.com/sigstore/sigstore-js/tree/main/packages/core#readme"
+	},
+	{
+		"name": "@sigstore/protobuf-specs",
+		"version": "0.5.1",
+		"authors": ["bdehamer@github.com"],
+		"license": "Apache-2.0",
+		"url": "https://github.com/sigstore/protobuf-specs#readme"
+	},
+	{
+		"name": "@sigstore/sign",
+		"version": "4.1.1",
+		"authors": ["bdehamer@github.com"],
+		"license": "Apache-2.0",
+		"url": "https://github.com/sigstore/sigstore-js/tree/main/packages/sign#readme"
+	},
+	{
+		"name": "@sigstore/tuf",
+		"version": "4.0.2",
+		"authors": ["bdehamer@github.com"],
+		"license": "Apache-2.0",
+		"url": "https://github.com/sigstore/sigstore-js/tree/main/packages/tuf#readme"
+	},
+	{
+		"name": "@sigstore/verify",
+		"version": "3.1.1",
+		"authors": ["bdehamer@github.com"],
+		"license": "Apache-2.0",
+		"url": "https://github.com/sigstore/sigstore-js/tree/main/packages/verify#readme"
+	},
+	{
 		"name": "@spotify/basic-pitch",
 		"version": "1.0.1",
 		"authors": [],
@@ -455,6 +644,20 @@
 		"url": "https://tonejs.github.com/Midi/"
 	},
 	{
+		"name": "@tufjs/canonical-json",
+		"version": "2.0.0",
+		"authors": ["bdehamer@github.com"],
+		"license": "MIT",
+		"url": "https://github.com/theupdateframework/tuf-js/tree/main/packages/canonical-json#readme"
+	},
+	{
+		"name": "@tufjs/models",
+		"version": "4.1.0",
+		"authors": ["bdehamer@github.com"],
+		"license": "MIT",
+		"url": "https://github.com/theupdateframework/tuf-js/tree/main/packages/models#readme"
+	},
+	{
 		"name": "@types/d3-color",
 		"version": "3.1.3",
 		"authors": [
@@ -562,6 +765,37 @@
 	},
 	{
 		"name": "@types/node",
+		"version": "18.19.130",
+		"authors": [
+			"Microsoft TypeScript",
+			"Alberto Schiabel",
+			"Andrew Makarov",
+			"Benjamin Toueg",
+			"David Junger",
+			"Mohsen Azimi",
+			"Nikita Galkin",
+			"Sebastian Silbermann",
+			"Simon Schick",
+			"Wilco Bakker",
+			"Marcin Kopacz",
+			"Trivikram Kamat",
+			"Junxiao Shi",
+			"Ilia Baryshnikov",
+			"ExE Boss",
+			"Piotr Błażejewicz",
+			"Anna Henningsen",
+			"Victor Perin",
+			"NodeJS Contributors",
+			"Linus Unnebäck",
+			"wafuwafu13",
+			"Matteo Collina",
+			"Dmitry Semigradsky"
+		],
+		"license": "MIT",
+		"url": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/node"
+	},
+	{
+		"name": "@types/node",
 		"version": "26.6.6",
 		"authors": [
 			"Microsoft TypeScript",
@@ -613,6 +847,13 @@
 		"name": "@types/offscreencanvas",
 		"version": "2019.3.0",
 		"authors": ["Klaus Reimer"],
+		"license": "MIT",
+		"url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git"
+	},
+	{
+		"name": "@types/retry",
+		"version": "0.12.0",
+		"authors": ["Stan Goldmann", "BendingBender"],
 		"license": "MIT",
 		"url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git"
 	},
@@ -680,6 +921,13 @@
 		"url": "https://github.com/xyflow/xyflow.git"
 	},
 	{
+		"name": "abbrev",
+		"version": "4.0.0",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/abbrev-js.git"
+	},
+	{
 		"name": "abcjs",
 		"version": "6.7.3",
 		"authors": [
@@ -692,6 +940,13 @@
 		],
 		"license": "MIT",
 		"url": "https://abcjs.net"
+	},
+	{
+		"name": "abort-controller",
+		"version": "3.0.0",
+		"authors": ["Toru Nagashima (https://github.com/mysticatea)"],
+		"license": "MIT",
+		"url": "https://github.com/mysticatea/abort-controller#readme"
 	},
 	{
 		"name": "abstract-leveldown",
@@ -713,6 +968,27 @@
 		"authors": [],
 		"license": "MIT",
 		"url": "https://github.com/acornjs/acorn"
+	},
+	{
+		"name": "agent-base",
+		"version": "7.1.4",
+		"authors": ["Nathan Rajlich (http://n8.io/)"],
+		"license": "MIT",
+		"url": "https://github.com/TooTallNate/proxy-agents.git"
+	},
+	{
+		"name": "agent-base",
+		"version": "7.1.4",
+		"authors": ["Nathan Rajlich (http://n8.io/)"],
+		"license": "MIT",
+		"url": "https://github.com/TooTallNate/proxy-agents.git"
+	},
+	{
+		"name": "agentkeepalive",
+		"version": "4.6.0",
+		"authors": ["fengmk2 (https://github.com/fengmk2)"],
+		"license": "MIT",
+		"url": "git://github.com/node-modules/agentkeepalive.git"
 	},
 	{
 		"name": "align-text",
@@ -741,6 +1017,20 @@
 		"authors": ["Sindre Sorhus"],
 		"license": "MIT",
 		"url": "chalk/ansi-styles"
+	},
+	{
+		"name": "aproba",
+		"version": "2.1.0",
+		"authors": ["Rebecca Turner"],
+		"license": "ISC",
+		"url": "https://github.com/iarna/aproba"
+	},
+	{
+		"name": "archy",
+		"version": "1.0.0",
+		"authors": ["James Halliday"],
+		"license": "MIT",
+		"url": "http://github.com/substack/node-archy.git"
 	},
 	{
 		"name": "argparse",
@@ -834,6 +1124,13 @@
 		"url": "https://github.com/chrisguttandin/automation-events"
 	},
 	{
+		"name": "aw8json",
+		"version": "0.4.16",
+		"authors": ["Bela Bohlender"],
+		"license": "MIT",
+		"url": "https://github.com/pmndrs/prai"
+	},
+	{
 		"name": "babel-runtime",
 		"version": "6.26.0",
 		"authors": ["Sebastian McKenzie"],
@@ -841,11 +1138,39 @@
 		"url": "https://github.com/babel/babel/tree/master/packages/babel-runtime"
 	},
 	{
+		"name": "balanced-match",
+		"version": "4.0.4",
+		"authors": [],
+		"license": "MIT",
+		"url": "git://github.com/juliangruber/balanced-match.git"
+	},
+	{
 		"name": "base64-js",
 		"version": "1.5.1",
 		"authors": ["T. Jameson Little"],
 		"license": "MIT",
 		"url": "https://github.com/beatgammit/base64-js"
+	},
+	{
+		"name": "bignumber.js",
+		"version": "9.3.1",
+		"authors": ["Michael Mclaughlin"],
+		"license": "MIT",
+		"url": "https://github.com/MikeMcl/bignumber.js.git"
+	},
+	{
+		"name": "bin-links",
+		"version": "6.0.3",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/bin-links.git"
+	},
+	{
+		"name": "binary-extensions",
+		"version": "3.1.0",
+		"authors": ["Sindre Sorhus"],
+		"license": "MIT",
+		"url": "sindresorhus/binary-extensions"
 	},
 	{
 		"name": "bit-twiddle",
@@ -868,11 +1193,25 @@
 		"url": "git://github.com/thenativeweb/boolean.git"
 	},
 	{
+		"name": "brace-expansion",
+		"version": "5.0.12",
+		"authors": [],
+		"license": "MIT",
+		"url": "git+https://github.com/juliangruber/brace-expansion.git"
+	},
+	{
 		"name": "buffer",
 		"version": "5.7.1",
 		"authors": ["Feross Aboukhadijeh", "Romain Beauxis", "James Halliday"],
 		"license": "MIT",
 		"url": "https://github.com/feross/buffer"
+	},
+	{
+		"name": "buffer-equal-constant-time",
+		"version": "1.0.1",
+		"authors": ["GoInstant Inc., a salesforce.com company"],
+		"license": "BSD-3-Clause",
+		"url": "git@github.com:goinstant/buffer-equal-constant-time.git"
 	},
 	{
 		"name": "buffer-from",
@@ -901,6 +1240,13 @@
 		"authors": ["Jordan Berg"],
 		"license": "MIT",
 		"url": "https://butterchurnviz.com"
+	},
+	{
+		"name": "cacache",
+		"version": "20.0.4",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/cacache.git"
 	},
 	{
 		"name": "call-bind-apply-helpers",
@@ -938,6 +1284,20 @@
 		"url": "chalk/chalk"
 	},
 	{
+		"name": "chalk",
+		"version": "5.6.2",
+		"authors": [],
+		"license": "MIT",
+		"url": "chalk/chalk"
+	},
+	{
+		"name": "chalk",
+		"version": "5.6.2",
+		"authors": [],
+		"license": "MIT",
+		"url": "chalk/chalk"
+	},
+	{
 		"name": "chiptune3",
 		"version": "0.8.10",
 		"authors": ["drsnuggles"],
@@ -950,6 +1310,27 @@
 		"authors": ["Isaac Z. Schlueter (http://blog.izs.me/)"],
 		"license": "BlueOak-1.0.0",
 		"url": "git://github.com/isaacs/chownr.git"
+	},
+	{
+		"name": "chownr",
+		"version": "3.0.0",
+		"authors": ["Isaac Z. Schlueter (http://blog.izs.me/)"],
+		"license": "BlueOak-1.0.0",
+		"url": "git://github.com/isaacs/chownr.git"
+	},
+	{
+		"name": "ci-info",
+		"version": "4.4.0",
+		"authors": ["Thomas Watson Steen (https://twitter.com/wa7son)", "Sibiraj"],
+		"license": "MIT",
+		"url": "https://github.com/watson/ci-info"
+	},
+	{
+		"name": "cidr-regex",
+		"version": "5.0.5",
+		"authors": ["silverwind", "Felipe Apostol (http://flipjs.io/)"],
+		"license": "BSD-2-Clause",
+		"url": "silverwind/cidr-regex"
 	},
 	{
 		"name": "classcat",
@@ -978,6 +1359,13 @@
 		"authors": ["Ben Coe"],
 		"license": "ISC",
 		"url": "yargs/cliui"
+	},
+	{
+		"name": "cmd-shim",
+		"version": "8.0.0",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/cmd-shim.git"
 	},
 	{
 		"name": "cmu-pronouncing-dictionary",
@@ -1019,6 +1407,13 @@
 		"url": "https://github.com/felixge/node-combined-stream"
 	},
 	{
+		"name": "common-ancestor-path",
+		"version": "2.0.0",
+		"authors": ["Isaac Z. Schlueter (https://izs.me)"],
+		"license": "BlueOak-1.0.0",
+		"url": "git@github.com:isaacs/common-ancestor-path"
+	},
+	{
 		"name": "concat-stream",
 		"version": "1.6.2",
 		"authors": ["Max Ogden"],
@@ -1052,6 +1447,13 @@
 		"authors": ["Isaac Z. Schlueter (http://blog.izs.me/)"],
 		"license": "MIT",
 		"url": "git://github.com/isaacs/core-util-is"
+	},
+	{
+		"name": "cssesc",
+		"version": "3.0.0",
+		"authors": ["Mathias Bynens"],
+		"license": "MIT",
+		"url": "https://mths.be/cssesc"
 	},
 	{
 		"name": "cwise",
@@ -1138,6 +1540,25 @@
 		"url": "https://d3js.org/d3-zoom/"
 	},
 	{
+		"name": "data-uri-to-buffer",
+		"version": "4.0.1",
+		"authors": ["Nathan Rajlich (http://n8.io/)"],
+		"license": "MIT",
+		"url": "https://github.com/TooTallNate/node-data-uri-to-buffer"
+	},
+	{
+		"name": "debug",
+		"version": "4.4.3",
+		"authors": [
+			"Josh Junon (https://github.com/qix-)",
+			"TJ Holowaychuk",
+			"Nathan Rajlich (http://n8.io)",
+			"Andrew Rhyne"
+		],
+		"license": "MIT",
+		"url": "git://github.com/debug-js/debug.git"
+	},
+	{
 		"name": "debug",
 		"version": "4.4.3",
 		"authors": [
@@ -1199,6 +1620,13 @@
 		"url": "https://github.com/iliakan/detect-node"
 	},
 	{
+		"name": "diff",
+		"version": "8.0.4",
+		"authors": [],
+		"license": "BSD-3-Clause",
+		"url": "https://github.com/kpdecker/jsdiff.git"
+	},
+	{
 		"name": "dijkstrajs",
 		"version": "1.0.3",
 		"authors": [],
@@ -1248,6 +1676,13 @@
 		"url": "git://github.com/deoxxa/duplexer2.git"
 	},
 	{
+		"name": "ecdsa-sig-formatter",
+		"version": "1.0.11",
+		"authors": ["D2L Corporation"],
+		"license": "Apache-2.0",
+		"url": "https://github.com/Brightspace/node-ecdsa-sig-formatter#readme"
+	},
+	{
 		"name": "ecma-proposal-math-extensions",
 		"version": "0.0.2",
 		"authors": ["Rick Waldron"],
@@ -1281,6 +1716,13 @@
 		"authors": ["Orlando Groppo"],
 		"license": "",
 		"url": "https://github.com/codeledge/entitree-flex"
+	},
+	{
+		"name": "env-paths",
+		"version": "2.2.1",
+		"authors": ["Sindre Sorhus"],
+		"license": "MIT",
+		"url": "sindresorhus/env-paths"
 	},
 	{
 		"name": "errno",
@@ -1409,11 +1851,53 @@
 		"url": "https://github.com/benlesh/event-target-polyfill#readme"
 	},
 	{
+		"name": "event-target-shim",
+		"version": "5.0.1",
+		"authors": ["Toru Nagashima"],
+		"license": "MIT",
+		"url": "https://github.com/mysticatea/event-target-shim"
+	},
+	{
+		"name": "exponential-backoff",
+		"version": "3.1.3",
+		"authors": ["Sami Sayegh"],
+		"license": "Apache-2.0",
+		"url": "https://github.com/coveooss/exponential-backoff#readme"
+	},
+	{
+		"name": "extend",
+		"version": "3.0.2",
+		"authors": ["Stefan Thomas (http://www.justmoon.net)", "Jordan Harband"],
+		"license": "MIT",
+		"url": "https://github.com/justmoon/node-extend.git"
+	},
+	{
 		"name": "falafel",
 		"version": "2.2.5",
 		"authors": ["James Halliday"],
 		"license": "MIT",
 		"url": "git://github.com/substack/node-falafel.git"
+	},
+	{
+		"name": "fastest-levenshtein",
+		"version": "1.0.16",
+		"authors": ["Kasper U. Weihe"],
+		"license": "MIT",
+		"url": "https://github.com/ka-weihe/fastest-levenshtein#README"
+	},
+	{
+		"name": "fdir",
+		"version": "6.5.0",
+		"authors": ["thecodrr"],
+		"license": "MIT",
+		"url": "https://github.com/thecodrr/fdir#readme"
+	},
+	{
+		"name": "fetch-blob",
+		"version": "3.2.0",
+		"authors": ["Jimmy Wärting (https://jimmy.warting.se)"],
+		"license": "MIT",
+		"url": "https://github.com/node-fetch/fetch-blob#readme"
 	},
 	{
 		"name": "fflate",
@@ -1458,6 +1942,27 @@
 		"url": "git://github.com/form-data/form-data.git"
 	},
 	{
+		"name": "form-data-encoder",
+		"version": "1.7.2",
+		"authors": ["Nick K."],
+		"license": "MIT",
+		"url": "octet-stream/form-data-encoder"
+	},
+	{
+		"name": "formdata-node",
+		"version": "4.4.1",
+		"authors": ["Nick K."],
+		"license": "MIT",
+		"url": "octet-stream/form-data"
+	},
+	{
+		"name": "formdata-polyfill",
+		"version": "4.0.10",
+		"authors": ["Jimmy Wärting"],
+		"license": "MIT",
+		"url": "https://github.com/jimmywarting/FormData#readme"
+	},
+	{
 		"name": "fs-extra",
 		"version": "10.1.0",
 		"authors": ["JP Richardson"],
@@ -1465,11 +1970,32 @@
 		"url": "https://github.com/jprichardson/node-fs-extra"
 	},
 	{
+		"name": "fs-minipass",
+		"version": "3.0.3",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "https://github.com/npm/fs-minipass#readme"
+	},
+	{
 		"name": "function-bind",
 		"version": "1.1.2",
 		"authors": ["Raynos", "Jordan Harband"],
 		"license": "MIT",
 		"url": "https://github.com/Raynos/function-bind"
+	},
+	{
+		"name": "gaxios",
+		"version": "7.3.1",
+		"authors": ["Google, LLC"],
+		"license": "Apache-2.0",
+		"url": "https://github.com/googleapis/google-cloud-node/tree/main/core/packages/gaxios"
+	},
+	{
+		"name": "gcp-metadata",
+		"version": "8.1.2",
+		"authors": ["Google LLC"],
+		"license": "Apache-2.0",
+		"url": "https://github.com/googleapis/google-cloud-node-core/tree/main/packages/gcp-metadata"
 	},
 	{
 		"name": "get-caller-file",
@@ -1493,6 +2019,13 @@
 		"url": "https://github.com/ljharb/get-proto#readme"
 	},
 	{
+		"name": "glob",
+		"version": "13.0.6",
+		"authors": ["Isaac Z. Schlueter (https://blog.izs.me/)"],
+		"license": "BlueOak-1.0.0",
+		"url": "git@github.com:isaacs/node-glob.git"
+	},
+	{
 		"name": "global-agent",
 		"version": "3.0.0",
 		"authors": ["Gajus Kuizinas"],
@@ -1507,11 +2040,32 @@
 		"url": "git://github.com/ljharb/System.global.git"
 	},
 	{
+		"name": "google-auth-library",
+		"version": "10.9.1",
+		"authors": ["Google Inc."],
+		"license": "Apache-2.0",
+		"url": "https://github.com/googleapis/google-cloud-node/tree/main/core/packages/google-auth-library-nodejs"
+	},
+	{
+		"name": "google-logging-utils",
+		"version": "1.1.3",
+		"authors": ["Google API Authors"],
+		"license": "Apache-2.0",
+		"url": "https://github.com/googleapis/google-cloud-node-core/tree/main/dev-packages/logging-utils"
+	},
+	{
 		"name": "gopd",
 		"version": "1.2.0",
 		"authors": ["Jordan Harband"],
 		"license": "MIT",
 		"url": "https://github.com/ljharb/gopd#readme"
+	},
+	{
+		"name": "graceful-fs",
+		"version": "4.2.11",
+		"authors": [],
+		"license": "ISC",
+		"url": "https://github.com/isaacs/node-graceful-fs"
 	},
 	{
 		"name": "graceful-fs",
@@ -1570,11 +2124,74 @@
 		"url": "https://github.com/inspect-js/hasOwn#readme"
 	},
 	{
+		"name": "hosted-git-info",
+		"version": "9.0.3",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "https://github.com/npm/hosted-git-info"
+	},
+	{
+		"name": "http-cache-semantics",
+		"version": "4.3.0",
+		"authors": ["Kornel Lesiński (https://kornel.ski/)"],
+		"license": "BSD-2-Clause",
+		"url": "git+https://github.com/kornelski/http-cache-semantics.git"
+	},
+	{
+		"name": "http-proxy-agent",
+		"version": "7.0.2",
+		"authors": ["Nathan Rajlich (http://n8.io/)"],
+		"license": "MIT",
+		"url": "https://github.com/TooTallNate/proxy-agents.git"
+	},
+	{
+		"name": "https-proxy-agent",
+		"version": "7.0.6",
+		"authors": ["Nathan Rajlich (http://n8.io/)"],
+		"license": "MIT",
+		"url": "https://github.com/TooTallNate/proxy-agents.git"
+	},
+	{
+		"name": "https-proxy-agent",
+		"version": "7.0.6",
+		"authors": ["Nathan Rajlich (http://n8.io/)"],
+		"license": "MIT",
+		"url": "https://github.com/TooTallNate/proxy-agents.git"
+	},
+	{
+		"name": "humanize-ms",
+		"version": "1.2.1",
+		"authors": ["dead-horse"],
+		"license": "MIT",
+		"url": "https://github.com/node-modules/humanize-ms"
+	},
+	{
+		"name": "i",
+		"version": "0.3.7",
+		"authors": ["Pavan Kumar Sunkara (pksunkara.github.com)", "Pavan Kumar Sunkara"],
+		"license": "",
+		"url": "http://pksunkara.github.com/inflect"
+	},
+	{
+		"name": "iconv-lite",
+		"version": "0.7.2",
+		"authors": ["Alexander Shtuchkin"],
+		"license": "MIT",
+		"url": "https://github.com/pillarjs/iconv-lite"
+	},
+	{
 		"name": "ieee754",
 		"version": "1.2.1",
 		"authors": ["Feross Aboukhadijeh", "Romain Beauxis"],
 		"license": "BSD-3-Clause",
 		"url": "git://github.com/feross/ieee754.git"
+	},
+	{
+		"name": "ignore-walk",
+		"version": "8.0.0",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/ignore-walk.git"
 	},
 	{
 		"name": "immediate",
@@ -1601,11 +2218,32 @@
 		"url": "git://github.com/calvinmetcalf/immediate.git"
 	},
 	{
+		"name": "imurmurhash",
+		"version": "0.1.4",
+		"authors": ["Jens Taylor"],
+		"license": "MIT",
+		"url": "https://github.com/jensyt/imurmurhash-js"
+	},
+	{
 		"name": "inherits",
 		"version": "2.0.4",
 		"authors": [],
 		"license": "ISC",
 		"url": "git://github.com/isaacs/inherits"
+	},
+	{
+		"name": "ini",
+		"version": "6.0.0",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/ini.git"
+	},
+	{
+		"name": "init-package-json",
+		"version": "8.2.5",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/init-package-json.git"
 	},
 	{
 		"name": "iota-array",
@@ -1615,11 +2253,25 @@
 		"url": "git://github.com/mikolalysenko/iota-array.git"
 	},
 	{
+		"name": "ip-address",
+		"version": "10.7.5",
+		"authors": ["Beau Gunderson (https://beaugunderson.com/)"],
+		"license": "MIT",
+		"url": "https://github.com/beaugunderson/ip-address.git"
+	},
+	{
 		"name": "is-buffer",
 		"version": "1.1.6",
 		"authors": ["Feross Aboukhadijeh"],
 		"license": "MIT",
 		"url": "git://github.com/feross/is-buffer.git"
+	},
+	{
+		"name": "is-cidr",
+		"version": "6.0.4",
+		"authors": ["silverwind", "Felipe Apostol (http://flipjs.io/)"],
+		"license": "BSD-2-Clause",
+		"url": "silverwind/is-cidr"
 	},
 	{
 		"name": "is-fullwidth-code-point",
@@ -1648,6 +2300,13 @@
 		"authors": ["Julian Gruber"],
 		"license": "MIT",
 		"url": "https://github.com/juliangruber/isarray"
+	},
+	{
+		"name": "isexe",
+		"version": "4.0.0",
+		"authors": ["Isaac Z. Schlueter (http://blog.izs.me/)"],
+		"license": "BlueOak-1.0.0",
+		"url": "https://github.com/isaacs/isexe"
 	},
 	{
 		"name": "isomorphic.js",
@@ -1683,6 +2342,27 @@
 		"url": "nodeca/js-yaml"
 	},
 	{
+		"name": "json-bigint",
+		"version": "1.0.0",
+		"authors": ["Andrey Sidorov"],
+		"license": "MIT",
+		"url": "git@github.com:sidorares/json-bigint.git"
+	},
+	{
+		"name": "json-parse-even-better-errors",
+		"version": "5.0.0",
+		"authors": ["GitHub Inc."],
+		"license": "MIT",
+		"url": "git+https://github.com/npm/json-parse-even-better-errors.git"
+	},
+	{
+		"name": "json-stringify-nice",
+		"version": "1.1.4",
+		"authors": ["Isaac Z. Schlueter (https://izs.me)"],
+		"license": "ISC",
+		"url": "https://github.com/isaacs/json-stringify-nice"
+	},
+	{
 		"name": "json-stringify-safe",
 		"version": "5.0.1",
 		"authors": ["Isaac Z. Schlueter (http://blog.izs.me)", "Andri Möll (http://themoll.com)"],
@@ -1697,6 +2377,13 @@
 		"url": "git@github.com:jprichardson/node-jsonfile.git"
 	},
 	{
+		"name": "jsonparse",
+		"version": "1.3.1",
+		"authors": ["Tim Caswell"],
+		"license": "MIT",
+		"url": "http://github.com/creationix/jsonparse.git"
+	},
+	{
 		"name": "jszip",
 		"version": "3.10.2",
 		"authors": [
@@ -1708,6 +2395,34 @@
 		],
 		"license": "(MIT OR GPL-3.0-or-later)",
 		"url": "https://github.com/Stuk/jszip.git"
+	},
+	{
+		"name": "just-diff",
+		"version": "6.0.2",
+		"authors": ["Angus Croll"],
+		"license": "MIT",
+		"url": "https://github.com/angus-c/just"
+	},
+	{
+		"name": "just-diff-apply",
+		"version": "5.5.0",
+		"authors": ["Angus Croll"],
+		"license": "MIT",
+		"url": "https://github.com/angus-c/just"
+	},
+	{
+		"name": "jwa",
+		"version": "2.0.1",
+		"authors": ["Brian J. Brennan"],
+		"license": "MIT",
+		"url": "git://github.com/brianloveswords/node-jwa.git"
+	},
+	{
+		"name": "jws",
+		"version": "4.0.1",
+		"authors": ["Brian J Brennan"],
+		"license": "MIT",
+		"url": "git://github.com/brianloveswords/node-jws.git"
 	},
 	{
 		"name": "jzz",
@@ -1837,6 +2552,76 @@
 		"url": "https://github.com/dmonad/lib0#readme"
 	},
 	{
+		"name": "libnpmaccess",
+		"version": "10.0.3",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "https://npmjs.com/package/libnpmaccess"
+	},
+	{
+		"name": "libnpmdiff",
+		"version": "8.1.15",
+		"authors": ["GitHub Inc.", "Ruy Adorno"],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/cli.git"
+	},
+	{
+		"name": "libnpmexec",
+		"version": "10.3.6",
+		"authors": ["GitHub Inc.", "Ruy Adorno"],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/cli.git"
+	},
+	{
+		"name": "libnpmfund",
+		"version": "7.0.29",
+		"authors": ["GitHub Inc.", "Ruy Adorno"],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/cli.git"
+	},
+	{
+		"name": "libnpmorg",
+		"version": "8.0.1",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "https://npmjs.com/package/libnpmorg"
+	},
+	{
+		"name": "libnpmpack",
+		"version": "9.1.16",
+		"authors": ["GitHub Inc.", "Claudia Hernández"],
+		"license": "ISC",
+		"url": "https://npmjs.com/package/libnpmpack"
+	},
+	{
+		"name": "libnpmpublish",
+		"version": "11.2.1",
+		"authors": ["GitHub Inc.", "Kat Marchán", "Claudia Hernández"],
+		"license": "ISC",
+		"url": "https://npmjs.com/package/libnpmpublish"
+	},
+	{
+		"name": "libnpmsearch",
+		"version": "9.0.1",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "https://npmjs.com/package/libnpmsearch"
+	},
+	{
+		"name": "libnpmteam",
+		"version": "8.0.2",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "https://npmjs.com/package/libnpmteam"
+	},
+	{
+		"name": "libnpmversion",
+		"version": "8.0.4",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/cli.git"
+	},
+	{
 		"name": "lie",
 		"version": "3.3.0",
 		"authors": [],
@@ -1911,6 +2696,13 @@
 		"url": "https://github.com/jonschlinkert/longest"
 	},
 	{
+		"name": "lru-cache",
+		"version": "11.5.1",
+		"authors": ["Isaac Z. Schlueter"],
+		"license": "BlueOak-1.0.0",
+		"url": "git+ssh://git@github.com/isaacs/node-lru-cache.git"
+	},
+	{
 		"name": "ltgt",
 		"version": "2.2.1",
 		"authors": ["Dominic Tarr (http://dominictarr.com)"],
@@ -1923,6 +2715,13 @@
 		"authors": ["pieroxy"],
 		"license": "MIT",
 		"url": "http://pieroxy.net/blog/pages/lz-string/index.html"
+	},
+	{
+		"name": "make-fetch-happen",
+		"version": "15.0.6",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/make-fetch-happen.git"
 	},
 	{
 		"name": "matcher",
@@ -1989,6 +2788,13 @@
 		"url": "jshttp/mime-types"
 	},
 	{
+		"name": "minimatch",
+		"version": "10.2.5",
+		"authors": ["Isaac Z. Schlueter (http://blog.izs.me)"],
+		"license": "BlueOak-1.0.0",
+		"url": "git@github.com:isaacs/minimatch"
+	},
+	{
 		"name": "minimist",
 		"version": "0.0.8",
 		"authors": ["James Halliday"],
@@ -1997,10 +2803,66 @@
 	},
 	{
 		"name": "minipass",
+		"version": "3.3.6",
+		"authors": ["Isaac Z. Schlueter (http://blog.izs.me/)"],
+		"license": "ISC",
+		"url": "git+https://github.com/isaacs/minipass.git"
+	},
+	{
+		"name": "minipass",
 		"version": "7.1.3",
 		"authors": ["Isaac Z. Schlueter (http://blog.izs.me/)"],
 		"license": "BlueOak-1.0.0",
 		"url": "https://github.com/isaacs/minipass"
+	},
+	{
+		"name": "minipass",
+		"version": "7.1.3",
+		"authors": ["Isaac Z. Schlueter (http://blog.izs.me/)"],
+		"license": "BlueOak-1.0.0",
+		"url": "https://github.com/isaacs/minipass"
+	},
+	{
+		"name": "minipass-collect",
+		"version": "2.0.1",
+		"authors": ["Isaac Z. Schlueter (https://izs.me)"],
+		"license": "ISC",
+		"url": "https://github.com/isaacs/minipass-collect"
+	},
+	{
+		"name": "minipass-fetch",
+		"version": "5.0.2",
+		"authors": ["GitHub Inc."],
+		"license": "MIT",
+		"url": "git+https://github.com/npm/minipass-fetch.git"
+	},
+	{
+		"name": "minipass-flush",
+		"version": "1.0.6",
+		"authors": ["Isaac Z. Schlueter (https://izs.me)"],
+		"license": "BlueOak-1.0.0",
+		"url": "git+https://github.com/isaacs/minipass-flush.git"
+	},
+	{
+		"name": "minipass-pipeline",
+		"version": "1.2.4",
+		"authors": ["Isaac Z. Schlueter (https://izs.me)"],
+		"license": "ISC",
+		"url": ""
+	},
+	{
+		"name": "minipass-sized",
+		"version": "2.0.0",
+		"authors": ["Isaac Z. Schlueter (https://izs.me)"],
+		"license": "ISC",
+		"url": "git+https://github.com/isaacs/minipass-sized.git"
+	},
+	{
+		"name": "minizlib",
+		"version": "3.1.0",
+		"authors": ["Isaac Z. Schlueter (http://blog.izs.me/)"],
+		"license": "MIT",
+		"url": "git+https://github.com/isaacs/minizlib.git"
 	},
 	{
 		"name": "minizlib",
@@ -2015,6 +2877,20 @@
 		"authors": [],
 		"license": "MIT",
 		"url": "vercel/ms"
+	},
+	{
+		"name": "ms",
+		"version": "2.1.3",
+		"authors": [],
+		"license": "MIT",
+		"url": "vercel/ms"
+	},
+	{
+		"name": "mute-stream",
+		"version": "3.0.0",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/mute-stream.git"
 	},
 	{
 		"name": "napi-macros",
@@ -2059,6 +2935,17 @@
 		"url": "git://github.com/mikolalysenko/ndarray-scratch.git"
 	},
 	{
+		"name": "negotiator",
+		"version": "1.0.0",
+		"authors": [
+			"Douglas Christopher Wilson",
+			"Federico Romero",
+			"Isaac Z. Schlueter (http://blog.izs.me/)"
+		],
+		"license": "MIT",
+		"url": "jshttp/negotiator"
+	},
+	{
 		"name": "netronome",
 		"version": "2.9.0",
 		"authors": ["designerzen"],
@@ -2066,11 +2953,32 @@
 		"url": "https://designerzen.github.io/netronome/"
 	},
 	{
+		"name": "node-domexception",
+		"version": "1.0.0",
+		"authors": ["Jimmy Wärting"],
+		"license": "MIT",
+		"url": "https://github.com/jimmywarting/node-domexception#readme"
+	},
+	{
 		"name": "node-fetch",
 		"version": "2.6.13",
 		"authors": ["David Frank"],
 		"license": "MIT",
 		"url": "https://github.com/bitinn/node-fetch"
+	},
+	{
+		"name": "node-fetch",
+		"version": "3.3.2",
+		"authors": ["David Frank"],
+		"license": "MIT",
+		"url": "https://github.com/node-fetch/node-fetch"
+	},
+	{
+		"name": "node-gyp",
+		"version": "12.4.0",
+		"authors": ["Nathan Rajlich (http://tootallnate.net)"],
+		"license": "MIT",
+		"url": "git://github.com/nodejs/node-gyp.git"
 	},
 	{
 		"name": "node-gyp-build",
@@ -2085,6 +2993,90 @@
 		"authors": ["Andreas Gal"],
 		"license": "MIT",
 		"url": "https://github.com/andreasgal/node-wav"
+	},
+	{
+		"name": "nopt",
+		"version": "9.0.0",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/nopt.git"
+	},
+	{
+		"name": "npm",
+		"version": "11.21.3",
+		"authors": ["GitHub Inc."],
+		"license": "Artistic-2.0",
+		"url": "https://docs.npmjs.com/"
+	},
+	{
+		"name": "npm-audit-report",
+		"version": "7.0.0",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "https://github.com/npm/npm-audit-report#readme"
+	},
+	{
+		"name": "npm-bundled",
+		"version": "5.0.0",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/npm-bundled.git"
+	},
+	{
+		"name": "npm-install-checks",
+		"version": "8.0.0",
+		"authors": ["GitHub Inc."],
+		"license": "BSD-2-Clause",
+		"url": "git+https://github.com/npm/npm-install-checks.git"
+	},
+	{
+		"name": "npm-normalize-package-bin",
+		"version": "5.0.0",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/npm-normalize-package-bin.git"
+	},
+	{
+		"name": "npm-package-arg",
+		"version": "13.0.2",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "https://github.com/npm/npm-package-arg"
+	},
+	{
+		"name": "npm-packlist",
+		"version": "10.0.4",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/npm-packlist.git"
+	},
+	{
+		"name": "npm-pick-manifest",
+		"version": "11.0.3",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/npm-pick-manifest.git"
+	},
+	{
+		"name": "npm-profile",
+		"version": "12.0.2",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/npm-profile.git"
+	},
+	{
+		"name": "npm-registry-fetch",
+		"version": "19.1.1",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/npm-registry-fetch.git"
+	},
+	{
+		"name": "npm-user-validate",
+		"version": "4.0.0",
+		"authors": ["GitHub Inc."],
+		"license": "BSD-2-Clause",
+		"url": "git+https://github.com/npm/npm-user-validate.git"
 	},
 	{
 		"name": "object-inspect",
@@ -2136,6 +3128,13 @@
 		"url": "https://github.com/Microsoft/onnxruntime.git"
 	},
 	{
+		"name": "openai",
+		"version": "4.104.0",
+		"authors": ["OpenAI"],
+		"license": "Apache-2.0",
+		"url": "github:openai/openai-node"
+	},
+	{
 		"name": "opendaw",
 		"version": "0.8.0",
 		"authors": [],
@@ -2157,11 +3156,32 @@
 		"url": "sindresorhus/p-locate"
 	},
 	{
+		"name": "p-map",
+		"version": "7.0.4",
+		"authors": ["Sindre Sorhus"],
+		"license": "MIT",
+		"url": "sindresorhus/p-map"
+	},
+	{
+		"name": "p-retry",
+		"version": "4.6.2",
+		"authors": ["Sindre Sorhus"],
+		"license": "MIT",
+		"url": "sindresorhus/p-retry"
+	},
+	{
 		"name": "p-try",
 		"version": "2.2.0",
 		"authors": ["Sindre Sorhus"],
 		"license": "MIT",
 		"url": "sindresorhus/p-try"
+	},
+	{
+		"name": "pacote",
+		"version": "21.5.2",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/pacote.git"
 	},
 	{
 		"name": "pako",
@@ -2178,6 +3198,13 @@
 		"url": "https://github.com/nodeca/pako"
 	},
 	{
+		"name": "parse-conflict-json",
+		"version": "5.0.1",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/parse-conflict-json.git"
+	},
+	{
 		"name": "partysocket",
 		"version": "1.1.16",
 		"authors": [],
@@ -2192,11 +3219,25 @@
 		"url": "sindresorhus/path-exists"
 	},
 	{
+		"name": "path-scurry",
+		"version": "2.0.2",
+		"authors": ["Isaac Z. Schlueter (https://blog.izs.me)"],
+		"license": "BlueOak-1.0.0",
+		"url": "git+https://github.com/isaacs/path-scurry"
+	},
+	{
 		"name": "phonemizer",
 		"version": "1.2.1",
 		"authors": ["Xenova"],
 		"license": "Apache-2.0",
 		"url": "https://github.com/xenova/phonemizer.js#readme"
+	},
+	{
+		"name": "picomatch",
+		"version": "4.0.4",
+		"authors": ["Jon Schlinkert (https://github.com/jonschlinkert)"],
+		"license": "MIT",
+		"url": "https://github.com/micromatch/picomatch"
 	},
 	{
 		"name": "pitfalls",
@@ -2233,11 +3274,60 @@
 		"url": "https://github.com/lukeapage/pngjs"
 	},
 	{
+		"name": "postcss-selector-parser",
+		"version": "7.1.6",
+		"authors": ["Maxime Thirouin", "Ben Briggs", "Chris Eppstein"],
+		"license": "MIT",
+		"url": "https://github.com/postcss/postcss-selector-parser"
+	},
+	{
+		"name": "prai",
+		"version": "0.4.16",
+		"authors": ["Bela Bohlender"],
+		"license": "MIT",
+		"url": "https://github.com/pmndrs/prai"
+	},
+	{
+		"name": "proc-log",
+		"version": "6.1.0",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/proc-log.git"
+	},
+	{
 		"name": "process-nextick-args",
 		"version": "2.0.1",
 		"authors": [],
 		"license": "MIT",
 		"url": "https://github.com/calvinmetcalf/process-nextick-args"
+	},
+	{
+		"name": "proggy",
+		"version": "4.0.0",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/proggy.git"
+	},
+	{
+		"name": "promise-all-reject-late",
+		"version": "1.0.1",
+		"authors": ["Isaac Z. Schlueter (https://izs.me)"],
+		"license": "ISC",
+		"url": ""
+	},
+	{
+		"name": "promise-call-limit",
+		"version": "3.0.2",
+		"authors": ["Isaac Z. Schlueter (https://izs.me)"],
+		"license": "ISC",
+		"url": "git+https://github.com/isaacs/promise-call-limit"
+	},
+	{
+		"name": "promzard",
+		"version": "3.0.1",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/promzard.git"
 	},
 	{
 		"name": "protobufjs",
@@ -2268,6 +3358,13 @@
 		"url": "http://github.com/soldair/node-qrcode"
 	},
 	{
+		"name": "qrcode-terminal",
+		"version": "0.12.0",
+		"authors": ["Gord Tanner", "Michael Brooks"],
+		"license": "",
+		"url": "https://github.com/gtanner/qrcode-terminal"
+	},
+	{
 		"name": "quote-stream",
 		"version": "0.0.0",
 		"authors": ["James Halliday"],
@@ -2287,6 +3384,20 @@
 		"authors": [],
 		"license": "MIT",
 		"url": "https://react.dev/"
+	},
+	{
+		"name": "read",
+		"version": "5.0.1",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/read.git"
+	},
+	{
+		"name": "read-cmd-shim",
+		"version": "6.0.0",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "https://github.com/npm/read-cmd-shim#readme"
 	},
 	{
 		"name": "readable-stream",
@@ -2359,6 +3470,13 @@
 		"url": "https://github.com/yargs/require-main-filename#readme"
 	},
 	{
+		"name": "retry",
+		"version": "0.13.1",
+		"authors": ["Tim Koschützki (http://debuggable.com/)"],
+		"license": "MIT",
+		"url": "https://github.com/tim-kos/node-retry"
+	},
+	{
 		"name": "right-align",
 		"version": "0.1.3",
 		"authors": ["Jon Schlinkert"],
@@ -2385,6 +3503,13 @@
 		"authors": ["Feross Aboukhadijeh"],
 		"license": "MIT",
 		"url": "https://github.com/feross/safe-buffer"
+	},
+	{
+		"name": "safer-buffer",
+		"version": "2.1.2",
+		"authors": ["Nikita Skovoroda"],
+		"license": "MIT",
+		"url": "git+https://github.com/ChALkeR/safer-buffer.git"
 	},
 	{
 		"name": "sax",
@@ -2424,6 +3549,13 @@
 	{
 		"name": "semver",
 		"version": "7.7.4",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/node-semver.git"
+	},
+	{
+		"name": "semver",
+		"version": "7.8.6",
 		"authors": ["GitHub Inc."],
 		"license": "ISC",
 		"url": "git+https://github.com/npm/node-semver.git"
@@ -2569,11 +3701,67 @@
 		"url": "https://sharp.pixelplumbing.com"
 	},
 	{
+		"name": "signal-exit",
+		"version": "4.1.0",
+		"authors": ["Ben Coe"],
+		"license": "ISC",
+		"url": "https://github.com/tapjs/signal-exit.git"
+	},
+	{
+		"name": "sigstore",
+		"version": "4.1.1",
+		"authors": ["bdehamer@github.com"],
+		"license": "Apache-2.0",
+		"url": "https://github.com/sigstore/sigstore-js/tree/main/packages/client#readme"
+	},
+	{
 		"name": "sion",
 		"version": "0.1.0",
 		"authors": [],
 		"license": "",
 		"url": "https://github.com/designerzen/SiON.git"
+	},
+	{
+		"name": "smart-buffer",
+		"version": "4.2.0",
+		"authors": ["Josh Glazebrook", "syvita"],
+		"license": "MIT",
+		"url": "https://github.com/JoshGlazebrook/smart-buffer/"
+	},
+	{
+		"name": "socks",
+		"version": "2.8.9",
+		"authors": ["Josh Glazebrook", "castorw"],
+		"license": "MIT",
+		"url": "https://github.com/JoshGlazebrook/socks/"
+	},
+	{
+		"name": "socks-proxy-agent",
+		"version": "8.0.5",
+		"authors": [
+			"Nathan Rajlich",
+			"Kiko Beats",
+			"Josh Glazebrook",
+			"talmobi",
+			"Indospace.io",
+			"Kilian von Pflugk",
+			"Kyle",
+			"Matheus Fernandes",
+			"Ricky Miller",
+			"Shantanu Sharma",
+			"Tim Perry",
+			"Vadim Baryshev",
+			"jigu",
+			"Alba Mendez",
+			"Дмитрий Гуденков",
+			"Andrei Bitca",
+			"Andrew Casey",
+			"Brandon Ros",
+			"Dang Duy Thanh",
+			"Dimitar Nestorov"
+		],
+		"license": "MIT",
+		"url": "https://github.com/TooTallNate/proxy-agents.git"
 	},
 	{
 		"name": "soundfont2",
@@ -2708,6 +3896,27 @@
 		"url": "https://github.com/mozilla/source-map"
 	},
 	{
+		"name": "spdx-exceptions",
+		"version": "2.5.0",
+		"authors": ["The Linux Foundation", "Kyle E. Mitchell (https://kemitchell.com/)"],
+		"license": "CC-BY-3.0",
+		"url": "kemitchell/spdx-exceptions.json"
+	},
+	{
+		"name": "spdx-expression-parse",
+		"version": "4.0.0",
+		"authors": ["Kyle E. Mitchell (https://kemitchell.com)"],
+		"license": "MIT",
+		"url": "jslicense/spdx-expression-parse.js"
+	},
+	{
+		"name": "spdx-license-ids",
+		"version": "3.0.23",
+		"authors": ["Shinnosuke Watanabe (https://github.com/shinnn)"],
+		"license": "CC0-1.0",
+		"url": "jslicense/spdx-license-ids"
+	},
+	{
 		"name": "sprintf-js",
 		"version": "1.0.3",
 		"authors": ["Alexandru Marasteanu (http://alexei.ro/)"],
@@ -2720,6 +3929,13 @@
 		"authors": ["Alexandru Mărășteanu"],
 		"license": "BSD-3-Clause",
 		"url": "https://github.com/alexei/sprintf.js.git"
+	},
+	{
+		"name": "ssri",
+		"version": "13.0.1",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/ssri.git"
 	},
 	{
 		"name": "staffrender",
@@ -2828,6 +4044,13 @@
 	},
 	{
 		"name": "supports-color",
+		"version": "10.2.2",
+		"authors": ["Sindre Sorhus"],
+		"license": "MIT",
+		"url": "chalk/supports-color"
+	},
+	{
+		"name": "supports-color",
 		"version": "7.2.0",
 		"authors": ["Sindre Sorhus"],
 		"license": "MIT",
@@ -2842,10 +4065,24 @@
 	},
 	{
 		"name": "tar",
+		"version": "7.5.22",
+		"authors": ["Isaac Z. Schlueter"],
+		"license": "BlueOak-1.0.0",
+		"url": "https://github.com/isaacs/node-tar.git"
+	},
+	{
+		"name": "tar",
 		"version": "7.5.23",
 		"authors": ["Isaac Z. Schlueter"],
 		"license": "BlueOak-1.0.0",
 		"url": "https://github.com/isaacs/node-tar.git"
+	},
+	{
+		"name": "text-table",
+		"version": "0.2.0",
+		"authors": ["James Halliday"],
+		"license": "MIT",
+		"url": "https://github.com/substack/text-table"
 	},
 	{
 		"name": "theremid",
@@ -2862,11 +4099,25 @@
 		"url": "https://github.com/rvagg/through2.git"
 	},
 	{
+		"name": "tiny-relative-date",
+		"version": "2.0.2",
+		"authors": ["Joseph Wynn (https://wildlyinaccurate.com/)"],
+		"license": "MIT",
+		"url": "https://github.com/wildlyinaccurate/relative-date.git"
+	},
+	{
 		"name": "tiny-typed-emitter",
 		"version": "2.1.0",
 		"authors": ["Zurab Benashvili"],
 		"license": "MIT",
 		"url": "https://github.com/binier/tiny-typed-emitter.git"
+	},
+	{
+		"name": "tinyglobby",
+		"version": "0.2.17",
+		"authors": ["Superchupu"],
+		"license": "MIT",
+		"url": "https://superchupu.dev/tinyglobby"
 	},
 	{
 		"name": "tonal",
@@ -2974,11 +4225,25 @@
 		"url": "https://github.com/Sebmaster/tr46.js#readme"
 	},
 	{
+		"name": "treeverse",
+		"version": "3.0.0",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "https://github.com/npm/treeverse.git"
+	},
+	{
 		"name": "tslib",
 		"version": "2.9.1",
 		"authors": ["Microsoft Corp."],
 		"license": "0BSD",
 		"url": "https://www.typescriptlang.org/"
+	},
+	{
+		"name": "tuf-js",
+		"version": "4.1.0",
+		"authors": ["bdehamer@github.com"],
+		"license": "MIT",
+		"url": "https://github.com/theupdateframework/tuf-js/tree/main/packages/client#readme"
 	},
 	{
 		"name": "type-fest",
@@ -3038,6 +4303,36 @@
 		"url": "https://undici.nodejs.org"
 	},
 	{
+		"name": "undici",
+		"version": "6.29.1",
+		"authors": [
+			"Daniele Belardi",
+			"Ethan Arrowood",
+			"Matteo Collina",
+			"Matthew Aitken",
+			"Robert Nagy",
+			"Szymon Marczak",
+			"Tomas Della Vedova"
+		],
+		"license": "MIT",
+		"url": "https://undici.nodejs.org"
+	},
+	{
+		"name": "undici-types",
+		"version": "5.26.5",
+		"authors": [
+			"Daniele Belardi",
+			"Ethan Arrowood",
+			"Matteo Collina",
+			"Matthew Aitken",
+			"Robert Nagy",
+			"Szymon Marczak",
+			"Tomas Della Vedova"
+		],
+		"license": "MIT",
+		"url": "https://undici.nodejs.org"
+	},
+	{
 		"name": "undici-types",
 		"version": "8.9.0",
 		"authors": [
@@ -3081,6 +4376,13 @@
 		"url": "https://github.com/TooTallNate/util-deprecate"
 	},
 	{
+		"name": "util-deprecate",
+		"version": "1.0.2",
+		"authors": ["Nathan Rajlich (http://n8.io/)"],
+		"license": "MIT",
+		"url": "https://github.com/TooTallNate/util-deprecate"
+	},
+	{
 		"name": "utility-types",
 		"version": "3.11.0",
 		"authors": ["Piotr Witek (http://piotrwitek.github.io)"],
@@ -3095,11 +4397,39 @@
 		"url": "https://github.com/uuidjs/uuid.git"
 	},
 	{
+		"name": "validate-npm-package-name",
+		"version": "7.0.2",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "https://github.com/npm/validate-npm-package-name"
+	},
+	{
 		"name": "vexflow",
 		"version": "5.6.0",
 		"authors": ["VexFlow Authors"],
 		"license": "MIT",
 		"url": "https://vexflow.com/"
+	},
+	{
+		"name": "walk-up-path",
+		"version": "4.0.0",
+		"authors": ["Isaac Z. Schlueter (https://izs.me)"],
+		"license": "ISC",
+		"url": "git+https://github.com/isaacs/walk-up-path"
+	},
+	{
+		"name": "web-streams-polyfill",
+		"version": "3.3.3",
+		"authors": ["Mattias Buelens", "Diwank Singh"],
+		"license": "MIT",
+		"url": "https://github.com/MattiasBuelens/web-streams-polyfill#readme"
+	},
+	{
+		"name": "web-streams-polyfill",
+		"version": "4.0.0-beta.3",
+		"authors": ["Mattias Buelens", "Diwank Singh"],
+		"license": "MIT",
+		"url": "https://github.com/MattiasBuelens/web-streams-polyfill#readme"
 	},
 	{
 		"name": "webidl-conversions",
@@ -3128,6 +4458,13 @@
 		"authors": ["Sebastian Mayr"],
 		"license": "MIT",
 		"url": "jsdom/whatwg-url"
+	},
+	{
+		"name": "which",
+		"version": "6.0.1",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "git+https://github.com/npm/node-which.git"
 	},
 	{
 		"name": "which-module",
@@ -3165,8 +4502,22 @@
 		"url": "chalk/wrap-ansi"
 	},
 	{
+		"name": "write-file-atomic",
+		"version": "7.0.1",
+		"authors": ["GitHub Inc."],
+		"license": "ISC",
+		"url": "https://github.com/npm/write-file-atomic"
+	},
+	{
 		"name": "ws",
 		"version": "6.2.7",
+		"authors": ["Einar Otto Stangvik (http://2x.io)"],
+		"license": "MIT",
+		"url": "https://github.com/websockets/ws"
+	},
+	{
+		"name": "ws",
+		"version": "8.23.0",
 		"authors": ["Einar Otto Stangvik (http://2x.io)"],
 		"license": "MIT",
 		"url": "https://github.com/websockets/ws"
@@ -3219,6 +4570,20 @@
 		"authors": ["Ben Coe"],
 		"license": "ISC",
 		"url": "https://github.com/yargs/y18n"
+	},
+	{
+		"name": "yallist",
+		"version": "4.0.0",
+		"authors": ["Isaac Z. Schlueter (http://blog.izs.me/)"],
+		"license": "ISC",
+		"url": "git+https://github.com/isaacs/yallist.git"
+	},
+	{
+		"name": "yallist",
+		"version": "5.0.0",
+		"authors": ["Isaac Z. Schlueter (http://blog.izs.me/)"],
+		"license": "BlueOak-1.0.0",
+		"url": "git+https://github.com/isaacs/yallist.git"
 	},
 	{
 		"name": "yallist",
@@ -3282,6 +4647,13 @@
 		"authors": ["Kevin Jahns"],
 		"license": "MIT",
 		"url": "https://docs.yjs.dev"
+	},
+	{
+		"name": "zod",
+		"version": "3.25.76",
+		"authors": ["Colin McDonnell"],
+		"license": "MIT",
+		"url": "https://zod.dev"
 	},
 	{
 		"name": "zod",
